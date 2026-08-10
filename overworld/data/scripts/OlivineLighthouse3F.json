@@ -1,1 +1,0 @@
-{"TrainerBirdKeeperTheo.Script":[{"op":"msg","text":"BirdKeeperTheoAfterBattleText"},{"op":"end"}],"TrainerGentlemanPreston.Script":[{"op":"msg","text":"GentlemanPrestonAfterBattleText"},{"op":"end"}],"TrainerSailorTerrell.Script":[{"op":"msg","text":"SailorTerrellAfterBattleText"},{"op":"end"}],"OlivineLighthouse3FEther":[{"op":"give","item":"ETHER","count":1}]}

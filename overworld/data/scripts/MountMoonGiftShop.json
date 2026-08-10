@@ -1,1 +1,0 @@
-{"MountMoonGiftShopClerkScript":[{"op":"faceplayer"},{"op":"openmart"},{"op":"end"}],"MountMoonGiftShopLassScript":[{"op":"faceplayer"},{"op":"msg","text":"MountMoonGiftShopLassText"}]}

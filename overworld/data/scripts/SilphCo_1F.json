@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"SilphCo_1F_OnTransition"},"SilphCo_1F_OnTransition":[{"op":"end"}],"SilphCo_1F_EventScript_Receptionist":[{"op":"msg","text":"SilphCo_1F_Text_WelcomePresidentInBoardroom"},{"op":"end"}],"SilphCo_1F_EventScript_FloorSign":[{"op":"msg","text":"SilphCo_1F_Text_FloorSign"},{"op":"end"}]}

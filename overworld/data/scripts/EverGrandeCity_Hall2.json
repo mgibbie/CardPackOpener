@@ -1,1 +1,0 @@
-{"__map__":{"onWarp":[{"var":"VAR_TEMP_1","value":0,"label":"EverGrandeCity_Hall2_EventScript_TurnPlayerNorth"}]},"EverGrandeCity_Hall2_EventScript_TurnPlayerNorth":[{"op":"face","who":"LOCALID_PLAYER","dir":"up"},{"op":"end"}]}

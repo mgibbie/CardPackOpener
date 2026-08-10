@@ -1,1 +1,0 @@
-{"TrainerSageNico.Script":[{"op":"msg","text":"SageNicoAfterBattleText"},{"op":"end"}],"TrainerSageEdmond.Script":[{"op":"msg","text":"SageEdmondAfterBattleText"},{"op":"end"}],"SproutTower2FStatue":[{"op":"msg","text":"SproutTower2FStatueText"}],"SproutTower2FXAccuracy":[{"op":"give","item":"X_ACCURACY","count":1}]}

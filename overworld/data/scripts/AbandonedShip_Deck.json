@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"AbandonedShip_Deck_OnTransition"},"AbandonedShip_Deck_OnTransition":[{"op":"setflag","flag":"FLAG_LANDMARK_ABANDONED_SHIP"},{"op":"end"}]}

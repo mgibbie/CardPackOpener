@@ -1,1 +1,0 @@
-{"LilycoveCity_House1_EventScript_ExpertM":[{"op":"msg","text":"LilycoveCity_House1_Text_PokemonPartnersNotTools"},{"op":"end"}],"LilycoveCity_House1_EventScript_Kecleon":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"LilycoveCity_House1_Text_Kecleon"},{"op":"release"},{"op":"end"}]}

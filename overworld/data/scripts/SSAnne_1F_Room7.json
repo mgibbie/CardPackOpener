@@ -1,1 +1,0 @@
-{"SSAnne_1F_Room7_EventScript_Thomas":[{"op":"trainerbattle","args":["TRAINER_GENTLEMAN_THOMAS","SSAnne_1F_Room7_Text_ThomasIntro","SSAnne_1F_Room7_Text_ThomasDefeat"]},{"op":"msg","text":"SSAnne_1F_Room7_Text_ThomasPostBattle"},{"op":"end"}]}

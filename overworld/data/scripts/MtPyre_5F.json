@@ -1,1 +1,0 @@
-{"MtPyre_4F_EventScript_Tasha":[{"op":"trainerbattle","args":["TRAINER_TASHA","MtPyre_4F_Text_TashaIntro","MtPyre_4F_Text_TashaDefeat"]},{"op":"msg","text":"MtPyre_4F_Text_TashaPostBattle"},{"op":"end"}]}

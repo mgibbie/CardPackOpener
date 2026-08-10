@@ -30,6 +30,7 @@ export function getImage(url) {
 	if (!imgCache.has(url)) {
 		imgCache.set(url, new Promise((res, rej) => {
 			const img = new Image();
+			img.crossOrigin = 'anonymous'; // data (sprites/tiles) is served cross-origin (magepunk-owdata project) — keep the canvas untainted
 			img.onload = () => res(img);
 			img.onerror = () => { imgCache.delete(url); rej(new Error('img ' + url)); };
 			img.src = url;

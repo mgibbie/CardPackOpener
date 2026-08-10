@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"SevenIsland_TanobyRuins_MoneanChamber_OnTransition"},"SevenIsland_TanobyRuins_MoneanChamber_OnTransition":[{"op":"call","label":"EventScript_TryDarkenRuins"},{"op":"end"}]}

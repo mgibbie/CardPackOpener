@@ -1,1 +1,0 @@
-{"SSAnne_B1F_Room2_EventScript_Huey":[{"op":"trainerbattle","args":["TRAINER_SAILOR_HUEY","SSAnne_B1F_Room2_Text_HueyIntro","SSAnne_B1F_Room2_Text_HueyDefeat"]},{"op":"msg","text":"SSAnne_B1F_Room2_Text_HueyPostBattle"},{"op":"end"}]}

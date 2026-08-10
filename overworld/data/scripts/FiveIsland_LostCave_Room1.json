@@ -1,1 +1,0 @@
-{"FiveIsland_LostCave_Room1_EventScript_Lawson":[{"op":"trainerbattle","args":["TRAINER_RUIN_MANIAC_LAWSON","FiveIsland_LostCave_Room1_Text_LawsonIntro","FiveIsland_LostCave_Room1_Text_LawsonDefeat"]},{"op":"msg","text":"FiveIsland_LostCave_Room1_Text_LawsonPostBattle"},{"op":"end"}]}

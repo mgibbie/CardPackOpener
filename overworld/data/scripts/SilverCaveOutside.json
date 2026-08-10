@@ -1,1 +1,0 @@
-{"SilverCaveOutsideFlypointCallback":[{"op":"setflag","flag":"ENGINE_FLYPOINT_SILVER_CAVE"},{"op":"end"}],"MtSilverSign":[{"op":"msg","text":"MtSilverSignText"}],"SilverCaveOutsideHiddenFullRestore":[{"op":"give","item":"FULL_RESTORE","count":1}]}

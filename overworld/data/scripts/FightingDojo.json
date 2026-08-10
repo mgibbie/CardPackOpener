@@ -1,1 +1,0 @@
-{"FightingDojoBlackBelt":[{"op":"faceplayer"},{"op":"msg","text":"FightingDojoBlackBeltText"}],"FightingDojoSign1":[{"op":"msg","text":"FightingDojoSign1Text"}],"FightingDojoSign2":[{"op":"msg","text":"FightingDojoSign2Text"}],"FightingDojoFocusBand":[{"op":"give","item":"FOCUS_BAND","count":1}]}

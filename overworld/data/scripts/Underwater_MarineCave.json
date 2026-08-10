@@ -1,1 +1,0 @@
-{"__map__":{"onResume":"Underwater_MarineCave_OnResume","onTransition":"Underwater_MarineCave_OnTransition"},"Underwater_MarineCave_OnTransition":[{"op":"setflag","flag":"FLAG_ARRIVED_AT_MARINE_CAVE_EMERGE_SPOT"},{"op":"end"}],"Underwater_MarineCave_OnResume":[{"op":"end"}]}

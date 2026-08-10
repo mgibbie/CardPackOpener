@@ -1,1 +1,0 @@
-{"IcePathB2FMahoganySideBoulder":[{"op":"msg","text":"IcePathB2FMahoganySideBoulderText"}],"IcePathB2FMahoganySideFullHeal":[{"op":"give","item":"FULL_HEAL","count":1}],"IcePathB2FMahoganySideMaxPotion":[{"op":"give","item":"MAX_POTION","count":1}],"IcePathB2FMahoganySideHiddenCarbos":[{"op":"give","item":"CARBOS","count":1}]}

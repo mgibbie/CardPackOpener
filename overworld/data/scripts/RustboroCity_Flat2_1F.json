@@ -1,1 +1,0 @@
-{"RustboroCity_Flat2_1F_EventScript_OldWoman":[{"op":"msg","text":"RustboroCity_Flat2_1F_Text_DevonWorkersLiveHere"},{"op":"end"}],"RustboroCity_Flat2_1F_EventScript_Skitty":[{"op":"lock"},{"op":"faceplayer"},{"op":"msg","text":"RustboroCity_Flat2_1F_Text_Skitty"},{"op":"release"},{"op":"end"}]}

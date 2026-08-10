@@ -3,3 +3,9 @@ package-lock.json
 
 # large third-party HS card dump used only by tools/gen_battlecards_design.py (kept local, not republished)
 tools/data/hs_cards_full.json
+
+# large asset folders offloaded to their own Cloudflare Pages projects
+# (magepunk-cardart / magepunk-owdata) so the main deploy stays under the
+# 20,000-file Pages limit. Kept on disk locally to redeploy those projects.
+battlecards/art/
+overworld/data/

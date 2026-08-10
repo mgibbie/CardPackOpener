@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"ArtisanCave_B1F_OnTransition"},"ArtisanCave_B1F_OnTransition":[{"op":"setflag","flag":"FLAG_LANDMARK_ARTISAN_CAVE"},{"op":"end"}]}

@@ -1,1 +1,0 @@
-{"CeruleanPokecenter1FSuperNerdScript":[{"op":"special","name":"CheckMobileAdapterStatusSpecial"},{"op":"faceplayer"},{"op":"msg","text":"CeruleanPokecenter1FSuperNerdText"},{"op":"faceplayer"},{"op":"msg","text":"CeruleanPokecenter1FSuperNerdText_Mobile"}],"CeruleanPokecenter1FGymGuideScript":[{"op":"faceplayer"},{"op":"msg","text":"CeruleanPokecenter1FGymGuideText"}]}

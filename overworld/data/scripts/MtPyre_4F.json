@@ -1,1 +1,0 @@
-{"MtPyre_5F_EventScript_Atsushi":[{"op":"trainerbattle","args":["TRAINER_ATSUSHI","MtPyre_5F_Text_AtsushiIntro","MtPyre_5F_Text_AtsushiDefeat"]},{"op":"msg","text":"MtPyre_5F_Text_AtsushiPostBattle"},{"op":"end"}]}

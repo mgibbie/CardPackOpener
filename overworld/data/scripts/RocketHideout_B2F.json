@@ -1,1 +1,0 @@
-{"RocketHideout_B2F_EventScript_Grunt":[{"op":"trainerbattle","args":["TRAINER_TEAM_ROCKET_GRUNT_13","RocketHideout_B2F_Text_GruntIntro","RocketHideout_B2F_Text_GruntDefeat"]},{"op":"msg","text":"RocketHideout_B2F_Text_GruntPostBattle"},{"op":"end"}]}

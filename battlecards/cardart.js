@@ -209,6 +209,7 @@ function artFor(id) {
 	let img = artImgs.get(id);
 	if (!img) {
 		img = new Image();
+		img.crossOrigin = 'anonymous'; // art is served cross-origin (magepunk-cardart project) — keep the canvas untainted
 		img.onload = () => { for (const fn of artListeners) fn(id); };
 		img.src = ART_DIR + id + '.jpg';
 		artImgs.set(id, img);
@@ -224,7 +225,7 @@ export async function preloadArt(ids) {
 	await Promise.all([...new Set(ids)].map(id => new Promise(res => {
 		if (!artIndex.has(id)) return res();
 		let img = artImgs.get(id);
-		if (!img) { img = new Image(); img.src = ART_DIR + id + '.jpg'; artImgs.set(id, img); }
+		if (!img) { img = new Image(); img.crossOrigin = 'anonymous'; img.src = ART_DIR + id + '.jpg'; artImgs.set(id, img); }
 		if (img.complete) return res();
 		img.addEventListener('load', () => { for (const fn of artListeners) fn(id); res(); }, { once: true });
 		img.addEventListener('error', () => res(), { once: true });

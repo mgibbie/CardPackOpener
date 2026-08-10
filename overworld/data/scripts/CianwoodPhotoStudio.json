@@ -1,1 +1,0 @@
-{"CianwoodPhotoStudioFishingGuruScript":[{"op":"faceplayer"},{"op":"msg","text":"CianwoodPhotoStudioFishingGuruText_Question"},{"op":"msg","text":"CianwoodPhotoStudioFishingGuruText_Yes"},{"op":"special","name":"PhotoStudio"},{"op":"end"}],"CianwoodPhotoStudioFishingGuruScript.Refused":[{"op":"msg","text":"CianwoodPhotoStudioFishingGuruText_No"},{"op":"end"}]}

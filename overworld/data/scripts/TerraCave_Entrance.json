@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"TerraCave_Entrance_OnTransition"},"TerraCave_Entrance_OnTransition":[{"op":"setflag","flag":"FLAG_ARRIVED_AT_TERRA_CAVE_ENTRANCE"},{"op":"end"}]}

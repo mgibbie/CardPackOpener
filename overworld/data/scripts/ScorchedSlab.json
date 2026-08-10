@@ -1,1 +1,0 @@
-{"__map__":{"onTransition":"ScorchedSlab_OnTransition"},"ScorchedSlab_OnTransition":[{"op":"setflag","flag":"FLAG_LANDMARK_SCORCHED_SLAB"},{"op":"end"}]}
