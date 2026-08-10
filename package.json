@@ -2,10 +2,7 @@
   "name": "cardpackopener",
   "private": true,
   "type": "module",
-  "description": "Static site + Netlify Functions backend for /magepunktest accounts",
-  "dependencies": {
-    "@netlify/blobs": "^8.1.0"
-  },
+  "description": "Static site + Cloudflare Pages Functions backend (D1) for /magepunktest accounts",
   "devDependencies": {
     "esbuild": "^0.28.1",
     "puppeteer-core": "^25.3.0"
