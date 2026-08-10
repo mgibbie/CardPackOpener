@@ -1,0 +1,13 @@
+# Cloudflare Pages caps a deployment at 20,000 files. Keep these in the repo but
+# out of the deployed asset set so we stay under the limit. Everything here is
+# either served from another project (the design-wiki sprites, redirected in
+# _redirects to magepunk-sprites.pages.dev) or not fetched by the site at
+# runtime (tests, docs, build tooling, plans, the unlinked scoundrel prototype).
+node_modules
+.git
+designwiki/sprites
+battlecards/tests
+battlecards/docs
+tools
+Plans
+scoundrel
