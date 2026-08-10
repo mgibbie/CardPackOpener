@@ -171367,6 +171367,598 @@
           "type": "grant-weapon-cleave-turn"
         }
       ]
+    },
+    {
+      "id": "imp_losion",
+      "name": "Imp-losion",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "GVG",
+      "description": "Deal 3 damage to a minion. Summon three 1/1 Imps.",
+      "effects": [
+        {
+          "type": "damage-minion",
+          "value": 3
+        },
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Imp"
+        }
+      ]
+    },
+    {
+      "id": "annihilation",
+      "name": "Annihilation",
+      "type": "sorcery",
+      "cost": 9,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Destroy all minions. Summon Demons from the bottom of your deck.",
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Demon",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "the_unseen_atlas",
+      "name": "The Unseen Atlas",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "description": "Draw 3 cards. Costs (1) less for each card in your hand.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "reverberations",
+      "name": "Reverberations",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "description": "Summon a copy of a minion.",
+      "effects": [
+        {
+          "type": "copy-minion",
+          "of": "target"
+        }
+      ]
+    },
+    {
+      "id": "kara_kazham",
+      "name": "Kara Kazham!",
+      "type": "sorcery",
+      "cost": 5,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "KARA",
+      "description": "Summon a 1/1 Candle, 2/2 Broom, and 3/3 Teapot.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Candle"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Broom"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Teapot"
+        }
+      ]
+    },
+    {
+      "id": "spreading_madness",
+      "name": "Spreading Madness",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "OG",
+      "description": "Deal 13 damage randomly split among ALL characters.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "characters",
+          "count": 13
+        }
+      ]
+    },
+    {
+      "id": "doom",
+      "name": "DOOM!",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "OG",
+      "description": "Destroy all minions. Draw a card for each.",
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "scourge_supplies",
+      "name": "Scourge Supplies",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Draw 3 cards. Discard one.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        },
+        {
+          "type": "discard-random",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "soul_barrage",
+      "name": "Soul Barrage",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Deal 5 damage randomly split among all enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "twisted_tether",
+      "name": "Twisted Tether",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "description": "Destroy a minion. Give its stats to a random Undead in your hand.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "buff-random-hand-tribe",
+          "tribe": "Undead",
+          "attack": 3,
+          "health": 3
+        }
+      ]
+    },
+    {
+      "id": "consume",
+      "name": "Consume",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "SPACE",
+      "description": "Restore 8 Health to your hero.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "school_spirits",
+      "name": "School Spirits",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "SCHOLOMANCE",
+      "description": "Deal 2 damage to all minions. Shuffle 2 Soul Fragments into your deck.",
+      "effects": [
+        {
+          "type": "damage-all-minions",
+          "value": 2
+        },
+        {
+          "type": "shuffle-soul-fragments",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "the_demon_seed",
+      "name": "The Demon Seed",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "legendary",
+      "set": "STORMWIND",
+      "description": "Questline: Take 12 damage on your turns. Reward: Deal 3 damage to the enemy hero.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "self-damage",
+          "count": 12
+        },
+        "reward": [
+          {
+            "type": "damage-enemy-hero-by-amount",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "rafaam_ladder",
+      "name": "RAFAAM LADDER!!",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "TIME_TRAVEL",
+      "description": "Draw 3 cards of different Costs.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "caustic_fumes",
+      "name": "Caustic Fumes",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "description": "Destroy an enemy minion. Deal 2 damage to all minions.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "damage-all-minions",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "story_of_lakkari",
+      "name": "Story of Lakkari",
+      "type": "sorcery",
+      "cost": 7,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "description": "Discard a card and fill your board with 3/2 Imps.",
+      "effects": [
+        {
+          "type": "discard-random",
+          "count": 1
+        },
+        {
+          "type": "fill-board-token",
+          "name": "Imp",
+          "tribe": "Demon",
+          "attack": 3,
+          "health": 2
+        }
+      ]
+    },
+    {
+      "id": "table_flip",
+      "name": "Table Flip",
+      "type": "sorcery",
+      "cost": 10,
+      "cardClass": "warlock",
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Deal 3 damage to all enemy minions. Costs (1) less for each other card in your hand.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "crane_game",
+      "name": "Crane Game",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "WHIZBANGS_WORKSHOP",
+      "description": "Summon copies of two Demons in your deck.",
+      "effects": [
+        {
+          "type": "summon-from-deck-tribe",
+          "tribe": "Demon",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "void_contract",
+      "name": "Void Contract",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "TROLL",
+      "description": "Destroy half of each player's deck.",
+      "effects": [
+        {
+          "type": "destroy-enemy-deck",
+          "fraction": "half"
+        },
+        {
+          "type": "mill-self",
+          "fraction": "half"
+        }
+      ]
+    },
+    {
+      "id": "impbalming",
+      "name": "Impbalming",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "description": "Destroy a minion. Shuffle 3 Worthless Imps into your deck.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "worthless_imp",
+            "worthless_imp",
+            "worthless_imp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plague_of_flames",
+      "name": "Plague of Flames",
+      "type": "sorcery",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "ULDUM",
+      "description": "Destroy all your minions. For each one, destroy a random enemy minion.",
+      "effects": [
+        {
+          "type": "sacrifice-each"
+        },
+        {
+          "type": "destroy-random-each"
+        }
+      ]
+    },
+    {
+      "id": "lakkari_sacrifice",
+      "name": "Lakkari Sacrifice",
+      "type": "quest",
+      "cost": 1,
+      "cardClass": "warlock",
+      "rarity": "legendary",
+      "set": "UNGORO",
+      "description": "Quest: Discard 6 cards. Reward: Nether Portal.",
+      "keywords": [
+        "quest"
+      ],
+      "quest": {
+        "goal": {
+          "type": "discard",
+          "count": 6
+        },
+        "reward": [
+          {
+            "type": "fill-board-token",
+            "name": "Imp",
+            "tribe": "Demon",
+            "attack": 3,
+            "health": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "cursed_souvenir",
+      "name": "Cursed Souvenir",
+      "type": "sorcery",
+      "cost": 2,
+      "cardClass": "warlock",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Give a minion +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "felfire_bonfire",
+      "name": "Felfire Bonfire",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "warlock",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Deal 4 damage to a minion. If it dies, your next Deathrattle minion costs (3) less.",
+      "effects": [
+        {
+          "type": "damage-then",
+          "value": 4,
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "grant-next-deathrattle-discount",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snatch_and_grab",
+      "name": "Snatch and Grab",
+      "type": "sorcery",
+      "cost": 8,
+      "cardClass": "rogue",
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "description": "Destroy two random enemy creatures. Costs (1) less for each card you've played from another class.",
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "selfCost": {
+        "per": "other-class-cards-played",
+        "amount": -1
+      }
+    },
+    {
+      "id": "shroud_of_concealment",
+      "name": "Shroud of Concealment",
+      "type": "sorcery",
+      "cost": 3,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "school": "shadow",
+      "description": "Draw 2 minions. Give your creatures Stealth until your next turn.",
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "minion",
+          "count": 2
+        },
+        {
+          "type": "temp-stealth-all"
+        }
+      ]
+    },
+    {
+      "id": "jade_telegram",
+      "name": "Jade Telegram",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "WONDERS",
+      "description": "Choose a card in your opponent's hand and shuffle it into their deck. Summon a Jade Golem.",
+      "effects": [
+        {
+          "type": "shuffle-enemy-hand-card-choose"
+        },
+        {
+          "type": "summon-jade"
+        }
+      ]
+    },
+    {
+      "id": "agency_espionage",
+      "name": "Agency Espionage",
+      "type": "sorcery",
+      "cost": 4,
+      "cardClass": "rogue",
+      "rarity": "rare",
+      "set": "ISLAND_VACATION",
+      "description": "Shuffle a card from each other class into your deck. They cost (1) less. Draw one.",
+      "effects": [
+        {
+          "type": "shuffle-random-spells-into-deck",
+          "count": 9,
+          "cardClass": "other",
+          "costMod": -1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "the_badlands_bandits",
+      "name": "The Badlands Bandits",
+      "type": "sorcery",
+      "cost": 6,
+      "cardClass": "paladin",
+      "rarity": "legendary",
+      "set": "WILD_WEST",
+      "description": "Get eight 3/2 Bandits with Bonus Effects. Any that can't fit in your hand are summoned instead.",
+      "effects": [
+        {
+          "type": "add-token",
+          "name": "Bandit",
+          "attack": 3,
+          "health": 2,
+          "count": 8,
+          "withGift": true
+        }
+      ]
     }
   ]
 }

@@ -156,7 +156,11 @@ register('fill-board-copies-of-target', ({ state, pi, target, source, enemies, s
 	const base = state.cardsById[t.id];
 	const p = state.players[pi];
 	const cap = 7;
-	while (p.board.filter(c => !isDead(c) && c.type !== 'location').length < cap) {
+	// bounded: a copy that doesn't "stick" (dies on summon, or is a location so it
+	// never counts toward the alive-minion cap) must not spin the fill forever —
+	// you never need more than `cap` attempts to fill the board
+	let guard = cap;
+	while (guard-- > 0 && p.board.filter(c => !isDead(c) && c.type !== 'location').length < cap) {
 		const cd = base ? JSON.parse(JSON.stringify(base)) : { id: t.id, name: t.name, type: 'creature', cost: t.cost || 0, rarity: 'common', keywords: [...(t.keywords || [])], tribe: t.tribe, description: t.description || '' };
 		if (e.attack != null) cd.attack = e.attack;
 		if (e.health != null) cd.health = e.health;
