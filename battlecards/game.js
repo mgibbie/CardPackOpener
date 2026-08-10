@@ -790,7 +790,10 @@ function layoutTargets() {
 					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
 					ent.target.scale = 0.5;
 				} else {
-					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 - (hovered ? 0.55 : 0));
+					// a hovered card lifts up AND pulls toward the camera (+z) so it sits
+					// in FRONT of its neighbors — pushing it back (-z) let siblings, whose
+					// forward-tilted bottom edges are nearer the camera, cover its lower half
+					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
 					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
 					ent.target.scale = hovered ? 1.0 : 0.68;
 				}
