@@ -2,814 +2,1048 @@
 	"generated": "2026-08-10",
 	"entries": [
 		{
-			"sha": "dea13e3",
-			"date": "2026-08-07",
+			"sha": "5af8bc9",
+			"date": "2026-08-10",
 			"kind": "patch",
-			"title": "Correct Lightning Helix and Terminate color tags",
+			"title": "Consolidate to one branch: fold cloudflare-migration into main",
 			"body": "",
 			"cards": []
 		},
 		{
-			"sha": "45fb709",
-			"date": "2026-08-07",
-			"kind": "patch",
-			"title": "Normalize targeted creature buff wording",
-			"body": "",
-			"cards": []
-		},
-		{
-			"sha": "13afdde",
-			"date": "2026-08-07",
-			"kind": "patch",
-			"title": "Complete Death Knight rune metadata",
-			"body": "",
-			"cards": []
-		},
-		{
-			"sha": "18a2105",
-			"date": "2026-08-07",
-			"kind": "patch",
-			"title": "Normalize all Battlecards rules text",
-			"body": "Standardize creature tokens, life gain, multiplayer opponent targeting, and creature terminology across all 7,002 cards.",
-			"cards": []
-		},
-		{
-			"sha": "cbe50b3",
-			"date": "2026-08-07",
+			"sha": "a216abc",
+			"date": "2026-08-10",
 			"kind": "cards",
-			"title": "Sync latest Battlecards updates to Cloudflare",
-			"body": "",
+			"title": "import final 3 groundable HS spells (round 7) — frontier exhausted",
+			"body": "Abyssal Wave, Fine Print (AoE 4 to all minions), and Trolley Problem\n(discard-lowest + two 3/3 Rush Tram Cars). Curse of Flesh hard-listed\n(bespoke \"minions cost Health\" mechanic). This clears the groundable\nspell-import frontier: build_round.mjs now surfaces ~0 remaining. Total\ncards 7466; 176/176 suites pass, fuzz clean.",
 			"cards": [
 				{
-					"id": "starsurge",
-					"name": "Starsurge",
+					"id": "abyssal_wave",
+					"name": "Abyssal Wave",
 					"type": "sorcery",
-					"class": "mage",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "storage_scuffle",
-					"name": "Storage Scuffle",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "unexpected_results",
-					"name": "Unexpected Results",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "scorch",
-					"name": "Scorch",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "apexis_blast",
-					"name": "Apexis Blast",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "blast_wave",
-					"name": "Blast Wave",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "crystallized_leyline",
-					"name": "Crystallized Leyline",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "wing_blast",
-					"name": "Wing Blast",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "baited_arrow",
-					"name": "Baited Arrow",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "common",
-					"cost": 5
-				},
-				{
-					"id": "supreme_dinomancy",
-					"name": "Supreme Dinomancy",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "alien_encounters",
-					"name": "Alien Encounters",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "rats_of_extraordinary_size",
-					"name": "Rats of Extraordinary Size",
-					"type": "sorcery",
-					"class": "hunter",
+					"class": "warlock",
 					"rarity": "epic",
 					"cost": 6
 				},
 				{
-					"id": "to_my_side",
-					"name": "To My Side!",
+					"id": "fine_print",
+					"name": "Fine Print",
 					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 6
-				},
-				{
-					"id": "cryosleep",
-					"name": "Cryosleep",
-					"type": "sorcery",
-					"class": "deathknight",
+					"class": "warlock",
 					"rarity": "rare",
 					"cost": 4
 				},
 				{
-					"id": "suffocate",
-					"name": "Suffocate",
+					"id": "trolley_problem",
+					"name": "Trolley Problem",
 					"type": "sorcery",
-					"class": "deathknight",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "5b345f3",
+			"date": "2026-08-10",
+			"kind": "cards",
+			"title": "import 29 more HS spells (round 6) + fix fill-board infinite loop",
+			"body": "Round 6: 3 class agents (warlock/rogue/paladin) authored 36 spells; 30 passed\nthe gate, 29 appended (1 dropped for a missing token ref), 6 hard-listed.\nTotal cards 7463.\n\nAlso fixes a pre-existing unbounded-loop bug the seeded fuzzer surfaced once\nthe shifted card pool let it hit it: fill-board-copies-of-target (Criminal\nLineup / Ancient Reflections) spun forever when a summoned copy never \"stuck\"\n(died on summon, or was a location so it never counted toward the alive cap).\nBounded the fill to `cap` attempts. 176/176 suites pass, fuzz clean.",
+			"cards": [
+				{
+					"id": "imp_losion",
+					"name": "Imp-losion",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "annihilation",
+					"name": "Annihilation",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 9
+				},
+				{
+					"id": "the_unseen_atlas",
+					"name": "The Unseen Atlas",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 10
+				},
+				{
+					"id": "reverberations",
+					"name": "Reverberations",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "kara_kazham",
+					"name": "Kara Kazham!",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "spreading_madness",
+					"name": "Spreading Madness",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "doom",
+					"name": "DOOM!",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "scourge_supplies",
+					"name": "Scourge Supplies",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "soul_barrage",
+					"name": "Soul Barrage",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "twisted_tether",
+					"name": "Twisted Tether",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "consume",
+					"name": "Consume",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "school_spirits",
+					"name": "School Spirits",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "the_demon_seed",
+					"name": "The Demon Seed",
+					"type": "quest",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "rafaam_ladder",
+					"name": "RAFAAM LADDER!!",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "caustic_fumes",
+					"name": "Caustic Fumes",
+					"type": "sorcery",
+					"class": "warlock",
 					"rarity": "common",
 					"cost": 4
 				},
 				{
-					"id": "wave_of_tar",
-					"name": "Wave of Tar",
+					"id": "story_of_lakkari",
+					"name": "Story of Lakkari",
 					"type": "sorcery",
-					"class": "deathknight",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "talanjis_last_stand",
-					"name": "Talanji's Last Stand",
-					"type": "sorcery",
-					"class": "deathknight",
+					"class": "warlock",
 					"rarity": "rare",
-					"cost": 5
+					"cost": 7
 				},
 				{
-					"id": "chow_down",
-					"name": "Chow Down",
+					"id": "table_flip",
+					"name": "Table Flip",
 					"type": "sorcery",
-					"class": "deathknight",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 10
+				},
+				{
+					"id": "crane_game",
+					"name": "Crane Game",
+					"type": "sorcery",
+					"class": "warlock",
 					"rarity": "rare",
 					"cost": 8
 				},
 				{
-					"id": "airlock_breach",
-					"name": "Airlock Breach",
+					"id": "void_contract",
+					"name": "Void Contract",
 					"type": "sorcery",
-					"class": "deathknight",
-					"rarity": "rare",
-					"cost": 6
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 8
 				},
 				{
-					"id": "cloning_device",
-					"name": "Cloning Device",
+					"id": "impbalming",
+					"name": "Impbalming",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "plague_of_flames",
+					"name": "Plague of Flames",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "lakkari_sacrifice",
+					"name": "Lakkari Sacrifice",
+					"type": "quest",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "cursed_souvenir",
+					"name": "Cursed Souvenir",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "felfire_bonfire",
+					"name": "Felfire Bonfire",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "snatch_and_grab",
+					"name": "Snatch and Grab",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "shroud_of_concealment",
+					"name": "Shroud of Concealment",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "jade_telegram",
+					"name": "Jade Telegram",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "agency_espionage",
+					"name": "Agency Espionage",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "the_badlands_bandits",
+					"name": "The Badlands Bandits",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "95b9c6e",
+			"date": "2026-08-10",
+			"kind": "cards",
+			"title": "import 198 more missing HS spells (spell-import round 5)",
+			"body": "12 class agents authored 258 spells grounded in existing engine effects;\ngate + smoke-test + recovery pass kept 201, of which 198 appended (3 dropped\nfor missing hero-power refs). 38 needing new handlers + the ref-missing set\nwere hard-listed. 18 gate-caught collisions were existing Quests (scope gap).\nNo new effect types; total cards 7434; 176/176 suites pass.",
+			"cards": [
+				{
+					"id": "consumption",
+					"name": "Consumption",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "blood_tap",
+					"name": "Blood Tap",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "soulrest_ceremony",
+					"name": "Soulrest Ceremony",
+					"type": "sorcery",
+					"class": "death_knight",
 					"rarity": "common",
 					"cost": 1
 				},
 				{
-					"id": "confuse",
-					"name": "Confuse",
+					"id": "unholy_frenzy",
+					"name": "Unholy Frenzy",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "shadows_of_yesterday",
+					"name": "Shadows of Yesterday",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "forgotten_millennium",
+					"name": "Forgotten Millennium",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "slippery_slope",
+					"name": "Slippery Slope",
+					"type": "sorcery",
+					"class": "death_knight",
 					"rarity": "epic",
 					"cost": 2
 				},
 				{
-					"id": "eternal_servitude",
-					"name": "Eternal Servitude",
+					"id": "fel_infusion",
+					"name": "Fel Infusion",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "lesser_diamond_spellstone",
-					"name": "Lesser Diamond Spellstone",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 7
-				},
-				{
-					"id": "mass_resurrection",
-					"name": "Mass Resurrection",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 9
-				},
-				{
-					"id": "dragonfire_potion",
-					"name": "Dragonfire Potion",
-					"type": "sorcery",
-					"class": "priest",
+					"class": "demon_hunter",
 					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "seance",
-					"name": "Seance",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
 					"cost": 2
 				},
 				{
-					"id": "holy_water",
-					"name": "Holy Water",
+					"id": "going_down_swinging",
+					"name": "Going Down Swinging",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "unsleeping_soul",
-					"name": "Unsleeping Soul",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
+					"class": "demon_hunter",
+					"rarity": "legendary",
 					"cost": 4
 				},
 				{
-					"id": "velens_chosen",
-					"name": "Velen's Chosen",
+					"id": "final_showdown_dh",
+					"name": "Final Showdown",
+					"type": "quest",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "unleash_the_colossus",
+					"name": "Unleash the Colossus",
+					"type": "quest",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "demonic_deal",
+					"name": "Demonic Deal",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "demon_hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "frostwolf_kennels",
+					"name": "Frostwolf Kennels",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "celestial_alignment",
+					"name": "Celestial Alignment",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "forests_gift",
+					"name": "Forest's Gift",
+					"type": "sorcery",
+					"class": "druid",
 					"rarity": "common",
 					"cost": 3
 				},
 				{
-					"id": "free_from_amber",
-					"name": "Free From Amber",
+					"id": "nightshade_bud",
+					"name": "Nightshade Bud",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "druid",
 					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "convoke_the_spirits",
+					"name": "Convoke the Spirits",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "crystal_cluster",
+					"name": "Crystal Cluster",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
 					"cost": 7
 				},
 				{
-					"id": "shadow_word_horror",
-					"name": "Shadow Word: Horror",
+					"id": "guess_the_weight",
+					"name": "Guess the Weight",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 4
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 2
 				},
 				{
-					"id": "excavated_evil",
-					"name": "Excavated Evil",
+					"id": "final_frontier",
+					"name": "Final Frontier",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 5
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 7
 				},
 				{
-					"id": "plague_of_death",
-					"name": "Plague of Death",
+					"id": "recycle",
+					"name": "Recycle",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "tree_of_life",
+					"name": "Tree of Life",
+					"type": "sorcery",
+					"class": "druid",
 					"rarity": "epic",
 					"cost": 9
 				},
 				{
-					"id": "lazuls_scheme",
-					"name": "Lazul's Scheme",
+					"id": "noxious_bribe",
+					"name": "Noxious Bribe",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "scale_of_onyxia",
+					"name": "Scale of Onyxia",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "unending_swarm",
+					"name": "Unending Swarm",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "runic_carvings",
+					"name": "Runic Carvings",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "alternate_reality",
+					"name": "Alternate Reality",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "stampeding_roar",
+					"name": "Stampeding Roar",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "miracle_growth",
+					"name": "Miracle Growth",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "cultivation",
+					"name": "Cultivation",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 8
+				},
+				{
+					"id": "untapped_potential",
+					"name": "Untapped Potential",
+					"type": "quest",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "sleep_under_the_stars",
+					"name": "Sleep Under the Stars",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "hydration_station",
+					"name": "Hydration Station",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "lock_and_load",
+					"name": "Lock and Load",
+					"type": "sorcery",
+					"class": "hunter",
 					"rarity": "epic",
 					"cost": 0
 				},
 				{
-					"id": "surrender_to_madness",
-					"name": "Surrender to Madness",
+					"id": "dun_baldar_bunker",
+					"name": "Dun Baldar Bunker",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "epic",
-					"cost": 3
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
 				},
 				{
-					"id": "entomb",
-					"name": "Entomb",
+					"id": "confront_the_tol_vir",
+					"name": "Confront the Tol'vir",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 6
-				},
-				{
-					"id": "avenge",
-					"name": "Avenge",
-					"type": "secret",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "call_to_arms",
-					"name": "Call to Arms",
-					"type": "sorcery",
-					"class": "paladin",
+					"class": "hunter",
 					"rarity": "epic",
 					"cost": 4
 				},
 				{
-					"id": "small_time_recruits",
-					"name": "Small-Time Recruits",
+					"id": "wild_spirits",
+					"name": "Wild Spirits",
 					"type": "sorcery",
-					"class": "paladin",
+					"class": "hunter",
 					"rarity": "epic",
 					"cost": 3
 				},
 				{
-					"id": "tip_the_scales",
-					"name": "Tip the Scales",
+					"id": "mismatched_fossils",
+					"name": "Mismatched Fossils",
 					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 8
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
 				},
 				{
-					"id": "anyfin_can_happen",
-					"name": "Anyfin Can Happen",
+					"id": "beast_tripwire",
+					"name": "Beast Tripwire",
 					"type": "sorcery",
-					"class": "paladin",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "bargain_bin",
+					"name": "Bargain Bin",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "faithful_companions",
+					"name": "Faithful Companions",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "defend_the_dwarven_district",
+					"name": "Defend the Dwarven District",
+					"type": "quest",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "devouring_swarm",
+					"name": "Devouring Swarm",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "camouflage_mount",
+					"name": "Camouflage Mount",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "arcane_brilliance",
+					"name": "Arcane Brilliance",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "rune_of_the_archmage",
+					"name": "Rune of the Archmage",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 9
+				},
+				{
+					"id": "iceblood_tower",
+					"name": "Iceblood Tower",
+					"type": "sorcery",
+					"class": "mage",
 					"rarity": "rare",
 					"cost": 10
 				},
 				{
-					"id": "getaway_kodo",
-					"name": "Getaway Kodo",
-					"type": "secret",
-					"class": "paladin",
-					"rarity": "rare",
+					"id": "refreshing_spring_water",
+					"name": "Refreshing Spring Water",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "wildfire",
+					"name": "Wildfire",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
 					"cost": 1
 				},
 				{
-					"id": "pharaoh_s_blessing",
-					"name": "Pharaoh's Blessing",
+					"id": "incanters_flow",
+					"name": "Incanter's Flow",
 					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "spikeridged_steed",
-					"name": "Spikeridged Steed",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "forbidden_healing",
-					"name": "Forbidden Healing",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 0
-				},
-				{
-					"id": "lesser_pearl_spellstone",
-					"name": "Lesser Pearl Spellstone",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "lightforged_blessing",
-					"name": "Lightforged Blessing",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "seal_of_champions",
-					"name": "Seal of Champions",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "rebuke",
-					"name": "Rebuke",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "shrink_ray",
-					"name": "Shrink Ray",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "pharaohs_blessing",
-					"name": "Pharaoh's Blessing",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "cannon_barrage",
-					"name": "Cannon Barrage",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 6
-				},
-				{
-					"id": "daring_escape",
-					"name": "Daring Escape",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "lesser_onyx_spellstone",
-					"name": "Lesser Onyx Spellstone",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "raiding_party",
-					"name": "Raiding Party",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "tinkers_sharpsword_oil",
-					"name": "Tinker's Sharpsword Oil",
-					"type": "sorcery",
-					"class": "rogue",
+					"class": "mage",
 					"rarity": "common",
 					"cost": 4
 				},
 				{
-					"id": "razorpetal_volley",
-					"name": "Razorpetal Volley",
+					"id": "sindragosas_triumph",
+					"name": "Sindragosa's Triumph",
 					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
 				},
 				{
-					"id": "evasion",
-					"name": "Evasion",
+					"id": "arcane_overflow",
+					"name": "Arcane Overflow",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "summoning_ward",
+					"name": "Summoning Ward",
 					"type": "secret",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "pick_pocket",
-					"name": "Pick Pocket",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "evolve",
-					"name": "Evolve",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "unstable_evolution",
-					"name": "Unstable Evolution",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "everyfin_is_awesome",
-					"name": "Everyfin is Awesome",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 7
-				},
-				{
-					"id": "primal_talismans",
-					"name": "Primal Talismans",
-					"type": "sorcery",
-					"class": "shaman",
+					"class": "mage",
 					"rarity": "rare",
 					"cost": 3
 				},
 				{
-					"id": "the_storm_bringer",
-					"name": "The Storm Bringer",
+					"id": "tribute_dance",
+					"name": "Tribute Dance",
 					"type": "sorcery",
-					"class": "shaman",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "deck_of_lunacy",
+					"name": "Deck of Lunacy",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "rolling_fireball",
+					"name": "Rolling Fireball",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "rewind",
+					"name": "Rewind",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "pocket_dimension",
+					"name": "Pocket Dimension",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "code_violet",
+					"name": "Code Violet",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "star_power",
+					"name": "Star Power",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "dragons_fury",
+					"name": "Dragon's Fury",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "the_arcanomicon",
+					"name": "The Arcanomicon",
+					"type": "sorcery",
+					"class": "mage",
 					"rarity": "legendary",
 					"cost": 6
 				},
 				{
-					"id": "healing_rain",
-					"name": "Healing Rain",
+					"id": "go_with_the_flow",
+					"name": "Go with the Flow",
 					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "healing_wave",
-					"name": "Healing Wave",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "elemental_destruction",
-					"name": "Elemental Destruction",
-					"type": "sorcery",
-					"class": "shaman",
+					"class": "mage",
 					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "shattering_blast",
+					"name": "Shattering Blast",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
 					"cost": 3
 				},
 				{
-					"id": "lesser_sapphire_spellstone",
-					"name": "Lesser Sapphire Spellstone",
+					"id": "huddle_up",
+					"name": "Huddle Up",
 					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
+					"class": "mage",
+					"rarity": "common",
 					"cost": 7
 				},
 				{
-					"id": "elementary_reaction",
-					"name": "Elementary Reaction",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "branching_paths",
-					"name": "Branching Paths",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "crystalsong_portal",
-					"name": "Crystalsong Portal",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "dark_wispers",
-					"name": "Dark Wispers",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 6
-				},
-				{
-					"id": "juicy_psychmelon",
-					"name": "Juicy Psychmelon",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "blessing_of_the_ancients",
-					"name": "Blessing of the Ancients",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "spreading_plague",
-					"name": "Spreading Plague",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "the_forest_s_aid",
-					"name": "The Forest's Aid",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 8
-				},
-				{
-					"id": "overflow",
-					"name": "Overflow",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 7
-				},
-				{
-					"id": "the_forests_aid",
-					"name": "The Forest's Aid",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 8
-				},
-				{
-					"id": "stolen_goods",
-					"name": "Stolen Goods",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "omega_assembly",
-					"name": "Omega Assembly",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "sweeping_strikes",
-					"name": "Sweeping Strikes",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "plague_of_wrath",
-					"name": "Plague of Wrath",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "gather_your_party",
-					"name": "Gather Your Party",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "unidentified_shield",
-					"name": "Unidentified Shield",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 6
-				},
-				{
-					"id": "call_of_the_wild",
-					"name": "Call of the Wild",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 8
-				},
-				{
-					"id": "nine_lives",
-					"name": "Nine Lives",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "unleash_the_beast",
-					"name": "Unleash the Beast",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "deck_of_wonders",
-					"name": "Deck of Wonders",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "power_of_creation",
-					"name": "Power of Creation",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 8
-				},
-				{
-					"id": "ray_of_frost",
-					"name": "Ray of Frost",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "cataclysm",
-					"name": "Cataclysm",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "dark_bargain",
-					"name": "Dark Bargain",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "dark_possession",
-					"name": "Dark Possession",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "demonbolt",
-					"name": "Demonbolt",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "common",
-					"cost": 8
-				},
-				{
-					"id": "ferocious_howl",
-					"name": "Ferocious Howl",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "competitive_spirit",
-					"name": "Competitive Spirit",
+					"id": "azerite_vein",
+					"name": "Azerite Vein",
 					"type": "secret",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "acceleration_aura",
+					"name": "Acceleration Aura",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "battle_at_the_end_time",
+					"name": "Battle at the End Time",
+					"type": "quest",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "storm_the_gates_neutral",
+					"name": "Storm the Gates",
+					"type": "quest",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "champions_of_azeroth",
+					"name": "Champions of Azeroth",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "hysteria",
+					"name": "Hysteria",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "protect_the_innocent",
+					"name": "Protect the Innocent",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "libram_of_justice",
+					"name": "Libram of Justice",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "gelbins_triumph",
+					"name": "Gelbin's Triumph",
+					"type": "sorcery",
 					"class": "paladin",
 					"rarity": "rare",
 					"cost": 1
 				},
 				{
-					"id": "the_last_kaleidosaur",
+					"id": "pursuit_of_justice",
+					"name": "Pursuit of Justice",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "divine_toll",
+					"name": "Divine Toll",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "immortalized_in_stone",
+					"name": "Immortalized in Stone",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "heros_welcome",
+					"name": "Hero's Welcome",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "oh_my_yogg",
+					"name": "Oh My Yogg!",
+					"type": "secret",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "sanctuary_pal",
+					"name": "Sanctuary",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "renewing_flames",
+					"name": "Renewing Flames",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "righteousness",
+					"name": "Righteousness",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "libram_of_faith",
+					"name": "Libram of Faith",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "commencement",
+					"name": "Commencement",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "rise_to_the_occasion_r5",
+					"name": "Rise to the Occasion",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "front_lines",
+					"name": "Front Lines",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 9
+				},
+				{
+					"id": "dive_the_golakka_depths_r5",
+					"name": "Dive the Golakka Depths",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "story_of_galvadon",
+					"name": "Story of Galvadon",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "threshriders_blessing",
+					"name": "Threshrider's Blessing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "crafters_aura",
+					"name": "Crafter's Aura",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "a_new_challenger",
+					"name": "A New Challenger...",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "the_gardens_grace",
+					"name": "The Garden's Grace",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "tyrs_tears",
+					"name": "Tyr's Tears",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "making_mummies_r5",
+					"name": "Making Mummies",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "the_last_kaleidosaur_r5",
 					"name": "The Last Kaleidosaur",
 					"type": "quest",
 					"class": "paladin",
@@ -817,397 +1051,4066 @@
 					"cost": 1
 				},
 				{
-					"id": "light_of_the_naaru",
-					"name": "Light of the Naaru",
+					"id": "sea_shanty",
+					"name": "Sea Shanty",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "lifesaving_aura",
+					"name": "Lifesaving Aura",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "prismatic_beam",
+					"name": "Prismatic Beam",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "power_word_fortitude",
+					"name": "Power Word: Fortitude",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 8
+				},
+				{
+					"id": "soul_mirror",
+					"name": "Soul Mirror",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "theft_accusation",
+					"name": "Theft Accusation",
 					"type": "sorcery",
 					"class": "priest",
 					"rarity": "rare",
 					"cost": 1
 				},
 				{
-					"id": "purify",
-					"name": "Purify",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "unidentified_elixir",
-					"name": "Unidentified Elixir",
+					"id": "pendant_of_earth",
+					"name": "Pendant of Earth",
 					"type": "sorcery",
 					"class": "priest",
 					"rarity": "common",
 					"cost": 3
 				},
 				{
-					"id": "vivid_nightmare",
-					"name": "Vivid Nightmare",
+					"id": "behemoth_mask",
+					"name": "Behemoth Mask",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "idol_of_yshaarj",
+					"name": "Idol of Y'Shaarj",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "fight_over_me",
+					"name": "Fight Over Me",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "love_everlasting",
+					"name": "Love Everlasting",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "funnel_cake",
+					"name": "Funnel Cake",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "delayed_product",
+					"name": "Delayed Product",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "cannibalize",
+					"name": "Cannibalize",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "seek_guidance_priest",
+					"name": "Seek Guidance",
+					"type": "quest",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "elekk_mount",
+					"name": "Elekk Mount",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "reach_equilibrium",
+					"name": "Reach Equilibrium",
+					"type": "quest",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "resuscitate",
+					"name": "Resuscitate",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "story_of_amara",
+					"name": "Story of Amara",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 10
+				},
+				{
+					"id": "repackage",
+					"name": "Repackage",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "whirlpool",
+					"name": "Whirlpool",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "whispers_of_the_deep",
+					"name": "Whispers of the Deep",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "the_stars_align",
+					"name": "The Stars Align",
 					"type": "sorcery",
 					"class": "priest",
 					"rarity": "epic",
 					"cost": 3
 				},
 				{
-					"id": "sudden_betrayal",
-					"name": "Sudden Betrayal",
+					"id": "grace_of_the_highfather",
+					"name": "Grace of the Highfather",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "activate_the_obelisk",
+					"name": "Activate the Obelisk",
+					"type": "quest",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "awaken_the_makers_priest",
+					"name": "Awaken the Makers",
+					"type": "quest",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "sensory_deprivation",
+					"name": "Sensory Deprivation",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "rest_in_peace",
+					"name": "Rest in Peace",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "yoink",
+					"name": "Yoink!",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "myras_unstable_element",
+					"name": "Myra's Unstable Element",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "necrium_vial",
+					"name": "Necrium Vial",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "stolen_power",
+					"name": "Stolen Power",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "murder_accusation",
+					"name": "Murder Accusation",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "double_cross",
+					"name": "Double Cross",
 					"type": "secret",
 					"class": "rogue",
 					"rarity": "common",
 					"cost": 2
 				},
 				{
-					"id": "eureka",
-					"name": "Eureka!",
+					"id": "shadow_of_demise",
+					"name": "Shadow of Demise",
 					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "unidentified_contract",
+					"name": "Unidentified Contract",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
 					"cost": 6
 				},
 				{
-					"id": "the_boomship",
-					"name": "The Boomship",
+					"id": "parrrley",
+					"name": "Parrrley",
 					"type": "sorcery",
-					"class": "warrior",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "cloak_of_shadows",
+					"name": "Cloak of Shadows",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "malevolent_strike",
+					"name": "Malevolent Strike",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "candle_breath",
+					"name": "Candle Breath",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "mimicry",
+					"name": "Mimicry",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "quasar",
+					"name": "Quasar",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "pressure_points",
+					"name": "Pressure Points",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "wanted",
+					"name": "WANTED!",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "slice_and_dice",
+					"name": "Slice and Dice",
+					"type": "sorcery",
+					"class": "rogue",
 					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "thiefs_tools",
+					"name": "Thief's Tools",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ransack",
+					"name": "Ransack",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "smokescreen",
+					"name": "Smokescreen",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "sketchy_information",
+					"name": "Sketchy Information",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "fast_forward",
+					"name": "Fast Forward",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "everything_must_go",
+					"name": "Everything Must Go!",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "walk_the_plank",
+					"name": "Walk the Plank",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "azsharan_vessel",
+					"name": "Azsharan Vessel",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "tar_slick",
+					"name": "Tar Slick",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "muradins_last_stand",
+					"name": "Muradin's Last Stand",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
 					"cost": 9
 				},
 				{
-					"id": "revenge_of_the_wild",
-					"name": "Revenge of the Wild",
+					"id": "criminal_lineup",
+					"name": "Criminal Lineup",
 					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 2
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 8
 				},
 				{
-					"id": "dire_frenzy",
-					"name": "Dire Frenzy",
+					"id": "primordial_wave",
+					"name": "Primordial Wave",
 					"type": "sorcery",
-					"class": "hunter",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "typhoon",
+					"name": "Typhoon",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 10
+				},
+				{
+					"id": "pack_the_house",
+					"name": "Pack the House",
+					"type": "sorcery",
+					"class": "shaman",
 					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "nebula",
+					"name": "Nebula",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 9
+				},
+				{
+					"id": "stormfury",
+					"name": "Stormfury",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "from_de_other_side",
+					"name": "From De Other Side",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 9
+				},
+				{
+					"id": "wish_upon_a_star",
+					"name": "Wish Upon a Star",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "fist_of_jaraxxus",
+					"name": "Fist of Jaraxxus",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
 					"cost": 4
 				},
 				{
-					"id": "duel",
-					"name": "Duel!",
+					"id": "felfire_in_the_hole",
+					"name": "Felfire in the Hole!",
 					"type": "sorcery",
-					"class": "paladin",
+					"class": "warlock",
 					"rarity": "epic",
 					"cost": 5
 				},
 				{
-					"id": "kangor_s_endless_army",
-					"name": "Kangor's Endless Army",
+					"id": "soul_rend",
+					"name": "Soul Rend",
 					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "legendary",
-					"cost": 7
-				},
-				{
-					"id": "twilights_call",
-					"name": "Twilight's Call",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "call_pet",
-					"name": "Call Pet",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "big_bad_voodoo",
-					"name": "Big Bad Voodoo",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "envenom_weapon",
-					"name": "Envenom Weapon",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "cheat_death",
-					"name": "Cheat Death",
-					"type": "secret",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "thistle_tea",
-					"name": "Thistle Tea",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "finders_keepers",
-					"name": "Finders Keepers",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "worthy_expedition",
-					"name": "Worthy Expedition",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "vendetta",
-					"name": "Vendetta",
-					"type": "sorcery",
-					"class": "rogue",
+					"class": "warlock",
 					"rarity": "rare",
 					"cost": 4
 				},
 				{
-					"id": "crush",
-					"name": "Crush",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 7
-				},
-				{
-					"id": "lunas_pocket_galaxy",
-					"name": "Luna's Pocket Galaxy",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "legendary",
-					"cost": 7
-				},
-				{
-					"id": "devolve",
-					"name": "Devolve",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "plague_of_murlocs",
-					"name": "Plague of Murlocs",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "sudden_genesis",
-					"name": "Sudden Genesis",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "crushing_walls",
-					"name": "Crushing Walls",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 7
-				},
-				{
-					"id": "darkest_hour",
-					"name": "Darkest Hour",
+					"id": "ectomancy",
+					"name": "Ectomancy",
 					"type": "sorcery",
 					"class": "warlock",
 					"rarity": "epic",
 					"cost": 6
 				},
 				{
-					"id": "lightbomb",
-					"name": "Lightbomb",
+					"id": "hand_of_guldan",
+					"name": "Hand of Gul'dan",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "epic",
+					"class": "warlock",
+					"rarity": "common",
 					"cost": 6
 				},
 				{
-					"id": "mass_hysteria",
-					"name": "Mass Hysteria",
+					"id": "the_dark_portal",
+					"name": "The Dark Portal",
 					"type": "sorcery",
-					"class": "priest",
+					"class": "warlock",
 					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "echo_of_medivh",
-					"name": "Echo of Medivh",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
 					"cost": 4
 				},
 				{
-					"id": "demonic_project",
-					"name": "Demonic Project",
+					"id": "eldritch_tentacles",
+					"name": "Eldritch Tentacles",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "blastcrystal_potion",
+					"name": "Blastcrystal Potion",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "treachery",
+					"name": "Treachery",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "unwilling_sacrifice",
+					"name": "Unwilling Sacrifice",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "lesser_amethyst_spellstone",
+					"name": "Lesser Amethyst Spellstone",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "arson_accusation",
+					"name": "Arson Accusation",
 					"type": "sorcery",
 					"class": "warlock",
 					"rarity": "common",
 					"cost": 2
 				},
 				{
-					"id": "conjurers_calling",
-					"name": "Conjurer's Calling",
+					"id": "suffocating_shadows",
+					"name": "Suffocating Shadows",
 					"type": "sorcery",
-					"class": "mage",
+					"class": "warlock",
 					"rarity": "rare",
 					"cost": 3
 				},
 				{
-					"id": "hallucination",
-					"name": "Hallucination",
+					"id": "tome_tampering",
+					"name": "Tome Tampering",
 					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "psychic_scream",
-					"name": "Psychic Scream",
-					"type": "sorcery",
-					"class": "priest",
+					"class": "warlock",
 					"rarity": "epic",
-					"cost": 7
+					"cost": 6
 				},
 				{
-					"id": "explore_ungoro",
-					"name": "Explore Un'Goro",
+					"id": "impending_catastrophe",
+					"name": "Impending Catastrophe",
 					"type": "sorcery",
-					"class": "warrior",
+					"class": "warlock",
 					"rarity": "epic",
 					"cost": 2
 				},
 				{
-					"id": "academic_espionage",
-					"name": "Academic Espionage",
+					"id": "shadow_waltz",
+					"name": "Shadow Waltz",
 					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "masters_call",
-					"name": "Master's Call",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "prismatic_lens",
-					"name": "Prismatic Lens",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "earthen_scales",
-					"name": "Earthen Scales",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "bring_it_on",
-					"name": "Bring It On!",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "weapons_project",
-					"name": "Weapons Project",
-					"type": "sorcery",
-					"class": "warrior",
+					"class": "warlock",
 					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "living_mana",
-					"name": "Living Mana",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
 					"cost": 5
 				},
 				{
-					"id": "doomerang",
-					"name": "Doomerang",
+					"id": "dark_alley_pact",
+					"name": "Dark Alley Pact",
 					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "flarks_boom_zooka",
-					"name": "Flark's Boom-Zooka",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "legendary",
-					"cost": 7
-				},
-				{
-					"id": "extra_arms",
-					"name": "Extra Arms",
-					"type": "sorcery",
-					"class": "priest",
+					"class": "warlock",
 					"rarity": "rare",
-					"cost": 3
+					"cost": 4
 				},
 				{
-					"id": "floops_glorious_gloop",
-					"name": "Floop's Glorious Gloop",
+					"id": "chaos_creation",
+					"name": "Chaos Creation",
 					"type": "sorcery",
-					"class": "druid",
-					"rarity": "legendary",
-					"cost": 1
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 6
 				},
 				{
-					"id": "stampede",
-					"name": "Stampede",
+					"id": "bat_mask",
+					"name": "Bat Mask",
 					"type": "sorcery",
-					"class": "hunter",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 8
+				},
+				{
+					"id": "cascading_disaster",
+					"name": "Cascading Disaster",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "fractured_power",
+					"name": "Fractured Power",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "dirge_of_despair",
+					"name": "Dirge of Despair",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "bad_omen",
+					"name": "Bad Omen",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "healthstone",
+					"name": "Healthstone",
+					"type": "sorcery",
+					"class": "warlock",
 					"rarity": "epic",
 					"cost": 0
 				},
 				{
-					"id": "shadow_of_death",
-					"name": "Shadow of Death",
+					"id": "black_hole",
+					"name": "Black Hole",
 					"type": "sorcery",
-					"class": "rogue",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "frozen_buckler",
+					"name": "Frozen Buckler",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "iceblood_garrison",
+					"name": "Iceblood Garrison",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "rancor",
+					"name": "Rancor",
+					"type": "sorcery",
+					"class": "warrior",
 					"rarity": "epic",
 					"cost": 4
 				},
 				{
-					"id": "beneath_the_grounds",
-					"name": "Beneath the Grounds",
+					"id": "bladestorm",
+					"name": "Bladestorm",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "torch",
+					"name": "Torch",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "dead_mans_hand_shuffle",
+					"name": "Dead Man's Hand",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "ramming_speed",
+					"name": "Ramming Speed",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "bouncing_blade",
+					"name": "Bouncing Blade",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "raid_the_docks_ql",
+					"name": "Raid the Docks",
+					"type": "quest",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "chemical_spill",
+					"name": "Chemical Spill",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "wreckem_and_deckem",
+					"name": "Wreck'em and Deck'em",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "hack_the_system_ql",
+					"name": "Hack the System",
+					"type": "quest",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "fire_plumes_heart_ql",
+					"name": "Fire Plume's Heart",
+					"type": "quest",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "char",
+					"name": "Char",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "punch_card",
+					"name": "Punch Card",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "d9de479",
+			"date": "2026-08-10",
+			"kind": "cards",
+			"title": "import 174 more missing HS spells (spell-import round 4)",
+			"body": "7 class agents (druid/paladin/priest/rogue/shaman/warlock/warrior) authored\n185 spells grounded in existing engine effects; gate + smoke-test kept 174\n(135 direct + 39 recovered from cautious low-confidence). 11 genuinely\nneeding new handlers were hard-listed. No new effect types; 176/176 suites pass.",
+			"cards": [
+				{
+					"id": "moontouched_amulet",
+					"name": "Moontouched Amulet",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "new_heights",
+					"name": "New Heights",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "overgrown_beanstalk",
+					"name": "Overgrown Beanstalk",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "pilfered_power",
+					"name": "Pilfered Power",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "plot_of_sin",
+					"name": "Plot of Sin",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "seaweed_strike",
+					"name": "Seaweed Strike",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "infest_the_scullery",
+					"name": "Infest the Scullery",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "kodo_mount",
+					"name": "Kodo Mount",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "oaken_summons",
+					"name": "Oaken Summons",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "overgrowth",
+					"name": "Overgrowth",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "panther_mask",
+					"name": "Panther Mask",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "poison_seeds",
+					"name": "Poison Seeds",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "sparkling_phial",
+					"name": "Sparkling Phial",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "splintered_reality",
+					"name": "Splintered Reality",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "spread_the_word",
+					"name": "Spread the Word",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "ungoro_brochure",
+					"name": "Un'Goro Brochure",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "wildwood_circle",
+					"name": "Wildwood Circle",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "aeroponics",
+					"name": "Aeroponics",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "cosmic_phenomenon",
+					"name": "Cosmic Phenomenon",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "lunar_visions",
+					"name": "Lunar Visions",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "woodland_wonders",
+					"name": "Woodland Wonders",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "life_from_death",
+					"name": "Life from Death",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "mend_the_timeline",
+					"name": "Mend the Timeline",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "neon_innovation",
+					"name": "Neon Innovation",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "salvage_the_bunker",
+					"name": "Salvage the Bunker",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "service_bell",
+					"name": "Service Bell",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "service_bell_revendreth",
+					"name": "Service Bell",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "time_out",
+					"name": "Time Out!",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "flight_maneuvers",
+					"name": "Flight Maneuvers",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "holy_glowsticks",
+					"name": "Holy Glowsticks",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "invigorating_sermon",
+					"name": "Invigorating Sermon",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "judge_unworthy",
+					"name": "Judge Unworthy",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "libram_of_divinity",
+					"name": "Libram of Divinity",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "order_in_the_court",
+					"name": "Order in the Court",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "order_in_the_court_revendreth",
+					"name": "Order in the Court",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "teamwork",
+					"name": "Teamwork",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "timeless_blessing",
+					"name": "Timeless Blessing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "vacation_planning",
+					"name": "Vacation Planning",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "blessing_of_authority",
+					"name": "Blessing of Authority",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "level_up",
+					"name": "Level Up!",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "grave_digging",
+					"name": "Grave Digging",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "grave_rune",
+					"name": "Grave Rune",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "gravedawn_sunbloom",
+					"name": "Gravedawn Sunbloom",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "gravedawn_voidbulb",
+					"name": "Gravedawn Voidbulb",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "greater_healing_potion",
+					"name": "Greater Healing Potion",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "greater_healing_potion_core",
+					"name": "Greater Healing Potion",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "invasive_shadeleaf",
+					"name": "Invasive Shadeleaf",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "schism",
+					"name": "Schism",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "serenity",
+					"name": "Serenity",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "shadow_word_ruin",
+					"name": "Shadow Word: Ruin",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "shadow_word_ruin_legacy",
+					"name": "Shadow Word: Ruin",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "tram_heist",
+					"name": "Tram Heist",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "clean_the_scene",
+					"name": "Clean the Scene",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "clean_the_scene_revendreth",
+					"name": "Clean the Scene",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hold_them_off",
+					"name": "Hold Them Off!",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "medivh_s_triumph",
+					"name": "Medivh's Triumph",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "psyche_split",
+					"name": "Psyche Split",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "ritual_of_the_new_moon",
+					"name": "Ritual of the New Moon",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "shadow_word_undeath",
+					"name": "Shadow Word: Undeath",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "shattered_reflections",
+					"name": "Shattered Reflections",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "swarm_of_lightbugs",
+					"name": "Swarm of Lightbugs",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "unshackle_soul",
+					"name": "Unshackle Soul",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "embrace_darkness",
+					"name": "Embrace Darkness",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "embrace_darkness_icecrown",
+					"name": "Embrace Darkness",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "harmonic_pop",
+					"name": "Harmonic Pop",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "initiation",
+					"name": "Initiation",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "initiation_scholomance",
+					"name": "Initiation",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "moonwell",
+					"name": "Moonwell",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "rite_of_twilight",
+					"name": "Rite of Twilight",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "shadow_clone",
+					"name": "Shadow Clone",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "sticky_situation",
+					"name": "Sticky Situation",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "sticky_situation_revendreth",
+					"name": "Sticky Situation",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "waxmancy",
+					"name": "Waxmancy",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "web_of_deception",
+					"name": "Web of Deception",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "wicked_stab_rank_1",
+					"name": "Wicked Stab (Rank 1)",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "cheat_death_core_2024",
+					"name": "[CORE 2024] Cheat Death",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ambush_predators",
+					"name": "Ambush Predators",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "chrono_daggers",
+					"name": "Chrono Daggers",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "daze",
+					"name": "Daze",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "deadly_bribe",
+					"name": "Deadly Bribe",
 					"type": "sorcery",
 					"class": "rogue",
 					"rarity": "epic",
 					"cost": 3
 				},
+				{
+					"id": "headcrack",
+					"name": "Headcrack",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "headcrack_vanilla",
+					"name": "Headcrack",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "snowball_fight",
+					"name": "Snowball Fight!",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "totemic_reflection",
+					"name": "Totemic Reflection",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ancestors_call",
+					"name": "Ancestor's Call",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "ascendance",
+					"name": "Ascendance",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "avalanche",
+					"name": "Avalanche",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "avalanche_icecrown",
+					"name": "Avalanche",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "bioluminescence",
+					"name": "Bioluminescence",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "ceremonial_clash",
+					"name": "Ceremonial Clash",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "dunk_tank",
+					"name": "Dunk Tank",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "matching_outfits",
+					"name": "Matching Outfits",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "torrent",
+					"name": "Torrent",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "totally_totems",
+					"name": "Totally Totems",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "vivid_spores",
+					"name": "Vivid Spores",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "wildpaw_cavern",
+					"name": "Wildpaw Cavern",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "altered_chord",
+					"name": "Altered Chord",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "crash_of_thunder",
+					"name": "Crash of Thunder",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "dragons_pack",
+					"name": "Dragon's Pack",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "frostshatter",
+					"name": "Frostshatter",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "frosty_decor",
+					"name": "Frosty Décor",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hagathas_scheme",
+					"name": "Hagatha's Scheme",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "jive_insect",
+					"name": "JIVE, INSECT!",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "wave_of_nostalgia",
+					"name": "Wave of Nostalgia",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "meteor_storm",
+					"name": "Meteor Storm",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "once_upon_a_time",
+					"name": "Once Upon a Time...",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "sizzling_swarm",
+					"name": "Sizzling Swarm",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "tiny_toys",
+					"name": "Tiny Toys",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "forbidden_ritual",
+					"name": "Forbidden Ritual",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "rotten_apple",
+					"name": "Rotten Apple",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "shadow_rounds",
+					"name": "Shadow Rounds",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "shallow_grave",
+					"name": "Shallow Grave",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "twisted_knowledge",
+					"name": "Twisted Knowledge",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "health_drink",
+					"name": "\"Health\" Drink",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "bloodfury_potion",
+					"name": "Bloodfury Potion",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "cursed_campaign",
+					"name": "Cursed Campaign",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "dark_skies",
+					"name": "Dark Skies",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "demonwrath",
+					"name": "Demonwrath",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "dragged_below",
+					"name": "Dragged Below",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "dreaded_mount",
+					"name": "Dreaded Mount",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "fiendish_rites",
+					"name": "Fiendish Rites",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "full_blown_evil",
+					"name": "Full-Blown Evil",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "impferno",
+					"name": "Impferno",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "infernal_stratagem",
+					"name": "Infernal Stratagem",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "plague_eruption",
+					"name": "Plague Eruption",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "rafaams_scheme",
+					"name": "Rafaam's Scheme",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "rafaams_last_stand",
+					"name": "Rafaams' Last Stand",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "gladiatorial_combat",
+					"name": "Gladiatorial Combat",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "heavy_metal",
+					"name": "Heavy Metal!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "guard_duty",
+					"name": "Guard Duty",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "lesser_mithril_spellstone",
+					"name": "Lesser Mithril Spellstone",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "trial_by_fire",
+					"name": "Trial by Fire",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "dimensional_ripper",
+					"name": "Dimensional Ripper",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 10
+				},
+				{
+					"id": "dwarf_planet",
+					"name": "Dwarf Planet",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "shield_shatter",
+					"name": "Shield Shatter",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 10
+				},
+				{
+					"id": "overheat",
+					"name": "Overheat",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "predatory_instincts",
+					"name": "Predatory Instincts",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hybridization",
+					"name": "Hybridization",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "ready_the_fleet",
+					"name": "Ready the Fleet",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "righteous_defense",
+					"name": "Righteous Defense",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "starlight_groove",
+					"name": "Starlight Groove",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "keepers_strength",
+					"name": "Keeper's Strength",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "trust_fall",
+					"name": "Trust Fall",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "harmonic_disco",
+					"name": "Harmonic Disco",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "switcheroo",
+					"name": "Switcheroo",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "nab",
+					"name": "Nab",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "perjury",
+					"name": "Perjury",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "perjury_revendreth",
+					"name": "Perjury",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "pit_stop",
+					"name": "Pit Stop",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "plagiarize",
+					"name": "Plagiarize",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "plagiarize_scholomance",
+					"name": "Plagiarize",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "roll_the_bones",
+					"name": "Roll the Bones",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "roll_the_bones_icecrown",
+					"name": "Roll the Bones",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "secret_passage",
+					"name": "Secret Passage",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "shell_game",
+					"name": "Shell Game",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "barrel_roll",
+					"name": "Barrel Roll",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "bounce_around_ft_garona",
+					"name": "Bounce Around (ft. Garona)",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "jade_guardians",
+					"name": "Jade Guardians",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "mic_drop",
+					"name": "Mic Drop",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "prescience",
+					"name": "Prescience",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "glaciate",
+					"name": "Glaciate",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "glaciate_core",
+					"name": "Glaciate",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "instant_multiverse",
+					"name": "Instant Multiverse",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "seeds_of_destruction",
+					"name": "Seeds of Destruction",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "tachyon_barrage",
+					"name": "Tachyon Barrage",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "unstable_shadow_blast",
+					"name": "Unstable Shadow Blast",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "desecrated_graveyard",
+					"name": "Desecrated Graveyard",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "domino_effect",
+					"name": "Domino Effect",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "encroaching_insanity",
+					"name": "Encroaching Insanity",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "free_admission",
+					"name": "Free Admission",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "furnace_fuel",
+					"name": "Furnace Fuel",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "habeas_corpses",
+					"name": "Habeas Corpses",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "habeas_corpses_revendreth",
+					"name": "Habeas Corpses",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "mortal_eradication",
+					"name": "Mortal Eradication",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "846d206",
+			"date": "2026-08-07",
+			"kind": "cards",
+			"title": "6 new handlers + spells (handler wave 1) from the import hard-list",
+			"body": "Clears 6 spells that needed genuinely new mechanics (not groundable in existing\neffects): Gravity Lapse (set-all-minions-to-lower-stat), Forbidden Words\n(spend-all-mana-destroy), Funhouse Mirror (summon-enemy-copy-attack-original),\nRiot! (all-friendly-minions-attack-random), Piercing Shot (damage-overkill-hero),\nDeath Roll (destroy-split-attack). 6 behavior assertions added to\nbucket_spells_test.mjs (now 24). Full suite 176/176; registry 1037->1043.",
+			"cards": [
+				{
+					"id": "gravity_lapse",
+					"name": "Gravity Lapse",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "forbidden_words",
+					"name": "Forbidden Words",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "funhouse_mirror",
+					"name": "Funhouse Mirror",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "riot",
+					"name": "Riot!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "piercing_shot",
+					"name": "Piercing Shot",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "death_roll",
+					"name": "Death Roll",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "c129e38",
+			"date": "2026-08-07",
+			"kind": "cards",
+			"title": "import 54 more missing HS spells (spell-import round 3, partial)",
+			"body": "Third round: 54 more grounded spells (5 classes completed; the other 7 hit the\nsession limit and will resume next round). Hard-list (spells needing new\nhandlers) now tracked to skip re-serving them. Full suite 176/176.\n\nMissing collectible spells: ~548 -> ~494.",
+			"cards": [
+				{
+					"id": "dark_prophecy",
+					"name": "Dark Prophecy",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "deliverance",
+					"name": "Deliverance",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "fly_off_the_shelves",
+					"name": "Fly Off the Shelves",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "horn_of_wrathion",
+					"name": "Horn of Wrathion",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hot_coals",
+					"name": "Hot Coals",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "identity_theft",
+					"name": "Identity Theft",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "identity_theft_revendreth",
+					"name": "Identity Theft",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "intertwined_fate",
+					"name": "Intertwined Fate",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "light_of_the_new_moon",
+					"name": "Light of the New Moon",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "palm_reading",
+					"name": "Palm Reading",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "shadow_chord_distort",
+					"name": "Shadow Chord: Distort",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "stormpike_aid_station",
+					"name": "Stormpike Aid Station",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "wish_of_the_new_moon",
+					"name": "Wish of the New Moon",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "auspicious_spirits",
+					"name": "Auspicious Spirits",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "azsharan_ritual",
+					"name": "Azsharan Ritual",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "boon_of_the_ascended",
+					"name": "Boon of the Ascended",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "boon_of_the_ascended_revendreth",
+					"name": "Boon of the Ascended",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "drown",
+					"name": "Drown",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "guardian_animals",
+					"name": "Guardian Animals",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "roam_free",
+					"name": "Roam Free",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "collateral_damage",
+					"name": "Collateral Damage",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "devilsaur_mask",
+					"name": "Devilsaur Mask",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 8
+				},
+				{
+					"id": "jewel_of_nzoth",
+					"name": "Jewel of N'Zoth",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "stranglethorn_heart",
+					"name": "Stranglethorn Heart",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "from_the_depths",
+					"name": "From the Depths",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "reserved_spot",
+					"name": "Reserved Spot",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "snowed_in",
+					"name": "Snowed In",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "succumb_to_madness",
+					"name": "Succumb to Madness",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "war_cache",
+					"name": "War Cache",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "aftershocks",
+					"name": "Aftershocks",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "burden_of_pride",
+					"name": "Burden of Pride",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "captains_log",
+					"name": "Captain's Log",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "city_defenses",
+					"name": "City Defenses",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "dr_booms_scheme",
+					"name": "Dr. Boom's Scheme",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "light_of_the_phoenix",
+					"name": "Light of the Phoenix",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "sanitize",
+					"name": "Sanitize",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "bridge_riff",
+					"name": "Bridge Riff",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "for_glory",
+					"name": "For Glory!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "logoshs_last_stand",
+					"name": "Lo'Gosh's Last Stand",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "decimation",
+					"name": "Decimation",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "anomalize",
+					"name": "Anomalize",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "greater_arcane_missiles",
+					"name": "Greater Arcane Missiles",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "mass_polymorph",
+					"name": "Mass Polymorph",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "relic_of_kings",
+					"name": "Relic of Kings",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "yogg_in_the_box",
+					"name": "Yogg in the Box",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "glacial_mysteries",
+					"name": "Glacial Mysteries",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "grand_finale",
+					"name": "Grand Finale",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "supernova",
+					"name": "Supernova",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "tsunami",
+					"name": "Tsunami",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "drakefire_amulet",
+					"name": "Drakefire Amulet",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 10
+				},
+				{
+					"id": "puzzle_box_of_yogg_saron",
+					"name": "Puzzle Box of Yogg-Saron",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 10
+				},
+				{
+					"id": "spellweavers_brilliance",
+					"name": "Spellweaver's Brilliance",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 10
+				},
+				{
+					"id": "the_galactic_projection_orb",
+					"name": "The Galactic Projection Orb",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "plagued_grain",
+					"name": "Plagued Grain",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "ff1f437",
+			"date": "2026-08-07",
+			"kind": "cards",
+			"title": "import 165 more missing HS spells (spell-import round 2)",
+			"body": "Second broad round: 165 more previously-missing collectible spells across all\n12 classes, grounded in existing effect handlers (no engine changes). Same\nauthor -> gate -> append pipeline. Full suite 176/176.\n\nMissing collectible spells: 713 -> ~548.",
+			"cards": [
+				{
+					"id": "illuminate",
+					"name": "Illuminate",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "anduins_gift",
+					"name": "Anduin's Gift",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "anduins_gift_legacy",
+					"name": "Anduin's Gift",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "animate_dead",
+					"name": "Animate Dead",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "lightspeed",
+					"name": "Lightspeed",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "orbital_halo",
+					"name": "Orbital Halo",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "power_chord_synchronize",
+					"name": "Power Chord: Synchronize",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "power_word_feast",
+					"name": "Power Word: Feast",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "shadow_word_forbid",
+					"name": "Shadow Word: Forbid",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "smoldering_ascent",
+					"name": "Smoldering Ascent",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "twilight_torrent",
+					"name": "Twilight Torrent",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "amulet_of_undying",
+					"name": "Amulet of Undying",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "cease_to_exist",
+					"name": "Cease to Exist",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "clear_conscience",
+					"name": "Clear Conscience",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "clear_conscience_revendreth",
+					"name": "Clear Conscience",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "convert",
+					"name": "Convert",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "convert_wonders",
+					"name": "Convert",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "announce_darkness",
+					"name": "Announce Darkness",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "wicked_whispers",
+					"name": "Wicked Whispers",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "avant_gardening",
+					"name": "Avant-Gardening",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "chum_bucket",
+					"name": "Chum Bucket",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "corrupting_mist",
+					"name": "Corrupting Mist",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "curse_of_weakness",
+					"name": "Curse of Weakness",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "cursed_chains",
+					"name": "Cursed Chains",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "deadline",
+					"name": "Deadline",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "demonic_confinement",
+					"name": "Demonic Confinement",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "demonic_dynamics",
+					"name": "Demonic Dynamics",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "disposable_acolytes",
+					"name": "Disposable Acolytes",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "endgame",
+					"name": "Endgame",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "renounce_darkness",
+					"name": "Renounce Darkness",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "the_beast_within",
+					"name": "The Beast Within",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "petting_zoo",
+					"name": "Petting Zoo",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "wormhole",
+					"name": "Wormhole",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "spring_the_trap",
+					"name": "Spring the Trap",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "supply_run",
+					"name": "Supply Run",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "big_dreams",
+					"name": "Big Dreams",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hunting_party",
+					"name": "Hunting Party",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "lesser_emerald_spellstone",
+					"name": "Lesser Emerald Spellstone",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "furious_fowls",
+					"name": "Furious Fowls",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "trial_of_the_jormungars",
+					"name": "Trial of the Jormungars",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "blessed_goods",
+					"name": "Blessed Goods",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "dragonscale_armaments",
+					"name": "Dragonscale Armaments",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "making_mummies",
+					"name": "Making Mummies",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "reckoning",
+					"name": "Reckoning",
+					"type": "secret",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "lay_down_the_law",
+					"name": "Lay Down the Law",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "mark_of_ursol",
+					"name": "Mark of Ursol",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "radar_detector",
+					"name": "Radar Detector",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "resistance_aura",
+					"name": "Resistance Aura",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ring_of_courage",
+					"name": "Ring of Courage",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "sanctuary",
+					"name": "Sanctuary",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "showdown",
+					"name": "Showdown!",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "spotlight",
+					"name": "Spotlight",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "vitality_surge",
+					"name": "Vitality Surge",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "boogie_down",
+					"name": "Boogie Down",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "charity",
+					"name": "Charity",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "day_at_the_faire",
+					"name": "Day at the Faire",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "deputization_aura",
+					"name": "Deputization Aura",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "enter_the_coliseum",
+					"name": "Enter the Coliseum",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "hatching_ceremony",
+					"name": "Hatching Ceremony",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "libram_of_clarity",
+					"name": "Libram of Clarity",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "primal_fusion",
+					"name": "Primal Fusion",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "flash_of_lightning",
+					"name": "Flash of Lightning",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "frostbite",
+					"name": "Frostbite",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "icecrown_brochure",
+					"name": "Icecrown Brochure",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "perpetual_flame",
+					"name": "Perpetual Flame",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ritual_of_power",
+					"name": "Ritual of Power",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "siren_song",
+					"name": "Siren Song",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "spirit_mount",
+					"name": "Spirit Mount",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "triangulate",
+					"name": "Triangulate",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "trusty_companion",
+					"name": "Trusty Companion",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "chill_vibes",
+					"name": "Chill Vibes",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "dehydrate",
+					"name": "Dehydrate",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "fire_breath",
+					"name": "Fire Breath",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "flight_of_the_firehawk",
+					"name": "Flight of the Firehawk",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "incredible_value",
+					"name": "Incredible Value",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "lava_flow",
+					"name": "Lava Flow",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "lightning_breath",
+					"name": "Lightning Breath",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "molten_gold",
+					"name": "Molten Gold",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "nascent_bolt",
+					"name": "Nascent Bolt",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "natural_talent",
+					"name": "Natural Talent",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "nofin_can_stop_us",
+					"name": "Nofin Can Stop Us",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "shadow_suffusion",
+					"name": "Shadow Suffusion",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "forged_in_flame",
+					"name": "Forged in Flame",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "jettison",
+					"name": "Jettison",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "misfire",
+					"name": "Misfire",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "precursory_strike",
+					"name": "Precursory Strike",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "release_the_beasts",
+					"name": "Release the Beasts",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "roaring_applause",
+					"name": "Roaring Applause",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "safety_goggles",
+					"name": "Safety Goggles",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "shadowflame_suffusion",
+					"name": "Shadowflame Suffusion",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "slow_motion",
+					"name": "Slow Motion",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "to_the_front",
+					"name": "To the Front!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "all_you_can_eat",
+					"name": "All You Can Eat",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "bellowing_flames",
+					"name": "Bellowing Flames",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "blood_warriors",
+					"name": "Blood Warriors",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "chorus_riff",
+					"name": "Chorus Riff",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "clash_of_the_colossals",
+					"name": "Clash of the Colossals",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "feat_of_strength",
+					"name": "Feat of Strength",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ring_toss",
+					"name": "Ring Toss",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "volume_up",
+					"name": "Volume Up",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "deep_breath",
+					"name": "Deep Breath",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "manufacturing_error",
+					"name": "Manufacturing Error",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "solar_flare",
+					"name": "Solar Flare",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "wisdom_of_norgannon",
+					"name": "Wisdom of Norgannon",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "disco_at_the_end_of_time",
+					"name": "Disco at the End of Time",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "under_the_sea",
+					"name": "Under the Sea",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "dark_bribe",
+					"name": "Dark Bribe",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "infestation",
+					"name": "Infestation",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "runic_adornment",
+					"name": "Runic Adornment",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "cliff_dive",
+					"name": "Cliff Dive",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "proving_grounds",
+					"name": "Proving Grounds",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "expendable_performers",
+					"name": "Expendable Performers",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "expendable_performers_darkmoon_faire",
+					"name": "Expendable Performers",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "azsharan_gardens",
+					"name": "Azsharan Gardens",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "lost_in_the_park",
+					"name": "Lost in the Park",
+					"type": "quest",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "restore_the_wild",
+					"name": "Restore the Wild",
+					"type": "quest",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "strength_in_numbers",
+					"name": "Strength in Numbers",
+					"type": "quest",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "handle_with_bear",
+					"name": "Handle with Bear",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "harmonic_mood",
+					"name": "Harmonic Mood",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "lifebinders_gift",
+					"name": "Lifebinder's Gift",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "living_seed_rank_1",
+					"name": "Living Seed (Rank 1)",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "mark_of_the_spikeshell",
+					"name": "Mark of the Spikeshell",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "moonlit_guidance",
+					"name": "Moonlit Guidance",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "mossbinding",
+					"name": "Mossbinding",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ravenous_flock",
+					"name": "Ravenous Flock",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "reforestation",
+					"name": "Reforestation",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "rising_winds",
+					"name": "Rising Winds",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "story_of_barnabus",
+					"name": "Story of Barnabus",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ensmallen",
+					"name": "Ensmallen",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "frost_lotus_seedling",
+					"name": "Frost Lotus Seedling",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "fungal_fortunes",
+					"name": "Fungal Fortunes",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "heartroot_stones",
+					"name": "Heartroot Stones",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "incarceration",
+					"name": "Incarceration",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "bazaar_burglary",
+					"name": "Bazaar Burglary",
+					"type": "quest",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "find_the_imposter",
+					"name": "Find the Imposter",
+					"type": "quest",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "knockback",
+					"name": "Knockback",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "lie_in_wait",
+					"name": "Lie in Wait",
+					"type": "quest",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "mixtape",
+					"name": "Mixtape",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "starship_schematic",
+					"name": "Starship Schematic",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "bamboozle",
+					"name": "Bamboozle",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "cultist_map",
+					"name": "Cultist Map",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dart_throw",
+					"name": "Dart Throw",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "dirty_tricks",
+					"name": "Dirty Tricks",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "from_the_scrapheap",
+					"name": "From the Scrapheap",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "gang_up",
+					"name": "Gang Up",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "garona_s_last_stand",
+					"name": "Garona's Last Stand",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "harmonic_hip_hop",
+					"name": "Harmonic Hip Hop",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "kidnap",
+					"name": "Kidnap",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "lucky_comet",
+					"name": "Lucky Comet",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "potion_of_illusion",
+					"name": "Potion of Illusion",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "baneling_barrage",
+					"name": "Baneling Barrage",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "cold_feet",
+					"name": "Cold Feet",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "corpsicle",
+					"name": "Corpsicle",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "frozen_over",
+					"name": "Frozen Over",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "soul_searching",
+					"name": "Soul Searching",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "assimilating_blight",
+					"name": "Assimilating Blight",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "blood_clone",
+					"name": "Blood Clone",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "finality",
+					"name": "Finality",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "harmonic_metal",
+					"name": "Harmonic Metal",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "paleomancy",
+					"name": "Paleomancy",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "memoriam_manifest",
+					"name": "Memoriam Manifest",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "sinister_soulcage",
+					"name": "Sinister Soulcage",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "story_of_umbra",
+					"name": "Story of Umbra",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "the_scourge",
+					"name": "The Scourge",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "the_scourge_path_of_arthas",
+					"name": "The Scourge",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 9
+				}
+			]
+		},
+		{
+			"sha": "d0ac28e",
+			"date": "2026-08-07",
+			"kind": "cards",
+			"title": "import 207 missing HS spells (spell-import round 1)",
+			"body": "First broad round of the general spell-import frontier (beyond the run-mode\nbuckets): 207 previously-missing collectible spells across all 12 classes,\nall grounded in existing effect handlers (no engine changes). Authored via the\nspell-import-round1 workflow (12 class agents), gated against the live engine\n(smoke-tested), and appended. Full suite 176/176.\n\nMissing collectible spells: 936 -> 713.",
+			"cards": [
 				{
 					"id": "forbidden_shaping",
 					"name": "Forbidden Shaping",
@@ -2863,1344 +6766,1265 @@
 					"class": "death_knight",
 					"rarity": "common",
 					"cost": 3
-				},
-				{
-					"id": "illuminate",
-					"name": "Illuminate",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 0
-				},
-				{
-					"id": "anduins_gift",
-					"name": "Anduin's Gift",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "anduins_gift_legacy",
-					"name": "Anduin's Gift",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "animate_dead",
-					"name": "Animate Dead",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "lightspeed",
-					"name": "Lightspeed",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "orbital_halo",
-					"name": "Orbital Halo",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "power_chord_synchronize",
-					"name": "Power Chord: Synchronize",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "power_word_feast",
-					"name": "Power Word: Feast",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "shadow_word_forbid",
-					"name": "Shadow Word: Forbid",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "smoldering_ascent",
-					"name": "Smoldering Ascent",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "twilight_torrent",
-					"name": "Twilight Torrent",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "amulet_of_undying",
-					"name": "Amulet of Undying",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "cease_to_exist",
-					"name": "Cease to Exist",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "clear_conscience",
-					"name": "Clear Conscience",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "clear_conscience_revendreth",
-					"name": "Clear Conscience",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "convert",
-					"name": "Convert",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "convert_wonders",
-					"name": "Convert",
-					"type": "sorcery",
-					"class": "priest",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "announce_darkness",
-					"name": "Announce Darkness",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "wicked_whispers",
-					"name": "Wicked Whispers",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "avant_gardening",
-					"name": "Avant-Gardening",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "chum_bucket",
-					"name": "Chum Bucket",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "corrupting_mist",
-					"name": "Corrupting Mist",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "curse_of_weakness",
-					"name": "Curse of Weakness",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "cursed_chains",
-					"name": "Cursed Chains",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "deadline",
-					"name": "Deadline",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "demonic_confinement",
-					"name": "Demonic Confinement",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "demonic_dynamics",
-					"name": "Demonic Dynamics",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "disposable_acolytes",
-					"name": "Disposable Acolytes",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "endgame",
-					"name": "Endgame",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "renounce_darkness",
-					"name": "Renounce Darkness",
-					"type": "sorcery",
-					"class": "warlock",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "the_beast_within",
-					"name": "The Beast Within",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "petting_zoo",
-					"name": "Petting Zoo",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "wormhole",
-					"name": "Wormhole",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "spring_the_trap",
-					"name": "Spring the Trap",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "supply_run",
-					"name": "Supply Run",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "common",
-					"cost": 4
-				},
-				{
-					"id": "big_dreams",
-					"name": "Big Dreams",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "hunting_party",
-					"name": "Hunting Party",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "lesser_emerald_spellstone",
-					"name": "Lesser Emerald Spellstone",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "furious_fowls",
-					"name": "Furious Fowls",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "trial_of_the_jormungars",
-					"name": "Trial of the Jormungars",
-					"type": "sorcery",
-					"class": "hunter",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "blessed_goods",
-					"name": "Blessed Goods",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "dragonscale_armaments",
-					"name": "Dragonscale Armaments",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "making_mummies",
-					"name": "Making Mummies",
-					"type": "quest",
-					"class": "paladin",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "reckoning",
-					"name": "Reckoning",
-					"type": "secret",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "lay_down_the_law",
-					"name": "Lay Down the Law",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "mark_of_ursol",
-					"name": "Mark of Ursol",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "radar_detector",
-					"name": "Radar Detector",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "resistance_aura",
-					"name": "Resistance Aura",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "ring_of_courage",
-					"name": "Ring of Courage",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "sanctuary",
-					"name": "Sanctuary",
-					"type": "quest",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "showdown",
-					"name": "Showdown!",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "spotlight",
-					"name": "Spotlight",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "vitality_surge",
-					"name": "Vitality Surge",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "boogie_down",
-					"name": "Boogie Down",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "charity",
-					"name": "Charity",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "day_at_the_faire",
-					"name": "Day at the Faire",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "deputization_aura",
-					"name": "Deputization Aura",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "enter_the_coliseum",
-					"name": "Enter the Coliseum",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "hatching_ceremony",
-					"name": "Hatching Ceremony",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "libram_of_clarity",
-					"name": "Libram of Clarity",
-					"type": "sorcery",
-					"class": "paladin",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "primal_fusion",
-					"name": "Primal Fusion",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "flash_of_lightning",
-					"name": "Flash of Lightning",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "frostbite",
-					"name": "Frostbite",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "icecrown_brochure",
-					"name": "Icecrown Brochure",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "perpetual_flame",
-					"name": "Perpetual Flame",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "ritual_of_power",
-					"name": "Ritual of Power",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "siren_song",
-					"name": "Siren Song",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "spirit_mount",
-					"name": "Spirit Mount",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "triangulate",
-					"name": "Triangulate",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "trusty_companion",
-					"name": "Trusty Companion",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "chill_vibes",
-					"name": "Chill Vibes",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "dehydrate",
-					"name": "Dehydrate",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "fire_breath",
-					"name": "Fire Breath",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "flight_of_the_firehawk",
-					"name": "Flight of the Firehawk",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "incredible_value",
-					"name": "Incredible Value",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "lava_flow",
-					"name": "Lava Flow",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "lightning_breath",
-					"name": "Lightning Breath",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "molten_gold",
-					"name": "Molten Gold",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "nascent_bolt",
-					"name": "Nascent Bolt",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "natural_talent",
-					"name": "Natural Talent",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "nofin_can_stop_us",
-					"name": "Nofin Can Stop Us",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "shadow_suffusion",
-					"name": "Shadow Suffusion",
-					"type": "sorcery",
-					"class": "shaman",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "forged_in_flame",
-					"name": "Forged in Flame",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "jettison",
-					"name": "Jettison",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "misfire",
-					"name": "Misfire",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "precursory_strike",
-					"name": "Precursory Strike",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "release_the_beasts",
-					"name": "Release the Beasts",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "roaring_applause",
-					"name": "Roaring Applause",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "safety_goggles",
-					"name": "Safety Goggles",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "shadowflame_suffusion",
-					"name": "Shadowflame Suffusion",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "slow_motion",
-					"name": "Slow Motion",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "to_the_front",
-					"name": "To the Front!",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "all_you_can_eat",
-					"name": "All You Can Eat",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "bellowing_flames",
-					"name": "Bellowing Flames",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "blood_warriors",
-					"name": "Blood Warriors",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "chorus_riff",
-					"name": "Chorus Riff",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "clash_of_the_colossals",
-					"name": "Clash of the Colossals",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "feat_of_strength",
-					"name": "Feat of Strength",
-					"type": "sorcery",
-					"class": "warrior",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "ring_toss",
-					"name": "Ring Toss",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "volume_up",
-					"name": "Volume Up",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "deep_breath",
-					"name": "Deep Breath",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "manufacturing_error",
-					"name": "Manufacturing Error",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 5
-				},
-				{
-					"id": "solar_flare",
-					"name": "Solar Flare",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "common",
-					"cost": 5
-				},
-				{
-					"id": "wisdom_of_norgannon",
-					"name": "Wisdom of Norgannon",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 5
-				},
-				{
-					"id": "disco_at_the_end_of_time",
-					"name": "Disco at the End of Time",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "epic",
-					"cost": 6
-				},
-				{
-					"id": "under_the_sea",
-					"name": "Under the Sea",
-					"type": "sorcery",
-					"class": "mage",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "dark_bribe",
-					"name": "Dark Bribe",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "infestation",
-					"name": "Infestation",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "runic_adornment",
-					"name": "Runic Adornment",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "cliff_dive",
-					"name": "Cliff Dive",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "epic",
-					"cost": 6
-				},
-				{
-					"id": "proving_grounds",
-					"name": "Proving Grounds",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "rare",
-					"cost": 6
-				},
-				{
-					"id": "expendable_performers",
-					"name": "Expendable Performers",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "epic",
-					"cost": 7
-				},
-				{
-					"id": "expendable_performers_darkmoon_faire",
-					"name": "Expendable Performers",
-					"type": "sorcery",
-					"class": "demon_hunter",
-					"rarity": "epic",
-					"cost": 7
-				},
-				{
-					"id": "azsharan_gardens",
-					"name": "Azsharan Gardens",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "lost_in_the_park",
-					"name": "Lost in the Park",
-					"type": "quest",
-					"class": "druid",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "restore_the_wild",
-					"name": "Restore the Wild",
-					"type": "quest",
-					"class": "druid",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "strength_in_numbers",
-					"name": "Strength in Numbers",
-					"type": "quest",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "handle_with_bear",
-					"name": "Handle with Bear",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "harmonic_mood",
-					"name": "Harmonic Mood",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "lifebinders_gift",
-					"name": "Lifebinder's Gift",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "living_seed_rank_1",
-					"name": "Living Seed (Rank 1)",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "mark_of_the_spikeshell",
-					"name": "Mark of the Spikeshell",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "moonlit_guidance",
-					"name": "Moonlit Guidance",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "mossbinding",
-					"name": "Mossbinding",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "ravenous_flock",
-					"name": "Ravenous Flock",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "reforestation",
-					"name": "Reforestation",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "rising_winds",
-					"name": "Rising Winds",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "story_of_barnabus",
-					"name": "Story of Barnabus",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "ensmallen",
-					"name": "Ensmallen",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "epic",
-					"cost": 3
-				},
-				{
-					"id": "frost_lotus_seedling",
-					"name": "Frost Lotus Seedling",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "fungal_fortunes",
-					"name": "Fungal Fortunes",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "heartroot_stones",
-					"name": "Heartroot Stones",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "incarceration",
-					"name": "Incarceration",
-					"type": "sorcery",
-					"class": "druid",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "bazaar_burglary",
-					"name": "Bazaar Burglary",
-					"type": "quest",
-					"class": "rogue",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "find_the_imposter",
-					"name": "Find the Imposter",
-					"type": "quest",
-					"class": "rogue",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "knockback",
-					"name": "Knockback",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 1
-				},
-				{
-					"id": "lie_in_wait",
-					"name": "Lie in Wait",
-					"type": "quest",
-					"class": "rogue",
-					"rarity": "legendary",
-					"cost": 1
-				},
-				{
-					"id": "mixtape",
-					"name": "Mixtape",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "starship_schematic",
-					"name": "Starship Schematic",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 1
-				},
-				{
-					"id": "bamboozle",
-					"name": "Bamboozle",
-					"type": "secret",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "cultist_map",
-					"name": "Cultist Map",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "dart_throw",
-					"name": "Dart Throw",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "dirty_tricks",
-					"name": "Dirty Tricks",
-					"type": "secret",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "from_the_scrapheap",
-					"name": "From the Scrapheap",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "gang_up",
-					"name": "Gang Up",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "garona_s_last_stand",
-					"name": "Garona's Last Stand",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "harmonic_hip_hop",
-					"name": "Harmonic Hip Hop",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "kidnap",
-					"name": "Kidnap",
-					"type": "secret",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "lucky_comet",
-					"name": "Lucky Comet",
-					"type": "sorcery",
-					"class": "rogue",
-					"rarity": "epic",
-					"cost": 2
-				},
-				{
-					"id": "potion_of_illusion",
-					"name": "Potion of Illusion",
-					"type": "sorcery",
-					"class": "neutral",
-					"rarity": "epic",
-					"cost": 4
-				},
-				{
-					"id": "baneling_barrage",
-					"name": "Baneling Barrage",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "common",
-					"cost": 1
-				},
-				{
-					"id": "cold_feet",
-					"name": "Cold Feet",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "corpsicle",
-					"name": "Corpsicle",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "frozen_over",
-					"name": "Frozen Over",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 2
-				},
-				{
-					"id": "soul_searching",
-					"name": "Soul Searching",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "common",
-					"cost": 2
-				},
-				{
-					"id": "assimilating_blight",
-					"name": "Assimilating Blight",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "blood_clone",
-					"name": "Blood Clone",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "finality",
-					"name": "Finality",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "harmonic_metal",
-					"name": "Harmonic Metal",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "common",
-					"cost": 3
-				},
-				{
-					"id": "paleomancy",
-					"name": "Paleomancy",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 3
-				},
-				{
-					"id": "memoriam_manifest",
-					"name": "Memoriam Manifest",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "sinister_soulcage",
-					"name": "Sinister Soulcage",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 4
-				},
-				{
-					"id": "story_of_umbra",
-					"name": "Story of Umbra",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "rare",
-					"cost": 7
-				},
-				{
-					"id": "the_scourge",
-					"name": "The Scourge",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "legendary",
-					"cost": 9
-				},
-				{
-					"id": "the_scourge_path_of_arthas",
-					"name": "The Scourge",
-					"type": "sorcery",
-					"class": "death_knight",
-					"rarity": "legendary",
-					"cost": 9
 				}
 			]
 		},
 		{
-			"sha": "f8466bf",
+			"sha": "a39beb1",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "import final 4 bucket spells (wave 3) — buckets now 100% complete",
+			"body": "Completes all 52 remaining Heist/Tombs bucket spells (52/52). The last 4 needed\ndeeper infra than the batch handlers:\n\n- Floop's Glorious Gloop: turn-scoped death trigger (player.floopRefreshTurn +\n  a death.js hook that refreshes a Mana Crystal on any death that turn; auto-\n  expires by turn-number match, no cleanup needed).\n- Stampede: turn-scoped play trigger (player.stampedeTurn + a core.js\n  creature-played hook that conjures a Beast when a Beast is played that turn).\n- Shadow of Death: per-cast dynamic token (shuffle-shadows-of-target mints a\n  runtime shadow_of_<id> token whose onDraw summons a copy of the chosen minion).\n- Beneath the Grounds: cross-player on-draw attribution via the existing\n  summon forEnemy — the Ambush shuffled into the enemy deck summons a 4/4 for\n  the caster when the enemy draws it.\n\nNew handlers: floop-refresh-on-death, stampede-turn, shuffle-shadows-of-target\n(+ nerubian_ambush token). bucket_spells_test.mjs now 18 assertions covering\nall four. Full suite 176/176. Registry count 1034->1037.\n\nResult: dungeon/heist/tombs/duels buckets now draw from a complete class-spell\npool; buildBossDeck and the draft buckets are as accurate as the card data allows.",
+			"cards": [
+				{
+					"id": "floops_glorious_gloop",
+					"name": "Floop's Glorious Gloop",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "stampede",
+					"name": "Stampede",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "shadow_of_death",
+					"name": "Shadow of Death",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "beneath_the_grounds",
+					"name": "Beneath the Grounds",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "9bb3688",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "import 20 more Heist/Tombs bucket spells (wave 2) + behavior tests",
+			"body": "Brings the imported total to 48 of 52 remaining bucket spells. Adds 17 new\neffect handlers + 2 tokens (more_arms, explore_ungoro_discover):\n\n- destroy-enemy-edges (Crushing Walls)\n- darkest-hour (Darkest Hour)\n- damage-all-minions-by-own-attack (Lightbomb)\n- force-all-minions-attack-random (Mass Hysteria)\n- copy-each-friendly-to-hand (Echo of Medivh)\n- demonic-project (Demonic Project)\n- destroy-summon-random-of-cost (Conjurer's Calling)\n- shuffle-all-minions-into-enemy-deck (Psychic Scream)\n- replace-deck-with-card (Explore Un'Goro)\n- shuffle-enemy-class-cards (Academic Espionage)\n- draw-minion-spell-swap-cost (Prismatic Lens)\n- buff-target-gain-armor-by-attack (Earthen Scales)\n- reduce-all-enemy-hand-minions-cost (Bring It On!)\n- enemy-equip / enemy-armor (Weapons Project)\n- throw-weapon (Doomerang)\n- living-mana (Living Mana)\nExtended summon-from-deck-suicide (count + targetEnemyMinions) for Flark's\nBoom-Zooka; Master's Call via search, Hallucination via summon-copy (double-\ndamage/Protoss downside dropped as not modeled).\n\nNew tests/regression/bucket_spells_test.mjs: 12 behavior assertions. Full\nsuite 176/176. Registry count 1017->1034.\n\nDeferred (4, need deeper infra): Floop's Glorious Gloop + Stampede (turn-scoped\ntriggers), Shadow of Death (per-instance deck-card identity), Beneath the\nGrounds (cross-player on-draw attribution).",
+			"cards": [
+				{
+					"id": "crushing_walls",
+					"name": "Crushing Walls",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "darkest_hour",
+					"name": "Darkest Hour",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "lightbomb",
+					"name": "Lightbomb",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "mass_hysteria",
+					"name": "Mass Hysteria",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "echo_of_medivh",
+					"name": "Echo of Medivh",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "demonic_project",
+					"name": "Demonic Project",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "conjurers_calling",
+					"name": "Conjurer's Calling",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "hallucination",
+					"name": "Hallucination",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "psychic_scream",
+					"name": "Psychic Scream",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "explore_ungoro",
+					"name": "Explore Un'Goro",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "academic_espionage",
+					"name": "Academic Espionage",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "masters_call",
+					"name": "Master's Call",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "prismatic_lens",
+					"name": "Prismatic Lens",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "earthen_scales",
+					"name": "Earthen Scales",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "bring_it_on",
+					"name": "Bring It On!",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "weapons_project",
+					"name": "Weapons Project",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "living_mana",
+					"name": "Living Mana",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "doomerang",
+					"name": "Doomerang",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "flarks_boom_zooka",
+					"name": "Flark's Boom-Zooka",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "extra_arms",
+					"name": "Extra Arms",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "fd06128",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "import 28 Heist/Tombs bucket spells (wave 1) via handler extensions",
+			"body": "Adds the first 28 of the 52 remaining real Dalaran Heist / Tombs of Terror\nbucket spells, widening the pool buildBossDeck / draft buckets draw from.\n\nEngine handler extensions (backward-compatible, param-gated):\n- draw-check: allTribe gate (Call Pet)\n- summon-random: costDelta (Big Bad Voodoo)\n- summon-died-this-game: count + attack/health override (Twilight's Call)\n- summon-from-deck-each: fight flag (Duel!)\n- resurrect-tribe: count + grant (Kangor's Endless Army)\n- resurrect-died-this-turn: tribe filter (Revenge of the Wild)\n- tolins: count (Thistle Tea)\n- grant-weapon-ability: permanent keyword (Envenom Weapon)\n- copy-triggering-to-hand: costMod (Cheat Death)\n- discover: requireOverload (Finders Keepers) + chooseOne (Worthy Expedition)\n- copy-to-deck: buff -> deckIdBuffs (Dire Frenzy)\n- selfCostIf: holding-other-class (Vendetta) + damaged-minion (Crush)\n\nNew handlers: set-deck-minions-cost (Luna's Pocket Galaxy),\ntransform-all-enemies-costplus (Devolve),\ntransform-all-into-random-tribe (Plague of Murlocs),\nsummon-copies-of-damaged (Sudden Genesis).\n\nTests: 175/175 green. Registry count 1013->1017; relaxed groupd_wave10\nPrimordial Acolyte to accept a 3-cost secret (a valid spell result).",
+			"cards": [
+				{
+					"id": "ferocious_howl",
+					"name": "Ferocious Howl",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "competitive_spirit",
+					"name": "Competitive Spirit",
+					"type": "secret",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "the_last_kaleidosaur",
+					"name": "The Last Kaleidosaur",
+					"type": "quest",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "light_of_the_naaru",
+					"name": "Light of the Naaru",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "purify",
+					"name": "Purify",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "unidentified_elixir",
+					"name": "Unidentified Elixir",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "vivid_nightmare",
+					"name": "Vivid Nightmare",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "sudden_betrayal",
+					"name": "Sudden Betrayal",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "eureka",
+					"name": "Eureka!",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "the_boomship",
+					"name": "The Boomship",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "revenge_of_the_wild",
+					"name": "Revenge of the Wild",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "dire_frenzy",
+					"name": "Dire Frenzy",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "duel",
+					"name": "Duel!",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "kangor_s_endless_army",
+					"name": "Kangor's Endless Army",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "twilights_call",
+					"name": "Twilight's Call",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "call_pet",
+					"name": "Call Pet",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "big_bad_voodoo",
+					"name": "Big Bad Voodoo",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "envenom_weapon",
+					"name": "Envenom Weapon",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "cheat_death",
+					"name": "Cheat Death",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "thistle_tea",
+					"name": "Thistle Tea",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "finders_keepers",
+					"name": "Finders Keepers",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "worthy_expedition",
+					"name": "Worthy Expedition",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "vendetta",
+					"name": "Vendetta",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "crush",
+					"name": "Crush",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 7
+				},
+				{
+					"id": "lunas_pocket_galaxy",
+					"name": "Luna's Pocket Galaxy",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "devolve",
+					"name": "Devolve",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "plague_of_murlocs",
+					"name": "Plague of Murlocs",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "sudden_genesis",
+					"name": "Sudden Genesis",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "13b37cc",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Bucket-spell import wave 4 (final): Mage/Warlock (~13 spells)",
+			"body": "Completes the 125 real Dalaran Heist + Tombs of Terror card-bucket spells.\nMage 6 (Conjurer's Calling, Deck of Wonders, Luna's Pocket Galaxy, Echo of\nMedivh, Ray of Frost...), Warlock 7 (Cataclysm, Dark Bargain, Dark\nPossession, Demonbolt, Demonic Project, Darkest Hour...).\n\n~93 of the 125 bucket spells imported across 9 classes (the rest need\nbespoke mechanics or referenced tokens). Run-mode buckets now draw from an\naccurate pool, and the spell-inclusive boss decks benefit too.\n\nRNG-shift test fixes: titans_wave1 Yogg \"two random spells\" no longer\nrequires Yogg to survive its own random board-wipe (coherence check\ninstead); groupd_wave7 Sunstruck Henchman 50%-flip widened to 40 samples.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "deck_of_wonders",
+					"name": "Deck of Wonders",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "power_of_creation",
+					"name": "Power of Creation",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "ray_of_frost",
+					"name": "Ray of Frost",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "cataclysm",
+					"name": "Cataclysm",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "dark_bargain",
+					"name": "Dark Bargain",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "dark_possession",
+					"name": "Dark Possession",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "demonbolt",
+					"name": "Demonbolt",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 8
+				}
+			]
+		},
+		{
+			"sha": "9039de1",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Bucket-spell import wave 3: Warrior/Hunter (~14 spells)",
+			"body": "Warrior 9 (The Boomship, Stolen Goods, Omega Assembly, Crush, Plague of\nWrath, Gather Your Party...), Hunter 5 (Call of the Wild, Nine Lives,\nUnleash the Beast, Crushing Walls...). All existing effects.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "stolen_goods",
+					"name": "Stolen Goods",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "omega_assembly",
+					"name": "Omega Assembly",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "sweeping_strikes",
+					"name": "Sweeping Strikes",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "plague_of_wrath",
+					"name": "Plague of Wrath",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "gather_your_party",
+					"name": "Gather Your Party",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "unidentified_shield",
+					"name": "Unidentified Shield",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "call_of_the_wild",
+					"name": "Call of the Wild",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "nine_lives",
+					"name": "Nine Lives",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "unleash_the_beast",
+					"name": "Unleash the Beast",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "4a0829f",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Bucket-spell import wave 2: Shaman/Druid (~23 spells)",
+			"body": "Continuing the 125 Heist/Tombs bucket spells. Shaman 11 (Evolve, Devolve,\nPlague of Murlocs, Healing Rain, Elemental Destruction, Storm Bringer...),\nDruid 12 (Branching Paths, Dark Wispers, Blessing of the Ancients, The\nForest's Aid, Juicy Psychmelon, Overflow, Crystalsong Portal...). All\nexisting effects.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "evolve",
+					"name": "Evolve",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "unstable_evolution",
+					"name": "Unstable Evolution",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "everyfin_is_awesome",
+					"name": "Everyfin is Awesome",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "primal_talismans",
+					"name": "Primal Talismans",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "the_storm_bringer",
+					"name": "The Storm Bringer",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "healing_rain",
+					"name": "Healing Rain",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "healing_wave",
+					"name": "Healing Wave",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "elemental_destruction",
+					"name": "Elemental Destruction",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "lesser_sapphire_spellstone",
+					"name": "Lesser Sapphire Spellstone",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "elementary_reaction",
+					"name": "Elementary Reaction",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "branching_paths",
+					"name": "Branching Paths",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "crystalsong_portal",
+					"name": "Crystalsong Portal",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "dark_wispers",
+					"name": "Dark Wispers",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "juicy_psychmelon",
+					"name": "Juicy Psychmelon",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "blessing_of_the_ancients",
+					"name": "Blessing of the Ancients",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "spreading_plague",
+					"name": "Spreading Plague",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "the_forest_s_aid",
+					"name": "The Forest's Aid",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "overflow",
+					"name": "Overflow",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "the_forests_aid",
+					"name": "The Forest's Aid",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 8
+				}
+			]
+		},
+		{
+			"sha": "6a45a1a",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Bucket-spell import wave 1: Priest/Paladin/Rogue (~43 spells)",
+			"body": "Importing the 125 real Dalaran Heist + Tombs of Terror card-bucket spells\nthat were missing from cards.json, so the run-mode buckets (and the now\nspell-inclusive boss decks) draw from an accurate pool.\n\nPriest 17 (Psychic Scream, Mass Hysteria, Entomb, Lightbomb, Shadow Word:\nHorror, Plague of Death, Confuse, Eternal Servitude...), Paladin 17 (Call\nto Arms, Duel!, Spikeridged Steed, Pharaoh's Blessing, Avenge, Anyfin Can\nHappen...), Rogue 9 (Cannon Barrage, Daring Escape, Thistle Tea,\nEnvenom Weapon...). All existing effects; broken-token-ref cards\nauto-dropped.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "cloning_device",
+					"name": "Cloning Device",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "confuse",
+					"name": "Confuse",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "eternal_servitude",
+					"name": "Eternal Servitude",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "lesser_diamond_spellstone",
+					"name": "Lesser Diamond Spellstone",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "mass_resurrection",
+					"name": "Mass Resurrection",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 9
+				},
+				{
+					"id": "dragonfire_potion",
+					"name": "Dragonfire Potion",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "seance",
+					"name": "Seance",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "holy_water",
+					"name": "Holy Water",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "unsleeping_soul",
+					"name": "Unsleeping Soul",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "velens_chosen",
+					"name": "Velen's Chosen",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "free_from_amber",
+					"name": "Free From Amber",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "shadow_word_horror",
+					"name": "Shadow Word: Horror",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "excavated_evil",
+					"name": "Excavated Evil",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "plague_of_death",
+					"name": "Plague of Death",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 9
+				},
+				{
+					"id": "lazuls_scheme",
+					"name": "Lazul's Scheme",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "surrender_to_madness",
+					"name": "Surrender to Madness",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "entomb",
+					"name": "Entomb",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "avenge",
+					"name": "Avenge",
+					"type": "secret",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "call_to_arms",
+					"name": "Call to Arms",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "small_time_recruits",
+					"name": "Small-Time Recruits",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "tip_the_scales",
+					"name": "Tip the Scales",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "anyfin_can_happen",
+					"name": "Anyfin Can Happen",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 10
+				},
+				{
+					"id": "getaway_kodo",
+					"name": "Getaway Kodo",
+					"type": "secret",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "pharaoh_s_blessing",
+					"name": "Pharaoh's Blessing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "spikeridged_steed",
+					"name": "Spikeridged Steed",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "forbidden_healing",
+					"name": "Forbidden Healing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "lesser_pearl_spellstone",
+					"name": "Lesser Pearl Spellstone",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "lightforged_blessing",
+					"name": "Lightforged Blessing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "seal_of_champions",
+					"name": "Seal of Champions",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "rebuke",
+					"name": "Rebuke",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "shrink_ray",
+					"name": "Shrink Ray",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "pharaohs_blessing",
+					"name": "Pharaoh's Blessing",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "cannon_barrage",
+					"name": "Cannon Barrage",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "daring_escape",
+					"name": "Daring Escape",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "lesser_onyx_spellstone",
+					"name": "Lesser Onyx Spellstone",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "raiding_party",
+					"name": "Raiding Party",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "tinkers_sharpsword_oil",
+					"name": "Tinker's Sharpsword Oil",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "razorpetal_volley",
+					"name": "Razorpetal Volley",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "evasion",
+					"name": "Evasion",
+					"type": "secret",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "pick_pocket",
+					"name": "Pick Pocket",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "a1aa364",
 			"date": "2026-08-06",
 			"kind": "patch",
-			"title": "Tune Duels draft cards to 30 percent larger",
-			"body": "",
+			"title": "Heist/Tombs boss decks: make buildBossDeck spell-inclusive",
+			"body": "The generative boss decks were minion-only (filtered type==='creature'),\nso Heist/Tombs bosses never cast spells - inaccurate vs real HS decks.\nNow class-themed bosses draw ~1/3 of their deck from real class spells\n(sorcery/instant/secret/trap of the boss's class); tribe-only and neutral\nbosses stay minion-heavy (a spell can't carry a creature tribe). Mage\nbosses now run 5 spells, Priest 5, etc.\n\nExact per-boss decklists are NOT sourceable (dungeon-run decks are\nserver-side; the wiki/datamining only document boss hero-powers + special\ncards, which the pool JSON already has - that's why dungeon.js's hardcoded\ndecks are labeled \"community records\"). So spell-inclusive themed\ngeneration is the accurate-achievable fix, and it auto-benefits from every\nimported spell.\n\nApplied identically to heist.js + tombs.js. Boss-deck tests + full battery\n175/175 (bosses playing spells doesn't destabilize the AI).",
 			"cards": []
 		},
 		{
-			"sha": "c5b549d",
+			"sha": "108a7c0",
 			"date": "2026-08-06",
-			"kind": "patch",
-			"title": "Enlarge Duels draft cards",
-			"body": "",
-			"cards": []
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 5d: Death Knight 2nd tranche (6)",
+			"body": "Completes the wave-5 second tranche across all 12 classes. DK 6 clean\ngate-passers appended (Cryosleep, Suffocate, Wave of Tar, Chow Down,\nAirlock Breach, Talanji's Last Stand). Run wf_d89dc4f8-7cf resumed after\nthe usage limit cleared.\n\nWave 5 total ~90 clean spells; full sweep now ~290 across all classes\n(cards.json now 6482). All existing effects.\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "cryosleep",
+					"name": "Cryosleep",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "suffocate",
+					"name": "Suffocate",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "wave_of_tar",
+					"name": "Wave of Tar",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "talanjis_last_stand",
+					"name": "Talanji's Last Stand",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "chow_down",
+					"name": "Chow Down",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 8
+				},
+				{
+					"id": "airlock_breach",
+					"name": "Airlock Breach",
+					"type": "sorcery",
+					"class": "deathknight",
+					"rarity": "rare",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "65575be",
+			"date": "2026-08-06",
+			"kind": "cards",
+			"title": "Cross-class easy-spell sweep, wave 5c: Mage/Hunter 2nd tranche (~23)",
+			"body": "Mage 11, Hunter 12 clean gate-passers appended. Simplified base texts on\nthe harder remnants (dropping conditional riders) landed cleanly: damage\nspells, summon-random, buff-all-tribe, Animal Companion, etc.\n\ntombs_treasures Study Break: broadened its \"discover a spell\" type check to\ninclude secret/trap (both are spell types) - the pool shifted as more\nSecrets/Traps were imported.\n\n(Death Knight 2nd-tranche batch is queued on run wf_d89dc4f8-7cf, blocked\non an account usage limit until 1:20pm ET; resume when it clears.)\n\nBattery 175/175 incl. fuzz.",
+			"cards": [
+				{
+					"id": "starsurge",
+					"name": "Starsurge",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "storage_scuffle",
+					"name": "Storage Scuffle",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "unexpected_results",
+					"name": "Unexpected Results",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "scorch",
+					"name": "Scorch",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "apexis_blast",
+					"name": "Apexis Blast",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "blast_wave",
+					"name": "Blast Wave",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "crystallized_leyline",
+					"name": "Crystallized Leyline",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "wing_blast",
+					"name": "Wing Blast",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "baited_arrow",
+					"name": "Baited Arrow",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "supreme_dinomancy",
+					"name": "Supreme Dinomancy",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "alien_encounters",
+					"name": "Alien Encounters",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "rats_of_extraordinary_size",
+					"name": "Rats of Extraordinary Size",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "to_my_side",
+					"name": "To My Side!",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "epic",
+					"cost": 6
+				}
+			]
 		},
 		{
 			"sha": "931da06",
