@@ -1,4 +1,4 @@
-// Regenerate netlify/functions/pool-rarity.json — the deck/pack card universe the
+// Regenerate server/pool-rarity.json — the deck/pack card universe the
 // MP backend validates against. Must be rerun whenever battlecards/cards.json grows,
 // or newly-imported cards can't be packed, decked, or granted.
 //
@@ -25,6 +25,6 @@ for (const c of cards) {
 	if (!deckEligible(c)) continue;
 	pool[c.id] = [c.rarity || 'common', c.cardClass || 'neutral'];
 }
-const out = join(root, 'netlify', 'functions', 'pool-rarity.json');
+const out = join(root, 'server', 'pool-rarity.json');
 writeFileSync(out, JSON.stringify(pool, null, 0));
 console.log(`wrote ${Object.keys(pool).length} cards to ${out}`);

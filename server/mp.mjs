@@ -1,17 +1,18 @@
-// /api/mp — the /magepunktest account backend (Netlify Function + Blobs).
+// /api/mp — the /magepunktest account backend.
 //
 // One POST endpoint, JSON body { action, ...payload }, Bearer token auth.
 // The server is authoritative for everything a player could cheat:
 // pack contents are rolled here, rewards are granted here, deck saves are
 // validated against the owned collection here.
 //
-// Storage: Netlify Blobs store "mp-users", one JSON blob per user.
-// Secret: set MP_SECRET in the Netlify environment (Site settings →
-// Environment variables). The fallback below keeps dev working but is
-// public knowledge — tokens are forgeable until MP_SECRET is set.
+// Runtime: Cloudflare Pages Function — functions/api/mp.mjs wraps this and
+// serves it at /api/mp. Storage: Cloudflare D1 (the MP_DB binding), one JSON
+// row per user in the mp_store table. Secret: set MP_SECRET in the Cloudflare
+// environment. The fallback below keeps dev working but is public knowledge —
+// tokens are forgeable until MP_SECRET is set.
 import { scrypt as scryptCb, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
-import { STARTER_DECKS } from '../../battlecards/dungeon.js';
-import { createMatch, submitAction, replaceFainted, sideOf } from '../../battlecards/pvpbattle.js';
+import { STARTER_DECKS } from '../battlecards/dungeon.js';
+import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 

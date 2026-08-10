@@ -12,7 +12,7 @@ visible jank), then Bug 2 (mechanics are right; presentation is confusing).
 
 ## Bug 3 — card duel never loads for the guest
 
-### Code path (all in battlecards/game.js + netlify/functions/mp.mjs)
+### Code path (all in battlecards/game.js + server/mp.mjs)
 - Guest accepts → redirected to `/battlecards/?cardpvp=<id>&mp=1` → `startDuel()`
   (game.js:2601) → role 'guest' → `startDuelGuest()` polls `card-poll` every
   300–850ms and builds the board when a snapshot arrives.

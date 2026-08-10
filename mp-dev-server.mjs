@@ -32,10 +32,10 @@ const MP_DB = {
 };
 console.log('accounts db:', dbFile);
 
-// bundle the function exactly like Netlify's esbuild does, then import it
+// bundle the function exactly like the Cloudflare build does, then import it
 const bundle = join(mkdtempSync(join(tmpdir(), 'mp-fn-')), 'mp.bundle.mjs');
 buildSync({
-	entryPoints: ['netlify/functions/mp.mjs'],
+	entryPoints: ['server/mp.mjs'],
 	bundle: true, platform: 'node', format: 'esm', outfile: bundle,
 	banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
 });
@@ -50,7 +50,7 @@ const MIME = {
 const port = +(process.argv[2] || 8767);
 createServer(async (req, res) => {
 	const url = new URL(req.url, `http://localhost:${port}`);
-	if (url.pathname === '/api/mp' || url.pathname === '/.netlify/functions/mp') {
+	if (url.pathname === '/api/mp') {
 		const chunks = [];
 		for await (const c of req) chunks.push(c);
 		const request = new Request(`http://localhost${url.pathname}`, {
