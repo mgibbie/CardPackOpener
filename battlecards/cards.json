@@ -10727,7 +10727,7 @@
       "health": 2,
       "tribe": "Beast",
       "keywords": [
-        "deathtouch"
+        "venomous"
       ],
       "ongoing": {
         "on": "spell-played",
