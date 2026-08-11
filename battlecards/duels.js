@@ -46,7 +46,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].rocketBackpacks = true; },
 	},
 	special_delivery: {
-		name: 'Special Delivery', text: 'After you play your first Rush creature in a turn, summon a copy of it with 1 Health.',
+		name: 'Special Delivery', text: 'After you play your first Rush creature in a turn, create a copy of it with 1 Health.',
 		apply: (state, pi) => { state.players[pi].specialDelivery = true; },
 	},
 	shadowcasting_101: {
@@ -78,15 +78,15 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].ironRoots = true; },
 	},
 	spreading_saplings: {
-		name: 'Spreading Saplings', text: 'After you cast a Nature spell, summon a 1/1 Sapling.',
+		name: 'Spreading Saplings', text: 'After you cast a Nature spell, create a 1/1 Sapling.',
 		apply: (state, pi) => { state.players[pi].spreadingSaplings = true; },
 	},
 	guardian_light: {
-		name: 'Guardian Light', text: 'After you cast a Holy spell, summon an Ancient Guardian with stats equal to its Cost.',
+		name: 'Guardian Light', text: 'After you cast a Holy spell, create an Ancient Guardian with stats equal to its Cost.',
 		apply: (state, pi) => { state.players[pi].guardianLight = true; },
 	},
 	firekeepers_idol: {
-		name: "Firekeeper's Idol", text: 'After you cast a Fire spell, summon a 1/2 Flame Elemental & add one to your hand.',
+		name: "Firekeeper's Idol", text: 'After you cast a Fire spell, create a 1/2 Flame Elemental & add one to your hand.',
 		apply: (state, pi) => { state.players[pi].firekeepersIdol = true; },
 	},
 	invigorating_light: {
@@ -123,7 +123,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].armorPerFriendlyDeath = (state.players[pi].armorPerFriendlyDeath || 0) + 1; },
 	},
 	disks_of_legend: {
-		name: 'Disks of Legend', text: 'After you play a Legendary creature, summon a copy of it.',
+		name: 'Disks of Legend', text: 'After you play a Legendary creature, create a copy of it.',
 		apply: (state, pi) => { state.players[pi].disksOfLegend = true; },
 	},
 	elixir_of_vigor: {
@@ -161,7 +161,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].crystalGem = true; },
 	},
 	party_replacement: {
-		name: 'Party Replacement', text: 'At the start of your turn, summon a 2/2 Adventurer with a random bonus keyword.',
+		name: 'Party Replacement', text: 'At the start of your turn, create a 2/2 Adventurer with a random bonus keyword.',
 		apply: (state, pi) => { state.players[pi].partyReplacement = true; },
 	},
 	// --- play-a-creature triggers ---
@@ -346,11 +346,11 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].bloodShields = true; },
 	},
 	ghouls_rush_in: {
-		name: 'Ghouls Rush In', text: 'After the first time you spend a Corpse in a turn, summon a 2/2 Risen Ghoul with Rush.',
+		name: 'Ghouls Rush In', text: 'After the first time you spend a Corpse in a turn, create a 2/2 Risen Ghoul with Rush.',
 		apply: (state, pi) => { state.players[pi].ghoulsRushIn = true; },
 	},
 	cold_feet_pact: {
-		name: 'Cold Feet Pact', text: 'At the end of your turn, summon a Risen Groom with stats equal to half your Corpse total.',
+		name: 'Cold Feet Pact', text: 'At the end of your turn, create a Risen Groom with stats equal to half your Corpse total.',
 		apply: (state, pi) => { state.players[pi].coldFeetPact = true; },
 	},
 	// --- reuse of existing pools (colossal / locations / Patches / tribes) ---
@@ -380,7 +380,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].impTrousers = true; },
 	},
 	draconic_dream: {
-		name: 'Draconic Dream', text: 'After you play a Dragon, shuffle a Dream Portal into your deck that summons a Dragon when drawn.',
+		name: 'Draconic Dream', text: 'After you play a Dragon, shuffle a Dream Portal into your deck that creates a Dragon when drawn.',
 		apply: (state, pi) => { state.players[pi].draconicDream = true; },
 	},
 	cloak_of_emerald_dreams: {
@@ -429,7 +429,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { const p = state.players[pi]; p.expeditedBurial = true; for (const c of p.hand) if (c.type === 'creature' && (c.keywords || []).includes('deathrattle')) { c.attack = 1; c.maxHealth = 1; c.damage = 0; c.tempHealth = 0; c.cost = 1; } },
 	},
 	brittle_bones: {
-		name: 'Brittle Bones', text: 'After you cast a spell that kills an enemy, summon a 2/2 Volatile Skeleton.',
+		name: 'Brittle Bones', text: 'After you cast a spell that kills an enemy, create a 2/2 Volatile Skeleton.',
 		apply: (state, pi) => { state.players[pi].brittleBones = true; },
 	},
 	eerie_stone: {

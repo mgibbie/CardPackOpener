@@ -3601,7 +3601,7 @@
         },
         {
           "cost": -4,
-          "text": "Summon two 3/3 Card Soldiers.",
+          "text": "Create two 3/3 Card Soldiers.",
           "effects": [
             {
               "type": "summon",
@@ -3646,7 +3646,7 @@
       "abilities": [
         {
           "cost": 2,
-          "text": "Restore 4 health to your hero.",
+          "text": "Gain 4 life.",
           "effects": [
             {
               "type": "heal",
@@ -3657,7 +3657,7 @@
         },
         {
           "cost": -5,
-          "text": "Deal 3 damage to all enemy creatures and summon a 5/5 Saguaro Guardian with Taunt.",
+          "text": "Deal 3 damage to all enemy creatures and create a 5/5 Saguaro Guardian with Taunt.",
           "effects": [
             {
               "type": "damage",
@@ -14299,7 +14299,7 @@
           ]
         },
         {
-          "text": "Summon a 3/2 Panther",
+          "text": "Create a 3/2 Panther",
           "effects": [
             {
               "type": "summon",
@@ -15508,7 +15508,7 @@
           ]
         },
         {
-          "text": "Summon two 2/2 Treants with Taunt",
+          "text": "Create two 2/2 Treants with Taunt",
           "effects": [
             {
               "type": "summon",
@@ -21481,7 +21481,7 @@
           ]
         },
         {
-          "text": "Summon two 1/1 Saplings",
+          "text": "Create two 1/1 Saplings",
           "effects": [
             {
               "type": "summon",
@@ -25270,7 +25270,7 @@
           ]
         },
         {
-          "text": "Summon two 3/2 Wolves with Rush",
+          "text": "Create two 3/2 Wolves with Rush",
           "effects": [
             {
               "type": "summon",
@@ -26507,7 +26507,7 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Summon three 2/3 Wolves with Taunt",
+          "text": "Create three 2/3 Wolves with Taunt",
           "effects": [
             {
               "type": "summon",
@@ -26522,7 +26522,7 @@
           ]
         },
         {
-          "text": "Summon two 4/3 Falcons with Windfury",
+          "text": "Create two 4/3 Falcons with Windfury",
           "effects": [
             {
               "type": "summon",
@@ -31775,7 +31775,7 @@
           ]
         },
         {
-          "text": "Summon a random 2-cost creature",
+          "text": "Create a random 2-cost creature",
           "effects": [
             {
               "type": "summon-random",
@@ -32855,7 +32855,7 @@
           ]
         },
         {
-          "text": "Summon two 3/2 Raptors",
+          "text": "Create two 3/2 Raptors",
           "effects": [
             {
               "type": "summon",
@@ -32881,7 +32881,7 @@
       "health": 4,
       "choices": [
         {
-          "text": "Summon a 2/2 Slime",
+          "text": "Create a 2/2 Slime",
           "effects": [
             {
               "type": "summon",
@@ -34386,7 +34386,7 @@
           ]
         },
         {
-          "text": "Summon two 2/2 Treants",
+          "text": "Create two 2/2 Treants",
           "effects": [
             {
               "type": "summon",
@@ -36098,7 +36098,7 @@
           "target": "all-heroes"
         }
       ],
-      "description": "Restore 5 health to each hero.",
+      "description": "Each player gains 5 life.",
       "set": "hsx"
     },
     {
@@ -36539,7 +36539,7 @@
           "target": "all-heroes"
         }
       ],
-      "description": "Battlecry: Restore 4 health to each hero.",
+      "description": "Battlecry: Each player gains 4 life.",
       "set": "hsx"
     },
     {
@@ -36829,7 +36829,7 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Summon five 2/2 Treants",
+          "text": "Create five 2/2 Treants",
           "effects": [
             {
               "type": "summon",
@@ -36889,7 +36889,7 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Summon seven 1/1 Wisps",
+          "text": "Create seven 1/1 Wisps",
           "effects": [
             {
               "type": "summon",
@@ -40906,7 +40906,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Destroy a friendly creature to summon a 4/5 Undead with Rush.",
+          "text": "Destroy a friendly creature to create a 4/5 Undead with Rush.",
           "effects": [
             {
               "type": "destroy",
@@ -40946,7 +40946,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Choose a damaged creature. Summon a copy that sleeps Dormant for one turn.",
+          "text": "Choose a damaged creature. Create a copy that sleeps Dormant for one turn.",
           "effects": [
             {
               "type": "copy-summon",
@@ -40993,7 +40993,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Summon two 1/1 Pirates with Charge.",
+          "text": "Create two 1/1 Pirates with Charge.",
           "effects": [
             {
               "type": "summon",
@@ -41045,7 +41045,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Restore 3 health to your hero and creatures.",
+          "text": "Gain 3 life & restore 3 Health to your creatures.",
           "effects": [
             {
               "type": "heal",
@@ -41055,7 +41055,7 @@
           ]
         }
       ],
-      "description": "Gain 3 life & creatures."
+      "description": "Gain 3 life & restore 3 Health to your creatures."
     },
     {
       "id": "forge_of_wills",
@@ -41068,7 +41068,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Choose a friendly creature. Summon a Giant with its stats and Rush.",
+          "text": "Choose a friendly creature. Create a Giant with its stats and Rush.",
           "effects": [
             {
               "type": "summon-with-stats",
@@ -41222,7 +41222,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Freeze a creature. Summon a 2/2 Volatile Skeleton.",
+          "text": "Freeze a creature. Create a 2/2 Volatile Skeleton.",
           "effects": [
             {
               "type": "freeze",
@@ -41251,7 +41251,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Summon a random Dragon that costs 5 or more.",
+          "text": "Create a random Dragon that costs 5 or more.",
           "effects": [
             {
               "type": "summon-random",
@@ -41444,7 +41444,7 @@
       "set": "hsloc",
       "taps": [
         {
-          "text": "Summon a 2/1 Rat with \"Deathrattle: Draw a card.\"",
+          "text": "Create a 2/1 Rat with \"Deathrattle: Draw a card.\"",
           "effects": [
             {
               "type": "summon",
@@ -49255,7 +49255,7 @@
         },
         {
           "name": "Argunite Army",
-          "text": "Summon four 2/2 Elementals with Taunt.",
+          "text": "Create four 2/2 Elementals with Taunt.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -51196,7 +51196,7 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Summon two 3/6 Demons with Taunt that can't attack.",
+          "text": "Create two 3/6 Demons with Taunt that can't attack.",
           "effects": [
             {
               "type": "summon",
@@ -51229,7 +51229,7 @@
       "type": "sorcery",
       "choices": [
         {
-          "text": "Summon two 1/1 Ants.",
+          "text": "Create two 1/1 Ants.",
           "effects": [
             {
               "type": "summon",
@@ -54858,7 +54858,7 @@
       "power": {
         "name": "Galakrond's Malice",
         "cost": 2,
-        "text": "Summon two 1/1 Imps.",
+        "text": "Create two 1/1 Imps.",
         "effects": [
           {
             "type": "summon",
@@ -54920,7 +54920,7 @@
       "power": {
         "name": "Galakrond's Fury",
         "cost": 2,
-        "text": "Summon a 2/1 Elemental with Rush.",
+        "text": "Create a 2/1 Elemental with Rush.",
         "effects": [
           {
             "type": "summon",
@@ -69491,7 +69491,7 @@
       "description": "Choose One - Create a Jade Golem creature token; or Shuffle 3 copies of this card into your deck.",
       "choices": [
         {
-          "text": "Summon a Jade Golem",
+          "text": "Create a Jade Golem",
           "effects": [
             {
               "type": "summon-jade"
@@ -80799,7 +80799,7 @@
           ]
         },
         {
-          "text": "Summon a copy",
+          "text": "Create a copy",
           "effects": [
             {
               "type": "summon-self-copy"
@@ -84276,7 +84276,7 @@
       "description": "Taunt. Choose One - Create a 9/9 Fungal Giant creature token with Taunt; or Rush.",
       "choices": [
         {
-          "text": "Summon a 9/9 Fungal Giant with Taunt",
+          "text": "Create a 9/9 Fungal Giant with Taunt",
           "effects": [
             {
               "type": "summon",
@@ -86779,7 +86779,7 @@
           ]
         },
         {
-          "text": "Summon a 2/2 Treant",
+          "text": "Create a 2/2 Treant",
           "effects": [
             {
               "type": "summon",
@@ -98059,7 +98059,7 @@
         {
           "type": "emblem",
           "name": "Topior",
-          "description": "After you cast a Nature spell, summon a 3/3 Whelp with Rush.",
+          "description": "After you cast a Nature spell, create a 3/3 Whelp with Rush.",
           "ongoing": {
             "on": "spell-played",
             "if": {
@@ -105381,7 +105381,7 @@
         },
         {
           "name": "Commanding Presence",
-          "text": "Give your weapon \"After your hero attacks, summon a 3/3 Enforcer with Taunt.\"",
+          "text": "Give your weapon \"After your hero attacks, create a 3/3 Enforcer with Taunt.\"",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -105630,7 +105630,7 @@
       "activated": [
         {
           "name": "Shape the Stars",
-          "text": "Choose a non-Titan minion. Summon a copy of it with +2/+2.",
+          "text": "Choose a non-Titan minion. Create a copy of it with +2/+2.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -105660,7 +105660,7 @@
         },
         {
           "name": "Vision of Heroes",
-          "text": "Summon a random 6-Cost minion. Give it Taunt and Lifesteal.",
+          "text": "Create a random 6-Cost minion. Give it Taunt and Lifesteal.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -105791,7 +105791,7 @@
       "description": "Choose One - Create three 2/2 Treant creature tokens; or Transform your Treants into 5/5 Ancients with Taunt.",
       "choices": [
         {
-          "text": "Summon three 2/2 Treants",
+          "text": "Create three 2/2 Treants",
           "effects": [
             {
               "type": "summon",
@@ -105889,7 +105889,7 @@
           ]
         },
         {
-          "text": "Summon copies of minions",
+          "text": "Create copies of minions",
           "effects": [
             {
               "type": "summon-copies-of-board"
@@ -106077,7 +106077,7 @@
         },
         {
           "name": "Runes of the Unholy",
-          "text": "Summon two 3/3 Undead with Taunt and Reborn.",
+          "text": "Create two 3/3 Undead with Taunt and Reborn.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -106163,7 +106163,7 @@
         },
         {
           "name": "Inferno!",
-          "text": "Summon two 6/6 Infernals.",
+          "text": "Create two 6/6 Infernals.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -106180,7 +106180,7 @@
         },
         {
           "name": "Legion Invasion!",
-          "text": "Future Demons summoned from the Twisting Nether have +2 Health and Taunt.",
+          "text": "Future Demons created from the Twisting Nether have +2 Health and Taunt.",
           "oncePerGame": true,
           "sorcerySpeed": true,
           "cost": 0,
@@ -106290,7 +106290,7 @@
       "titan": true,
       "titanPassive": {
         "type": "after-ability-effects",
-        "text": "Summon a 5/5 Ancient with Taunt.",
+        "text": "Create a 5/5 Ancient with Taunt.",
         "effects": [
           {
             "type": "summon",
@@ -113320,7 +113320,7 @@
           ]
         },
         {
-          "text": "Zarog's Crown: Discover a Legendary minion. Summon two copies of it.",
+          "text": "Zarog's Crown: Discover a Legendary minion. Create two copies of it.",
           "effects": [
             {
               "type": "conjure-id",
@@ -118770,7 +118770,7 @@
           ]
         },
         {
-          "text": "Deathrattle: Summon two 1/1 Plants",
+          "text": "Deathrattle: Create two 1/1 Plants",
           "effects": [
             {
               "type": "grant-deathrattle",
@@ -122352,7 +122352,7 @@
       "description": "Fabled. Battlecry: Draw Bwonsamdi (or resurrect him if he has died). Choose a Boon to give him.",
       "choices": [
         {
-          "text": "Boon of Power: give Bwonsamdi Taunt permanently. His summons cost (2) more.",
+          "text": "Boon of Power: give Bwonsamdi Taunt permanently. His creates cost (2) more.",
           "effects": [
             {
               "type": "talanji",
@@ -122361,7 +122361,7 @@
           ]
         },
         {
-          "text": "Boon of Longevity: give Bwonsamdi Lifesteal permanently. His summons cost (2) more.",
+          "text": "Boon of Longevity: give Bwonsamdi Lifesteal permanently. His creates cost (2) more.",
           "effects": [
             {
               "type": "talanji",
@@ -122370,7 +122370,7 @@
           ]
         },
         {
-          "text": "Boon of Speed: give Bwonsamdi Rush permanently. His summons cost (2) more.",
+          "text": "Boon of Speed: give Bwonsamdi Rush permanently. His creates cost (2) more.",
           "effects": [
             {
               "type": "talanji",
@@ -124593,7 +124593,7 @@
       "description": "Battlecry: Choose an Animal Companion to create.",
       "choices": [
         {
-          "text": "Summon Huffer (4/2, Charge).",
+          "text": "Create Huffer (4/2, Charge).",
           "effects": [
             {
               "type": "summon",
@@ -124606,7 +124606,7 @@
           ]
         },
         {
-          "text": "Summon Misha (4/4, Taunt).",
+          "text": "Create Misha (4/4, Taunt).",
           "effects": [
             {
               "type": "summon",
@@ -124619,7 +124619,7 @@
           ]
         },
         {
-          "text": "Summon Leokk (2/4, others +1 Attack).",
+          "text": "Create Leokk (2/4, others +1 Attack).",
           "effects": [
             {
               "type": "summon",
@@ -129778,7 +129778,7 @@
       "durability": 3,
       "taps": [
         {
-          "text": "Summon a copy of a friendly minion with its stats doubled.",
+          "text": "Create a copy of a friendly minion with its stats doubled.",
           "effects": [
             {
               "type": "zin-copy"
@@ -129948,7 +129948,7 @@
       "costZeroIfWeaponId": "atiesh_the_greatstaff",
       "taps": [
         {
-          "text": "Summon two random 8-Cost minions.",
+          "text": "Create two random 8-Cost minions.",
           "effects": [
             {
               "type": "summon-random",
@@ -138354,7 +138354,7 @@
       "description": "Create a 2/1 Starship Piece creature token with an effect when launched.",
       "taps": [
         {
-          "text": "Summon a 2/1 Starship Piece with an effect when launched.",
+          "text": "Create a 2/1 Starship Piece with an effect when launched.",
           "effects": [
             {
               "type": "summon-random",
@@ -138857,7 +138857,7 @@
       "description": "Deal 5 damage to a random creature an opponent controls. Excess hits target opponent. Advance to the future!",
       "taps": [
         {
-          "text": "Deal 5 damage to a random enemy minion. Excess hits the enemy hero. Advance to the future!",
+          "text": "Deal 5 damage to a random enemy minion. Excess hits target opponent. Advance to the future!",
           "effects": [
             {
               "type": "damage-enemy-minion",
@@ -138887,7 +138887,7 @@
       "description": "Deal 5 damage to the lowest Health creature an opponent controls. Excess damage hits target opponent.",
       "taps": [
         {
-          "text": "Deal 5 damage to the lowest Health enemy minion. Excess damage hits the enemy hero.",
+          "text": "Deal 5 damage to the lowest Health enemy minion. Excess damage hits target opponent.",
           "effects": [
             {
               "type": "damage-enemy-minion",
@@ -138941,7 +138941,7 @@
       "description": "Target creature gains +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
       "taps": [
         {
-          "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to the enemy hero.' Advance to the future!",
+          "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
           "effects": [
             {
               "type": "buff",
@@ -138982,7 +138982,7 @@
       "description": "Target creature gains +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to target opponent.'",
       "taps": [
         {
-          "text": "Give a minion +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to the enemy hero.'",
+          "text": "Give a minion +2/+1, Divine Shield, and 'Deathrattle: Deal 2 damage to target opponent.'",
           "effects": [
             {
               "type": "buff",
@@ -139600,7 +139600,7 @@
       "description": "The next creature you create this turn has its stats set to 4/4.",
       "taps": [
         {
-          "text": "The next minion you summon this turn has its stats set to 4/4.",
+          "text": "The next minion you create this turn has its stats set to 4/4.",
           "effects": [
             {
               "type": "set-next-summon-stats",
@@ -139623,7 +139623,7 @@
       "description": "Create a 1/1 Ghost creature token. (Has +1/+1 for each other card you played this turn!)",
       "taps": [
         {
-          "text": "Summon a 1/1 Ghost. (Has +1/+1 for each other card you played this turn!)",
+          "text": "Create a 1/1 Ghost. (Has +1/+1 for each other card you played this turn!)",
           "effects": [
             {
               "type": "summon-scaled-cards-played",
@@ -140139,7 +140139,7 @@
       "description": "Create a Demon creature token with stats equal to the number of cards in your hand. It attacks a random creature an opponent controls.",
       "taps": [
         {
-          "text": "Summon a Demon with stats equal to the number of cards in your hand. It attacks a random enemy minion.",
+          "text": "Create a Demon with stats equal to the number of cards in your hand. It attacks a random enemy minion.",
           "effects": [
             {
               "type": "summon-hand-size-stats",
@@ -140644,7 +140644,7 @@
           ]
         },
         {
-          "text": "Earth: summon a random 3-Cost minion with Taunt.",
+          "text": "Earth: create a random 3-Cost minion with Taunt.",
           "effects": [
             {
               "type": "set-tiny-pal-ammo",
@@ -140704,7 +140704,7 @@
       "description": "Choose a friendly Dragon. Create a 0/2 Egg creature token that hatches into a copy of it.",
       "taps": [
         {
-          "text": "Choose a friendly Dragon. Summon a 0/2 Egg that hatches into a copy of it.",
+          "text": "Choose a friendly Dragon. Create a 0/2 Egg that hatches into a copy of it.",
           "effects": [
             {
               "type": "summon-hatch-egg",
@@ -140727,7 +140727,7 @@
       "description": "Create a 1-Cost creature. Gain 1 Armor. Draw 1 card. Refresh 1 Mana Crystal. (Improves each use!)",
       "taps": [
         {
-          "text": "Summon a 1-Cost minion. Gain 1 Armor. Draw 1 card. Refresh 1 Mana Crystal. (Improves each use!)",
+          "text": "Create a 1-Cost minion. Gain 1 Armor. Draw 1 card. Refresh 1 Mana Crystal. (Improves each use!)",
           "effects": [
             {
               "type": "amirdrassil-tap"
@@ -140836,7 +140836,7 @@
       "description": "Choose a card to discard to create a 5/5 Taunt creature token. Deathrattle: Free Zuramat who plays one each turn!",
       "taps": [
         {
-          "text": "Discard a card to summon a 5/5 Taunt.",
+          "text": "Discard a card to create a 5/5 Taunt.",
           "effects": [
             {
               "type": "zuramat-prison-tap"
@@ -152903,7 +152903,7 @@
       "collectible": true,
       "choices": [
         {
-          "text": "Summon 5 Wisps",
+          "text": "Create 5 Wisps",
           "effects": [
             {
               "type": "summon",
@@ -155531,7 +155531,7 @@
           {
             "type": "emblem",
             "name": "Golakka Depths",
-            "description": "Murlocs you summon gain +1/+1.",
+            "description": "Murlocs you create gain +1/+1.",
             "aura": {
               "attack": 1,
               "health": 1,
@@ -156470,7 +156470,7 @@
       "description": "Choose One - Create two Dormant Dreadseeds; or Deal 2 damage to all creatures.",
       "choices": [
         {
-          "text": "Summon two Dormant Dreadseeds.",
+          "text": "Create two Dormant Dreadseeds.",
           "effects": [
             {
               "type": "summon",
@@ -156665,7 +156665,7 @@
           ]
         },
         {
-          "text": "Summon a 2/2 Treant.",
+          "text": "Create a 2/2 Treant.",
           "effects": [
             {
               "type": "summon",
@@ -156725,7 +156725,7 @@
           ]
         },
         {
-          "text": "Summon a 2/2 Treant.",
+          "text": "Create a 2/2 Treant.",
           "effects": [
             {
               "type": "summon",
@@ -162454,7 +162454,7 @@
           ]
         },
         {
-          "text": "Summon a 3/2 Eagle.",
+          "text": "Create a 3/2 Eagle.",
           "effects": [
             {
               "type": "summon",
@@ -163411,7 +163411,7 @@
       "set": "YEAR_OF_THE_DRAGON",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Discover a 2-Cost minion. Summon it and give it +3 Health.",
+      "description": "Discover a 2-Cost minion. Create it and give it +3 Health.",
       "effects": [
         {
           "type": "discover",
@@ -163434,7 +163434,7 @@
       "set": "ALTERAC_VALLEY",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Deal 3 damage to a minion. Honorable Kill: Summon a new 3/3 copy of it.",
+      "description": "Deal 3 damage to a minion. Honorable Kill: Create a new 3/3 copy of it.",
       "target": "creature",
       "effects": [
         {
@@ -163492,7 +163492,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Draw a minion. If it's a Dragon, summon two 2/1 Whelps with Rush.",
+      "description": "Draw a minion. If it's a Dragon, create two 2/1 Whelps with Rush.",
       "effects": [
         {
           "type": "tutor",
@@ -163733,7 +163733,7 @@
       "set": "DARKMOON_FAIRE",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Summon a random 4-Cost minion. Corrupt: Summon a 7-Cost minion instead.",
+      "description": "Create a random 4-Cost minion. Corrupt: Create a 7-Cost minion instead.",
       "effects": [
         {
           "type": "summon-random",
@@ -163750,7 +163750,7 @@
       "rarity": "rare",
       "set": "THE_SUNKEN_CITY",
       "collectible": true,
-      "description": "Silence a minion and summon a copy of it. Put a 'Sunken Ritual' on the bottom of your deck.",
+      "description": "Silence a minion and create a copy of it. Put a 'Sunken Ritual' on the bottom of your deck.",
       "target": "creature",
       "effects": [
         {
@@ -163773,7 +163773,7 @@
       "set": "PLACEHOLDER_202204",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a minion +2 Health. Summon a Kyrian with its stats and Taunt.",
+      "description": "Give a minion +2 Health. Create a Kyrian with its stats and Taunt.",
       "target": "friendly-creature",
       "effects": [
         {
@@ -163800,7 +163800,7 @@
       "set": "REVENDRETH",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Give a minion +2 Health. Summon a Kyrian with its stats and Taunt.",
+      "description": "Give a minion +2 Health. Create a Kyrian with its stats and Taunt.",
       "target": "friendly-creature",
       "effects": [
         {
@@ -163865,10 +163865,10 @@
       "rarity": "epic",
       "set": "CATACLYSM",
       "collectible": true,
-      "description": "Replace your future Animal Companions with random Beasts that cost (2) more. Choose one to summon.",
+      "description": "Replace your future Animal Companions with random Beasts that cost (2) more. Choose one to create.",
       "choices": [
         {
-          "text": "Summon Huffer (4/2, Charge).",
+          "text": "Create Huffer (4/2, Charge).",
           "effects": [
             {
               "type": "companion-upgrade"
@@ -163884,7 +163884,7 @@
           ]
         },
         {
-          "text": "Summon Misha (4/4, Taunt).",
+          "text": "Create Misha (4/4, Taunt).",
           "effects": [
             {
               "type": "companion-upgrade"
@@ -163900,7 +163900,7 @@
           ]
         },
         {
-          "text": "Summon Leokk (2/4, others +1 Attack).",
+          "text": "Create Leokk (2/4, others +1 Attack).",
           "effects": [
             {
               "type": "companion-upgrade"
@@ -163925,7 +163925,7 @@
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
       "collectible": true,
-      "description": "Deal 6 damage to three random enemy minions. Excess damage hits the enemy hero.",
+      "description": "Deal 6 damage to three random enemy minions. Excess damage hits target opponent.",
       "effects": [
         {
           "type": "damage-enemy-minion",
@@ -163977,7 +163977,7 @@
       "rarity": "epic",
       "set": "DARKMOON_FAIRE",
       "collectible": true,
-      "description": "Summon three friendly Deathrattle minions that died this game.",
+      "description": "Create three friendly Deathrattle minions that died this game.",
       "effects": [
         {
           "type": "summon-random-died-game",
@@ -164153,7 +164153,7 @@
       "rarity": "epic",
       "set": "REVENDRETH",
       "collectible": true,
-      "description": "Summon three 1/3 Jailers with Taunt. If you have 20 or less Health, give them +1/+1.",
+      "description": "Create three 1/3 Jailers with Taunt. If you have 20 or less Health, give them +1/+1.",
       "effects": [
         {
           "type": "summon",
@@ -164193,7 +164193,7 @@
       "rarity": "epic",
       "set": "THE_LOST_CITY",
       "collectible": true,
-      "description": "Summon two 0/6 Security with Taunt. They gain +1 Attack when damaged.",
+      "description": "Create two 0/6 Security with Taunt. They gain +1 Attack when damaged.",
       "effects": [
         {
           "type": "summon",
@@ -164270,7 +164270,7 @@
       "rarity": "epic",
       "set": "BATTLE_OF_THE_BANDS",
       "collectible": true,
-      "description": "Summon a 3/4 Rocker with Taunt and a 4/3 with Rush. Finale: Play your last Riff.",
+      "description": "Create a 3/4 Rocker with Taunt and a 4/3 with Rush. Finale: Play your last Riff.",
       "effects": [
         {
           "type": "summon",
@@ -164320,7 +164320,7 @@
       "rarity": "common",
       "set": "CATACLYSM",
       "collectible": true,
-      "description": "Give a minion \"Deathrattle: Summon a random minion from your hand.\"",
+      "description": "Give a minion \"Deathrattle: Create a random minion from your hand.\"",
       "target": "friendly-creature",
       "effects": [
         {
@@ -164364,7 +164364,7 @@
       "set": "TIME_TRAVEL",
       "collectible": true,
       "tribe": "Arcane",
-      "description": "Summon a random 10 and 1-Cost minion. Scramble their stats.",
+      "description": "Create a random 10 and 1-Cost minion. Scramble their stats.",
       "effects": [
         {
           "type": "summon-random",
@@ -164482,7 +164482,7 @@
       "set": "DARKMOON_FAIRE",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Summon an 8/8 Elemental.",
+      "description": "Create an 8/8 Elemental.",
       "effects": [
         {
           "type": "summon",
@@ -164525,7 +164525,7 @@
       "set": "ISLAND_VACATION",
       "collectible": true,
       "tribe": "Frost",
-      "description": "Summon three 3/6 Water Elementals that Freeze.",
+      "description": "Create three 3/6 Water Elementals that Freeze.",
       "effects": [
         {
           "type": "summon",
@@ -164554,7 +164554,7 @@
       "keywords": [
         "tradeable"
       ],
-      "description": "Tradeable. Discover 2 Dragons. Summon them.",
+      "description": "Tradeable. Discover 2 Dragons. Create them.",
       "effects": [
         {
           "type": "discover",
@@ -164600,7 +164600,7 @@
       "set": "CATACLYSM",
       "collectible": true,
       "tribe": "Arcane",
-      "description": "Summon a 6/6 Dragon. Costs (1) less for each damage you dealt with spells this turn.",
+      "description": "Create a 6/6 Dragon. Costs (1) less for each damage you dealt with spells this turn.",
       "effects": [
         {
           "type": "summon",
@@ -164638,7 +164638,7 @@
       "rarity": "rare",
       "set": "LEGACY",
       "collectible": true,
-      "description": "Gain 4 Corpses. Shuffle four Crates into your deck that summon a 2/2 Undead when drawn.",
+      "description": "Gain 4 Corpses. Shuffle four Crates into your deck that create a 2/2 Undead when drawn.",
       "effects": [
         {
           "type": "gain-corpses",
@@ -164698,7 +164698,7 @@
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
       "collectible": true,
-      "description": "Summon a copy of an enemy minion. It attacks the original.",
+      "description": "Create a copy of an enemy minion. It attacks the original.",
       "effects": [
         {
           "type": "summon-enemy-copy-attack-original",
@@ -164732,7 +164732,7 @@
       "rarity": "common",
       "set": "THE_BARRENS",
       "collectible": true,
-      "description": "Deal 6 damage to a minion. Excess damage hits the enemy hero.",
+      "description": "Deal 6 damage to a minion. Excess damage hits target opponent.",
       "effects": [
         {
           "type": "damage-overkill-hero",
@@ -164802,7 +164802,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Summon a 2/2 Treant. Draw a card for each Treant you control.",
+      "description": "Create a 2/2 Treant. Draw a card for each Treant you control.",
       "effects": [
         {
           "type": "summon",
@@ -164843,7 +164843,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "description": "Summon two 2/2 Treants. Infuse (5): Two 5/5 Ancients instead.",
+      "description": "Create two 2/2 Treants. Infuse (5): Two 5/5 Ancients instead.",
       "effects": [
         {
           "type": "summon",
@@ -164880,7 +164880,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Summon a random 4-Cost minion. (Improved by your hero attacks this game.)",
+      "description": "Create a random 4-Cost minion. (Improved by your hero attacks this game.)",
       "effects": [
         {
           "type": "summon-random",
@@ -164896,7 +164896,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "STORMWIND",
-      "description": "Give a minion +4/+2 and Rush. When it dies, summon a Kodo.",
+      "description": "Give a minion +4/+2 and Rush. When it dies, create a Kodo.",
       "effects": [
         {
           "type": "buff",
@@ -164997,7 +164997,7 @@
       "cardClass": "druid",
       "rarity": "common",
       "set": "NAXX",
-      "description": "Destroy all minions and summon 2/2 Treants to replace them.",
+      "description": "Destroy all minions and create 2/2 Treants to replace them.",
       "effects": [
         {
           "type": "transform-all-into-token",
@@ -165038,7 +165038,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "TIME_TRAVEL",
-      "description": "Summon two 2/2 Treants. They gain +1/+1 for each friendly Treant that died this game.",
+      "description": "Create two 2/2 Treants. They gain +1/+1 for each friendly Treant that died this game.",
       "effects": [
         {
           "type": "summon",
@@ -165096,7 +165096,7 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "CATACLYSM",
-      "description": "Shatter. Summon two 2/2 Treants. Give your minions \"Deathrattle: Summon a 2/2 Treant.\"",
+      "description": "Shatter. Create two 2/2 Treants. Give your minions \"Deathrattle: Create a 2/2 Treant.\"",
       "effects": [
         {
           "type": "summon",
@@ -165145,7 +165145,7 @@
       "cardClass": "druid",
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Summon three 2/3 Elementals with Taunt. If your board is full, give your minions +1/+1.",
+      "description": "Create three 2/3 Elementals with Taunt. If your board is full, give your minions +1/+1.",
       "effects": [
         {
           "type": "summon",
@@ -165189,7 +165189,7 @@
       "cardClass": "druid",
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Summon two 2/5 Beetles with Taunt. Costs (3) less if you have Spell Damage.",
+      "description": "Create two 2/5 Beetles with Taunt. Costs (3) less if you have Spell Damage.",
       "effects": [
         {
           "type": "summon",
@@ -165228,7 +165228,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "TIME_TRAVEL",
-      "description": "Get 2 random Holy spells. Restore 6 Health to your hero.",
+      "description": "Get 2 random Holy spells. Gain 6 life.",
       "effects": [
         {
           "type": "conjure-random",
@@ -165276,7 +165276,7 @@
       "cardClass": "paladin",
       "rarity": "common",
       "set": "SPACE",
-      "description": "Summon two 2/2 Marines with Taunt. Your next Starship launch costs (2) less.",
+      "description": "Create two 2/2 Marines with Taunt. Your next Starship launch costs (2) less.",
       "effects": [
         {
           "type": "summon",
@@ -165347,7 +165347,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "CATACLYSM",
-      "description": "Summon two 4/2 Drakes. Give your minions +1 Attack and Divine Shield.",
+      "description": "Create two 4/2 Drakes. Give your minions +1 Attack and Divine Shield.",
       "effects": [
         {
           "type": "summon",
@@ -165487,7 +165487,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "CATACLYSM",
-      "description": "Summon four 1/1 Silver Hand Recruits and add one to your hand.",
+      "description": "Create four 1/1 Silver Hand Recruits and add one to your hand.",
       "effects": [
         {
           "type": "summon",
@@ -165544,7 +165544,7 @@
       "cardClass": "paladin",
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "description": "Restore 4 Health. Summon 3 Silver Hand Recruits. Draw 2 cards.",
+      "description": "Restore 4 Health. Create 3 Silver Hand Recruits. Draw 2 cards.",
       "effects": [
         {
           "type": "heal",
@@ -165634,7 +165634,7 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "DRAGONS",
-      "description": "Give a minion \"Deathrattle: Summon 2 copies of this.\"",
+      "description": "Give a minion \"Deathrattle: Create 2 copies of this.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -165672,7 +165672,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Summon a random 4-Cost minion and give it Taunt.",
+      "description": "Create a random 4-Cost minion and give it Taunt.",
       "effects": [
         {
           "type": "summon-random",
@@ -165749,7 +165749,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "CATACLYSM",
-      "description": "Give a friendly minion +2/+3. Summon a copy of it.",
+      "description": "Give a friendly minion +2/+3. Create a copy of it.",
       "effects": [
         {
           "type": "buff",
@@ -165905,7 +165905,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "BLACK_TEMPLE",
-      "description": "Give a minion +1/+2. Summon a copy of it.",
+      "description": "Give a minion +1/+2. Create a copy of it.",
       "effects": [
         {
           "type": "buff",
@@ -165927,7 +165927,7 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "description": "Summon two random 3-Cost minions.",
+      "description": "Create two random 3-Cost minions.",
       "effects": [
         {
           "type": "summon-random",
@@ -165976,7 +165976,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "WILD_WEST",
-      "description": "Summon 10 1/1 Lightbugs with Lifesteal.",
+      "description": "Create 10 1/1 Lightbugs with Lifesteal.",
       "effects": [
         {
           "type": "summon",
@@ -166046,7 +166046,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Deal 3 damage to all minions. Summon a 6/6 Popstar.",
+      "description": "Deal 3 damage to all minions. Create a 6/6 Popstar.",
       "effects": [
         {
           "type": "damage-all-minions",
@@ -166149,7 +166149,7 @@
       "keywords": [
         "secret"
       ],
-      "description": "Secret: After a minion attacks your hero, summon a copy of it with Stealth.",
+      "description": "Secret: After a minion attacks your hero, create a copy of it with Stealth.",
       "secret": {
         "trigger": "enemy-attack",
         "condition": {
@@ -166176,7 +166176,7 @@
       "keywords": [
         "secret"
       ],
-      "description": "Secret: After your opponent casts a spell, summon a 3/4 Spider with Stealth.",
+      "description": "Secret: After your opponent casts a spell, create a 3/4 Spider with Stealth.",
       "secret": {
         "trigger": "enemy-spell-cast",
         "effects": [
@@ -166204,7 +166204,7 @@
       "keywords": [
         "secret"
       ],
-      "description": "Secret: After your opponent casts a spell, summon a 3/4 Spider with Stealth.",
+      "description": "Secret: After your opponent casts a spell, create a 3/4 Spider with Stealth.",
       "secret": {
         "trigger": "enemy-spell-cast",
         "effects": [
@@ -166251,7 +166251,7 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "EMERALD_DREAM",
-      "description": "Return a friendly minion to your hand to summon a 4/4 Spider with Stealth.",
+      "description": "Return a friendly minion to your hand to create a 4/4 Spider with Stealth.",
       "effects": [
         {
           "type": "bounce",
@@ -166317,7 +166317,7 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Summon a 1/1 Spitter with Stealth and Poisonous. Kindred: Do it again.",
+      "description": "Create a 1/1 Spitter with Stealth and Poisonous. Kindred: Do it again.",
       "effects": [
         {
           "type": "summon",
@@ -166420,7 +166420,7 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "EXPERT1",
-      "description": "Deal 2 damage to the enemy hero. Combo: Return this to your hand next turn.",
+      "description": "Deal 2 damage to target opponent. Combo: Return this to your hand next turn.",
       "effects": [
         {
           "type": "damage",
@@ -166442,7 +166442,7 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "VANILLA",
-      "description": "Deal 2 damage to the enemy hero. Combo: Return this to your hand next turn.",
+      "description": "Deal 2 damage to target opponent. Combo: Return this to your hand next turn.",
       "effects": [
         {
           "type": "damage",
@@ -166485,7 +166485,7 @@
       "cardClass": "shaman",
       "rarity": "common",
       "set": "BLACK_TEMPLE",
-      "description": "Give a minion +2/+2. If it's a Totem, summon a copy of it.",
+      "description": "Give a minion +2/+2. If it's a Totem, create a copy of it.",
       "effects": [
         {
           "type": "buff",
@@ -166536,7 +166536,7 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "CATACLYSM",
-      "description": "Transform all friendly minions into ones that cost (1) more. They summon the originals when they die.",
+      "description": "Transform all friendly minions into ones that cost (1) more. They create the originals when they die.",
       "effects": [
         {
           "type": "transform-friendly-costplus",
@@ -166608,7 +166608,7 @@
       "rarity": "common",
       "set": "CATACLYSM",
       "overload": 1,
-      "description": "Summon a random 3, 2, and 1-Cost minion. Overload: (1)",
+      "description": "Create a random 3, 2, and 1-Cost minion. Overload: (1)",
       "effects": [
         {
           "type": "summon-random",
@@ -166649,7 +166649,7 @@
       "cardClass": "shaman",
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "description": "Transform a minion into a random one that costs (1) more, then summon a copy of it.",
+      "description": "Transform a minion into a random one that costs (1) more, then create a copy of it.",
       "effects": [
         {
           "type": "transform",
@@ -166689,7 +166689,7 @@
       "rarity": "epic",
       "set": "WONDERS",
       "overload": 1,
-      "description": "Summon all FIVE?! basic Totems. Overload: (1)",
+      "description": "Create all FIVE?! basic Totems. Overload: (1)",
       "effects": [
         {
           "type": "summon-random-basic-totem",
@@ -166725,13 +166725,13 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "At the end of your turn, summon a 3/4 Elemental that Freezes. Lasts 3 turns.",
+      "description": "At the end of your turn, create a 3/4 Elemental that Freezes. Lasts 3 turns.",
       "effects": [
         {
           "type": "emblem",
           "name": "Wildpaw Cavern",
           "turns": 3,
-          "description": "At the end of your turn, summon a 3/4 Elemental.",
+          "description": "At the end of your turn, create a 3/4 Elemental.",
           "ongoing": {
             "on": "turn-end",
             "effects": [
@@ -166790,7 +166790,7 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "DRAGONS",
-      "description": "Summon two 2/3 Spirit Wolves with Taunt. If you've Invoked twice, give them +3/+3.",
+      "description": "Create two 2/3 Spirit Wolves with Taunt. If you've Invoked twice, give them +3/+3.",
       "effects": [
         {
           "type": "summon",
@@ -166832,7 +166832,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "description": "Summon two 2/4 Elementals with Taunt and \"Deathrattle: Gain 4 Armor\".",
+      "description": "Create two 2/4 Elementals with Taunt and \"Deathrattle: Gain 4 Armor\".",
       "effects": [
         {
           "type": "summon",
@@ -166934,7 +166934,7 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Summon a random 3-Cost Beast, Dragon, Elemental, and Murloc.",
+      "description": "Create a random 3-Cost Beast, Dragon, Elemental, and Murloc.",
       "effects": [
         {
           "type": "summon-random",
@@ -166966,7 +166966,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Deal 3 damage. Summon that many 2/1 Sizzling Cinders.",
+      "description": "Deal 3 damage. Create that many 2/1 Sizzling Cinders.",
       "effects": [
         {
           "type": "damage",
@@ -166990,7 +166990,7 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "STORMWIND",
-      "description": "Summon four random 5-Cost minions. Make them 2/2.",
+      "description": "Create four random 5-Cost minions. Make them 2/2.",
       "effects": [
         {
           "type": "summon-random",
@@ -167007,7 +167007,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "OG",
-      "description": "Spend all your Mana. Summon that many 1/1 Tentacles.",
+      "description": "Spend all your Mana. Create that many 1/1 Tentacles.",
       "effects": [
         {
           "type": "spend-mana-summon",
@@ -167023,7 +167023,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "description": "Restore 12 Health to your hero. For the next 2 turns, deal 3 damage to your hero.",
+      "description": "Gain 12 life. For the next 2 turns, deal 3 damage to your hero.",
       "effects": [
         {
           "type": "heal",
@@ -167154,7 +167154,7 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Give a friendly minion \"Deathrattle: Summon two copies of this minion that are Dormant for 2 turns.\"",
+      "description": "Give a friendly minion \"Deathrattle: Create two copies of this minion that are Dormant for 2 turns.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -167234,7 +167234,7 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "STORMWIND",
-      "description": "Give a minion +1/+1. When it dies, summon an endless Dreadsteed.",
+      "description": "Give a minion +1/+1. When it dies, create an endless Dreadsteed.",
       "effects": [
         {
           "type": "buff",
@@ -167372,7 +167372,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "DALARAN",
-      "description": "Summon 1 1/1 Imp. (Upgrades each turn!)",
+      "description": "Create 1 1/1 Imp. (Upgrades each turn!)",
       "effects": [
         {
           "type": "summon",
@@ -167409,7 +167409,7 @@
       "cardClass": "warrior",
       "rarity": "epic",
       "set": "TIME_TRAVEL",
-      "description": "Summon a random minion from your deck. Summon a 5/5 Tiger with Stealth for your opponent.",
+      "description": "Summon a random minion from your deck. Create a 5/5 Tiger with Stealth for your opponent.",
       "effects": [
         {
           "type": "summon-from-deck",
@@ -167436,7 +167436,7 @@
       "cardClass": "warrior",
       "rarity": "rare",
       "set": "TROLL",
-      "description": "Summon a random minion with Cost equal to your Armor (up to 10).",
+      "description": "Create a random minion with Cost equal to your Armor (up to 10).",
       "effects": [
         {
           "type": "summon-random-armor-cost",
@@ -167452,7 +167452,7 @@
       "cardClass": "warrior",
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "description": "Summon a random 6, 4, and 2-Cost Taunt minion.",
+      "description": "Create a random 6, 4, and 2-Cost Taunt minion.",
       "effects": [
         {
           "type": "summon-random",
@@ -167476,7 +167476,7 @@
       "cardClass": "warrior",
       "rarity": "rare",
       "set": "LOOTAPALOOZA",
-      "description": "Summon one 5/5 Mithril Golem.",
+      "description": "Create one 5/5 Mithril Golem.",
       "effects": [
         {
           "type": "summon",
@@ -167496,7 +167496,7 @@
       "rarity": "epic",
       "set": "TITANS",
       "tribe": "Fire",
-      "description": "Summon five 1/1 Val'kyr with Rush.",
+      "description": "Create five 1/1 Val'kyr with Rush.",
       "effects": [
         {
           "type": "summon",
@@ -167754,7 +167754,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Summon a random 5-Cost minion.",
+      "description": "Create a random 5-Cost minion.",
       "effects": [
         {
           "type": "summon-random",
@@ -168051,7 +168051,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Draw 2 minions. For each that costs (5) or more, summon a 2/3 Spirit with Taunt.",
+      "description": "Draw 2 minions. For each that costs (5) or more, create a 2/3 Spirit with Taunt.",
       "effects": [
         {
           "type": "draw",
@@ -168067,7 +168067,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "Discover an 8-Cost minion. Summon and Freeze it.",
+      "description": "Discover an 8-Cost minion. Create and Freeze it.",
       "effects": [
         {
           "type": "summon-random",
@@ -168083,7 +168083,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "CORE",
-      "description": "Discover an 8-Cost minion. Summon and Freeze it.",
+      "description": "Discover an 8-Cost minion. Create and Freeze it.",
       "effects": [
         {
           "type": "summon-random",
@@ -168100,7 +168100,7 @@
       "rarity": "epic",
       "set": "TIME_TRAVEL",
       "overload": 3,
-      "description": "Rewind Summon 12 Mana worth of random minions. Overload: (3)",
+      "description": "Rewind Create 12 Mana worth of random minions. Overload: (3)",
       "effects": [
         {
           "type": "summon-random",
@@ -168117,7 +168117,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "Shuffle four Rifts into your deck. They summon a 3/3 Dread Imp when drawn.",
+      "description": "Shuffle four Rifts into your deck. They create a 3/3 Dread Imp when drawn.",
       "effects": [
         {
           "type": "shuffle-tokens-into-deck",
@@ -168180,7 +168180,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "At the end of your turn, destroy your lowest Attack minion to summon a 4/4 Shade. Lasts 3 turns.",
+      "description": "At the end of your turn, destroy your lowest Attack minion to create a 4/4 Shade. Lasts 3 turns.",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -168309,7 +168309,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "TITANS",
-      "description": "Deal 5 damage randomly split among all enemy minions. Restore 2 Health to your hero for each killed.",
+      "description": "Deal 5 damage randomly split among all enemy minions. Gain 2 life for each killed.",
       "effects": [
         {
           "type": "random-damage",
@@ -168420,7 +168420,7 @@
       "cardClass": "death_knight",
       "rarity": "rare",
       "set": "TIME_TRAVEL",
-      "description": "Rewind\nSummon four 3/2 Shades. They each gain two random Bonus Effects.",
+      "description": "Rewind\nCreate four 3/2 Shades. They each gain two random Bonus Effects.",
       "effects": [
         {
           "type": "summon",
@@ -168624,13 +168624,13 @@
       "cardClass": "druid",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "At the end of your turn, summon a 2/2 Wolf with Stealth. Lasts 3 turns.",
+      "description": "At the end of your turn, create a 2/2 Wolf with Stealth. Lasts 3 turns.",
       "effects": [
         {
           "type": "emblem",
           "name": "Frostwolf Kennels",
           "turns": 3,
-          "description": "At the end of your turn, summon a 2/2 Wolf with Stealth.",
+          "description": "At the end of your turn, create a 2/2 Wolf with Stealth.",
           "ongoing": {
             "on": "turn-end",
             "effects": [
@@ -168754,7 +168754,7 @@
       "cardClass": "druid",
       "rarity": "common",
       "set": "WILD_WEST",
-      "description": "Gain three empty Mana Crystals. Any that can't fit summon a 3/7 Elemental with Taunt.",
+      "description": "Gain three empty Mana Crystals. Any that can't fit create a 3/7 Elemental with Taunt.",
       "effects": [
         {
           "type": "gain-empty-mana-crystal",
@@ -168900,10 +168900,10 @@
       "rarity": "epic",
       "set": "SCHOLOMANCE",
       "tribe": "Nature",
-      "description": "Choose One - Summon four 2/2 Treant Totems; or Overload: (2) to summon them with Rush.",
+      "description": "Choose One - Create four 2/2 Treant Totems; or Overload: (2) to create them with Rush.",
       "choices": [
         {
-          "text": "Summon four 2/2 Treant Totems",
+          "text": "Create four 2/2 Treant Totems",
           "effects": [
             {
               "type": "summon",
@@ -168916,7 +168916,7 @@
           ]
         },
         {
-          "text": "Overload: (2) to summon them with Rush",
+          "text": "Overload: (2) to create them with Rush",
           "overload": 2,
           "effects": [
             {
@@ -168960,7 +168960,7 @@
       "cardClass": "druid",
       "rarity": "epic",
       "set": "TROLL",
-      "description": "Summon a random Beast from your hand and give it Rush.",
+      "description": "Create a random Beast from your hand and give it Rush.",
       "effects": [
         {
           "type": "summon-from-hand",
@@ -168978,7 +168978,7 @@
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
       "tribe": "Nature",
-      "description": "Draw 3 cards. Summon a Plant with Taunt and stats equal to your hand size.",
+      "description": "Draw 3 cards. Create a Plant with Taunt and stats equal to your hand size.",
       "effects": [
         {
           "type": "draw",
@@ -169002,7 +169002,7 @@
       "rarity": "common",
       "set": "TITANS",
       "tribe": "Nature",
-      "description": "Give your minions +2/+2. Costs (1) less for each Treant you've summoned this game.",
+      "description": "Give your minions +2/+2. Costs (1) less for each Treant you've created this game.",
       "effects": [
         {
           "type": "buff",
@@ -169154,7 +169154,7 @@
       "cardClass": "hunter",
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
-      "description": "Summon two different Dormant Wildseeds. Make your Wildseeds awaken 1 turn sooner.",
+      "description": "Create two different Dormant Wildseeds. Make your Wildseeds awaken 1 turn sooner.",
       "effects": [
         {
           "type": "summon",
@@ -169198,7 +169198,7 @@
       "cardClass": "hunter",
       "rarity": "rare",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Summon a random 5-Cost Beast. Shuffle 2 spells into your deck that do it again when drawn.",
+      "description": "Create a random 5-Cost Beast. Shuffle 2 spells into your deck that do it again when drawn.",
       "effects": [
         {
           "type": "summon-random",
@@ -169238,7 +169238,7 @@
       "cardClass": "hunter",
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Discover a Beast from your deck and summon it. Manathirst (10): Also summon a copy of it.",
+      "description": "Discover a Beast from your deck and summon it. Manathirst (10): Also create a copy of it.",
       "effects": [
         {
           "type": "summon-from-deck-tribe",
@@ -169308,7 +169308,7 @@
       "cardClass": "hunter",
       "rarity": "rare",
       "set": "WILD_WEST",
-      "description": "Give a minion +3/+3 and a random Bonus Effect. When it dies, summon a Chameleon.",
+      "description": "Give a minion +3/+3 and a random Bonus Effect. When it dies, create a Chameleon.",
       "effects": [
         {
           "type": "buff",
@@ -169468,7 +169468,7 @@
       "cardClass": "mage",
       "rarity": "rare",
       "set": "STORMWIND",
-      "description": "Deal 8 damage to an enemy minion. Summon a Remnant with stats equal to the excess damage.",
+      "description": "Deal 8 damage to an enemy minion. Create a Remnant with stats equal to the excess damage.",
       "effects": [
         {
           "type": "damage-minion",
@@ -169492,7 +169492,7 @@
       "cardClass": "mage",
       "rarity": "rare",
       "set": "WILD_WEST",
-      "description": "Secret: When your turn starts, summon a copy of your highest Cost minion.",
+      "description": "Secret: When your turn starts, create a copy of your highest Cost minion.",
       "secret": {
         "trigger": "enemy-turn-end",
         "effects": [
@@ -169594,7 +169594,7 @@
       "cardClass": "mage",
       "rarity": "epic",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Prepare. Summon an 8-Cost minion. If you've cast 3 other spells this turn, do it again.",
+      "description": "Prepare. Create an 8-Cost minion. If you've cast 3 other spells this turn, do it again.",
       "effects": [
         {
           "type": "summon-random",
@@ -169902,7 +169902,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "ALTERAC_VALLEY",
-      "description": "Summon a 5/5 Defender with Taunt. If your hero was healed this turn, summon another.",
+      "description": "Create a 5/5 Defender with Taunt. If your hero was healed this turn, create another.",
       "effects": [
         {
           "type": "summon",
@@ -169980,7 +169980,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "PLACEHOLDER_202204",
-      "description": "Give +1 Attack to Silver Hand Recruits you summon this game.",
+      "description": "Give +1 Attack to Silver Hand Recruits you create this game.",
       "effects": [
         {
           "type": "embolden-recruits",
@@ -170018,7 +170018,7 @@
       "cardClass": "paladin",
       "rarity": "common",
       "set": "CORE",
-      "description": "Summon a 4/8, 2/4, and 1/2 Elemental with Taunt.",
+      "description": "Create a 4/8, 2/4, and 1/2 Elemental with Taunt.",
       "effects": [
         {
           "type": "summon",
@@ -170063,7 +170063,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Discover a Legendary minion to summon. Set its stats to 10/10.",
+      "description": "Discover a Legendary minion to create. Set its stats to 10/10.",
       "effects": [
         {
           "type": "discover",
@@ -170101,7 +170101,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "DRAGONS",
-      "description": "Sidequest: Take no damage for a turn.\nReward: Summon a 3/6 minion with Taunt.",
+      "description": "Sidequest: Take no damage for a turn.\nReward: Create a 3/6 minion with Taunt.",
       "keywords": [
         "quest"
       ],
@@ -170171,7 +170171,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "SPACE",
-      "description": "Summon three 3/3 Draenei with Divine Shield. If this costs (0), give them Rush.",
+      "description": "Create three 3/3 Draenei with Divine Shield. If this costs (0), give them Rush.",
       "effects": [
         {
           "type": "summon",
@@ -170258,7 +170258,7 @@
       "cardClass": "paladin",
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "description": "Repeatable Quest: Summon 6 Murlocs.\nReward: Murlocs you summon gain +1/+1.",
+      "description": "Repeatable Quest: Create 6 Murlocs.\nReward: Murlocs you create gain +1/+1.",
       "keywords": [
         "quest"
       ],
@@ -170303,7 +170303,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "description": "Give a friendly minion +4/+4 and \"Deathrattle: Summon a random 4-Cost minion.\"",
+      "description": "Give a friendly minion +4/+4 and \"Deathrattle: Create a random 4-Cost minion.\"",
       "effects": [
         {
           "type": "buff",
@@ -170331,7 +170331,7 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "At the end of your turn, summon a random 6-Cost minion. Lasts 3 turns.",
+      "description": "At the end of your turn, create a random 6-Cost minion. Lasts 3 turns.",
       "ongoing": {
         "on": "turn-end",
         "turns": 3,
@@ -170351,7 +170351,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "TROLL",
-      "description": "Discover a 6-Cost minion. Summon it with Taunt and Divine Shield.",
+      "description": "Discover a 6-Cost minion. Create it with Taunt and Divine Shield.",
       "effects": [
         {
           "type": "discover",
@@ -170475,7 +170475,7 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "description": "Summon three 5/5 Pirates. Costs (1) less for each spell you've cast on characters this game.",
+      "description": "Create three 5/5 Pirates. Costs (1) less for each spell you've cast on characters this game.",
       "effects": [
         {
           "type": "summon",
@@ -170556,7 +170556,7 @@
       "rarity": "legendary",
       "set": "BLACK_TEMPLE",
       "tribe": "Shadow",
-      "description": "Summon copies of enemy minions. They attack their copies.",
+      "description": "Create copies of enemy minions. They attack their copies.",
       "effects": [
         {
           "type": "summon-enemy-copy-attack-original",
@@ -170590,7 +170590,7 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "WILD_WEST",
-      "description": "Discover a minion from your deck. Restore Health to your hero equal to its Cost.",
+      "description": "Discover a minion from your deck. Gain life equal to its Cost.",
       "effects": [
         {
           "type": "discover",
@@ -170712,7 +170712,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Discover and summon a minion that costs (8) or more. It goes Dormant for 2 turns.",
+      "description": "Discover and create a minion that costs (8) or more. It goes Dormant for 2 turns.",
       "effects": [
         {
           "type": "discover",
@@ -170777,7 +170777,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "STORMWIND",
-      "description": "Give a minion +4/+7 and Taunt. When it dies, summon an Elekk.",
+      "description": "Give a minion +4/+7 and Taunt. When it dies, create an Elekk.",
       "effects": [
         {
           "type": "buff",
@@ -170996,7 +170996,7 @@
       "cardClass": "priest",
       "rarity": "legendary",
       "set": "UNGORO",
-      "description": "Quest: Summon 6 Deathrattle minions.\nReward: Amara, Warden of Hope.",
+      "description": "Quest: Create 6 Deathrattle minions.\nReward: Amara, Warden of Hope.",
       "keywords": [
         "quest"
       ],
@@ -171023,7 +171023,7 @@
       "rarity": "epic",
       "set": "ISLAND_VACATION",
       "tribe": "Shadow",
-      "description": "Summon a copy of an enemy minion. If you have 20 or less Health, destroy the original.",
+      "description": "Create a copy of an enemy minion. If you have 20 or less Health, destroy the original.",
       "effects": [
         {
           "type": "summon-enemy-minion-copy",
@@ -171052,7 +171052,7 @@
       "rarity": "rare",
       "set": "ISLAND_VACATION",
       "tribe": "Shadow",
-      "description": "Each player summons their highest Cost minion that died this game.",
+      "description": "Each player creates their highest Cost minion that died this game.",
       "effects": [
         {
           "type": "resurrect-highest-died"
@@ -171473,7 +171473,7 @@
       "cardClass": "rogue",
       "rarity": "epic",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Summon two random 4-Cost minions. Costs (1) less for each card you've drawn this turn.",
+      "description": "Create two random 4-Cost minions. Costs (1) less for each card you've drawn this turn.",
       "effects": [
         {
           "type": "summon-random",
@@ -171507,7 +171507,7 @@
       "cardClass": "rogue",
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
-      "description": "Summon two 3/3 Pirates with Stealth. Put a 'Sunken Vessel' on the bottom of your deck.",
+      "description": "Create two 3/3 Pirates with Stealth. Put a 'Sunken Vessel' on the bottom of your deck.",
       "effects": [
         {
           "type": "summon",
@@ -171576,7 +171576,7 @@
       "rarity": "common",
       "set": "PLACEHOLDER_202204",
       "overload": 2,
-      "description": "Choose a friendly minion. Summon 3 copies of it. Overload: (2)",
+      "description": "Choose a friendly minion. Create 3 copies of it. Overload: (2)",
       "effects": [
         {
           "type": "fill-board-copies-of-target",
@@ -171628,7 +171628,7 @@
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
       "overload": 2,
-      "description": "Summon a random 6, 5, 4, and 3-Cost minion. Overload: (2)",
+      "description": "Create a random 6, 5, 4, and 3-Cost minion. Overload: (2)",
       "effects": [
         {
           "type": "summon-random",
@@ -171656,7 +171656,7 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Discover two 8-Cost minions to summon with Taunt and Elusive.",
+      "description": "Discover two 8-Cost minions to create with Taunt and Elusive.",
       "effects": [
         {
           "type": "discover",
@@ -171697,7 +171697,7 @@
       "cardClass": "shaman",
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Summon a copy of each minion in your hand. They attack random enemy minions, then die.",
+      "description": "Create a copy of each minion in your hand. They attack random enemy minions, then die.",
       "effects": [
         {
           "type": "summon-hand-copy"
@@ -171782,7 +171782,7 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "BOOMSDAY",
-      "description": "Summon copies of all Demons you control.",
+      "description": "Create copies of all Demons you control.",
       "effects": [
         {
           "type": "summon-copies-of-board",
@@ -171992,7 +171992,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "PLACEHOLDER_202204",
-      "description": "Summon a 3/5 Shadow with Taunt.",
+      "description": "Create a 3/5 Shadow with Taunt.",
       "effects": [
         {
           "type": "summon",
@@ -172014,7 +172014,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "description": "Summon a Fiend with Taunt and stats equal to your hand size.",
+      "description": "Create a Fiend with Taunt and stats equal to your hand size.",
       "effects": [
         {
           "type": "summon-hand-size-stats",
@@ -172033,7 +172033,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "WILD_WEST",
-      "description": "Deal 6 damage. Summon a random 6-Cost minion. Destroy the bottom 6 cards of your deck.",
+      "description": "Deal 6 damage. Create a random 6-Cost minion. Destroy the bottom 6 cards of your deck.",
       "effects": [
         {
           "type": "damage",
@@ -172145,7 +172145,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "SPACE",
-      "description": "In 2 turns, summon two 6/6 Demons with Taunt.",
+      "description": "In 2 turns, create two 6/6 Demons with Taunt.",
       "effects": [
         {
           "type": "delay-to-turn-start",
@@ -172173,7 +172173,7 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Restore Health to your hero.",
+      "description": "Gain life.",
       "effects": [
         {
           "type": "heal",
@@ -172389,7 +172389,7 @@
       "cardClass": "warrior",
       "rarity": "epic",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Summon the highest Cost minion from your hand, then deal 5 damage to it.",
+      "description": "Create the highest Cost minion from your hand, then deal 5 damage to it.",
       "effects": [
         {
           "type": "summon-from-hand",
@@ -172409,7 +172409,7 @@
       "cardClass": "warrior",
       "rarity": "epic",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Choose a friendly Mech. Summon a copy of it that attacks a random enemy, then dies.",
+      "description": "Choose a friendly Mech. Create a copy of it that attacks a random enemy, then dies.",
       "effects": [
         {
           "type": "summon-copy-attack-die",
@@ -172525,7 +172525,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "GVG",
-      "description": "Deal 3 damage to a minion. Summon three 1/1 Imps.",
+      "description": "Deal 3 damage to a minion. Create three 1/1 Imps.",
       "effects": [
         {
           "type": "damage-minion",
@@ -172584,7 +172584,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Summon a copy of a minion.",
+      "description": "Create a copy of a minion.",
       "effects": [
         {
           "type": "copy-minion",
@@ -172600,7 +172600,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "KARA",
-      "description": "Summon a 1/1 Candle, 2/2 Broom, and 3/3 Teapot.",
+      "description": "Create a 1/1 Candle, 2/2 Broom, and 3/3 Teapot.",
       "effects": [
         {
           "type": "summon",
@@ -172730,7 +172730,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "SPACE",
-      "description": "Restore 8 Health to your hero.",
+      "description": "Gain 8 life.",
       "effects": [
         {
           "type": "heal",
@@ -172767,7 +172767,7 @@
       "cardClass": "warlock",
       "rarity": "legendary",
       "set": "STORMWIND",
-      "description": "Questline: Take 12 damage on your turns. Reward: Deal 3 damage to the enemy hero.",
+      "description": "Questline: Take 12 damage on your turns. Reward: Deal 3 damage to target opponent.",
       "keywords": [
         "quest"
       ],
@@ -173057,7 +173057,7 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "WONDERS",
-      "description": "Choose a card in your opponent's hand and shuffle it into their deck. Summon a Jade Golem.",
+      "description": "Choose a card in your opponent's hand and shuffle it into their deck. Create a Jade Golem.",
       "effects": [
         {
           "type": "shuffle-enemy-hand-card-choose"
@@ -173097,7 +173097,7 @@
       "cardClass": "paladin",
       "rarity": "legendary",
       "set": "WILD_WEST",
-      "description": "Get eight 3/2 Bandits with Bonus Effects. Any that can't fit in your hand are summoned instead.",
+      "description": "Get eight 3/2 Bandits with Bonus Effects. Any that can't fit in your hand are created instead.",
       "effects": [
         {
           "type": "add-token",
@@ -173149,7 +173149,7 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "WILD_WEST",
-      "description": "Discard your lowest Cost card. Summon two 3/3 Tram Cars with Rush.",
+      "description": "Discard your lowest Cost card. Create two 3/3 Tram Cars with Rush.",
       "effects": [
         {
           "type": "discard-lowest",
