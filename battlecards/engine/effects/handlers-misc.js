@@ -2654,3 +2654,124 @@ register('hero-damage-cap-until-next', ({ state, pi }, e) => {
 	p.heroDamageCap = e.value || 1;
 	p.heroDamageCapUntilTurn = state.turnNumber + state.players.length;
 });
+
+// ---------- quick one-offs (hard-list recovery) ----------
+register('destroy-parity-attack-minions', ({ state }, e) => {
+	// Against All Odds: destroy ALL odd-Attack (or even-Attack) minions
+	const want = e.parity === 'even' ? 0 : 1;
+	for (const pl of state.players) {
+		for (const c of [...pl.board]) {
+			if (c.type !== 'creature' || isDead(c)) continue;
+			if (Math.abs(c.attack || 0) % 2 === want) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+		}
+	}
+	sweepDeaths(state);
+});
+
+register('tribe-steal-stats', ({ state, pi, chosenCreature }, e) => {
+	// Wither: each friendly minion of the tribe steals 1 Attack and Health
+	// from the chosen minion (which can die from it)
+	const t = chosenCreature();
+	if (!t) return;
+	for (const u of state.players[pi].board) {
+		if (u.type !== 'creature' || isDead(u) || u === t) continue;
+		if (!(u.tribe || '').includes(e.tribe || 'Undead')) continue;
+		if ((t.attack || 0) > 0) { t.attack--; u.attack++; }
+		if (t.maxHealth > 0) { t.maxHealth--; u.maxHealth++; }
+		emit(state, { type: 'buff', uid: u.uid, attack: u.attack, hp: hp(u) });
+	}
+	emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+	sweepDeaths(state);
+});
+
+register('steal-health-from-all', ({ state, chosenCreature }, e) => {
+	// Shadow Word: Devour — the chosen minion steals 1 Health from ALL others
+	const t = chosenCreature();
+	if (!t) return;
+	let stolen = 0;
+	for (const pl of state.players) {
+		for (const c of pl.board) {
+			if (c === t || c.type !== 'creature' || isDead(c)) continue;
+			c.maxHealth -= (e.value || 1); stolen += (e.value || 1);
+			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		}
+	}
+	if (stolen) { t.maxHealth += stolen; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+	sweepDeaths(state);
+});
+
+register('reveal-deck-weapon-damage-all', ({ state, pi }) => {
+	// Deadly Arsenal: reveal a weapon from your deck (it stays), deal its
+	// Attack to all minions
+	const p = state.players[pi];
+	const wid = p.deck.find(id => state.cardsById[id]?.type === 'weapon');
+	if (!wid) return;
+	const w = state.cardsById[wid];
+	emit(state, { type: 'reveal', player: pi, cardId: wid, name: w.name });
+	execEffects(state, pi, [{ type: 'damage-all-minions', value: w.attack || 0 }], null, null);
+});
+
+register('all-players-extra-turn-draw', ({ state }, e) => {
+	// Dew Process: for the rest of the game, EVERY player draws extra at turn
+	// start (rides the existing extraTurnDraw counter from Elixir of Vim)
+	for (const pl of state.players) pl.extraTurnDraw = (pl.extraTurnDraw || 0) + (e.value || 1);
+});
+
+register('spend-all-mana-hero-attack', ({ state, pi }) => {
+	// Forbidden Fruit A: spend all your Mana, gain that much Attack this turn
+	const p = state.players[pi];
+	const spent = availableMana(p);
+	spendMana(p, spent);
+	emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max });
+	p.heroTempAttack = (p.heroTempAttack || 0) + spent;
+	emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, p) });
+});
+
+register('spend-all-mana-armor', ({ state, pi }, e) => {
+	// Forbidden Fruit B: spend all your Mana, gain twice that much Armor
+	const p = state.players[pi];
+	const spent = availableMana(p);
+	spendMana(p, spent);
+	emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max });
+	gainArmor(state, pi, spent * (e.mult || 2));
+});
+
+register('blood-boil-infect', ({ state, pi, enemies }) => {
+	// Blood Boil: infect all enemy minions, and install the permanent tick
+	// (an enchantment with no turnsLeft — enchantments fire turn-end triggers)
+	for (const o of enemies) for (const c of state.players[o].board) {
+		if (c.type === 'creature' && !isDead(c)) c._bloodBoil = pi;
+	}
+	const ench = instantiate({ id: 'token_blood_boil', name: 'Blood Boil', type: 'enchantment', cost: 0, token: true, description: 'At the end of your turns, infected minions take 2 damage. Lifesteal.' }, pi);
+	ench.zone = 'enchantment';
+	ench.ongoing = { on: 'turn-end', effects: [{ type: 'blood-boil-tick' }] };
+	state.players[pi].enchantments.push(ench);
+	emit(state, { type: 'enchant', player: pi, card: ench });
+});
+
+register('blood-boil-tick', ({ state, pi }) => {
+	let healed = 0;
+	for (const pl of state.players) {
+		for (const c of [...pl.board]) {
+			if (c.type !== 'creature' || isDead(c) || c._bloodBoil !== pi) continue;
+			healed += damageCreature(state, c, 2, null);
+		}
+	}
+	if (healed > 0) healHero(state, pi, healed); // Lifesteal
+	sweepDeaths(state);
+});
+
+register('summon-entree-for-enemy', ({ state, pi, enemyHero }) => {
+	// Food Fight: create a 0/4 Entrée for target opponent; when it dies, YOU
+	// summon a minion from your deck (the owner rides on the instance)
+	const o = enemyHero();
+	if (o == null) return;
+	const def = { id: 'token_entree', name: 'Entrée', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 0, health: 4, keywords: ['deathrattle'], deathrattle: [{ type: 'entree-rattle' }], description: "Deathrattle: The cook summons a minion from their deck." };
+	const sc = summon(state, o, def);
+	if (sc) sc._entreeOwner = pi;
+});
+
+register('entree-rattle', ({ state, pi, source }) => {
+	const owner = source && source._entreeOwner != null ? source._entreeOwner : (opponentsOf(state, pi)[0] ?? pi);
+	execEffects(state, owner, [{ type: 'summon-from-deck' }], null, null);
+});

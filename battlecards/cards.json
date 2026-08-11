@@ -173807,6 +173807,177 @@
           "target": "friendly-creature"
         }
       ]
+    },
+    {
+      "id": "against_all_odds",
+      "name": "Against All Odds",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "THE_BARRENS",
+      "cardClass": "priest",
+      "type": "sorcery",
+      "description": "Destroy ALL odd-Attack minions.",
+      "effects": [
+        {
+          "type": "destroy-parity-attack-minions",
+          "parity": "odd"
+        }
+      ]
+    },
+    {
+      "id": "wither",
+      "name": "Wither",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "RETURN_OF_THE_LICH_KING",
+      "cardClass": "druid",
+      "type": "sorcery",
+      "description": "Choose a minion. Each friendly Undead steals 1 Attack and Health from it.",
+      "effects": [
+        {
+          "type": "tribe-steal-stats",
+          "tribe": "Undead",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "shadow_word_devour",
+      "name": "Shadow Word: Devour",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "ALTERAC_VALLEY",
+      "cardClass": "priest",
+      "type": "sorcery",
+      "description": "Choose a minion. It steals 1 Health from ALL other minions.",
+      "effects": [
+        {
+          "type": "steal-health-from-all",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "deadly_arsenal",
+      "name": "Deadly Arsenal",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "GILNEAS",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Reveal a weapon from your deck. Deal its Attack to all minions.",
+      "effects": [
+        {
+          "type": "reveal-deck-weapon-damage-all"
+        }
+      ]
+    },
+    {
+      "id": "dew_process",
+      "name": "Dew Process",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "PLACEHOLDER_202204",
+      "cardClass": "druid",
+      "type": "sorcery",
+      "description": "For the rest of the game, players draw an extra card at the start of their turn.",
+      "effects": [
+        {
+          "type": "all-players-extra-turn-draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "melomania",
+      "name": "Melomania",
+      "cost": 0,
+      "rarity": "epic",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "shaman",
+      "type": "sorcery",
+      "description": "Each time you play a minion this turn, add a random Shaman spell to your hand.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "turns": 1,
+          "name": "Melomania",
+          "description": "Playing a minion adds a random Shaman spell to your hand.",
+          "ongoing": {
+            "on": "summoned",
+            "effects": [
+              {
+                "type": "conjure-random",
+                "cardType": "spell",
+                "cardClass": "shaman"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "forbidden_fruit",
+      "name": "Forbidden Fruit",
+      "cost": 0,
+      "rarity": "rare",
+      "set": "TITANS",
+      "cardClass": "druid",
+      "type": "sorcery",
+      "description": "Spend all your Mana. Choose One - Gain that much Attack this turn; or twice as much Armor.",
+      "choices": [
+        {
+          "text": "Gain that much Attack this turn",
+          "effects": [
+            {
+              "type": "spend-all-mana-hero-attack"
+            }
+          ]
+        },
+        {
+          "text": "Gain twice that much Armor",
+          "effects": [
+            {
+              "type": "spend-all-mana-armor",
+              "mult": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "blood_boil",
+      "name": "Blood Boil",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "PATH_OF_ARTHAS",
+      "cardClass": "death_knight",
+      "type": "sorcery",
+      "keywords": [
+        "lifesteal"
+      ],
+      "description": "Lifesteal. Infect all enemy minions. At the end of your turns, they take 2 damage.",
+      "effects": [
+        {
+          "type": "blood-boil-infect"
+        }
+      ]
+    },
+    {
+      "id": "food_fight",
+      "name": "Food Fight",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "ISLAND_VACATION",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Create a 0/4 Entrée for target opponent. When it dies, summon a minion from your deck.",
+      "effects": [
+        {
+          "type": "summon-entree-for-enemy"
+        }
+      ]
     }
   ]
 }
