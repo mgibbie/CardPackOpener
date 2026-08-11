@@ -173166,6 +173166,182 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dun_baldar_bridge",
+      "name": "Dun Baldar Bridge",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "After you create a minion, give it +2/+2. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Dun Baldar Bridge",
+          "turns": 3,
+          "description": "After you create a minion, give it +2/+2.",
+          "ongoing": {
+            "on": "summoned",
+            "effects": [
+              {
+                "type": "buff-minion",
+                "attack": 2,
+                "health": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "crusader_aura",
+      "name": "Crusader Aura",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "LEGACY",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "Whenever a friendly minion attacks, give it +2/+1. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Crusader Aura",
+          "turns": 3,
+          "description": "Whenever a friendly minion attacks, give it +2/+1.",
+          "ongoing": {
+            "on": "friendly-attacks",
+            "effects": [
+              {
+                "type": "buff-minion",
+                "attack": 2,
+                "health": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sandfury_aura",
+      "name": "Sandfury Aura",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "CATACLYSM",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "Your minions' end of turn effects trigger twice. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Sandfury Aura",
+          "turns": 3,
+          "description": "Your minions' end of turn effects trigger twice.",
+          "endTurnTwice": true
+        }
+      ]
+    },
+    {
+      "id": "celestial_aura",
+      "name": "Celestial Aura",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "SPACE",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "While you have exactly 1 minion in play, its Attack and Health are 10. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Celestial Aura",
+          "turns": 3,
+          "description": "While you have exactly 1 minion in play, its Attack and Health are 10.",
+          "aura": {
+            "soloSet": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "reinforcement_aura",
+      "name": "Reinforcement Aura",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "At the end of your turn, summon a minion from your deck that costs (2) or less. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Reinforcement Aura",
+          "turns": 3,
+          "description": "At the end of your turn, summon a minion from your deck that costs (2) or less.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "summon-from-deck",
+                "maxCost": 2
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "chronological_aura",
+      "name": "Chronological Aura",
+      "cost": 5,
+      "rarity": "common",
+      "set": "TIME_TRAVEL",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "description": "At the end of your turn, create a 3/5 Dragon with Taunt. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Chronological Aura",
+          "turns": 3,
+          "description": "At the end of your turn, create a 3/5 Dragon with Taunt.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 3,
+                "health": 5,
+                "name": "Timewarped Dragon",
+                "keywords": [
+                  "taunt"
+                ],
+                "tribe": "Dragon"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "snowfall_graveyard",
+      "name": "Snowfall Graveyard",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "cardClass": "rogue",
+      "type": "sorcery",
+      "description": "Your Deathrattles trigger twice. Lasts 3 turns.",
+      "effects": [
+        {
+          "type": "timed-aura",
+          "name": "Snowfall Graveyard",
+          "turns": 3,
+          "description": "Your Deathrattles trigger twice.",
+          "rattleDouble": true
+        }
+      ]
     }
   ]
 }

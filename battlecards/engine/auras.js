@@ -23,6 +23,16 @@ export function recomputeAuras(state) {
 			const granted = new Set();
 			for (const src of [...sources, ...globalSources]) {
 				const a = src.aura;
+				// Celestial Aura: while its controller has EXACTLY ONE minion, that
+				// minion's Attack and Health become N (a set, not a bonus — the delta
+				// can be negative and lapses the moment a second minion arrives)
+				if (a.soloSet != null) {
+					const alive = state.players[src.controller].board.filter(x => x.type === 'creature' && !isDead(x));
+					if (alive.length !== 1 || alive[0] !== c) continue;
+					aBonus += a.soloSet - (c.attack - c.auraAttack);
+					hBonus += a.soloSet - (c.maxHealth - c.auraHealth);
+					continue;
+				}
 				if (a.others && src === c) continue;
 				if (a.scope === 'enemies' && src.controller === c.controller) continue; // Band of Scarabs
 				if (a.scope === 'friendly' && src.controller !== c.controller) continue;

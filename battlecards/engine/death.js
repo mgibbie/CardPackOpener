@@ -163,7 +163,8 @@ export function runDeathrattle(state, pi, card) {
 		execEffects(state, pi, card.deathrattle, null, card);
 		// Totem of the Dead (dungeon treasure / Azun passive) or a live Rivendare
 		if (state.players[pi].deathrattlesTwice
-			|| state.players[pi].board.some(c => c.rattleDouble && !isDead(c))) {
+			|| state.players[pi].board.some(c => c.rattleDouble && !isDead(c))
+			|| state.players[pi].enchantments.some(en => en.rattleDouble)) { // Snowfall Graveyard (timed)
 			execEffects(state, pi, card.deathrattle, null, card);
 		}
 	}

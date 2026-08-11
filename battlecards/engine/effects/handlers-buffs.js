@@ -649,10 +649,16 @@ register('buff-random-hand', ({ state, pi, target, source, enemies, scaled, hm, 
 
 register('timed-aura', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// "Your minions have ... Lasts N turns": a friendly team aura enchantment that
-			// ticks down at each of your turn-ends (existing p.enchantments turnsLeft loop)
+			// ticks down at each of your turn-ends (existing p.enchantments turnsLeft loop).
+			// Beyond stat auras it can carry a trigger (ongoing — enchantments are
+			// fireOngoing sources) and timed flags: rattleDouble (Snowfall Graveyard),
+			// endTurnTwice (Sandfury Aura).
 			const ench = instantiate({ id: 'token_timed_aura', name: e.name || 'Aura', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
 			ench.zone = 'enchantment';
 			ench.aura = e.aura;
+			if (e.ongoing) ench.ongoing = JSON.parse(JSON.stringify(e.ongoing)); // clone — trigCount/spent must not leak into the shared def
+			if (e.rattleDouble) ench.rattleDouble = true;
+			if (e.endTurnTwice) ench.endTurnTwice = true;
 			ench.turnsLeft = e.turns || 3;
 			state.players[pi].enchantments.push(ench);
 			recomputeAuras(state);

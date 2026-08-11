@@ -102,6 +102,12 @@ export function fireOngoing(state, pi, when, ctx = {}) {
 			const fx = trig.effects;
 			if (trig.once) { if (trig === card.ongoing) card.ongoing = null; else trig.spent = true; } // one-shots
 			runSecretEffects(state, pi, fx, { ...ctx, self: card });
+			// Sandfury Aura: your minions' end-of-turn effects trigger twice
+			// (board minions only, never one-shots — those already spent above)
+			if (when === 'turn-end' && card.zone === 'board' && !trig.once
+				&& p.enchantments.some(en => en.endTurnTwice)) {
+				runSecretEffects(state, pi, fx, { ...ctx, self: card });
+			}
 		}
 	}
 }
