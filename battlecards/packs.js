@@ -176,7 +176,9 @@ const hud = {
 	gold: document.getElementById('gold'),
 	hint: document.getElementById('hint'),
 	toast: document.getElementById('toast'),
+	nextBtn: document.getElementById('next-btn'),
 };
+hud.nextBtn.addEventListener('click', startOpen);
 
 function updateHud() {
 	updateStack();
@@ -192,8 +194,19 @@ function updateHud() {
 		const left = cardMeshes.filter(c => !c.flipped).length;
 		hud.hint.textContent = left ? `Click cards to reveal (${left} left)` : 'Hover a card to see what it does';
 	} else if (phase === 'done') {
-		hud.hint.textContent = '[Z / click] open another pack  ·  hover a card for details';
+		// linger on the pulls — only the button (or Z, or clicking the pack
+		// itself) opens the next one, never a stray click
+		const canOpen = MP_ON ? mpPacks > 0 : Col.getGold() >= Col.PACK_PRICE;
+		hud.hint.textContent = canOpen
+			? 'Take your time — hover a card for details'
+			: MP_ON ? 'That was your last pack — finish a dungeon run (win or lose) to earn more!'
+				: 'Out of gold — win matches to earn more!';
+		hud.nextBtn.hidden = !canOpen;
+		if (canOpen) hud.nextBtn.textContent = MP_ON
+			? `Open another pack (${mpPacks} left)`
+			: `Open another pack — ${Col.PACK_PRICE} gold`;
 	} else hud.hint.textContent = '';
+	if (phase !== 'done') hud.nextBtn.hidden = true;
 }
 
 async function startOpen() {
@@ -271,8 +284,25 @@ const pointer = new THREE.Vector2();
 renderer.domElement.style.touchAction = 'none';
 
 // a plain tap: flip the next card, or open a pack on the idle/done screen
+function hitPack(e) {
+	if (!pack || !pack.visible) return false;
+	pointer.x = (e.clientX / innerWidth) * 2 - 1;
+	pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	return raycaster.intersectObjects([pack, ...stackMeshes]).length > 0;
+}
+
 function tapAction(e) {
-	if (phase === 'idle' || phase === 'done') { startOpen(); return; }
+	if (phase === 'idle') { startOpen(); return; }
+	if (phase === 'done') {
+		// no involuntary next pack: only a deliberate click on the pack (or the
+		// button / Z key) tears the next one — clicking a card inspects it
+		if (hitPack(e)) { startOpen(); return; }
+		const c = hoveredCard(e);
+		if (c && c.flipped) showTip(c.def, e.clientX, e.clientY);
+		else hideTip();
+		return;
+	}
 	if (phase !== 'revealing') return;
 	const c = hoveredCard(e);
 	if (c) flip(c.mesh.userData.idx);

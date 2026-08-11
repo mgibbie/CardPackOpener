@@ -1026,9 +1026,9 @@ export function makeBackTexture() {
 	ctx.arc(W / 2, H / 2, 120, 0, Math.PI * 2);
 	ctx.stroke();
 	ctx.fillStyle = '#c9b8ff';
-	ctx.font = 'bold 44px Georgia';
+	ctx.font = 'bold 28px Georgia'; // small enough to sit comfortably inside the circle
 	ctx.textAlign = 'center';
-	ctx.fillText('MAGEPUNK', W / 2, H / 2 + 14);
+	ctx.fillText('MAGEPUNK', W / 2, H / 2 + 10);
 	const tex = new THREE.CanvasTexture(c);
 	tex.colorSpace = THREE.SRGBColorSpace;
 	return tex;
