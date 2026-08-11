@@ -285,11 +285,15 @@ renderer.domElement.style.touchAction = 'none';
 
 // a plain tap: flip the next card, or open a pack on the idle/done screen
 function hitPack(e) {
-	if (!pack || !pack.visible) return false;
+	// during 'done' the torn pack is gone (pack === null) — the banked stack on
+	// the left is the clickable "next pack" until startOpen respawns one
+	const targets = [...stackMeshes];
+	if (pack && pack.visible) targets.push(pack);
+	if (!targets.length) return false;
 	pointer.x = (e.clientX / innerWidth) * 2 - 1;
 	pointer.y = -(e.clientY / innerHeight) * 2 + 1;
 	raycaster.setFromCamera(pointer, camera);
-	return raycaster.intersectObjects([pack, ...stackMeshes]).length > 0;
+	return raycaster.intersectObjects(targets).length > 0;
 }
 
 function tapAction(e) {
