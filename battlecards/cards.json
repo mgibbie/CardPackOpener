@@ -173744,6 +173744,69 @@
           }
         }
       ]
+    },
+    {
+      "id": "conductivity",
+      "name": "Conductivity",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "TITANS",
+      "cardClass": "shaman",
+      "type": "sorcery",
+      "description": "The next spell you cast this turn also targets adjacent minions.",
+      "effects": [
+        {
+          "type": "conductivity-next-spell"
+        }
+      ]
+    },
+    {
+      "id": "urchin_spines",
+      "name": "Urchin Spines",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "cardClass": "hunter",
+      "type": "sorcery",
+      "description": "Your spells this turn are Poisonous.",
+      "effects": [
+        {
+          "type": "spells-poisonous-turn"
+        }
+      ]
+    },
+    {
+      "id": "solid_alibi",
+      "name": "Solid Alibi",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "cardClass": "mage",
+      "type": "sorcery",
+      "description": "Until your next turn, your hero can only take 1 damage at a time.",
+      "effects": [
+        {
+          "type": "hero-damage-cap-until-next",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "judgment",
+      "name": "Judgment",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "ESCAPEFROM_VIOLET_HOLD",
+      "cardClass": "paladin",
+      "type": "sorcery",
+      "prepare": true,
+      "description": "Prepare. Choose a friendly minion. Set all minions' stats equal to that minion's.",
+      "effects": [
+        {
+          "type": "set-all-stats-to-target",
+          "target": "friendly-creature"
+        }
+      ]
     }
   ]
 }

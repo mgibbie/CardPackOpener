@@ -77,6 +77,9 @@ export function damageCreature(state, target, amount, source) {
 		// (2 damage at the end of its controller's turn).
 		if (has(source, KW.POISONOUS)) target.poisoned = true;
 	}
+	// Urchin Spines: your spells this turn are Poisonous (flag scoped to the
+	// resolving spell in runSpell — damage branches don't all thread source)
+	if (state._spellPoisonActive && amount > 0) target.poisoned = true;
 	// Commanding Shout: friendly creatures can't drop below 1 health this turn
 	const owner = state.players[target.controller];
 	if (owner?.minionsSurviveTurn === state.turnNumber && target.damage >= target.maxHealth) {
@@ -110,6 +113,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
 	if (p.weapon?.doubleHeroDamage) amount *= 2; // Cursed Blade: double all damage dealt to your hero
+	if (p.heroDamageCapUntilTurn != null && state.turnNumber < p.heroDamageCapUntilTurn && amount > (p.heroDamageCap || 1)) amount = p.heroDamageCap || 1; // Solid Alibi: only 1 damage at a time until your next turn
 	if (p.weapon?.absorbHeroDamageToWeapon && amount > 0) { // Bulwark of Azzinoth: the weapon loses 1 Durability instead
 		p.weapon.durability -= 1;
 		emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability });

@@ -1702,6 +1702,10 @@ export function resolveSac(state, uid) {
 }
 
 export function runSpell(state, pi, card, target, choice) {
+	// Urchin Spines: while one of YOUR spells is resolving, creature damage it
+	// deals inflicts Poisoned (state-scoped — many damage branches pass no source)
+	const _spines = state.players[pi].spellsPoisonousTurn === state.turnNumber;
+	if (_spines) state._spellPoisonActive = true;
 	// Farseer Nobundo's Galaxy Lens: the next spell is absorbed — a copy returns to hand
 	if (state.players[pi].galaxyLens && state.cardsById[card.id] && !card.token) {
 		state.players[pi].galaxyLens = false;
@@ -1725,6 +1729,19 @@ export function runSpell(state, pi, card, target, choice) {
 	// Lei Flamepaw: while it's on your board, your spells cast an extra time
 	else if (state.players[pi].board.some(c => c.spellEcho && !isDead(c))) {
 		execEffects(state, pi, liveEffectsOf(state, pi, card, choice), target, card);
+	}
+	// Conductivity: your next minion-targeted spell this turn also hits the
+	// target's board neighbors (consumed by the first spell it applies to)
+	if (target && target.type === 'creature' && state.players[pi].conductivityTurn === state.turnNumber) {
+		state.players[pi].conductivityTurn = -1;
+		const ct = findCreature(state, target.uid);
+		if (ct) {
+			const ob = state.players[ct.controller].board;
+			const ti = ob.indexOf(ct);
+			for (const n of [ob[ti - 1], ob[ti + 1]]) {
+				if (n && !isDead(n)) execEffects(state, pi, liveEffectsOf(state, pi, card, choice), { type: 'creature', uid: n.uid, player: n.controller }, card);
+			}
+		}
 	}
 	// DH Relics: after resolving, "improve your future Relics" (a played Relic bumps the counter once)
 	if (card.relic) state.players[pi].relicImprove = (state.players[pi].relicImprove || 0) + 1;
@@ -1756,6 +1773,7 @@ export function runSpell(state, pi, card, target, choice) {
 		}
 		case 'regroup': drawCards(state, pi, state.players[pi].diedThisTurn); break;
 	}
+	if (_spines) state._spellPoisonActive = false;
 }
 
 // ---------- spell schools ----------

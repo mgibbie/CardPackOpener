@@ -1454,3 +1454,17 @@ const _h_attach = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 register('attach', _h_attach);
 register('attach-curse', _h_attach); // shared or-branch handler
 
+
+register('set-all-stats-to-target', ({ state, pi, chosenCreature }) => {
+	// Judgment: set ALL minions' stats equal to the chosen minion's current stats
+	const t = chosenCreature();
+	if (!t) return;
+	const a = t.attack, h = hp(t);
+	for (const pl of state.players) {
+		for (const c of pl.board) {
+			if (c.type !== 'creature' || isDead(c)) continue;
+			c.attack = a; c.maxHealth = h; c.damage = 0; c.tempHealth = 0;
+			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		}
+	}
+});

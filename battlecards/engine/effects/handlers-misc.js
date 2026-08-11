@@ -2634,3 +2634,23 @@ register('immolate-burn', ({ state, pi, enemies }) => {
 		for (const c of burned) { toGraveyard(state, o, c); emit(state, { type: 'discard', player: o, card: c }); }
 	}
 });
+
+// ---------- next-spell modifiers family (hard-list recovery) ----------
+register('conductivity-next-spell', ({ state, pi }) => {
+	// Conductivity: your next minion-targeted spell this turn also hits the
+	// target's neighbors (consumed in runSpell)
+	state.players[pi].conductivityTurn = state.turnNumber;
+});
+
+register('spells-poisonous-turn', ({ state, pi }) => {
+	// Urchin Spines: your spells this turn are Poisonous (damaged minions are
+	// Poisoned — the damageCreature rider reads this flag)
+	state.players[pi].spellsPoisonousTurn = state.turnNumber;
+});
+
+register('hero-damage-cap-until-next', ({ state, pi }, e) => {
+	// Solid Alibi: until your next turn, your hero can only take N damage at a time
+	const p = state.players[pi];
+	p.heroDamageCap = e.value || 1;
+	p.heroDamageCapUntilTurn = state.turnNumber + state.players.length;
+});
