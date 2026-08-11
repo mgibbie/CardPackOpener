@@ -1,4 +1,4 @@
-// Local dev server for /magepunktest: static files + the real /api/mp function
+// Local dev server for the account system: static files + the real /api/mp function
 // handler. Production runs on Cloudflare with a D1 binding (env.MP_DB); here we
 // hand the handler the same interface backed by a local SQLite file, so it runs
 // the identical code and the identical SQL.
@@ -70,4 +70,4 @@ createServer(async (req, res) => {
 	if (!existsSync(p)) { res.writeHead(404); res.end('not found'); return; }
 	res.writeHead(200, { 'content-type': MIME[extname(p)] || 'application/octet-stream' });
 	res.end(readFileSync(p));
-}).listen(port, () => console.log(`mp dev server: http://localhost:${port}/magepunktest/`));
+}).listen(port, () => console.log(`mp dev server: http://localhost:${port}/login/`));

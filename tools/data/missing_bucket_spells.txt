@@ -1,0 +1,146 @@
+MISSING SPELLS referenced by real Dalaran Heist + Tombs of Terror card BUCKETS
+(each verified: a real HS collectible spell, currently NOT in battlecards/cards.json)
+Total: 125
+
+### DRUID (13)
+  (1) Floop's Glorious Gloop [NATURE]   set:BOOMSDAY
+  (1) Worthy Expedition   set:ULDUM
+  (2) Crystalsong Portal [NATURE]   set:DALARAN
+  (2) Earthen Scales [NATURE]   set:PLACEHOLDER_202204
+  (3) Blessing of the Ancients [NATURE]   set:DALARAN
+  (3) Ferocious Howl   set:GILNEAS
+  (4) Branching Paths   set:LOOTAPALOOZA
+  (4) Juicy Psychmelon [NATURE]   set:BOOMSDAY
+  (5) Living Mana [NATURE]   set:UNGORO
+  (6) Dark Wispers [NATURE]   set:GVG
+  (6) Spreading Plague [NATURE]   set:PLACEHOLDER_202204
+  (7) Overflow [NATURE]   set:ULDUM
+  (8) The Forest's Aid [NATURE]   set:DALARAN
+
+### HUNTER (10)
+  (0) Stampede   set:UNGORO
+  (2) Call Pet   set:GVG
+  (2) Revenge of the Wild   set:TROLL
+  (3) Master's Call   set:PLACEHOLDER_202204
+  (3) Nine Lives   set:DALARAN
+  (4) Dire Frenzy   set:PLACEHOLDER_202204
+  (6) Unleash the Beast   set:DALARAN
+  (7) Crushing Walls   set:LOOTAPALOOZA
+  (7) Flark's Boom-Zooka   set:BOOMSDAY
+  (8) Call of the Wild   set:CORE
+
+### MAGE (6)
+  (1) Ray of Frost [FROST]   set:DALARAN
+  (3) Conjurer's Calling [ARCANE]   set:DALARAN
+  (4) Echo of Medivh [ARCANE]   set:GVG
+  (5) Deck of Wonders [ARCANE]   set:LOOTAPALOOZA
+  (7) Luna's Pocket Galaxy [ARCANE]   set:BOOMSDAY
+  (8) Power of Creation [ARCANE]   set:DALARAN
+
+### PALADIN (19)
+  (0) Forbidden Healing [HOLY]   set:OG
+  (1) Avenge [HOLY]   set:PLACEHOLDER_202204
+  (1) Competitive Spirit   set:TGT
+  (1) Getaway Kodo   set:GANGS
+  (1) The Last Kaleidosaur   set:UNGORO
+  (2) Lesser Pearl Spellstone [HOLY]   set:LOOTAPALOOZA
+  (2) Lightforged Blessing [HOLY]   set:DALARAN
+  (2) Rebuke   set:GILNEAS
+  (3) Seal of Champions [HOLY]   set:TGT
+  (3) Small-Time Recruits   set:GANGS
+  (4) Call to Arms   set:LOOTAPALOOZA
+  (4) Prismatic Lens   set:BOOMSDAY
+  (5) Duel!   set:DALARAN
+  (5) Shrink Ray   set:BOOMSDAY
+  (5) Spikeridged Steed   set:CORE
+  (6) Pharaoh's Blessing [HOLY]   set:ULDUM
+  (7) Kangor's Endless Army   set:BOOMSDAY
+  (8) Tip the Scales   set:ULDUM
+  (10) Anyfin Can Happen   set:LOE
+
+### PRIEST (27)
+  (0) Lazul's Scheme [SHADOW]   set:DALARAN
+  (1) Cloning Device   set:BOOMSDAY
+  (1) Hallucination   set:SPACE
+  (1) Light of the Naaru [HOLY]   set:GVG
+  (2) Confuse [SHADOW]   set:TGT
+  (2) Purify [HOLY]   set:KARA
+  (2) Seance [SHADOW]   set:TROLL
+  (3) Extra Arms   set:BOOMSDAY
+  (3) Surrender to Madness [SHADOW]   set:TROLL
+  (3) Twilight's Call [SHADOW]   set:LOOTAPALOOZA
+  (3) Unidentified Elixir [HOLY]   set:LOOTAPALOOZA
+  (3) Velen's Chosen [HOLY]   set:GVG
+  (3) Vivid Nightmare [SHADOW]   set:GILNEAS
+  (4) Eternal Servitude [SHADOW]   set:PLACEHOLDER_202204
+  (4) Shadow Word: Horror [SHADOW]   set:OG
+  (4) Unsleeping Soul [SHADOW]   set:DALARAN
+  (5) Dragonfire Potion [FIRE]   set:GANGS
+  (5) Excavated Evil [SHADOW]   set:LOE
+  (5) Holy Water [HOLY]   set:GILNEAS
+  (5) Mass Hysteria [SHADOW]   set:TROLL
+  (6) Entomb   set:LOE
+  (6) Lightbomb [HOLY]   set:PLACEHOLDER_202204
+  (7) Free From Amber   set:UNGORO
+  (7) Lesser Diamond Spellstone [HOLY]   set:PLACEHOLDER_202204
+  (7) Psychic Scream [SHADOW]   set:LOOTAPALOOZA
+  (9) Mass Resurrection [HOLY]   set:DALARAN
+  (9) Plague of Death [SHADOW]   set:ULDUM
+
+### ROGUE (17)
+  (1) Daring Escape   set:DALARAN
+  (1) Doomerang   set:PLACEHOLDER_202204
+  (2) Cheat Death   set:LOOTAPALOOZA
+  (2) Envenom Weapon [NATURE]   set:UNGORO
+  (2) Evasion   set:LOOTAPALOOZA
+  (2) Pick Pocket   set:GILNEAS
+  (2) Razorpetal Volley [NATURE]   set:UNGORO
+  (2) Sudden Betrayal   set:LOOTAPALOOZA
+  (3) Beneath the Grounds   set:TGT
+  (3) Raiding Party   set:PLACEHOLDER_202204
+  (4) Academic Espionage   set:BOOMSDAY
+  (4) Shadow of Death [SHADOW]   set:ULDUM
+  (4) Tinker's Sharpsword Oil   set:GVG
+  (4) Vendetta   set:DALARAN
+  (5) Lesser Onyx Spellstone [SHADOW]   set:LOOTAPALOOZA
+  (6) Cannon Barrage   set:TROLL
+  (6) Thistle Tea   set:OG
+
+### SHAMAN (15)
+  (1) Evolve [NATURE]   set:OG
+  (1) Finders Keepers   set:GANGS
+  (1) Unstable Evolution [NATURE]   set:LOOTAPALOOZA
+  (2) Big Bad Voodoo [SHADOW]   set:TROLL
+  (2) Devolve [NATURE]   set:GANGS
+  (2) Elementary Reaction [NATURE]   set:BOOMSDAY
+  (3) Elemental Destruction [NATURE]   set:TGT
+  (3) Healing Rain [NATURE]   set:CORE
+  (3) Healing Wave [NATURE]   set:TGT
+  (3) Plague of Murlocs   set:ULDUM
+  (3) Primal Talismans   set:LOOTAPALOOZA
+  (6) Eureka!   set:BOOMSDAY
+  (6) The Storm Bringer [NATURE]   set:BOOMSDAY
+  (7) Everyfin is Awesome   set:LOE
+  (7) Lesser Sapphire Spellstone [NATURE]   set:LOOTAPALOOZA
+
+### WARLOCK (6)
+  (1) Dark Possession [SHADOW]   set:GILNEAS
+  (2) Demonic Project [SHADOW]   set:BOOMSDAY
+  (4) Dark Bargain [SHADOW]   set:TGT
+  (5) Cataclysm [FIRE]   set:LOOTAPALOOZA
+  (6) Darkest Hour [SHADOW]   set:DALARAN
+  (8) Demonbolt [SHADOW]   set:TROLL
+
+### WARRIOR (12)
+  (1) Omega Assembly   set:BOOMSDAY
+  (2) Bring It On!   set:PLACEHOLDER_202204
+  (2) Explore Un'Goro   set:UNGORO
+  (2) Stolen Goods   set:GANGS
+  (2) Sweeping Strikes   set:DALARAN
+  (2) Weapons Project   set:BOOMSDAY
+  (4) Sudden Genesis [NATURE]   set:UNGORO
+  (5) Plague of Wrath   set:PLACEHOLDER_202204
+  (6) Gather Your Party   set:LOOTAPALOOZA
+  (6) Unidentified Shield   set:LOOTAPALOOZA
+  (7) Crush   set:GVG
+  (9) The Boomship   set:BOOMSDAY

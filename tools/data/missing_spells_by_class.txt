@@ -1,0 +1,986 @@
+### MAGE — 72 missing spells
+  (1) Discovery of Magic
+  (1) Elemental Allies
+  (1) Go with the Flow
+  (1) Jaina's Gift
+  (1) Learn Draconic
+  (1) Open the Waygate
+  (1) Raid the Sky Temple
+  (1) Ray of Frost [FROST]
+  (1) Sorcerer's Gambit
+  (1) The Forbidden Sequence
+  (1) The Skeleton Key [ARCANE]
+  (1) Wildfire [FIRE]
+  (2) Book of Specters [SHADOW]
+  (2) Deck of Lunacy
+  (2) Gifts of Azshara [ARCANE]
+  (2) Rewind [ARCANE]
+  (2) Shield Battery
+  (2) Smoldering Grove [FIRE]
+  (2) Stellar Balance [ARCANE]
+  (2) Unearthed Artifacts
+  (2) Vast Wisdom
+  (2) Void Scripture [SHADOW]
+  (3) Azerite Vein
+  (3) Burndown [FIRE]
+  (3) Buy One, Get One Freeze [FROST]
+  (3) Conjurer's Calling [ARCANE]
+  (3) Lightshow [ARCANE]
+  (3) Polymorph: Jellyfish [ARCANE]
+  (3) Scorching Winds [FIRE]
+  (3) Shattering Blast [FROST]
+  (3) Solid Alibi [FROST]
+  (3) Summoning Ward
+  (4) Arcane Brilliance [ARCANE]
+  (4) Echo of Medivh [ARCANE]
+  (4) Pocket Dimension [ARCANE]
+  (4) Ring Toss
+  (4) Volume Up [ARCANE]
+  (5) Arcane Overflow [ARCANE]
+  (5) Deck of Wonders [ARCANE]
+  (5) Deep Breath [FIRE]
+  (5) Dragon's Fury [FIRE]
+  (5) Manufacturing Error
+  (5) Refreshing Spring Water
+  (5) Rolling Fireball [FIRE]
+  (5) Sindragosa's Triumph [ARCANE]
+  (5) Solar Flare [FIRE]
+  (5) Star Power [ARCANE]
+  (5) Tribute Dance
+  (5) Wisdom of Norgannon [ARCANE]
+  (6) Disco at the End of Time
+  (6) The Arcanomicon [ARCANE]
+  (6) Under the Sea
+  (7) Anomalize [ARCANE]
+  (7) Code Violet [ARCANE]
+  (7) Elemental Inspiration
+  (7) Greater Arcane Missiles [ARCANE]
+  (7) Huddle Up
+  (7) Luna's Pocket Galaxy [ARCANE]
+  (7) Mass Polymorph [ARCANE]
+  (7) Relic of Kings
+  (7) Yogg in the Box [SHADOW]
+  (8) Glacial Mysteries [FROST]
+  (8) Grand Finale [FIRE]
+  (8) Power of Creation [ARCANE]
+  (8) Supernova [FIRE]
+  (8) Tsunami [FROST]
+  (9) Rune of the Archmage
+  (10) Drakefire Amulet [FIRE]
+  (10) Iceblood Tower
+  (10) Puzzle Box of Yogg-Saron [SHADOW]
+  (10) Spellweaver's Brilliance [ARCANE]
+  (10) The Galactic Projection Orb [ARCANE]
+
+### PRIEST — 124 missing spells
+  (0) Forbidden Shaping [SHADOW]
+  (0) Forbidden Words [SHADOW]
+  (0) Gravity Lapse
+  (0) Illuminate [HOLY]
+  (0) Lazul's Scheme [SHADOW]
+  (0) Topsy Turvy
+  (0) Undying Allies [SHADOW]
+  (1) Activate the Obelisk
+  (1) Anduin's Gift
+  (1) Animate Dead [SHADOW]
+  (1) Awaken the Makers
+  (1) Call of the Grave [SHADOW]
+  (1) Cloning Device
+  (1) Hallucination
+  (1) Light of the Naaru [HOLY]
+  (1) Power Word: Glory [HOLY]
+  (1) Psionic Probe [SHADOW]
+  (1) Reach Equilibrium
+  (1) Seek Guidance
+  (1) Serpent Wig
+  (1) Shadow Word: Devour [SHADOW]
+  (1) Theft Accusation [SHADOW]
+  (1) Undeath Sentence [SHADOW]
+  (1) Whispers of the Deep [SHADOW]
+  (1) Wings of Eternity
+  (2) Confuse [SHADOW]
+  (2) Creation Protocol [HOLY]
+  (2) Embrace the Shadow [SHADOW]
+  (2) Funnel Cake
+  (2) Holy Springwater [HOLY]
+  (2) Insight [SHADOW]
+  (2) Lightspeed [HOLY]
+  (2) Orbital Halo [HOLY]
+  (2) Power Chord: Synchronize [HOLY]
+  (2) Power Word: Feast
+  (2) Purify [HOLY]
+  (2) Seance [SHADOW]
+  (2) Shadow Word: Forbid [SHADOW]
+  (2) Shadowform [SHADOW]
+  (2) Smoldering Ascent [FIRE]
+  (2) Twilight Torrent [SHADOW]
+  (3) Amulet of Undying [SHADOW]
+  (3) Cease to Exist
+  (3) Clear Conscience [HOLY]
+  (3) Convert
+  (3) Dark Prophecy [SHADOW]
+  (3) Deliverance [HOLY]
+  (3) Extra Arms
+  (3) Fly Off the Shelves
+  (3) Funhouse Mirror [SHADOW]
+  (3) Grace of the Highfather [HOLY]
+  (3) Horn of Wrathion
+  (3) Hot Coals [FIRE]
+  (3) Identity Theft [SHADOW]
+  (3) Intertwined Fate
+  (3) Light of the New Moon [ARCANE]
+  (3) Love Everlasting [HOLY]
+  (3) Palm Reading [SHADOW]
+  (3) Pendant of Earth [NATURE]
+  (3) Rest in Peace [SHADOW]
+  (3) Shadow Chord: Distort [SHADOW]
+  (3) Stormpike Aid Station
+  (3) Surrender to Madness [SHADOW]
+  (3) The Stars Align [ARCANE]
+  (3) Twilight's Call [SHADOW]
+  (3) Unidentified Elixir [HOLY]
+  (3) Velen's Chosen [HOLY]
+  (3) Vivid Nightmare [SHADOW]
+  (3) Wish of the New Moon [ARCANE]
+  (4) Auspicious Spirits [SHADOW]
+  (4) Azsharan Ritual
+  (4) Boon of the Ascended [HOLY]
+  (4) Cannibalize [SHADOW]
+  (4) Delayed Product
+  (4) Drown [SHADOW]
+  (4) Eternal Servitude [SHADOW]
+  (4) Fight Over Me [SHADOW]
+  (4) Grave Digging [SHADOW]
+  (4) Grave Rune [SHADOW]
+  (4) Gravedawn Sunbloom [HOLY]
+  (4) Gravedawn Voidbulb [SHADOW]
+  (4) Greater Healing Potion [HOLY]
+  (4) Invasive Shadeleaf [SHADOW]
+  (4) Schism [SHADOW]
+  (4) Serenity [HOLY]
+  (4) Shadow Word: Horror [SHADOW]
+  (4) Shadow Word: Ruin [SHADOW]
+  (4) Tram Heist
+  (4) Unsleeping Soul [SHADOW]
+  (5) Against All Odds [HOLY]
+  (5) Clean the Scene [HOLY]
+  (5) Dragonfire Potion [FIRE]
+  (5) Excavated Evil [SHADOW]
+  (5) Hold Them Off! [HOLY]
+  (5) Holy Water [HOLY]
+  (5) Mass Hysteria [SHADOW]
+  (5) Medivh's Triumph [HOLY]
+  (5) Psyche Split [SHADOW]
+  (5) Ritual of the New Moon [ARCANE]
+  (5) Shadow Word: Undeath [SHADOW]
+  (5) Shattered Reflections
+  (5) Swarm of Lightbugs
+  (5) Switcheroo
+  (5) Unshackle Soul [SHADOW]
+  (6) Embrace Darkness [SHADOW]
+  (6) Entomb
+  (6) Harmonic Pop [HOLY]
+  (6) Initiation [SHADOW]
+  (6) Lightbomb [HOLY]
+  (6) Moonwell
+  (6) Resuscitate [SHADOW]
+  (6) Sensory Deprivation [SHADOW]
+  (7) Behemoth Mask
+  (7) Elekk Mount
+  (7) Free From Amber
+  (7) Lesser Diamond Spellstone [HOLY]
+  (7) Psychic Scream [SHADOW]
+  (7) Repackage
+  (7) Soul Mirror [SHADOW]
+  (8) Power Word: Fortitude [HOLY]
+  (8) Whirlpool [NATURE]
+  (9) Mass Resurrection [HOLY]
+  (9) Plague of Death [SHADOW]
+  (10) Story of Amara
+
+### WARLOCK — 128 missing spells
+  (0) Cursed Catacombs [FEL]
+  (0) Forbidden Ritual [SHADOW]
+  (0) Healthstone [FEL]
+  (1) Abduction Ray [SHADOW]
+  (1) Announce Darkness [SHADOW]
+  (1) Conflagrate [FIRE]
+  (1) Consume
+  (1) Curse of Agony [SHADOW]
+  (1) Curse of Flesh [SHADOW]
+  (1) Dark Possession [SHADOW]
+  (1) Escape the Underfel
+  (1) Felosophy [FEL]
+  (1) Fracking
+  (1) Gul'dan's Gift
+  (1) Lakkari Sacrifice
+  (1) Mass Production
+  (1) Monstrous Form [SHADOW]
+  (1) Plague of Flames [FIRE]
+  (1) Rock Bottom
+  (1) Shadow Council [FEL]
+  (1) Shriek [SHADOW]
+  (1) Smokestack [FEL]
+  (1) Soulfreeze [FROST]
+  (1) Supreme Archaeology
+  (1) The Demon Seed
+  (1) The Soularium [SHADOW]
+  (1) Wicked Shipment
+  (1) Wicked Whispers [SHADOW]
+  (2) Arson Accusation [FIRE]
+  (2) Avant-Gardening
+  (2) Chum Bucket
+  (2) Corrupting Mist [SHADOW]
+  (2) Crescendo [FEL]
+  (2) Curse of Weakness [SHADOW]
+  (2) Cursed Chains [SHADOW]
+  (2) Cursed Souvenir [SHADOW]
+  (2) Deadline [SHADOW]
+  (2) Demonic Confinement
+  (2) Demonic Dynamics [FEL]
+  (2) Demonic Project [SHADOW]
+  (2) Disposable Acolytes [SHADOW]
+  (2) Endgame [SHADOW]
+  (2) Fractured Power
+  (2) Impending Catastrophe [SHADOW]
+  (2) Renounce Darkness [HOLY]
+  (2) Rotten Apple
+  (2) Seeds of Destruction [FEL]
+  (2) Shadow Rounds [SHADOW]
+  (2) Shallow Grave
+  (2) Tachyon Barrage
+  (2) Twisted Knowledge [SHADOW]
+  (2) Unstable Shadow Blast [SHADOW]
+  (3) "Health" Drink [FEL]
+  (3) Bloodfury Potion [SHADOW]
+  (3) Cursed Campaign [SHADOW]
+  (3) Dark Skies [FEL]
+  (3) Demonwrath [FEL]
+  (3) Desecrated Graveyard
+  (3) Domino Effect
+  (3) Dragged Below [SHADOW]
+  (3) Dreaded Mount
+  (3) Encroaching Insanity [SHADOW]
+  (3) Fiendish Rites
+  (3) Free Admission
+  (3) Full-Blown Evil [FEL]
+  (3) Furnace Fuel [FIRE]
+  (3) Habeas Corpses [SHADOW]
+  (3) Impferno [FEL]
+  (3) Infernal Stratagem [FEL]
+  (3) Mortal Eradication [SHADOW]
+  (3) Plague Eruption
+  (3) Rafaam's Scheme [FIRE]
+  (3) Rafaams' Last Stand
+  (3) Reverberations [SHADOW]
+  (3) School Spirits [SHADOW]
+  (3) Scourge Supplies
+  (3) Spreading Madness [SHADOW]
+  (3) Suffocating Shadows [SHADOW]
+  (3) Treachery [SHADOW]
+  (3) Trolley Problem
+  (3) Unwilling Sacrifice [SHADOW]
+  (4) Blastcrystal Potion [SHADOW]
+  (4) Bloodbloom [SHADOW]
+  (4) Cascading Disaster
+  (4) Caustic Fumes [FEL]
+  (4) Dark Alley Pact [SHADOW]
+  (4) Dark Bargain [SHADOW]
+  (4) Felfire Bonfire [FEL]
+  (4) Fine Print [SHADOW]
+  (4) Fist of Jaraxxus [FEL]
+  (4) Immolate [FIRE]
+  (4) Imp-losion [FEL]
+  (4) Impbalming [FEL]
+  (4) Lesser Amethyst Spellstone [SHADOW]
+  (4) RAFAAM LADDER!!
+  (4) Soul Barrage [SHADOW]
+  (4) Soul Rend [SHADOW]
+  (4) Tamsin's Phylactery [SHADOW]
+  (4) The Dark Portal [FEL]
+  (4) Twisted Tether [SHADOW]
+  (4) Wing Welding
+  (5) Cataclysm [FIRE]
+  (5) Deck of Chaos [SHADOW]
+  (5) Divergence [SHADOW]
+  (5) Felfire in the Hole! [FEL]
+  (5) Kara Kazham!
+  (5) Shadow Waltz [SHADOW]
+  (5) Symphony of Sins
+  (6) Abyssal Wave [SHADOW]
+  (6) Bad Omen [FEL]
+  (6) Chaos Creation [FEL]
+  (6) Darkest Hour [SHADOW]
+  (6) Dirge of Despair [SHADOW]
+  (6) Ectomancy [SHADOW]
+  (6) Eldritch Tentacles [SHADOW]
+  (6) Hand of Gul'dan [SHADOW]
+  (6) Tome Tampering
+  (7) Story of Lakkari
+  (8) Bat Mask
+  (8) Black Hole [SHADOW]
+  (8) Crane Game
+  (8) Demonbolt [SHADOW]
+  (8) Void Contract [SHADOW]
+  (8) Wheel of DEATH!!! [SHADOW]
+  (9) Annihilation
+  (10) DOOM! [SHADOW]
+  (10) Table Flip [SHADOW]
+  (10) The Unseen Atlas [SHADOW]
+
+### ROGUE — 104 missing spells
+  (0) Ransack
+  (0) Shadow of Demise [SHADOW]
+  (1) Bazaar Burglary
+  (1) Breakdance [SHADOW]
+  (1) Daring Escape
+  (1) Deja Vu
+  (1) Doomerang
+  (1) Door of Shadows [SHADOW]
+  (1) Find the Imposter
+  (1) Fool's Gold
+  (1) Gone Fishin'
+  (1) Knockback
+  (1) Lie in Wait
+  (1) Mimicry
+  (1) Mixtape [FIRE]
+  (1) Nightmare Fuel
+  (1) Parrrley
+  (1) Petty Theft
+  (1) Plague of Madness [SHADOW]
+  (1) Savory Deviate Delight
+  (1) SI:7 Extortion
+  (1) Starship Schematic
+  (1) Tar Slick
+  (1) The Caverns Below
+  (1) Togwaggle's Scheme
+  (1) Valeera's Gift
+  (1) Yoink!
+  (2) [CORE 2024] Cheat Death
+  (2) Ambush
+  (2) Bamboozle
+  (2) Cheat Death
+  (2) Cultist Map [SHADOW]
+  (2) Dart Throw
+  (2) Dirty Tricks
+  (2) Double Cross
+  (2) Envenom Weapon [NATURE]
+  (2) Evasion
+  (2) From the Scrapheap
+  (2) Gang Up
+  (2) Garona's Last Stand
+  (2) Harmonic Hip Hop [SHADOW]
+  (2) Interrogation
+  (2) Kidnap
+  (2) Lucky Comet
+  (2) Murder Accusation
+  (2) Nab
+  (2) Perjury
+  (2) Pick Pocket
+  (2) Pit Stop
+  (2) Plagiarize
+  (2) Razorpetal Volley [NATURE]
+  (2) Rite of Twilight [SHADOW]
+  (2) Roll the Bones
+  (2) Secret Passage
+  (2) Shadow Clone [SHADOW]
+  (2) Shell Game
+  (2) Shenanigans
+  (2) Sticky Situation
+  (2) Sudden Betrayal
+  (2) Waxmancy
+  (2) Web of Deception
+  (2) Wicked Stab (Rank 1)
+  (3) Ambush Predators [SHADOW]
+  (3) Barrel Roll
+  (3) Beneath the Grounds
+  (3) Bounce Around (ft. Garona)
+  (3) Chrono Daggers
+  (3) Daze [SHADOW]
+  (3) Deadly Bribe
+  (3) Headcrack
+  (3) Jade Guardians
+  (3) Mic Drop
+  (3) Pressure Points [SHADOW]
+  (3) Raiding Party
+  (3) Shroud of Concealment [SHADOW]
+  (3) Stolen Power [SHADOW]
+  (3) Thief's Tools
+  (4) Academic Espionage
+  (4) Agency Espionage
+  (4) Cloak of Shadows [SHADOW]
+  (4) Fast Forward
+  (4) Jade Telegram
+  (4) Shadow of Death [SHADOW]
+  (4) Sketchy Information
+  (4) Tinker's Sharpsword Oil
+  (4) Vendetta
+  (4) Walk the Plank
+  (4) WANTED!
+  (5) Azsharan Vessel
+  (5) Contraband Stash
+  (5) Lesser Onyx Spellstone [SHADOW]
+  (5) Malevolent Strike
+  (5) Myra's Unstable Element
+  (5) Necrium Vial [SHADOW]
+  (5) Slice and Dice
+  (5) Snowfall Graveyard
+  (6) Candle Breath [FIRE]
+  (6) Cannon Barrage
+  (6) Thistle Tea
+  (6) Unidentified Contract
+  (8) Everything Must Go!
+  (8) Quasar
+  (8) Smokescreen
+  (8) Snatch and Grab
+
+### PALADIN — 110 missing spells
+  (0) Forbidden Healing [HOLY]
+  (1) Autodefense Matrix
+  (1) Avenge [HOLY]
+  (1) Blessed Goods [HOLY]
+  (1) Competitive Spirit
+  (1) Desperate Measures
+  (1) Dive the Golakka Depths
+  (1) Dragonscale Armaments [HOLY]
+  (1) Feast and Famine
+  (1) Galloping Savior
+  (1) Gelbin's Triumph
+  (1) Getaway Kodo
+  (1) Hidden Wisdom
+  (1) Judgment of Justice [HOLY]
+  (1) Lifesaving Aura [HOLY]
+  (1) Making Mummies
+  (1) Never Surrender!
+  (1) Oh My Yogg! [SHADOW]
+  (1) Orbital Satellite
+  (1) Reckoning [HOLY]
+  (1) Righteous Cause
+  (1) Sacred Trial [HOLY]
+  (1) Smoldering Strength [FIRE]
+  (1) Submerged Map
+  (1) The Last Kaleidosaur
+  (1) Uther's Gift
+  (1) Wave of Apathy
+  (1) Whack-A-Gnoll
+  (2) Air Raid
+  (2) Holy Bola! [HOLY]
+  (2) Inventor's Aura [HOLY]
+  (2) Lay Down the Law [HOLY]
+  (2) Lesser Pearl Spellstone [HOLY]
+  (2) Lightforged Blessing [HOLY]
+  (2) Mark of Ursol
+  (2) Pursuit of Justice [HOLY]
+  (2) Radar Detector
+  (2) Rebuke
+  (2) Resistance Aura [HOLY]
+  (2) Ring of Courage
+  (2) Sanctuary
+  (2) Showdown!
+  (2) Spotlight [HOLY]
+  (2) Story of Galvadon
+  (2) Vitality Surge [HOLY]
+  (3) Boogie Down [HOLY]
+  (3) Charity
+  (3) Day at the Faire
+  (3) Deputization Aura [HOLY]
+  (3) Enter the Coliseum
+  (3) Hatching Ceremony
+  (3) Libram of Clarity [HOLY]
+  (3) Mend the Timeline [HOLY]
+  (3) Neon Innovation [HOLY]
+  (3) Ready the Fleet
+  (3) Reinforcement Aura [HOLY]
+  (3) Righteous Defense [HOLY]
+  (3) Salvage the Bunker
+  (3) Sandfury Aura [HOLY]
+  (3) Seal of Champions [HOLY]
+  (3) Service Bell
+  (3) Small-Time Recruits
+  (3) Starlight Groove [HOLY]
+  (3) Time Out!
+  (4) Call to Arms
+  (4) Crusader Aura [HOLY]
+  (4) Dun Baldar Bridge
+  (4) Flight Maneuvers [HOLY]
+  (4) Holy Glowsticks [HOLY]
+  (4) Invigorating Sermon [HOLY]
+  (4) Judge Unworthy
+  (4) Keeper's Strength [HOLY]
+  (4) Libram of Divinity [HOLY]
+  (4) Order in the Court
+  (4) Prismatic Lens
+  (4) Teamwork
+  (4) Timeless Blessing [HOLY]
+  (4) Trust Fall
+  (4) Vacation Planning
+  (5) Blessing of Authority [HOLY]
+  (5) Chronological Aura [HOLY]
+  (5) Duel!
+  (5) Harmonic Disco [HOLY]
+  (5) Level Up!
+  (5) Libram of Justice [HOLY]
+  (5) Protect the Innocent
+  (5) Righteousness [HOLY]
+  (5) Shrink Ray
+  (5) Spikeridged Steed
+  (5) Threshrider's Blessing [HOLY]
+  (5) Tyr's Tears [HOLY]
+  (6) Celestial Aura [HOLY]
+  (6) Judgment [HOLY]
+  (6) Libram of Faith [HOLY]
+  (6) Pharaoh's Blessing [HOLY]
+  (6) The Badlands Bandits
+  (7) A New Challenger...
+  (7) Commencement
+  (7) Crafter's Aura [HOLY]
+  (7) Divine Toll [HOLY]
+  (7) Immortalized in Stone [HOLY]
+  (7) Kangor's Endless Army
+  (7) Prismatic Beam
+  (7) Renewing Flames [NATURE]
+  (8) Hero's Welcome
+  (8) Tip the Scales
+  (9) Front Lines
+  (10) Anyfin Can Happen
+  (10) Sea Shanty
+  (10) The Garden's Grace [HOLY]
+
+### DRUID — 102 missing spells
+  (0) Aquatic Form
+  (0) Construct Pylons
+  (0) Embiggen [NATURE]
+  (0) Forbidden Fruit
+  (1) Azshara's Triumph [ARCANE]
+  (1) Azsharan Gardens
+  (1) Floop's Glorious Gloop [NATURE]
+  (1) Jungle Giants
+  (1) Life Cycle [NATURE]
+  (1) Lost in the Park
+  (1) Malfurion's Gift
+  (1) Restore the Wild
+  (1) Secure the Deck
+  (1) Sow the Soil [NATURE]
+  (1) Strength in Numbers
+  (1) Symbiosis [NATURE]
+  (1) Treenforcements [NATURE]
+  (1) Untapped Potential
+  (1) Waveshaping [NATURE]
+  (1) Wither [NATURE]
+  (1) Worthy Expedition
+  (2) Alternate Reality
+  (2) Astral Phaser [ARCANE]
+  (2) Bottomless Toy Chest [ARCANE]
+  (2) Capture Coldtooth Mine
+  (2) Chitinous Plating
+  (2) Crystalsong Portal [NATURE]
+  (2) Dragon Tales
+  (2) Earthen Scales [NATURE]
+  (2) Ebb and Flow [NATURE]
+  (2) Embrace of Nature [NATURE]
+  (2) Guess the Weight
+  (2) Handle with Bear [NATURE]
+  (2) Harmonic Mood
+  (2) Lifebinder's Gift [NATURE]
+  (2) Living Seed (Rank 1) [NATURE]
+  (2) Mark of the Spikeshell [NATURE]
+  (2) Moonlit Guidance [ARCANE]
+  (2) Mossbinding [NATURE]
+  (2) Noxious Bribe
+  (2) Ravenous Flock
+  (2) Reforestation [NATURE]
+  (2) Rising Winds
+  (2) Story of Barnabus
+  (3) Blessing of the Ancients [NATURE]
+  (3) Ensmallen [NATURE]
+  (3) Ferocious Howl
+  (3) Forest's Gift [NATURE]
+  (3) Frost Lotus Seedling [NATURE]
+  (3) Frostwolf Kennels
+  (3) Fungal Fortunes [NATURE]
+  (3) Heartroot Stones [NATURE]
+  (3) Incarceration
+  (3) Moontouched Amulet
+  (3) New Heights
+  (3) Overgrown Beanstalk [NATURE]
+  (3) Overheat [FIRE]
+  (3) Pilfered Power
+  (3) Plot of Sin [NATURE]
+  (3) Seaweed Strike [NATURE]
+  (4) Branching Paths
+  (4) Dew Process [NATURE]
+  (4) Infest the Scullery
+  (4) Juicy Psychmelon [NATURE]
+  (4) Kodo Mount
+  (4) Oaken Summons [NATURE]
+  (4) Overgrowth [NATURE]
+  (4) Panther Mask
+  (4) Poison Seeds [NATURE]
+  (4) Predatory Instincts
+  (4) Rhythm and Roots [NATURE]
+  (4) Sparkling Phial [ARCANE]
+  (4) Splintered Reality [NATURE]
+  (4) Spread the Word
+  (4) Un'Goro Brochure [NATURE]
+  (4) Wildwood Circle [NATURE]
+  (5) Aeroponics [NATURE]
+  (5) Cosmic Phenomenon [ARCANE]
+  (5) Hybridization [NATURE]
+  (5) Living Mana [NATURE]
+  (5) Lunar Visions [ARCANE]
+  (5) Woodland Wonders
+  (6) Dark Wispers [NATURE]
+  (6) Life from Death [NATURE]
+  (6) Recycle [NATURE]
+  (6) Runic Carvings [NATURE]
+  (6) Spreading Plague [NATURE]
+  (6) Stampeding Roar
+  (6) Unending Swarm
+  (7) Crystal Cluster
+  (7) Final Frontier [ARCANE]
+  (7) Miracle Growth [NATURE]
+  (7) Overflow [NATURE]
+  (7) Scale of Onyxia
+  (8) Celestial Alignment [ARCANE]
+  (8) Cultivation [NATURE]
+  (8) Hydration Station
+  (8) Nightshade Bud [NATURE]
+  (8) Sleep Under the Stars [ARCANE]
+  (8) The Forest's Aid [NATURE]
+  (9) Tree of Life [NATURE]
+  (10) Convoke the Spirits [NATURE]
+
+### SHAMAN — 97 missing spells
+  (0) Melomania
+  (0) Mutate [NATURE]
+  (1) Azsharan Scroll
+  (1) Blazing Transmutation [FIRE]
+  (1) Command the Elements
+  (1) Convincing Disguise
+  (1) Corrupt the Waters
+  (1) Evolve [NATURE]
+  (1) Finders Keepers
+  (1) Lightning Reflexes [NATURE]
+  (1) Lightning Rod [NATURE]
+  (1) Lock On
+  (1) Mountain Map
+  (1) Overdraft
+  (1) Primal Fusion [NATURE]
+  (1) Revolve
+  (1) Spirit of the Mountain
+  (1) Thrall's Gift
+  (1) Totemic Evidence
+  (1) Unite the Murlocs
+  (1) Unstable Evolution [NATURE]
+  (2) Aspect's Embrace
+  (2) Big Bad Voodoo [SHADOW]
+  (2) Chain Lightning (Rank 1) [NATURE]
+  (2) Conductivity [NATURE]
+  (2) Devolve [NATURE]
+  (2) Elementary Reaction [NATURE]
+  (2) Emerald Bounty
+  (2) Explosive Evolution [NATURE]
+  (2) Flames of the Firelord [FIRE]
+  (2) Flash of Lightning [NATURE]
+  (2) Frostbite [FROST]
+  (2) Icecrown Brochure [FROST]
+  (2) Perpetual Flame [FIRE]
+  (2) Ritual of Power [NATURE]
+  (2) Siren Song
+  (2) Spirit Mount
+  (2) Triangulate
+  (2) Trusty Companion
+  (3) Chill Vibes [FROST]
+  (3) Dehydrate
+  (3) Elemental Destruction [NATURE]
+  (3) Fire Breath [FIRE]
+  (3) Flight of the Firehawk [FIRE]
+  (3) Healing Rain [NATURE]
+  (3) Healing Wave [NATURE]
+  (3) Incredible Value [SHADOW]
+  (3) Lava Flow [FIRE]
+  (3) Lightning Breath [NATURE]
+  (3) Molten Gold [FIRE]
+  (3) Nascent Bolt [NATURE]
+  (3) Natural Talent [NATURE]
+  (3) Nofin Can Stop Us
+  (3) Plague of Murlocs
+  (3) Primal Talismans
+  (3) Primordial Wave [NATURE]
+  (3) Shadow Suffusion [SHADOW]
+  (3) Snowball Fight! [FROST]
+  (3) Totemic Reflection
+  (4) Ancestor's Call
+  (4) Ascendance [NATURE]
+  (4) Avalanche [FROST]
+  (4) Bioluminescence [NATURE]
+  (4) Ceremonial Clash
+  (4) Dunk Tank [NATURE]
+  (4) Matching Outfits
+  (4) Prescience [SHADOW]
+  (4) Torrent [NATURE]
+  (4) Totally Totems
+  (4) Vivid Spores [NATURE]
+  (4) Wildpaw Cavern
+  (5) Altered Chord [NATURE]
+  (5) Crash of Thunder [NATURE]
+  (5) Dragon's Pack
+  (5) Frostshatter [FROST]
+  (5) Frosty Décor [FROST]
+  (5) Hagatha's Scheme [NATURE]
+  (5) JIVE, INSECT! [FIRE]
+  (5) Wave of Nostalgia [NATURE]
+  (6) Eureka!
+  (6) Glaciate [FROST]
+  (6) Instant Multiverse
+  (6) Meteor Storm [NATURE]
+  (6) Once Upon a Time... [NATURE]
+  (6) Sizzling Swarm [FIRE]
+  (6) The Storm Bringer [NATURE]
+  (6) Tiny Toys
+  (7) Everyfin is Awesome
+  (7) Lesser Sapphire Spellstone [NATURE]
+  (7) Pack the House
+  (7) Stormfury [NATURE]
+  (7) Wish Upon a Star [ARCANE]
+  (8) Criminal Lineup
+  (9) From De Other Side [SHADOW]
+  (9) Muradin's Last Stand [NATURE]
+  (9) Nebula [ARCANE]
+  (10) Typhoon [NATURE]
+
+### WARRIOR — 91 missing spells
+  (0) Provoke
+  (1) Boom Squad
+  (1) Call to the Stand
+  (1) Enter the Lost City
+  (1) Fire Plume's Heart
+  (1) Garrosh's Gift
+  (1) Hack the System
+  (1) Hit It Very Hard
+  (1) Last Stand
+  (1) Omega Assembly
+  (1) Scramble for Gear
+  (1) Shoulder Check
+  (1) Stage Dive
+  (1) Standardized Pack
+  (1) Torch [FIRE]
+  (1) Training Session
+  (1) Verse Riff
+  (2) Bladestorm
+  (2) Blazing Power [FIRE]
+  (2) Bouncing Blade
+  (2) Bring It On!
+  (2) Bulk Up
+  (2) Conqueror's Banner
+  (2) Embers of Strength [FIRE]
+  (2) Explore Un'Goro
+  (2) Forged in Flame [FIRE]
+  (2) Frozen Buckler [FROST]
+  (2) Iceblood Garrison
+  (2) Jettison
+  (2) Misfire
+  (2) Part Scrapper
+  (2) Precursory Strike
+  (2) Release the Beasts
+  (2) Riot!
+  (2) Roaring Applause
+  (2) Safety Goggles
+  (2) Shadowflame Suffusion [FIRE]
+  (2) Slow Motion
+  (2) Stolen Goods
+  (2) Sweeping Strikes
+  (2) The Fires of Zin-Azshari [FIRE]
+  (2) To the Front!
+  (2) Weapons Project
+  (3) All You Can Eat
+  (3) Bellowing Flames [FIRE]
+  (3) Blood Warriors
+  (3) Chorus Riff
+  (3) Clash of the Colossals
+  (3) Feat of Strength
+  (3) Food Fight
+  (3) From the Depths
+  (3) Punch Card
+  (3) Ramming Speed
+  (3) Reckless Flurry
+  (3) Reserved Spot
+  (3) Snowed In [FROST]
+  (3) Succumb to Madness
+  (3) War Cache
+  (3) Wreck'em and Deck'em
+  (4) Aftershocks [NATURE]
+  (4) Burden of Pride
+  (4) Captain's Log
+  (4) Char [FIRE]
+  (4) City Defenses
+  (4) Dr. Boom's Scheme
+  (4) Light of the Phoenix [FIRE]
+  (4) Rancor
+  (4) Sanitize
+  (4) Shellnado
+  (4) Sudden Genesis [NATURE]
+  (5) Blackrock 'n' Roll [FIRE]
+  (5) Bridge Riff
+  (5) For Glory!
+  (5) Lo'Gosh's Last Stand
+  (5) Plague of Wrath
+  (5) Story of Sulfuras [FIRE]
+  (6) Chemical Spill
+  (6) Deadly Arsenal
+  (6) Decimation [FIRE]
+  (6) Gather Your Party
+  (6) Gladiatorial Combat
+  (6) Heavy Metal!
+  (6) Unidentified Shield
+  (7) Crush
+  (7) Guard Duty
+  (7) Lesser Mithril Spellstone
+  (7) Trial by Fire [FIRE]
+  (9) The Boomship
+  (10) Dimensional Ripper
+  (10) Dwarf Planet
+  (10) Shield Shatter [FROST]
+
+### HUNTER — 56 missing spells
+  (0) Devouring Swarm
+  (0) Lock and Load
+  (0) Stampede
+  (1) Barbed Nets
+  (1) Clear the Way
+  (1) Defend the Dwarven District
+  (1) Odd Map
+  (1) Rexxar's Gift
+  (1) The Beast Within
+  (1) The Food Chain
+  (1) Urchin Spines
+  (2) Arcane Quiver [ARCANE]
+  (2) Bargain Bin
+  (2) Birdwatching
+  (2) Call Pet
+  (2) Dun Baldar Bunker
+  (2) Hidden Meaning
+  (2) Open the Cages
+  (2) Precise Shot
+  (2) Revenge of the Wild
+  (2) Sylvanas's Triumph
+  (2) Ten Gallon Hat
+  (2) ZOMBEEEES!!!
+  (3) Master's Call
+  (3) Mismatched Fossils
+  (3) Naga's Pride
+  (3) Nine Lives
+  (3) Petting Zoo
+  (3) Ramming Mount
+  (3) Stag Charge
+  (3) Wild Spirits [NATURE]
+  (3) Wormhole
+  (4) Beast Tripwire
+  (4) Camouflage Mount
+  (4) Confront the Tol'vir
+  (4) Dire Frenzy
+  (4) Piercing Shot
+  (4) Spring the Trap
+  (4) Supply Run
+  (5) Big Dreams
+  (5) Death Roll
+  (5) Hunting Party
+  (5) Lesser Emerald Spellstone [NATURE]
+  (6) Furious Fowls
+  (6) Trial of the Jormungars
+  (6) Unleash the Beast
+  (7) Crushing Walls
+  (7) Faithful Companions
+  (7) Flark's Boom-Zooka
+  (7) Guardian Animals
+  (7) Roam Free
+  (8) Call of the Wild
+  (8) Collateral Damage
+  (8) Devilsaur Mask
+  (8) Jewel of N'Zoth
+  (8) Stranglethorn Heart
+
+### DEATHKNIGHT — 37 missing spells
+  (1) Arthas's Gift
+  (1) Baneling Barrage
+  (1) Crypt Map
+  (1) Death Growl
+  (1) Lesser Spinel Spellstone
+  (1) Plagued Grain
+  (1) Reanimate the Terror
+  (1) Runeforging [SHADOW]
+  (1) Soulrest Ceremony [SHADOW]
+  (2) Blood Tap [SHADOW]
+  (2) Cold Feet [FROST]
+  (2) Corpsicle [FROST]
+  (2) Dark Transformation [SHADOW]
+  (2) Drink Blood [SHADOW]
+  (2) Frozen Over [FROST]
+  (2) Mining Casualties
+  (2) Northern Navigation [FROST]
+  (2) Silk Stitching
+  (2) Slippery Slope [FROST]
+  (2) Soul Searching [SHADOW]
+  (2) Threads of Despair [SHADOW]
+  (2) Unholy Frenzy
+  (3) Assimilating Blight
+  (3) Blood Clone [SHADOW]
+  (3) Blood Draw [SHADOW]
+  (3) Corpse Farm
+  (3) Finality
+  (3) Harmonic Metal
+  (3) Paleomancy [SHADOW]
+  (4) Consumption
+  (4) Memoriam Manifest [SHADOW]
+  (4) Sinister Soulcage [SHADOW]
+  (5) Blood Boil [SHADOW]
+  (6) Shadows of Yesterday [SHADOW]
+  (7) Story of Umbra
+  (8) Forgotten Millennium
+  (9) The Scourge [SHADOW]
+
+### DEMONHUNTER — 28 missing spells
+  (1) Hive Map
+  (1) Illidan's Gift
+  (1) Oasis Outlaws
+  (1) Unleash the Colossus
+  (2) Blind Box
+  (2) Broxigar's Last Stand
+  (2) Dark Bribe [SHADOW]
+  (2) Demonic Deal [FEL]
+  (2) Fel Infusion [FEL]
+  (2) Infestation
+  (2) Lesser Opal Spellstone
+  (2) Predation [FEL]
+  (2) Runic Adornment
+  (3) Acrobatics
+  (3) Eye Beam [FEL]
+  (3) Paraglide
+  (3) Return Policy
+  (3) Wyvern's Slumber
+  (4) Flanking Maneuver
+  (4) Glide
+  (4) Going Down Swinging
+  (4) Metamorphosis [FEL]
+  (4) Topple the Idol
+  (4) Workshop Mishap [FEL]
+  (5) Need for Greed
+  (6) Cliff Dive
+  (6) Proving Grounds
+  (7) Expendable Performers
+
+### NEUTRAL — 14 missing spells
+  (1) Devolving Missiles [ARCANE]
+  (1) Guidance
+  (1) Primordial Studies [ARCANE]
+  (1) Sands of Time
+  (1) Storm the Gates
+  (2) Nitroboost Poison [NATURE]
+  (3) Welcome Home!
+  (4) Champions of Azeroth
+  (4) Hysteria [SHADOW]
+  (4) Potion of Illusion [ARCANE]
+  (4) Rally! [HOLY]
+  (6) Dragon Soul, Shattered
+  (8) Shaladrassil [NATURE]
+  (9) The Sunwell [HOLY]

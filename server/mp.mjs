@@ -1,4 +1,4 @@
-// /api/mp — the /magepunktest account backend.
+// /api/mp — the account backend (the /login screen + game clients call it).
 //
 // One POST endpoint, JSON body { action, ...payload }, Bearer token auth.
 // The server is authoritative for everything a player could cheat:
