@@ -14,7 +14,7 @@
 // so both helpers consume rng()/mutate exactly like the idioms they replace.
 import {
 	emit, instantiate, damageHero, checkGameOver, execEffects, runSpell,
-	sweepDeaths, questTick, fireOngoing, firePonder, fireEmerge,
+	sweepDeaths, questTick, fireOngoing, firePonder, fireEmerge, fireSecretsAll,
 	recomputeAuras, staticValue, isDead, isSpellType, schoolOf, targetSpec,
 	legalTargets, MAX_HAND, KW, CTHUN_BASE, applyGift, DARK_GIFTS,
 } from '../engine.js';
@@ -168,6 +168,9 @@ export function drawCards(state, pi, count) {
 		p.drawsThisTurn = (p.drawsThisTurn || 0) + 1;
 		if (p.drawsThisTurn > 1) firePonder(state, pi, { drawn: card });
 		fireEmerge(state, pi, card);
+		// Shenanigans: opponents' secrets can react to this draw (the drawn card
+		// is already in hand, the draw counter already includes it)
+		fireSecretsAll(state, pi, 'enemy-card-drawn', { drawnCard: card, drawnBy: pi, drawsThisTurn: p.drawsThisTurn });
 		// Chromaggus: "whenever you draw a card…" (guard against re-entrant copies)
 		if (state.dealt && !state.drawTrigLock) {
 			state.drawTrigLock = true;

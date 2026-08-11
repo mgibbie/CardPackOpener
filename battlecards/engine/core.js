@@ -50,7 +50,7 @@ import { isDead, sweepDeaths, runDeathrattle } from './death.js';
 import { execEffects, runSecretEffects } from './effects/exec.js';
 export { execEffects, runSecretEffects };
 import { fireOngoing, fireCreatureTrigger, ongoingCondOk, fireSecrets, fireSecretsAll } from './triggers.js';
-export { fireOngoing, fireSecrets };
+export { fireOngoing, fireSecrets, fireSecretsAll };
 import { recomputeAuras, staticValue } from './auras.js';
 export { recomputeAuras, staticValue };
 

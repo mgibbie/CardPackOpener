@@ -2869,3 +2869,25 @@ register('discard-highest-damage-all', ({ state, pi, source }) => {
 	emit(state, { type: 'discard', player: pi, card: hi });
 	execEffects(state, pi, [{ type: 'damage-all-minions', value: hi.cost || 0 }], null, null);
 });
+
+register('transform-hand-minions-each-player', ({ state }, e) => {
+	// Savory Deviate Delight: a random minion in EACH player's hand becomes a
+	// random Pirate or Stealth minion (replaced in place)
+	const pool = Object.values(state.cardsById).filter(d =>
+		d.type === 'creature' && !d.token && d.collectible !== false
+		&& !(d.colors && d.colors.length) && !d.companion && !d.commander
+		&& ((d.tribe || '').includes(e.tribe || 'Pirate') || (d.keywords || []).includes(e.keyword || 'stealth')));
+	if (!pool.length) return;
+	for (let s2 = 0; s2 < state.players.length; s2++) {
+		const p = state.players[s2];
+		if (p.eliminated) continue;
+		const minions = p.hand.filter(c => c.type === 'creature');
+		if (!minions.length) continue;
+		const victim = minions[Math.floor(state.rng() * minions.length)];
+		const def = pool[Math.floor(state.rng() * pool.length)];
+		const nc = instantiate(def, s2);
+		nc.zone = 'hand';
+		p.hand[p.hand.indexOf(victim)] = nc;
+		emit(state, { type: 'conjure', player: s2, card: nc, color: null });
+	}
+});

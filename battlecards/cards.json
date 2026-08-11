@@ -174209,6 +174209,130 @@
           "type": "enemy-minions-cost-health-next-turn"
         }
       ]
+    },
+    {
+      "id": "ninja_ambush",
+      "name": "Ambush!",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "rare",
+      "cardClass": "rogue",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Spectral Ninja",
+          "keywords": [
+            "stealth"
+          ]
+        }
+      ],
+      "description": "When drawn, create a 3/3 Ninja with Stealth."
+    },
+    {
+      "id": "dk_plague_crate",
+      "name": "Crate",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Plagued Undead",
+          "tribe": "Undead"
+        }
+      ],
+      "description": "When drawn, create a 2/2 Undead."
+    },
+    {
+      "id": "contraband_stash",
+      "name": "Contraband Stash",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "ALTERAC_VALLEY",
+      "cardClass": "rogue",
+      "type": "sorcery",
+      "description": "Replay 5 cards from other classes you've played this game.",
+      "effects": [
+        {
+          "type": "replay-other-class",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "id": "interrogation",
+      "name": "Interrogation",
+      "cost": 2,
+      "rarity": "common",
+      "set": "THE_LOST_CITY",
+      "cardClass": "rogue",
+      "type": "sorcery",
+      "description": "Shuffle three Ambushes into your deck. When drawn, they create a 3/3 Ninja with Stealth.",
+      "effects": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "ninja_ambush",
+            "ninja_ambush",
+            "ninja_ambush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "savory_deviate_delight",
+      "name": "Savory Deviate Delight",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "THE_BARRENS",
+      "cardClass": "rogue",
+      "type": "sorcery",
+      "description": "Transform a minion in both players' hands into a Pirate or Stealth minion.",
+      "effects": [
+        {
+          "type": "transform-hand-minions-each-player",
+          "tribe": "Pirate",
+          "keyword": "stealth"
+        }
+      ]
+    },
+    {
+      "id": "shenanigans",
+      "name": "Shenanigans",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "DARKMOON_FAIRE",
+      "cardClass": "rogue",
+      "type": "secret",
+      "keywords": [
+        "secret"
+      ],
+      "description": "Secret: When your opponent draws their second card in a turn, transform it into a Banana.",
+      "secret": {
+        "trigger": "enemy-card-drawn",
+        "condition": {
+          "drawsThisTurn": 2
+        },
+        "effects": [
+          {
+            "type": "transform-drawn-to-banana",
+            "id": "banana"
+          }
+        ]
+      }
     }
   ]
 }

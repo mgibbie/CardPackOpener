@@ -1953,7 +1953,15 @@ const _h_repeat_battlecries = ({ state, pi, target, source, enemies, scaled, hm,
 				for (let s2 = 0; s2 < state.players.length; s2++) { if (state.players[s2].eliminated) continue; for (const c of state.players[s2].board) if (!isDead(c) && c.type !== 'location') pool.push({ type: 'creature', uid: c.uid, player: s2 }); pool.push({ type: 'hero', player: s2 }); }
 				return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null;
 			};
-			for (const id of [...list]) {
+			// Contraband Stash: replay only `count` random ones (Tess replays all).
+			// Never replay the replaying card itself — infinite recursion otherwise.
+			let ids = [...list].filter(id => !source || id !== source.id);
+			if (e.count && ids.length > e.count) {
+				const picked = [];
+				for (let n = 0; n < e.count; n++) picked.push(ids.splice(Math.floor(state.rng() * ids.length), 1)[0]);
+				ids = picked;
+			}
+			for (const id of ids) {
 				const def = state.cardsById[id];
 				if (def && def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), randTarget(), source);
 			}

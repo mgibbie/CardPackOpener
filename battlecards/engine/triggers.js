@@ -126,6 +126,8 @@ function secretMatches(sec, ctx) {
 	if (c.attackerCreature && ctx.attackerType !== 'creature') return false;
 	// Rat Trap / Motion Denied: fire only on the opponent's Nth card this turn
 	if (c.cardsPlayedThisTurn != null && ctx.cardsPlayedThisTurn !== c.cardsPlayedThisTurn) return false;
+	// Shenanigans: fire only on the opponent's Nth draw this turn
+	if (c.drawsThisTurn != null && ctx.drawsThisTurn !== c.drawsThisTurn) return false;
 	return true;
 }
 

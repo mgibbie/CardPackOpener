@@ -2256,3 +2256,18 @@ registerTrigger('recast-triggering-spell', (state, pi, e, ctx, triggering) => {
 	} while (false); // `break` ends this effect, exactly like the old case break
 });
 
+
+registerTrigger('transform-drawn-to-banana', (state, pi, e, ctx) => {
+	// Shenanigans: the card the opponent just drew becomes a Banana in place
+	const victim = ctx.drawnBy;
+	const card = ctx.drawnCard;
+	if (victim == null || !card) return;
+	const hand = state.players[victim].hand;
+	const i = hand.indexOf(card);
+	const def = state.cardsById[e.id || 'banana'];
+	if (i < 0 || !def) return;
+	const banana = instantiate(def, victim);
+	banana.zone = 'hand';
+	hand[i] = banana;
+	emit(state, { type: 'conjure', player: victim, card: banana, color: null });
+});
