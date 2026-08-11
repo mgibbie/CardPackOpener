@@ -666,6 +666,19 @@ register('timed-aura', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 } });
 
 
+register('delayed', ({ state, pi }, e) => {
+	// generic time-bomb: an enchantment that counts down at your turn-ends and
+	// fires its effects when it expires (Wheel of DEATH!!!, Immolate,
+	// Rhythm and Roots). Rides the same turnsLeft loop as timed-aura.
+	const ench = instantiate({ id: 'token_delayed', name: e.name || 'Countdown', type: 'enchantment', cost: 0, token: true, description: e.description || null }, pi);
+	ench.zone = 'enchantment';
+	ench.turnsLeft = e.turns || 1;
+	ench.onExpire = JSON.parse(JSON.stringify(e.effects || []));
+	state.players[pi].enchantments.push(ench);
+	emit(state, { type: 'enchant', player: pi, card: ench });
+});
+
+
 register('embolden-recruits', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Emboldening Blade: give your Silver Hand Recruits +X/+Y this game — buff the
 			// ones on board now and raise the persistent bonus for future Recruits

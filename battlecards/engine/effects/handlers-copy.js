@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { addHeroPower } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -429,15 +430,13 @@ register('swap-attack-extremes', ({ state, pi, target, source, enemies, scaled, 
 
 
 register('copy-enemy-hero-power', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// Sideshow Spelleater: copy a random opponent's Hero Power
+			// Sideshow Spelleater: copy a random opponent's Hero Power (additive
+			// house rule — at the 3-power cap you pick one to discard)
 			const p = state.players[pi];
 			for (const o of enemies) {
 				const src = state.players[o].heroPowers[0];
-				if (src && p.heroPowers.length < MAX_HERO_POWERS && !p.heroPowers.some(h => h.id === src.id)) {
-					const copy = instantiate(state.cardsById[src.id] || { id: src.id, name: src.name, type: 'heropower', power: src.power }, pi);
-					copy.zone = 'heropower'; copy.usedThisTurn = false;
-					p.heroPowers.push(copy);
-					emit(state, { type: 'heroPowerGained', player: pi, card: copy });
+				if (src && !p.heroPowers.some(h => h.id === src.id)) {
+					addHeroPower(state, pi, state.cardsById[src.id] || { id: src.id, name: src.name, type: 'heropower', power: src.power });
 				}
 				break;
 			}
@@ -917,12 +916,13 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 	// hero-power discovers took a dedicated guarded branch BEFORE the plain
 	// one in the old chain; batch 19 briefly rerouted them here — restored:
 	if (e.heroPower) {
-			// Sir Finley: Discover a new Hero Power (replaces yours on pick)
+			// Sir Finley / Yoink: Discover a new Hero Power (ADDED on pick — house
+			// rule). Yoink passes cost/uses so its power is free and 2-shot.
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'heropower' && d.power);
 			const ids = [];
 			for (let i = 0; i < 3 && pool.length; i++) ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
 			if (ids.length && !state.players[pi].eliminated) {
-				state.pickQueue.push({ player: pi, ids, heroPower: true, discover: true });
+				state.pickQueue.push({ player: pi, ids, heroPower: true, discover: true, powerSetCost: e.cost, powerUses: e.uses });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 		return;
@@ -966,7 +966,7 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				if (!ids.length) break;
 				// Staff of Trickery: "Reduce its Cost by your hero's Attack" — dynamic at Discover time
 				const costMod = e.costModByHeroAttack ? -heroAttackValue(state, state.players[pi]) : (e.costMod || null);
-				state.pickQueue.push({ player: pi, ids, discover: true, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod, healByCost: e.healByCost || false, summonCopy: e.summonCopy || null, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null, darkGift: e.darkGift || false, duplicate: e.duplicate || false, mode: (e.fromOwnDeck && e.drawPick) ? 'search' : undefined, shuffleOthers: e.shuffleOthers || false, toDeckBottomBuff: e.toDeckBottomBuff || null, gainStatsUid: (e.gainStats && source) ? source.uid : null, hataaru: e.hataaru || false, summonTwice: e.summonTwice || false, qonzu: e.qonzu || false, grantCastTwice: e.grantCastTwice || false, damageAllByCost: e.damageAllByCost || false });
+				state.pickQueue.push({ player: pi, ids, discover: true, grant: e.grant || null, buff: e.buff || null, to: e.to || null, costMod, healByCost: e.healByCost || false, summonCopy: e.summonCopy || null, armorByCost: e.armorByCost || false, installSecret: e.installSecret || false, castRandom: e.castRandom || false, castOnDeathUid: (e.castOnDeath && chosenCreature()) ? chosenCreature().uid : undefined, damageSelfByCost: e.damageSelfByCost || false, gainDeathrattleUid: e.gainDeathrattle && source ? source.uid : null, setAttack: e.setAttack ?? null, setHealth: e.setHealth ?? null, setCost: e.setCost ?? null, darkGift: e.darkGift || false, duplicate: e.duplicate || false, mode: (e.fromOwnDeck && e.drawPick) ? 'search' : undefined, shuffleOthers: e.shuffleOthers || false, toDeckBottomBuff: e.toDeckBottomBuff || null, gainStatsUid: (e.gainStats && source) ? source.uid : null, hataaru: e.hataaru || false, summonTwice: e.summonTwice || false, qonzu: e.qonzu || false, grantCastTwice: e.grantCastTwice || false, damageAllByCost: e.damageAllByCost || false });
 				emit(state, { type: 'pickStart', player: pi, count: ids.length });
 			}
 } });

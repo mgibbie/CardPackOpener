@@ -80,5 +80,18 @@ function fullRound(st) { E.endTurn(st); E.endTurn(st); st.players[0].mana.cur = 
 	ok('cap: discarded pick is gone, newcomer in, still 3', st.players[0].heroPowers.length === 3 && !powerIds(st).includes('hp_mind_spike') && powerIds(st).filter(x => x === 'hp_demonic_blast').length === 2, powerIds(st));
 }
 
+// --- legacy set-hero-power now ADDS (Dinomancy) + Yoink's discover flow ---
+{
+	const st = game();
+	cast(st, 'shadowform');
+	cast(st, 'dinomancy');
+	ok('dinomancy: ADDS a power (never replaces)', powerIds(st).length === 2 && powerIds(st).includes('hp_dinomancy') && powerIds(st).includes('hp_mind_spike'), powerIds(st));
+	cast(st, 'yoink');
+	ok('yoink: discover queued with cost 0 / 2 uses riding along', st.pickQueue.length === 1 && st.pickQueue[0].heroPower === true && st.pickQueue[0].powerSetCost === 0 && st.pickQueue[0].powerUses === 2);
+	E.resolvePick(st, st.pickQueue[0].ids[0]);
+	const yp = st.players[0].heroPowers[st.players[0].heroPowers.length - 1];
+	ok('yoink: picked power added FREE with 2 uses', st.players[0].heroPowers.length === 3 && yp.power.cost === 0 && yp.power.uses === 2, [yp.id, yp.power.cost, yp.power.uses]);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

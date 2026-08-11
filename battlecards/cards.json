@@ -68455,7 +68455,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Your Hero Power becomes 'Create a 1/1 Murloc creature token.'",
+      "description": "Battlecry: Gain a new Hero Power: 'Create a 1/1 Murloc creature token.'",
       "effects": [
         {
           "type": "set-hero-power",
@@ -114285,7 +114285,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Replace your Hero Power with Tracking (Discover a card from your deck).",
+      "description": "Battlecry: Gain a new Hero Power: Tracking (Discover a card from your deck).",
       "effects": [
         {
           "type": "set-hero-power",
@@ -134550,7 +134550,7 @@
       "set": "TOMBS_OF_TERROR",
       "token": true,
       "treasure": true,
-      "description": "Battlecry: If you played 6 Secrets this game, your Hero Power becomes 'Discover a Treasure'.",
+      "description": "Battlecry: If you played 6 Secrets this game, gain a new Hero Power: 'Discover a Treasure'.",
       "attack": 5,
       "health": 5,
       "tribe": "",
@@ -134582,7 +134582,7 @@
       "set": "TOMBS_OF_TERROR",
       "token": true,
       "treasure": true,
-      "description": "Battlecry: If you played 3 Secrets this game, your Hero Power becomes 'Discover a Treasure'.",
+      "description": "Battlecry: If you played 3 Secrets this game, gain a new Hero Power: 'Discover a Treasure'.",
       "attack": 7,
       "health": 7,
       "tribe": "",
@@ -137551,7 +137551,7 @@
       "durability": 3,
       "rarity": "common",
       "set": "CORE",
-      "description": "Deathrattle: Your Hero Power becomes 'Deal 2 damage.'",
+      "description": "Deathrattle: Gain a new Hero Power: 'Deal 2 damage.'",
       "deathrattle": [
         {
           "type": "set-hero-power",
@@ -145067,7 +145067,7 @@
       "rarity": "epic",
       "set": "UNGORO",
       "collectible": true,
-      "description": "Replace your Hero Power with 'Give a Beast +3/+3.'",
+      "description": "Gain a new Hero Power: 'Give a Beast +3/+3.'",
       "effects": [
         {
           "type": "set-hero-power",
@@ -171067,7 +171067,7 @@
       "cardClass": "rogue",
       "rarity": "epic",
       "set": "THE_BARRENS",
-      "description": "Discover a Hero Power and set its Cost to (0). Swap back after 2 uses.",
+      "description": "Discover a Hero Power and set its Cost to (0). It vanishes after 2 uses.",
       "effects": [
         {
           "type": "set-hero-power",
@@ -173551,6 +173551,130 @@
         {
           "type": "add-hero-power",
           "powerId": "hp_die_insect"
+        }
+      ]
+    },
+    {
+      "id": "wheel_of_death",
+      "name": "Wheel of DEATH!!!",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "WHIZBANGS_WORKSHOP",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Destroy your deck. In 5 turns, destroy target opponent.",
+      "effects": [
+        {
+          "type": "mill-self",
+          "value": 99
+        },
+        {
+          "type": "delayed",
+          "turns": 5,
+          "name": "Wheel of DEATH!!!",
+          "description": "In 5 turns, destroy target opponent.",
+          "effects": [
+            {
+              "type": "destroy-enemy-hero"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "immolate",
+      "name": "Immolate",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Light every card in target opponent's hand on fire. In 3 turns, any still in hand are destroyed!",
+      "effects": [
+        {
+          "type": "immolate-mark"
+        },
+        {
+          "type": "delayed",
+          "turns": 3,
+          "name": "Immolate",
+          "description": "In 3 turns, burning cards still in hand are destroyed.",
+          "effects": [
+            {
+              "type": "immolate-burn"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rhythm_and_roots",
+      "name": "Rhythm and Roots",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "druid",
+      "type": "sorcery",
+      "description": "Choose One - Create three 5/5 Ancients in 2 turns; or three 8/8 Ancients in 4 turns.",
+      "choices": [
+        {
+          "text": "Create three 5/5 Ancients in 2 turns",
+          "effects": [
+            {
+              "type": "delayed",
+              "turns": 2,
+              "name": "Rhythm and Roots",
+              "description": "Creating three 5/5 Ancients…",
+              "effects": [
+                {
+                  "type": "summon",
+                  "count": 3,
+                  "attack": 5,
+                  "health": 5,
+                  "name": "Ancient"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Create three 8/8 Ancients in 4 turns",
+          "effects": [
+            {
+              "type": "delayed",
+              "turns": 4,
+              "name": "Rhythm and Roots",
+              "description": "Creating three 8/8 Ancients…",
+              "effects": [
+                {
+                  "type": "summon",
+                  "count": 3,
+                  "attack": 8,
+                  "health": 8,
+                  "name": "Ancient"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "silk_stitching",
+      "name": "Silk Stitching",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "WHIZBANGS_WORKSHOP",
+      "cardClass": "death_knight",
+      "type": "sorcery",
+      "description": "Choose a friendly minion. Discover a spell that costs (4) or less for it to cast when it dies.",
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "spell",
+          "maxCost": 4,
+          "castOnDeath": true,
+          "target": "friendly-creature"
         }
       ]
     }

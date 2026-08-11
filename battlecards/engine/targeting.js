@@ -49,6 +49,7 @@ const CHOSEN = {
 	'devour-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'fill-board-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'unlock-overload-damage': { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	'discover': { 'friendly-creature': 'friendly-creature' }, // Silk Stitching: pick the minion that casts the discovered spell on death
 	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
 	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },

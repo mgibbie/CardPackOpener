@@ -2,6 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
+import { addHeroPower } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -233,31 +234,18 @@ register('set-hero-health', ({ state, pi, target, source, enemies, scaled, hm, p
 
 
 register('set-hero-power', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// Vilefin Inquisitor: replace your Hero Power with a specific one
-			const def = state.cardsById[e.powerId];
-			if (def) { const power = instantiate(def, pi); power.zone = 'heropower'; power.usedThisTurn = false; state.players[pi].heroPowers = [power]; emit(state, { type: 'heroPowerGained', player: pi, card: power }); }
+			// Vilefin Inquisitor / Dinomancy / Charged Hammer... — house rule: the
+			// power is ADDED, never replacing your row. discover:true = Yoink's
+			// discover-a-power flow (cost/uses ride along to the pick).
+			if (e.discover) { execEffects(state, pi, [{ type: 'discover', heroPower: true, cost: e.cost, uses: e.uses }], null, null); return; }
+			addHeroPower(state, pi, e.powerId, { setCost: e.cost, uses: e.uses });
 });
 
 
 register('add-hero-power', ({ state, pi }, e) => {
-	// House rule: hero powers are ADDITIVE — a new power joins your row (max 3)
-	// instead of replacing the old one. At the cap you pick one to discard to
-	// make room (resolvePick mode: discardPower). power.uses = N makes the
-	// power vanish after N activations (Metamorphosis / Story of Sulfuras).
-	const p = state.players[pi];
-	const def = state.cardsById[e.powerId];
-	if (!def || p.eliminated) return;
-	if (p.heroPowers.length >= MAX_HERO_POWERS) {
-		state.pickQueue.push({
-			player: pi, discardPower: true, addPowerId: e.powerId,
-			ids: p.heroPowers.map(c => c.id), uids: p.heroPowers.map(c => c.uid),
-		});
-		return;
-	}
-	const power = instantiate(def, pi);
-	power.zone = 'heropower'; power.usedThisTurn = false;
-	p.heroPowers.push(power);
-	emit(state, { type: 'heroPowerGained', player: pi, card: power });
+	// additive hero powers (house rule) — see addHeroPower in core.js; power.uses
+	// = N on the token makes it vanish after N activations (Metamorphosis etc.)
+	addHeroPower(state, pi, e.powerId);
 });
 
 
@@ -271,14 +259,9 @@ register('hero-attack-multi-turn', ({ state, pi, target, source, enemies, scaled
 
 
 register('thalena-power', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// Blood Doctor Thalena: a second, Corpse-costed Hero Power
-			const p = state.players[pi];
-			const def = state.cardsById['hp_blood_tap'];
-			if (def) {
-				const power = instantiate(def, pi); power.zone = 'heropower'; power.usedThisTurn = false;
-				p.heroPowers.push(power);
-				emit(state, { type: 'heroPowerGained', player: pi, card: power });
-			}
+			// Blood Doctor Thalena: a second, Corpse-costed Hero Power (additive
+			// house rule — cap-safe via the shared helper)
+			addHeroPower(state, pi, 'hp_blood_tap');
 } });
 
 

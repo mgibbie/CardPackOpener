@@ -3351,6 +3351,38 @@ export function resolveDredge(state, id) {
 }
 
 // resolve the oldest pending Discover/Draft with the chosen card id
+// House rule: hero powers are ADDITIVE. Granting one never replaces your row —
+// it joins it (max MAX_HERO_POWERS = 3); at the cap a discardPower pick opens
+// and the power you discard makes room for the newcomer.
+// opts: { setCost, uses } — Yoink's free 2-use discovered power.
+export function addHeroPower(state, pi, defOrId, opts = {}) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return null;
+	const def = typeof defOrId === 'string' ? state.cardsById[defOrId] : defOrId;
+	if (!def) return null;
+	if (p.heroPowers.length >= MAX_HERO_POWERS) {
+		state.pickQueue.push({
+			player: pi, discardPower: true,
+			addPowerId: typeof defOrId === 'string' ? defOrId : null,
+			addPowerDef: typeof defOrId === 'string' ? null : def,
+			addOpts: opts,
+			ids: p.heroPowers.map(c => c.id), uids: p.heroPowers.map(c => c.uid),
+		});
+		emit(state, { type: 'pickStart', player: pi, count: p.heroPowers.length });
+		return null;
+	}
+	const power = instantiate(def, pi);
+	power.zone = 'heropower'; power.usedThisTurn = false;
+	if (power.power && (opts.setCost != null || opts.uses != null)) {
+		power.power = { ...power.power };
+		if (opts.setCost != null) power.power.cost = opts.setCost;
+		if (opts.uses != null) power.power.uses = opts.uses;
+	}
+	p.heroPowers.push(power);
+	emit(state, { type: 'heroPowerGained', player: pi, card: power });
+	return power;
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
@@ -3371,7 +3403,7 @@ export function resolvePick(state, id) {
 		return true;
 	}
 	if (pend.discardPower) {
-		// add-hero-power at the 3-power cap: the chosen power is discarded and
+		// addHeroPower at the 3-power cap: the chosen power is discarded and
 		// the incoming one takes its slot
 		const pp = state.players[pend.player];
 		if (!pp.eliminated) {
@@ -3382,26 +3414,15 @@ export function resolvePick(state, id) {
 				pp.heroPowers = pp.heroPowers.filter(c => c !== victim);
 				emit(state, { type: 'heroPowerFaded', player: pend.player, card: victim });
 			}
-			const def = state.cardsById[pend.addPowerId];
-			if (def && pp.heroPowers.length < MAX_HERO_POWERS) {
-				const power = instantiate(def, pend.player);
-				power.zone = 'heropower'; power.usedThisTurn = false;
-				pp.heroPowers.push(power);
-				emit(state, { type: 'heroPowerGained', player: pend.player, card: power });
-			}
+			addHeroPower(state, pend.player, pend.addPowerDef || pend.addPowerId, pend.addOpts || {});
 		}
 		return true;
 	}
 	if (pend.heroPower) {
-		// Sir Finley: replace your Hero Power with the discovered one
-		const pp = state.players[pend.player];
+		// Sir Finley / Yoink: the discovered power is ADDED (house rule) —
+		// Yoink's pend carries powerSetCost 0 + powerUses 2
 		const def = state.cardsById[pend.ids.includes(id) ? id : pend.ids[0]];
-		if (def && !pp.eliminated) {
-			const power = instantiate(def, pend.player);
-			power.zone = 'heropower'; power.usedThisTurn = false;
-			pp.heroPowers = [power];
-			emit(state, { type: 'heroPowerGained', player: pend.player, card: power });
-		}
+		if (def) addHeroPower(state, pend.player, def.id, { setCost: pend.powerSetCost, uses: pend.powerUses });
 		return true;
 	}
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
@@ -3635,6 +3656,17 @@ export function resolvePick(state, id) {
 		let tgt = null;
 		if (spec) { const legal = legalTargets(state, pend.player, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; }
 		if (!spec || tgt || !spec.required) { emit(state, { type: 'conjure', player: pend.player, card: spell, color: null }); runSpell(state, pend.player, spell, tgt, null); sweepDeaths(state); }
+		return true;
+	}
+	if (def && pend.castOnDeathUid != null && !p.eliminated) {
+		// Silk Stitching: the chosen minion casts the discovered spell (random
+		// targets) when it dies — the spell binds to the minion, not your hand
+		const src = findCreature(state, pend.castOnDeathUid);
+		if (src && !isDead(src)) {
+			src.deathrattle = [...(src.deathrattle || []), { type: 'cast-random-spell', ids: [chosen] }];
+			if (!src.keywords.includes('deathrattle')) src.keywords.push('deathrattle');
+			emit(state, { type: 'buff', uid: src.uid, attack: src.attack, hp: hp(src) });
+		}
 		return true;
 	}
 	if (def && !p.eliminated && p.hand.length < MAX_HAND) {
@@ -4157,6 +4189,8 @@ export function endTurn(state) {
 		if (en.turnsLeft <= 0) {
 			p.enchantments = p.enchantments.filter(x => x !== en);
 			emit(state, { type: 'enchantFade', player: pi, name: en.name });
+			// time-bombs (the 'delayed' effect): the countdown ends — fire the payload
+			if (en.onExpire && !state.over) { execEffects(state, pi, en.onExpire, null, null); sweepDeaths(state); }
 		}
 	}
 	p.mana.bonus = 0;

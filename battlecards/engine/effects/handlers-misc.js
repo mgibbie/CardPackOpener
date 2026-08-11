@@ -2606,3 +2606,31 @@ register('unlock-overload-damage', ({ state, pi, target, source }, e) => {
 	emit(state, { type: 'manaGained', player: pi, amount: n, mana: p.mana.cur });
 	execEffects(state, pi, [{ type: 'damage', value: n, target: e.target || 'any' }], target, source);
 });
+
+// ---------- time-bombs family (hard-list recovery) ----------
+register('destroy-enemy-hero', ({ state, pi, enemyHero }) => {
+	// Wheel of DEATH!!!: the countdown ends — destroy target opponent
+	const o = enemyHero();
+	if (o == null || state.players[o].eliminated) return;
+	damageHero(state, o, 99999, pi);
+	checkGameOver(state);
+});
+
+register('immolate-mark', ({ state, pi, enemyHero }) => {
+	// Immolate: light target opponent's current hand on fire (the marks travel
+	// with the card instances; the delayed burn destroys any still in hand)
+	const o = enemyHero();
+	if (o == null) return;
+	for (const c of state.players[o].hand) c._immolate = true;
+	emit(state, { type: 'immolateMark', player: o, count: state.players[o].hand.length });
+});
+
+register('immolate-burn', ({ state, pi, enemies }) => {
+	for (const o of enemies) {
+		const p2 = state.players[o];
+		const burned = p2.hand.filter(c => c._immolate);
+		if (!burned.length) continue;
+		p2.hand = p2.hand.filter(c => !c._immolate);
+		for (const c of burned) { toGraveyard(state, o, c); emit(state, { type: 'discard', player: o, card: c }); }
+	}
+});
