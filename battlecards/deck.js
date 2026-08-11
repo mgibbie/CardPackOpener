@@ -105,8 +105,9 @@ function tileFor(card) {
 		tile.addEventListener('touchstart', e => onTouchStart(e, card), { passive: true });
 	} else {
 		tile.draggable = true;
-		tile.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.id); e.dataTransfer.effectAllowed = 'copy'; });
+		tile.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.id); e.dataTransfer.effectAllowed = 'copy'; hideTip(); });
 		tile.addEventListener('click', () => openCard(card));
+		attachTip(tile, card);
 	}
 	tileById.set(card.id, { tile, owned });
 	return tile;
@@ -144,6 +145,7 @@ function refreshTile(id) {
 
 let renderToken = 0;
 async function renderPage() {
+	hideTip(); // the hovered tile may be replaced under the cursor
 	tileById.clear();
 	const grid = $('grid');
 	if (!curClass) {
@@ -213,6 +215,7 @@ function renderSlots() {
 const showList = () => { $('decks-view').style.display = 'flex'; $('edit-view').style.display = 'none'; };
 const showEdit = () => { $('decks-view').style.display = 'none'; $('edit-view').style.display = 'flex'; };
 function renderDeckList() {
+	hideTip(); // the hovered row may be removed under the cursor
 	const dl = $('deck-list');
 	dl.innerHTML = '';
 	const counts = {};
@@ -223,7 +226,8 @@ function renderDeckList() {
 		const row = document.createElement('div');
 		row.className = 'deck-row';
 		row.innerHTML = `<span class="gem">${def.cost ?? 0}</span><span class="dn">${def.name}</span><span class="dx">×${counts[id]}</span>`;
-		row.onclick = () => removeCard(id);
+		row.onclick = () => { hideTip(); removeCard(id); };
+		if (!TOUCH) attachTip(row, def); // name-only rows benefit the most from the inspect tip
 		dl.appendChild(row);
 	}
 }
@@ -477,3 +481,34 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 	cardsReady = true;
 	maybeInit();
 });
+
+// ---------- hover tooltip (packs-style inspect, shared look with /collection) ----------
+const tipEl = document.getElementById('tip');
+const tipEsc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+function tipHtml(def) {
+	const stat = def.type === 'creature' ? ` · ${def.attack}/${def.health}`
+		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
+		: def.type ? ` · ${tipEsc(def.type)}` : '';
+	const owned = collection[def.id] > 0 ? ` · ×${collection[def.id]} owned` : '';
+	const kw = def.keywords?.length ? `<div class="kws">${tipEsc(def.keywords.join(', '))}</div>` : '';
+	const kwLines = keywordsFor(def).map(k =>
+		`<div class="kwline"><b>${tipEsc(k.label)}</b> <span style="opacity:0.85">${tipEsc(k.text)}</span></div>`).join('');
+	return `<div class="nm">${tipEsc(def.name)} <span class="cost">(${def.cost ?? 0})</span></div>`
+		+ `<div class="meta">${tipEsc(def.rarity || 'common')} ${tipEsc(classNameOf(def.cardClass))}${stat}${def.tribe ? ' · ' + tipEsc(def.tribe) : ''}${owned}</div>`
+		+ kw
+		+ (def.description ? `<div class="rules">${richHtml(def.description)}</div>` : '')
+		+ kwLines;
+}
+function placeTip(e) {
+	if (tipEl.style.display !== 'block') return;
+	const x = Math.min(e.clientX + 16, innerWidth - tipEl.offsetWidth - 8);
+	const y = Math.min(e.clientY + 16, innerHeight - tipEl.offsetHeight - 8);
+	tipEl.style.left = Math.max(8, x) + 'px';
+	tipEl.style.top = Math.max(8, y) + 'px';
+}
+function hideTip() { tipEl.style.display = 'none'; }
+function attachTip(el, def) {
+	el.addEventListener('mouseenter', e => { tipEl.innerHTML = tipHtml(def); tipEl.style.display = 'block'; placeTip(e); });
+	el.addEventListener('mousemove', placeTip);
+	el.addEventListener('mouseleave', hideTip);
+}
