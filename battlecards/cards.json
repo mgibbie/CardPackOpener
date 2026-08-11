@@ -173677,6 +173677,73 @@
           "target": "friendly-creature"
         }
       ]
+    },
+    {
+      "id": "blackrock_n_roll",
+      "name": "Blackrock 'n' Roll",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Give all minions in your deck Attack and Health equal to their Cost.",
+      "effects": [
+        {
+          "type": "deck-stats-equal-cost"
+        }
+      ]
+    },
+    {
+      "id": "deck_of_chaos",
+      "name": "Deck of Chaos",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "DARKMOON_FAIRE",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Swap the Cost and Attack of all minions in your deck.",
+      "effects": [
+        {
+          "type": "deck-swap-cost-attack"
+        }
+      ]
+    },
+    {
+      "id": "the_fires_of_zin_azshari",
+      "name": "The Fires of Zin-Azshari",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "THE_SUNKEN_CITY",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Replace your deck with minions that cost (5) or more. They cost (5).",
+      "effects": [
+        {
+          "type": "replace-deck-minions",
+          "minCost": 5,
+          "setCost": 5
+        }
+      ]
+    },
+    {
+      "id": "shadow_council",
+      "name": "Shadow Council",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "BLACK_TEMPLE",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Replace your hand with random Demons. Give them +2/+2.",
+      "effects": [
+        {
+          "type": "replace-hand-random-tribe",
+          "tribe": "Demon",
+          "buff": {
+            "attack": 2,
+            "health": 2
+          }
+        }
+      ]
     }
   ]
 }

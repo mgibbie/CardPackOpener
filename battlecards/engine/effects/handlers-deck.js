@@ -1768,3 +1768,49 @@ const _h_scry = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, en
 register('scry', _h_scry);
 register('gaze', _h_scry); // shared or-branch handler
 
+
+// ---------- deck rewrites family (hard-list recovery) ----------
+register('deck-stats-equal-cost', ({ state, pi }) => {
+	// Blackrock 'n' Roll: minions in your deck get stats equal to their Cost
+	// (applied as each takes on a live identity in the draw pipeline)
+	state.players[pi].deckStatsEqualCost = true;
+});
+
+register('deck-swap-cost-attack', ({ state, pi }) => {
+	// Deck of Chaos: swap the Cost and Attack of all minions in your deck
+	state.players[pi].deckSwapCostAttack = true;
+});
+
+register('replace-deck-minions', ({ state, pi }, e) => {
+	// The Fires of Zin-Azshari: replace your deck with random minions that cost
+	// (minCost) or more; drawn deck minions then cost (setCost)
+	const p = state.players[pi];
+	const pool = Object.values(state.cardsById).filter(d =>
+		d.type === 'creature' && !d.token && d.collectible !== false
+		&& !(d.colors && d.colors.length) && !d.companion && !d.commander
+		&& (e.minCost == null || (d.cost || 0) >= e.minCost));
+	if (!pool.length) return;
+	p.deck = p.deck.map(() => pool[Math.floor(state.rng() * pool.length)].id);
+	if (e.setCost != null) p.deckSetCost = e.setCost;
+	emit(state, { type: 'shuffle', player: pi });
+});
+
+register('replace-hand-random-tribe', ({ state, pi, source }, e) => {
+	// Shadow Council: replace your hand with random creatures of a tribe,
+	// buffed (+2/+2). The spell being cast is never its own victim.
+	const p = state.players[pi];
+	const pool = Object.values(state.cardsById).filter(d =>
+		d.type === 'creature' && !d.token && d.collectible !== false
+		&& !(d.colors && d.colors.length) && !d.companion && !d.commander
+		&& (e.tribe == null || (d.tribe || '').includes(e.tribe)));
+	if (!pool.length) return;
+	p.hand = p.hand.map(old => {
+		if (old === source) return old;
+		const def = pool[Math.floor(state.rng() * pool.length)];
+		const card = instantiate(def, pi);
+		card.zone = 'hand';
+		if (e.buff) { card.attack += e.buff.attack || 0; card.maxHealth += e.buff.health || 0; }
+		emit(state, { type: 'conjure', player: pi, card, color: null });
+		return card;
+	});
+});
