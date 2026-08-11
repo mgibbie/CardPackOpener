@@ -1008,7 +1008,7 @@ register('dredge', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				// bottom of the deck is the front of the array (draws pop the end)
 				const ids = p.deck.splice(0, Math.min(e.value || 3, p.deck.length));
 				if (ids.length) {
-					state.dredgeQueue.push({ player: pi, ids, beastCostMod: e.beastCostMod || 0 }); // Harpoon Gun: if the dredged card is a Beast, reduce its Cost
+					state.dredgeQueue.push({ player: pi, ids, beastCostMod: e.beastCostMod || 0, damageAllByCost: e.damageAllByCost || false }); // Harpoon Gun: Beast discount; Topple the Idol: reveal + AoE by its Cost
 					emit(state, { type: 'dredgeStart', player: pi, count: ids.length });
 					firePonder(state, pi, { dredge: true });
 				}

@@ -174333,6 +174333,405 @@
           }
         ]
       }
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "ungoro_queen_carnassa",
+      "name": "Queen Carnassa",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "hunter",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "carnassas_brood",
+            "carnassas_brood",
+            "carnassas_brood",
+            "carnassas_brood",
+            "carnassas_brood"
+          ]
+        }
+      ],
+      "description": "Battlecry: Shuffle 5 of Carnassa's Brood into your deck."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "ungoro_amara",
+      "name": "Amara, Warden of Hope",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "priest",
+      "attack": 8,
+      "health": 8,
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "set-hero-health",
+          "value": 40,
+          "target": "self"
+        }
+      ],
+      "description": "Taunt. Battlecry: Set your hero's Health to 40."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "ungoro_megafin",
+      "name": "Megafin",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "shaman",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conjure-random",
+          "cardType": "creature",
+          "tribe": "Murloc",
+          "count": 6
+        }
+      ],
+      "description": "Battlecry: Fill your hand with random Murlocs."
+    },
+    {
+      "rarity": "legendary",
+      "token": true,
+      "collectible": false,
+      "id": "latorvius",
+      "name": "Latorvius, Gaze of the City",
+      "type": "creature",
+      "cost": 5,
+      "cardClass": "warrior",
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "ids-to-hand-rest-deck",
+          "ids": [
+            "ungoro_queen_carnassa",
+            "ungoro_amara",
+            "ungoro_megafin"
+          ],
+          "take": 2
+        }
+      ],
+      "description": "Battlecry: Get 2 random Un'Goro Quest Rewards. Shuffle the rest into your deck."
+    },
+    {
+      "rarity": "legendary",
+      "token": true,
+      "collectible": false,
+      "id": "the_origin_stone",
+      "name": "The Origin Stone",
+      "type": "weapon",
+      "cost": 3,
+      "cardClass": "mage",
+      "attack": 1,
+      "durability": 3,
+      "playsDiscoverRest": true,
+      "description": "After you Discover a card, this plays the other options. Lose 1 Durability."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "inspired_vortex",
+      "name": "Vortex",
+      "type": "creature",
+      "cost": 4,
+      "cardClass": "mage",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Elemental",
+      "description": "A living gale."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_red",
+      "name": "Essence of the Red",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "When drawn: Gain 5 life."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_blue",
+      "name": "Essence of the Blue",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "When drawn: Draw 2 cards."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_green",
+      "name": "Essence of the Green",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Emerald Whelp",
+          "tribe": "Dragon"
+        }
+      ],
+      "description": "When drawn: Create two 2/2 Whelps."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_bronze",
+      "name": "Essence of the Bronze",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "conjure-id",
+          "id": "coin"
+        },
+        {
+          "type": "conjure-id",
+          "id": "coin"
+        }
+      ],
+      "description": "When drawn: Get two Coins."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_black",
+      "name": "Essence of the Black",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "random-damage",
+          "value": 5,
+          "count": 1,
+          "pool": "enemy-creatures"
+        }
+      ],
+      "description": "When drawn: Deal 5 damage to a random enemy minion."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "id": "essence_of_the_twilight",
+      "name": "Essence of the Twilight",
+      "type": "sorcery",
+      "cost": 0,
+      "cardClass": "neutral",
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "count": 1,
+          "pool": "enemies"
+        }
+      ],
+      "description": "When drawn: Deal 3 damage to a random enemy."
+    },
+    {
+      "id": "enter_the_lost_city",
+      "name": "Enter the Lost City",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "cardClass": "warrior",
+      "type": "quest",
+      "keywords": [
+        "quest"
+      ],
+      "description": "Quest: Survive 10 turns.\nReward: Latorvius, Gaze of the City.",
+      "quest": {
+        "goal": {
+          "type": "turn",
+          "count": 10
+        },
+        "reward": [
+          {
+            "type": "conjure-id",
+            "id": "latorvius"
+          }
+        ]
+      }
+    },
+    {
+      "id": "the_forbidden_sequence",
+      "name": "The Forbidden Sequence",
+      "cost": 1,
+      "rarity": "legendary",
+      "set": "THE_LOST_CITY",
+      "cardClass": "mage",
+      "type": "quest",
+      "keywords": [
+        "quest"
+      ],
+      "description": "Quest: Discover 7 cards.\nReward: The Origin Stone.",
+      "quest": {
+        "goal": {
+          "type": "discover",
+          "count": 7
+        },
+        "reward": [
+          {
+            "type": "conjure-id",
+            "id": "the_origin_stone"
+          }
+        ]
+      }
+    },
+    {
+      "id": "death_growl",
+      "name": "Death Growl",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "death_knight",
+      "type": "sorcery",
+      "description": "Choose a minion. Spread its Deathrattle to adjacent minions.",
+      "effects": [
+        {
+          "type": "spread-deathrattle-adjacent",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "topple_the_idol",
+      "name": "Topple the Idol",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "THE_SUNKEN_CITY",
+      "cardClass": "demon_hunter",
+      "type": "sorcery",
+      "description": "Dredge. Reveal it and deal damage equal to its Cost to all minions.",
+      "effects": [
+        {
+          "type": "dredge",
+          "value": 3,
+          "damageAllByCost": true
+        }
+      ]
+    },
+    {
+      "id": "elemental_inspiration",
+      "name": "Elemental Inspiration",
+      "cost": 7,
+      "rarity": "epic",
+      "set": "TITANS",
+      "cardClass": "mage",
+      "type": "sorcery",
+      "description": "For each spell school you have cast this game, create a 4/5 Vortex with a random Bonus Effect.",
+      "effects": [
+        {
+          "type": "summon-with-gifts",
+          "summonId": "inspired_vortex",
+          "perSchoolsCast": true
+        }
+      ]
+    },
+    {
+      "id": "dragon_soul_shattered",
+      "name": "Dragon Soul, Shattered",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "EVENT",
+      "cardClass": "neutral",
+      "type": "sorcery",
+      "description": "Break into 6 Essences: shuffle them into your deck. They cast when drawn — adjoining Essences cast together.",
+      "effects": [
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "essence_of_the_red",
+            "essence_of_the_blue",
+            "essence_of_the_green",
+            "essence_of_the_bronze",
+            "essence_of_the_black",
+            "essence_of_the_twilight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "welcome_home",
+      "name": "Welcome Home!",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "EVENT",
+      "cardClass": "neutral",
+      "type": "sorcery",
+      "description": "Reopen a friendly location (+2 uses). Give it 'Deathrattle: Create a random 3-Cost minion.'",
+      "effects": [
+        {
+          "type": "reopen-location",
+          "uses": 2,
+          "deathrattle": [
+            {
+              "type": "summon-random",
+              "cost": 3
+            }
+          ]
+        }
+      ]
     }
   ]
 }

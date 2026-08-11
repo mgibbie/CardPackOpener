@@ -188,8 +188,10 @@ register('resurrect-died-this-turn', ({ state, pi, target, source, enemies, scal
 
 
 register('summon-with-gifts', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// Tyrannogill: summon N tokens, each with its own random Bonus Effect
-			for (let n = 0; n < (e.count || 1); n++) {
+			// Tyrannogill: summon N tokens, each with its own random Bonus Effect.
+			// Elemental Inspiration: N = spell schools you've cast this game.
+			const times = e.perSchoolsCast ? Object.keys(state.players[pi].schoolsCastGame || {}).length : (e.count || 1);
+			for (let n = 0; n < times; n++) {
 				const c = state.cardsById[e.summonId] ? summon(state, pi, state.cardsById[e.summonId]) : null;
 				if (c) applyGift(state, c, null, { board: true });
 			}

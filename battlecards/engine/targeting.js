@@ -53,6 +53,7 @@ const CHOSEN = {
 	'set-all-stats-to-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' }, // Judgment
 	'tribe-steal-stats': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Wither
 	'steal-health-from-all': { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // Shadow Word: Devour
+	'spread-deathrattle-adjacent': { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // Death Growl
 	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
 	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },

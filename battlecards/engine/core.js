@@ -3366,6 +3366,13 @@ export function resolveDredge(state, id) {
 	// Harpoon Gun: if the dredged card is a Beast, reduce its Cost (applied when drawn)
 	if (pend.beastCostMod) { const d = state.cardsById[chosen]; if (d && (d.tribe || '').includes('Beast')) (state.players[pend.player].deckIdBuffs = state.players[pend.player].deckIdBuffs || []).push({ id: chosen, attack: 0, health: 0, cost: pend.beastCostMod }); }
 	emit(state, { type: 'dredgeDone', player: pend.player, id: chosen });
+	// Topple the Idol: reveal the dredged card, deal its Cost to all minions
+	if (pend.damageAllByCost) {
+		const d = state.cardsById[chosen];
+		emit(state, { type: 'reveal', player: pend.player, cardId: chosen, name: d?.name });
+		execEffects(state, pend.player, [{ type: 'damage-all-minions', value: (d && d.cost) || 0 }], null, null);
+		sweepDeaths(state);
+	}
 	{ const dp = state.players[pend.player]; if (dp.edgeOfDredge && dp._dredgeTurn !== state.turnNumber) { dp._dredgeTurn = state.turnNumber; drawCards(state, pend.player, 1); } } // Edge of Dredge (Duels): first Dredge each turn -> draw
 	return true;
 }
@@ -3406,7 +3413,10 @@ export function addHeroPower(state, pi, defOrId, opts = {}) {
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
-	if (pend.discover && state.players[pend.player]) state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
+	if (pend.discover && state.players[pend.player]) {
+		state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
+		questTick(state, 'discover', pend.player); // The Forbidden Sequence: "Discover 7 cards"
+	}
 	if (pend.mode === 'adapt') {
 		// apply the chosen adaptation to every still-living adapting creature
 		const idx = pend.ids.includes(String(id)) ? Number(id) : Number(pend.ids[0]);
@@ -3736,6 +3746,24 @@ export function resolvePick(state, id) {
 		if (pend.darkGift) appliedGift = applyGift(state, card); // Emerald Dream: the discovered card carries a Dark Gift
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		// The Origin Stone: after you Discover, the other options are played too
+		// (custom flags live on the DEF — instantiate doesn't copy them)
+		if (pend.discover && p.weapon && (p.weapon.playsDiscoverRest || state.cardsById[p.weapon.id]?.playsDiscoverRest) && !p.eliminated) {
+			for (const oid of pend.ids) {
+				if (oid === chosen || state.over) continue;
+				const od = state.cardsById[oid];
+				if (!od) continue;
+				if (od.type === 'creature') summon(state, pend.player, od);
+				else if (isSpellType(od)) {
+					const sp2 = instantiate(od, pend.player);
+					const spec2 = targetSpec(state, pend.player, sp2, null);
+					let t2 = null;
+					if (spec2) { const lg = legalTargets(state, pend.player, spec2); if (lg.length) t2 = lg[Math.floor(state.rng() * lg.length)]; }
+					if (!spec2 || t2 || !spec2.required) { emit(state, { type: 'conjure', player: pend.player, card: sp2, color: null }); runSpell(state, pend.player, sp2, t2, null); sweepDeaths(state); }
+				}
+			}
+			if (p.weapon) execEffects(state, pend.player, [{ type: 'lose-durability', value: 1 }], null, p.weapon);
+		}
 		if (p.luckySpade && def) for (let _n = 0; _n < 2 && p.hand.length < MAX_HAND; _n++) { const lc = instantiate(def, pend.player); lc.zone = 'hand'; lc.cost = Math.max(0, (lc.cost || 0) - 2); p.hand.push(lc); emit(state, { type: 'conjure', player: pend.player, card: lc, color: null }); } // Lucky Spade
 		if (p.openDoorways && def && p._doorwaysTurn !== state.turnNumber && p.hand.length < MAX_HAND) { p._doorwaysTurn = state.turnNumber; const dc = instantiate(def, pend.player); dc.zone = 'hand'; p.hand.push(dc); emit(state, { type: 'conjure', player: pend.player, card: dc, color: null }); } // Open the Doorways (Duels): first Discover each turn -> a copy
 		if (p.orbRevelation && p._orbTurn !== state.turnNumber) { p._orbTurn = state.turnNumber; for (const oc of p.hand) if (isSpellType(oc) && (oc.cost || 0) > 0) { oc.cost = Math.max(0, oc.cost - 1); emit(state, { type: 'costChange', player: pend.player, uid: oc.uid, cost: oc.cost }); } } // Orb of Revelation (Duels): first Discover each turn -> spells (1) cheaper
@@ -4011,6 +4039,7 @@ export function endTurn(state) {
 	if (state.over) return;
 	const pi = state.current;
 	const p = state.players[pi];
+	questTick(state, 'turn', pi); // Enter the Lost City: "Survive 10 turns"
 	p.spellTaxNext = 0; // Loatheb's tax only lasts this player's turn
 	p.battlecryTaxNext = 0; // Boompistol Bully's tax only lasts through this player's turn
 	{ const cursed = p.hand.filter(c => c.cursed); if (cursed.length) { let dmg = 0; for (const c of cursed) { dmg += c.curseDamage || 3; c.cursed = false; } damageHero(state, pi, dmg, pi); } } // Chaos Gazer: unplayed cursed cards bite

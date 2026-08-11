@@ -2891,3 +2891,51 @@ register('transform-hand-minions-each-player', ({ state }, e) => {
 		emit(state, { type: 'conjure', player: s2, card: nc, color: null });
 	}
 });
+
+// ---------- the final seven (hard-list recovery) ----------
+register('ids-to-hand-rest-deck', ({ state, pi }, e) => {
+	// Latorvius: get `take` random cards from the pool, shuffle the rest into
+	// your deck
+	const p = state.players[pi];
+	const bag = [...(e.ids || [])].filter(id => state.cardsById[id]);
+	for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+	for (let n = 0; n < (e.take || 1) && bag.length; n++) {
+		if (p.hand.length >= MAX_HAND) break;
+		const card = instantiate(state.cardsById[bag.shift()], pi);
+		card.zone = 'hand'; p.hand.push(card);
+		emit(state, { type: 'conjure', player: pi, card, color: null });
+	}
+	if (bag.length) {
+		for (const id of bag) p.deck.push(id);
+		for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+		emit(state, { type: 'shuffle', player: pi });
+	}
+});
+
+register('spread-deathrattle-adjacent', ({ state, pi, chosenCreature }) => {
+	// Death Growl: copy the chosen minion's Deathrattle onto its board neighbors
+	const t = chosenCreature();
+	if (!t || !t.deathrattle) return;
+	const ob = state.players[t.controller].board;
+	const ti = ob.indexOf(t);
+	for (const n of [ob[ti - 1], ob[ti + 1]]) {
+		if (!n || n.type !== 'creature' || isDead(n)) continue;
+		n.deathrattle = [...(n.deathrattle || []), ...JSON.parse(JSON.stringify(t.deathrattle))];
+		if (!n.keywords.includes('deathrattle')) n.keywords.push('deathrattle');
+		emit(state, { type: 'buff', uid: n.uid, attack: n.attack, hp: hp(n) });
+	}
+});
+
+register('reopen-location', ({ state, pi }, e) => {
+	// Welcome Home!: a friendly location regains uses and gains a Deathrattle
+	// (locations run their deathrattles when they crumble — Ultralisk Cavern)
+	const p = state.players[pi];
+	const loc = p.board.find(c => c.type === 'location');
+	if (!loc) return;
+	loc.durability = (loc.durability || 0) + (e.uses || 2);
+	if (e.deathrattle) {
+		loc.deathrattle = [...(loc.deathrattle || []), ...JSON.parse(JSON.stringify(e.deathrattle))];
+		if (!loc.keywords.includes('deathrattle')) loc.keywords.push('deathrattle');
+	}
+	emit(state, { type: 'locationDurability', player: pi, uid: loc.uid, durability: loc.durability });
+});
