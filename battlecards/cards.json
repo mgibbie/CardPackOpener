@@ -173342,6 +173342,103 @@
           "rattleDouble": true
         }
       ]
+    },
+    {
+      "id": "reckless_flurry",
+      "name": "Reckless Flurry",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "LOOTAPALOOZA",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Spend all your Armor. Deal that much damage to all minions.",
+      "effects": [
+        {
+          "type": "spend-armor-damage-all-minions"
+        }
+      ]
+    },
+    {
+      "id": "shellnado",
+      "name": "Shellnado",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Spend up to 5 Armor. For each spent, deal 1 damage to all minions.",
+      "effects": [
+        {
+          "type": "spend-armor-damage-all-minions",
+          "cap": 5,
+          "perPoint": true
+        }
+      ]
+    },
+    {
+      "id": "part_scrapper",
+      "name": "Part Scrapper",
+      "cost": 2,
+      "rarity": "common",
+      "set": "WHIZBANGS_WORKSHOP",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Lose up to 5 Armor. Your next Mech costs that much less.",
+      "effects": [
+        {
+          "type": "spend-armor-next-tribe-discount",
+          "cap": 5,
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "crescendo",
+      "name": "Crescendo",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Take Fatigue damage. Deal that much damage to all enemies.",
+      "effects": [
+        {
+          "type": "fatigue-damage-all-enemies"
+        }
+      ]
+    },
+    {
+      "id": "corpse_farm",
+      "name": "Corpse Farm",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "CORE",
+      "cardClass": "death_knight",
+      "type": "sorcery",
+      "description": "Spend up to 8 Corpses to create a random minion of that Cost.",
+      "effects": [
+        {
+          "type": "spend-corpses-summon-cost",
+          "cap": 8
+        }
+      ]
+    },
+    {
+      "id": "overdraft",
+      "name": "Overdraft",
+      "cost": 1,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "cardClass": "shaman",
+      "type": "sorcery",
+      "tradeable": true,
+      "description": "Tradeable. Unlock your Overloaded Mana Crystals to deal that much damage.",
+      "effects": [
+        {
+          "type": "unlock-overload-damage",
+          "target": "any"
+        }
+      ]
     }
   ]
 }

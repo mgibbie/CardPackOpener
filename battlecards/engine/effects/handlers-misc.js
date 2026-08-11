@@ -2548,3 +2548,61 @@ const _h_mind_control = ({ state, pi, target, source, enemies, scaled, hm, pickE
 register('mind-control', _h_mind_control);
 register('mind-control-random', _h_mind_control); // shared or-branch handler
 
+
+// ---------- spend-X resources family (hard-list recovery) ----------
+register('spend-armor-damage-all-minions', ({ state, pi }, e) => {
+	// Reckless Flurry: spend ALL your Armor, deal that much to all minions.
+	// Shellnado (cap 5, perPoint): each point is its own 1-damage AoE, so
+	// Divine Shields pop per hit like the real card.
+	const p = state.players[pi];
+	const n = Math.min(p.armor || 0, e.cap ?? Infinity);
+	if (n <= 0) return;
+	p.armor -= n;
+	emit(state, { type: 'armor', player: pi, amount: -n, armor: p.armor });
+	if (e.perPoint) { for (let i = 0; i < n; i++) execEffects(state, pi, [{ type: 'damage-all-minions', value: 1 }], null, null); }
+	else execEffects(state, pi, [{ type: 'damage-all-minions', value: n }], null, null);
+});
+
+register('spend-armor-next-tribe-discount', ({ state, pi }, e) => {
+	// Part Scrapper: lose up to `cap` Armor; your next `tribe` creature costs that much less
+	const p = state.players[pi];
+	const n = Math.min(p.armor || 0, e.cap ?? 5);
+	if (n <= 0) return;
+	p.armor -= n;
+	emit(state, { type: 'armor', player: pi, amount: -n, armor: p.armor });
+	p.nextTribeDiscount = { tribe: e.tribe || 'Mech', count: 1, amount: n };
+});
+
+register('fatigue-damage-all-enemies', ({ state, pi }) => {
+	// Crescendo: take your next (escalating) Fatigue hit, then deal that much
+	// to all enemies (their minions and heroes)
+	const p = state.players[pi];
+	p.fatigue++;
+	emit(state, { type: 'fatigue', player: pi, amount: p.fatigue });
+	damageHero(state, pi, p.fatigue, pi);
+	execEffects(state, pi, [{ type: 'damage-all-enemies', value: p.fatigue }], null, null);
+	sweepDeaths(state);
+});
+
+register('spend-corpses-summon-cost', ({ state, pi }, e) => {
+	// Corpse Farm: spend up to `cap` Corpses, create a random minion of that Cost
+	const p = state.players[pi];
+	const n = Math.min(p.corpses || 0, e.cap ?? 8);
+	if (n > 0) {
+		spendCorpses(state, pi, n);
+		emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
+	}
+	execEffects(state, pi, [{ type: 'summon-random', cost: n }], null, null);
+});
+
+register('unlock-overload-damage', ({ state, pi, target, source }, e) => {
+	// Overdraft: unlock your Overloaded crystals (locked now AND pending) and
+	// deal that much damage to the chosen target
+	const p = state.players[pi];
+	const n = (p.overloadLockedThisTurn || 0) + (p.overloadPending || 0);
+	if (n <= 0) return;
+	if (p.overloadLockedThisTurn) { p.mana.cur += p.overloadLockedThisTurn; p.overloadLockedThisTurn = 0; }
+	p.overloadPending = 0;
+	emit(state, { type: 'manaGained', player: pi, amount: n, mana: p.mana.cur });
+	execEffects(state, pi, [{ type: 'damage', value: n, target: e.target || 'any' }], target, source);
+});

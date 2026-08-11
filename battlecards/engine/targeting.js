@@ -48,6 +48,7 @@ const CHOSEN = {
 	'mark-doomed': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
 	'fill-board-copies-of-target': { 'friendly-creature': 'friendly-creature', creature: 'creature' },
+	'unlock-overload-damage': { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'devour-enemy': { 'enemy-creature': 'enemy-creature', creature: 'creature' },
 	'throw-hand-minion': { 'enemy-creature': 'enemy-creature' },
 	'lock-minion-attack': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
