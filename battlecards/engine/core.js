@@ -3370,6 +3370,28 @@ export function resolvePick(state, id) {
 		recomputeAuras(state);
 		return true;
 	}
+	if (pend.discardPower) {
+		// add-hero-power at the 3-power cap: the chosen power is discarded and
+		// the incoming one takes its slot
+		const pp = state.players[pend.player];
+		if (!pp.eliminated) {
+			const idx = pend.ids.includes(id) ? pend.ids.indexOf(id) : 0;
+			const victimUid = pend.uids[idx];
+			const victim = pp.heroPowers.find(c => c.uid === victimUid);
+			if (victim) {
+				pp.heroPowers = pp.heroPowers.filter(c => c !== victim);
+				emit(state, { type: 'heroPowerFaded', player: pend.player, card: victim });
+			}
+			const def = state.cardsById[pend.addPowerId];
+			if (def && pp.heroPowers.length < MAX_HERO_POWERS) {
+				const power = instantiate(def, pend.player);
+				power.zone = 'heropower'; power.usedThisTurn = false;
+				pp.heroPowers.push(power);
+				emit(state, { type: 'heroPowerGained', player: pend.player, card: power });
+			}
+		}
+		return true;
+	}
 	if (pend.heroPower) {
 		// Sir Finley: replace your Hero Power with the discovered one
 		const pp = state.players[pend.player];
@@ -3843,6 +3865,13 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	card._uses = (card._uses || 0) + 1;
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
 	stackAction(state, pi, { kind: 'heropower', card, effects: heroPowerEffects(state, pi, card, choice), target });
+	// limited-use powers (Metamorphosis / Story of Sulfuras): vanish once spent.
+	// _uses is a per-TURN counter (reset at turn start) — track lifetime uses here.
+	card._usesGame = (card._usesGame || 0) + 1;
+	if (card.power && card.power.uses && card._usesGame >= card.power.uses) {
+		p.heroPowers = p.heroPowers.filter(c => c !== card);
+		emit(state, { type: 'heroPowerFaded', player: pi, card });
+	}
 	return true;
 }
 

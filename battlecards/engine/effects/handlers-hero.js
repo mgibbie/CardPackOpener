@@ -239,6 +239,28 @@ register('set-hero-power', ({ state, pi, target, source, enemies, scaled, hm, pi
 });
 
 
+register('add-hero-power', ({ state, pi }, e) => {
+	// House rule: hero powers are ADDITIVE — a new power joins your row (max 3)
+	// instead of replacing the old one. At the cap you pick one to discard to
+	// make room (resolvePick mode: discardPower). power.uses = N makes the
+	// power vanish after N activations (Metamorphosis / Story of Sulfuras).
+	const p = state.players[pi];
+	const def = state.cardsById[e.powerId];
+	if (!def || p.eliminated) return;
+	if (p.heroPowers.length >= MAX_HERO_POWERS) {
+		state.pickQueue.push({
+			player: pi, discardPower: true, addPowerId: e.powerId,
+			ids: p.heroPowers.map(c => c.id), uids: p.heroPowers.map(c => c.uid),
+		});
+		return;
+	}
+	const power = instantiate(def, pi);
+	power.zone = 'heropower'; power.usedThisTurn = false;
+	p.heroPowers.push(power);
+	emit(state, { type: 'heroPowerGained', player: pi, card: power });
+});
+
+
 register('hero-attack-multi-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Chronikar: +N hero Attack this turn and the next `turns - 1` of your turns
 			const p = state.players[pi];

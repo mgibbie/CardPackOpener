@@ -173439,6 +173439,120 @@
           "target": "any"
         }
       ]
+    },
+    {
+      "id": "hp_mind_spike",
+      "name": "Mind Spike",
+      "type": "heropower",
+      "cost": 0,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "token": true,
+      "collectible": false,
+      "power": {
+        "cost": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Deal 2 damage."
+    },
+    {
+      "id": "hp_demonic_blast",
+      "name": "Demonic Blast",
+      "type": "heropower",
+      "cost": 0,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "token": true,
+      "collectible": false,
+      "power": {
+        "cost": 1,
+        "uses": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "Hero Power (1): Deal 5 damage. Vanishes after 2 uses."
+    },
+    {
+      "id": "hp_die_insect",
+      "name": "DIE, INSECT!",
+      "type": "heropower",
+      "cost": 0,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "token": true,
+      "collectible": false,
+      "power": {
+        "cost": 2,
+        "uses": 2,
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 8,
+            "count": 1,
+            "pool": "enemies"
+          }
+        ]
+      },
+      "description": "Hero Power (2): Deal 8 damage to a random enemy. Vanishes after 2 uses."
+    },
+    {
+      "id": "shadowform",
+      "name": "Shadowform",
+      "cost": 2,
+      "rarity": "epic",
+      "set": "PLACEHOLDER_202204",
+      "cardClass": "priest",
+      "type": "sorcery",
+      "description": "Gain a new Hero Power: 'Deal 2 damage.'",
+      "effects": [
+        {
+          "type": "add-hero-power",
+          "powerId": "hp_mind_spike"
+        }
+      ]
+    },
+    {
+      "id": "metamorphosis",
+      "name": "Metamorphosis",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "BLACK_TEMPLE",
+      "cardClass": "demon_hunter",
+      "type": "sorcery",
+      "description": "Gain a new Hero Power: 'Deal 5 damage.' Vanishes after 2 uses.",
+      "effects": [
+        {
+          "type": "add-hero-power",
+          "powerId": "hp_demonic_blast"
+        }
+      ]
+    },
+    {
+      "id": "story_of_sulfuras",
+      "name": "Story of Sulfuras",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "THE_LOST_CITY",
+      "cardClass": "warrior",
+      "type": "sorcery",
+      "description": "Gain a new Hero Power: 'Deal 8 damage to a random enemy.' Vanishes after 2 uses.",
+      "effects": [
+        {
+          "type": "add-hero-power",
+          "powerId": "hp_die_insect"
+        }
+      ]
     }
   ]
 }
