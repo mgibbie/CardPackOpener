@@ -1274,7 +1274,7 @@ register('buff-distinct-tribes', ({ state, pi, target, source, enemies, scaled, 
 			const seen = new Set();
 			for (const c of p.board) {
 				if (isDead(c) || c.type !== 'creature' || c === source) continue;
-				const t = (c.tribe || '').split('/')[0];
+				const t = (c.tribe || '').split(/[/\s]+/)[0];
 				if (!t || seen.has(t)) continue;
 				seen.add(t);
 				buffCreature(c, e.attack || 1, e.health || 1);

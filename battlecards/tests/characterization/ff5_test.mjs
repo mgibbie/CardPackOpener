@@ -9,8 +9,8 @@ function mana(s, pi, n) { s.players[pi].mana = { cur: n, max: n, bonus: 0 }; }
 let pass = 0, fail = 0; const ok = (l, c) => { if (c) pass++; else { fail++; console.log('FAIL:', l); } };
 
 // dual tribes synced from HS data
-ok('firegill is Elemental/Murloc', byId['firegill'].tribe === 'Elemental/Murloc');
-ok('diabolus rex is Demon/Beast', byId['diabolus_rex'].tribe === 'Demon/Beast');
+ok('firegill is Elemental Murloc', byId['firegill'].tribe === 'Elemental Murloc');
+ok('diabolus rex is Demon Beast', byId['diabolus_rex'].tribe === 'Demon Beast');
 
 // Kindred OFF: no type-mate on board
 {

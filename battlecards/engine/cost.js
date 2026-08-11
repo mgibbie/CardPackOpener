@@ -83,8 +83,8 @@ export function effectiveCost(state, pi, card) {
 		} else if (card.selfCost.per === 'tribe-in-graveyard') {
 			n = (p.graveyard || []).filter(x => ((state.cardsById[x.id] || x).tribe || '').includes(card.selfCost.tribe)).length; // Fye, the Setting Sun
 		} else if (card.selfCost.per === 'unique-tribes') {
-			const counts = {}; for (const x of p.board) if (!isDead(x) && x.type === 'creature') for (const t of (x.tribe || '').split('/').filter(Boolean)) counts[t] = (counts[t] || 0) + 1;
-			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').split('/').filter(Boolean).some(t => counts[t] === 1)).length; // Tent Trasher: friendly minions with a unique type
+			const counts = {}; for (const x of p.board) if (!isDead(x) && x.type === 'creature') for (const t of (x.tribe || '').split(/[/\s]+/).filter(Boolean)) counts[t] = (counts[t] || 0) + 1;
+			n = p.board.filter(x => !isDead(x) && x.type === 'creature' && (x.tribe || '').split(/[/\s]+/).filter(Boolean).some(t => counts[t] === 1)).length; // Tent Trasher: friendly minions with a unique type
 		} else if (card.selfCost.per === 'friendly-deaths-game') {
 			n = p.friendlyDeaths || 0; // Ur'zul Giant
 		} else if (card.selfCost.per === 'damage-opp-turn') {

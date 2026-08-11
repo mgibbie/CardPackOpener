@@ -147,11 +147,11 @@ export const DARK_GIFTS = [
 // with this card (slash-joined dual tribes; 'All' matches anything with a type).
 export function kindredActive(state, pi, source) {
 	if (!source) return false;
-	const mine = (source.tribe || '').split('/').filter(Boolean);
+	const mine = (source.tribe || '').split(/[/\s]+/).filter(Boolean);
 	if (!mine.length) return false;
 	for (const c of state.players[pi].board) {
 		if (c === source || isDead(c) || c.type === 'location') continue;
-		const theirs = (c.tribe || '').split('/').filter(Boolean);
+		const theirs = (c.tribe || '').split(/[/\s]+/).filter(Boolean);
 		if (!theirs.length) continue;
 		if (mine.includes('All') || theirs.includes('All')) return true;
 		if (mine.some(t => theirs.includes(t))) return true;
@@ -1084,7 +1084,7 @@ export function summon(state, pi, tokenDef) {
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
 	if ((c.tribe || '').includes('Totem')) p.totemsSummonedGame = (p.totemsSummonedGame || 0) + 1; // Thing from Below / Gigantotem: Totems summoned this game
-	for (const t of (c.tribe || '').split('/').filter(Boolean)) (p.tribeSummonedGame = p.tribeSummonedGame || {})[t] = (p.tribeSummonedGame[t] || 0) + 1; // Knight of the Wild / Frostsaber Matriarch: minions of a tribe summoned this game
+	for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) (p.tribeSummonedGame = p.tribeSummonedGame || {})[t] = (p.tribeSummonedGame[t] || 0) + 1; // Knight of the Wild / Frostsaber Matriarch: minions of a tribe summoned this game
 	if (state.anomaly && c.type !== 'location') { // Dalaran Heist anomalies, applied symmetrically to every summon
 		if (state.anomaly === 'infused') { const ks = [KW.TAUNT, KW.DIVINE_SHIELD, KW.RUSH, KW.WINDFURY]; const k = ks[Math.floor(state.rng() * ks.length)]; if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } }
 		else if (state.anomaly === 'explosive') { c.deathrattle = (c.deathrattle || []).concat([{ type: 'damage', value: 1, target: 'all-creatures' }]); if (!c.keywords.includes(KW.DEATHRATTLE)) c.keywords.push(KW.DEATHRATTLE); }
@@ -2269,7 +2269,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 
 	p.lastCardCost = card.cost; p.lastPlayedRunes = card.runes || null; // Rolling Stone / Grotesque Runeblade: cost of the most recently played card
 	if (!card.token) p.lastCardPlayedId = card.id; // Fate Splitter: opponent's most recent card
-	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || {}; for (const tr of (card.tribe || '').split('/')) if (tr) p.tribesPlayedGame[tr] = true; } // Power Slider (plain object, NOT a Set — must survive snapshot JSON)
+	if (card.type === 'creature' && card.tribe) { p.tribesPlayedGame = p.tribesPlayedGame || {}; for (const tr of (card.tribe || '').split(/[/\s]+/)) if (tr) p.tribesPlayedGame[tr] = true; } // Power Slider (plain object, NOT a Set — must survive snapshot JSON)
 	if (card.type === 'creature' && (card.tribe || '').includes('Elemental')) p.elementalsPlayedThisTurn = (p.elementalsPlayedThisTurn || 0) + 1; // Unchained Gladiator
 	if (card.type === 'creature' && (card.tribe || '').includes('Dragon')) p.dragonsPlayedGame = (p.dragonsPlayedGame || 0) + 1; // Timewinder Zarimi
 	if (card.type === 'creature' && !card.token) (p.playedMinionLog = p.playedMinionLog || []).push(card.id); // Joymancer Jepetto

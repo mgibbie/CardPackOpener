@@ -97,7 +97,7 @@ register('illusion-copy', ({ state, pi, target, source, enemies, scaled, hm, pic
 register('discover-target-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Amalgam of the Deep: discover a minion of the chosen friendly minion's type
 			const t = chosenCreature();
-			const tribe = t && (t.tribe || '').split('/')[0];
+			const tribe = t && (t.tribe || '').split(/[/\s]+/)[0];
 			execEffects(state, pi, [{ type: 'discover', cardType: 'creature', tribe: tribe || undefined }], null, source);
 });
 
@@ -990,7 +990,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			if (e.minCost != null) pool = pool.filter(d => (d.cost || 0) >= e.minCost); // Hexmarshal: a spell that costs (5) or more
 			if (e.nameIncludes) pool = pool.filter(d => (d.name || '').includes(e.nameIncludes)); // Yrel: Librams
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
-			if (e.multiTribe) pool = pool.filter(d => d.type === 'creature' && (d.tribe || '').split('/').filter(Boolean).length >= 2); // Tortotem: a creature with multiple creature types
+			if (e.multiTribe) pool = pool.filter(d => d.type === 'creature' && (d.tribe || '').split(/[/\s]+/).filter(Boolean).length >= 2); // Tortotem: a creature with multiple creature types
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
@@ -1131,7 +1131,7 @@ register('copy-hand-minions-distinct-tribe', ({ state, pi, target, source, enemi
 			// Rock Master Voone: add a copy of each minion of a different type in your hand
 			const p = state.players[pi];
 			const seen = new Set(); const toAdd = [];
-			for (const c of p.hand) { if (c === source || c.type !== 'creature') continue; const tr = (c.tribe || '').split('/')[0] || ('_' + c.id); if (seen.has(tr)) continue; seen.add(tr); toAdd.push(c.id); }
+			for (const c of p.hand) { if (c === source || c.type !== 'creature') continue; const tr = (c.tribe || '').split(/[/\s]+/)[0] || ('_' + c.id); if (seen.has(tr)) continue; seen.add(tr); toAdd.push(c.id); }
 			for (const id of toAdd) { if (p.hand.length >= MAX_HAND) break; const def = state.cardsById[id]; if (def) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); } }
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });

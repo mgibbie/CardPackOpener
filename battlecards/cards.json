@@ -2052,7 +2052,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "legendary",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "type": "creature",
       "attack": 9,
       "health": 7,
@@ -2095,7 +2095,7 @@
       "attack": 9,
       "health": 5,
       "description": "A 9/5 creature.",
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental Beast"
     },
     {
       "id": "flamestrike",
@@ -8715,7 +8715,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Undead/Draenei",
+      "tribe": "Undead Draenei",
       "keywords": [
         "battlecry",
         "deathrattle"
@@ -9196,7 +9196,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "elusive"
       ]
@@ -9269,7 +9269,7 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "dispatch_kodo",
@@ -10005,7 +10005,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "rush"
       ]
@@ -10600,7 +10600,7 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -10858,7 +10858,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Mech/Demon"
+      "tribe": "Mech Demon"
     },
     {
       "id": "naval_mine",
@@ -11060,7 +11060,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -12152,7 +12152,7 @@
       "type": "creature",
       "attack": 2,
       "health": 8,
-      "tribe": "Elemental/Dragon",
+      "tribe": "Elemental Dragon",
       "keywords": [
         "divine_shield",
         "taunt",
@@ -12862,7 +12862,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental/Naga",
+      "tribe": "Elemental Naga",
       "selfCost": {
         "per": "spells-while-held",
         "amount": -1
@@ -19846,7 +19846,8 @@
         ]
       },
       "description": "Sacrifice — pay 1 & discard a card: draw a card.",
-      "tribe": "Token"
+      "tribe": "Token",
+      "cardClass": "neutral"
     },
     {
       "id": "darkfallen_neophyte",
@@ -20261,7 +20262,8 @@
         ]
       },
       "description": "Sacrifice: gain 1 mana.",
-      "tribe": "Token"
+      "tribe": "Token",
+      "cardClass": "neutral"
     },
     {
       "id": "food_token",
@@ -20281,7 +20283,8 @@
         ]
       },
       "description": "Sacrifice — pay 2: Gain 3 life.",
-      "tribe": "Token"
+      "tribe": "Token",
+      "cardClass": "neutral"
     },
     {
       "id": "clue_token",
@@ -20300,7 +20303,8 @@
         ]
       },
       "description": "Sacrifice — pay 2: draw a card.",
-      "tribe": "Token"
+      "tribe": "Token",
+      "cardClass": "neutral"
     },
     {
       "id": "kalecgos",
@@ -22149,7 +22153,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Elemental/Murloc",
+      "tribe": "Elemental Murloc",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -22209,7 +22213,7 @@
       "cardClass": "death_knight",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -23474,7 +23478,7 @@
       "cardClass": "rogue",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -24281,7 +24285,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "type": "creature",
       "attack": 7,
       "health": 2,
@@ -24710,7 +24714,7 @@
       "cardClass": "hunter",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -25161,7 +25165,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -25177,7 +25181,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -25439,7 +25443,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Naga/Pirate",
+      "tribe": "Naga Pirate",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -25699,7 +25703,7 @@
       "cardClass": "neutral",
       "cost": 4,
       "rarity": "common",
-      "tribe": "Elemental/Mech",
+      "tribe": "Elemental Mech",
       "type": "creature",
       "attack": 5,
       "health": 1,
@@ -26138,7 +26142,7 @@
       ],
       "description": "Divine Shield.\nRush.",
       "set": "hsx",
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "green_jelly",
@@ -26464,7 +26468,7 @@
       "cardClass": "neutral",
       "cost": 5,
       "rarity": "common",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -27100,7 +27104,7 @@
       ],
       "description": "Battlecry: Target creature you control gains +4/+4 & Taunt.",
       "set": "hsx",
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "captured_jormungar",
@@ -27506,7 +27510,7 @@
       "cardClass": "neutral",
       "cost": 8,
       "rarity": "common",
-      "tribe": "Mech/Demon",
+      "tribe": "Mech Demon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -27645,7 +27649,7 @@
       "cardClass": "neutral",
       "cost": 9,
       "rarity": "common",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "type": "creature",
       "attack": 9,
       "health": 7,
@@ -27940,7 +27944,7 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -28037,7 +28041,7 @@
       "cardClass": "rogue",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -28086,7 +28090,7 @@
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -28373,7 +28377,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -29093,7 +29097,7 @@
       "cardClass": "warrior",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech/Pirate",
+      "tribe": "Mech Pirate",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -30261,7 +30265,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "common",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "type": "creature",
       "attack": 5,
       "health": 12,
@@ -30512,7 +30516,7 @@
       "cardClass": "neutral",
       "cost": 8,
       "rarity": "common",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -31946,7 +31950,7 @@
       "cardClass": "shaman",
       "cost": 3,
       "rarity": "legendary",
-      "tribe": "Murloc/Pirate",
+      "tribe": "Murloc Pirate",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -33657,7 +33661,7 @@
       "cardClass": "neutral",
       "cost": 5,
       "rarity": "rare",
-      "tribe": "Elemental/Dragon",
+      "tribe": "Elemental Dragon",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -34230,7 +34234,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "rare",
-      "tribe": "Mech/Dragon",
+      "tribe": "Mech Dragon",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -34507,7 +34511,7 @@
       "cardClass": "neutral",
       "cost": 7,
       "rarity": "legendary",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -34857,7 +34861,7 @@
       "cardClass": "warlock",
       "cost": 8,
       "rarity": "rare",
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "type": "creature",
       "attack": 6,
       "health": 12,
@@ -35120,7 +35124,7 @@
       "cardClass": "mage",
       "cost": 8,
       "rarity": "legendary",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -35636,7 +35640,7 @@
       ],
       "description": "Battlecry: Choose a creature you control & gain a copy of its Deathrattle.",
       "set": "hsx",
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "mok_nathal_lion",
@@ -36036,7 +36040,7 @@
       "cardClass": "death_knight__demon_hunter",
       "cost": 7,
       "rarity": "common",
-      "tribe": "Undead/Demon",
+      "tribe": "Undead Demon",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -36684,7 +36688,7 @@
       "cardClass": "neutral",
       "cost": 6,
       "rarity": "rare",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -37407,7 +37411,7 @@
       "cardClass": "rogue",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "type": "creature",
       "attack": 1,
       "health": 4,
@@ -40234,7 +40238,7 @@
       "cardClass": "shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "echo": true,
       "type": "creature",
       "attack": 2,
@@ -40265,7 +40269,7 @@
       "cardClass": "mage__shaman",
       "cost": 2,
       "rarity": "common",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "static": {
         "type": "spell-damage",
         "value": 2
@@ -40283,7 +40287,7 @@
       "cardClass": "warlock",
       "cost": 2,
       "rarity": "rare",
-      "tribe": "Mech/Demon",
+      "tribe": "Mech Demon",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -40416,7 +40420,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "common",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "type": "creature",
       "attack": 3,
       "health": 12,
@@ -40470,7 +40474,7 @@
       "cardClass": "neutral",
       "cost": 3,
       "rarity": "legendary",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "magnetic": true,
       "echo": true,
       "type": "creature",
@@ -40515,7 +40519,7 @@
       "cardClass": "hunter",
       "cost": 3,
       "rarity": "rare",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "magnetic": true,
       "type": "creature",
       "attack": 2,
@@ -43704,7 +43708,8 @@
         "cardType": "spell",
         "cost": 4,
         "setZero": true
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "bloomburrow",
@@ -43740,7 +43745,8 @@
       "staticRule": {
         "kind": "cant-attack",
         "tribe": "Human"
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "primordia",
@@ -43776,7 +43782,8 @@
         "kind": "sac-artifact-buff",
         "attack": 2,
         "health": 2
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "alara",
@@ -43808,7 +43815,8 @@
       ],
       "staticRule": {
         "kind": "coin-parity"
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "belenon",
@@ -43841,7 +43849,8 @@
       ],
       "staticRule": {
         "kind": "no-untap"
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "zendikar",
@@ -43869,7 +43878,8 @@
         "kind": "cost",
         "cardType": "enchantment",
         "amount": -1
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "interstellar_stowaway",
@@ -44653,7 +44663,7 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "selfCost": {
         "per": "tribe-died-game",
         "tribe": "Treant",
@@ -44772,7 +44782,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Demon/Murloc",
+      "tribe": "Demon Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -45483,7 +45493,7 @@
       "type": "creature",
       "attack": 4,
       "health": 10,
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "keywords": [
         "lifesteal"
       ],
@@ -45701,7 +45711,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "inHandCopyLastPlayed": {
         "from": "enemy",
         "attack": 3,
@@ -45720,7 +45730,7 @@
       "type": "creature",
       "attack": 3,
       "health": 6,
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "selfCost": {
         "per": "foreign-played-game",
         "amount": -1
@@ -46137,7 +46147,7 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Beast/Dragon",
+      "tribe": "Beast Dragon",
       "selfCost": {
         "per": "overloaded-game",
         "amount": -1
@@ -46967,7 +46977,7 @@
       "type": "creature",
       "attack": 2,
       "health": 6,
-      "tribe": "Undead/Draenei",
+      "tribe": "Undead Draenei",
       "keywords": [
         "taunt",
         "pacifist"
@@ -46997,7 +47007,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "runes": {
         "blood": 0,
         "frost": 0,
@@ -47273,7 +47283,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental Beast"
     },
     {
       "id": "gemstudded_golem",
@@ -47828,7 +47838,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "launchTransform": "sc_hellbat",
       "aura": {
         "attack": 1,
@@ -48183,7 +48193,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "selfCost": {
         "per": "class-played-game",
         "cardClass": "paladin",
@@ -48341,7 +48351,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "altCost": {
         "label": "Corpses",
         "corpses": 5,
@@ -48528,7 +48538,7 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "shirvallah_the_tiger",
@@ -48570,7 +48580,7 @@
       "type": "creature",
       "attack": 0,
       "health": 3,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "rabble_bouncer",
@@ -48984,7 +48994,7 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Titan/Mech",
+      "tribe": "Titan Mech",
       "titan": true,
       "titanPassive": {
         "type": "repeat-on-random-friendly"
@@ -49276,7 +49286,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "magnetic": true
     },
     {
@@ -49509,7 +49519,7 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -49696,7 +49706,7 @@
       "type": "creature",
       "attack": 1,
       "health": 8,
-      "tribe": "Mech/Beast"
+      "tribe": "Mech Beast"
     },
     {
       "id": "bouldering_buddy",
@@ -49769,7 +49779,7 @@
       "type": "creature",
       "attack": 16,
       "health": 16,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "rush",
         "taunt"
@@ -50282,7 +50292,7 @@
       "type": "creature",
       "attack": 7,
       "health": 3,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -50597,7 +50607,7 @@
       "type": "creature",
       "attack": 2,
       "health": 14,
-      "tribe": "Mech/Protoss",
+      "tribe": "Mech Protoss",
       "ongoing": {
         "on": "turn-end",
         "effects": [
@@ -51094,7 +51104,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -51597,7 +51607,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -51668,7 +51678,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -53424,7 +53434,7 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Mech/Demon",
+      "tribe": "Mech Demon",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -53761,7 +53771,7 @@
           }
         ]
       },
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "runes": {
         "blood": 0,
         "frost": 1,
@@ -54452,7 +54462,7 @@
       ],
       "description": "Colossal +2. When your hero would lose Health on your turn, gain that much max Health instead.",
       "healToMaxHealth": true,
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "runes": {
         "blood": 2,
         "frost": 0,
@@ -54556,7 +54566,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Undead/Mech",
+      "tribe": "Undead Mech",
       "keywords": [
         "deathrattle"
       ],
@@ -56624,7 +56634,8 @@
           "value": 3,
           "target": "all-creatures"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "sokenzan",
@@ -56675,7 +56686,8 @@
           "target": "all-heroes",
           "value": 2
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_hippodrome",
@@ -56709,7 +56721,8 @@
           "value": 1,
           "target": "all"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "stronghold_furnace",
@@ -56743,7 +56756,8 @@
           "value": 5,
           "target": "all-heroes"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lethe_lake",
@@ -56785,7 +56799,8 @@
           "value": 1,
           "target": "all"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "takenuma",
@@ -56825,7 +56840,8 @@
           "value": 2,
           "target": "all-creatures"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "fields_of_summer",
@@ -56867,7 +56883,8 @@
           "value": 1,
           "target": "all"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "minamo",
@@ -56908,7 +56925,8 @@
           "value": 2,
           "target": "all"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "concealing_confection",
@@ -64216,7 +64234,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -64240,7 +64258,7 @@
       "health": 2,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -64606,7 +64624,7 @@
       "health": 6,
       "rarity": "rare",
       "set": "GVG",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "description": "Whenever this creature takes damage, add a Spare Part to your hand.",
       "ongoing": {
         "on": "self-damaged",
@@ -64807,7 +64825,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "toshley",
@@ -65389,7 +65408,8 @@
       "health": 2,
       "rarity": "common",
       "set": "UNGORO",
-      "description": "A 1/2 Elemental."
+      "description": "A 1/2 Elemental.",
+      "cardClass": "neutral"
     },
     {
       "id": "ung_raptor",
@@ -65402,7 +65422,8 @@
       "health": 5,
       "rarity": "common",
       "set": "UNGORO",
-      "description": "A 4/5 Beast."
+      "description": "A 4/5 Beast.",
+      "cardClass": "neutral"
     },
     {
       "id": "ung_direhorn",
@@ -65418,7 +65439,8 @@
       "keywords": [
         "taunt"
       ],
-      "description": "An 8/12 Beast with Taunt."
+      "description": "An 8/12 Beast with Taunt.",
+      "cardClass": "neutral"
     },
     {
       "id": "crackling_razormaw",
@@ -65886,7 +65908,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "BRM",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -67464,7 +67486,7 @@
       "health": 4,
       "rarity": "common",
       "set": "LOE",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -67581,7 +67603,7 @@
       "health": 8,
       "rarity": "common",
       "set": "LOE",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -67666,7 +67688,8 @@
           "value": 7,
           "target": "own-hero"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "djinni_of_zephyrs",
@@ -67738,7 +67761,8 @@
           "type": "shuffle-into-deck",
           "id": "golden_monkey"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "golden_monkey",
@@ -67763,7 +67787,8 @@
           "rarity": "legendary",
           "count": 3
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "disciple_of_cthun",
@@ -68413,7 +68438,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "vilefin_inquisitor",
@@ -68700,7 +68726,8 @@
             "tribe": "Murloc"
           }
         ]
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "arcane_anomaly",
@@ -69030,7 +69057,8 @@
       "set": "KARA",
       "attack": 3,
       "durability": 2,
-      "description": "A 3/2 weapon."
+      "description": "A 3/2 weapon.",
+      "cardClass": "neutral"
     },
     {
       "id": "ethereal_peddler",
@@ -69113,7 +69141,8 @@
             "type": "summon-of-spell-cost"
           }
         ]
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "small_time_buccaneer",
@@ -69917,7 +69946,8 @@
       "keywords": [
         "windfury"
       ],
-      "description": "A 10/10 with Windfury."
+      "description": "A 10/10 with Windfury.",
+      "cardClass": "neutral"
     },
     {
       "id": "pint_sized_summoner",
@@ -70436,7 +70466,7 @@
       "health": 1,
       "rarity": "legendary",
       "set": "GANGS",
-      "tribe": "Demon/Pirate",
+      "tribe": "Demon Pirate",
       "keywords": [
         "charge"
       ],
@@ -70564,7 +70594,8 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "kazakus_potion_b",
@@ -70582,7 +70613,8 @@
           "attack": 3,
           "health": 3
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "kazakus_potion_c",
@@ -70604,7 +70636,8 @@
           "value": 8,
           "target": "self"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "thunder_lizard",
@@ -71041,7 +71074,8 @@
           "name": "Fire Elemental",
           "tribe": "Elemental"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "razorpetal",
@@ -71058,7 +71092,8 @@
           "value": 2,
           "target": "any"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "hydrologist",
@@ -71212,7 +71247,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "UNGORO",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "charge",
         "battlecry"
@@ -71256,7 +71291,7 @@
       "health": 2,
       "rarity": "legendary",
       "set": "UNGORO",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -71368,7 +71403,8 @@
           "type": "add-card",
           "id": "pyros_10"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "pyros_10",
@@ -71381,7 +71417,8 @@
       "health": 10,
       "rarity": "legendary",
       "set": "UNGORO",
-      "description": "A 10/10 Elemental."
+      "description": "A 10/10 Elemental.",
+      "cardClass": "neutral"
     },
     {
       "id": "sherazin",
@@ -71539,7 +71576,8 @@
       "keywords": [
         "pacifist"
       ],
-      "description": "Play 4 cards in a turn to revive Sherazin."
+      "description": "Play 4 cards in a turn to revive Sherazin.",
+      "cardClass": "neutral"
     },
     {
       "id": "ungoro_pack",
@@ -71556,7 +71594,8 @@
           "cardType": "creature",
           "count": 5
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "wretched_tiller",
@@ -71828,7 +71867,7 @@
           "type": "gain-weapon-stats"
         }
       ],
-      "tribe": "Undead/Pirate"
+      "tribe": "Undead Pirate"
     },
     {
       "id": "grave_shambler",
@@ -71851,7 +71890,7 @@
           }
         ]
       },
-      "tribe": "Undead/Elemental"
+      "tribe": "Undead Elemental"
     },
     {
       "id": "wicked_skeleton",
@@ -72053,7 +72092,8 @@
       "health": 1,
       "rarity": "common",
       "set": "ICECROWN",
-      "description": "A 1/1 Skeleton."
+      "description": "A 1/1 Skeleton.",
+      "cardClass": "neutral"
     },
     {
       "id": "mirror_image",
@@ -72075,7 +72115,8 @@
             "taunt"
           ]
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "druid_of_the_swarm",
@@ -72426,7 +72467,7 @@
           }
         ]
       },
-      "tribe": "Undead/Draenei"
+      "tribe": "Undead Draenei"
     },
     {
       "id": "abominable_bowman",
@@ -73400,7 +73441,8 @@
       "health": 1,
       "rarity": "common",
       "set": "LOOTAPALOOZA",
-      "description": "A 1/1 Silver Hand Recruit."
+      "description": "A 1/1 Silver Hand Recruit.",
+      "cardClass": "neutral"
     },
     {
       "id": "murmuring_elemental",
@@ -73919,7 +73961,8 @@
         {
           "type": "enrich"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "faldorei_strider",
@@ -74070,7 +74113,8 @@
           "tribe": "Beast"
         }
       ],
-      "description": "When drawn, create a 4/4 Spider creature token."
+      "description": "When drawn, create a 4/4 Spider creature token.",
+      "cardClass": "neutral"
     },
     {
       "id": "darkness_candle",
@@ -74086,7 +74130,8 @@
           "type": "awaken-darkness"
         }
       ],
-      "description": "When drawn, The Darkness awakens."
+      "description": "When drawn, The Darkness awakens.",
+      "cardClass": "neutral"
     },
     {
       "id": "kings_ransom",
@@ -74102,7 +74147,8 @@
           "type": "swap-decks",
           "back": true
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_first_seal",
@@ -74126,7 +74172,8 @@
           "type": "add-card",
           "id": "the_second_seal"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_second_seal",
@@ -74150,7 +74197,8 @@
           "type": "add-card",
           "id": "the_third_seal"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_third_seal",
@@ -74174,7 +74222,8 @@
           "type": "add-card",
           "id": "the_fourth_seal"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_fourth_seal",
@@ -74198,7 +74247,8 @@
           "type": "add-card",
           "id": "the_final_seal"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "the_final_seal",
@@ -74222,7 +74272,8 @@
           "type": "add-card",
           "id": "azari_the_devourer"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "azari_the_devourer",
@@ -74237,7 +74288,8 @@
         {
           "type": "destroy-enemy-deck"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lost_spirit",
@@ -75146,7 +75198,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "GILNEAS",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "keywords": [
         "rush",
         "deathrattle"
@@ -75585,7 +75637,7 @@
       "health": 1,
       "rarity": "rare",
       "set": "BOOMSDAY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -75612,7 +75664,7 @@
       "health": 1,
       "rarity": "common",
       "set": "BOOMSDAY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -75885,7 +75937,7 @@
       "health": 4,
       "rarity": "common",
       "set": "BOOMSDAY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -76020,7 +76072,8 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush."
+      "description": "Rush.",
+      "cardClass": "neutral"
     },
     {
       "id": "nethersoul_buster",
@@ -76234,7 +76287,7 @@
           "count": 5
         }
       ],
-      "tribe": "Mech/Beast"
+      "tribe": "Mech Beast"
     },
     {
       "id": "mechathun",
@@ -76478,7 +76531,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "BOOMSDAY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "description": "Whenever you shuffle a card into a deck, shuffle in an extra copy."
     },
     {
@@ -76974,7 +77027,8 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush."
+      "description": "Rush.",
+      "cardClass": "neutral"
     },
     {
       "id": "trl_banana",
@@ -76992,7 +77046,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "spirit_of_the_bat",
@@ -77024,7 +77079,7 @@
           }
         ]
       },
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "spirit_of_the_lynx",
@@ -77057,7 +77112,7 @@
           }
         ]
       },
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "spirit_of_the_tiger",
@@ -77089,7 +77144,7 @@
           }
         ]
       },
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "spirit_of_the_dead",
@@ -77238,7 +77293,7 @@
           "type": "set-heal-harm"
         }
       ],
-      "tribe": "Undead/Draenei"
+      "tribe": "Undead Draenei"
     },
     {
       "id": "soup_vendor",
@@ -77366,7 +77421,7 @@
           ]
         }
       ],
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental Beast"
     },
     {
       "id": "zandalari_templar",
@@ -77816,7 +77871,7 @@
           }
         ]
       },
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "spirit_of_the_dragonhawk",
@@ -77839,7 +77894,7 @@
         }
       ],
       "heroPowerAdjacent": true,
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "spirit_of_the_frog",
@@ -77870,7 +77925,7 @@
           }
         ]
       },
-      "tribe": "Undead/Beast"
+      "tribe": "Undead Beast"
     },
     {
       "id": "zentimo",
@@ -78236,7 +78291,8 @@
             "pool": "enemies"
           }
         ]
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "trl_corrupted_blood",
@@ -78259,7 +78315,8 @@
           "count": 2
         }
       ],
-      "description": "When drawn, deal 3 damage to your hero and shuffle 2 more copies into your deck."
+      "description": "When drawn, deal 3 damage to your hero and shuffle 2 more copies into your deck.",
+      "cardClass": "neutral"
     },
     {
       "id": "acornbearer",
@@ -78432,7 +78489,7 @@
       "health": 2,
       "rarity": "common",
       "set": "DALARAN",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "description": "Whenever this creature deals damage, gain that much Armor.",
       "ongoing": {
         "on": "self-deals-damage",
@@ -78646,7 +78703,8 @@
       "health": 1,
       "rarity": "common",
       "set": "DALARAN",
-      "description": "A 1/1 Squirrel."
+      "description": "A 1/1 Squirrel.",
+      "cardClass": "neutral"
     },
     {
       "id": "dal_dragon_4",
@@ -78659,7 +78717,8 @@
       "health": 4,
       "rarity": "common",
       "set": "DALARAN",
-      "description": "A 4/4 Dragon."
+      "description": "A 4/4 Dragon.",
+      "cardClass": "neutral"
     },
     {
       "id": "dal_portal",
@@ -78679,7 +78738,8 @@
           "name": "Portal Guardian"
         }
       ],
-      "description": "When drawn, create a 2/4."
+      "description": "When drawn, create a 2/4.",
+      "cardClass": "neutral"
     },
     {
       "id": "lackey_ethereal",
@@ -78701,7 +78761,8 @@
           "type": "discover",
           "cardType": "spell"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lackey_faceless",
@@ -78723,7 +78784,8 @@
           "type": "summon-random",
           "cost": 2
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lackey_goblin",
@@ -78752,7 +78814,8 @@
           "target": "friendly-creature",
           "keyword": "rush"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lackey_kobold",
@@ -78775,7 +78838,8 @@
           "value": 2,
           "target": "any"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "lackey_witchy",
@@ -78799,7 +78863,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "evil_genius",
@@ -79573,7 +79638,8 @@
           ]
         }
       ],
-      "description": "When drawn, create a 2/2 Demon creature token with Rush."
+      "description": "When drawn, create a 2/2 Demon creature token with Rush.",
+      "cardClass": "neutral"
     },
     {
       "id": "thoridal",
@@ -79585,7 +79651,8 @@
       "durability": 3,
       "rarity": "legendary",
       "set": "DALARAN",
-      "description": "A 4/3 weapon."
+      "description": "A 4/3 weapon.",
+      "cardClass": "neutral"
     },
     {
       "id": "unseen_saboteur",
@@ -79865,7 +79932,8 @@
             "into": "lucentbark"
           }
         ]
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "jar_dealer",
@@ -79944,7 +80012,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "ULDUM",
-      "tribe": "Undead/Mech",
+      "tribe": "Undead Mech",
       "keywords": [
         "reborn"
       ],
@@ -80247,7 +80315,8 @@
       "health": 1,
       "rarity": "common",
       "set": "ULDUM",
-      "description": "A 2/1 Sandwasp."
+      "description": "A 2/1 Sandwasp.",
+      "cardClass": "neutral"
     },
     {
       "id": "uld_scarab",
@@ -80262,7 +80331,8 @@
       "keywords": [
         "taunt"
       ],
-      "description": "Taunt."
+      "description": "Taunt.",
+      "cardClass": "neutral"
     },
     {
       "id": "crystal_merchant",
@@ -80475,7 +80545,7 @@
       "health": 5,
       "rarity": "epic",
       "set": "ULDUM",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "description": "Whenever your hero takes damage on your turn, Create a random 3-Cost creature token.",
       "ongoing": {
         "on": "own-hero-damaged",
@@ -81255,7 +81325,8 @@
           "value": 5,
           "target": "enemy-heroes"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "uld_king_krush",
@@ -81271,7 +81342,8 @@
       "keywords": [
         "charge"
       ],
-      "description": "Charge."
+      "description": "Charge.",
+      "cardClass": "neutral"
     },
     {
       "id": "bloodsail_flybooter",
@@ -81338,7 +81410,7 @@
           "id": "drg_arcane_missiles"
         }
       ],
-      "tribe": "Elemental/Beast"
+      "tribe": "Elemental Beast"
     },
     {
       "id": "tasty_flyfish",
@@ -81428,7 +81500,7 @@
       "health": 3,
       "rarity": "common",
       "set": "DRAGONS",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -81586,7 +81658,7 @@
       "health": 3,
       "rarity": "epic",
       "set": "DRAGONS",
-      "tribe": "Murloc/Dragon",
+      "tribe": "Murloc Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -81691,7 +81763,8 @@
       "health": 1,
       "rarity": "common",
       "set": "DRAGONS",
-      "description": "A 1/1 Pirate."
+      "description": "A 1/1 Pirate.",
+      "cardClass": "neutral"
     },
     {
       "id": "drg_albatross",
@@ -81704,7 +81777,8 @@
       "health": 1,
       "rarity": "common",
       "set": "DRAGONS",
-      "description": "A 1/1 Albatross."
+      "description": "A 1/1 Albatross.",
+      "cardClass": "neutral"
     },
     {
       "id": "drg_arcane_missiles",
@@ -81722,7 +81796,8 @@
           "count": 3,
           "pool": "enemies"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "dwarven_sharpshooter",
@@ -82559,7 +82634,8 @@
           "count": 1
         }
       ],
-      "description": "When drawn, create a random Dragon."
+      "description": "When drawn, create a random Dragon.",
+      "cardClass": "neutral"
     },
     {
       "id": "wyrmrest_purifier",
@@ -82731,7 +82807,7 @@
           "count": 1
         }
       ],
-      "tribe": "Elemental/Dragon"
+      "tribe": "Elemental Dragon"
     },
     {
       "id": "bandersmosh",
@@ -82882,7 +82958,8 @@
           "summonId": "waxadred"
         }
       ],
-      "description": "When drawn, resummon Waxadred."
+      "description": "When drawn, resummon Waxadred.",
+      "cardClass": "neutral"
     },
     {
       "id": "drg_nithogg_egg",
@@ -82912,7 +82989,8 @@
             ]
           }
         ]
-      }
+      },
+      "cardClass": "neutral"
     },
     {
       "id": "cleric_of_scales",
@@ -83268,7 +83346,8 @@
       "keywords": [
         "rush"
       ],
-      "description": "Rush."
+      "description": "Rush.",
+      "cardClass": "neutral"
     },
     {
       "id": "aldor_attendant",
@@ -83913,7 +83992,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -84864,7 +84943,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "rush"
       ],
@@ -84890,7 +84969,7 @@
       "health": 9,
       "rarity": "epic",
       "set": "BLACK_TEMPLE",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "keywords": [
         "taunt"
       ],
@@ -85355,7 +85434,8 @@
           "value": 2
         }
       ],
-      "description": "Casts When Drawn. Gain 2 life."
+      "description": "Casts When Drawn. Gain 2 life.",
+      "cardClass": "neutral"
     },
     {
       "id": "sch_ghost",
@@ -86673,7 +86753,8 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "faire_arborist",
@@ -87425,7 +87506,7 @@
       "health": 6,
       "rarity": "rare",
       "set": "DARKMOON_FAIRE",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "healBonusHealth": 2,
       "description": "Your healing effects also give affected creatures +2 Health."
     },
@@ -87490,7 +87571,7 @@
       "health": 5,
       "rarity": "common",
       "set": "DARKMOON_FAIRE",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "divine_shield"
       ],
@@ -87681,7 +87762,8 @@
           "summonId": "dmf_plush_bear"
         }
       ],
-      "description": "When drawn, create a 3/3 Plush Bear creature token."
+      "description": "When drawn, create a 3/3 Plush Bear creature token.",
+      "cardClass": "neutral"
     },
     {
       "id": "keywarden_ivory",
@@ -88957,7 +89039,8 @@
           "type": "bounce",
           "target": "creature"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "bar_freeze_elemental",
@@ -89347,7 +89430,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "THE_BARRENS",
-      "tribe": "Undead/Quilboar",
+      "tribe": "Undead Quilboar",
       "description": "After a creature you control with Taunt dies, create a new copy of it without Taunt.",
       "ongoing": {
         "on": "friendly-creature-died",
@@ -90266,7 +90349,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Demon/Murloc",
+      "tribe": "Demon Murloc",
       "keywords": [
         "taunt",
         "battlecry"
@@ -90589,7 +90672,8 @@
           "summonId": "sw_squirrel"
         }
       ],
-      "description": "When drawn, create a 2/1 Squirrel creature token."
+      "description": "When drawn, create a 2/1 Squirrel creature token.",
+      "cardClass": "neutral"
     },
     {
       "id": "sw_squirrel",
@@ -90807,7 +90891,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Demon/Pirate",
+      "tribe": "Demon Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -91463,7 +91547,7 @@
       "health": 5,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "description": "After you play a card with Overload, create a 2/3 Spirit Wolf creature token with Taunt.",
       "ongoing": {
         "on": "overload-card-played",
@@ -91542,7 +91626,7 @@
       "health": 2,
       "rarity": "common",
       "set": "STORMWIND",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -91779,7 +91863,8 @@
           "summonId": "sw_mech"
         }
       ],
-      "description": "When drawn, create a 2/1 Mech creature token."
+      "description": "When drawn, create a 2/1 Mech creature token.",
+      "cardClass": "neutral"
     },
     {
       "id": "sw_mech",
@@ -92851,7 +92936,8 @@
           "target": "creature",
           "health": 2
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "av_grunt",
@@ -93534,7 +93620,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "ALTERAC_VALLEY",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -93678,7 +93764,8 @@
           "summonId": "mida_pure_light"
         }
       ],
-      "description": "When drawn, resummon Mi'da."
+      "description": "When drawn, resummon Mi'da.",
+      "cardClass": "neutral"
     },
     {
       "id": "av_frost_elemental",
@@ -93785,7 +93872,7 @@
       "health": 1,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "divine_shield",
         "battlecry"
@@ -94057,7 +94144,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -94620,7 +94707,7 @@
       "health": 5,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "description": "After your hero attacks, draw a Pirate.",
       "ongoing": {
         "on": "hero-attacks",
@@ -94822,7 +94909,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "description": "After a Mech enters the battlefield under your control, deal 3 damage randomly split among all enemies.",
       "ongoing": {
         "on": "summoned",
@@ -94897,7 +94984,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Elemental/Naga",
+      "tribe": "Elemental Naga",
       "schoolCostReduce": {
         "school": "Nature",
         "amount": 1
@@ -95039,7 +95126,8 @@
           "target": "own-hero"
         }
       ],
-      "description": "When drawn, deal 3 damage to your hero."
+      "description": "When drawn, deal 3 damage to your hero.",
+      "cardClass": "neutral"
     },
     {
       "id": "twin_fin_fin_twin",
@@ -95309,7 +95397,7 @@
       "health": 5,
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -95561,7 +95649,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "description": "Combo: Put a creature an opponent controls on the bottom of target opponent's deck.",
       "combo": [
         {
@@ -97048,7 +97136,7 @@
       "health": 4,
       "rarity": "common",
       "set": "REVENDRETH",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "keywords": [
         "lifesteal"
       ],
@@ -98464,7 +98552,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry",
         "deathrattle"
@@ -98729,7 +98817,7 @@
       "health": 1,
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "combo"
       ],
@@ -98865,7 +98953,7 @@
       "health": 4,
       "rarity": "common",
       "set": "BATTLE_OF_THE_BANDS",
-      "tribe": "Mech/Totem",
+      "tribe": "Mech Totem",
       "description": "At the end of your turn, create a Silver Hand Recruit creature token.",
       "ongoing": {
         "on": "turn-end",
@@ -101156,7 +101244,7 @@
       "health": 1,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -101555,7 +101643,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental/Murloc",
+      "tribe": "Elemental Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -101756,7 +101844,7 @@
       "health": 3,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Naga",
+      "tribe": "Undead Naga",
       "keywords": [
         "battlecry"
       ],
@@ -102078,7 +102166,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental/Naga",
+      "tribe": "Elemental Naga",
       "keywords": [
         "battlecry"
       ],
@@ -102187,7 +102275,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Mech/Dragon",
+      "tribe": "Mech Dragon",
       "keywords": [
         "rush",
         "battlecry"
@@ -102240,7 +102328,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Draenei",
+      "tribe": "Undead Draenei",
       "keywords": [
         "deathrattle"
       ],
@@ -102444,7 +102532,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "rush",
         "deathrattle"
@@ -102568,7 +102656,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Murloc",
+      "tribe": "Undead Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -102743,7 +102831,7 @@
       "health": 6,
       "rarity": "common",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -102780,7 +102868,7 @@
       "health": 7,
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Demon/Naga",
+      "tribe": "Demon Naga",
       "keywords": [
         "battlecry"
       ],
@@ -103083,7 +103171,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "reborn",
         "battlecry",
@@ -103901,7 +103989,7 @@
       "health": 3,
       "rarity": "common",
       "set": "TITANS",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "magnetic": true,
       "description": "Magnetic. Whenever this attacks, get a Coin.",
       "ongoing": {
@@ -104016,7 +104104,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "TITANS",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "magnetic": true,
       "keywords": [
         "deathrattle"
@@ -106529,7 +106617,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead/Mech",
+      "tribe": "Undead Mech",
       "keywords": [
         "taunt",
         "battlecry"
@@ -106985,7 +107073,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "rush"
       ],
@@ -107353,7 +107441,7 @@
       "health": 4,
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Undead/Quilboar",
+      "tribe": "Undead Quilboar",
       "description": "At the end of your turn, deal this creature's Attack damage randomly split among enemies.",
       "ongoing": {
         "on": "turn-end",
@@ -107830,7 +107918,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "keywords": [
         "battlecry"
       ],
@@ -108453,7 +108541,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "WHIZBANGS_WORKSHOP",
-      "tribe": "Mech/Demon",
+      "tribe": "Mech Demon",
       "dormant": 2,
       "description": "Dormant for 2 turns. While Dormant, deal 3 damage to all enemies at the end of your turn.",
       "ongoing": {
@@ -109069,7 +109157,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "WILD_WEST",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -109463,7 +109551,7 @@
       "health": 4,
       "rarity": "legendary",
       "set": "WILD_WEST",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -109672,7 +109760,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "WILD_WEST",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -110662,7 +110750,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "WILD_WEST",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "taunt",
         "battlecry"
@@ -110858,7 +110946,7 @@
       "health": 6,
       "rarity": "legendary",
       "set": "WILD_WEST",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -110973,7 +111061,7 @@
       "health": 3,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "description": "Whenever this creature takes damage, also deal that amount to your hero.",
       "ongoing": {
         "on": "self-damaged",
@@ -111022,7 +111110,7 @@
       "health": 1,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Demon/Pirate",
+      "tribe": "Demon Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -111051,7 +111139,7 @@
       "health": 2,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Demon/Pirate",
+      "tribe": "Demon Pirate",
       "description": "After a friendly Pirate attacks, give your hero +1 Attack this turn.",
       "ongoing": {
         "on": "friendly-attacks",
@@ -111076,7 +111164,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "description": "Whenever you play a Deathrattle creature, give it Reborn.",
       "ongoing": {
         "on": "creature-played",
@@ -111170,7 +111258,7 @@
       "health": 2,
       "rarity": "common",
       "set": "ISLAND_VACATION",
-      "tribe": "Murloc/Pirate",
+      "tribe": "Murloc Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -111461,7 +111549,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "keywords": [
         "taunt",
         "battlecry"
@@ -111492,7 +111580,7 @@
       "health": 2,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Murloc/Pirate",
+      "tribe": "Murloc Pirate",
       "description": "Demon Hunter Tourist. After a creature you control dies, create a random creature that costs (1) more.",
       "ongoing": {
         "on": "friendly-creature-died",
@@ -111552,7 +111640,7 @@
       "health": 3,
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "tribe": "Beast/Pirate",
+      "tribe": "Beast Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -111696,7 +111784,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -112272,7 +112360,7 @@
       "health": 3,
       "rarity": "legendary",
       "set": "ISLAND_VACATION",
-      "tribe": "Undead/Pirate",
+      "tribe": "Undead Pirate",
       "keywords": [
         "deathrattle"
       ],
@@ -113523,7 +113611,7 @@
       "health": 3,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -113860,7 +113948,7 @@
       "health": 3,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -114021,7 +114109,7 @@
       "health": 1,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -114612,7 +114700,7 @@
       "health": 2,
       "rarity": "common",
       "set": "SPACE",
-      "tribe": "Mech/Protoss",
+      "tribe": "Mech Protoss",
       "keywords": [
         "rush",
         "divine_shield",
@@ -114964,7 +115052,7 @@
       "health": 3,
       "rarity": "rare",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -115116,7 +115204,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -115475,7 +115563,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech/Protoss",
+      "tribe": "Mech Protoss",
       "keywords": [
         "taunt",
         "divine_shield",
@@ -115626,7 +115714,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Murloc/Zerg",
+      "tribe": "Murloc Zerg",
       "keywords": [
         "battlecry"
       ],
@@ -115674,7 +115762,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech/Terran",
+      "tribe": "Mech Terran",
       "keywords": [
         "battlecry"
       ],
@@ -115740,7 +115828,7 @@
       "health": 4,
       "rarity": "epic",
       "set": "SPACE",
-      "tribe": "Mech/Protoss",
+      "tribe": "Mech Protoss",
       "keywords": [
         "battlecry"
       ],
@@ -115768,7 +115856,7 @@
       "health": 10,
       "rarity": "legendary",
       "set": "SPACE",
-      "tribe": "Mech/Protoss",
+      "tribe": "Mech Protoss",
       "keywords": [
         "taunt",
         "battlecry",
@@ -116833,7 +116921,7 @@
       "health": 6,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "tribe": "Beast/Dragon",
+      "tribe": "Beast Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -116943,7 +117031,7 @@
       "health": 2,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -117312,7 +117400,7 @@
       "health": 3,
       "rarity": "common",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -117420,7 +117508,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "keywords": [
         "battlecry"
       ],
@@ -117784,7 +117872,7 @@
       "health": 5,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -117881,7 +117969,7 @@
       "health": 7,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "keywords": [
         "taunt",
         "deathrattle"
@@ -118091,7 +118179,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "rush"
       ],
@@ -118198,7 +118286,7 @@
       "health": 5,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "rush",
         "taunt",
@@ -118434,7 +118522,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "EMERALD_DREAM",
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "keywords": [
         "rush",
         "windfury",
@@ -118793,7 +118881,7 @@
       "health": 2,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Murloc",
+      "tribe": "Elemental Murloc",
       "keywords": [
         "battlecry"
       ],
@@ -119168,7 +119256,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Dragon",
+      "tribe": "Elemental Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -119628,7 +119716,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -119741,7 +119829,7 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -119800,7 +119888,7 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -119922,7 +120010,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Mech",
+      "tribe": "Elemental Mech",
       "description": "Whenever you play a Fire spell, gain stats equal to its Cost.",
       "ongoing": {
         "on": "spell-played",
@@ -120035,7 +120123,7 @@
       "health": 7,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "keywords": [
         "battlecry"
       ],
@@ -120102,7 +120190,7 @@
       "health": 7,
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "battlecry"
       ],
@@ -120263,7 +120351,7 @@
       "health": 4,
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "rush"
       ],
@@ -120447,7 +120535,7 @@
       "health": 4,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Dragon",
+      "tribe": "Elemental Dragon",
       "keywords": [
         "battlecry"
       ],
@@ -120553,7 +120641,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Undead/Beast",
+      "tribe": "Undead Beast",
       "keywords": [
         "deathrattle"
       ],
@@ -120634,7 +120722,7 @@
       "health": 5,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Demon/Beast",
+      "tribe": "Demon Beast",
       "keywords": [
         "battlecry"
       ],
@@ -120790,7 +120878,7 @@
       "health": 3,
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "tribe": "Murloc/Beast",
+      "tribe": "Murloc Beast",
       "keywords": [
         "rush",
         "deathrattle"
@@ -121028,7 +121116,7 @@
       "health": 12,
       "rarity": "legendary",
       "set": "THE_LOST_CITY",
-      "tribe": "Beast/Dragon",
+      "tribe": "Beast Dragon",
       "keywords": [
         "rush"
       ],
@@ -121128,7 +121216,7 @@
       "health": 8,
       "rarity": "epic",
       "set": "THE_LOST_CITY",
-      "tribe": "Elemental/Dragon",
+      "tribe": "Elemental Dragon",
       "keywords": [
         "rush",
         "windfury",
@@ -122794,7 +122882,7 @@
       "health": 5,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "description": "Whenever you would damage this with a Nature spell, Create a random 5-Cost creature token instead.",
       "spellDamageRedirect": {
         "school": "Nature",
@@ -122817,7 +122905,7 @@
       "health": 6,
       "rarity": "common",
       "set": "TIME_TRAVEL",
-      "tribe": "Dragon/Pirate",
+      "tribe": "Dragon Pirate",
       "keywords": [
         "battlecry"
       ],
@@ -123605,7 +123693,7 @@
       "health": 1,
       "rarity": "common",
       "set": "CATACLYSM",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "keywords": [
         "deathrattle"
       ],
@@ -124339,7 +124427,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "CATACLYSM",
-      "tribe": "Undead/Dragon",
+      "tribe": "Undead Dragon",
       "keywords": [
         "rush"
       ],
@@ -125103,7 +125191,7 @@
       "health": 12,
       "rarity": "epic",
       "set": "CATACLYSM",
-      "tribe": "Mech/Beast",
+      "tribe": "Mech Beast",
       "description": "Colossal +99. Create any leftover appendages when there is room. (Board cap: 6 Bodies.)",
       "colossal": [
         "cata_magmaw_body",
@@ -126168,7 +126256,7 @@
       "health": 3,
       "rarity": "common",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "tribe": "Elemental/Mech",
+      "tribe": "Elemental Mech",
       "keywords": [
         "battlecry"
       ],
@@ -126924,7 +127012,7 @@
       "health": 2,
       "rarity": "common",
       "set": "WONDERS",
-      "tribe": "Dragon/Pirate",
+      "tribe": "Dragon Pirate",
       "description": "After a creature enters the battlefield under your control, give it +1 Health.",
       "ongoing": {
         "on": "summoned",
@@ -128784,7 +128872,7 @@
       "health": 5,
       "rarity": "rare",
       "set": "EVENT",
-      "tribe": "Elemental/Beast",
+      "tribe": "Elemental Beast",
       "keywords": [
         "battlecry"
       ],
@@ -129268,7 +129356,8 @@
       "health": 1,
       "tribe": "Mech",
       "rarity": "legendary",
-      "description": "Has the combined stats and effects of all assembled Starship Pieces."
+      "description": "Has the combined stats and effects of all assembled Starship Pieces.",
+      "cardClass": "neutral"
     },
     {
       "id": "gdb_launch_starship",
@@ -129282,7 +129371,8 @@
           "type": "launch-starship"
         }
       ],
-      "description": "Launch your Starship."
+      "description": "Launch your Starship.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_marine",
@@ -129296,7 +129386,8 @@
         "taunt"
       ],
       "rarity": "common",
-      "description": "Taunt"
+      "description": "Taunt",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_viking",
@@ -129315,7 +129406,8 @@
           "value": 5
         }
       ],
-      "description": "Starship Piece. When this is launched, gain 5 Armor."
+      "description": "Starship Piece. When this is launched, gain 5 Armor.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_liberator",
@@ -129335,7 +129427,8 @@
           "target": "enemy-creatures"
         }
       ],
-      "description": "Starship Piece. When this is launched, deal 2 damage to all creatures your opponents control."
+      "description": "Starship Piece. When this is launched, deal 2 damage to all creatures your opponents control.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_raven",
@@ -129354,7 +129447,8 @@
           "count": 2
         }
       ],
-      "description": "Starship Piece. When this is launched, gain 2 random Bonus Effects."
+      "description": "Starship Piece. When this is launched, gain 2 random Bonus Effects.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_banshee",
@@ -129375,7 +129469,8 @@
           "pool": "enemies"
         }
       ],
-      "description": "Starship Piece. When this is launched, deal 3 damage to a random enemy."
+      "description": "Starship Piece. When this is launched, deal 3 damage to a random enemy.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_medivac",
@@ -129395,7 +129490,8 @@
           "summonId": "sc_marine"
         }
       ],
-      "description": "Starship Piece. When this is launched, create two 2/2 Marine creature tokens with Taunt."
+      "description": "Starship Piece. When this is launched, create two 2/2 Marine creature tokens with Taunt.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_hellbat",
@@ -129414,7 +129510,8 @@
           "rush"
         ]
       },
-      "description": "Your other creatures have +2 Attack and Rush."
+      "description": "Your other creatures have +2 Attack and Rush.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_siege_tank_deployed",
@@ -129438,7 +129535,8 @@
           "excessToHero": true
         }
       ],
-      "description": "Battlecry: Deal 10 damage to a random creature an opponent controls. Excess damage hits target opponent."
+      "description": "Battlecry: Deal 10 damage to a random creature an opponent controls. Excess damage hits target opponent.",
+      "cardClass": "neutral"
     },
     {
       "id": "sc_thor_payload",
@@ -129466,7 +129564,8 @@
           "countStat": "starshipsLaunched"
         }
       ],
-      "description": "Battlecry: Deal 5 damage. Repeat at a random enemy for each Starship you've launched this game."
+      "description": "Battlecry: Deal 5 damage. Repeat at a random enemy for each Starship you've launched this game.",
+      "cardClass": "neutral"
     },
     {
       "id": "first_portal_to_argus",
@@ -129483,7 +129582,8 @@
       ],
       "description": "Create a 1/1 Demon creature token under target opponent's control. When it dies, draw a card and shuffle the next Portal into your deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "fleeing_urzul",
@@ -129504,7 +129604,8 @@
       ],
       "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "second_portal_to_argus",
@@ -129521,7 +129622,8 @@
       ],
       "description": "Create a 2/1 Demon creature token under target opponent's control. When it dies, draw a card and shuffle the next Portal into your deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "fleeing_incubus",
@@ -129542,7 +129644,8 @@
       ],
       "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "third_portal_to_argus",
@@ -129559,7 +129662,8 @@
       ],
       "description": "Create a 3/1 Demon creature token under target opponent's control. When it dies, draw a card and shuffle the next Portal into your deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "fleeing_wrathguard",
@@ -129580,7 +129684,8 @@
       ],
       "description": "Deathrattle: Your opponent draws a card and shuffles the next Portal into their deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "final_portal_to_argus",
@@ -129597,7 +129702,8 @@
       ],
       "description": "Create a 4/1 Demon creature token under target opponent's control. When it dies, Broxigar reappears in your hand.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "fleeing_terrorguard",
@@ -129617,7 +129723,8 @@
       ],
       "description": "Deathrattle: Broxigar reappears in target opponent's hand.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "king_llane",
@@ -129640,7 +129747,8 @@
       ],
       "description": "Hides from Garona in your deck. Battlecry: Draw a card. Shuffle this back into your deck.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "time_bwonsamdi",
@@ -129659,7 +129767,8 @@
         }
       ],
       "description": "Deathrattle: Create a random 4-Cost creature token. (Any Boons given to Bwonsamdi carry over.)",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "zin_azshari",
@@ -129679,7 +129788,8 @@
       ],
       "description": "Location. Create a token that's a copy of a creature you control with its stats doubled.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "well_of_eternity",
@@ -129703,7 +129813,8 @@
       ],
       "description": "Location. Fill your hand with random Temporary spells. They cast twice.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "high_kings_hammer",
@@ -129723,7 +129834,8 @@
       ],
       "description": "Windfury. Deathrattle: Shuffle this into your deck with +2 Attack permanently.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "broll_blood_fighter",
@@ -129744,7 +129856,8 @@
         }
       ],
       "description": "Taunt. Deathrattle: Put a Blood Fighter from your hand onto the battlefield. Give it +5/+5 and Taunt.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "valeera_blood_fighter",
@@ -129765,7 +129878,8 @@
         }
       ],
       "description": "Elusive. Deathrattle: Put a Blood Fighter from your hand onto the battlefield. Give it +5/+5 and Elusive.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "gnomish_aura",
@@ -129784,7 +129898,8 @@
       },
       "description": "At the end of your turn, restore 4 Health to all your characters. Lasts 3 turns.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "mekkatorques_aura",
@@ -129804,7 +129919,8 @@
       },
       "description": "At the end of your turn, give a random creature you control +4/+4 and Divine Shield. Lasts 3 turns.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "atiesh_the_greatstaff",
@@ -129819,7 +129935,8 @@
         "type": "double-spell"
       },
       "description": "Costs (0) if you control Medivh. Double the damage and healing of your spells.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "karazhan_the_sanctum",
@@ -129842,7 +129959,8 @@
         }
       ],
       "description": "Costs (0) if you're wielding Atiesh. Create two random 8-Cost creatures.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "time_sheep",
@@ -129854,7 +129972,8 @@
       "tribe": "Beast",
       "description": "",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "tiny_rafaam",
@@ -129883,7 +130002,8 @@
         }
       ],
       "description": "Battlecry and Deathrattle: Draw a Rafaam.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "green_rafaam",
@@ -129905,7 +130025,8 @@
         }
       ],
       "description": "Battlecry: Give other Rafaams in your hand and battlefield +2/+2.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "explorer_rafaam",
@@ -129926,7 +130047,8 @@
         }
       ],
       "description": "Battlecry: Draw a Rafaam from your deck.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "warchief_rafaam",
@@ -129958,7 +130080,8 @@
         }
       ],
       "description": "Battlecry: Gain 5 Armor. If you're holding another Rafaam, gain 5 more.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "mindflayer_rfaam",
@@ -129987,7 +130110,8 @@
         }
       ],
       "description": "Taunt. Battlecry: If you're holding another Rafaam, Create a token that's a copy of this.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "calamitous_rafaam",
@@ -130008,7 +130132,8 @@
         }
       ],
       "description": "Battlecry: Deal 6 damage to all creatures that aren't Rafaam.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "giant_rafaam",
@@ -130026,7 +130151,8 @@
         "value": 1
       },
       "description": "Rush. Costs (1) less for each Rafaam you've played this game.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "murloc_rafaam",
@@ -130048,7 +130174,8 @@
         }
       ],
       "description": "Battlecry: The next Rafaam you play costs (3) less.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "archmage_rafaam",
@@ -130069,7 +130196,8 @@
         }
       ],
       "description": "Battlecry: Transform all creatures that aren't Rafaam into 1/1 Sheep.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "sc_archon",
@@ -130095,7 +130223,8 @@
         ]
       },
       "description": "At the end of your turn, deal 8 damage to target opponent and 2 damage to their creatures.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "hp_tracking",
@@ -130116,7 +130245,8 @@
       },
       "description": "Hero Power: Discover a card from your deck and draw it.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "infinite_banana",
@@ -130137,7 +130267,8 @@
       ],
       "description": "Target creature gains +1/+1. Get another Infinite Banana.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "twilight_whelp_grow",
@@ -130160,7 +130291,8 @@
       },
       "description": "At the end of your turn, gain +1/+1.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "nythendra_beetle",
@@ -130172,7 +130304,8 @@
       "tribe": "Beast",
       "description": "",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "golden_kobold",
@@ -130192,7 +130325,8 @@
         }
       ],
       "description": "Taunt. Battlecry: Replace your hand with Legendary creatures.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "wondrous_wand",
@@ -130207,7 +130341,8 @@
         }
       ],
       "description": "Draw 3 cards. They cost (0).",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "tolins_goblet",
@@ -130221,7 +130356,8 @@
         }
       ],
       "description": "Draw a card. Fill your hand with copies of it.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "zarogs_crown",
@@ -130239,7 +130375,8 @@
         }
       ],
       "description": "Discover a Legendary creature. Create two tokens that are copies of it.",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_engine",
@@ -130259,7 +130396,8 @@
       ],
       "description": "Divine Shield. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_tactical",
@@ -130279,7 +130417,8 @@
       ],
       "description": "Taunt. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_gunner",
@@ -130299,7 +130438,8 @@
       ],
       "description": "Rush. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_helm",
@@ -130319,7 +130459,8 @@
       ],
       "description": "Windfury. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_recon",
@@ -130339,7 +130480,8 @@
       ],
       "description": "Elusive. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_research",
@@ -130359,7 +130501,8 @@
       ],
       "description": "Poisonous. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_medical",
@@ -130379,7 +130522,8 @@
       ],
       "description": "Lifesteal. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "crewmate_admin",
@@ -130399,7 +130543,8 @@
       ],
       "description": "Reborn. Battlecry: Create every adjoining Crewmate.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "toru_jar",
@@ -130418,7 +130563,8 @@
       ],
       "description": "Deathrattle: Release the creature inside!",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "eruption",
@@ -130432,7 +130578,8 @@
       ],
       "description": "Deal 4 damage randomly split among all enemies. (Improves each turn Incindius lives!)",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "xortoth_star",
@@ -130449,7 +130596,8 @@
       ],
       "description": "Deal 2 damage to a random enemy. (When both Stars meet in your hand, they collide for 5 damage to all enemies!)",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "glade_tonic",
@@ -130483,7 +130631,8 @@
       ],
       "description": "Choose One - Target creature gains +2 Health; or -2 Health.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "khelos_hatched",
@@ -130497,7 +130646,8 @@
         "rush"
       ],
       "description": "Rush",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "khelos_egg_4",
@@ -130519,7 +130669,8 @@
       ],
       "description": "Taunt. Deathrattle: The egg cracks further..",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "khelos_egg_3",
@@ -130541,7 +130692,8 @@
       ],
       "description": "Taunt. Deathrattle: The egg cracks further..",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "khelos_egg_2",
@@ -130563,7 +130715,8 @@
       ],
       "description": "Taunt. Deathrattle: The egg cracks further..",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "khelos_egg_1",
@@ -130585,7 +130738,8 @@
       ],
       "description": "Taunt. Deathrattle: The egg cracks further..",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "threshfleet_blessing",
@@ -130608,7 +130762,8 @@
       ],
       "description": "Target creature gains +2/+2 and Divine Shield.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "sanc_azel_loc",
@@ -130631,7 +130786,8 @@
       ],
       "description": "Location. Deal 2 damage to a random enemy.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "ourobos",
@@ -130647,7 +130803,8 @@
       ],
       "tribe": "Dragon",
       "description": "Taunt, Lifesteal",
-      "token": true
+      "token": true,
+      "cardClass": "neutral"
     },
     {
       "id": "hooktail_chest",
@@ -130668,7 +130825,8 @@
       ],
       "description": "Taunt. Deathrattle: The enemy gets 3 Coins.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "leyline_of_flame",
@@ -130686,7 +130844,8 @@
       },
       "description": "At the end of your turn, deal 2 damage to a random enemy.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "leyline_of_frost",
@@ -130704,7 +130863,8 @@
       },
       "description": "At the end of your turn, Freeze a random creature an opponent controls.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "leyline_of_arcana",
@@ -130722,7 +130882,8 @@
       },
       "description": "At the end of your turn, get a random spell.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "blight",
@@ -130740,7 +130901,8 @@
       ],
       "description": "When drawn, take 2 damage.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "sabotage_dud",
@@ -130755,7 +130917,8 @@
       ],
       "description": "Does nothing. Cards next to this cost (1) more.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "sprite_bulb",
@@ -130769,7 +130932,8 @@
       ],
       "description": "Cast three random spells of this Bulb's level. (Levels up each turn!)",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "cenarius_might",
@@ -130779,7 +130943,8 @@
       "collectible": false,
       "description": "Give your other creatures +1/+3.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "cenarius_ancient",
@@ -130789,7 +130954,8 @@
       "collectible": false,
       "description": "Create a 5/5 Ancient creature token with Taunt.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "power_chord_murloc",
@@ -130808,7 +130974,8 @@
       ],
       "description": "Create four 1/1 Murloc creature tokens.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "power_chord_rogues",
@@ -130829,7 +130996,8 @@
       ],
       "description": "Deal 4 damage. Draw a card.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "power_chord_horde",
@@ -130845,7 +131013,8 @@
       ],
       "description": "Create a random 4-Cost creature token.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "hp_blood_tap",
@@ -130866,7 +131035,8 @@
       },
       "description": "Hero Power: Spend 3 Corpses to deal 2 damage.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "dream_card",
@@ -130881,7 +131051,8 @@
       ],
       "description": "Return a creature to its owner's hand.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "nightmare_card",
@@ -130896,7 +131067,8 @@
       ],
       "description": "Target creature gains +5/+5. At the start of your next turn, destroy it.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "ysera_awakens",
@@ -130917,7 +131089,8 @@
       ],
       "description": "Deal 5 damage to all characters except Ysera.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "emerald_drake_card",
@@ -130929,7 +131102,8 @@
       "tribe": "Dragon",
       "description": "",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "laughing_sister_card",
@@ -130943,7 +131117,8 @@
       ],
       "description": "Elusive",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "highborne_pupil",
@@ -130954,7 +131129,8 @@
       "health": 2,
       "description": "An eager student.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "epoch_past",
@@ -130969,7 +131145,8 @@
       ],
       "description": "Create a fallen creature you control.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "epoch_present",
@@ -130985,7 +131162,8 @@
       ],
       "description": "Draw 2 cards.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "epoch_future",
@@ -131002,7 +131180,8 @@
       ],
       "description": "Get a random huge creature. It costs (2) less.",
       "token": true,
-      "rarity": "common"
+      "rarity": "common",
+      "cardClass": "neutral"
     },
     {
       "id": "dala_continuum_collider",
@@ -135812,7 +135991,8 @@
           "rarity": "legendary",
           "count": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "dream_portal",
@@ -135830,7 +136010,8 @@
           "type": "summon-random",
           "tribe": "Dragon"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "dream",
@@ -135846,7 +136027,8 @@
         {
           "type": "bounce"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "nightmare",
@@ -135865,7 +136047,8 @@
           "health": 5,
           "target": "creature"
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "laughing_sister",
@@ -135881,7 +136064,8 @@
       "health": 5,
       "keywords": [
         "elusive"
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "emerald_drake",
@@ -135895,7 +136079,8 @@
       "description": "A 7/6 Dragon.",
       "attack": 7,
       "health": 6,
-      "tribe": "Dragon"
+      "tribe": "Dragon",
+      "cardClass": "neutral"
     },
     {
       "id": "lk_frost_strike",
@@ -144524,7 +144709,8 @@
       "token": true,
       "tribe": "Beast",
       "collectible": false,
-      "description": "A 4/1 Worm."
+      "description": "A 4/1 Worm.",
+      "cardClass": "neutral"
     },
     {
       "id": "overwhelm",
@@ -145050,7 +145236,8 @@
           }
         ]
       },
-      "description": "Hero Power (2): Give a Beast +3/+3."
+      "description": "Hero Power (2): Give a Beast +3/+3.",
+      "cardClass": "neutral"
     },
     {
       "id": "frenzied_fangs_infused",
@@ -145662,7 +145849,8 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "cardClass": "neutral"
     },
     {
       "id": "arcane_tripwire_token",

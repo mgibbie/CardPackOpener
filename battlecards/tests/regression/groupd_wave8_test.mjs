@@ -46,7 +46,7 @@ ok('gutwrencher_oni gained Poisonous/Taunt/Trample', ['poisonous', 'taunt', 'tra
 {
 	const st = game(); put(st, 0, 'tortotem');
 	E.endTurn(st);
-	const got = st.players[0].hand.find(c => { const d = cardsById[c.id]; return d && d.type === 'creature' && (d.tribe || '').split('/').filter(Boolean).length >= 2; });
+	const got = st.players[0].hand.find(c => { const d = cardsById[c.id]; return d && d.type === 'creature' && (d.tribe || '').split(/[/\s]+/).filter(Boolean).length >= 2; });
 	ok('Tortotem: a multi-tribe creature is added to hand', !!got, st.players[0].hand.map(c => c.id + ':' + (cardsById[c.id]?.tribe || '')));
 }
 

@@ -41,7 +41,7 @@ export function sweepDeaths(state) {
 			}
 			p.diedThisTurn++;
 			p.friendlyDeaths = (p.friendlyDeaths || 0) + 1; // Aessina: lifetime friendly deaths (tokens included)
-			for (const t of (c.tribe || '').split('/').filter(Boolean)) (p.tribeDiedGame = p.tribeDiedGame || {})[t] = (p.tribeDiedGame[t] || 0) + 1; // Mulchmuncher: friendly minions of a tribe that died this game
+			for (const t of (c.tribe || '').split(/[/\s]+/).filter(Boolean)) (p.tribeDiedGame = p.tribeDiedGame || {})[t] = (p.tribeDiedGame[t] || 0) + 1; // Mulchmuncher: friendly minions of a tribe that died this game
 			if (p.armorPerFriendlyDeath) { p.armor += p.armorPerFriendlyDeath; emit(state, { type: 'armor', player: c.controller, armor: p.armor }); } // Recycling
 			// Duels friendly-death passives (first of their kind each turn)
 			if (p.starving && (c.tribe || '').includes('Beast') && p._starvingTurn !== state.turnNumber) { p._starvingTurn = state.turnNumber; drawCards(state, pi, 1); } // Starving: first Beast death -> draw
