@@ -1914,6 +1914,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.nextCardCorpses) { spendCorpses(state, pi, card.cost || 0); p.nextCardCorpses = false; emit(state, { type: 'corpses', player: pi, corpses: p.corpses }); } // Exarch Maladaar: paid in Corpses
 	if (p.agamagganNext) { p.agamagganNext = false; for (const o of opponentsOf(state, pi)) { damageHero(state, o, Math.min(10, card.cost || 0), pi, true); break; } } // Agamaggan: the opponent's Health pays
 	if (p.spellsCostHealth && isSpellType(card)) damageHero(state, pi, card.cost || 0, pi, true); // Elixir of Vile: spells cost Health
+	if (p.nextSpellCostsHealthTurn === state.turnNumber && isSpellType(card)) { damageHero(state, pi, card.cost || 0, pi, true); p.nextSpellCostsHealthTurn = -1; } // Bloodbloom: one spell, paid in Health
+	if (p.minionsCostHealthTurn === state.turnNumber && card.type === 'creature') damageHero(state, pi, card.cost || 0, pi, true); // Curse of Flesh: minions cost Health this turn
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) { p.warlocNext = false; damageHero(state, pi, card.cost || 0, pi, true); } // Warloc: your Health pays
 	if (card.combo && p.nextComboDiscount > 0) p.nextComboDiscount = 0; // Foxy Fraud discount is spent by the next Combo card
 	if (card.choices && p.nextChooseOneDiscount > 0) p.nextChooseOneDiscount = 0; // Pride Seeker discount is spent by the next Choose One card
@@ -3674,6 +3676,20 @@ export function resolvePick(state, id) {
 		let tgt = null;
 		if (spec) { const legal = legalTargets(state, pend.player, spec); if (legal.length) tgt = legal[Math.floor(state.rng() * legal.length)]; }
 		if (!spec || tgt || !spec.required) { emit(state, { type: 'conjure', player: pend.player, card: spell, color: null }); runSpell(state, pend.player, spell, tgt, null); sweepDeaths(state); }
+		// Symphony of Sins: the unplayed Movements shuffle into your deck
+		if (pend.shuffleRestPool) execEffects(state, pend.player, [{ type: 'shuffle-ids-into-deck', ids: pend.shuffleRestPool.filter(x => x !== def.id) }], null, null);
+		return true;
+	}
+	if (def && pend.spreadDeathrattle && !p.eliminated) {
+		// Tamsin's Phylactery: give ALL your minions the discovered Deathrattle
+		if (def.deathrattle) {
+			for (const c of p.board) {
+				if (c.type !== 'creature' || isDead(c)) continue;
+				c.deathrattle = [...(c.deathrattle || []), ...JSON.parse(JSON.stringify(def.deathrattle))];
+				if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle');
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			}
+		}
 		return true;
 	}
 	if (def && pend.castOnDeathUid != null && !p.eliminated) {

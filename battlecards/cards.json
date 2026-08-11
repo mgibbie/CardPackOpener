@@ -173978,6 +173978,237 @@
           "type": "summon-entree-for-enemy"
         }
       ]
+    },
+    {
+      "id": "movement_of_pride",
+      "name": "Movement of Pride",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Draw your highest Cost minion. Reduce its Cost by (6).",
+      "effects": [
+        {
+          "type": "draw-highest-cost-minion",
+          "costMod": -6
+        }
+      ]
+    },
+    {
+      "id": "movement_of_greed",
+      "name": "Movement of Greed",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Draw 6 cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "movement_of_wrath",
+      "name": "Movement of Wrath",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Deal 6 damage to all characters.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "all-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "all-heroes"
+        }
+      ]
+    },
+    {
+      "id": "movement_of_gluttony",
+      "name": "Movement of Gluttony",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Give a random minion in your hand, deck, and battlefield +6/+6.",
+      "effects": [
+        {
+          "type": "buff-random-each-zone",
+          "attack": 6,
+          "health": 6
+        }
+      ]
+    },
+    {
+      "id": "movement_of_envy",
+      "name": "Movement of Envy",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Remove the top 6 cards from target opponent's deck.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "id": "movement_of_desire",
+      "name": "Movement of Desire",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Lifesteal. Deal 6 damage to target opponent.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "enemy-hero",
+          "lifesteal": true
+        }
+      ],
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "movement_of_sloth",
+      "name": "Movement of Sloth",
+      "type": "sorcery",
+      "cost": 3,
+      "rarity": "common",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "description": "Create a 6/6 Demon with Taunt and Reborn.",
+      "effects": [
+        {
+          "type": "summon",
+          "attack": 6,
+          "health": 6,
+          "name": "Slothful Demon",
+          "tribe": "Demon",
+          "keywords": [
+            "taunt",
+            "reborn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tamsins_phylactery",
+      "name": "Tamsin's Phylactery",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "ALTERAC_VALLEY",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Discover a friendly Deathrattle minion that died this game. Give your minions its Deathrattle.",
+      "effects": [
+        {
+          "type": "discover",
+          "fromDied": true,
+          "requireKeyword": "deathrattle",
+          "spreadDeathrattle": true
+        }
+      ]
+    },
+    {
+      "id": "symphony_of_sins",
+      "name": "Symphony of Sins",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "BATTLE_OF_THE_BANDS",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Discover and play a Movement. Shuffle the other 6 into your deck.",
+      "effects": [
+        {
+          "type": "symphony-of-sins"
+        }
+      ]
+    },
+    {
+      "id": "divergence",
+      "name": "Divergence",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "TIME_TRAVEL",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Split a random minion in your hand into two halves.",
+      "effects": [
+        {
+          "type": "split-hand-minion"
+        }
+      ]
+    },
+    {
+      "id": "wing_welding",
+      "name": "Wing Welding",
+      "cost": 4,
+      "rarity": "common",
+      "set": "TITANS",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Discard your highest Cost card. Deal damage equal to its Cost to all minions.",
+      "effects": [
+        {
+          "type": "discard-highest-damage-all"
+        }
+      ]
+    },
+    {
+      "id": "bloodbloom",
+      "name": "Bloodbloom",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "UNGORO",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "The next spell you cast this turn costs Health instead of Mana.",
+      "effects": [
+        {
+          "type": "next-spell-costs-health"
+        }
+      ]
+    },
+    {
+      "id": "curse_of_flesh",
+      "name": "Curse of Flesh",
+      "cost": 1,
+      "rarity": "rare",
+      "set": "TITANS",
+      "cardClass": "warlock",
+      "type": "sorcery",
+      "description": "Target opponent's minions cost Health instead of Mana next turn.",
+      "effects": [
+        {
+          "type": "enemy-minions-cost-health-next-turn"
+        }
+      ]
     }
   ]
 }

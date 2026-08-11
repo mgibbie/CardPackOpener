@@ -2775,3 +2775,97 @@ register('entree-rattle', ({ state, pi, source }) => {
 	const owner = source && source._entreeOwner != null ? source._entreeOwner : (opponentsOf(state, pi)[0] ?? pi);
 	execEffects(state, owner, [{ type: 'summon-from-deck' }], null, null);
 });
+
+// ---------- warlock six (hard-list recovery) ----------
+register('next-spell-costs-health', ({ state, pi }) => {
+	// Bloodbloom: the next spell you cast this turn costs Health instead of
+	// Mana (effectiveCost returns 0; playCard pays the printed cost in Health)
+	state.players[pi].nextSpellCostsHealthTurn = state.turnNumber;
+});
+
+register('enemy-minions-cost-health-next-turn', ({ state, enemyHero }) => {
+	// Curse of Flesh: target opponent's minions cost Health instead of Mana
+	// on their next turn
+	const o = enemyHero();
+	if (o == null) return;
+	state.players[o].minionsCostHealthTurn = state.turnNumber + 1;
+});
+
+register('symphony-of-sins', ({ state, pi }, e) => {
+	// Discover and play a Movement; the other six shuffle into your deck
+	// (castRandom pick + shuffleRestPool rider in resolvePick)
+	const SEVEN = ['movement_of_pride', 'movement_of_greed', 'movement_of_wrath', 'movement_of_gluttony', 'movement_of_envy', 'movement_of_desire', 'movement_of_sloth'];
+	const pool = SEVEN.filter(id => state.cardsById[id]);
+	const ids = [];
+	const bag = [...pool];
+	for (let i = 0; i < 3 && bag.length; i++) ids.push(bag.splice(Math.floor(state.rng() * bag.length), 1)[0]);
+	if (!ids.length || state.players[pi].eliminated) return;
+	state.pickQueue.push({ player: pi, ids, discover: true, castRandom: true, shuffleRestPool: pool });
+	emit(state, { type: 'pickStart', player: pi, count: ids.length });
+});
+
+register('draw-highest-cost-minion', ({ state, pi }, e) => {
+	// Movement of Pride: draw your highest-Cost minion, discounted
+	const p = state.players[pi];
+	if (p.hand.length >= MAX_HAND) return;
+	let bi = -1, best = -1;
+	for (let i = 0; i < p.deck.length; i++) {
+		const d = state.cardsById[p.deck[i]];
+		if (d && d.type === 'creature' && (d.cost || 0) > best) { best = d.cost || 0; bi = i; }
+	}
+	if (bi < 0) return;
+	const [id] = p.deck.splice(bi, 1);
+	const card = instantiate(state.cardsById[id], pi);
+	card.zone = 'hand';
+	if (e.costMod) card.cost = Math.max(0, (card.cost || 0) + e.costMod);
+	p.hand.push(card);
+	emit(state, { type: 'draw', player: pi, card });
+});
+
+register('buff-random-each-zone', ({ state, pi }, e) => {
+	// Movement of Gluttony: +N/+N to a random minion in your hand, deck, and
+	// battlefield (the deck one lands via the deckIdBuffs draw rider)
+	const p = state.players[pi];
+	const a = e.attack || 0, h = e.health || 0;
+	const board = p.board.filter(c => c.type === 'creature' && !isDead(c));
+	if (board.length) { const c = board[Math.floor(state.rng() * board.length)]; c.attack += a; c.maxHealth += h; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+	const hand = p.hand.filter(c => c.type === 'creature');
+	if (hand.length) { const c = hand[Math.floor(state.rng() * hand.length)]; c.attack += a; c.maxHealth += h; }
+	const deckMinions = p.deck.filter(id => state.cardsById[id]?.type === 'creature');
+	if (deckMinions.length) {
+		const id = deckMinions[Math.floor(state.rng() * deckMinions.length)];
+		p.deckIdBuffs = p.deckIdBuffs || [];
+		p.deckIdBuffs.push({ id, attack: a, health: h });
+	}
+});
+
+register('split-hand-minion', ({ state, pi }) => {
+	// Divergence: split a random minion in your hand into two halves
+	// (Attack, Health, and Cost halved, rounded up)
+	const p = state.players[pi];
+	const minions = p.hand.filter(c => c.type === 'creature');
+	if (!minions.length) return;
+	const t = minions[Math.floor(state.rng() * minions.length)];
+	p.hand = p.hand.filter(c => c !== t);
+	for (let i = 0; i < 2 && p.hand.length < MAX_HAND; i++) {
+		const half = instantiate(state.cardsById[t.id] || t, pi);
+		half.zone = 'hand';
+		half.attack = Math.ceil((t.attack || 0) / 2);
+		half.maxHealth = Math.max(1, Math.ceil((t.maxHealth || 1) / 2));
+		half.cost = Math.ceil((t.cost || 0) / 2);
+		p.hand.push(half);
+		emit(state, { type: 'conjure', player: pi, card: half, color: null });
+	}
+});
+
+register('discard-highest-damage-all', ({ state, pi, source }) => {
+	// Wing Welding: discard your highest-Cost card; deal its Cost to all minions
+	const p = state.players[pi];
+	let hi = null;
+	for (const c of p.hand) { if (c === source) continue; if (!hi || (c.cost || 0) > (hi.cost || 0)) hi = c; }
+	if (!hi) return;
+	p.hand = p.hand.filter(c => c !== hi);
+	toGraveyard(state, pi, hi);
+	emit(state, { type: 'discard', player: pi, card: hi });
+	execEffects(state, pi, [{ type: 'damage-all-minions', value: hi.cost || 0 }], null, null);
+});
