@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magepunk — Your Collection</title>
+<!-- shares the Design Wiki's look; card faces are the real in-game renders -->
+<link rel="stylesheet" href="../designwiki/style.css?v=20260817">
+<!-- battlecards/cardart.js imports three; map it so the import resolves -->
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
+</script>
+<style>
+	header .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+	header .right a { color: #ffe9a8; font-weight: 600; }
+	#content { max-width: 1180px; margin: 0 auto; }
+	.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+	.toolbar input[type=search] { flex: 1; min-width: 160px; max-width: 300px; padding: 7px 10px; border: 1px solid #cfd6e4; border-radius: 6px; font: inherit; }
+	.toolbar select { padding: 6px 8px; border: 1px solid #cfd6e4; border-radius: 6px; font: inherit; background: #fff; }
+	.own-summary { color: #76819c; margin: 6px 0 0; }
+	.count-line { color: #98a2bd; font-size: 12.5px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<header>
+	<a class="brand" href="/">Magepunk</a>
+	<a href="/profile/">Profile</a>
+	<a href="/designwiki/">Design Wiki</a>
+	<div class="right"><a id="who" href="/profile/"></a></div>
+</header>
+<div id="content">
+	<h1>Your Collection</h1>
+	<p class="own-summary" id="summary">Loading your collection…</p>
+	<div class="toolbar" id="toolbar" hidden>
+		<input type="search" id="q" placeholder="Search your cards…">
+		<select id="f-class"><option value="">All classes</option></select>
+		<select id="f-type"><option value="">All types</option></select>
+		<select id="f-rarity"><option value="">All rarities</option></select>
+		<select id="f-sort">
+			<option value="cost">Sort: cost</option>
+			<option value="name">Sort: name</option>
+			<option value="count">Sort: copies</option>
+			<option value="rarity">Sort: rarity</option>
+		</select>
+		<select id="f-size">
+			<option value="small">Small</option>
+			<option value="medium" selected>Medium</option>
+			<option value="large">Large</option>
+		</select>
+	</div>
+	<p class="count-line" id="countline"></p>
+	<div class="card-grid size-medium" id="grid"></div>
+</div>
+
+<script type="module">
+import * as MP from '../battlecards/mpmode.js';
+if (!MP.hasToken()) location.replace('/login/?next=' + encodeURIComponent('/collection/'));
+
+const $ = id => document.getElementById(id);
+const grid = $('grid');
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'special'];
+
+let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, state = null;
+
+(async () => {
+	// account state (server-owned collection) + the card database + the renderer
+	try { state = await MP.freshState(); } catch (e) { state = MP.cachedState(); }
+	if (!state) { location.replace('/login/?next=' + encodeURIComponent('/collection/')); return; }
+	$('who').textContent = state.username;
+
+	const [art, raw, pool] = await Promise.all([
+		import('../battlecards/cardart.js'),
+		fetch('../battlecards/cards.json').then(r => r.json()),
+		fetch('/server/pool-rarity.json').then(r => r.json()).catch(() => null),
+	]);
+	CardArt = art;
+	cards = raw.cards;
+	for (const c of cards) byId[c.id] = c;
+	poolSize = pool ? Object.keys(pool).length : 0;
+
+	const col = state.collection || {};
+	owned = Object.entries(col)
+		.filter(([id, n]) => n > 0 && byId[id])
+		.map(([id, n]) => ({ card: byId[id], count: n }));
+
+	const copies = owned.reduce((a, o) => a + o.count, 0);
+	$('summary').textContent = `You own ${owned.length.toLocaleString()} different cards` +
+		(poolSize ? ` — ${Math.round(owned.length / poolSize * 100)}% of the ${poolSize.toLocaleString()}-card pool` : '') +
+		` (${copies.toLocaleString()} total copies).`;
+
+	// filter options from what you actually own
+	const opts = (sel, values, label) => {
+		for (const v of values) {
+			const o = document.createElement('option');
+			o.value = v; o.textContent = label ? label(v) : v;
+			sel.appendChild(o);
+		}
+	};
+	const classes = [...new Set(owned.map(o => CardArt.canonClass(o.card.cardClass)))].sort();
+	opts($('f-class'), classes, v => CardArt.classNameOf ? CardArt.classNameOf(v) : v);
+	opts($('f-type'), [...new Set(owned.map(o => o.card.type))].sort());
+	opts($('f-rarity'), RARITY_ORDER.filter(r => owned.some(o => (o.card.rarity || 'common') === r)));
+	$('toolbar').hidden = false;
+
+	for (const id of ['q', 'f-class', 'f-type', 'f-rarity', 'f-sort']) $(id).addEventListener('input', render);
+	$('f-size').addEventListener('input', () => { grid.className = 'card-grid size-' + $('f-size').value; });
+	render();
+})().catch(e => { $('summary').textContent = 'Could not load your collection: ' + e.message; });
+
+let gen = 0; // render generation — a filter change cancels the in-flight chunked render
+async function render() {
+	const my = ++gen;
+	const q = $('q').value.trim().toLowerCase();
+	const fc = $('f-class').value, ft = $('f-type').value, fr = $('f-rarity').value, sort = $('f-sort').value;
+	let list = owned.filter(({ card: c }) =>
+		(!q || c.name.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q)) &&
+		(!fc || CardArt.canonClass(c.cardClass) === fc) &&
+		(!ft || c.type === ft) &&
+		(!fr || (c.rarity || 'common') === fr));
+	const rk = c => RARITY_ORDER.indexOf(c.rarity || 'common');
+	list.sort((a, b) =>
+		sort === 'name' ? a.card.name.localeCompare(b.card.name) :
+		sort === 'count' ? b.count - a.count || a.card.name.localeCompare(b.card.name) :
+		sort === 'rarity' ? rk(b.card) - rk(a.card) || (a.card.cost ?? 0) - (b.card.cost ?? 0) :
+		(a.card.cost ?? 0) - (b.card.cost ?? 0) || a.card.name.localeCompare(b.card.name));
+
+	$('countline').textContent = list.length === owned.length
+		? '' : `${list.length.toLocaleString()} of ${owned.length.toLocaleString()} cards match.`;
+	grid.replaceChildren();
+
+	// chunked: preload each chunk's real art, snapshot the in-game faces, keep the page responsive
+	const CHUNK = 48;
+	for (let i = 0; i < list.length; i += CHUNK) {
+		if (gen !== my) return;
+		const chunk = list.slice(i, i + CHUNK);
+		try { await CardArt.preloadArt(chunk.map(o => o.card.id)); } catch (e) {}
+		if (gen !== my) return;
+		const frag = document.createDocumentFragment();
+		for (const { card, count } of chunk) {
+			const canvas = CardArt.drawCardFace(card, { count });
+			const img = document.createElement('img');
+			img.className = 'wiki-face'; img.loading = 'lazy'; img.alt = card.name;
+			img.src = canvas.toDataURL();
+			const a = document.createElement('a');
+			a.className = 'wiki-card'; a.title = card.name;
+			a.href = '/designwiki/#/cards/' + card.id;
+			a.appendChild(img);
+			frag.appendChild(a);
+		}
+		grid.appendChild(frag);
+		await new Promise(r => requestAnimationFrame(r));
+	}
+}
+</script>
+</body>
+</html>

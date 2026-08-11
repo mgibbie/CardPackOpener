@@ -17,13 +17,31 @@
 	.card-image:hover {
 		transform: scale(1.5);
 	}
+
+	/* account corner (top right): Log in when signed out, username chip when in */
+	#account-corner {
+		position: absolute; top: 14px; right: 16px;
+		display: flex; align-items: center; gap: 8px;
+		font: 14px system-ui, sans-serif;
+	}
+	#account-corner a {
+		display: inline-block; padding: 7px 16px; border-radius: 8px;
+		text-decoration: none; font-weight: 600;
+	}
+	#login-btn { background: #2b6cb0; color: #fff; }
+	#login-btn:hover { background: #245a96; }
+	#user-chip { background: #1f2a44; color: #ffe9a8; border: 1px solid #3a4a74; }
+	#user-chip:hover { background: #2a3a5e; }
+	#user-chip::before { content: '👤 '; }
 	</style>
 </head>
 <body>
+	<div id="account-corner"></div>
 	<h1>Mike's Card Pack Opening Simulator</h1>
 	<p>
 		<a href="overworld/">Overworld (web-native)</a> &middot;
 		<a href="battlecards/">Battlecards 3D</a> &middot;
+		<span id="nav-collection" hidden><a href="collection/">Collection</a> &middot;</span>
 		<a href="overworld/pokechess.html">PokéChess</a> &middot;
 		<a href="pairofpears/">Pair of Pears</a> &middot;
 		<a href="learnmagepunk/">Learn Magepunk</a> &middot;
@@ -33,17 +51,32 @@
 	<button id="reveal-cards-button">Reveal 15 random Magic: The Gathering cards</button>
 	<div id="card-container"></div>
 
+	<!-- account corner: Log in button, or username -> /profile/ + the Collection link -->
+	<script type="module">
+	import * as MP from './battlecards/mpmode.js';
+	const corner = document.getElementById('account-corner');
+	if (MP.hasToken()) {
+		// cached state only — never force a network round-trip (or a logout
+		// redirect) just to render the landing page
+		const name = MP.cachedState()?.username || 'Account';
+		corner.innerHTML = `<a id="user-chip" href="profile/" title="Your profile">${name}</a>`;
+		document.getElementById('nav-collection').hidden = false;
+	} else {
+		corner.innerHTML = `<a id="login-btn" href="login/?next=/">Log in</a>`;
+	}
+	</script>
+
 	<!-- JavaScript code to fetch and display the cards -->
 	<script>
 	const API_ENDPOINT = 'https://api.scryfall.com/cards/random?';
 	const CARD_COUNT = 15;
 	const cardContainer = document.getElementById('card-container');
 	const revealCardsButton = document.getElementById('reveal-cards-button');
-	
+
 	revealCardsButton.addEventListener('click', async () => {
 		revealCardsButton.disabled = true;
 		cardContainer.innerHTML = '';
-		
+
 		for (let i = 0; i < CARD_COUNT; i++) {
 			const response = await fetch(API_ENDPOINT);
 			const { image_uris } = await response.json();
