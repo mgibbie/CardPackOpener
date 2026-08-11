@@ -2,7 +2,7 @@
 // a login token exists, every battlecards page runs in "MP mode" (the server,
 // not localStorage, owns the collection, decks, and packs) — no ?mp opt-in.
 // The overworld and the battlecards 3D game additionally REQUIRE a login and
-// bounce you to the /magepunktest door when you have none. Read-only pages
+// bounce you to the /login door when you have none. Read-only pages
 // (the gallery, deck browser) stay usable logged-out in local mode.
 const TOKEN_KEY = 'magepunk_mp_token_v1';
 const STATE_KEY = 'magepunk_mp_state_v1';
@@ -18,7 +18,7 @@ export function mpMode() { return hasToken(); }
 // pages that MUST have a login (the overworld + the battlecards game) call this;
 // it sends you to the account door when no token is present.
 export function requireLogin() {
-	if (!hasToken()) { location.href = '/magepunktest/'; return false; }
+	if (!hasToken()) { location.href = '/login/?next=' + encodeURIComponent(location.pathname + location.search); return false; }
 	return true;
 }
 
@@ -52,7 +52,7 @@ export async function auth(action, username, password) {
 export function logout() {
 	localStorage.removeItem(TOKEN_KEY);
 	localStorage.removeItem(STATE_KEY);
-	if (!location.pathname.startsWith('/magepunktest')) location.href = '/magepunktest/';
+	if (!location.pathname.startsWith('/login')) location.href = '/login/';
 }
 
 // last known server state (refresh with call('state'))

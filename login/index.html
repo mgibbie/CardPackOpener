@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magepunk — Sign in</title>
+<style>
+	* { box-sizing: border-box; }
+	body {
+		margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+		background: radial-gradient(circle at 50% 18%, #241b40 0%, #0d0b15 72%);
+		color: #e9e3f5; font-family: Georgia, "Times New Roman", serif; padding: 20px;
+	}
+	.panel {
+		width: min(400px, 94vw); background: #1b1730e6; border: 1px solid #4a4066;
+		border-radius: 16px; padding: 30px 28px; text-align: center; box-shadow: 0 14px 46px #000a;
+	}
+	h1 { margin: 0 0 2px; letter-spacing: 3px; font-size: 30px; color: #cdbaff; }
+	.sub { opacity: 0.7; font-size: 13px; margin-bottom: 22px; }
+	label { display: block; text-align: left; font-size: 12px; opacity: 0.7; margin: 12px 2px 4px; letter-spacing: 0.5px; }
+	input {
+		width: 100%; padding: 12px 13px; border-radius: 9px; border: 1px solid #4a4066;
+		background: #130f21; color: #e9e3f5; font-size: 15px; font-family: inherit;
+	}
+	input:focus { outline: none; border-color: #7a68b6; }
+	button#go {
+		width: 100%; padding: 13px; margin-top: 20px; border-radius: 9px; border: 1px solid #6a5a9a;
+		background: linear-gradient(180deg, #4d3c80, #33285c); color: #f2ecff;
+		font-size: 16px; font-family: inherit; letter-spacing: 1px; cursor: pointer;
+	}
+	button#go:hover { filter: brightness(1.15); }
+	button#go:disabled { opacity: 0.6; cursor: default; }
+	.flip { background: none; border: none; color: #9d90cd; font-size: 13px; margin-top: 16px;
+		cursor: pointer; text-decoration: underline; font-family: inherit; }
+	.err { color: #ff9d9d; font-size: 13px; min-height: 18px; margin-top: 12px; }
+	.hint { font-size: 11.5px; opacity: 0.5; margin-top: 18px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="panel">
+	<h1>MAGEPUNK</h1>
+	<div class="sub" id="sub">Sign in to enter the world</div>
+
+	<form id="form" autocomplete="on">
+		<label for="u">Username</label>
+		<input id="u" name="username" autocomplete="username" maxlength="20" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+		<label for="p">Password</label>
+		<input id="p" name="password" type="password" autocomplete="current-password" minlength="6" required>
+		<button id="go" type="submit">Log in</button>
+	</form>
+	<div class="err" id="err"></div>
+	<button class="flip" id="flip" type="button">No account? Create one</button>
+
+	<div class="hint">Your collection, decks, packs, and progress live in your account. The Overworld and Battlecards 3D need a login; everything else is open.</div>
+</div>
+
+<script type="module">
+import * as MP from '../battlecards/mpmode.js';
+
+// where to go after signing in — the page that sent you here, else the overworld.
+// only same-origin absolute paths are honored, so ?next can't bounce off-site.
+const params = new URLSearchParams(location.search);
+const raw = params.get('next') || '/overworld/';
+const next = /^\/(?!\/)/.test(raw) ? raw : '/overworld/';
+
+// already signed in? skip the door.
+if (MP.hasToken()) location.replace(next);
+
+const $ = id => document.getElementById(id);
+let registering = false;
+
+function render() {
+	$('go').textContent = registering ? 'Create account' : 'Log in';
+	$('flip').textContent = registering ? 'Have an account? Log in' : 'No account? Create one';
+	$('sub').textContent = registering ? 'Create an account to enter the world' : 'Sign in to enter the world';
+	$('p').autocomplete = registering ? 'new-password' : 'current-password';
+}
+$('flip').addEventListener('click', () => { registering = !registering; $('err').textContent = ''; render(); });
+
+$('form').addEventListener('submit', async (e) => {
+	e.preventDefault();
+	const u = $('u').value.trim(), p = $('p').value;
+	if (!u || !p) { $('err').textContent = 'Enter a username and password.'; return; }
+	$('err').textContent = '';
+	$('go').disabled = true;
+	try {
+		const data = await MP.auth(registering ? 'register' : 'login', u, p);
+		if (data && data.token) { location.replace(next); return; }
+		$('err').textContent = (data && data.error) || 'Something went wrong. Try again.';
+	} catch (err) {
+		$('err').textContent = 'Network error. Try again.';
+	}
+	$('go').disabled = false;
+});
+render();
+</script>
+</body>
+</html>
