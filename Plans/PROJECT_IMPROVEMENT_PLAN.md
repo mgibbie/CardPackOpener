@@ -1,0 +1,132 @@
+# Magepunk — Project Improvement Plan
+
+_Practical, mostly-easy ways to make the project better, ranked by impact vs. effort.
+Written 2026-08-12, after the main-page redesign._
+
+The content is enormous and deep (7,491 Battlecards, four run modes, a web RPG, a
+design wiki, accounts). The biggest gaps are **not content** — they're
+**discoverability, onboarding, and retention**. Most of the wins below are hours,
+not weeks.
+
+---
+
+## Tier 0 — Highest leverage, low effort (do these first)
+
+### 1. A Battlecards "start screen" / mode picker  ⭐ biggest win
+Right now `battlecards/` drops you straight into a match, and the run modes only
+exist via URL params (`?heist=1`, `?tombs=1`, `?dungeon=1`, `?duels=1`). **Almost
+nobody will ever find them.** Add a lightweight landing that surfaces everything:
+- **Quick Match** (vs AI), **Dungeon**, **Heist**, **Tombs**, **Duels**, **Deck Builder**, **Packs**, **Gallery**.
+- Each with a one-line description and the mode's art/icon.
+- Reuse the tile style from the new main page for visual consistency.
+- Effort: ~half a day. Impact: unlocks 4 finished game modes that are currently invisible.
+
+### 2. First-run onboarding for Battlecards
+A new player lands mid-match with no idea what to do.
+- On first visit (no account / flag in localStorage), show a 3-slide "how a turn works"
+  overlay, then start a scripted tutorial match, OR a prominent "New? Read the 60-second
+  rules" button linking to `learnmagepunk/`.
+- Ship 1–2 **precon starter decks** per class so new players aren't staring at an empty
+  deckbuilder. (You already have run-mode stock decks to draw from.)
+- Effort: 1 day. Impact: cuts the bounce rate for first-timers dramatically.
+
+### 3. Cross-link the site consistently
+The new main page is the hub, but sub-pages are islands.
+- Add the same top bar (⚙️ Magepunk wordmark → home, account chip) to `battlecards/`,
+  `overworld/`, `learnmagepunk/`, `magepunknews/`, `collection/`, `profile/`.
+- Add a persistent "◀ Magepunk" back-link on every game.
+- Effort: 1–2 hours. Impact: the whole thing finally feels like one product.
+
+### 4. SEO & link-sharing basics
+- Per-page `<title>` + `<meta name="description">` (main page done; audit the rest).
+- **Open Graph / Twitter card** tags + a share image on the main page and Battlecards so
+  links unfurl nicely in Discord/social. A single 1200×630 PNG per game.
+- A `sitemap.xml` and `robots.txt` at the root.
+- Effort: 2–3 hours. Impact: every shared link looks legit and gets indexed.
+
+---
+
+## Tier 1 — Easy quality-of-life
+
+### 5. Deck Builder search & filters
+Verify/upgrade the deckbuilder to have: text search, filter by class/cost/type/keyword,
+and "cards you own vs. all." With 7,491 cards this is essential for it to feel usable.
+(Collection + deckbuilder already have hover tooltips — good.)
+
+### 6. Match UX niceties
+- A visible **game log** panel (what happened, whose turn) — huge for a deep card game.
+- **Concede / rematch** buttons on the match screen.
+- A "mulligan" confirmation and clearer priority/end-turn affordances.
+- Effort: a day, incremental.
+
+### 7. Collection completion goals
+The profile has tiered achievements already — extend the collection page with:
+- A **completion meter** ("2,140 / 7,491 collected"), and a **"Missing"** filter.
+- Group-by set/class so completionists have targets.
+- Effort: a few hours (data already exists).
+
+### 8. Loading & perf polish
+- `cards.json` is large (7,491 entries). For pages that only need names/costs, ship a
+  **slim index** (id, name, cost, class, rarity) and lazy-load full defs on demand.
+- Add long-cache headers for static assets (Cloudflare `_headers`), and confirm the
+  art/data offload domains cache aggressively.
+- Run **Lighthouse** on the main page + Battlecards; fix the top 3 findings.
+- Effort: half a day. Impact: faster first paint, less bandwidth.
+
+---
+
+## Tier 2 — Retention & cadence (medium effort, compounding value)
+
+### 9. Daily quest / daily pack
+A simple "come back tomorrow" loop:
+- One **daily quest** ("win a match", "play 10 spells", "open a pack") → reward a pack.
+- A **daily free pack** if logged in.
+- All computable from existing account state; store a `lastDailyClaim` timestamp.
+- Effort: 1 day. Impact: the single biggest retention lever for a card game.
+
+### 10. Weekly featured content
+You have the whole import + wiki pipeline. Rotate:
+- A **featured deck of the week** on the main page / Battlecards start screen.
+- A **spotlight card** with its wiki blurb.
+- Effort: small once templated; can even be data-driven from a JSON.
+
+### 11. Lightweight, privacy-friendly analytics
+You can't improve what you can't see. Add a self-hosted counter (or Cloudflare Web
+Analytics — no cookies) to learn which games/modes people actually open. Effort: 30 min.
+
+---
+
+## Tier 3 — Bigger bets (worth planning, not "easy")
+
+### 12. Finish multiplayer
+`Plans/MULTIPLAYER_FIX_PLAN.md` tracks the known bugs. Beyond fixing them:
+- A minimal **lobby / matchmaking** (share-a-code or quick-match queue).
+- **Spectate** and a post-game summary.
+- This is the path from "single-player toy" to "thing friends play together."
+
+### 13. Mobile-first match layout
+The hub and tiles are responsive; the Battlecards match board likely is not. A
+touch-friendly layout would roughly double the addressable audience.
+
+### 14. Accessibility pass
+- Colorblind-safe class/keyword colors (or a toggle).
+- Keyboard navigation for menus and the deckbuilder.
+- Respect `prefers-reduced-motion` (the main page float animation should honor it).
+
+---
+
+## Suggested order of attack
+1. Battlecards **start screen / mode picker** (Tier 0 #1) — unlocks hidden content today.
+2. **Cross-site top bar + back-links** (#3) and **SEO/OG** (#4) — cheap, site-wide polish.
+3. **Onboarding + starter decks** (#2) — fixes the new-player cliff.
+4. **Daily quest/pack** (#9) — turns visitors into returners.
+5. Then pick from Tier 1 by whatever annoys you most while playing.
+
+## Quick-win checklist (each < ~2 hours)
+- [ ] `prefers-reduced-motion` guard on the main-page card float
+- [ ] OG/Twitter meta + one share image
+- [ ] `sitemap.xml` + `robots.txt`
+- [ ] "◀ Magepunk" back-link on every sub-page
+- [ ] Collection completion meter
+- [ ] Cloudflare Web Analytics snippet
+- [ ] Audit every page's `<title>`/`<meta description>`

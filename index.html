@@ -1,43 +1,205 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Mike's Card Pack Opening Simulator</title>
+	<title>Magepunk</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" href="style.css">
+	<meta name="description" content="Magepunk — a homebrew universe of games, cards, and worlds. Play Battlecards, explore the Overworld, and more.">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%99%EF%B8%8F</text></svg>">
 	<style>
-	/* account corner (top right): Log in when signed out, username chip when in */
-	#account-corner {
-		position: absolute; top: 14px; right: 16px;
-		display: flex; align-items: center; gap: 8px;
-		font: 14px system-ui, sans-serif;
+	:root {
+		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
+		--shadow: 0 10px 30px rgba(0,0,0,.35);
 	}
-	#account-corner a {
-		display: inline-block; padding: 7px 16px; border-radius: 8px;
-		text-decoration: none; font-weight: 600;
+	@media (prefers-color-scheme: light) {
+		:root {
+			--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
+			--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
+			--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6;
+			--shadow: 0 8px 24px rgba(40,50,90,.12);
+		}
 	}
-	#login-btn { background: #2b6cb0; color: #fff; }
-	#login-btn:hover { background: #245a96; }
-	#user-chip { background: #1f2a44; color: #ffe9a8; border: 1px solid #3a4a74; }
-	#user-chip:hover { background: #2a3a5e; }
-	#user-chip::before { content: '👤 '; }
+	:root[data-theme="dark"] {
+		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
+		--shadow: 0 10px 30px rgba(0,0,0,.35);
+	}
+	:root[data-theme="light"] {
+		--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
+		--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
+		--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6;
+		--shadow: 0 8px 24px rgba(40,50,90,.12);
+	}
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	body {
+		font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+		color: var(--text); min-height: 100vh;
+		background:
+			radial-gradient(1200px 600px at 15% -10%, rgba(166,136,255,.16), transparent 60%),
+			radial-gradient(1000px 500px at 90% 0%, rgba(110,168,255,.14), transparent 55%),
+			linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%);
+		background-attachment: fixed;
+	}
+	a { color: inherit; text-decoration: none; }
+	.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 20px 64px; }
+
+	/* top bar */
+	.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 2px 0; }
+	.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .3px; font-size: 1.05rem; }
+	.brand .cog { font-size: 1.25rem; filter: drop-shadow(0 0 6px rgba(255,207,107,.4)); }
+	.account { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+	.account a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 9px; font-weight: 600; border: 1px solid transparent; }
+	#login-btn { background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 82%, #000)); color: #fff; box-shadow: var(--shadow); }
+	#login-btn:hover { filter: brightness(1.08); }
+	#user-chip { background: var(--panel); color: var(--gold); border-color: var(--border); }
+	#user-chip:hover { background: var(--panel-2); }
+
+	/* hero */
+	.hero { text-align: center; padding: 56px 12px 40px; }
+	.hero h1 {
+		font-size: clamp(3rem, 9vw, 5.5rem); font-weight: 900; letter-spacing: -1px; line-height: .95;
+		background: linear-gradient(120deg, var(--gold) 10%, var(--violet) 55%, var(--blue) 95%);
+		-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+	}
+	.hero .tag { margin-top: 16px; color: var(--muted); font-size: clamp(1rem, 2.4vw, 1.2rem); }
+	.hero .tag b { color: var(--text); font-weight: 700; }
+
+	/* section label */
+	.section-label { display: flex; align-items: center; gap: 12px; margin: 38px 4px 16px; color: var(--muted); font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+	.section-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+	/* featured flagship */
+	.featured {
+		display: grid; grid-template-columns: 1.4fr 1fr; gap: 0; overflow: hidden;
+		border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow);
+		position: relative; transition: transform .18s ease, box-shadow .18s ease;
+	}
+	.featured:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+	.featured .body { padding: 30px 32px; display: flex; flex-direction: column; justify-content: center; }
+	.featured .badge { align-self: flex-start; font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 999px; padding: 4px 11px; margin-bottom: 14px; }
+	.featured h2 { font-size: 2.1rem; font-weight: 800; }
+	.featured p { color: var(--muted); margin: 10px 0 18px; line-height: 1.55; max-width: 42ch; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+	.chip { font-size: .74rem; color: var(--text); background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px; }
+	.cta { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 11px; font-weight: 700; color: #0c1122; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); box-shadow: var(--shadow); }
+	.featured:hover .cta { gap: 12px; }
+	.featured .art {
+		display: flex; align-items: center; justify-content: center; font-size: 7rem; position: relative;
+		background: radial-gradient(circle at 50% 40%, rgba(166,136,255,.28), transparent 70%), linear-gradient(160deg, var(--panel-2), var(--panel));
+		border-left: 1px solid var(--border);
+	}
+	.featured .art span { filter: drop-shadow(0 8px 24px rgba(0,0,0,.35)); animation: float 5s ease-in-out infinite; }
+	@keyframes float { 0%,100% { transform: translateY(-6px) rotate(-4deg); } 50% { transform: translateY(6px) rotate(4deg); } }
+	@media (prefers-reduced-motion: reduce) { .featured .art span { animation: none; } .tile, .featured, .cta { transition: none; } }
+
+	/* tiles grid */
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+	.tile {
+		display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: 15px;
+		background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
+		transition: transform .16s ease, border-color .16s ease, background .16s ease;
+	}
+	.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--violet) 50%, var(--border)); background: var(--panel-2); }
+	.tile[hidden] { display: none; } /* beat the .tile display:flex so hidden actually hides */
+	.tile .glyph { font-size: 1.9rem; line-height: 1; flex-shrink: 0; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); }
+	.tile h3 { font-size: 1.06rem; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
+	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
+	.tile p { color: var(--muted); font-size: .86rem; line-height: 1.45; margin-top: 4px; }
+
+	/* footer */
+	footer { margin-top: 46px; text-align: center; color: var(--muted); font-size: .84rem; }
+	footer a { color: var(--blue); font-weight: 600; }
+	footer a:hover { text-decoration: underline; }
+	.theme-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: .82rem; cursor: pointer; margin-left: 8px; }
+	.theme-toggle:hover { color: var(--text); border-color: var(--violet); }
+
+	@media (max-width: 640px) {
+		.featured { grid-template-columns: 1fr; }
+		.featured .art { border-left: none; border-top: 1px solid var(--border); font-size: 5rem; padding: 24px 0; }
+	}
 	</style>
 </head>
 <body>
-	<div id="account-corner"></div>
-	<h1>Mike's Card Pack Opening Simulator</h1>
-	<p>
-		<a href="overworld/">Overworld (web-native)</a> &middot;
-		<a href="battlecards/">Battlecards 3D</a> &middot;
-		<span id="nav-collection" hidden><a href="collection/">Collection</a> &middot;</span>
-		<a href="overworld/pokechess.html">PokéChess</a> &middot;
-		<a href="pairofpears/">Pair of Pears</a> &middot;
-		<a href="learnmagepunk/">Learn Magepunk</a> &middot;
-		<a href="magepunknews/">Magepunk News</a> &middot;
-		<a href="designwiki/">Design Wiki</a>
-	</p>
+	<div class="wrap">
+		<div class="topbar">
+			<a class="brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
+			<div class="account" id="account-corner"></div>
+		</div>
 
-	<!-- account corner: Log in button, or username -> /profile/ + the Collection link -->
+		<header class="hero">
+			<h1>Magepunk</h1>
+			<p class="tag">A homebrew universe of <b>games</b>, <b>cards</b>, and <b>worlds</b> — built card by card.</p>
+		</header>
+
+		<div class="section-label">Featured</div>
+		<a class="featured" href="battlecards/">
+			<div class="body">
+				<span class="badge">Flagship</span>
+				<h2>Battlecards</h2>
+				<p>A deep collectible card game with a full deckbuilder, run modes, and 3D matches against the AI. Every mechanic, hand-built.</p>
+				<div class="chips">
+					<span class="chip">7,400+ cards</span>
+					<span class="chip">PvP &amp; solo runs</span>
+					<span class="chip">Deckbuilder</span>
+					<span class="chip">Dungeon · Heist · Tombs · Duels</span>
+				</div>
+				<span class="cta">Play Battlecards →</span>
+			</div>
+			<div class="art"><span>🃏</span></div>
+		</a>
+
+		<div class="section-label">Play</div>
+		<div class="grid">
+			<a class="tile" href="overworld/">
+				<div class="glyph">🗺️</div>
+				<div><h3>Overworld <span class="arrow">→</span></h3><p>Explore the web-native RPG world — Kanto, Johto, and Hoenn, right in your browser.</p></div>
+			</a>
+			<a class="tile" href="overworld/pokechess.html">
+				<div class="glyph">♟️</div>
+				<div><h3>PokéChess <span class="arrow">→</span></h3><p>Chess reimagined with creatures — capture battles decided by stats.</p></div>
+			</a>
+			<a class="tile" href="pairofpears/">
+				<div class="glyph">🍐</div>
+				<div><h3>Pair of Pears <span class="arrow">→</span></h3><p>A cozy co-op puzzle game about two pears working together.</p></div>
+			</a>
+			<a class="tile" href="scoundrel/">
+				<div class="glyph">🗡️</div>
+				<div><h3>Scoundrel <span class="arrow">→</span></h3><p>A single-deck dungeon crawler — press your luck through a hall of cards.</p></div>
+			</a>
+		</div>
+
+		<div class="section-label">Explore</div>
+		<div class="grid">
+			<a class="tile" id="tile-collection" href="collection/" hidden>
+				<div class="glyph">📚</div>
+				<div><h3>Your Collection <span class="arrow">→</span></h3><p>Browse every card you've opened, gallery-style.</p></div>
+			</a>
+			<a class="tile" href="learnmagepunk/">
+				<div class="glyph">🎓</div>
+				<div><h3>Learn Magepunk <span class="arrow">→</span></h3><p>How to play Battlecards — turns, combat, lands, classes, and every keyword.</p></div>
+			</a>
+			<a class="tile" href="magepunknews/">
+				<div class="glyph">📰</div>
+				<div><h3>Magepunk News <span class="arrow">→</span></h3><p>Patch notes and every new card release from the game's history.</p></div>
+			</a>
+			<a class="tile" href="designwiki/">
+				<div class="glyph">📖</div>
+				<div><h3>Design Wiki <span class="arrow">→</span></h3><p>The living design bible — mechanics, keywords, and the world's lore.</p></div>
+			</a>
+		</div>
+
+		<footer>
+			<p>Made by Mike. Looking for the original card pack opener? It lives at <a href="og/">/og</a>.
+				<button class="theme-toggle" id="theme-toggle" title="Toggle theme">◐ Theme</button>
+			</p>
+		</footer>
+	</div>
+
+	<!-- account corner: Log in button, or username -> /profile/ + the Collection tile -->
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
 	const corner = document.getElementById('account-corner');
@@ -45,11 +207,27 @@
 		// cached state only — never force a network round-trip (or a logout
 		// redirect) just to render the landing page
 		const name = MP.cachedState()?.username || 'Account';
-		corner.innerHTML = `<a id="user-chip" href="profile/" title="Your profile">${name}</a>`;
-		document.getElementById('nav-collection').hidden = false;
+		corner.innerHTML = `<a id="user-chip" href="profile/" title="Your profile">👤 ${name}</a>`;
+		const c = document.getElementById('tile-collection');
+		if (c) c.hidden = false;
 	} else {
 		corner.innerHTML = `<a id="login-btn" href="login/?next=/">Log in</a>`;
 	}
+	</script>
+	<script>
+	// theme toggle: remember the choice; default follows the OS
+	(function () {
+		const root = document.documentElement, KEY = 'mp-theme';
+		const saved = localStorage.getItem(KEY);
+		if (saved) root.setAttribute('data-theme', saved);
+		document.getElementById('theme-toggle').addEventListener('click', function () {
+			const cur = root.getAttribute('data-theme')
+				|| (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+			const next = cur === 'dark' ? 'light' : 'dark';
+			root.setAttribute('data-theme', next);
+			localStorage.setItem(KEY, next);
+		});
+	})();
 	</script>
 </body>
 </html>
