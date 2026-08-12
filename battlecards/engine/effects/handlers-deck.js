@@ -1529,8 +1529,10 @@ register('discard-lowest', ({ state, pi, target, source, enemies, scaled, hm, pi
 			// Lakkari Felhound: discard your N lowest-Cost cards
 			const p = state.players[pi];
 			for (let k = 0; k < (e.count || 1) && p.hand.length; k++) {
-				let li = 0;
-				for (let j = 1; j < p.hand.length; j++) if (e.highest ? (p.hand[j].cost || 0) > (p.hand[li].cost || 0) : (p.hand[j].cost || 0) < (p.hand[li].cost || 0)) li = j; // Expired Merchant: highest
+				const cand = e.spellsOnly ? p.hand.map((c, j) => j).filter(j => isSpellType(p.hand[j])) : p.hand.map((c, j) => j); // Trolley Problem: lowest-Cost SPELL only
+				if (!cand.length) break;
+				let li = cand[0];
+				for (const j of cand) if (e.highest ? (p.hand[j].cost || 0) > (p.hand[li].cost || 0) : (p.hand[j].cost || 0) < (p.hand[li].cost || 0)) li = j; // Expired Merchant: highest
 				const [c] = p.hand.splice(li, 1);
 				if (e.remember && source) source.discardedId = c.id; // Expired Merchant deathrattle
 				toGraveyard(state, pi, c);

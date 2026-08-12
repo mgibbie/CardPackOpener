@@ -172512,11 +172512,21 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "WILD_WEST",
-      "description": "Discard your lowest Cost card. Create two 3/3 Tram Cars with Rush.",
+      "description": "Discard your lowest Cost spell. Create two 3/3 Tram Cars with Rush. Quickdraw: Don't discard.",
       "effects": [
         {
-          "type": "discard-lowest",
-          "count": 1
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [],
+          "else": [
+            {
+              "type": "discard-lowest",
+              "count": 1,
+              "spellsOnly": true
+            }
+          ]
         },
         {
           "type": "summon",
