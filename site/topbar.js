@@ -154,6 +154,16 @@ function injectStyles() {
 	#mp-deckpick .dk:hover{ border-color:var(--blue); }
 	#mp-deckpick .dk .cls{ color:var(--muted); font-size:.8rem; text-transform:capitalize; }
 	#mp-deckpick .cancel{ width:100%; margin-top:6px; background:none; border:1px solid var(--bd); color:var(--muted); border-radius:9px; padding:9px; font:inherit; cursor:pointer; }
+
+	/* ---- accessibility ---- */
+	/* a clear keyboard focus ring on every interactive element, site-wide */
+	a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; border-radius:6px; }
+	#mp-inbox .ib-tab[aria-selected="true"]{ color:var(--txt); background:var(--pnl2); }
+	/* honor reduced-motion for the panel slide + all component transitions */
+	@media (prefers-reduced-motion: reduce){
+		#mp-inbox{ transition:none; }
+		#mp-topbar *, #mp-inbox *, #mp-deckpick *{ transition:none !important; animation:none !important; }
+	}
 	`;
 	document.head.appendChild(s);
 }
@@ -177,14 +187,14 @@ function buildBar() {
 		bar.classList.add('tb-compact');
 		bar.innerHTML = `<div class="tb-right">
 			<a class="tb-mini" href="/" title="Magepunk home">⚙️</a>
-			${loggedIn ? `<button class="tb-mini" id="tb-bell" title="Inbox">🔔<span class="tb-badge" id="tb-badge">0</span></button>` : ''}
+			${loggedIn ? `<button class="tb-mini" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>` : ''}
 		</div>`;
 	} else {
 		bar.innerHTML = `
 			<a class="tb-brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
 			<div class="tb-right">
 				${loggedIn
-					? `<button class="tb-bell" id="tb-bell" title="Inbox">🔔<span class="tb-badge" id="tb-badge">0</span></button>
+					? `<button class="tb-bell" id="tb-bell" title="Inbox" aria-label="Open inbox" aria-haspopup="dialog">🔔<span class="tb-badge" id="tb-badge" aria-hidden="true">0</span></button>
 					   <a class="tb-chip" href="/profile/" title="Your profile">👤 ${esc(name)}</a>`
 					: `<a class="tb-login" href="/login/?next=${encodeURIComponent(location.pathname + location.search)}">Log in</a>`}
 			</div>`;
@@ -233,20 +243,33 @@ function ensurePanel() {
 	if ($('#mp-inbox')) return;
 	const ov = el('div'); ov.id = 'mp-inbox-overlay'; ov.addEventListener('click', closeInbox);
 	const panel = el('div'); panel.id = 'mp-inbox';
+	panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true'); panel.setAttribute('aria-label', 'Inbox');
 	panel.innerHTML = `
-		<div class="ib-head"><h2>Inbox</h2><button class="ib-close" id="ib-close" title="Close">×</button></div>
-		<div class="ib-tabs">
-			<button class="ib-tab active" data-view="alerts">Alerts <span class="dot" id="dot-alerts" hidden></span></button>
-			<button class="ib-tab" data-view="quests">Quests <span class="dot" id="dot-quests" hidden></span></button>
-			<button class="ib-tab" data-view="packs">Packs <span class="dot" id="dot-packs" hidden></span></button>
-			<button class="ib-tab" data-view="friends">Friends</button>
-			<button class="ib-tab" data-view="messages">Messages <span class="dot" id="dot-messages" hidden></span></button>
+		<div class="ib-head"><h2 id="ib-title">Inbox</h2><button class="ib-close" id="ib-close" title="Close" aria-label="Close inbox">×</button></div>
+		<div class="ib-tabs" role="tablist" aria-label="Inbox sections">
+			<button class="ib-tab active" data-view="alerts" role="tab" aria-selected="true">Alerts <span class="dot" id="dot-alerts" hidden></span></button>
+			<button class="ib-tab" data-view="quests" role="tab" aria-selected="false" tabindex="-1">Quests <span class="dot" id="dot-quests" hidden></span></button>
+			<button class="ib-tab" data-view="packs" role="tab" aria-selected="false" tabindex="-1">Packs <span class="dot" id="dot-packs" hidden></span></button>
+			<button class="ib-tab" data-view="friends" role="tab" aria-selected="false" tabindex="-1">Friends</button>
+			<button class="ib-tab" data-view="messages" role="tab" aria-selected="false" tabindex="-1">Messages <span class="dot" id="dot-messages" hidden></span></button>
 		</div>
-		<div class="ib-body" id="ib-body"></div>
-		<div class="toast" id="ib-toast"></div>`;
+		<div class="ib-body" id="ib-body" role="region" aria-live="polite"></div>
+		<div class="toast" id="ib-toast" role="status" aria-live="polite"></div>`;
 	document.body.appendChild(ov); document.body.appendChild(panel);
 	$('#ib-close', panel).addEventListener('click', closeInbox);
-	panel.querySelectorAll('.ib-tab').forEach(t => t.addEventListener('click', () => { state.view = t.dataset.view; state.thread = null; renderTabs(); renderBody(); }));
+	const tabs = [...panel.querySelectorAll('.ib-tab')];
+	const goTab = t => { state.view = t.dataset.view; state.thread = null; renderTabs(); renderBody(); t.focus(); };
+	tabs.forEach(t => t.addEventListener('click', () => goTab(t)));
+	// arrow-key navigation between tabs (WAI-ARIA tablist pattern)
+	panel.querySelector('.ib-tabs').addEventListener('keydown', e => {
+		const i = tabs.indexOf(document.activeElement);
+		if (i < 0) return;
+		if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); goTab(tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]); }
+		else if (e.key === 'Home') { e.preventDefault(); goTab(tabs[0]); }
+		else if (e.key === 'End') { e.preventDefault(); goTab(tabs[tabs.length - 1]); }
+	});
+	// Escape closes the inbox from anywhere inside it
+	panel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); closeInbox(); } });
 
 	// deck picker
 	const dp = el('div'); dp.id = 'mp-deckpick';
@@ -265,8 +288,10 @@ function toast(msg) {
 async function openInbox() {
 	ensurePanel();
 	state.me = MP.cachedState()?.username || null;
+	state._returnFocus = document.activeElement; // return focus here on close (the bell)
 	$('#mp-inbox-overlay').classList.add('open');
 	requestAnimationFrame(() => $('#mp-inbox').classList.add('open'));
+	$('#ib-close')?.focus(); // move keyboard focus into the dialog
 	await refreshData();
 	renderTabs(); renderBody();
 }
@@ -275,6 +300,8 @@ function closeInbox() {
 	$('#mp-inbox-overlay')?.classList.remove('open');
 	clearInterval(state.packTicker); state.packTicker = null;
 	if (state.view === 'messages') { markSeen(); poll(); }
+	const back = state._returnFocus; state._returnFocus = null;
+	if (back && back.focus) back.focus(); else $('#tb-bell')?.focus();
 }
 
 async function refreshData() {
@@ -306,7 +333,12 @@ function isOnline(f) {
 }
 
 function renderTabs() {
-	document.querySelectorAll('#mp-inbox .ib-tab').forEach(t => t.classList.toggle('active', t.dataset.view === state.view));
+	document.querySelectorAll('#mp-inbox .ib-tab').forEach(t => {
+		const on = t.dataset.view === state.view;
+		t.classList.toggle('active', on);
+		t.setAttribute('aria-selected', on ? 'true' : 'false');
+		t.tabIndex = on ? 0 : -1;
+	});
 	const da = $('#dot-alerts'), dm = $('#dot-messages'), dp = $('#dot-packs');
 	if (da) { da.textContent = state.challenges.length; da.hidden = !state.challenges.length; }
 	const unread = state.inbox.filter(m => m.ts > seenTs() && m.from !== state.me).length;

@@ -164,10 +164,20 @@ back on narrow aspect) and taps work (Pointer Events), and there was already a
 - Follow-up: a true portrait-first board (stacked lanes) rather than a rotated
   landscape board, and bigger tap targets for the in-scene cards.
 
-### 14. Accessibility pass
-- Colorblind-safe class/keyword colors (or a toggle).
-- Keyboard navigation for menus and the deckbuilder.
-- Respect `prefers-reduced-motion` (the main page float animation should honor it).
+### 14. Accessibility pass — ✅ DONE (2026-08-12)
+- **Keyboard + focus**: a site-wide `:focus-visible` ring (injected by the top bar,
+  so it lands on every content page's links/buttons/inputs). The inbox is a proper
+  `role="dialog"` (`aria-modal`) — opening it moves focus inside, Escape closes it and
+  returns focus to the bell, and the tabs are a WAI-ARIA `tablist` with arrow/Home/End
+  navigation and `aria-selected`. The bell has an `aria-label`; live regions announce
+  the body/toast.
+- **Reduced motion**: `prefers-reduced-motion` guards on the hub float, the matchmaking
+  spinner, the inbox slide + all component transitions, and the collection meter (the
+  earlier hub/start guards stand).
+- **Screen readers**: `lang="en"` added to the game + Overworld pages.
+- Follow-up (the one real gap): the in-game board uses red (`targetable`) vs green
+  (`armed`) borders — a red-green colorblind risk. A colorblind toggle or an added
+  shape/pattern cue on those states is the next step, but it lives deep in the 3D HUD.
 
 ---
 
