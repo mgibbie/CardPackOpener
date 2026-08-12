@@ -172287,13 +172287,27 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "ISLAND_VACATION",
-      "description": "Give a minion +3/+3.",
+      "description": "Give a creature +3/+3 and \"At the start of your turn, deal 3 damage to your hero.\"",
       "effects": [
         {
           "type": "buff",
           "attack": 3,
           "health": 3,
           "target": "creature"
+        },
+        {
+          "type": "grant-ongoing",
+          "target": "creature",
+          "ongoing": {
+            "on": "turn-start",
+            "effects": [
+              {
+                "type": "damage",
+                "value": 3,
+                "target": "own-hero"
+              }
+            ]
+          }
         }
       ]
     },
