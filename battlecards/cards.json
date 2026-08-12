@@ -148121,12 +148121,34 @@
       "rarity": "common",
       "set": "EMERALD_DREAM",
       "collectible": true,
-      "description": "Discover an Undead.",
+      "description": "Discover an Undead. Spend 2 Corpses to give it a Dark Gift.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "tribe": "Undead"
+          "type": "conditional",
+          "if": {
+            "corpsesAtLeast": 2
+          },
+          "then": [
+            {
+              "type": "spend-corpses",
+              "value": 2,
+              "effects": [
+                {
+                  "type": "discover",
+                  "cardType": "creature",
+                  "tribe": "Undead",
+                  "darkGift": true
+                }
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Undead"
+            }
+          ]
         }
       ],
       "runes": {
@@ -148570,11 +148592,15 @@
       "set": "THE_SUNKEN_CITY",
       "collectible": true,
       "tribe": "Fel",
-      "description": "Give your hero +2 Attack this turn.",
+      "description": "Give your hero +2 Attack this turn. If they've already attacked, they may attack again.",
       "effects": [
         {
           "type": "hero-temp-attack",
           "value": 2
+        },
+        {
+          "type": "refresh-hero-attack",
+          "value": 1
         }
       ]
     },
@@ -151590,7 +151616,7 @@
       "rarity": "rare",
       "set": "LOE",
       "collectible": true,
-      "description": "Give creatures you control +2/+2.",
+      "description": "Give creatures you control +2/+2. Costs (1) less for each Murloc you control.",
       "effects": [
         {
           "type": "buff",
@@ -151598,7 +151624,12 @@
           "health": 2,
           "target": "friendly-creatures"
         }
-      ]
+      ],
+      "selfCost": {
+        "per": "tribe-controlled",
+        "tribe": "Murloc",
+        "amount": -1
+      }
     },
     {
       "id": "primal_talismans",
@@ -164076,14 +164107,22 @@
       "cardClass": "paladin",
       "rarity": "common",
       "set": "WHIZBANGS_WORKSHOP",
-      "description": "Lifesteal. Deal 4 damage to a minion.",
+      "description": "Lifesteal. Deal 4 damage to a minion. Costs (1) if you've cast a Holy spell this turn.",
       "effects": [
         {
           "type": "damage",
           "value": 4,
-          "target": "creature"
+          "target": "creature",
+          "lifesteal": true
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "schools-turn",
+        "schools": [
+          "Holy"
+        ],
+        "setCost": 1
+      }
     },
     {
       "id": "invigorating_sermon",
@@ -164714,7 +164753,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "WILD_WEST",
-      "description": "Create 10 1/1 Lightbugs with Lifesteal.",
+      "description": "Create 10 1/1 Lightbugs with Lifesteal. If your board is full, add a 1-Cost Bottle of Lightbugs (a 3/3 with Lifesteal) to your hand.",
       "effects": [
         {
           "type": "summon",
@@ -164724,6 +164763,24 @@
           "name": "Lightbug",
           "keywords": [
             "lifesteal"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 40
+          },
+          "then": [
+            {
+              "type": "add-token",
+              "name": "Bottle of Lightbugs",
+              "cost": 1,
+              "attack": 3,
+              "health": 3,
+              "keywords": [
+                "lifesteal"
+              ]
+            }
           ]
         }
       ]
@@ -164807,12 +164864,17 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "CORE",
-      "description": "Deal 4 damage to a minion.",
+      "description": "Deal 4 damage to a minion. If it dies, create a new copy of it under your control.",
       "effects": [
         {
-          "type": "damage",
+          "type": "damage-then",
           "value": 4,
-          "target": "creature"
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon-copy-of-target-buffed"
+            }
+          ]
         }
       ]
     },
@@ -170523,11 +170585,17 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "ALTERAC_VALLEY",
-      "description": "Draw a spell and deal 2 damage to all enemies.",
+      "description": "Draw a spell and deal 2 damage to all enemies. If it's a Fel spell, deal 1 more.",
       "effects": [
         {
-          "type": "draw-spell-cheap",
-          "maxCost": 99
+          "type": "draw-spell-school-then",
+          "school": "Fel",
+          "then": [
+            {
+              "type": "damage-all-enemies",
+              "value": 1
+            }
+          ]
         },
         {
           "type": "damage-all-enemies",
@@ -172028,11 +172096,17 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "THE_SUNKEN_CITY",
-      "description": "Deal 4 damage to all minions.",
+      "description": "Deal 4 damage to all minions. Give your opponent an Abyssal Curse.",
       "effects": [
         {
           "type": "damage-all-minions",
           "value": 4
+        },
+        {
+          "type": "add-card",
+          "id": "tsc_abyssal_curse",
+          "count": 1,
+          "toEnemy": true
         }
       ]
     },
