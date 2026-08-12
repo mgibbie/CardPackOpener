@@ -1383,6 +1383,7 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 				if (c && e.disguise) disguiseCreature(state, c);
 				// "...and give it Taunt": grant a keyword to the summoned creature
 				if (c && e.grant) { for (const gk of (Array.isArray(e.grant) ? e.grant : [e.grant])) if (!c.keywords.includes(gk)) { c.keywords.push(gk); if (gk === KW.DIVINE_SHIELD) c.shield = true; if (gk === KW.STEALTH) c.stealthed = true; } } // grant may be a single keyword or an array (Aman'Thul: Taunt + Lifesteal)
+				if (c && (e.buffAttack || e.buffHealth)) { c.attack += e.buffAttack || 0; c.maxHealth += e.buffHealth || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Harmonic Disco: summon it with +1/+1
 				if (c && e.dormantTurns) { c.dormantLeft = e.dormantTurns; emit(state, { type: 'dormant', player: owner, uid: c.uid, turns: e.dormantTurns }); } // Paltry Flutterwing / Dreadsoul
 				// Ankylodon: the summoned Beasts attack random enemies
 				if (c && e.attackRandom && !isDead(c)) {
@@ -1766,4 +1767,25 @@ register('summon-attack-random', ({ state, pi, enemies }, e) => {
 		damageCreature(state, c, t.attack, t);
 	}
 	sweepDeaths(state);
+});
+
+register('draw-minions-swap-health', ({ state, pi }, e) => {
+	// Switcheroo: draw 2 creatures from your deck, then swap their Health
+	const p = state.players[pi];
+	const drawn = [];
+	for (let n = 0; n < (e.count || 2); n++) {
+		if (p.hand.length >= MAX_HAND) break;
+		let idx = -1;
+		for (let i = p.deck.length - 1; i >= 0; i--) { if (state.cardsById[p.deck[i]]?.type === 'creature') { idx = i; break; } }
+		if (idx < 0) break;
+		const [id] = p.deck.splice(idx, 1);
+		const card = instantiate(state.cardsById[id], pi);
+		card.zone = 'hand'; p.hand.push(card);
+		emit(state, { type: 'draw', player: pi, card });
+		drawn.push(card);
+	}
+	if (drawn.length === 2) {
+		const h0 = drawn[0].maxHealth, h1 = drawn[1].maxHealth;
+		drawn[0].maxHealth = h1; drawn[1].maxHealth = h0;
+	}
 });

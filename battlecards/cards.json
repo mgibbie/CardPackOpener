@@ -166837,12 +166837,14 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Create a random 5-Cost minion.",
+      "description": "Create a random 5-Cost creature with +1/+1.",
       "effects": [
         {
           "type": "summon-random",
           "cost": 5,
-          "count": 1
+          "count": 1,
+          "buffAttack": 1,
+          "buffHealth": 1
         }
       ]
     },
@@ -166854,11 +166856,11 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "THE_SUNKEN_CITY",
-      "description": "Draw 2 minions.",
+      "description": "Draw 2 creatures. Swap their Health.",
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "draw-minions-swap-health",
+          "count": 2
         }
       ]
     },
