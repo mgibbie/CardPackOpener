@@ -1203,6 +1203,8 @@ register('set-health', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 				? state.players.flatMap(pl => pl.board.filter(c => !isDead(c) && c !== source))
 				: e.target === 'enemy-creatures'
 				? enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location')) // Veranus
+				: e.target === 'random-enemy-other'
+				? (() => { const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location' && c !== chosenCreature())); return pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; })() // Earthen Roar: pick another
 				: [chosenCreature()].filter(Boolean);
 			for (const t of list) {
 				t.maxHealth = e.value + (t.auraHealth || 0);

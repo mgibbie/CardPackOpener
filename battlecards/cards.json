@@ -143871,7 +143871,7 @@
       "keywords": [
         "secret"
       ],
-      "description": "Secret: When your enemy's turn ends, destroy their highest Health creature.",
+      "description": "Secret: When target opponent's turn ends, deal INFINITE damage to their highest Health creature.",
       "secret": {
         "trigger": "enemy-turn-end",
         "effects": [
@@ -148740,12 +148740,25 @@
       "set": "CATACLYSM",
       "collectible": true,
       "type": "sorcery",
-      "description": "Set a creature an opponent controls's Health to 1.",
+      "description": "Set an enemy creature's Health to 1. If you're holding a Dragon, set another's too.",
       "effects": [
         {
           "type": "set-health",
           "value": 1,
           "target": "enemy-creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "holdingTribe": "Dragon"
+          },
+          "then": [
+            {
+              "type": "set-health",
+              "value": 1,
+              "target": "random-enemy-other"
+            }
+          ]
         }
       ]
     },
