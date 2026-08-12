@@ -171863,18 +171863,13 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "GVG",
-      "description": "Deal 3 damage to a minion. Create three 1/1 Imps.",
+      "description": "Deal 2-4 damage to a creature. Create a 1/1 Imp for each damage dealt.",
       "effects": [
         {
-          "type": "damage-minion",
-          "value": 3
-        },
-        {
-          "type": "summon",
-          "count": 3,
-          "attack": 1,
-          "health": 1,
-          "name": "Imp"
+          "type": "imp-losion",
+          "min": 2,
+          "max": 4,
+          "target": "creature"
         }
       ]
     },

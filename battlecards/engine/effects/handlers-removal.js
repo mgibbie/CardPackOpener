@@ -2051,3 +2051,14 @@ register('smolder-damage-all-enemies', ({ state, pi, source, enemies }) => {
 	for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, v, source);
 	sweepDeaths(state);
 });
+
+register('imp-losion', ({ state, pi, source, chosenCreature }, e) => {
+	// Imp-losion: deal a random 2-4 to the chosen creature, then create a 1/1
+	// Imp for each damage dealt
+	const lo = e.min || 2, hi = e.max || 4;
+	const amt = lo + Math.floor(state.rng() * (hi - lo + 1));
+	const t = chosenCreature();
+	if (t) { damageCreature(state, t, amt, source); sweepDeaths(state); }
+	const def = { id: 'implosion_imp', name: 'Imp', type: 'creature', cost: 1, token: true, tribe: 'Demon', rarity: 'common', attack: 1, health: 1, description: 'A 1/1 Imp.' };
+	for (let n = 0; n < amt; n++) if (!summon(state, pi, def)) break;
+});
