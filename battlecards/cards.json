@@ -166800,10 +166800,13 @@
       "cardClass": "paladin",
       "rarity": "legendary",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Give your hero Divine Shield.",
+      "description": "Give your hero Divine Shield. For the rest of the game, playing a Holy spell refreshes it.",
       "effects": [
         {
           "type": "hero-shield"
+        },
+        {
+          "type": "set-holy-refresh-shield"
         }
       ]
     },

@@ -538,3 +538,9 @@ register('spend-location-durability-heal', ({ state, pi }, e) => {
 	healHero(state, pi, e.value || 8);
 	sweepDeaths(state);
 });
+
+register('set-holy-refresh-shield', ({ state, pi }) => {
+	// Starlight Groove: for the rest of the game, playing a Holy spell refreshes
+	// your hero's Divine Shield
+	state.players[pi].holyRefreshShield = true;
+});
