@@ -93,6 +93,12 @@ function injectStyles() {
 	#mp-inbox button.mini.primary{ background:linear-gradient(180deg,var(--gold),color-mix(in srgb,var(--gold) 80%,#000)); color:#0c1122; border-color:transparent; }
 	#mp-inbox button.mini.danger{ color:#ff8a8a; }
 	#mp-inbox .note{ color:var(--muted); font-size:.8rem; margin:2px 0 12px; line-height:1.4; }
+	#mp-inbox .addf{ display:flex; gap:8px; margin-bottom:10px; }
+	#mp-inbox .addf input{ flex:1; min-width:0; background:var(--pnl); border:1px solid var(--bd); color:var(--txt); border-radius:8px; padding:8px 11px; font:inherit; font-size:.86rem; }
+	#mp-inbox .addf input:focus{ outline:none; border-color:var(--blue); }
+	#mp-inbox .addf button{ white-space:nowrap; }
+	#mp-inbox .mycode{ color:var(--muted); font-size:.8rem; margin:-2px 0 12px; line-height:1.4; }
+	#mp-inbox .mycode b{ color:var(--gold); letter-spacing:2px; font-size:.9rem; }
 	#mp-inbox .thread{ display:flex; flex-direction:column; height:100%; }
 	#mp-inbox .thread .back{ background:none; border:none; color:var(--blue); font:inherit; font-weight:700; cursor:pointer; padding:0 0 10px; text-align:left; }
 	#mp-inbox .thread .msgs{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:4px 2px; }
@@ -323,6 +329,7 @@ async function refreshData() {
 		]);
 		state.challenges = ch.challenges || [];
 		state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
+		state.myFriendCode = fr.friendCode || MP.cachedState()?.friendCode || state.myFriendCode || null;
 		state.inbox = msg.messages || [];
 		applyPackTimer(pk);
 		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
@@ -501,6 +508,28 @@ function renderAlerts(body) {
 	}
 }
 
+// add a friend from the inbox (no Overworld needed). One input takes either a
+// username or a 6-letter friend code; we try the likely reading first and fall
+// back to the other so a 6-letter username still resolves.
+async function addFriend(raw) {
+	const v = (raw || '').trim();
+	if (!v) return;
+	const looksCode = /^[A-Za-z]{6}$/.test(v);
+	const attempts = looksCode ? [{ code: v }, { username: v }] : [{ username: v }, { code: v }];
+	for (const payload of attempts) {
+		let r;
+		try { r = await MP.call('add-friend', payload); } catch { continue; }
+		if (r && !r.error) {
+			toast('Added ' + (r.added || v) + '!');
+			state.myFriendCode = MP.cachedState()?.friendCode || state.myFriendCode;
+			await refreshData();
+			if (state.view === 'friends' && $('#mp-inbox')?.classList.contains('open')) renderBody();
+			return;
+		}
+	}
+	toast('No player found with that username or code.');
+}
+
 // ----- Friends -----
 // A friend's live activity is read from their presence `status` (set by the
 // Overworld heartbeat / the card client's publish-cardstate):
@@ -536,6 +565,7 @@ async function friendsAutoTick() {
 	let fr;
 	try { fr = await MP.call('friends'); } catch { return; }
 	state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
+	if (fr.friendCode) state.myFriendCode = fr.friendCode;
 	if (!state.friends.some(f => 'online' in f)) {
 		try { const pr = await MP.call('presence', { who: state.friends.map(f => f.username) }); state.presence = pr.presence || pr.online || {}; } catch {}
 	}
@@ -547,8 +577,20 @@ async function friendsAutoTick() {
 function renderFriends(body) {
 	body.innerHTML = '';
 	ensureFriendsAuto();
+	// add-a-friend row (works without ever opening the Overworld)
+	const add = el('div', 'addf');
+	add.innerHTML = `<input type="text" maxlength="24" placeholder="Add by username or friend code" aria-label="Add a friend by username or friend code" autocapitalize="off" autocomplete="off" spellcheck="false"><button class="mini primary">Add</button>`;
+	const input = $('input', add), addBtn = $('button', add);
+	const submit = () => { const v = input.value.trim(); if (v) { input.value = ''; addFriend(v); } };
+	addBtn.addEventListener('click', submit);
+	input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+	body.appendChild(add);
+	if (state.myFriendCode) {
+		const mc = el('div', 'mycode'); mc.innerHTML = `Your friend code: <b>${esc(state.myFriendCode)}</b> — share it so others can add you.`;
+		body.appendChild(mc);
+	}
 	if (!state.friends.length) {
-		body.appendChild(el('div', 'ib-empty', 'No friends yet.<br>Add friends in the Overworld to battle and message them.'));
+		body.appendChild(el('div', 'ib-empty', 'No friends yet.<br>Add someone above by username or friend code.'));
 		return;
 	}
 	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles, or Watch one who\'s live. Card duels launch on the spot; Pokémon battles open in the Overworld.'));

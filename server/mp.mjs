@@ -463,11 +463,20 @@ export default async function handler(req, env) {
 
 	// ---------- friends & presence ----------
 	if (action === 'add-friend') {
-		const code = String(body.code || '').toUpperCase().trim();
-		if (!/^[A-Z]{6}$/.test(code)) return json({ error: 'friend codes are 6 capital letters' }, 400);
-		if (code === user.friendCode) return json({ error: "that's your own code" }, 400);
-		const other = await store.get('code:' + code);
-		if (!other || other === username) return json({ error: 'no player has that code' }, 404);
+		// add by username (accounts are keyed by lowercased name) or friend code
+		let other;
+		const uname = String(body.username || '').trim().toLowerCase();
+		if (uname) {
+			if (uname === username) return json({ error: "that's your own account" }, 400);
+			if (!(await store.get(uname))) return json({ error: 'no player with that username' }, 404);
+			other = uname;
+		} else {
+			const code = String(body.code || '').toUpperCase().trim();
+			if (!/^[A-Z]{6}$/.test(code)) return json({ error: 'friend codes are 6 capital letters' }, 400);
+			if (code === user.friendCode) return json({ error: "that's your own code" }, 400);
+			other = await store.get('code:' + code);
+			if (!other || other === username) return json({ error: 'no player has that code' }, 404);
+		}
 		if (!user.friends.includes(other)) user.friends.push(other);
 		const ou = await store.get(other);
 		if (ou) {

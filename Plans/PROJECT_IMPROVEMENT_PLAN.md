@@ -133,8 +133,20 @@ Built a shared **social inbox** into the top bar (`/site/topbar.js`), on the exi
   challenges are **also sent and accepted standalone** now (see below), then open in
   the Overworld to render.
 - **Friends** — presence + one-click **card** (deck-picker → challenge → launch) **and
-  Pokémon** challenge, plus **Watch** (spectate a live friend) and "Message".
+  Pokémon** challenge, plus **Watch** (spectate a live friend) and "Message". You can
+  now also **add a friend by username or friend code right here** (no Overworld needed):
+  one input resolves either identifier (a 6-letter entry tries the code, falling back to
+  a username, so a 6-letter name still works), and your own friend code is shown to share.
+  The `add-friend` action gained a username path (accounts are keyed by lowercased name).
 - **Messages** — per-friend DM threads over the `u:<name>` chat rooms.
+
+**Overworld menu on desktop — ✅ DONE (2026-08-12):** the menu (Pokédex/Bag/Trainer
+Card/Save/Friends/…) opens with **Enter/M** on desktop, but that was undiscoverable —
+the on-screen **MENU/PARTY/BAG** buttons only showed on touch devices. They're now
+visible on desktop too (a `@media (pointer:fine)` rule), sat below the corner topbar so
+they don't collide with the home/inbox cluster; the d-pad and A/B stay keyboard-only.
+The desktop hint bar also now spells out "Enter menu". Verified both the add-friend flow
+(server 12/12 + client 10/10) and the desktop/touch button visibility (9/9) headless.
 
 **Spectate from the inbox — ✅ DONE (2026-08-12):** the Friends tab reads each
 friend's live presence `status` — `battling:<matchId>` (a Pokémon battle) or
