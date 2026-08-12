@@ -3273,7 +3273,11 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beatLoop();
 		presLoop();
 		setInterval(pollChallenges, 2000);
-		checkRejoin();
+		// arriving from a challenge accepted in the standalone inbox: ?battle=<id>
+		// drops us straight into that freshly-minted match (no "rejoin?" prompt)
+		const directBattle = new URLSearchParams(location.search).get('battle');
+		if (directBattle) enterMatch(directBattle, false);
+		else checkRejoin();
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },

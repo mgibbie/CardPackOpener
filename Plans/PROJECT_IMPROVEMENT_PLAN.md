@@ -130,10 +130,23 @@ Analytics — no cookies) to learn which games/modes people actually open. Effor
 Built a shared **social inbox** into the top bar (`/site/topbar.js`), on the existing
 `/api/mp` backend, so you can be social without opening the Overworld:
 - **Challenges** — accept card duels right there (they launch `?cardpvp=<id>`); Pokémon
-  routes to the Overworld where the party/renderer live.
-- **Friends** — presence + one-click "Card battle" (deck-picker → challenge → launch)
-  and "Message".
+  challenges are **also sent and accepted standalone** now (see below), then open in
+  the Overworld to render.
+- **Friends** — presence + one-click **card** (deck-picker → challenge → launch) **and
+  Pokémon** challenge, plus "Message".
 - **Messages** — per-friend DM threads over the `u:<name>` chat rooms.
+
+**Standalone Pokémon challenges — ✅ DONE (2026-08-12):** the inbox now builds the
+self-contained party snapshot the PvP engine needs directly from the team saved in
+`localStorage` (`magepunk_party_v1`) — byte-for-byte the same shape the Overworld's
+`pvpParty()` builds — enriching each move's power/type/category/acc/priority from the
+battle move table (`/overworld/data/moves_battle.json`, served cross-origin with CORS).
+So you can **send** a Pokémon challenge to a friend and **accept** an incoming one from
+any page (Friends "⚔" button / Alerts "Accept"); on accept the server mints the match
+and both players are redirected to `/overworld/?mp=1&battle=<id>`, which the Overworld
+boot reads to **enter the battle directly** (no "rejoin?" prompt). Only the fainted-team
+case falls back to "set up a team in the Overworld first." Verified the snapshot shape,
+the fainted-mon drop, and the empty-team guard headless.
 
 **Matchmaking — ✅ DONE (2026-08-12):** a **"Find Match"** on the Battlecards start
 screen queues you against a real player; if no one's waiting after 12s you're handed
@@ -146,9 +159,9 @@ into a host-authoritative `cardpvp` duel, or mints an `aimatch`) + `ai-match`. E
 `?aimatch=<id>` boots a local match where the AI plays that deck. Verified the pairing,
 AI-timeout fallback, deck harvesting, the engine deck-override, and the full UI flow.
 
-Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, **spectate**, a post-game
-summary, and letting the inbox **send** Pokémon challenges standalone (needs the team
-snapshot, which currently only the Overworld builds).
+Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, **spectate**, and a post-game
+summary. (Standalone Pokémon challenge send/accept — the old open item here — is now
+done; see the social-inbox note above.)
 
 ### 13. Mobile match layout — ✅ DONE (2026-08-12)
 The Battlecards board already re-frames its camera for portrait/landscape (pulls

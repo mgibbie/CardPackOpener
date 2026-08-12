@@ -3,9 +3,11 @@
 // Drop `<script type="module" src="/site/topbar.js"></script>` on any content
 // page. It injects a consistent bar (⚙️ Magepunk wordmark home-link + account
 // area) and, when logged in, an inbox bell that opens a slide-in panel with:
-//   • Alerts   — incoming battle challenges (card duels launch here; Pokémon
-//                and trades route into the Overworld where the party/renderer live)
-//   • Friends  — your friends with presence + "Card battle" / "Message" actions
+//   • Alerts   — incoming battle challenges. Card duels launch here; Pokémon
+//                challenges are accepted here too (your saved team is read from
+//                localStorage) and the match opens in the Overworld to render.
+//                Trades route into the Overworld where the trade UI lives.
+//   • Friends  — your friends with presence + "Card"/"Pokémon" challenge + "Message"
 //   • Messages — per-friend DM threads over the u:<name> chat rooms
 //
 // All server calls go through the existing /api/mp backend via mpmode.js, using
@@ -169,7 +171,7 @@ function injectStyles() {
 }
 
 // ---------- state ----------
-let state = { challenges: [], friends: [], presence: {}, inbox: [], me: null, waitingOn: null, view: 'alerts', thread: null };
+let state = { challenges: [], friends: [], presence: {}, inbox: [], me: null, waitingOn: null, waitingType: null, view: 'alerts', thread: null };
 let pollTimer = null, waitTimer = null;
 
 function seenTs() { try { return +localStorage.getItem(SEEN_KEY) || 0; } catch { return 0; } }
@@ -465,7 +467,8 @@ function renderAlerts(body) {
 	body.innerHTML = '';
 	if (state.waitingOn) {
 		const w = el('div', 'row');
-		w.innerHTML = `<div class="av">⏳</div><div class="meta"><div class="name">Waiting for ${esc(state.waitingOn)}…</div><div class="sub">They'll get your card-battle challenge. This launches when they accept.</div></div>`;
+		const kindTxt = state.waitingType === 'pokemon' ? 'Pokémon-battle' : 'card-battle';
+		w.innerHTML = `<div class="av">⏳</div><div class="meta"><div class="name">Waiting for ${esc(state.waitingOn)}…</div><div class="sub">They'll get your ${kindTxt} challenge. This launches when they accept.</div></div>`;
 		body.appendChild(w);
 	}
 	if (!state.challenges.length && !state.waitingOn) {
@@ -482,6 +485,8 @@ function renderAlerts(body) {
 		const acts = $('.acts', row);
 		if (c.type === 'card') {
 			const accept = el('button', 'mini primary', 'Accept'); accept.addEventListener('click', () => acceptCard(c.from)); acts.appendChild(accept);
+		} else if (c.type === 'pokemon') {
+			const accept = el('button', 'mini primary', 'Accept'); accept.addEventListener('click', () => acceptPokemon(c.from)); acts.appendChild(accept);
 		} else {
 			const go = el('button', 'mini primary', 'Open in Overworld'); go.addEventListener('click', () => { location.href = '/overworld/?mp=1'; }); acts.appendChild(go);
 		}
@@ -497,7 +502,7 @@ function renderFriends(body) {
 		body.appendChild(el('div', 'ib-empty', 'No friends yet.<br>Add friends in the Overworld to battle and message them.'));
 		return;
 	}
-	body.appendChild(el('div', 'note', 'Card battles launch right here. Pokémon battles open in the Overworld, where your team lives.'));
+	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles right here. Card duels launch on the spot; once a Pokémon challenge is accepted it opens in the Overworld to play out.'));
 	for (const f of state.friends) {
 		const on = isOnline(f);
 		const row = el('div', 'row');
@@ -505,7 +510,8 @@ function renderFriends(body) {
 			<div class="meta"><div class="name">${esc(f.username)}</div><div class="sub">${on ? 'online' : 'offline'}</div></div>
 			<div class="acts"></div>`;
 		const acts = $('.acts', row);
-		const card = el('button', 'mini', '⚔ Cards'); card.addEventListener('click', () => challengeCard(f.username)); acts.appendChild(card);
+		const card = el('button', 'mini', '🃏'); card.title = 'Card battle'; card.addEventListener('click', () => challengeCard(f.username)); acts.appendChild(card);
+		const poke = el('button', 'mini', '⚔'); poke.title = 'Pokémon battle'; poke.addEventListener('click', () => challengePokemon(f.username)); acts.appendChild(poke);
 		const msg = el('button', 'mini', '💬'); msg.title = 'Message'; msg.addEventListener('click', () => openThread(f.username)); acts.appendChild(msg);
 		body.appendChild(row);
 	}
@@ -605,6 +611,43 @@ function pickDeck(title, onPick) {
 	dp.classList.add('open');
 }
 
+// ---------- Pokémon party snapshot (standalone) ----------
+// Rebuild the self-contained party the PvP engine needs — byte-for-byte the same
+// shape the Overworld's pvpParty() builds — straight from the team saved in
+// localStorage, so a Pokémon challenge can be sent/accepted without opening the
+// Overworld. Move power/type/category/acc/priority are enriched from the battle
+// move table (the same file the game itself fetches; served cross-origin from the
+// offloaded overworld-data project with CORS, so a plain fetch here works).
+const POKE_PARTY_KEY = 'magepunk_party_v1';
+let _moveTable = null;
+async function moveTable() {
+	if (_moveTable) return _moveTable;
+	try { _moveTable = await fetch('/overworld/data/moves_battle.json').then(r => r.ok ? r.json() : {}); }
+	catch { _moveTable = {}; }
+	return _moveTable;
+}
+async function pokeParty() {
+	let raw;
+	try { raw = localStorage.getItem(POKE_PARTY_KEY); } catch { return null; }
+	if (!raw) return null;
+	let party;
+	try { party = JSON.parse(raw); } catch { return null; }
+	if (!Array.isArray(party) || !party.length || !party[0]?.stats) return null;
+	const healthy = party.filter(m => m && m.curHP > 0).slice(0, 6);
+	if (!healthy.length) return null;
+	const moves = await moveTable();
+	return healthy.map(m => ({
+		speciesId: m.speciesId, name: m.name, level: m.level, types: m.types, sprite: m.sprite,
+		stats: { ...m.stats }, maxHP: m.maxHP, curHP: m.curHP, status: m.status || null,
+		moves: (m.moves || []).map(mv => {
+			const info = moves[mv.id] || {};
+			return { id: mv.id, name: mv.name, pp: mv.pp, maxPp: mv.maxPp,
+				type: info.type || 'Normal', power: info.power || 0,
+				category: info.category || 'Status', acc: info.acc ?? 100, priority: info.priority || 0 };
+		}),
+	}));
+}
+
 // ---------- challenge / accept actions ----------
 async function challengeCard(to) {
 	// make sure decks are fresh
@@ -612,23 +655,54 @@ async function challengeCard(to) {
 	pickDeck('Pick a deck to battle with', async (d) => {
 		try {
 			await MP.call('challenge', { to, battleType: 'card', party: { deck: d.cards, classId: d.classId, commander: d.commander || null, companion: d.companion || null } });
-			state.waitingOn = to; state.view = 'alerts'; renderTabs(); renderBody();
+			state.waitingOn = to; state.waitingType = 'card'; state.view = 'alerts'; renderTabs(); renderBody();
 			startWaitForAccept();
 			toast('Challenge sent to ' + to + '.');
 		} catch { toast('Could not send the challenge.'); }
 	});
 }
 
+// send a Pokémon challenge from anywhere: build the party from the saved team,
+// then wait for the accept just like a card duel (it launches in the Overworld).
+async function challengePokemon(to) {
+	const snap = await pokeParty();
+	if (!snap || !snap.length) { toast('Set up a healthy team in the Overworld first.'); return; }
+	try {
+		await MP.call('challenge', { to, battleType: 'pokemon', party: snap });
+		state.waitingOn = to; state.waitingType = 'pokemon'; state.view = 'alerts'; renderTabs(); renderBody();
+		startWaitForAccept();
+		toast('Pokémon challenge sent to ' + to + '.');
+	} catch { toast('Could not send the challenge.'); }
+}
+
 function startWaitForAccept() {
 	clearInterval(waitTimer);
 	const t0 = Date.now();
 	waitTimer = setInterval(async () => {
-		if (Date.now() - t0 > 60000) { clearInterval(waitTimer); state.waitingOn = null; if ($('#mp-inbox')?.classList.contains('open')) renderBody(); return; }
+		if (Date.now() - t0 > 60000) { clearInterval(waitTimer); state.waitingOn = null; state.waitingType = null; if ($('#mp-inbox')?.classList.contains('open')) renderBody(); return; }
 		try {
 			const mm = await MP.call('my-match');
-			if (mm && mm.matchId) { clearInterval(waitTimer); if (mm.type === 'card') location.href = CARD_DUEL(mm.matchId); else location.href = '/overworld/?mp=1'; }
+			if (mm && mm.matchId) {
+				clearInterval(waitTimer);
+				// card duels run on the Battlecards page; Pokémon matches render in the
+				// Overworld — pass the id so it enters the battle directly (no rejoin prompt)
+				if (mm.type === 'card') location.href = CARD_DUEL(mm.matchId);
+				else location.href = '/overworld/?mp=1&battle=' + encodeURIComponent(mm.matchId);
+			}
 		} catch {}
 	}, 2500);
+}
+
+// accept an incoming Pokémon challenge standalone: send our saved team, then the
+// server mints the match and we open the Overworld straight into it.
+async function acceptPokemon(from) {
+	const snap = await pokeParty();
+	if (!snap || !snap.length) { toast('Set up a healthy team in the Overworld first.'); location.href = '/overworld/?mp=1'; return; }
+	try {
+		const data = await MP.call('accept-challenge', { from, battleType: 'pokemon', party: snap });
+		if (data.error) { toast(data.error); return; }
+		location.href = '/overworld/?mp=1&battle=' + encodeURIComponent(data.matchId);
+	} catch { toast('Could not accept.'); }
 }
 
 async function acceptCard(from) {
