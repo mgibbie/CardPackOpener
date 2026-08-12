@@ -150498,7 +150498,11 @@
           ]
         }
       ],
-      "description": "Create two 2/5 Beast creature tokens with Taunt."
+      "description": "Create two 2/5 Beasts with Taunt. Costs (1) less for each card you Discovered this game.",
+      "selfCost": {
+        "per": "discovered-game",
+        "amount": -1
+      }
     },
     {
       "id": "rats_of_extraordinary_size",
@@ -163378,11 +163382,10 @@
       "set": "DARKMOON_FAIRE",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Create an 8/8 Elemental.",
+      "description": "Create an 8/8 Elemental. Repeat for each Elemental you played last turn.",
       "effects": [
         {
-          "type": "summon",
-          "count": 1,
+          "type": "summon-per-elementals-last-turn",
           "attack": 8,
           "health": 8,
           "name": "Elemental",

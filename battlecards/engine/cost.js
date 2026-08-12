@@ -99,6 +99,8 @@ export function effectiveCost(state, pi, card) {
 			n = p.corpsesSpentGame || 0; // Stitched Giant
 		} else if (card.selfCost.per === 'cards-drawn-game') {
 			n = p.cardsDrawnGame || 0; // Playhouse Giant
+		} else if (card.selfCost.per === 'discovered-game') {
+			n = p.discoveredGame || 0; // Alien Encounters
 		} else if (card.selfCost.per === 'cards-drawn-turn') {
 			n = p.cardsDrawnThisTurn || 0; // Irebound Brute
 		} else if (card.selfCost.per === 'tribe-summoned-game') {

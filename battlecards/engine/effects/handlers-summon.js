@@ -1742,3 +1742,11 @@ register('add-card-overflow-buff', ({ state, pi }, e) => {
 		}
 	}
 });
+
+register('summon-per-elementals-last-turn', ({ state, pi }, e) => {
+	// Grand Finale: create one token, then repeat for each Elemental you played
+	// last turn
+	const times = 1 + (state.players[pi].elementalsPlayedLastTurn || 0);
+	const def = { id: e.id || 'gf_token', name: e.name || 'Elemental', type: 'creature', cost: 0, token: true, tribe: e.tribe || 'Elemental', rarity: 'common', attack: e.attack || 8, health: e.health || 8, keywords: e.keywords || [], description: `A ${e.attack || 8}/${e.health || 8}.` };
+	for (let n = 0; n < times; n++) if (!summon(state, pi, def)) break;
+});

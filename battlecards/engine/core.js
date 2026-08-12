@@ -3427,6 +3427,7 @@ export function resolvePick(state, id) {
 	if (!pend) return false;
 	if (pend.discover && state.players[pend.player]) {
 		state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
+		state.players[pend.player].discoveredGame = (state.players[pend.player].discoveredGame || 0) + 1; // Alien Encounters: cost per card Discovered this game
 		questTick(state, 'discover', pend.player); // The Forbidden Sequence: "Discover 7 cards"
 	}
 	if (pend.mode === 'adapt') {
