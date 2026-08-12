@@ -2617,8 +2617,7 @@ function openAbilityMenu(card, ev) {
 				if (targets.length) { pending = { card, spec, targets, mode: 'activate', ability: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.activateAbility(state, HUMAN, card.uid, i, null);
-			pump();
+			actActivate(card.uid, i, null); // relays in a duel (guest)
 		});
 		menu.appendChild(btn);
 	});
@@ -2683,8 +2682,7 @@ function openWalkerMenu(card, ev) {
 				if (targets.length) { pending = { card, spec, targets, mode: 'walker', ability: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.useWalker(state, HUMAN, card.uid, i, null);
-			pump();
+			actWalker(card.uid, i, null); // relays in a duel (guest)
 		});
 		menu.appendChild(btn);
 	});
@@ -2745,7 +2743,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === kind && t.uid === card.uid);
-			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return; }
+			if (t) { actHeroAttack(t); return; } // relays in a duel (guest)
 		}
 		clearModes();
 		return;
@@ -2793,8 +2791,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.sac) {
 		// click a field token (Blood/Treasure/Food) to sacrifice it
 		if (E.canSacrifice(state, HUMAN, card)) {
-			E.sacrificeToken(state, HUMAN, card.uid);
-			pump();
+			actSacToken(card.uid); // relays in a duel (guest)
 		}
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.tapAbility) {
 		// click an artifact with a {T} ability to tap it (targeted ones pick a target)
@@ -2803,7 +2800,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			if (spec && spec.required) {
 				const targets = E.legalTargets(state, HUMAN, spec);
 				if (targets.length) { pending = { card, spec, targets, mode: 'tapart' }; updateHud(); }
-			} else { E.tapArtifact(state, HUMAN, card.uid, null); pump(); }
+			} else { actTapArtifact(card.uid, null); } // relays in a duel (guest)
 		}
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
@@ -2852,6 +2849,7 @@ function commitPending(t) {
 		else if (p.mode === 'equip') { localFn = () => E.equip(state, HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
+		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t); intent = { k: 'tapart', uid: p.card.uid, target: t || null }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
 		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
@@ -3000,11 +2998,11 @@ function tryCommitTargetAt(ev) {
 		if (card && (card.zone === 'board' || card.zone === 'planeswalker') && card.controller !== HUMAN) {
 			const kind = card.zone === 'board' ? 'creature' : 'walker';
 			const t = targets.find(t => t.type === kind && t.uid === card.uid);
-			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return true; }
+			if (t) { actHeroAttack(t); return true; } // relays in a duel (guest)
 		}
 		if (heroPi != null && heroPi !== HUMAN) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
-			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); return true; }
+			if (t) { actHeroAttack(t); return true; } // relays in a duel (guest)
 		}
 		return false;
 	}
@@ -3086,7 +3084,7 @@ function panelClick(pi) {
 	if (selectedAttacker === 'HERO') {
 		if (pi !== HUMAN) {
 			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero' && t.player === pi);
-			if (t) { E.heroAttack(state, HUMAN, t); clearModes(); pump(); }
+			if (t) { actHeroAttack(t); } // relays in a duel (guest)
 		} else {
 			clearModes();
 		}
@@ -3573,6 +3571,9 @@ function applyGuestIntent(it) {
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
 				case 'sacland': E.sacrificeLand(state, P, it.uid); break;
+				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null); break;
+				case 'sactoken': E.sacrificeToken(state, P, it.uid); break;
+				case 'heroattack': E.heroAttack(state, P, it.target); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
 			case 'land': E.buyLand(state, P, it.defId); break;
 			case 'trade': E.tradeCard(state, P, it.uid); break;
@@ -3830,6 +3831,34 @@ function actTapLand(uid, tapIndex, target) {
 function actSacLand(uid) {
 	if (isGuest()) return guestApply(() => E.sacrificeLand(state, HUMAN, uid), { k: 'sacland', uid });
 	E.sacrificeLand(state, HUMAN, uid); pump();
+	if (duel.on) publishDuel();
+}
+// The following mirror the tap fix: the TARGETED forms already relay via
+// commitPending, but the no-target menu paths ran the engine locally without
+// relaying, so a duel guest's action was reverted by the host's next snapshot.
+function actActivate(uid, ability, target) { // creature activated ability, no target
+	if (isGuest()) return guestApply(() => E.activateAbility(state, HUMAN, uid, ability, target || null), { k: 'activate', uid, ability, target: target || null });
+	E.activateAbility(state, HUMAN, uid, ability, target || null); pump();
+	if (duel.on) publishDuel();
+}
+function actWalker(uid, ability, target) { // planeswalker loyalty ability, no target
+	if (isGuest()) return guestApply(() => E.useWalker(state, HUMAN, uid, ability, target || null), { k: 'walker', uid, ability, target: target || null });
+	E.useWalker(state, HUMAN, uid, ability, target || null); pump();
+	if (duel.on) publishDuel();
+}
+function actTapArtifact(uid, target) { // {T} artifact ability (mana rocks etc.)
+	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null), { k: 'tapart', uid, target: target || null });
+	E.tapArtifact(state, HUMAN, uid, target || null); pump();
+	if (duel.on) publishDuel();
+}
+function actSacToken(uid) { // cash in a Treasure/Blood/Food token
+	if (isGuest()) return guestApply(() => E.sacrificeToken(state, HUMAN, uid), { k: 'sactoken', uid });
+	E.sacrificeToken(state, HUMAN, uid); pump();
+	if (duel.on) publishDuel();
+}
+function actHeroAttack(target) { // your hero swings at a creature/walker/hero
+	if (isGuest()) return guestApply(() => { E.heroAttack(state, HUMAN, target); clearModes(); }, { k: 'heroattack', target });
+	E.heroAttack(state, HUMAN, target); clearModes(); pump();
 	if (duel.on) publishDuel();
 }
 function actTrade(uid) {
