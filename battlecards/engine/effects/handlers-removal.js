@@ -1504,9 +1504,9 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
 				case 'own-hero': damageHero(state, pi, v, pi); break;
 				case 'friendly-others': for (const c of [...state.players[pi].board]) { if (c === source || c.type === 'location') continue; damageCreature(state, c, v, null); } break; // Afflicted Devastator
-				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (schoolImmune(c)) continue; damageCreature(state, c, rollv(), null); } break;
+				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (schoolImmune(c)) continue; damageCreature(state, c, rollv(), e.threadSource ? source : null); } break;
 				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
-				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; if (e.exceptSelf && c === source) continue; damageCreature(state, c, v, null); } break;
+				case 'all-creatures': for (const pl of state.players) for (const c of [...pl.board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue; if (e.exceptSelf && c === source) continue; damageCreature(state, c, v, e.threadSource ? source : null); } break;
 				case 'enemies':
 					for (const o of enemies) {
 						for (const c of [...state.players[o].board]) { if (schoolImmune(c)) continue; damageCreature(state, c, v, null); }
@@ -1561,7 +1561,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					if (t && schoolImmune(t)) break; // Fyrakk shrugs it off
 					if (t) {
 						const before = hp(t); // Combustion: excess beyond Health spills to both neighbors
-						damageCreature(state, t, v, null);
+						damageCreature(state, t, v, e.threadSource ? source : null); // threadSource: spell Overkill riders
 						if (e.excessToNeighbors && v > before) {
 							const b = state.players[t.controller].board, i = b.indexOf(t), ex = v - before;
 							for (const nb of [b[i - 1], b[i + 1]]) if (nb && !isDead(nb) && nb.type !== 'location') damageCreature(state, nb, ex, null);

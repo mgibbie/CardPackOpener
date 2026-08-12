@@ -167,6 +167,8 @@ export function effectiveCost(state, pi, card) {
 			case 'schools-turn': met = (s.schools || []).every(sch => (p.schoolsCastThisTurn || {})[sch]); break;
 			case 'holding-other-class': met = p.hand.some(x => x !== card && x.cardClass && x.cardClass !== 'neutral' && x.cardClass !== p.heroClass); break; // Vendetta
 			case 'damaged-minion': met = p.board.some(x => !isDead(x) && x.type !== 'location' && x.damage > 0); break; // Crush
+			case 'elemental-last-turn': met = !!p.elementalLastTurn; break; // Scorch
+			case 'discovered-this-turn': met = (p.discoveredThisTurn || 0) > 0; break; // Storage Scuffle
 			default: met = false;
 		}
 		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; }

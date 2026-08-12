@@ -12,7 +12,7 @@
 import {
 	emit, hp, has, isDead, isSpellType, schoolOf, staticValue, recomputeAuras,
 	fireOngoing, fireSecrets, runSecretEffects, questTick, summon, opponentsOf,
-	heroAttackValue, KW, STARTING_LIFE, spendCorpses, breakWeapon,
+	heroAttackValue, KW, STARTING_LIFE, spendCorpses, breakWeapon, execEffects,
 } from '../engine.js';
 
 export function damageCreature(state, target, amount, source) {
@@ -60,7 +60,17 @@ export function damageCreature(state, target, amount, source) {
 	}
 	if (target.frozen && amount > 0) { for (let fsi = 0; fsi < state.players.length; fsi++) if (fsi !== target.controller && state.players[fsi].freezeSolid) { amount += 2; break; } } // Freeze Solid (Duels): +2 damage to Frozen enemies
 	if (amount > 2 && state.players[target.controller].board.some(c => c.damageCapAura && !isDead(c))) amount = 2; // Amitus, the Peacekeeper: your minions can't take more than 2 damage at a time
+	const _hpBefore = hp(target);
 	target.damage += amount;
+	// spell Overkill (Baited Arrow / Totemic Smash / Blast Wave): a killing hit
+	// with excess damage on your turn fires the spell's overkill block once.
+	// Attack-combat overkill is handled at the attack sites — spells only here.
+	if (source && source.overkill && isSpellType(source) && state.current === source.controller
+		&& amount > _hpBefore && isDead(target)) {
+		const fx = source.overkill;
+		source.overkill = null; // once per cast, even on AoE
+		execEffects(state, source.controller, JSON.parse(JSON.stringify(fx)), null, source);
+	}
 	if (source && source.type === 'creature') target._lastDamagerUid = source.uid; // Faceless Replicator (uid, not ref — refs duplicate on snapshot round-trip)
 	warptoothCheck(state, target.controller);
 	if (target.damage === target.maxHealth) state.exactKills = (state.exactKills || 0) + 1;

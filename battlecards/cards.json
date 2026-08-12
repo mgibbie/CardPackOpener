@@ -149345,12 +149345,18 @@
       "keywords": [
         "overkill"
       ],
-      "description": "Deal 2 damage.",
+      "description": "Deal 2 damage. Overkill: Create a basic Totem.",
       "effects": [
         {
           "type": "damage",
           "value": 2,
-          "target": "any"
+          "target": "any",
+          "threadSource": true
+        }
+      ],
+      "overkill": [
+        {
+          "type": "summon-random-basic-totem"
         }
       ]
     },
@@ -149672,12 +149678,18 @@
       "rarity": "common",
       "set": "TITANS",
       "collectible": true,
-      "description": "Deal 3 damage.",
+      "description": "Deal 3 damage. Combo: Get a 1/1 Chaotic Tendril.",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "any"
+        }
+      ],
+      "combo": [
+        {
+          "type": "conjure-id",
+          "id": "token_chaotic_tendril"
         }
       ]
     },
@@ -149778,12 +149790,20 @@
       "rarity": "epic",
       "set": "STORMWIND",
       "collectible": true,
-      "description": "Deal 2 damage to target opponent.",
+      "description": "Deal 2 damage to target opponent. Shuffle 3 Bleeds into your deck that deal 2 more when drawn.",
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "enemy-hero"
+        },
+        {
+          "type": "shuffle-tokens-into-deck",
+          "ids": [
+            "bleed",
+            "bleed",
+            "bleed"
+          ]
         }
       ]
     },
@@ -150120,14 +150140,18 @@
       "set": "THE_LOST_CITY",
       "collectible": true,
       "tribe": "Arcane",
-      "description": "Deal 3 damage to a creature.",
+      "description": "Deal 3 damage to a creature. Costs (0) if you've Discovered this turn.",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "discovered-this-turn",
+        "setCost": 0
+      }
     },
     {
       "id": "apexis_blast",
@@ -150173,10 +150197,18 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "all-creatures"
+          "target": "all-creatures",
+          "threadSource": true
         }
       ],
-      "description": "Deal 2 damage to all creatures."
+      "description": "Deal 2 damage to all creatures. Overkill: Add a random Mage spell to your hand.",
+      "overkill": [
+        {
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "mage"
+        }
+      ]
     },
     {
       "id": "scorch",
@@ -150188,14 +150220,18 @@
       "set": "TROLL",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Deal 4 damage to a creature.",
+      "description": "Deal 4 damage to a creature. Costs (1) if you played an Elemental last turn.",
       "effects": [
         {
           "type": "damage",
           "value": 4,
           "target": "creature"
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "elemental-last-turn",
+        "setCost": 1
+      }
     },
     {
       "id": "unexpected_results",
@@ -150345,12 +150381,23 @@
       "mechanics": [
         "overkill"
       ],
-      "description": "Deal 3 damage.",
+      "description": "Deal 3 damage. Overkill: Create a 5/5 Devilsaur.",
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "any"
+          "target": "any",
+          "threadSource": true
+        }
+      ],
+      "overkill": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Devilsaur",
+          "tribe": "Beast"
         }
       ]
     },
@@ -150363,7 +150410,7 @@
       "rarity": "epic",
       "set": "LOOTAPALOOZA",
       "collectible": true,
-      "description": "Create a Animal Companion creature token.",
+      "description": "Create an Animal Companion, or 2 if your deck has no creatures.",
       "effects": [
         {
           "type": "summon",
@@ -150400,6 +150447,52 @@
                 "others": true
               },
               "description": "Your other creatures have +1 Attack."
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "options": [
+                {
+                  "name": "Huffer",
+                  "attack": 4,
+                  "health": 2,
+                  "keywords": [
+                    "charge"
+                  ],
+                  "tribe": "Beast",
+                  "description": "Charge."
+                },
+                {
+                  "name": "Misha",
+                  "attack": 4,
+                  "health": 4,
+                  "keywords": [
+                    "taunt"
+                  ],
+                  "tribe": "Beast",
+                  "description": "Taunt."
+                },
+                {
+                  "name": "Leokk",
+                  "attack": 2,
+                  "health": 4,
+                  "tribe": "Beast",
+                  "aura": {
+                    "attack": 1,
+                    "health": 0,
+                    "others": true
+                  },
+                  "description": "Your other creatures have +1 Attack."
+                }
+              ]
             }
           ]
         }
@@ -150443,11 +150536,25 @@
       "set": "SPACE",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Destroy a creature.",
+      "description": "Destroy a creature. If you're building a Starship, also destroy a random enemy creature.",
       "effects": [
         {
           "type": "destroy",
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 99,
+              "count": 1,
+              "pool": "enemy-creatures"
+            }
+          ]
         }
       ],
       "runes": {
@@ -151177,7 +151284,7 @@
       "rarity": "common",
       "set": "DALARAN",
       "collectible": true,
-      "description": "Target creature you control gains Lifesteal.",
+      "description": "Twinspell. Target creature you control gains Lifesteal.",
       "type": "sorcery",
       "tribe": "Holy",
       "effects": [
@@ -151185,6 +151292,10 @@
           "type": "grant",
           "keyword": "lifesteal",
           "target": "creature"
+        },
+        {
+          "type": "conjure-id",
+          "id": "lightforged_blessing_ii"
         }
       ]
     },
@@ -151429,8 +151540,9 @@
           "cardClass": "enemy"
         }
       ],
-      "description": "Add a random card to your hand from target opponent's class.",
-      "set": "GILNEAS"
+      "description": "Echo. Add a random card to your hand from target opponent's class.",
+      "set": "GILNEAS",
+      "echo": true
     },
     {
       "id": "daring_escape",
@@ -151991,12 +152103,28 @@
       "keywords": [
         "discover"
       ],
-      "description": "Discover a Mech.",
+      "description": "Discover a Mech. If you have 10 Mana Crystals, keep all 3 instead.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "tribe": "Mech"
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "tribe": "Mech",
+              "count": 3
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Mech"
+            }
+          ]
         }
       ]
     },
@@ -163003,11 +163131,26 @@
       "set": "WHIZBANGS_WORKSHOP",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Cast 5 random spells.",
+      "description": "Cast 5 random spells. If your deck has no creatures, the spells cast cost (5) or more.",
       "effects": [
         {
-          "type": "cast-random-spell",
-          "count": 5
+          "type": "conditional",
+          "if": {
+            "deckNoMinions": true
+          },
+          "then": [
+            {
+              "type": "cast-random-spell",
+              "count": 5,
+              "minCost": 5
+            }
+          ],
+          "else": [
+            {
+              "type": "cast-random-spell",
+              "count": 5
+            }
+          ]
         }
       ]
     },
@@ -173668,6 +173811,43 @@
       "health": 1,
       "tribe": "Dragon",
       "description": "A timely ally."
+    },
+    {
+      "id": "bleed",
+      "name": "Bleed",
+      "type": "sorcery",
+      "cost": 0,
+      "rarity": "common",
+      "cardClass": "rogue",
+      "token": true,
+      "collectible": false,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-hero"
+        }
+      ],
+      "description": "When drawn, deal 2 damage to target opponent."
+    },
+    {
+      "id": "lightforged_blessing_ii",
+      "name": "Lightforged Blessing",
+      "type": "sorcery",
+      "cost": 2,
+      "rarity": "common",
+      "cardClass": "paladin",
+      "token": true,
+      "collectible": false,
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "creature"
+        }
+      ],
+      "description": "Target creature you control gains Lifesteal."
     }
   ]
 }
