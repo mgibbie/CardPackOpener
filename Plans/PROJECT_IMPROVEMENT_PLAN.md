@@ -12,14 +12,16 @@ not weeks.
 
 ## Tier 0 — Highest leverage, low effort (do these first)
 
-### 1. A Battlecards "start screen" / mode picker  ⭐ biggest win
-Right now `battlecards/` drops you straight into a match, and the run modes only
-exist via URL params (`?heist=1`, `?tombs=1`, `?dungeon=1`, `?duels=1`). **Almost
-nobody will ever find them.** Add a lightweight landing that surfaces everything:
-- **Quick Match** (vs AI), **Dungeon**, **Heist**, **Tombs**, **Duels**, **Deck Builder**, **Packs**, **Gallery**.
-- Each with a one-line description and the mode's art/icon.
-- Reuse the tile style from the new main page for visual consistency.
-- Effort: ~half a day. Impact: unlocks 4 finished game modes that are currently invisible.
+### 1. A Battlecards "start screen" / mode picker  ⭐ biggest win — ✅ DONE (2026-08-12)
+Run modes used to exist only via URL params (`?heist=1`, `?tombs=1`, `?dungeon=1`,
+`?duels=1`), so almost nobody found them. Built `battlecards/start.html`:
+- **Quick Match**, **Dungeon**, **Heist**, **Tombs**, **Duels**, plus **Deck Builder**,
+  **Packs**, **Gallery**, and **How to Play** — each with a one-line description/icon.
+- Run tiles show a green **"▸ Resume"** badge when a saved run exists in localStorage.
+- Reuses the hub's tile style; the main-page flagship link and the in-game title bar
+  ("modes") both point here.
+- Follow-ups: split "New run" vs "Continue" explicitly; a starter-deck picker for Duels;
+  boss-select for one-off encounters (`?boss=<id>`).
 
 ### 2. First-run onboarding for Battlecards
 A new player lands mid-match with no idea what to do.

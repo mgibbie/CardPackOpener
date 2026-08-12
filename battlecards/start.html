@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Battlecards — Magepunk</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Play Magepunk Battlecards — Quick Match, run modes (Dungeon, Heist, Tombs, Duels), the deck builder, packs, and the card gallery.">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
+	<style>
+	:root {
+		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff; --green: #6bd6a0;
+		--shadow: 0 10px 30px rgba(0,0,0,.35);
+	}
+	@media (prefers-color-scheme: light) {
+		:root {
+			--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
+			--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
+			--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6; --green: #1f9d63;
+			--shadow: 0 8px 24px rgba(40,50,90,.12);
+		}
+	}
+	:root[data-theme="dark"] {
+		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff; --green: #6bd6a0;
+		--shadow: 0 10px 30px rgba(0,0,0,.35);
+	}
+	:root[data-theme="light"] {
+		--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
+		--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
+		--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6; --green: #1f9d63;
+		--shadow: 0 8px 24px rgba(40,50,90,.12);
+	}
+	* { margin: 0; padding: 0; box-sizing: border-box; }
+	body {
+		font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+		color: var(--text); min-height: 100vh;
+		background:
+			radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%),
+			radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%),
+			linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%);
+		background-attachment: fixed;
+	}
+	a { color: inherit; text-decoration: none; }
+	.wrap { max-width: 1040px; margin: 0 auto; padding: 18px 20px 64px; }
+
+	.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.back { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 600; font-size: .92rem; padding: 6px 10px; border-radius: 8px; }
+	.back:hover { color: var(--text); background: var(--panel); }
+	.account { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+	.account a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 9px; font-weight: 600; border: 1px solid transparent; }
+	#login-btn { background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 82%, #000)); color: #fff; box-shadow: var(--shadow); }
+	#login-btn:hover { filter: brightness(1.08); }
+	#user-chip { background: var(--panel); color: var(--gold); border-color: var(--border); }
+	#user-chip:hover { background: var(--panel-2); }
+
+	.hero { text-align: center; padding: 34px 12px 8px; }
+	.hero .glyph { font-size: 3rem; filter: drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
+	.hero h1 {
+		font-size: clamp(2.4rem, 7vw, 3.8rem); font-weight: 900; letter-spacing: -1px; margin-top: 6px;
+		background: linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%);
+		-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+	}
+	.hero .tag { margin-top: 10px; color: var(--muted); font-size: 1.02rem; }
+
+	.section-label { display: flex; align-items: center; gap: 12px; margin: 34px 4px 14px; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+	.section-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+	/* primary Quick Match banner */
+	.primary {
+		display: flex; align-items: center; gap: 22px; padding: 24px 26px; border-radius: 16px;
+		background: linear-gradient(120deg, var(--panel-2), var(--panel)); border: 1px solid var(--border);
+		box-shadow: var(--shadow); transition: transform .16s ease, box-shadow .16s ease;
+	}
+	.primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+	.primary .big { font-size: 3.2rem; line-height: 1; }
+	.primary .txt { flex: 1; }
+	.primary h2 { font-size: 1.6rem; font-weight: 800; }
+	.primary p { color: var(--muted); margin-top: 4px; }
+	.primary .go { font-weight: 800; color: var(--gold); font-size: 1.4rem; }
+
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 14px; }
+	.tile {
+		position: relative; display: flex; gap: 13px; align-items: flex-start; padding: 17px; border-radius: 14px;
+		background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
+		transition: transform .16s ease, border-color .16s ease, background .16s ease;
+	}
+	.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--violet) 50%, var(--border)); background: var(--panel-2); }
+	.tile .glyph { font-size: 1.8rem; line-height: 1; flex-shrink: 0; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; background: var(--panel-2); border: 1px solid var(--border); }
+	.tile h3 { font-size: 1.02rem; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
+	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
+	.tile p { color: var(--muted); font-size: .84rem; line-height: 1.42; margin-top: 3px; }
+	.tile .resume { position: absolute; top: 12px; right: 12px; font-size: .64rem; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 55%, var(--border)); border-radius: 999px; padding: 3px 8px; display: none; }
+	.tile[data-inprogress="1"] .resume { display: inline-block; }
+	.tile[data-inprogress="1"] h3 { padding-right: 78px; }
+	.tile[data-inprogress="1"] h3 .arrow { display: none; }
+
+	footer { margin-top: 42px; text-align: center; color: var(--muted); font-size: .84rem; }
+	footer a { color: var(--blue); font-weight: 600; }
+	footer a:hover { text-decoration: underline; }
+	.theme-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: .82rem; cursor: pointer; margin-left: 8px; }
+	.theme-toggle:hover { color: var(--text); border-color: var(--violet); }
+
+	@media (prefers-reduced-motion: reduce) { .tile, .primary { transition: none; } }
+	@media (max-width: 560px) { .primary { flex-direction: column; text-align: center; } }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<div class="topbar">
+			<a class="back" href="../">◀ Magepunk</a>
+			<div class="account" id="account-corner"></div>
+		</div>
+
+		<header class="hero">
+			<div class="glyph">🃏</div>
+			<h1>Battlecards</h1>
+			<p class="tag">Pick how you want to play.</p>
+		</header>
+
+		<div class="section-label">Play</div>
+		<a class="primary" href="index.html">
+			<div class="big">⚔️</div>
+			<div class="txt">
+				<h2>Quick Match</h2>
+				<p>Jump straight into a game against the AI.</p>
+			</div>
+			<div class="go">▶</div>
+		</a>
+
+		<div class="section-label">Run Modes</div>
+		<div class="grid">
+			<a class="tile" href="index.html?dungeon=1" data-run="magepunk_dungeon_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">🏰</div>
+				<div><h3>Dungeon <span class="arrow">→</span></h3><p>An 8-level gauntlet — draft a bucket and grab treasures between fights.</p></div>
+			</a>
+			<a class="tile" href="index.html?heist=1" data-run="magepunk_heist_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">💰</div>
+				<div><h3>Heist <span class="arrow">→</span></h3><p>A multi-wing run — nine heroes, dozens of bosses, treasures and anomalies.</p></div>
+			</a>
+			<a class="tile" href="index.html?tombs=1" data-run="magepunk_tombs_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">⚰️</div>
+				<div><h3>Tombs <span class="arrow">→</span></h3><p>Delve with an explorer — collect treasures and passives, then face the bosses.</p></div>
+			</a>
+			<a class="tile" href="index.html?duels=1" data-run="magepunk_duels_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">🎲</div>
+				<div><h3>Duels <span class="arrow">→</span></h3><p>Bring a starter deck, then upgrade it with treasures as you win.</p></div>
+			</a>
+		</div>
+
+		<div class="section-label">Build &amp; Browse</div>
+		<div class="grid">
+			<a class="tile" href="deck.html">
+				<div class="glyph">🛠️</div>
+				<div><h3>Deck Builder <span class="arrow">→</span></h3><p>Craft 40-card decks, class-first, from your whole collection.</p></div>
+			</a>
+			<a class="tile" href="packs.html">
+				<div class="glyph">📦</div>
+				<div><h3>Open Packs <span class="arrow">→</span></h3><p>Crack packs to grow your collection.</p></div>
+			</a>
+			<a class="tile" href="viewer.html">
+				<div class="glyph">🖼️</div>
+				<div><h3>Card Gallery <span class="arrow">→</span></h3><p>Browse every card, wiki-style, with full art and text.</p></div>
+			</a>
+			<a class="tile" href="../learnmagepunk/">
+				<div class="glyph">🎓</div>
+				<div><h3>How to Play <span class="arrow">→</span></h3><p>New here? Learn turns, combat, lands, classes, and keywords.</p></div>
+			</a>
+		</div>
+
+		<footer>
+			<p>Prefer the world? <a href="../overworld/">Play the RPG</a>.
+				<button class="theme-toggle" id="theme-toggle" title="Toggle theme">◐ Theme</button>
+			</p>
+		</footer>
+	</div>
+
+	<!-- account corner: Log in button, or username -> /profile/ -->
+	<script type="module">
+	import * as MP from './mpmode.js';
+	const corner = document.getElementById('account-corner');
+	if (MP.hasToken()) {
+		const name = MP.cachedState()?.username || 'Account';
+		corner.innerHTML = `<a id="user-chip" href="../profile/" title="Your profile">👤 ${name}</a>`;
+	} else {
+		corner.innerHTML = `<a id="login-btn" href="../login/?next=/battlecards/start.html">Log in</a>`;
+	}
+	</script>
+	<script>
+	// flag any run mode that has saved progress in localStorage
+	document.querySelectorAll('.tile[data-run]').forEach(function (el) {
+		try { if (localStorage.getItem(el.getAttribute('data-run'))) el.setAttribute('data-inprogress', '1'); } catch (e) {}
+	});
+	// theme toggle (shared convention with the main hub)
+	(function () {
+		const root = document.documentElement, KEY = 'mp-theme';
+		const saved = localStorage.getItem(KEY);
+		if (saved) root.setAttribute('data-theme', saved);
+		document.getElementById('theme-toggle').addEventListener('click', function () {
+			const cur = root.getAttribute('data-theme')
+				|| (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+			const next = cur === 'dark' ? 'light' : 'dark';
+			root.setAttribute('data-theme', next);
+			localStorage.setItem(KEY, next);
+		});
+	})();
+	</script>
+</body>
+</html>
