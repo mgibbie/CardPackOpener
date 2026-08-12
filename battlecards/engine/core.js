@@ -480,7 +480,7 @@ export function opponentsOf(state, pi) {
 // ---------- game setup ----------
 // `classPicks` (optional): one class object per player from classes.json —
 // { id, name, power: { name, cost, effects|choices, text } | null, passive? }
-export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null, loadouts = null) {
+export function createGame(cardsById, rng = Math.random, playerDeckIds = null, playerCount = 2, classPicks = null, loadouts = null, opponentDeckIds = null) {
 	// never in decks: companions/commanders (own zones), lands (bought from the
 	// slot menu), and colored cards (conjured by lands during play)
 	const playable = Object.values(cardsById).filter(d =>
@@ -625,6 +625,9 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		anomaly: null,  // Dalaran Heist anomaly id: a symmetric run-wide rule (engine/heist.js)
 	};
 	if (playerDeck) state.players[0].deck = playerDeck;
+	// matchmaking / AI opponents: player 1 can be handed a specific decklist
+	// (a starter or a harvested real-player deck) instead of a class-pool deck
+	if (opponentDeckIds?.length && state.players[1]) state.players[1].deck = shuffle([...opponentDeckIds]);
 
 	// class starting hero powers occupy one of the three power slots
 	if (classPicks) {

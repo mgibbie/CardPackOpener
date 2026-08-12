@@ -135,10 +135,20 @@ Built a shared **social inbox** into the top bar (`/site/topbar.js`), on the exi
   and "Message".
 - **Messages** — per-friend DM threads over the `u:<name>` chat rooms.
 
-Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, a real **lobby / matchmaking**
-(quick-match queue), **spectate**, and a post-game summary. Also worth doing: let the
-inbox **send** Pokémon challenges standalone (needs the team snapshot, which currently
-only the Overworld builds).
+**Matchmaking — ✅ DONE (2026-08-12):** a **"Find Match"** on the Battlecards start
+screen queues you against a real player; if no one's waiting after 12s you're handed
+an **AI opponent** instead. The AI plays a real decklist — the pool is seeded with the
+starter decks and **grows with every deck real players queue with** (harvested,
+deduped, capped at 200), so the bots start on starters but are gradually replaced by
+real players' decks. Backend: `matchmake-join` / `-poll` / `-leave` (pairs two waiters
+into a host-authoritative `cardpvp` duel, or mints an `aimatch`) + `ai-match`. Engine:
+`createGame` gained `opponentDeckIds` so player 1 can be dealt a specific deck. Game:
+`?aimatch=<id>` boots a local match where the AI plays that deck. Verified the pairing,
+AI-timeout fallback, deck harvesting, the engine deck-override, and the full UI flow.
+
+Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, **spectate**, a post-game
+summary, and letting the inbox **send** Pokémon challenges standalone (needs the team
+snapshot, which currently only the Overworld builds).
 
 ### 13. Mobile match layout — ✅ DONE (2026-08-12)
 The Battlecards board already re-frames its camera for portrait/landscape (pulls

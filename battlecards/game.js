@@ -78,6 +78,9 @@ const spectateMode = !!spectateName;
 // published board, and relays action intents the host applies.
 const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
 const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false, config: null, modalSig: null };
+// ?aimatch=<id> — a matchmaking AI game: a normal local game vs the AI, but the
+// AI plays a specific decklist (a starter or a harvested real-player deck)
+const aiMatchId = MP_ON ? new URLSearchParams(location.search).get('aimatch') : null;
 
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
 const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
@@ -3410,6 +3413,36 @@ function classPickFor(clsId) {
 	return classRegistry.find(c => c.id === clsId) || (clsId ? { id: clsId, name: clsId, power: null } : null);
 }
 
+// matchmaking AI game: a local match where player 1 (the AI) plays a specific
+// decklist handed down by the matchmaker (starter or harvested real-player deck)
+async function startAiMatch(cardsById) {
+	let cfg = null;
+	try { const r = await MPX.call('ai-match', { id: aiMatchId }); cfg = r && r.match; } catch (e) {}
+	if (!cfg) { // config expired — fall back to a normal quick match
+		const picks = pickClasses();
+		state = E.createGame(cardsById, Math.random, null, playerCount, picks);
+		state.classPicks = picks;
+	} else {
+		const picks = [classPickFor(cfg.humanClass), classPickFor(cfg.aiClass)];
+		const loadouts = [
+			{ commander: cfg.humanCommander || null, companion: cfg.humanCompanion || null },
+			{ commander: cfg.aiCommander || null, companion: cfg.aiCompanion || null },
+		];
+		state = E.createGame(cardsById, Math.random,
+			cfg.humanDeck?.length ? [...cfg.humanDeck] : null, 2, picks, loadouts,
+			cfg.aiDeck?.length ? [...cfg.aiDeck] : null); // player 1 gets the AI decklist
+		state.classPicks = picks;
+		log(`Matchmaking: playing ${cfg.aiName || 'a Challenger'} (AI).`);
+		banner(`Matched vs ${cfg.aiName || 'a Challenger'}`, 1600);
+	}
+	frameCamera();
+	buildPanels();
+	buildSlotMarkers();
+	pump();
+	updateHud();
+	if (MP_ON && !publishStarted) { publishStarted = true; startPublishLoop(); }
+}
+
 async function startDuel(cardsById) {
 	const data = await MPX.call('card-match', { id: duel.id });
 	if (data.error || !data.cardmatch) {
@@ -3824,6 +3857,7 @@ async function start() {
 		} catch (e) { classRegistry = []; }
 	}
 	if (duel.on) { await startDuel(cardsById); return; }
+	if (aiMatchId) { await startAiMatch(cardsById); return; }
 	// bare visit = the landing menu; any mode param (battle/players/boss/
 	// dungeon) boots straight in, so tests and deep links skip it
 	if (!location.search && !menuChosen) {

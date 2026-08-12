@@ -118,6 +118,35 @@ function streakInfo(user, now) {
 	return { count, claimedToday, nextReward: streakReward(nextCount), nextClaimMs: (day + 1) * DAY_MS - now };
 }
 
+// ---------- matchmaking ----------
+// A live queue pairs two waiting players into a host-authoritative card duel.
+// If nobody else is waiting after MM_AI_TIMEOUT_MS you're handed an AI opponent
+// instead — it plays a deck from the AI pool, which is seeded with the starter
+// decks and grows with real players' decks as they queue (so the bots start on
+// the starters but are gradually replaced by real decklists).
+const MM_AI_TIMEOUT_MS = 12_000; // wait this long for a human before the AI steps in
+const MM_STALE_MS = 8_000;       // a queue entry that hasn't polled in this long is dropped
+const AI_POOL_CAP = 200;         // keep the most recent N harvested decks
+const deckSig = (d) => (d.classId || '') + ':' + [...(d.deck || [])].sort().join(',');
+const titleCase = (s) => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const botName = (ai) => `${Q_CLASSES[ai.classId] || titleCase(ai.classId) || 'Rival'} Challenger`;
+const starterAiPool = () => STARTER_SLOT_DEFS.map(s => ({ deck: [...s.cards], classId: s.classId, commander: null, companion: null, starter: true }));
+async function harvestDeck(store, party) {
+	if (!party || !Array.isArray(party.deck) || party.deck.length !== DECK_SIZE || !party.classId) return;
+	const pool = (await store.get('aideckpool')) || [];
+	const sig = deckSig(party);
+	if (pool.some(d => deckSig(d) === sig)) return; // already have this exact deck
+	pool.push({ deck: party.deck.map(String), classId: party.classId, commander: party.commander || null, companion: party.companion || null, ts: Date.now() });
+	await store.setJSON('aideckpool', pool.slice(-AI_POOL_CAP));
+}
+async function pickAiDeck(store, myParty) {
+	const combined = [...starterAiPool(), ...((await store.get('aideckpool')) || [])];
+	const mySig = myParty ? deckSig(myParty) : null;
+	const pool = combined.filter(d => deckSig(d) !== mySig); // never mirror the player's own deck
+	const from = pool.length ? pool : combined;
+	return from[Math.floor(Math.random() * from.length)];
+}
+
 function applyQuestEvent(user, ev) {
 	if (!user.quests) return false;
 	let changed = false;
@@ -988,6 +1017,66 @@ export default async function handler(req, env) {
 		user.packInbox = (user.packInbox || 0) + add;
 		await store.setJSON(username, user);
 		return json({ quests: user.quests.list, reward: add, packInbox: user.packInbox });
+	}
+
+	// ---------- matchmaking ----------
+	if (action === 'matchmake-join') {
+		const party = body.party || {};
+		const err = deckError(party.classId, party.deck, effectiveCollection(user)) || loadoutError(party.classId, party.commander, party.companion);
+		if (err) return json({ error: err }, 400);
+		const now = Date.now();
+		const q = ((await store.get('mm:queue')) || []).filter(e => e.name !== username && now - (e.poll || e.ts) < MM_STALE_MS);
+		q.push({ name: username, party: { deck: party.deck.map(String), classId: party.classId, commander: party.commander || null, companion: party.companion || null }, ts: now, poll: now });
+		await store.setJSON('mm:queue', q);
+		await store.setJSON('mm:matched:' + username, null); // clear any stale pairing
+		await harvestDeck(store, party);                     // grow the AI deck pool
+		return json({ ok: true });
+	}
+	if (action === 'matchmake-leave') {
+		await store.setJSON('mm:queue', ((await store.get('mm:queue')) || []).filter(e => e.name !== username));
+		return json({ ok: true });
+	}
+	if (action === 'matchmake-poll') {
+		const now = Date.now();
+		const matched = await store.get('mm:matched:' + username);
+		if (matched && now - matched.ts < 60_000) { await store.setJSON('mm:matched:' + username, null); return json({ status: 'matched', matchId: matched.matchId, role: matched.role, type: 'card' }); }
+		let q = ((await store.get('mm:queue')) || []).filter(e => now - (e.poll || e.ts) < MM_STALE_MS);
+		const me = q.find(e => e.name === username);
+		if (!me) return json({ status: 'idle' }); // not queued (dropped / never joined)
+		me.poll = now;
+		const partner = q.find(e => e.name !== username);
+		if (partner) {
+			const matchId = randCode() + randCode();
+			const cm = {
+				id: matchId, type: 'card', host: username, guest: partner.name,
+				hostDeck: me.party.deck, hostClass: me.party.classId, hostCommander: me.party.commander, hostCompanion: me.party.companion,
+				guestDeck: partner.party.deck, guestClass: partner.party.classId, guestCommander: partner.party.commander, guestCompanion: partner.party.companion,
+				over: false, winner: null, createdAt: now, lastActive: now,
+			};
+			await store.setJSON('cardmatch:' + matchId, cm);
+			await store.setJSON('mm:matched:' + partner.name, { matchId, role: 'guest', ts: now });
+			await store.setJSON('curmatch:' + username, { id: matchId, type: 'card', ts: now });
+			await store.setJSON('curmatch:' + partner.name, { id: matchId, type: 'card', ts: now });
+			await store.setJSON('mm:queue', q.filter(e => e.name !== username && e.name !== partner.name));
+			return json({ status: 'matched', matchId, role: 'host', type: 'card' });
+		}
+		if (now - me.ts > MM_AI_TIMEOUT_MS) {
+			const ai = await pickAiDeck(store, me.party);
+			const aid = randCode() + randCode();
+			await store.setJSON('aimatch:' + aid, {
+				human: username, humanDeck: me.party.deck, humanClass: me.party.classId, humanCommander: me.party.commander, humanCompanion: me.party.companion,
+				aiDeck: ai.deck, aiClass: ai.classId, aiCommander: ai.commander || null, aiCompanion: ai.companion || null, aiName: botName(ai), createdAt: now,
+			});
+			await store.setJSON('mm:queue', q.filter(e => e.name !== username));
+			return json({ status: 'ai', aimatchId: aid, aiName: botName(ai), aiClass: ai.classId });
+		}
+		await store.setJSON('mm:queue', q);
+		return json({ status: 'searching', waited: now - me.ts, queueSize: q.length });
+	}
+	if (action === 'ai-match') {
+		const m = await store.get('aimatch:' + String(body.id || ''));
+		if (!m || m.human !== username) return json({ error: 'no such match' }, 404);
+		return json({ match: m });
 	}
 
 	// lightweight timer read (no full collection) for the inbox to poll
