@@ -147130,9 +147130,23 @@
           "attack": 1,
           "health": 1,
           "name": "Sapling"
+        },
+        {
+          "type": "delayed",
+          "turns": 2,
+          "name": "Blossom",
+          "description": "Your Saplings blossom (+3/+3) in 2 turns.",
+          "effects": [
+            {
+              "type": "buff-friendly-name",
+              "nameIncludes": "Sapling",
+              "attack": 3,
+              "health": 3
+            }
+          ]
         }
       ],
-      "description": "Create two 1/1 Sapling creature tokens.",
+      "description": "Create two 1/1 Sapling creature tokens. In 2 turns, your Saplings blossom, gaining +3/+3.",
       "set": "TITANS"
     },
     {
@@ -148425,13 +148439,29 @@
       "collectible": true,
       "type": "sorcery",
       "tribe": "Fire",
-      "description": "Deal 4 damage to a random enemy.",
+      "description": "Deal 4 damage to a random enemy. If you played an Elemental last turn, choose the target.",
       "effects": [
         {
-          "type": "random-damage",
-          "value": 4,
-          "pool": "enemies",
-          "count": 1
+          "type": "conditional",
+          "target": "any",
+          "if": {
+            "elementalLastTurn": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ],
+          "else": [
+            {
+              "type": "random-damage",
+              "value": 4,
+              "pool": "enemies",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -148444,13 +148474,28 @@
       "rarity": "common",
       "set": "WILD_WEST",
       "collectible": true,
-      "description": "Deal 3 damage.",
+      "description": "Deal 3 damage. Quickdraw: Your opponent's cards cost (1) more next turn.",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "any"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "enemy-cards-cost-more",
+              "value": 1
+            }
+          ]
         }
+      ],
+      "keywords": [
+        "miracle"
       ]
     },
     {
@@ -148678,7 +148723,7 @@
       "tribe": "Arcane",
       "type": "sorcery",
       "collectible": true,
-      "description": "Create a 4/4 Lynx creature token with Rush.",
+      "description": "Create a 4/4 Lynx creature token with Rush. If you have Spell Damage, create another.",
       "effects": [
         {
           "type": "summon",
@@ -148689,6 +148734,25 @@
           "tribe": "Beast",
           "keywords": [
             "rush"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "hasSpellDamage": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Lynx",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
           ]
         }
       ]
@@ -149413,9 +149477,13 @@
         {
           "type": "armor",
           "value": 2
+        },
+        {
+          "type": "launch-discount",
+          "value": 2
         }
       ],
-      "description": "Deal 2 damage and gain 2 Armor."
+      "description": "Deal 2 damage and gain 2 Armor. Your next Starship launch costs (2) less."
     },
     {
       "id": "through_fel_and_flames",
@@ -149432,9 +149500,23 @@
           "type": "grant",
           "keyword": "rush",
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "creature"
+            }
+          ]
         }
       ],
-      "description": "Target creature gains Rush."
+      "description": "Target creature gains Rush. Finale: And +1/+1."
     },
     {
       "id": "man_the_cannons",
@@ -150124,12 +150206,27 @@
       "rarity": "epic",
       "set": "BOOMSDAY",
       "collectible": true,
-      "description": "Create two random 2-Cost creatures.",
+      "description": "Create two random 2-Cost creatures. If you have Spell Damage, create two random 3-Cost creatures instead.",
       "effects": [
         {
-          "type": "summon-random",
-          "cost": 2,
-          "count": 2
+          "type": "conditional",
+          "if": {
+            "hasSpellDamage": true
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 3,
+              "count": 2
+            }
+          ],
+          "else": [
+            {
+              "type": "summon-random",
+              "cost": 2,
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -150160,14 +150257,18 @@
       "rarity": "rare",
       "set": "GILNEAS",
       "collectible": true,
-      "description": "Deal 4 damage to a creature.",
+      "description": "Deal 4 damage to a creature. Costs (3) less for each creature that died this turn.",
       "effects": [
         {
           "type": "damage",
           "value": 4,
           "target": "creature"
         }
-      ]
+      ],
+      "selfCost": {
+        "per": "deaths-this-turn",
+        "amount": -3
+      }
     },
     {
       "id": "supreme_dinomancy",
@@ -150415,15 +150516,42 @@
       "type": "sorcery",
       "collectible": true,
       "set": "CATACLYSM",
-      "description": "Create five 5/4 Undead Drake creature tokens.",
+      "description": "Create five 5/4 Undead Drake creature tokens. Spend 8 Corpses to give them Rush.",
       "effects": [
         {
-          "type": "summon",
-          "count": 5,
-          "attack": 5,
-          "health": 4,
-          "name": "Undead Drake",
-          "tribe": "Undead"
+          "type": "conditional",
+          "if": {
+            "corpsesAtLeast": 8
+          },
+          "then": [
+            {
+              "type": "spend-corpses",
+              "value": 8,
+              "effects": [
+                {
+                  "type": "summon",
+                  "count": 5,
+                  "attack": 5,
+                  "health": 4,
+                  "name": "Undead Drake",
+                  "tribe": "Undead",
+                  "keywords": [
+                    "rush"
+                  ]
+                }
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "summon",
+              "count": 5,
+              "attack": 5,
+              "health": 4,
+              "name": "Undead Drake",
+              "tribe": "Undead"
+            }
+          ]
         }
       ],
       "runes": {
@@ -150441,7 +150569,7 @@
       "rarity": "rare",
       "set": "SPACE",
       "collectible": true,
-      "description": "Create a 5/5 Undead creature token with Taunt and give your hero +5 Health.",
+      "description": "Create a 5/5 Undead creature token with Taunt and give your hero +5 Health. Spend 5 Corpses to do it again.",
       "effects": [
         {
           "type": "summon",
@@ -150457,6 +150585,27 @@
           "type": "heal",
           "value": 5,
           "target": "self"
+        },
+        {
+          "type": "spend-corpses",
+          "value": 5,
+          "effects": [
+            {
+              "type": "summon",
+              "attack": 5,
+              "health": 5,
+              "name": "Undead",
+              "tribe": "Undead",
+              "keywords": [
+                "taunt"
+              ]
+            },
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "self"
+            }
+          ]
         }
       ],
       "runes": {
@@ -151488,11 +151637,23 @@
       "set": "LOOTAPALOOZA",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Create 1 copy of a creature you control.",
+      "description": "Create 1 copy of a creature you control. If you have Overloaded Mana Crystals, create 2 copies instead.",
       "effects": [
         {
           "type": "summon-copy-of-target-buffed",
           "target": "friendly-creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "overloaded": true
+          },
+          "then": [
+            {
+              "type": "summon-copy-of-target-buffed",
+              "target": "friendly-creature"
+            }
+          ]
         }
       ]
     },
@@ -151712,13 +151873,29 @@
       "set": "DALARAN",
       "tribe": "Nature",
       "collectible": true,
-      "description": "Discover a Druid creature.",
+      "description": "Discover a Druid creature. If your hand is empty, keep all 3 instead.",
       "effects": [
         {
-          "type": "discover",
-          "cardType": "creature",
-          "cardClasses": [
-            "druid"
+          "type": "conditional",
+          "if": {
+            "handEmpty": true
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "creature",
+              "cardClass": "druid",
+              "count": 3
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "cardClasses": [
+                "druid"
+              ]
+            }
           ]
         }
       ]
@@ -158988,7 +159165,7 @@
       "set": "WILD_WEST",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Set a creature's Attack and Health to 1.",
+      "description": "Tradeable. Set a creature's Attack and Health to 1. Quickdraw: Then deal 1 damage to it.",
       "effects": [
         {
           "type": "set-attack",
@@ -158999,7 +159176,24 @@
           "type": "set-health",
           "value": 1,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "selfDrawnThisTurn": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
         }
+      ],
+      "tradeable": true,
+      "keywords": [
+        "miracle"
       ]
     },
     {
@@ -163794,13 +163988,34 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Give a minion +3/+3.",
+      "description": "Give a creature +3/+3. If this costs (0), return this to your hand at the end of your turn.",
       "effects": [
         {
           "type": "buff",
           "attack": 3,
           "health": 3,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "selfPaidZero": true
+          },
+          "then": [
+            {
+              "type": "delayed",
+              "turns": 1,
+              "name": "Libram of Divinity",
+              "description": "Returns to your hand at the end of the turn.",
+              "effects": [
+                {
+                  "type": "add-card",
+                  "id": "libram_of_divinity",
+                  "count": 1
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -163981,13 +164196,18 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Draw 2 cards.",
+      "description": "Draw 2 cards. Costs (1) less for each friendly Undead that has died this game.",
       "effects": [
         {
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "selfCost": {
+        "per": "tribe-died-game",
+        "tribe": "Undead",
+        "amount": -1
+      }
     },
     {
       "id": "grave_rune",
@@ -164307,11 +164527,23 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Deal 2 damage to all enemies.",
+      "description": "Deal 2 damage to all enemies. If a friendly Undead died after your last turn, deal 2 more.",
       "effects": [
         {
           "type": "damage-all-enemies",
           "value": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "friendlyUndeadDied": true
+          },
+          "then": [
+            {
+              "type": "damage-all-enemies",
+              "value": 2
+            }
+          ]
         }
       ]
     },
@@ -165839,7 +166071,7 @@
       "cardClass": "warrior",
       "rarity": "rare",
       "set": "LOOTAPALOOZA",
-      "description": "Create one 5/5 Mithril Golem.",
+      "description": "Create one 5/5 Mithril Golem. If you have a weapon equipped, create one more.",
       "effects": [
         {
           "type": "summon",
@@ -165847,6 +166079,21 @@
           "attack": 5,
           "health": 5,
           "name": "Mithril Golem"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "weaponEquipped": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Mithril Golem"
+            }
+          ]
         }
       ]
     },
@@ -165859,7 +166106,7 @@
       "rarity": "epic",
       "set": "TITANS",
       "tribe": "Fire",
-      "description": "Create five 1/1 Val'kyr with Rush.",
+      "description": "Create five 1/1 Val'kyr with Rush. When one dies, give the others +1/+1.",
       "effects": [
         {
           "type": "summon",
@@ -165868,7 +166115,16 @@
           "health": 1,
           "name": "Val'kyr",
           "keywords": [
-            "rush"
+            "rush",
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "buff-friendly-name",
+              "nameIncludes": "Val'kyr",
+              "attack": 1,
+              "health": 1
+            }
           ]
         }
       ]
@@ -167958,12 +168214,27 @@
       "rarity": "epic",
       "set": "ESCAPEFROM_VIOLET_HOLD",
       "description": "Prepare. Create an 8-Cost minion. If you've cast 3 other spells this turn, do it again.",
+      "prepare": true,
       "effects": [
         {
           "type": "summon-random",
           "minCost": 8,
           "maxCost": 8,
           "count": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "spellsThisTurn": 4
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "minCost": 8,
+              "maxCost": 8,
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -170339,11 +170610,116 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "PLACEHOLDER_202204",
-      "description": "Draw a card.",
+      "description": "Draw a card. Repeat for each Demon you control.",
       "effects": [
         {
           "type": "draw",
           "value": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 1
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 2
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 3
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 4
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 5
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 6
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribeCount": {
+              "tribe": "Demon",
+              "count": 7
+            }
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -170355,7 +170731,7 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "PLACEHOLDER_202204",
-      "description": "Create a 3/5 Shadow with Taunt.",
+      "description": "Create a 3/5 Shadow with Taunt. If a creature died this turn, create another.",
       "effects": [
         {
           "type": "summon",
@@ -170365,6 +170741,24 @@
           "name": "Shadow",
           "keywords": [
             "taunt"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "anyDiedThisTurn": true
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 5,
+              "name": "Shadow",
+              "keywords": [
+                "taunt"
+              ]
+            }
           ]
         }
       ]
@@ -171191,18 +171585,29 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Discard a card and fill your board with 3/2 Imps.",
+      "description": "At the end of your turn, discard a card and fill your board with 3/2 Imps. Lasts 3 turns.",
       "effects": [
         {
-          "type": "discard-random",
-          "count": 1
-        },
-        {
-          "type": "fill-board-token",
-          "name": "Imp",
-          "tribe": "Demon",
-          "attack": 3,
-          "health": 2
+          "type": "timed-aura",
+          "name": "Story of Lakkari",
+          "turns": 3,
+          "description": "At the end of your turn, discard a card and fill your board with 3/2 Imps.",
+          "ongoing": {
+            "on": "turn-end",
+            "effects": [
+              {
+                "type": "discard-random",
+                "count": 1
+              },
+              {
+                "type": "fill-board-token",
+                "name": "Imp",
+                "tribe": "Demon",
+                "attack": 3,
+                "health": 2
+              }
+            ]
+          }
         }
       ]
     },
