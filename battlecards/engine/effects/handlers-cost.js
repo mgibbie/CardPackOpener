@@ -255,7 +255,7 @@ register('enemy-minion-tax-next-turn', ({ state, pi, target, source, enemies, sc
 
 register('enemy-cards-cost-more', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Norgannon (Ancient Knowledge): ALL the opponent's cards cost more next turn
-			for (const o of enemies) { state.players[o].enemyCardTaxTurn = state.turnNumber + 1; state.players[o].enemyCardTaxAmount = e.value || 1; }
+			for (const o of enemies) { state.players[o].enemyCardTaxTurn = state.turnNumber + 1; state.players[o].enemyCardTaxAmount = e.value || 1; state.players[o].enemyCardTaxMinionsOnly = !!e.minionsOnly; }
 });
 
 

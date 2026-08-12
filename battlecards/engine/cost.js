@@ -286,7 +286,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.warlocNext && (card.tribe || '').includes('Murloc') && (card.cost || 0) <= 3) return 0; // Warloc: paid in your Health
 	if (p.nextCardCorpses && (p.corpses || 0) >= c) return 0; // Exarch Maladaar: the next card costs Corpses instead
 	if (card.type === 'creature' && p.enemyMinionTaxTurn === state.turnNumber && p.enemyMinionTaxAmount) c += p.enemyMinionTaxAmount; // Forensic Duster
-	if (p.enemyCardTaxTurn === state.turnNumber && p.enemyCardTaxAmount) c += p.enemyCardTaxAmount; // Norgannon (Ancient Knowledge): ALL enemy cards cost more next turn
+	if (p.enemyCardTaxTurn === state.turnNumber && p.enemyCardTaxAmount && (!p.enemyCardTaxMinionsOnly || card.type === 'creature')) c += p.enemyCardTaxAmount; // Norgannon: ALL enemy cards cost more; Wave of Tar: minions only
 	if (p.overloadDiscount > 0 && (card.overload || 0) > 0) c = Math.max(0, c - p.overloadDiscount); // Inzah
 	if (p.firstCardFreeEachTurn && (p.cardsPlayedThisTurn || 0) === 0) c = 0; // Bonelord Frostwhisper: first card each turn is free
 	if (isSpellType(card) && (p.spellsPlayedThisTurn || 0) === 0 && p.board.some(cc => cc.firstSpellDiscountAura && !isDead(cc))) c = Math.max(0, c - 3); // Golganneth, the Thunderer: your first spell each turn costs (3) less

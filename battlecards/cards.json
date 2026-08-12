@@ -146816,12 +146816,45 @@
       "collectible": true,
       "type": "sorcery",
       "tribe": "Holy",
-      "description": "Give a random creature you control +3 Attack.",
+      "description": "Give a random friendly creature +3 Attack. Upgrades at 5 and 10 Mana (more targets).",
       "effects": [
         {
-          "type": "buff-random-friendly",
-          "attack": 3,
-          "health": 0
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "buff-random-friendly",
+              "attack": 3,
+              "health": 0,
+              "count": 3
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "buff-random-friendly",
+                  "attack": 3,
+                  "health": 0,
+                  "count": 2
+                }
+              ],
+              "else": [
+                {
+                  "type": "buff-random-friendly",
+                  "attack": 3,
+                  "health": 0,
+                  "count": 1
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -147924,12 +147957,42 @@
       "rarity": "rare",
       "set": "THE_BARRENS",
       "collectible": true,
-      "description": "Give creatures in your hand +1/+1.",
+      "description": "Give creatures in your hand +1/+1. Upgrades at 5 and 10 Mana.",
       "effects": [
         {
-          "type": "buff-hand-minions",
-          "attack": 1,
-          "health": 1
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "buff-hand-minions",
+              "attack": 3,
+              "health": 3
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "buff-hand-minions",
+                  "attack": 2,
+                  "health": 2
+                }
+              ],
+              "else": [
+                {
+                  "type": "buff-hand-minions",
+                  "attack": 1,
+                  "health": 1
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -148978,12 +149041,42 @@
       "set": "THE_BARRENS",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Deal 1 damage to all creatures your opponents control.",
+      "description": "Deal 1 damage to all enemy creatures. Upgrades at 5 and 10 Mana.",
       "effects": [
         {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-creatures"
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-creatures"
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "damage",
+                  "value": 2,
+                  "target": "enemy-creatures"
+                }
+              ],
+              "else": [
+                {
+                  "type": "damage",
+                  "value": 1,
+                  "target": "enemy-creatures"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -150597,13 +150690,18 @@
       "rarity": "epic",
       "set": "THE_LOST_CITY",
       "collectible": true,
-      "description": "Deal 2 damage to all creatures your opponents control.",
+      "description": "Deal 2 damage to all enemy creatures. Enemy creatures cost (2) more next turn.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "enemy-cards-cost-more",
+          "value": 2,
+          "minionsOnly": true
         }
       ],
       "runes": {
