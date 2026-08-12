@@ -28,8 +28,17 @@ const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
 const MAGE_STARTER = ['arcane_missiles', 'arcane_missiles', 'mirror_image', 'mirror_image', 'arcane_explosion', 'arcane_explosion', 'frostbolt', 'frostbolt', 'arcane_intellect', 'arcane_intellect', 'fireball', 'fireball', 'flamestrike', 'flamestrike', 'babbling_book', 'babbling_book', 'glacier_racer', 'glacier_racer', 'lab_partner', 'lab_partner', 'mana_wyrm', 'mana_wyrm', 'time_twisted_seer', 'time_twisted_seer', 'wand_thief', 'wand_thief', 'winterspring_whelp', 'winterspring_whelp', 'aqua_archivist', 'aqua_archivist', 'arcanologist', 'arcanologist', 'chill_o_matic', 'chill_o_matic', 'game_master', 'game_master', 'imprisoned_phoenix', 'imprisoned_phoenix', 'magic_dart_frog', 'magic_dart_frog'];
+const WARRIOR_STARTER = ['iron_hide', 'iron_hide', 'razorfen_rockstar', 'razorfen_rockstar', 'warbot', 'warbot', 'harbor_scamp', 'harbor_scamp', 'public_defender', 'public_defender', 'quality_assurance', 'quality_assurance', 'redband_wasp', 'redband_wasp', 'fierce_monkey', 'fierce_monkey', 'orgrimmar_aspirant', 'orgrimmar_aspirant', 'rabid_worgen', 'rabid_worgen', 'shield_block', 'shield_block', 'dr_booms_scheme', 'dr_booms_scheme', 'kor_kron_elite', 'kor_kron_elite', 'warsong_outrider', 'warsong_outrider', 'death_revenant', 'death_revenant', 'shieldmaiden', 'shieldmaiden', 'stonemaul_anchorman', 'stonemaul_anchorman', 'ornery_direhorn', 'ornery_direhorn', 'silverfury_stalwart', 'silverfury_stalwart', 'bloodboil_brute', 'bloodboil_brute'];
+const HUNTER_STARTER = ['mystery_winner', 'mystery_winner', 'reinforcement_rallier', 'reinforcement_rallier', 'secret_plan', 'secret_plan', 'crackling_razormaw', 'crackling_razormaw', 'dancing_cobra', 'dancing_cobra', 'rapid_fire', 'rapid_fire', 'steamwheedle_sniper', 'steamwheedle_sniper', 'bearshark', 'bearshark', 'carrion_grub', 'carrion_grub', 'cave_hydra', 'cave_hydra', 'conch_s_call', 'conch_s_call', 'marked_shot', 'marked_shot', 'necromechanic', 'necromechanic', 'umbraclaw', 'umbraclaw', 'corpse_widow', 'corpse_widow', 'tundra_rhino', 'tundra_rhino', 'vilebrood_skitterer', 'vilebrood_skitterer', 'pterrorwing_ravager', 'pterrorwing_ravager', 'savannah_highmane', 'savannah_highmane', 'toyrannosaurus', 'toyrannosaurus'];
 const newDeckId = () => 'd_' + randomBytes(4).toString('hex');
 const mageStarterSlot = () => ({ id: newDeckId(), name: 'Mage Starter', classId: 'mage', cards: [...MAGE_STARTER] });
+// the ready-made 40-card PvP starters a fresh account is handed, one per style
+const STARTER_SLOT_DEFS = [
+	{ name: 'Mage Starter', classId: 'mage', cards: MAGE_STARTER },
+	{ name: 'Warrior Starter', classId: 'warrior', cards: WARRIOR_STARTER },
+	{ name: 'Hunter Starter', classId: 'hunter', cards: HUNTER_STARTER },
+];
+const starterSlots = () => STARTER_SLOT_DEFS.map(d => ({ id: newDeckId(), name: d.name, classId: d.classId, cards: [...d.cards] }));
 const grantCards = (collection, ids) => {
 	const counts = {};
 	for (const id of ids) counts[id] = (counts[id] || 0) + 1;
@@ -96,6 +105,9 @@ function startingCollection() {
 			col[id] = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 		}
 	}
+	// plus every card the ready-made 40-card PvP starters use, so the decks we
+	// hand out are always legal to play
+	for (const def of STARTER_SLOT_DEFS) grantCards(col, def.cards);
 	return col;
 }
 
@@ -105,15 +117,33 @@ function startingCollection() {
 // Bring everyone to the current baseline, keep their saved decks legal by granting
 // the cards those decks use, and pay out the same welcome packs a new account gets.
 async function grantStarterBaseline(store, username, user) {
-	if (user.starterBaselineV2) return;
+	let changed = false;
 	user.collection = user.collection || {};
-	for (const [id, n] of Object.entries(startingCollection())) {
-		user.collection[id] = Math.max(user.collection[id] || 0, n);
+	if (!user.starterBaselineV2) {
+		for (const [id, n] of Object.entries(startingCollection())) {
+			user.collection[id] = Math.max(user.collection[id] || 0, n);
+		}
+		for (const slot of user.decks || []) grantCards(user.collection, slot.cards || []);
+		user.packs = (user.packs || 0) + STARTER_PACKS;
+		user.starterBaselineV2 = true;
+		changed = true;
 	}
-	for (const slot of user.decks || []) grantCards(user.collection, slot.cards || []);
-	user.packs = (user.packs || 0) + STARTER_PACKS;
-	user.starterBaselineV2 = true;
-	await store.setJSON(username, user);
+	// V3: the extra per-class 40-card starter decks. Grant their cards, and hand
+	// existing accounts the new deck slots (once, and never a duplicate).
+	if (!user.startersV3) {
+		for (const def of STARTER_SLOT_DEFS) grantCards(user.collection, def.cards);
+		if (!Array.isArray(user.decks)) user.decks = [];
+		const have = new Set(user.decks.map(d => (d.name || '') + '|' + (d.classId || '')));
+		for (const def of STARTER_SLOT_DEFS) {
+			const key = def.name + '|' + def.classId;
+			if (!have.has(key) && user.decks.length < MAX_DECK_SLOTS) {
+				user.decks.push({ id: newDeckId(), name: def.name, classId: def.classId, cards: [...def.cards] });
+			}
+		}
+		user.startersV3 = true;
+		changed = true;
+	}
+	if (changed) await store.setJSON(username, user);
 }
 
 // Migrate the old per-class deck object to a list of up to 40 PvP deck slots
@@ -265,15 +295,15 @@ export default async function handler(req, env) {
 			if (!(await store.get('code:' + code))) break;
 		}
 		const collection = startingCollection();
-		const starter = mageStarterSlot();
-		grantCards(collection, starter.cards);
+		const decks = starterSlots(); // ready 40-card Mage / Warrior / Hunter decks
 		const user = {
 			salt, hash, created: Date.now(),
 			collection,
-			decks: [starter],       // a ready 40-card mage deck; up to 40 slots
+			decks,                  // three ready starter decks; up to 40 slots
 			decksMigrated: true,
 			packs: STARTER_PACKS, // a stack of welcome packs to build a collection from
 			starterBaselineV2: true,
+			startersV3: true,
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
 			friendCode: code,
 			friends: [],
