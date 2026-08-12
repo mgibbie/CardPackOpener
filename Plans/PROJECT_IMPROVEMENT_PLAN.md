@@ -93,8 +93,16 @@ is full; new `pack-timer` (cheap poll) and `claim-packs` actions; the fields rid
 progress bar + `HH:MM:SS` countdown to the next pack, `N / 120` waiting, and a
 **Collect** button (moves them to your stash to open on the Packs screen); the bell
 badge nudges when packs are waiting.
-- Follow-up: an actual **daily quest** ("win a match" / "play N spells") on top of
-  the timer, for a second reason to return.
+- **Daily quests — ✅ DONE (2026-08-12):** four fresh quests each UTC day, seeded
+  deterministically per account so a refresh never rerolls them. A varied pool —
+  play N cards / creatures / spells, N cards of a **class**, with a **keyword**
+  (Taunt/Rush/Lifesteal/…), at a **mana cost** (≤ / ≥ / exactly), or **win N
+  matches** — with the first quest always completable by any deck. Progress comes
+  from the game reporting each card you play (class/type/cost/keywords) and wins
+  via a batched `quest-event`; a finished quest's reward **packs drop into the 12h
+  pack inbox**. New **Quests tab** in the inbox with progress bars, reward icons,
+  a countdown to the daily reset, and Claim buttons; the bell badge nudges when a
+  quest is claimable.
 
 ### 10. Weekly featured content
 You have the whole import + wiki pipeline. Rotate:

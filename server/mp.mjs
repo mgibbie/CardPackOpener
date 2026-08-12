@@ -68,6 +68,56 @@ function packEtaMs(user, now) {
 	return Math.max(0, PACK_TIMER_MS - ((now - base) % PACK_TIMER_MS));
 }
 
+// ---------- daily quests ----------
+// Four fresh quests each UTC day, deterministically seeded per account so a
+// refresh never rerolls them. Progress comes from the game reporting the cards
+// you play (class / type / cost / keywords) and match wins; claiming a finished
+// quest drops its reward packs into the 12h pack inbox.
+const DAY_MS = 86_400_000;
+const QUEST_COUNT = 4;
+const Q_KEYWORDS = { taunt: 'Taunt', rush: 'Rush', lifesteal: 'Lifesteal', deathrattle: 'Deathrattle', battlecry: 'Battlecry', divine_shield: 'Divine Shield', windfury: 'Windfury', poisonous: 'Poisonous', reborn: 'Reborn', stealth: 'Stealth', charge: 'Charge' };
+const Q_CLASSES = { mage: 'Mage', warrior: 'Warrior', hunter: 'Hunter', priest: 'Priest', rogue: 'Rogue', druid: 'Druid', paladin: 'Paladin', shaman: 'Shaman', warlock: 'Warlock', death_knight: 'Death Knight', demon_hunter: 'Demon Hunter' };
+const hashStr = (s) => { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+const mulberry32 = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const pickR = (r, arr) => arr[Math.floor(r() * arr.length)];
+const Q_GEN = {
+	any: (r) => { const n = pickR(r, [15, 20, 25]); return { kind: 'play-any', target: n, reward: 1, label: `Play ${n} cards` }; },
+	type: (r) => { const t = r() < 0.5 ? 'creature' : 'spell'; const n = pickR(r, [8, 10, 12]); return { kind: 'play-type', pType: t, target: n, reward: 1, label: `Play ${n} ${t === 'creature' ? 'creatures' : 'spells'}` }; },
+	keyword: (r) => { const k = pickR(r, Object.keys(Q_KEYWORDS)); const n = pickR(r, [4, 5, 6]); return { kind: 'play-keyword', kw: k, target: n, reward: 2, label: `Play ${n} ${Q_KEYWORDS[k]} cards` }; },
+	klass: (r) => { const c = pickR(r, Object.keys(Q_CLASSES)); const n = pickR(r, [6, 8]); return { kind: 'play-class', cls: c, target: n, reward: 1, label: `Play ${n} ${Q_CLASSES[c]} cards` }; },
+	cost: (r) => { const op = pickR(r, ['ge', 'le', 'eq']); const x = op === 'ge' ? pickR(r, [5, 6, 7]) : op === 'le' ? pickR(r, [2, 3]) : pickR(r, [2, 3, 4, 5]); const n = pickR(r, [6, 8]); const lbl = op === 'ge' ? `cost ${x} or more` : op === 'le' ? `cost ${x} or less` : `cost exactly ${x}`; return { kind: 'play-cost', op, x, target: n, reward: 1, label: `Play ${n} cards that ${lbl}` }; },
+	win: (r) => { const n = pickR(r, [1, 1, 2]); return { kind: 'win', target: n, reward: 2, label: `Win ${n} ${n === 1 ? 'match' : 'matches'}` }; },
+};
+function genDailyQuests(username, day) {
+	const r = mulberry32(hashStr(username + ':' + day));
+	const general = r() < 0.5 ? 'any' : 'type';         // slot 0 is always completable by any deck
+	const rest = ['type', 'keyword', 'klass', 'cost', 'win'].filter(n => n !== general);
+	for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+	return [general, ...rest.slice(0, QUEST_COUNT - 1)].map((name, i) => ({ id: `q_${day}_${i}`, ...Q_GEN[name](r), progress: 0, claimed: false }));
+}
+function ensureDailyQuests(user, username, now) {
+	const day = Math.floor(now / DAY_MS);
+	if (!user.quests || user.quests.day !== day) { user.quests = { day, list: genDailyQuests(username, day) }; return true; }
+	return false;
+}
+function applyQuestEvent(user, ev) {
+	if (!user.quests) return false;
+	let changed = false;
+	for (const q of user.quests.list) {
+		if (q.claimed || q.progress >= q.target) continue;
+		let hit = false;
+		if (ev.kind === 'play') {
+			if (q.kind === 'play-any') hit = true;
+			else if (q.kind === 'play-type') hit = q.pType === 'creature' ? ev.cardType === 'creature' : (ev.cardType === 'sorcery' || ev.cardType === 'instant');
+			else if (q.kind === 'play-keyword') hit = Array.isArray(ev.keywords) && ev.keywords.includes(q.kw);
+			else if (q.kind === 'play-class') hit = ev.cardClass === q.cls || String(ev.cardClass || '').split('__').includes(q.cls);
+			else if (q.kind === 'play-cost') { const c = ev.cost | 0; hit = q.op === 'ge' ? c >= q.x : q.op === 'le' ? c <= q.x : c === q.x; }
+		} else if (ev.kind === 'win' && q.kind === 'win') hit = true;
+		if (hit) { q.progress = Math.min(q.target, q.progress + 1); changed = true; }
+	}
+	return changed;
+}
+
 const scrypt = (pw, salt) => new Promise((res, rej) =>
 	scryptCb(pw, salt, 32, (e, k) => e ? rej(e) : res(k)));
 
@@ -873,6 +923,38 @@ export default async function handler(req, env) {
 		}
 		await store.setJSON(username, user);
 		return json({ granted: Object.keys(POOL).length, state: publicState(user, username) });
+	}
+
+	// ---------- daily quests ----------
+	if (action === 'quests') {
+		const now = Date.now();
+		if (ensureDailyQuests(user, username, now)) await store.setJSON(username, user);
+		const resetsInMs = (Math.floor(now / DAY_MS) + 1) * DAY_MS - now;
+		return json({ quests: user.quests.list, resetsInMs });
+	}
+	// the game reports the cards you play + match wins here
+	if (action === 'quest-event') {
+		const now = Date.now();
+		let changed = ensureDailyQuests(user, username, now);
+		const events = Array.isArray(body.events) ? body.events.slice(0, 80) : [];
+		for (const ev of events) if (ev && typeof ev === 'object' && applyQuestEvent(user, ev)) changed = true;
+		if (changed) await store.setJSON(username, user);
+		return json({ quests: user.quests.list });
+	}
+	// claim a finished quest — its reward packs drop into the 12h pack inbox
+	if (action === 'claim-quest') {
+		const now = Date.now();
+		ensureDailyQuests(user, username, now);
+		const q = user.quests.list.find(x => x.id === String(body.id || ''));
+		if (!q) return json({ error: 'no such quest' }, 404);
+		if (q.claimed) return json({ error: 'already claimed' }, 400);
+		if (q.progress < q.target) return json({ error: 'not finished yet' }, 400);
+		q.claimed = true;
+		accruePacks(user, now);
+		const add = Math.min(q.reward || 1, PACK_INBOX_CAP - (user.packInbox || 0));
+		user.packInbox = (user.packInbox || 0) + add;
+		await store.setJSON(username, user);
+		return json({ quests: user.quests.list, reward: add, packInbox: user.packInbox });
 	}
 
 	// lightweight timer read (no full collection) for the inbox to poll

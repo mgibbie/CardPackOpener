@@ -2254,6 +2254,7 @@ function nextEvent() {
 			break;
 		case 'gameOver': {
 			const won = ev.winner === HUMAN;
+			if (won) questReport({ kind: 'win' }); // advance any "Win N matches" daily quest
 			const mh = $('mana-hud'); if (mh) mh.style.display = 'none';
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
@@ -3707,9 +3708,32 @@ function guestApply(localFn, intent) {
 	updateHud();
 	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
 }
+// ---------- daily-quest reporting ----------
+// Report the cards you play + your match wins so the account backend can advance
+// your daily quests. Batched + fire-and-forget; wins flush immediately.
+const questQueue = [];
+let questFlushT = null;
+function questFlush() {
+	clearTimeout(questFlushT); questFlushT = null;
+	if (!questQueue.length || !MPX.hasToken()) { questQueue.length = 0; return; }
+	const events = questQueue.splice(0, questQueue.length);
+	MPX.call('quest-event', { events }).catch(() => {});
+}
+function questReport(ev) {
+	if (!MPX.hasToken() || isGuest()) return;
+	questQueue.push(ev);
+	if (ev.kind === 'win' || questQueue.length >= 12) return questFlush();
+	clearTimeout(questFlushT);
+	questFlushT = setTimeout(questFlush, 1500);
+}
+addEventListener('pagehide', questFlush); // don't lose a partial batch on exit
+
 function actPlay(uid, target, choice, position, useAlt, kicked) {
 	if (isGuest()) return guestApply(() => E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked), { k: 'play', uid, target: target || null, choice, position, useAlt, kicked });
+	const c = state.players[HUMAN]?.hand.find(x => x.uid === uid); // capture before it leaves hand
 	E.playCard(state, HUMAN, uid, target, choice, position, useAlt, kicked); pump();
+	if (c && !state.players[HUMAN].hand.some(x => x.uid === uid)) // it really got played
+		questReport({ kind: 'play', cardClass: c.cardClass, cardType: c.type, cost: c.cost, keywords: c.keywords || [] });
 	if (duel.on) publishDuel();
 }
 function actAdventure(uid, target, choice) {

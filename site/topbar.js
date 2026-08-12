@@ -112,6 +112,20 @@ function injectStyles() {
 	#mp-inbox .pk-open:hover{ text-decoration:underline; }
 	#mp-inbox .pk-note{ color:var(--muted); font-size:.78rem; text-align:center; margin-top:14px; line-height:1.4; }
 
+	/* Quests tab */
+	#mp-inbox .quest{ border:1px solid var(--bd); border-radius:12px; background:var(--pnl2); padding:13px 14px; margin-bottom:10px; }
+	#mp-inbox .quest.claimed{ opacity:.55; }
+	#mp-inbox .q-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+	#mp-inbox .q-label{ font-weight:700; font-size:.94rem; line-height:1.3; }
+	#mp-inbox .q-reward{ flex-shrink:0; color:var(--gold); font-weight:800; font-size:.86rem; }
+	#mp-inbox .q-bar{ height:8px; border-radius:999px; background:var(--pnl); border:1px solid var(--bd); overflow:hidden; margin:10px 0 8px; }
+	#mp-inbox .q-fill{ height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); border-radius:999px; transition:width .4s ease; }
+	#mp-inbox .q-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+	#mp-inbox .q-prog{ color:var(--muted); font-size:.82rem; font-variant-numeric:tabular-nums; }
+	#mp-inbox .q-todo{ color:var(--muted); font-size:.78rem; }
+	#mp-inbox .q-claimed{ color:var(--green); font-size:.82rem; font-weight:700; }
+	#mp-inbox .quest .mini{ padding:5px 14px; }
+
 	/* small deck-picker dialog */
 	#mp-deckpick{ position:fixed; inset:0; z-index:70; background:rgba(4,7,18,.55); display:none; align-items:center; justify-content:center; padding:20px; }
 	#mp-deckpick.open{ display:flex; }
@@ -174,21 +188,24 @@ function applyPackTimer(pk) {
 	state.packCap = pk.packCap || 120;
 	state.packEtaTarget = pk.nextPackMs == null ? null : Date.now() + pk.nextPackMs;
 }
+function claimableQuests() { return (state.quests || []).filter(q => !q.claimed && q.progress >= q.target).length; }
 function badgeCount() {
-	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0);
+	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests();
 }
 async function poll() {
 	if (!MP.hasToken()) return;
 	try {
-		const [ch, msg, pk] = await Promise.all([
+		const [ch, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('chat-get', { room: 'u:' + (MP.cachedState()?.username || '') }).catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
+			MP.call('quests').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
 		const unread = (msg.messages || []).filter(m => m.ts > seenTs() && m.from !== MP.cachedState()?.username);
 		state.unread = unread.length;
 		applyPackTimer(pk);
+		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; }
 		setBadge(badgeCount());
 	} catch (e) {}
 }
@@ -202,6 +219,7 @@ function ensurePanel() {
 		<div class="ib-head"><h2>Inbox</h2><button class="ib-close" id="ib-close" title="Close">×</button></div>
 		<div class="ib-tabs">
 			<button class="ib-tab active" data-view="alerts">Alerts <span class="dot" id="dot-alerts" hidden></span></button>
+			<button class="ib-tab" data-view="quests">Quests <span class="dot" id="dot-quests" hidden></span></button>
 			<button class="ib-tab" data-view="packs">Packs <span class="dot" id="dot-packs" hidden></span></button>
 			<button class="ib-tab" data-view="friends">Friends</button>
 			<button class="ib-tab" data-view="messages">Messages <span class="dot" id="dot-messages" hidden></span></button>
@@ -244,16 +262,18 @@ function closeInbox() {
 async function refreshData() {
 	const room = 'u:' + (state.me || '');
 	try {
-		const [ch, fr, msg, pk] = await Promise.all([
+		const [ch, fr, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('friends').catch(() => ({ friends: [] })),
 			MP.call('chat-get', { room }).catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
+			MP.call('quests').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
 		state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
 		state.inbox = msg.messages || [];
 		applyPackTimer(pk);
+		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; }
 		// presence: prefer inline on friends payload, else ask
 		if (!state.friends.some(f => 'online' in f)) {
 			try { const pr = await MP.call('presence', { who: state.friends.map(f => f.username) }); state.presence = pr.presence || pr.online || {}; } catch {}
@@ -274,6 +294,8 @@ function renderTabs() {
 	const unread = state.inbox.filter(m => m.ts > seenTs() && m.from !== state.me).length;
 	if (dm) { dm.textContent = unread; dm.hidden = !unread; }
 	if (dp) { dp.textContent = state.packInbox || 0; dp.hidden = !(state.packInbox > 0); }
+	const dq = $('#dot-quests'); const cq = claimableQuests();
+	if (dq) { dq.textContent = cq; dq.hidden = !cq; }
 }
 
 function renderBody() {
@@ -281,9 +303,44 @@ function renderBody() {
 	const body = $('#ib-body'); if (!body) return;
 	if (state.thread) return renderThread(body, state.thread);
 	if (state.view === 'alerts') return renderAlerts(body);
+	if (state.view === 'quests') return renderQuests(body);
 	if (state.view === 'packs') return renderPacks(body);
 	if (state.view === 'friends') return renderFriends(body);
 	if (state.view === 'messages') return renderMessages(body);
+}
+
+// ----- Daily quests -----
+function renderQuests(body) {
+	body.innerHTML = '';
+	const quests = state.quests || [];
+	const resetTxt = state.questReset != null ? fmtDur(state.questReset).slice(0, 5) : '—';
+	body.appendChild(el('div', 'note', `Four fresh quests every day — new ones in <b>${resetTxt}</b>. Rewards drop into your pack inbox.`));
+	if (!quests.length) { body.appendChild(el('div', 'ib-empty', 'Loading your quests…')); return; }
+	for (const q of quests) {
+		const done = q.progress >= q.target;
+		const row = el('div', 'quest' + (q.claimed ? ' claimed' : ''));
+		const pct = Math.max(0, Math.min(100, (q.progress / q.target) * 100));
+		row.innerHTML = `
+			<div class="q-top"><div class="q-label">${esc(q.label)}</div><div class="q-reward">📦 ${q.reward}</div></div>
+			<div class="q-bar"><div class="q-fill" style="width:${pct}%"></div></div>
+			<div class="q-foot"><span class="q-prog">${q.progress} / ${q.target}</span></div>`;
+		const foot = $('.q-foot', row);
+		if (q.claimed) foot.appendChild(el('span', 'q-claimed', '✓ Claimed'));
+		else if (done) { const b = el('button', 'mini primary', 'Claim'); b.addEventListener('click', () => claimQuest(q.id)); foot.appendChild(b); }
+		else foot.appendChild(el('span', 'q-todo', 'In progress'));
+		body.appendChild(row);
+	}
+}
+async function claimQuest(id) {
+	try {
+		const r = await MP.call('claim-quest', { id });
+		if (r.error) { toast(r.error); return; }
+		state.quests = r.quests || state.quests;
+		if (r.packInbox != null) state.packInbox = r.packInbox;
+		toast(`Quest complete! +${r.reward} pack${r.reward === 1 ? '' : 's'} in your inbox.`);
+		setBadge(badgeCount()); renderTabs();
+		if (state.view === 'quests' && $('#ib-body')) renderQuests($('#ib-body'));
+	} catch { toast('Could not claim.'); }
 }
 
 // ----- Packs (the 12-hour free-pack inbox) -----
