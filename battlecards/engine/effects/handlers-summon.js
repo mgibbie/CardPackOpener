@@ -1699,3 +1699,46 @@ register('destroy-summon-tokens-by-health', ({ state, pi, target, source, enemie
 		attack: e.attack || 0, health: e.health || 2,
 	});
 } });
+
+register('summon-overflow', ({ state, pi }, e) => {
+	// Summon `count` tokens; any that can't fit the board (row saturated) become
+	// `overflow`: 'buff-others' (give the summoned survivors +a/+h each) or
+	// 'to-hand-buffed' (a buffed copy goes to hand instead).
+	const p = state.players[pi];
+	const def = { id: e.id || 'ov_token', name: e.name || 'Token', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, keywords: e.keywords || [], description: `A ${e.attack || 1}/${e.health || 1}.` };
+	const made = [];
+	let overflow = 0;
+	for (let n = 0; n < (e.count || 1); n++) {
+		const c = summon(state, pi, def);
+		if (c) made.push(c); else overflow++;
+	}
+	for (let n = 0; n < overflow; n++) {
+		if (e.overflow === 'buff-others') {
+			for (const c of made) { c.attack += e.overflowAttack || 1; c.maxHealth += e.overflowHealth || 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		} else if (e.overflow === 'to-hand-buffed' && p.hand.length < MAX_HAND) {
+			const cp = instantiate(def, pi); cp.zone = 'hand';
+			cp.attack += e.overflowAttack || 4; cp.maxHealth += e.overflowHealth || 4;
+			p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+		}
+	}
+});
+
+register('add-card-overflow-buff', ({ state, pi }, e) => {
+	// Monkey Business: add N copies of a card; any that can't fit your hand are
+	// fed to a random friendly creature as +1/+1 each.
+	const p = state.players[pi];
+	const def = state.cardsById[e.id];
+	if (!def) return;
+	for (let n = 0; n < (e.count || 1); n++) {
+		if (p.hand.length < MAX_HAND) {
+			const cp = instantiate(def, pi); cp.zone = 'hand';
+			p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+		} else {
+			const pool = p.board.filter(c => !isDead(c) && c.type === 'creature');
+			if (!pool.length) continue;
+			const c = pool[Math.floor(state.rng() * pool.length)];
+			c.attack += e.overflowAttack || 1; c.maxHealth += e.overflowHealth || 1;
+			emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+		}
+	}
+});

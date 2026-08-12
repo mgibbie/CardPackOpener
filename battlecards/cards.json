@@ -148696,14 +148696,17 @@
       "type": "sorcery",
       "effects": [
         {
-          "type": "summon",
+          "type": "summon-overflow",
           "count": 6,
           "attack": 1,
           "health": 1,
-          "name": "Hound"
+          "name": "Hound",
+          "overflow": "buff-others",
+          "overflowAttack": 1,
+          "overflowHealth": 1
         }
       ],
-      "description": "Create six 1/1 Hound creature tokens."
+      "description": "Create six 1/1 Hounds. Any that can't fit give the others +1/+1."
     },
     {
       "id": "celestial_shot",
@@ -148755,12 +148758,14 @@
       "rarity": "rare",
       "set": "ISLAND_VACATION",
       "collectible": true,
-      "description": "Add 8 Bananas to your hand.",
+      "description": "Add 8 Bananas to your hand. Any that can't fit are randomly fed to friendly creatures as +1/+1.",
       "effects": [
         {
-          "type": "add-card",
+          "type": "add-card-overflow-buff",
           "id": "banana",
-          "count": 8
+          "count": 8,
+          "overflowAttack": 1,
+          "overflowHealth": 1
         }
       ]
     },
@@ -150504,14 +150509,17 @@
       "type": "sorcery",
       "effects": [
         {
-          "type": "summon",
+          "type": "summon-overflow",
           "count": 7,
           "attack": 1,
           "health": 1,
-          "name": "Rat"
+          "name": "Rat",
+          "overflow": "to-hand-buffed",
+          "overflowAttack": 4,
+          "overflowHealth": 4
         }
       ],
-      "description": "Create seven 1/1 Rat creature tokens.",
+      "description": "Create seven 1/1 Rats. Any that can't fit go to your hand with +4/+4.",
       "set": "STORMWIND",
       "collectible": true
     },
