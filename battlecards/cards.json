@@ -166714,10 +166714,10 @@
       "cardClass": "paladin",
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "description": "Give +1/+2 to a friendly minion.",
+      "description": "Give +1/+2 to a friendly creature and your other creatures that share a type.",
       "effects": [
         {
-          "type": "buff",
+          "type": "buff-shared-type",
           "attack": 1,
           "health": 2,
           "target": "friendly-creature"

@@ -1468,3 +1468,20 @@ register('set-all-stats-to-target', ({ state, pi, chosenCreature }) => {
 		}
 	}
 });
+
+register('buff-shared-type', ({ state, pi, chosenCreature }, e) => {
+	// Ready the Fleet: buff the chosen friendly creature, and your OTHER
+	// creatures that share a type with it, by the same amount
+	const t = chosenCreature();
+	if (!t) return;
+	const a = e.attack || 0, h = e.health || 0;
+	const tribes = (t.tribe || '').split(/[\/\s]+/).filter(Boolean);
+	const bump = c => { c.attack += a; c.maxHealth += h; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); };
+	bump(t);
+	if (!tribes.length) return; // typeless: only the chosen one
+	for (const c of state.players[pi].board) {
+		if (c === t || isDead(c) || c.type !== 'creature') continue;
+		const ct = (c.tribe || '').split(/[\/\s]+/).filter(Boolean);
+		if (ct.some(x => tribes.includes(x))) bump(c);
+	}
+});
