@@ -145,8 +145,12 @@ read-only spectator views: Pokémon → `/overworld/?mp=1&watch=<matchId>` (a ne
 boot param that calls `enterMatch(id, /*spectator*/true)`; the server already gates the
 `match` fetch to friends of a participant), card → `/battlecards/?spectate=<user>&mp=1`
 (polls `cardstate` snapshots). So you can now spectate a friend from anywhere, not only
-by walking up to them in the Overworld. Verified the labels/pills, the button swap, and
-both routes headless.
+by walking up to them in the Overworld. While the Friends tab is open it **re-polls
+presence every 8s** and re-renders only when a status/online bit actually flips — so a
+friend going live (or a battle ending) surfaces a Watch button without reopening the
+panel, and the list never churns under the cursor; the poll stops when you leave the tab
+or close the inbox. Verified the labels/pills, the button swap, both routes, and the
+live auto-refresh (roaming→battling→roaming) headless.
 
 **Standalone Pokémon challenges — ✅ DONE (2026-08-12):** the inbox now builds the
 self-contained party snapshot the PvP engine needs directly from the team saved in

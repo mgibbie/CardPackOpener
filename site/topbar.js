@@ -305,6 +305,7 @@ function closeInbox() {
 	$('#mp-inbox')?.classList.remove('open');
 	$('#mp-inbox-overlay')?.classList.remove('open');
 	clearInterval(state.packTicker); state.packTicker = null;
+	clearInterval(state.friendsTicker); state.friendsTicker = null;
 	if (state.view === 'messages') { markSeen(); poll(); }
 	const back = state._returnFocus; state._returnFocus = null;
 	if (back && back.focus) back.focus(); else $('#tb-bell')?.focus();
@@ -356,6 +357,7 @@ function renderTabs() {
 
 function renderBody() {
 	clearInterval(state.packTicker); state.packTicker = null; // stop the countdown when leaving Packs
+	clearInterval(state.friendsTicker); state.friendsTicker = null; // stop live-status polling when leaving Friends
 	const body = $('#ib-body'); if (!body) return;
 	if (state.thread) return renderThread(body, state.thread);
 	if (state.view === 'alerts') return renderAlerts(body);
@@ -519,8 +521,32 @@ function watchFriend(f) {
 	else if (act.kind === 'card') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
 	else toast(f.username + ' isn\'t in a battle right now.');
 }
+// While the Friends tab is open, re-poll presence so a friend going live (or a
+// battle ending) shows up without reopening the panel. Only re-renders when a
+// status/online bit actually flips, so the list doesn't churn under the cursor.
+function friendsSig() { return state.friends.map(f => `${f.username}:${f.status || ''}:${isOnline(f) ? 1 : 0}`).join('|'); }
+function ensureFriendsAuto() {
+	if (state.friendsTicker) return;
+	state._friendsSig = friendsSig();
+	state.friendsTicker = setInterval(friendsAutoTick, 8000);
+}
+async function friendsAutoTick() {
+	// bail (and stop) if we've navigated away or closed the inbox
+	if (state.view !== 'friends' || state.thread || !$('#mp-inbox')?.classList.contains('open')) { clearInterval(state.friendsTicker); state.friendsTicker = null; return; }
+	let fr;
+	try { fr = await MP.call('friends'); } catch { return; }
+	state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
+	if (!state.friends.some(f => 'online' in f)) {
+		try { const pr = await MP.call('presence', { who: state.friends.map(f => f.username) }); state.presence = pr.presence || pr.online || {}; } catch {}
+	}
+	const sig = friendsSig();
+	if (sig === state._friendsSig) return; // nothing changed → leave the DOM alone
+	state._friendsSig = sig;
+	const body = $('#ib-body'); if (body && state.view === 'friends' && !state.thread) renderFriends(body);
+}
 function renderFriends(body) {
 	body.innerHTML = '';
+	ensureFriendsAuto();
 	if (!state.friends.length) {
 		body.appendChild(el('div', 'ib-empty', 'No friends yet.<br>Add friends in the Overworld to battle and message them.'));
 		return;
