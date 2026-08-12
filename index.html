@@ -125,11 +125,6 @@
 </head>
 <body>
 	<div class="wrap">
-		<div class="topbar">
-			<a class="brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
-			<div class="account" id="account-corner"></div>
-		</div>
-
 		<header class="hero">
 			<h1>Magepunk</h1>
 			<p class="tag">A homebrew universe of <b>games</b>, <b>cards</b>, and <b>worlds</b> — built card by card.</p>
@@ -199,20 +194,12 @@
 		</footer>
 	</div>
 
-	<!-- account corner: Log in button, or username -> /profile/ + the Collection tile -->
+	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
+	<script type="module" src="/site/topbar.js"></script>
+	<!-- the Collection tile is logged-in only -->
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
-	const corner = document.getElementById('account-corner');
-	if (MP.hasToken()) {
-		// cached state only — never force a network round-trip (or a logout
-		// redirect) just to render the landing page
-		const name = MP.cachedState()?.username || 'Account';
-		corner.innerHTML = `<a id="user-chip" href="profile/" title="Your profile">👤 ${name}</a>`;
-		const c = document.getElementById('tile-collection');
-		if (c) c.hidden = false;
-	} else {
-		corner.innerHTML = `<a id="login-btn" href="login/?next=/">Log in</a>`;
-	}
+	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
 	</script>
 	<script>
 	// theme toggle: remember the choice; default follows the OS

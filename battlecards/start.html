@@ -110,11 +110,6 @@
 </head>
 <body>
 	<div class="wrap">
-		<div class="topbar">
-			<a class="back" href="../">◀ Magepunk</a>
-			<div class="account" id="account-corner"></div>
-		</div>
-
 		<header class="hero">
 			<div class="glyph">🃏</div>
 			<h1>Battlecards</h1>
@@ -182,17 +177,8 @@
 		</footer>
 	</div>
 
-	<!-- account corner: Log in button, or username -> /profile/ -->
-	<script type="module">
-	import * as MP from './mpmode.js';
-	const corner = document.getElementById('account-corner');
-	if (MP.hasToken()) {
-		const name = MP.cachedState()?.username || 'Account';
-		corner.innerHTML = `<a id="user-chip" href="../profile/" title="Your profile">👤 ${name}</a>`;
-	} else {
-		corner.innerHTML = `<a id="login-btn" href="../login/?next=/battlecards/start.html">Log in</a>`;
-	}
-	</script>
+	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
+	<script type="module" src="/site/topbar.js"></script>
 	<script>
 	// flag any run mode that has saved progress in localStorage
 	document.querySelectorAll('.tile[data-run]').forEach(function (el) {
