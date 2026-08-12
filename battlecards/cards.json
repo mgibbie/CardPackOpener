@@ -151922,12 +151922,22 @@
       "set": "TGT",
       "collectible": true,
       "tribe": "Nature",
-      "description": "Gain 8 life.",
+      "description": "Gain 8 life. Reveal a creature in each deck. If yours costs more, gain 16 instead.",
       "effects": [
         {
           "type": "heal",
           "value": 8,
-          "target": "any"
+          "target": "self"
+        },
+        {
+          "type": "joust",
+          "then": [
+            {
+              "type": "heal",
+              "value": 8,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
@@ -163437,10 +163447,10 @@
       "set": "ISLAND_VACATION",
       "collectible": true,
       "tribe": "Frost",
-      "description": "Create three 3/6 Water Elementals that Freeze.",
+      "description": "Create three 3/6 Water Elementals that Freeze. They attack random enemies.",
       "effects": [
         {
-          "type": "summon",
+          "type": "summon-attack-random",
           "count": 3,
           "attack": 3,
           "health": 6,
@@ -163448,8 +163458,7 @@
           "tribe": "Elemental",
           "keywords": [
             "freezer"
-          ],
-          "description": "Freeze."
+          ]
         }
       ]
     },

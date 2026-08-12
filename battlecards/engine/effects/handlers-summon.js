@@ -1750,3 +1750,20 @@ register('summon-per-elementals-last-turn', ({ state, pi }, e) => {
 	const def = { id: e.id || 'gf_token', name: e.name || 'Elemental', type: 'creature', cost: 0, token: true, tribe: e.tribe || 'Elemental', rarity: 'common', attack: e.attack || 8, health: e.health || 8, keywords: e.keywords || [], description: `A ${e.attack || 8}/${e.health || 8}.` };
 	for (let n = 0; n < times; n++) if (!summon(state, pi, def)) break;
 });
+
+register('summon-attack-random', ({ state, pi, enemies }, e) => {
+	// Tsunami: create N tokens; each immediately attacks a random enemy
+	// (mutual combat damage), keeping any token keywords like Freeze
+	const def = { id: e.id || 'sar_token', name: e.name || 'Token', type: 'creature', cost: 0, token: true, tribe: e.tribe || null, rarity: 'common', attack: e.attack || 1, health: e.health || 1, keywords: e.keywords || [], description: `A ${e.attack || 1}/${e.health || 1}.` };
+	for (let n = 0; n < (e.count || 1); n++) {
+		const c = summon(state, pi, def);
+		if (!c) break;
+		const pool = [];
+		for (const o of enemies) for (const t of state.players[o].board) if (!isDead(t) && t.type !== 'location' && (t.dormantLeft || 0) <= 0) pool.push(t);
+		if (!pool.length) continue;
+		const t = pool[Math.floor(state.rng() * pool.length)];
+		damageCreature(state, t, c.attack, c);
+		damageCreature(state, c, t.attack, t);
+	}
+	sweepDeaths(state);
+});
