@@ -157129,15 +157129,18 @@
       "set": "EMERALD_DREAM",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Target creature you control gains +1/+1. (Upgrades each turn, but discards after use!)",
+      "description": "Give a friendly creature +1/+1. Upgrades each turn, but discards after 2!",
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
+          "type": "smolder-buff",
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "smolder": {
+        "value": 1,
+        "step": 1,
+        "turnsLeft": 2
+      }
     },
     {
       "id": "uther_s_gift",
@@ -157878,13 +157881,17 @@
       "set": "EMERALD_DREAM",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Draw a card. (Upgrades each turn, but discards after several turns!)",
+      "description": "Draw 1 card. Upgrades each turn, but discards after 2!",
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "smolder-draw"
         }
-      ]
+      ],
+      "smolder": {
+        "value": 1,
+        "step": 1,
+        "turnsLeft": 2
+      }
     },
     {
       "id": "stellar_balance",
@@ -158814,14 +158821,17 @@
       "set": "EMERALD_DREAM",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Deal 1 damage to all creatures your opponents control. (Upgrades each turn, but discards after a few turns!)",
+      "description": "Deal 1 damage to all enemy creatures. Upgrades each turn, but discards after 2!",
       "effects": [
         {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-creatures"
+          "type": "smolder-damage-all-enemies"
         }
-      ]
+      ],
+      "smolder": {
+        "value": 1,
+        "step": 1,
+        "turnsLeft": 2
+      }
     },
     {
       "id": "twilight_torrent",

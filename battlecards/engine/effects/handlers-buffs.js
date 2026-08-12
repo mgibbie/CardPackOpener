@@ -1487,3 +1487,10 @@ register('buff-shared-type', ({ state, pi, chosenCreature }, e) => {
 		if (ct.some(x => tribes.includes(x))) bump(c);
 	}
 });
+
+register('smolder-buff', ({ state, pi, source, chosenCreature }) => {
+	// Smoldering Strength: +v/+v where v is the card's current smolder value
+	const v = (source && source.smolder && source.smolder.value) || 1;
+	const t = chosenCreature();
+	if (t) { t.attack += v; t.maxHealth += v; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+});

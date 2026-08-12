@@ -1814,3 +1814,9 @@ register('replace-hand-random-tribe', ({ state, pi, source }, e) => {
 		return card;
 	});
 });
+
+register('smolder-draw', ({ state, pi, source }) => {
+	// Smoldering Grove: draw v cards, v = the card's current smolder value
+	const v = (source && source.smolder && source.smolder.value) || 1;
+	drawCards(state, pi, v);
+});

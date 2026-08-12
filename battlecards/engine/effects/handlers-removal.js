@@ -2044,3 +2044,10 @@ register('summon-raptors-outcast', ({ state, pi, source }, e) => {
 		if (c && outcast) c.immuneWhileAttacking = true;
 	}
 });
+
+register('smolder-damage-all-enemies', ({ state, pi, source, enemies }) => {
+	// Smoldering Ascent: deal v to all enemy creatures, v = smolder value
+	const v = (source && source.smolder && source.smolder.value) || 1;
+	for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type !== 'location') damageCreature(state, c, v, source);
+	sweepDeaths(state);
+});

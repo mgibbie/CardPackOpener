@@ -299,6 +299,7 @@ export function instantiate(def, controller) {
 		swapStatsEndOfTurn: def.swapStatsEndOfTurn || false, // Stalwart Avenger: swap Attack/Health at end of each turn
 		immuneWhileAttacking: def.immuneWhileAttacking || false, // Stalwart Avenger: Immune during its own attacks
 		diesToAnyDamage: def.diesToAnyDamage || false, // Reverberations: this copy dies after taking any damage
+		smolder: def.smolder ? { ...def.smolder } : null, // Smoldering Strength/Grove/Ascent: escalate in hand each turn, then discard
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
@@ -4496,6 +4497,19 @@ export function endTurn(state) {
 	if (np.turnStartEffects && np.turnStartEffects.length) {
 		const q = np.turnStartEffects; np.turnStartEffects = [];
 		for (const fx of q) { execEffects(state, state.current, fx, null, null); sweepDeaths(state); }
+	}
+	// Smoldering cards: each of your turns they upgrade in hand and count down;
+	// when the countdown expires the card discards itself
+	for (const c of [...np.hand]) {
+		if (!c.smolder) continue;
+		c.smolder.value = (c.smolder.value || 0) + (c.smolder.step || 1);
+		c.smolder.turnsLeft = (c.smolder.turnsLeft || 0) - 1;
+		emit(state, { type: 'smolder', player: state.current, uid: c.uid, value: c.smolder.value, turnsLeft: c.smolder.turnsLeft });
+		if (c.smolder.turnsLeft <= 0) {
+			np.hand = np.hand.filter(x => x !== c);
+			toGraveyard(state, state.current, c);
+			emit(state, { type: 'discard', player: state.current, card: c });
+		}
 	}
 	state.diedThisTurn = 0; // global "died this turn" (Volcanic Drake discounts)
 	np.heroAttacksUsed = 0;
