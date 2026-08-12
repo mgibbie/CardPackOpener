@@ -47,7 +47,7 @@ function injectStyles() {
 	#mp-topbar .tb-badge.show{ display:flex; }
 
 	/* compact floating widget for full-screen apps (game / Overworld) */
-	#mp-topbar.tb-compact{ position:fixed; top:10px; right:10px; padding:0; width:auto; background:none; z-index:55; }
+	#mp-topbar.tb-compact{ position:fixed; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right)); padding:0; width:auto; background:none; z-index:55; }
 	#mp-topbar.tb-compact .tb-right{ gap:7px; }
 	#mp-topbar.tb-compact .tb-mini{ width:38px; height:38px; display:grid; place-items:center; border-radius:10px; font-size:1.05rem; text-decoration:none;
 		background:color-mix(in srgb, var(--tb-panel) 82%, transparent); border:1px solid var(--tb-border); color:var(--tb-text); backdrop-filter:blur(6px); box-shadow:var(--tb-shadow); position:relative; cursor:pointer; }

@@ -140,9 +140,19 @@ Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, a real **lobby / matchm
 inbox **send** Pokémon challenges standalone (needs the team snapshot, which currently
 only the Overworld builds).
 
-### 13. Mobile-first match layout
-The hub and tiles are responsive; the Battlecards match board likely is not. A
-touch-friendly layout would roughly double the addressable audience.
+### 13. Mobile match layout — ✅ DONE (2026-08-12)
+The Battlecards board already re-frames its camera for portrait/landscape (pulls
+back on narrow aspect) and taps work (Pointer Events), and there was already a
+`@media (max-width: 760px)` compaction pass. Added on top:
+- **Safe-area insets** (`env(safe-area-inset-*)`) on the corner controls (title,
+  concede, end-turn, auto-pass, mana readout) and the compact top bar, so nothing
+  hides under a notch or the home indicator.
+- **Decluttered the title nav on phones** — the compact top bar covers navigation,
+  so only the wordmark (→ mode picker) shows.
+- A dismissible **"Rotate to landscape"** hint on portrait phones (remembered in
+  localStorage), since the board is wide. Verified the display states headless.
+- Follow-up: a true portrait-first board (stacked lanes) rather than a rotated
+  landscape board, and bigger tap targets for the in-scene cards.
 
 ### 14. Accessibility pass
 - Colorblind-safe class/keyword colors (or a toggle).
