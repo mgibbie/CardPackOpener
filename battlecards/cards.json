@@ -171361,13 +171361,14 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "DARKMOON_FAIRE",
-      "description": "Destroy a random enemy minion.",
+      "description": "Destroy a random enemy creature. Corrupt: Destroy 2. Corrupt Again: Destroy 3.",
       "effects": [
         {
           "type": "destroy-random",
           "count": 1
         }
-      ]
+      ],
+      "corrupt": "cascading_disaster_c2"
     },
     {
       "id": "fractured_power",
@@ -174288,6 +174289,43 @@
         }
       ],
       "description": "Deal 4 damage."
+    },
+    {
+      "id": "cascading_disaster_c2",
+      "name": "Cascading Disaster",
+      "type": "sorcery",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
+      ],
+      "corrupt": "cascading_disaster_c3",
+      "description": "Destroy 2 random enemy creatures."
+    },
+    {
+      "id": "cascading_disaster_c3",
+      "name": "Cascading Disaster",
+      "type": "sorcery",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "DARKMOON_FAIRE",
+      "cardClass": "warlock",
+      "token": true,
+      "collectible": false,
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 3
+        }
+      ],
+      "description": "Destroy 3 random enemy creatures."
     }
   ]
 }
