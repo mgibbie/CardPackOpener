@@ -7,7 +7,8 @@
 //                challenges are accepted here too (your saved team is read from
 //                localStorage) and the match opens in the Overworld to render.
 //                Trades route into the Overworld where the trade UI lives.
-//   • Friends  — your friends with presence + "Card"/"Pokémon" challenge + "Message"
+//   • Friends  — your friends with presence + "Card"/"Pokémon" challenge + "Message",
+//                and a "Watch" button to spectate a friend who's live in a battle
 //   • Messages — per-friend DM threads over the u:<name> chat rooms
 //
 // All server calls go through the existing /api/mp backend via mpmode.js, using
@@ -83,6 +84,9 @@ function injectStyles() {
 	#mp-inbox .row .meta{ flex:1; min-width:0; }
 	#mp-inbox .row .meta .name{ font-weight:700; }
 	#mp-inbox .row .meta .sub{ color:var(--muted); font-size:.8rem; margin-top:1px; }
+	#mp-inbox .row .meta .name .live{ color:#ff5470; font-size:.64rem; font-weight:800; letter-spacing:.5px; vertical-align:middle; margin-left:6px; animation:mp-livepulse 1.6s ease-in-out infinite; }
+	@keyframes mp-livepulse{ 0%,100%{opacity:1} 50%{opacity:.4} }
+	@media (prefers-reduced-motion: reduce){ #mp-inbox .row .meta .name .live{ animation:none; } }
 	#mp-inbox .row .acts{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
 	#mp-inbox button.mini{ background:var(--pnl); border:1px solid var(--bd); color:var(--txt); font:inherit; font-size:.78rem; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; }
 	#mp-inbox button.mini:hover{ border-color:var(--blue); }
@@ -496,22 +500,47 @@ function renderAlerts(body) {
 }
 
 // ----- Friends -----
+// A friend's live activity is read from their presence `status` (set by the
+// Overworld heartbeat / the card client's publish-cardstate):
+//   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
+//   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
+const CARD_MODE_LABEL = { dungeon: 'a dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run' };
+function friendActivity(f) {
+	const st = f.status || '';
+	if (st.startsWith('battling:')) return { live: true, kind: 'pokemon', matchId: st.slice('battling:'.length), label: 'in a Pokémon battle' };
+	if (st.startsWith('card:')) { const m = st.slice('card:'.length); return { live: true, kind: 'card', label: 'in ' + (CARD_MODE_LABEL[m] || 'a card game') }; }
+	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
+	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
+}
+// route to the right spectator view for a live friend
+function watchFriend(f) {
+	const act = friendActivity(f);
+	if (act.kind === 'pokemon') { if (!act.matchId) { toast('Their battle just ended.'); return; } location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(act.matchId); }
+	else if (act.kind === 'card') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+	else toast(f.username + ' isn\'t in a battle right now.');
+}
 function renderFriends(body) {
 	body.innerHTML = '';
 	if (!state.friends.length) {
 		body.appendChild(el('div', 'ib-empty', 'No friends yet.<br>Add friends in the Overworld to battle and message them.'));
 		return;
 	}
-	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles right here. Card duels launch on the spot; once a Pokémon challenge is accepted it opens in the Overworld to play out.'));
+	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles, or Watch one who\'s live. Card duels launch on the spot; Pokémon battles open in the Overworld.'));
 	for (const f of state.friends) {
 		const on = isOnline(f);
+		const act = friendActivity(f);
 		const row = el('div', 'row');
 		row.innerHTML = `<div class="av">👤<span class="pres ${on ? 'on' : ''}" title="${on ? 'online' : 'offline'}"></span></div>
-			<div class="meta"><div class="name">${esc(f.username)}</div><div class="sub">${on ? 'online' : 'offline'}</div></div>
+			<div class="meta"><div class="name">${esc(f.username)}${act.live ? ' <span class="live">● LIVE</span>' : ''}</div><div class="sub">${esc(act.label)}</div></div>
 			<div class="acts"></div>`;
 		const acts = $('.acts', row);
-		const card = el('button', 'mini', '🃏'); card.title = 'Card battle'; card.addEventListener('click', () => challengeCard(f.username)); acts.appendChild(card);
-		const poke = el('button', 'mini', '⚔'); poke.title = 'Pokémon battle'; poke.addEventListener('click', () => challengePokemon(f.username)); acts.appendChild(poke);
+		if (act.live) {
+			// mid-match: you can't challenge them, but you can watch
+			const watch = el('button', 'mini primary', '👁 Watch'); watch.title = 'Spectate'; watch.addEventListener('click', () => watchFriend(f)); acts.appendChild(watch);
+		} else {
+			const card = el('button', 'mini', '🃏'); card.title = 'Card battle'; card.addEventListener('click', () => challengeCard(f.username)); acts.appendChild(card);
+			const poke = el('button', 'mini', '⚔'); poke.title = 'Pokémon battle'; poke.addEventListener('click', () => challengePokemon(f.username)); acts.appendChild(poke);
+		}
 		const msg = el('button', 'mini', '💬'); msg.title = 'Message'; msg.addEventListener('click', () => openThread(f.username)); acts.appendChild(msg);
 		body.appendChild(row);
 	}

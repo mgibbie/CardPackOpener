@@ -133,8 +133,20 @@ Built a shared **social inbox** into the top bar (`/site/topbar.js`), on the exi
   challenges are **also sent and accepted standalone** now (see below), then open in
   the Overworld to render.
 - **Friends** — presence + one-click **card** (deck-picker → challenge → launch) **and
-  Pokémon** challenge, plus "Message".
+  Pokémon** challenge, plus **Watch** (spectate a live friend) and "Message".
 - **Messages** — per-friend DM threads over the `u:<name>` chat rooms.
+
+**Spectate from the inbox — ✅ DONE (2026-08-12):** the Friends tab reads each
+friend's live presence `status` — `battling:<matchId>` (a Pokémon battle) or
+`card:<mode>` (a card duel / dungeon / Heist / Tombs / Duels run) — tags them with a
+pulsing **● LIVE** pill and a labelled sub ("in a card duel", "in a dungeon run", …),
+and swaps the challenge buttons for a single **👁 Watch**. Watch routes to the existing
+read-only spectator views: Pokémon → `/overworld/?mp=1&watch=<matchId>` (a new Overworld
+boot param that calls `enterMatch(id, /*spectator*/true)`; the server already gates the
+`match` fetch to friends of a participant), card → `/battlecards/?spectate=<user>&mp=1`
+(polls `cardstate` snapshots). So you can now spectate a friend from anywhere, not only
+by walking up to them in the Overworld. Verified the labels/pills, the button swap, and
+both routes headless.
 
 **Standalone Pokémon challenges — ✅ DONE (2026-08-12):** the inbox now builds the
 self-contained party snapshot the PvP engine needs directly from the team saved in
@@ -159,9 +171,9 @@ into a host-authoritative `cardpvp` duel, or mints an `aimatch`) + `ai-match`. E
 `?aimatch=<id>` boots a local match where the AI plays that deck. Verified the pairing,
 AI-timeout fallback, deck harvesting, the engine deck-override, and the full UI flow.
 
-Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, **spectate**, and a post-game
-summary. (Standalone Pokémon challenge send/accept — the old open item here — is now
-done; see the social-inbox note above.)
+Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs and a post-game summary.
+(Standalone Pokémon challenge send/accept **and inbox spectate** — the old open items
+here — are now done; see the social-inbox notes above.)
 
 ### 13. Mobile match layout — ✅ DONE (2026-08-12)
 The Battlecards board already re-frames its camera for portrait/landscape (pulls

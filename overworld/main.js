@@ -3273,10 +3273,13 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beatLoop();
 		presLoop();
 		setInterval(pollChallenges, 2000);
-		// arriving from a challenge accepted in the standalone inbox: ?battle=<id>
-		// drops us straight into that freshly-minted match (no "rejoin?" prompt)
-		const directBattle = new URLSearchParams(location.search).get('battle');
-		if (directBattle) enterMatch(directBattle, false);
+		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
+		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
+		// match read-only as a spectator (the server gates it to friends of a player)
+		const qp = new URLSearchParams(location.search);
+		const directBattle = qp.get('battle'), watchBattle = qp.get('watch');
+		if (watchBattle) enterMatch(watchBattle, true);
+		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
