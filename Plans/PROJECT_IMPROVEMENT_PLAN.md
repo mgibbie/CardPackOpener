@@ -44,12 +44,14 @@ in the corner) via `<meta name="mp-topbar" content="compact">`, so the bar reach
 every screen without covering gameplay — verified the Overworld's `typingInChat()`
 guard already stops the inbox composer from driving the game.
 
-### 4. SEO & link-sharing basics
-- Per-page `<title>` + `<meta name="description">` (main page done; audit the rest).
-- **Open Graph / Twitter card** tags + a share image on the main page and Battlecards so
-  links unfurl nicely in Discord/social. A single 1200×630 PNG per game.
-- A `sitemap.xml` and `robots.txt` at the root.
-- Effort: 2–3 hours. Impact: every shared link looks legit and gets indexed.
+### 4. SEO & link-sharing basics — ✅ DONE (2026-08-12)
+- Per-page `<title>` + `<meta name="description">` across the public pages.
+- **Open Graph + Twitter card** tags on the hub, Battlecards, Learn, News, OG, and
+  Collection pages, with a rendered **1200×630 share image** (`/og-image.png`) so
+  links unfurl in Discord/social.
+- `sitemap.xml` (9 URLs) + `robots.txt` at the root (disallowing `/api`, `/server`,
+  and the logged-in pages).
+- Follow-up: a Battlecards-specific share image, and a canonical `<link>` per page.
 
 ---
 
@@ -66,11 +68,13 @@ and "cards you own vs. all." With 7,491 cards this is essential for it to feel u
 - A "mulligan" confirmation and clearer priority/end-turn affordances.
 - Effort: a day, incremental.
 
-### 7. Collection completion goals
-The profile has tiered achievements already — extend the collection page with:
-- A **completion meter** ("2,140 / 7,491 collected"), and a **"Missing"** filter.
-- Group-by set/class so completionists have targets.
-- Effort: a few hours (data already exists).
+### 7. Collection completion goals — ✅ DONE (2026-08-12)
+The collection page now has a **completion meter** ("N / 6,265 collected · X%"), a
+per-class **breakdown** (each class's owned/total with a mini bar), and a
+**Show: Owned / Missing / All** selector — Missing/All render the whole pool with
+unowned cards dimmed and tagged "Not owned" (capped at 750 with a "narrow with the
+filters" note for a fresh account's ~6k missing cards).
+- Follow-up: group Missing by set, and a "cards you can craft/afford" hint.
 
 ### 8. Loading & perf polish
 - `cards.json` is large (7,491 entries). For pages that only need names/costs, ship a

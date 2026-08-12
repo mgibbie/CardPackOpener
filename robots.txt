@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /server/
+Disallow: /login/
+Disallow: /profile/
+Disallow: /collection/
+
+Sitemap: https://michaelgibalerio.com/sitemap.xml
