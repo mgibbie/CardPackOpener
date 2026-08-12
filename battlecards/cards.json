@@ -165071,13 +165071,17 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Destroy a minion.",
+      "description": "Destroy a creature. Costs (1) if you played a copy of an opponent's card while holding this.",
       "effects": [
         {
           "type": "destroy",
           "target": "creature"
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "enemy-copy-while-held",
+        "setCost": 1
+      }
     },
     {
       "id": "embrace_darkness",
@@ -172414,10 +172418,11 @@
       "cardClass": "rogue",
       "rarity": "rare",
       "set": "WONDERS",
-      "description": "Choose a card in your opponent's hand and shuffle it into their deck. Create a Jade Golem.",
+      "description": "Look at 3 cards in your opponent's hand and shuffle one of them into their deck.",
       "effects": [
         {
-          "type": "shuffle-enemy-hand-card-choose"
+          "type": "look-enemy-hand-shuffle",
+          "count": 3
         },
         {
           "type": "summon-jade"

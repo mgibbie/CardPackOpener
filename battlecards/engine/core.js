@@ -3709,6 +3709,22 @@ export function resolvePick(state, id) {
 		if (pend.shuffleRestPool) execEffects(state, pend.player, [{ type: 'shuffle-ids-into-deck', ids: pend.shuffleRestPool.filter(x => x !== def.id) }], null, null);
 		return true;
 	}
+	if (pend.lookEnemyShuffle && !p.eliminated) {
+		// Jade Telegram: the chosen one of the 3 looked-at cards shuffles into
+		// the opponent's deck (match by the offered instance uids, not by id)
+		const { foe, uids } = pend.lookEnemyShuffle;
+		const fp = state.players[foe];
+		if (fp) {
+			let picked = fp.hand.find(c => c.id === id && uids.includes(c.uid)) || fp.hand.find(c => uids.includes(c.uid));
+			if (picked) {
+				fp.hand = fp.hand.filter(c => c !== picked);
+				fp.deck.push(picked.id);
+				for (let k = fp.deck.length - 1; k > 0; k--) { const j = Math.floor(state.rng() * (k + 1)); [fp.deck[k], fp.deck[j]] = [fp.deck[j], fp.deck[k]]; }
+				emit(state, { type: 'shuffle', player: foe });
+			}
+		}
+		return true;
+	}
 	if (def && pend.spreadDeathrattle && !p.eliminated) {
 		// Tamsin's Phylactery: give ALL your minions the discovered Deathrattle
 		if (def.deathrattle) {

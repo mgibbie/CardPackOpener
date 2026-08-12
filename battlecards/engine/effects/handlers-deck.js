@@ -1822,3 +1822,17 @@ register('smolder-draw', ({ state, pi, source }) => {
 	const v = (source && source.smolder && source.smolder.value) || 1;
 	drawCards(state, pi, v);
 });
+
+register('look-enemy-hand-shuffle', ({ state, pi, enemies }, e) => {
+	// Jade Telegram: look at 3 random cards in the opponent's hand; you choose
+	// one to shuffle into their deck
+	const foe = enemies[0];
+	if (foe == null) return;
+	const fp = state.players[foe];
+	if (!fp.hand.length || state.players[pi].eliminated) return;
+	const pool = fp.hand.slice();
+	const chosen = [];
+	for (let n = 0; n < (e.count || 3) && pool.length; n++) chosen.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0]);
+	state.pickQueue.push({ player: pi, ids: chosen.map(c => c.id), discover: true, lookEnemyShuffle: { foe, uids: chosen.map(c => c.uid) } });
+	emit(state, { type: 'pickStart', player: pi, count: chosen.length });
+});
