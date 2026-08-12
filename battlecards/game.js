@@ -753,8 +753,7 @@ function openTapMenu(card, ev) {
 				if (targets.length) { pending = { card, spec, targets, mode: 'tap', tapIndex: i }; updateHud(); return; }
 				if (spec.required) return;
 			}
-			E.tapLand(state, HUMAN, card.uid, i, null);
-			pump();
+			actTapLand(card.uid, i, null); // relays the intent in a duel (guest)
 		});
 		menu.appendChild(btn);
 	});
@@ -765,8 +764,7 @@ function openTapMenu(card, ev) {
 		sac.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			E.sacrificeLand(state, HUMAN, card.uid);
-			pump();
+			actSacLand(card.uid); // relays the intent in a duel (guest)
 		});
 		menu.appendChild(sac);
 	}
@@ -3574,6 +3572,7 @@ function applyGuestIntent(it) {
 			case 'equip': E.equip(state, P, it.uid, it.target); break;
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
+				case 'sacland': E.sacrificeLand(state, P, it.uid); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
 			case 'land': E.buyLand(state, P, it.defId); break;
 			case 'trade': E.tradeCard(state, P, it.uid); break;
@@ -3816,6 +3815,21 @@ function actAttack(attacker, target) {
 function actLand(defId) {
 	if (isGuest()) return guestApply(() => E.buyLand(state, HUMAN, defId), { k: 'land', defId });
 	E.buyLand(state, HUMAN, defId); pump();
+	if (duel.on) publishDuel();
+}
+// tapping a land for one of its abilities (e.g. Swamp → conjure a black card).
+// The TARGETED path relays via commitPending; this is the no-target path, which
+// previously ran the engine locally on the guest without relaying — so the host
+// never tapped/conjured and its next snapshot reverted the optimistic result.
+function actTapLand(uid, tapIndex, target) {
+	if (isGuest()) return guestApply(() => E.tapLand(state, HUMAN, uid, tapIndex, target || null), { k: 'tap', uid, tapIndex, target: target || null });
+	E.tapLand(state, HUMAN, uid, tapIndex, target || null); pump();
+	if (duel.on) publishDuel();
+}
+// cashing a land in for a card (Sacrifice: draw). Same relay gap as the tap above.
+function actSacLand(uid) {
+	if (isGuest()) return guestApply(() => E.sacrificeLand(state, HUMAN, uid), { k: 'sacland', uid });
+	E.sacrificeLand(state, HUMAN, uid); pump();
 	if (duel.on) publishDuel();
 }
 function actTrade(uid) {
