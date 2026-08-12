@@ -2941,3 +2941,28 @@ register('reopen-location', ({ state, pi }, e) => {
 	}
 	emit(state, { type: 'locationDurability', player: pi, uid: loc.uid, durability: loc.durability });
 });
+
+register('mind-control-delayed', ({ state, pi, chosenCreature }) => {
+	// Embrace Darkness: mark the chosen enemy creature; at the START of your
+	// next turn you gain control of it (if it's still alive on the same board)
+	const c = chosenCreature();
+	if (!c || c.controller === pi) return;
+	const p = state.players[pi];
+	p.turnStartEffects = p.turnStartEffects || [];
+	p.turnStartEffects.push([{ type: 'mind-control-uid', uid: c.uid }]);
+	emit(state, { type: 'markControl', uid: c.uid, player: pi, name: c.name });
+});
+
+register('mind-control-uid', ({ state, pi }, e) => {
+	// take control of a specific creature by uid (the delayed half of Embrace
+	// Darkness); a no-op if it died or already moved
+	let t = null;
+	for (const pl of state.players) { const f = pl.board.find(c => c.uid === e.uid && !isDead(c)); if (f) { t = f; break; } }
+	if (!t || t.controller === pi || state.players[pi].eliminated) return;
+	state.players[t.controller].board = state.players[t.controller].board.filter(c => c !== t);
+	t.controller = pi;
+	t.sick = true;
+	state.players[pi].board.push(t);
+	emit(state, { type: 'mindControl', uid: t.uid, player: pi, name: t.name });
+	recomputeAuras(state);
+});

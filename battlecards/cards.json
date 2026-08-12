@@ -165061,10 +165061,10 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "PLACEHOLDER_202204",
-      "description": "Take control of an enemy minion.",
+      "description": "Choose an enemy creature. At the start of your turn, gain control of it.",
       "effects": [
         {
-          "type": "mind-control",
+          "type": "mind-control-delayed",
           "target": "enemy-creature"
         }
       ]
@@ -165077,10 +165077,10 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "ICECROWN",
-      "description": "Take control of an enemy minion.",
+      "description": "Choose an enemy creature. At the start of your turn, gain control of it.",
       "effects": [
         {
-          "type": "mind-control",
+          "type": "mind-control-delayed",
           "target": "enemy-creature"
         }
       ]
