@@ -126,6 +126,23 @@ function injectStyles() {
 	#mp-inbox .q-claimed{ color:var(--green); font-size:.82rem; font-weight:700; }
 	#mp-inbox .quest .mini{ padding:5px 14px; }
 
+	/* daily streak banner */
+	#mp-inbox .streak{ border:1px solid color-mix(in srgb, var(--gold) 40%, var(--bd)); border-radius:14px; padding:14px; margin-bottom:14px;
+		background:linear-gradient(150deg, color-mix(in srgb, var(--gold) 12%, var(--pnl2)), var(--pnl2)); }
+	#mp-inbox .streak.claimed{ opacity:.8; border-color:var(--bd); background:var(--pnl2); }
+	#mp-inbox .st-top{ display:flex; align-items:center; gap:12px; }
+	#mp-inbox .st-flame{ font-size:1.5rem; }
+	#mp-inbox .st-flame b{ color:var(--gold); font-size:1.7rem; }
+	#mp-inbox .st-name{ font-weight:800; font-size:1rem; }
+	#mp-inbox .st-sub{ color:var(--muted); font-size:.82rem; margin-top:1px; }
+	#mp-inbox .st-week{ display:flex; gap:6px; margin:12px 0; }
+	#mp-inbox .st-week .sd{ flex:1; height:8px; border-radius:999px; background:var(--pnl); border:1px solid var(--bd); }
+	#mp-inbox .st-week .sd.on{ background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 70%,#e5843d)); border-color:transparent; }
+	#mp-inbox .st-week .sd.milestone{ position:relative; }
+	#mp-inbox .st-week .sd.milestone::after{ content:'★'; position:absolute; top:-13px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--gold); }
+	#mp-inbox .st-done{ display:block; text-align:center; color:var(--green); font-size:.86rem; font-weight:600; }
+	#mp-inbox .st-done b{ font-variant-numeric:tabular-nums; }
+
 	/* small deck-picker dialog */
 	#mp-deckpick{ position:fixed; inset:0; z-index:70; background:rgba(4,7,18,.55); display:none; align-items:center; justify-content:center; padding:20px; }
 	#mp-deckpick.open{ display:flex; }
@@ -189,8 +206,9 @@ function applyPackTimer(pk) {
 	state.packEtaTarget = pk.nextPackMs == null ? null : Date.now() + pk.nextPackMs;
 }
 function claimableQuests() { return (state.quests || []).filter(q => !q.claimed && q.progress >= q.target).length; }
+function streakClaimable() { return state.streak && !state.streak.claimedToday ? 1 : 0; }
 function badgeCount() {
-	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests();
+	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable();
 }
 async function poll() {
 	if (!MP.hasToken()) return;
@@ -205,7 +223,7 @@ async function poll() {
 		const unread = (msg.messages || []).filter(m => m.ts > seenTs() && m.from !== MP.cachedState()?.username);
 		state.unread = unread.length;
 		applyPackTimer(pk);
-		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; }
+		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
 		setBadge(badgeCount());
 	} catch (e) {}
 }
@@ -273,7 +291,7 @@ async function refreshData() {
 		state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
 		state.inbox = msg.messages || [];
 		applyPackTimer(pk);
-		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; }
+		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
 		// presence: prefer inline on friends payload, else ask
 		if (!state.friends.some(f => 'online' in f)) {
 			try { const pr = await MP.call('presence', { who: state.friends.map(f => f.username) }); state.presence = pr.presence || pr.online || {}; } catch {}
@@ -309,9 +327,35 @@ function renderBody() {
 	if (state.view === 'messages') return renderMessages(body);
 }
 
-// ----- Daily quests -----
+// ----- Daily quests + streak -----
+function renderStreak(body) {
+	const s = state.streak; if (!s) return;
+	const banner = el('div', 'streak' + (s.claimedToday ? ' claimed' : ''));
+	const weekDay = ((s.count || 0) % 7) || (s.count ? 7 : 0); // 0..7 within the current week
+	const dots = Array.from({ length: 7 }, (_, i) => `<span class="sd${i < weekDay ? ' on' : ''}${(i + 1) === 7 ? ' milestone' : ''}"></span>`).join('');
+	banner.innerHTML = `
+		<div class="st-top"><div class="st-flame">🔥 <b>${s.count || 0}</b></div><div class="st-txt"><div class="st-name">Daily streak</div><div class="st-sub">${s.count ? `${s.count}-day streak` : 'Start your streak today'}</div></div></div>
+		<div class="st-week">${dots}</div>`;
+	const act = el('div', 'st-act');
+	if (s.claimedToday) act.innerHTML = `<span class="st-done">✓ Claimed — back in <b>${state.questReset != null ? fmtDur(state.questReset).slice(0, 5) : '—'}</b></span>`;
+	else { const b = el('button', 'mini primary', `Claim daily reward · 📦 ${s.nextReward}`); b.style.width = '100%'; b.addEventListener('click', streakClaim); act.appendChild(b); }
+	banner.appendChild(act);
+	body.appendChild(banner);
+}
+async function streakClaim() {
+	try {
+		const r = await MP.call('streak-claim');
+		if (r.error) { if (r.streak) state.streak = r.streak; toast(r.error); renderTabs(); if ($('#ib-body')) renderQuests($('#ib-body')); return; }
+		state.streak = r.streak || state.streak;
+		if (r.packInbox != null) state.packInbox = r.packInbox;
+		toast(`🔥 ${state.streak.count}-day streak! +${r.reward} pack${r.reward === 1 ? '' : 's'} in your inbox.`);
+		setBadge(badgeCount()); renderTabs();
+		if (state.view === 'quests' && $('#ib-body')) renderQuests($('#ib-body'));
+	} catch { toast('Could not claim.'); }
+}
 function renderQuests(body) {
 	body.innerHTML = '';
+	renderStreak(body);
 	const quests = state.quests || [];
 	const resetTxt = state.questReset != null ? fmtDur(state.questReset).slice(0, 5) : '—';
 	body.appendChild(el('div', 'note', `Four fresh quests every day — new ones in <b>${resetTxt}</b>. Rewards drop into your pack inbox.`));

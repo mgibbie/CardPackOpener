@@ -103,6 +103,10 @@ badge nudges when packs are waiting.
   pack inbox**. New **Quests tab** in the inbox with progress bars, reward icons,
   a countdown to the daily reset, and Claim buttons; the bell badge nudges when a
   quest is claimable.
+- **Daily streak — ✅ DONE (2026-08-12):** a once-per-day reward whose size grows
+  with your consecutive-day streak (a milestone every 7th day gives a bigger pack
+  bundle); miss a day and it resets. Rewards drop into the pack inbox. Shown as a
+  🔥 banner atop the Quests tab with a 7-day dot track and a Claim button.
 
 ### 10. Weekly featured content
 You have the whole import + wiki pipeline. Rotate:

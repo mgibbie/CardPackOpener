@@ -100,6 +100,24 @@ function ensureDailyQuests(user, username, now) {
 	if (!user.quests || user.quests.day !== day) { user.quests = { day, list: genDailyQuests(username, day) }; return true; }
 	return false;
 }
+// ---------- daily streak ----------
+// A once-per-day reward whose size grows with your consecutive-day streak. Miss
+// a day and it resets. Reward packs drop into the 12h pack inbox like quests.
+function streakReward(streak) {
+	const weekly = Math.min(4, Math.floor((streak - 1) / 7)); // +1 pack for each full week kept
+	const milestone = streak > 0 && streak % 7 === 0 ? 3 : 0;  // every 7th day, a bonus
+	return 1 + weekly + milestone;
+}
+function streakInfo(user, now) {
+	const day = Math.floor(now / DAY_MS);
+	const st = user.streak || { count: 0, lastClaimDay: -1 };
+	const claimedToday = st.lastClaimDay === day;
+	const continues = st.lastClaimDay === day - 1;            // claiming today keeps the streak alive
+	const count = claimedToday || continues ? (st.count || 0) : 0; // 0 = lapsed / never
+	const nextCount = claimedToday ? st.count : (continues ? (st.count || 0) + 1 : 1);
+	return { count, claimedToday, nextReward: streakReward(nextCount), nextClaimMs: (day + 1) * DAY_MS - now };
+}
+
 function applyQuestEvent(user, ev) {
 	if (!user.quests) return false;
 	let changed = false;
@@ -930,7 +948,22 @@ export default async function handler(req, env) {
 		const now = Date.now();
 		if (ensureDailyQuests(user, username, now)) await store.setJSON(username, user);
 		const resetsInMs = (Math.floor(now / DAY_MS) + 1) * DAY_MS - now;
-		return json({ quests: user.quests.list, resetsInMs });
+		return json({ quests: user.quests.list, resetsInMs, streak: streakInfo(user, now) });
+	}
+	// claim the once-per-day streak reward
+	if (action === 'streak-claim') {
+		const now = Date.now(), day = Math.floor(now / DAY_MS);
+		const st = user.streak || { count: 0, lastClaimDay: -1 };
+		if (st.lastClaimDay === day) return json({ error: 'already claimed today', streak: streakInfo(user, now) });
+		st.count = st.lastClaimDay === day - 1 ? (st.count || 0) + 1 : 1; // continue, else restart
+		st.lastClaimDay = day;
+		user.streak = st;
+		accruePacks(user, now);
+		const reward = streakReward(st.count);
+		const add = Math.min(reward, PACK_INBOX_CAP - (user.packInbox || 0));
+		user.packInbox = (user.packInbox || 0) + add;
+		await store.setJSON(username, user);
+		return json({ streak: streakInfo(user, now), reward: add, packInbox: user.packInbox });
 	}
 	// the game reports the cards you play + match wins here
 	if (action === 'quest-event') {
