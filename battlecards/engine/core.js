@@ -3732,7 +3732,8 @@ export function resolvePick(state, id) {
 		if (pend.grant && !card.keywords.includes(pend.grant)) card.keywords.push(pend.grant);
 		if (pend.buff) { // "Discover a Taunt minion. Give it +1/+1."
 			card.attack += pend.buff.attack || 0;
-			card.maxHealth += pend.buff.health || 0;
+			if (card.type === 'weapon') card.durability = (card.durability || 0) + (pend.buff.health || 0); // Runes of Darkness: weapon +1/+1 = Attack/Durability
+			else card.maxHealth += pend.buff.health || 0;
 		}
 		if (pend.setAttack != null) card.attack = pend.setAttack; // Gurubashi Hypemon: a 1/1 copy
 			if (pend.setHealth != null) card.maxHealth = pend.setHealth;

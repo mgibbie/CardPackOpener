@@ -148236,12 +148236,35 @@
       "set": "TITANS",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Discover a weapon.",
+      "description": "Discover a weapon. Spend 3 Corpses to give it +1/+1.",
       "effects": [
         {
-          "type": "discover",
-          "pick": 3,
-          "cardType": "weapon"
+          "type": "conditional",
+          "if": {
+            "corpsesAtLeast": 3
+          },
+          "then": [
+            {
+              "type": "spend-corpses",
+              "value": 3,
+              "effects": [
+                {
+                  "type": "discover",
+                  "cardType": "weapon",
+                  "buff": {
+                    "attack": 1,
+                    "health": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "discover",
+              "cardType": "weapon"
+            }
+          ]
         }
       ],
       "runes": {
