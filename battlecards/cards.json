@@ -159522,7 +159522,7 @@
       "rarity": "common",
       "set": "ALTERAC_VALLEY",
       "collectible": true,
-      "description": "Target creature gains +1/+1. Repeat for each creature an opponent controls.",
+      "description": "Tradeable. Target creature gains +1/+1. Repeat for each enemy creature.",
       "effects": [
         {
           "type": "buff",
@@ -159530,7 +159530,8 @@
           "health": 1,
           "target": "creature"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "sanctuary",
@@ -164519,13 +164520,15 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "THE_LOST_CITY",
-      "description": "Draw 2 cards.",
+      "description": "Draw 2 cards. Kindred: This costs (2) less.",
       "effects": [
         {
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "kindredCard": true,
+      "kindredCostReduce": 2
     },
     {
       "id": "gravedawn_voidbulb",
@@ -164752,13 +164755,17 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "CATACLYSM",
-      "description": "Deal 4 damage to all minions.",
+      "description": "Deal 4 damage to all creatures. Costs (1) if you control a Legendary creature.",
       "effects": [
         {
           "type": "damage-all-minions",
           "value": 4
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "legendary-controlled",
+        "setCost": 1
+      }
     },
     {
       "id": "psyche_split",
@@ -165175,12 +165182,42 @@
       "cardClass": "rogue",
       "rarity": "common",
       "set": "THE_BARRENS",
-      "description": "Deal 2 damage.",
+      "description": "Deal 2 damage. Upgrades at 5 and 10 Mana.",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "any"
+          "type": "conditional",
+          "if": {
+            "manathirst": 10
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ],
+          "else": [
+            {
+              "type": "conditional",
+              "if": {
+                "manathirst": 5
+              },
+              "then": [
+                {
+                  "type": "damage",
+                  "value": 3,
+                  "target": "any"
+                }
+              ],
+              "else": [
+                {
+                  "type": "damage",
+                  "value": 2,
+                  "target": "any"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -166902,14 +166939,18 @@
       "cardClass": "rogue",
       "rarity": "common",
       "set": "SPACE",
-      "description": "Deal 5 damage to an undamaged character.",
+      "description": "Deal 5 damage to an undamaged character. Costs (1) if you're building a Starship.",
       "effects": [
         {
           "type": "damage",
           "value": 5,
           "target": "any"
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "building-starship",
+        "setCost": 1
+      }
     },
     {
       "id": "bounce_around_ft_garona",
@@ -170666,14 +170707,16 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "TGT",
-      "description": "Deal 4 damage to a random enemy.",
+      "description": "When you play or discard this, deal 4 damage to a random enemy.",
       "effects": [
         {
-          "type": "damage",
+          "type": "random-damage",
           "value": 4,
-          "target": "random-enemy"
+          "count": 1,
+          "pool": "enemies"
         }
-      ]
+      ],
+      "castOnDiscard": true
     },
     {
       "id": "felfire_in_the_hole",
@@ -170741,13 +170784,14 @@
       "cardClass": "warlock",
       "rarity": "common",
       "set": "BLACK_TEMPLE",
-      "description": "Draw 3 cards.",
+      "description": "When you play or discard this, draw 3 cards.",
       "effects": [
         {
           "type": "draw",
           "value": 3
         }
-      ]
+      ],
+      "castOnDiscard": true
     },
     {
       "id": "the_dark_portal",
@@ -170757,13 +170801,18 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "BLACK_TEMPLE",
-      "description": "Draw a minion.",
+      "description": "Draw a creature. If you have at least 8 cards in hand, it costs (5) less.",
       "effects": [
         {
           "type": "tutor",
           "count": 1
         }
-      ]
+      ],
+      "selfCostIf": {
+        "cond": "hand-size-ge",
+        "threshold": 8,
+        "amount": -5
+      }
     },
     {
       "id": "eldritch_tentacles",
@@ -170886,12 +170935,13 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "description": "Destroy a random enemy minion.",
+      "description": "When you play or discard this, destroy a random enemy creature.",
       "effects": [
         {
           "type": "destroy-random"
         }
-      ]
+      ],
+      "castOnDiscard": true
     },
     {
       "id": "tome_tampering",
@@ -171756,7 +171806,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "RETURN_OF_THE_LICH_KING",
-      "description": "Deal 5 damage randomly split among all enemies.",
+      "description": "When you play or discard this, deal 5 damage randomly split among all enemies.",
       "effects": [
         {
           "type": "random-damage",
@@ -171764,7 +171814,8 @@
           "pool": "enemies",
           "count": 5
         }
-      ]
+      ],
+      "castOnDiscard": true
     },
     {
       "id": "twisted_tether",

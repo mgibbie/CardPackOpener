@@ -169,6 +169,9 @@ export function effectiveCost(state, pi, card) {
 			case 'damaged-minion': met = p.board.some(x => !isDead(x) && x.type !== 'location' && x.damage > 0); break; // Crush
 			case 'elemental-last-turn': met = !!p.elementalLastTurn; break; // Scorch
 			case 'discovered-this-turn': met = (p.discoveredThisTurn || 0) > 0; break; // Storage Scuffle
+			case 'legendary-controlled': met = p.board.some(x => !isDead(x) && x.rarity === 'legendary'); break; // Medivh's Triumph
+			case 'building-starship': met = (p.starshipPieces || []).length > 0; break; // Barrel Roll
+			case 'hand-size-ge': met = p.hand.length >= s.threshold; break; // The Dark Portal
 			default: met = false;
 		}
 		if (met) { if (s.setCost != null) c = s.setCost; else if (s.amount != null) c += s.amount; }
