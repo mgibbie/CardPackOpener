@@ -17,6 +17,8 @@ const SEEN_KEY = 'mp_inbox_seen_v1';
 // full-screen apps (the game, the Overworld) opt into a small floating widget
 // via <meta name="mp-topbar" content="compact"> instead of the full bar
 const COMPACT = document.querySelector('meta[name="mp-topbar"]')?.content === 'compact';
+const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // client mirror of the backend cadence
+const fmtDur = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`; };
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -69,6 +71,7 @@ function injectStyles() {
 	#mp-inbox .ib-tab{ flex:1; background:none; border:none; color:var(--muted); font:inherit; font-weight:700; font-size:.86rem; padding:9px 6px; border-radius:9px 9px 0 0; cursor:pointer; position:relative; }
 	#mp-inbox .ib-tab.active{ color:var(--txt); background:var(--pnl2); }
 	#mp-inbox .ib-tab .dot{ display:inline-block; min-width:16px; height:16px; padding:0 4px; margin-left:5px; border-radius:999px; background:#e5484d; color:#fff; font-size:.62rem; font-weight:800; line-height:16px; }
+	#mp-inbox .ib-tab .dot[hidden]{ display:none; } /* beat display:inline-block so [hidden] hides */
 	#mp-inbox .ib-body{ flex:1; overflow-y:auto; padding:14px; }
 	#mp-inbox .ib-empty{ color:var(--muted); text-align:center; padding:40px 20px; font-size:.9rem; }
 	#mp-inbox .row{ display:flex; align-items:center; gap:11px; padding:12px; border:1px solid var(--bd); border-radius:12px; background:var(--pnl2); margin-bottom:10px; }
@@ -95,6 +98,19 @@ function injectStyles() {
 	#mp-inbox .composer button{ background:var(--blue); color:#fff; border:none; border-radius:9px; padding:0 15px; font:inherit; font-weight:700; cursor:pointer; }
 	#mp-inbox .toast{ position:absolute; bottom:14px; left:14px; right:14px; background:var(--pnl2); border:1px solid var(--bd); border-radius:10px; padding:12px 14px; font-size:.86rem; box-shadow:var(--tb-shadow); display:none; }
 	#mp-inbox .toast.show{ display:block; }
+
+	/* Packs tab */
+	#mp-inbox .pk-hero{ text-align:center; padding:16px 0 6px; }
+	#mp-inbox .pk-count{ font-size:2.4rem; font-weight:900; color:var(--gold); }
+	#mp-inbox .pk-count .pk-cap{ color:var(--muted); font-size:1.2rem; font-weight:700; }
+	#mp-inbox .pk-sub{ color:var(--muted); font-size:.86rem; margin-top:2px; }
+	#mp-inbox .pk-bar{ height:12px; border-radius:999px; background:var(--pnl2); border:1px solid var(--bd); overflow:hidden; margin:16px 0 8px; }
+	#mp-inbox .pk-fill{ height:100%; background:linear-gradient(90deg,var(--blue),var(--gold)); border-radius:999px; transition:width .5s ease; }
+	#mp-inbox .pk-eta{ text-align:center; color:var(--muted); font-size:.9rem; }
+	#mp-inbox .pk-eta b{ color:var(--txt); font-variant-numeric:tabular-nums; }
+	#mp-inbox .pk-open{ display:block; text-align:center; color:var(--blue); font-weight:700; font-size:.86rem; margin-top:16px; }
+	#mp-inbox .pk-open:hover{ text-decoration:underline; }
+	#mp-inbox .pk-note{ color:var(--muted); font-size:.78rem; text-align:center; margin-top:14px; line-height:1.4; }
 
 	/* small deck-picker dialog */
 	#mp-deckpick{ position:fixed; inset:0; z-index:70; background:rgba(4,7,18,.55); display:none; align-items:center; justify-content:center; padding:20px; }
@@ -152,17 +168,28 @@ function setBadge(n) {
 }
 
 // ---------- background poll (badge only) ----------
+function applyPackTimer(pk) {
+	if (!pk) return;
+	state.packInbox = pk.packInbox || 0;
+	state.packCap = pk.packCap || 120;
+	state.packEtaTarget = pk.nextPackMs == null ? null : Date.now() + pk.nextPackMs;
+}
+function badgeCount() {
+	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0);
+}
 async function poll() {
 	if (!MP.hasToken()) return;
 	try {
-		const [ch, msg] = await Promise.all([
+		const [ch, msg, pk] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('chat-get', { room: 'u:' + (MP.cachedState()?.username || '') }).catch(() => ({ messages: [] })),
+			MP.call('pack-timer').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
 		const unread = (msg.messages || []).filter(m => m.ts > seenTs() && m.from !== MP.cachedState()?.username);
 		state.unread = unread.length;
-		setBadge(state.challenges.length + unread.length);
+		applyPackTimer(pk);
+		setBadge(badgeCount());
 	} catch (e) {}
 }
 
@@ -175,6 +202,7 @@ function ensurePanel() {
 		<div class="ib-head"><h2>Inbox</h2><button class="ib-close" id="ib-close" title="Close">×</button></div>
 		<div class="ib-tabs">
 			<button class="ib-tab active" data-view="alerts">Alerts <span class="dot" id="dot-alerts" hidden></span></button>
+			<button class="ib-tab" data-view="packs">Packs <span class="dot" id="dot-packs" hidden></span></button>
 			<button class="ib-tab" data-view="friends">Friends</button>
 			<button class="ib-tab" data-view="messages">Messages <span class="dot" id="dot-messages" hidden></span></button>
 		</div>
@@ -209,20 +237,23 @@ async function openInbox() {
 function closeInbox() {
 	$('#mp-inbox')?.classList.remove('open');
 	$('#mp-inbox-overlay')?.classList.remove('open');
+	clearInterval(state.packTicker); state.packTicker = null;
 	if (state.view === 'messages') { markSeen(); poll(); }
 }
 
 async function refreshData() {
 	const room = 'u:' + (state.me || '');
 	try {
-		const [ch, fr, msg] = await Promise.all([
+		const [ch, fr, msg, pk] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('friends').catch(() => ({ friends: [] })),
 			MP.call('chat-get', { room }).catch(() => ({ messages: [] })),
+			MP.call('pack-timer').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
 		state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
 		state.inbox = msg.messages || [];
+		applyPackTimer(pk);
 		// presence: prefer inline on friends payload, else ask
 		if (!state.friends.some(f => 'online' in f)) {
 			try { const pr = await MP.call('presence', { who: state.friends.map(f => f.username) }); state.presence = pr.presence || pr.online || {}; } catch {}
@@ -238,18 +269,62 @@ function isOnline(f) {
 
 function renderTabs() {
 	document.querySelectorAll('#mp-inbox .ib-tab').forEach(t => t.classList.toggle('active', t.dataset.view === state.view));
-	const da = $('#dot-alerts'), dm = $('#dot-messages');
+	const da = $('#dot-alerts'), dm = $('#dot-messages'), dp = $('#dot-packs');
 	if (da) { da.textContent = state.challenges.length; da.hidden = !state.challenges.length; }
 	const unread = state.inbox.filter(m => m.ts > seenTs() && m.from !== state.me).length;
 	if (dm) { dm.textContent = unread; dm.hidden = !unread; }
+	if (dp) { dp.textContent = state.packInbox || 0; dp.hidden = !(state.packInbox > 0); }
 }
 
 function renderBody() {
+	clearInterval(state.packTicker); state.packTicker = null; // stop the countdown when leaving Packs
 	const body = $('#ib-body'); if (!body) return;
 	if (state.thread) return renderThread(body, state.thread);
 	if (state.view === 'alerts') return renderAlerts(body);
+	if (state.view === 'packs') return renderPacks(body);
 	if (state.view === 'friends') return renderFriends(body);
 	if (state.view === 'messages') return renderMessages(body);
+}
+
+// ----- Packs (the 12-hour free-pack inbox) -----
+function packEta() { return state.packEtaTarget == null ? null : Math.max(0, state.packEtaTarget - Date.now()); }
+function renderPacks(body) {
+	const inbox = state.packInbox || 0, cap = state.packCap || 120;
+	const eta = packEta(), full = eta == null;
+	const pct = full ? 100 : Math.max(0, Math.min(100, (1 - eta / PACK_TIMER_MS) * 100));
+	body.innerHTML = `
+		<div class="pk-hero"><div class="pk-count">📦 ${inbox}<span class="pk-cap"> / ${cap}</span></div><div class="pk-sub">free packs waiting in your inbox</div></div>
+		<div class="pk-bar"><div class="pk-fill" id="pk-fill" style="width:${pct}%"></div></div>
+		<div class="pk-eta" id="pk-eta">${full ? '⛔ Inbox full — collect to keep earning' : 'Next pack in <b>' + fmtDur(eta) + '</b>'}</div>`;
+	const collect = el('button', 'mini primary', inbox > 0 ? `Collect ${inbox} pack${inbox === 1 ? '' : 's'}` : 'Nothing to collect yet');
+	collect.style.width = '100%'; collect.style.marginTop = '16px';
+	if (inbox <= 0) { collect.disabled = true; collect.classList.remove('primary'); collect.style.opacity = '.6'; }
+	collect.addEventListener('click', collectPacks);
+	body.appendChild(collect);
+	const open = el('a', 'pk-open', 'Open your packs →'); open.href = '/battlecards/packs.html';
+	body.appendChild(open);
+	body.appendChild(el('div', 'pk-note', 'You earn one free pack every 12 hours, up to ' + cap + '. Collect them here, then crack them open on the Packs screen.'));
+	// live countdown
+	clearInterval(state.packTicker);
+	state.packTicker = setInterval(() => {
+		const e = packEta();
+		if (e == null) return;
+		const f = $('#pk-fill'), t = $('#pk-eta');
+		if (!f || !t) { clearInterval(state.packTicker); return; }
+		f.style.width = Math.max(0, Math.min(100, (1 - e / PACK_TIMER_MS) * 100)) + '%';
+		t.innerHTML = 'Next pack in <b>' + fmtDur(e) + '</b>';
+		if (e <= 0) { clearInterval(state.packTicker); poll().then(() => { if (state.view === 'packs' && $('#ib-body')) renderPacks($('#ib-body')); renderTabs(); }); } // a pack just dropped
+	}, 1000);
+}
+async function collectPacks() {
+	try {
+		const r = await MP.call('claim-packs');
+		if (r.error) { toast(r.error); return; }
+		toast(`Collected ${r.claimed} pack${r.claimed === 1 ? '' : 's'}! Open them on the Packs screen.`);
+		if (r.state) applyPackTimer(r.state);
+		setBadge(badgeCount()); renderTabs();
+		if (state.view === 'packs' && $('#ib-body')) renderPacks($('#ib-body'));
+	} catch { toast('Could not collect.'); }
 }
 
 // ----- Alerts (challenges) -----

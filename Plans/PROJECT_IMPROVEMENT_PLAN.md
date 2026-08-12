@@ -84,12 +84,17 @@ The profile has tiered achievements already — extend the collection page with:
 
 ## Tier 2 — Retention & cadence (medium effort, compounding value)
 
-### 9. Daily quest / daily pack
-A simple "come back tomorrow" loop:
-- One **daily quest** ("win a match", "play 10 spells", "open a pack") → reward a pack.
-- A **daily free pack** if logged in.
-- All computable from existing account state; store a `lastDailyClaim` timestamp.
-- Effort: 1 day. Impact: the single biggest retention lever for a card game.
+### 9. Daily pack loop — ✅ DONE (2026-08-12)
+A twice-daily "come back" loop: a free pack accrues **every 12 hours** into a
+special **pack inbox** that holds up to **120**. Backend (`server/mp.mjs`) does
+lazy accrual (`accruePacks`) — no cron needed — pausing the timer while the inbox
+is full; new `pack-timer` (cheap poll) and `claim-packs` actions; the fields ride
+`publicState`. The inbox's new **Packs tab** (`/site/topbar.js`) shows a live
+progress bar + `HH:MM:SS` countdown to the next pack, `N / 120` waiting, and a
+**Collect** button (moves them to your stash to open on the Packs screen); the bell
+badge nudges when packs are waiting.
+- Follow-up: an actual **daily quest** ("win a match" / "play N spells") on top of
+  the timer, for a second reason to return.
 
 ### 10. Weekly featured content
 You have the whole import + wiki pipeline. Rotate:

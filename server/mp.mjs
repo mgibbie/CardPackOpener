@@ -24,6 +24,8 @@ const MAX_COPIES = 2;
 const MAX_LEGENDARY_COPIES = 1;
 const MAX_DECK_SLOTS = 40;          // each player can save up to 40 PvP decks
 const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
+const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
+const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
 
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
@@ -44,6 +46,27 @@ const grantCards = (collection, ids) => {
 	for (const id of ids) counts[id] = (counts[id] || 0) + 1;
 	for (const [id, n] of Object.entries(counts)) collection[id] = Math.max(collection[id] || 0, n);
 };
+
+// Lazy pack accrual: a free pack drops into the special inbox every
+// PACK_TIMER_MS, up to PACK_INBOX_CAP. While the inbox is full the timer is
+// paused (its base is frozen until you collect). Returns true if it changed.
+function accruePacks(user, now) {
+	if (user.packInbox == null) user.packInbox = 0;
+	if (user.packTimerBase == null) { user.packTimerBase = now; return true; }
+	if (user.packInbox >= PACK_INBOX_CAP) return false; // full → paused
+	const elapsed = now - user.packTimerBase;
+	if (elapsed < PACK_TIMER_MS) return false;
+	const add = Math.min(Math.floor(elapsed / PACK_TIMER_MS), PACK_INBOX_CAP - user.packInbox);
+	user.packInbox += add;
+	user.packTimerBase += add * PACK_TIMER_MS; // keep the partial remainder toward the next one
+	return true;
+}
+// ms until the next inbox pack (null when the inbox is full / paused)
+function packEtaMs(user, now) {
+	if ((user.packInbox || 0) >= PACK_INBOX_CAP) return null;
+	const base = user.packTimerBase || now;
+	return Math.max(0, PACK_TIMER_MS - ((now - base) % PACK_TIMER_MS));
+}
 
 const scrypt = (pw, salt) => new Promise((res, rej) =>
 	scryptCb(pw, salt, 32, (e, k) => e ? rej(e) : res(k)));
@@ -241,6 +264,10 @@ const publicState = (u, username) => ({
 	collection: effectiveCollection(u),
 	decks: u.decks,
 	packs: u.packs,
+	packInbox: u.packInbox || 0,
+	packCap: PACK_INBOX_CAP,
+	packTimerMs: PACK_TIMER_MS,
+	nextPackMs: packEtaMs(u, Date.now()),
 	stats: u.stats,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
@@ -302,6 +329,8 @@ export default async function handler(req, env) {
 			decks,                  // three ready starter decks; up to 40 slots
 			decksMigrated: true,
 			packs: STARTER_PACKS, // a stack of welcome packs to build a collection from
+			packInbox: 0,
+			packTimerBase: Date.now(), // the 12-hour free-pack timer starts now
 			starterBaselineV2: true,
 			startersV3: true,
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
@@ -331,6 +360,7 @@ export default async function handler(req, env) {
 	await ensureFriendFields(store, username, user); // backfill code/friends
 	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
 	await grantStarterBaseline(store, username, user); // starter-deck playset + welcome packs (once)
+	if (accruePacks(user, Date.now())) await store.setJSON(username, user); // drip the 12h free packs into the inbox
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 
@@ -843,6 +873,27 @@ export default async function handler(req, env) {
 		}
 		await store.setJSON(username, user);
 		return json({ granted: Object.keys(POOL).length, state: publicState(user, username) });
+	}
+
+	// lightweight timer read (no full collection) for the inbox to poll
+	if (action === 'pack-timer') {
+		const now = Date.now();
+		if (accruePacks(user, now)) await store.setJSON(username, user);
+		return json({ packInbox: user.packInbox || 0, packCap: PACK_INBOX_CAP, packTimerMs: PACK_TIMER_MS, nextPackMs: packEtaMs(user, now), packs: user.packs || 0 });
+	}
+
+	// collect the free packs that have piled up in the 12-hour special inbox
+	if (action === 'claim-packs') {
+		const now = Date.now();
+		accruePacks(user, now);
+		const n = user.packInbox || 0;
+		if (n <= 0) return json({ error: 'no packs waiting yet', state: publicState(user, username) });
+		const full = n >= PACK_INBOX_CAP;
+		user.packs = (user.packs || 0) + n;
+		user.packInbox = 0;
+		if (full) user.packTimerBase = now; // it was paused at the cap — resume from now
+		await store.setJSON(username, user);
+		return json({ claimed: n, state: publicState(user, username) });
 	}
 
 	if (action === 'open-pack') {
