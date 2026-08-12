@@ -517,7 +517,7 @@ register('remove-colossal-keyword', ({ state, pi, target, source, enemies, scale
 register('summon-copy-of-target-buffed', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Ini Stormcoil: summon a copy of a chosen friendly minion with granted keywords
 			const t = chosenCreature();
-			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } } } // Aman'Thul (Shape the Stars): copy with +2/+2
+			if (t) { const base = state.cardsById[t.id]; if (base) { const c = summon(state, pi, JSON.parse(JSON.stringify(base))); if (c) { for (const kw of e.keywords || []) { if (!c.keywords.includes(kw)) { c.keywords.push(kw); if (kw === KW.DIVINE_SHIELD) c.shield = true; } } if (e.attack || e.health) { c.attack += e.attack || 0; c.maxHealth += e.health || 0; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } if (e.grantFragile) c.diesToAnyDamage = true; } } } // Aman'Thul (Shape the Stars): copy with +2/+2; Reverberations: fragile copy
 } });
 
 

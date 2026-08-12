@@ -1472,6 +1472,7 @@ registerTrigger('copy-minion', (state, pi, e, ctx, triggering) => {
 						c.maxHealth = e.health + c.auraHealth;
 						c.damage = 0;
 					}
+					if (c && e.grantFragile) c.diesToAnyDamage = true; // Reverberations
 				}
 				break;
 			}

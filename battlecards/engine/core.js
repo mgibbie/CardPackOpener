@@ -298,6 +298,7 @@ export function instantiate(def, controller) {
 		bonusEffectSwap: def.bonusEffectSwap ? JSON.parse(JSON.stringify(def.bonusEffectSwap)) : null, // Twisted Monstrosity: alternates between two Bonus Effects each turn in hand
 		swapStatsEndOfTurn: def.swapStatsEndOfTurn || false, // Stalwart Avenger: swap Attack/Health at end of each turn
 		immuneWhileAttacking: def.immuneWhileAttacking || false, // Stalwart Avenger: Immune during its own attacks
+		diesToAnyDamage: def.diesToAnyDamage || false, // Reverberations: this copy dies after taking any damage
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,

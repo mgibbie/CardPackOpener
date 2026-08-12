@@ -171885,11 +171885,12 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
-      "description": "Create a copy of a minion.",
+      "description": "Create a copy of a creature. It dies after taking damage.",
       "effects": [
         {
-          "type": "copy-minion",
-          "of": "target"
+          "type": "summon-copy-of-target-buffed",
+          "target": "creature",
+          "grantFragile": true
         }
       ]
     },

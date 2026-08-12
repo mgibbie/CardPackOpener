@@ -62,6 +62,7 @@ export function damageCreature(state, target, amount, source) {
 	if (amount > 2 && state.players[target.controller].board.some(c => c.damageCapAura && !isDead(c))) amount = 2; // Amitus, the Peacekeeper: your minions can't take more than 2 damage at a time
 	const _hpBefore = hp(target);
 	target.damage += amount;
+	if (target.diesToAnyDamage && amount > 0) target.damage = target.maxHealth; // Reverberations: any damage is lethal to the copy
 	// spell Overkill (Baited Arrow / Totemic Smash / Blast Wave): a killing hit
 	// with excess damage on your turn fires the spell's overkill block once.
 	// Attack-combat overkill is handled at the attack sites — spells only here.
