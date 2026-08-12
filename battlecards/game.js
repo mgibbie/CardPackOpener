@@ -82,6 +82,15 @@ const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false,
 // AI plays a specific decklist (a starter or a harvested real-player deck)
 const aiMatchId = MP_ON ? new URLSearchParams(location.search).get('aimatch') : null;
 
+// ---------- per-match stats (for the post-game summary) ----------
+// Accumulated from the event stream; reset when turn 1 fires so a rematch on the
+// same page starts fresh. 2-player attribution: damage to a hero is credited to
+// the other seat. Resumed/spectated games (no turn 1) leave this null → the
+// summary shows the result without a stat table.
+let matchStats = null;
+function resetMatchStats() { matchStats = { start: performance.now(), turns: 0, cards: [], summons: [], heroDmgTaken: [] }; }
+function statInc(arr, i, n = 1) { if (i == null || i < 0) return; arr[i] = (arr[i] || 0) + n; }
+
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
 const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
 const clearRun = () => localStorage.removeItem(RUN_KEY);
@@ -1853,6 +1862,8 @@ function nextEvent() {
 	let delay = 120;
 	switch (ev.type) {
 		case 'turnStart':
+			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
+			matchStats.turns = Math.max(matchStats.turns, ev.turnNumber || 0);
 			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`);
 			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
@@ -1868,10 +1879,12 @@ function nextEvent() {
 			break;
 		}
 		case 'play':
+			if (matchStats) statInc(matchStats.cards, ev.player);
 			log(`${nameOf(ev.player)} played ${ev.card.name}`);
 			delay = 420;
 			break;
 		case 'summon':
+			if (matchStats) statInc(matchStats.summons, ev.player);
 			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
 			delay = 260;
 			break;
@@ -1885,6 +1898,7 @@ function nextEvent() {
 			break;
 		}
 		case 'damage': {
+			if (matchStats && ev.targetType === 'hero') statInc(matchStats.heroDmgTaken, ev.player, ev.amount || 0);
 			const pos = ev.targetType === 'hero' ? heroPos(ev.player) : creaturePos(ev.uid);
 			floatText(`-${ev.amount}`, '#ff5f4f', pos);
 			if (ev.targetType === 'creature') {
@@ -2268,6 +2282,7 @@ function nextEvent() {
 				const el = dungeonOverlay(won ? 'YOU WIN!' : ev.winner == null ? 'DRAW' : 'DEFEAT',
 					won ? 'You win the duel!' : ev.winner == null ? "It's a draw." : `${nameOf(ev.winner)} wins the duel.`);
 				el.id = 'duel-over';
+					appendMatchSummary(el); // same stat block as Quick Match
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
@@ -2282,7 +2297,7 @@ function nextEvent() {
 				const run = loadDuels();
 				if (run?.active) setTimeout(() => won ? duelsVictory(run) : duelsDefeat(run), 1200);
 			} else {
-				$('restart').style.display = '';
+				showPostGameSummary(ev.winner); // Quick Match / AI: result + stats + next steps
 			}
 			delay = 200;
 			break;
@@ -4045,6 +4060,58 @@ function applyTreasures(ids) {
 }
 
 // ---------- dungeon run overlays ----------
+// ---------- post-game summary ----------
+// Append a compact stat block to an end-of-game overlay: match length + turns,
+// and (in a 2-player game) a You-vs-opponent table. Damage-to-hero is credited
+// to the other seat, so "damage to enemy hero" reads from the opponent's taken.
+function appendMatchSummary(el) {
+	if (!matchStats || !state || !state.players) return;
+	const ms = matchStats, pc = state.players.length;
+	const durS = Math.max(1, Math.round((performance.now() - ms.start) / 1000));
+	const dur = `${Math.floor(durS / 60)}:${String(durS % 60).padStart(2, '0')}`;
+	const box = document.createElement('div');
+	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:440px;width:100%;font-size:14px;';
+	if (pc === 2) {
+		const opp = 1 - HUMAN;
+		const life = p => Math.max(0, state.players[p]?.life ?? 0);
+		const my = k => ms[k][HUMAN] || 0, op = k => ms[k][opp] || 0;
+		const row = (lbl, a, b) => {
+			const hiA = a > b ? 'color:#ffd25f;' : '', hiB = b > a ? 'color:#ffd25f;' : '';
+			return `<tr><td style="text-align:left;padding:5px 10px;opacity:.85">${lbl}</td>`
+				+ `<td style="text-align:right;padding:5px 10px;font-weight:700;${hiA}">${a}</td>`
+				+ `<td style="text-align:right;padding:5px 10px;font-weight:700;${hiB}">${b}</td></tr>`;
+		};
+		box.innerHTML = `<table style="width:100%;border-collapse:collapse;margin:0 auto;">`
+			+ `<tr style="opacity:.55;font-size:11px;letter-spacing:1px;text-transform:uppercase">`
+			+ `<td style="text-align:left;padding:4px 10px">${dur} · ${ms.turns} turns</td>`
+			+ `<td style="text-align:right;padding:4px 10px">You</td>`
+			+ `<td style="text-align:right;padding:4px 10px">${esc2(nameOf(opp))}</td></tr>`
+			+ row('Cards played', my('cards'), op('cards'))
+			+ row('Creatures summoned', my('summons'), op('summons'))
+			+ row('Damage to enemy hero', ms.heroDmgTaken[opp] || 0, ms.heroDmgTaken[HUMAN] || 0)
+			+ row('Life remaining', life(HUMAN), life(opp))
+			+ `</table>`;
+	} else {
+		box.innerHTML = `<div style="opacity:.8;line-height:1.5">${dur} · ${ms.turns} turns<br>`
+			+ `You played ${ms.cards[HUMAN] || 0} cards and summoned ${ms.summons[HUMAN] || 0} creatures.</div>`;
+	}
+	el.appendChild(box);
+}
+// tiny HTML escape for names injected into the summary table
+function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+// full end screen for Quick Match / AI matches: result + stats + next-step buttons
+function showPostGameSummary(winner) {
+	const won = winner === HUMAN, drew = winner == null;
+	const el = dungeonOverlay(won ? 'VICTORY!' : drew ? 'DRAW' : 'DEFEAT',
+		drew ? "It's a draw." : won ? 'You won the match!' : `${esc2(nameOf(winner))} wins.`);
+	el.id = 'postgame';
+	appendMatchSummary(el);
+	// Play again: a fresh Quick Match (dropping any aimatch param) or an in-place restart
+	el.appendChild(overlayButton('Play again', () => { if (aiMatchId) location.href = 'index.html'; else { hideDungeonOverlay(); $('restart').style.display = 'none'; start(); } }));
+	el.appendChild(overlayButton('Find Match', () => { location.href = 'start.html'; }));
+	el.appendChild(overlayButton('Deck Builder', () => { location.href = 'deck.html'; }));
+	el.appendChild(overlayButton('View final board', () => { hideDungeonOverlay(); $('restart').style.display = ''; }));
+}
 function dungeonOverlay(title, sub) {
 	let el = $('dungeon-overlay');
 	if (!el) {

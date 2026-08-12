@@ -175,9 +175,23 @@ into a host-authoritative `cardpvp` duel, or mints an `aimatch`) + `ai-match`. E
 `?aimatch=<id>` boots a local match where the AI plays that deck. Verified the pairing,
 AI-timeout fallback, deck harvesting, the engine deck-override, and the full UI flow.
 
-Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs and a post-game summary.
-(Standalone Pokémon challenge send/accept **and inbox spectate** — the old open items
-here — are now done; see the social-inbox notes above.)
+**Post-game summary — ✅ DONE (2026-08-12):** Battlecards matches used to end on a
+bare banner + a restart button. Now Quick Match, AI matchmaking matches, and PvP duels
+show a proper end screen: the result (**VICTORY / DEFEAT / DRAW**) plus a compact stat
+block accumulated from the match's own event stream — duration, turn count, and (in a
+2-player game) a **You-vs-opponent table**: cards played, creatures summoned, damage to
+the enemy hero (credited to the striking seat), and life remaining, with the leading
+value highlighted. Quick Match / AI matches also get next-step buttons — **Play again**
+(a fresh match or an in-place restart), **Find Match**, **Deck Builder**, and **View
+final board** (dismisses the overlay to inspect the board); duels keep **Back to your
+world**. FFA (3–4 player) games fall back to a one-line self-summary, and resumed /
+spectated games (no turn 1 to seed the tally) degrade to just the result. Verified the
+stat attribution (both seat perspectives), the FFA fallback, the button wiring, and all
+three result titles by running the real functions headless.
+
+Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
+send/accept, inbox spectate, and the post-game summary — the old open items here — are
+all done now; see the notes above.)
 
 ### 13. Mobile match layout — ✅ DONE (2026-08-12)
 The Battlecards board already re-frames its camera for portrait/landscape (pulls
