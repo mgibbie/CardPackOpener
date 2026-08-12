@@ -1980,3 +1980,37 @@ register('destroy-zero-attack-enemies', ({ state, pi, enemies }) => {
 	}
 	sweepDeaths(state);
 });
+
+register('damage-all-minions-mill-per-kill', ({ state, pi }, e) => {
+	// Soul Rend: deal N to all minions; for each one that dies, destroy a card
+	// from your own deck
+	const liveBefore = state.players.reduce((s, pl) => s + pl.board.filter(c => c.type === 'creature' && !isDead(c)).length, 0);
+	for (const pl of state.players) for (const c of [...pl.board]) {
+		if (c.type === 'creature' && !isDead(c)) damageCreature(state, c, e.value || 5, null);
+	}
+	sweepDeaths(state);
+	const liveAfter = state.players.reduce((s, pl) => s + pl.board.filter(c => c.type === 'creature' && !isDead(c)).length, 0);
+	const kills = Math.max(0, liveBefore - liveAfter);
+	const deck = state.players[pi].deck;
+	for (let n = 0; n < kills && deck.length; n++) deck.pop(); // destroy from the top
+	if (kills) emit(state, { type: 'mill', player: pi, count: kills });
+});
+
+register('summon-attack-lowest-if-deck-empty', ({ state, pi, enemies }, e) => {
+	// Hounds of Fury: create N tokens; if your deck has no creatures, each
+	// attacks the lowest-Health enemy (mutual combat)
+	const def = { id: e.id || 'saldie_token', name: e.name || 'Demon', type: 'creature', cost: 0, token: true, tribe: e.tribe || 'Demon', rarity: 'common', attack: e.attack || 3, health: e.health || 2, keywords: e.keywords || [], description: `A ${e.attack || 3}/${e.health || 2}.` };
+	const made = [];
+	for (let n = 0; n < (e.count || 2); n++) { const c = summon(state, pi, def); if (c) made.push(c); }
+	const deckHasCreature = state.players[pi].deck.some(id => state.cardsById[id]?.type === 'creature');
+	if (deckHasCreature) return;
+	for (const c of made) {
+		if (isDead(c)) continue;
+		let lowest = null;
+		for (const o of enemies) for (const t of state.players[o].board) if (!isDead(t) && t.type !== 'location' && (t.dormantLeft || 0) <= 0) { if (!lowest || hp(t) < hp(lowest)) lowest = t; }
+		if (!lowest) break;
+		damageCreature(state, lowest, c.attack, c);
+		damageCreature(state, c, lowest.attack, lowest);
+	}
+	sweepDeaths(state);
+});

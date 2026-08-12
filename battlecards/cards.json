@@ -148659,7 +148659,7 @@
       "set": "TIME_TRAVEL",
       "effects": [
         {
-          "type": "summon",
+          "type": "summon-attack-lowest-if-deck-empty",
           "count": 2,
           "attack": 3,
           "health": 2,
@@ -148667,7 +148667,7 @@
           "tribe": "Demon"
         }
       ],
-      "description": "Create two 3/2 Demon creature tokens."
+      "description": "Create two 3/2 Demons. If your deck has no creatures, they attack the lowest Health enemy."
     },
     {
       "id": "remixed_rhapsody",
@@ -170915,10 +170915,10 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "THE_BARRENS",
-      "description": "Deal 5 damage to all minions.",
+      "description": "Deal 5 damage to all creatures. Destroy a card in your deck for each one killed.",
       "effects": [
         {
-          "type": "damage-all-minions",
+          "type": "damage-all-minions-mill-per-kill",
           "value": 5
         }
       ]
