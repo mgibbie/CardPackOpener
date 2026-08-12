@@ -379,6 +379,7 @@ export function instantiate(def, controller) {
 		startOfGame: def.startOfGame || null, // Start of Game: effects run from the deck when the game begins
 		kindredCard: !!def.kindredCard, // Lost City: a card with a Kindred bonus (Torga tutors these)
 		rewind: def.rewind || 0, // TIME_TRAVEL Rewind: when played, a copy returns to your deck until N charges are spent
+		rewindToHand: !!def.rewindToHand, // "(N Drinks left!)": the copy returns to hand instead of the deck
 		rewindDouble: !!def.rewindDouble, // Morchie: while on board, your Rewind battlecries fire twice
 		starshipPiece: !!def.starshipPiece, // GDB: joins your Starship under construction when it dies
 		spellSchoolDiscount: def.spellSchoolDiscount ? { ...def.spellSchoolDiscount } : null, // Azure Queen Sindragosa: Arcane spells cost less while she + another Dragon are out
@@ -2012,8 +2013,18 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		const spent = (p.rewindSpent = p.rewindSpent || {});
 		if ((spent[card.id] || 0) < card.rewind) {
 			spent[card.id] = (spent[card.id] || 0) + 1;
-			p.deck.push(card.id);
-			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			if (card.rewindToHand) {
+				// "(N Drinks left!)" (Malted Magma / Divine Brew / Bunch of Bananas):
+				// a copy returns straight to hand so you can use it again this turn
+				if (p.hand.length < MAX_HAND) {
+					const cp = instantiate(state.cardsById[card.id], pi);
+					cp.zone = 'hand'; p.hand.push(cp);
+					emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+				}
+			} else {
+				p.deck.push(card.id);
+				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			}
 			emit(state, { type: 'rewind', player: pi, cardId: card.id, name: card.name, remaining: card.rewind - spent[card.id] });
 		}
 	}
