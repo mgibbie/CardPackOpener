@@ -426,7 +426,7 @@ register('equip-random', ({ state, pi, target, source, enemies, scaled, hm, pick
 
 
 register('heal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : boost(e.value); // Spice Bread Baker
+			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : e.valueFromHeroDamage ? (state.players[pi].heroDamageTakenThisTurn || 0) : boost(e.value); // Spice Bread Baker; Healthstone: heal all damage taken this turn
 			if (v > 0) v += state.players[pi].healBonusGame || 0; // Cleansing Cleric: your heals restore 2 more this game
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead
@@ -528,3 +528,13 @@ register('proliferate', ({ state, pi, target, source, enemies, scaled, hm, pickE
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 
+
+register('spend-location-durability-heal', ({ state, pi }, e) => {
+	// Consume: remove 1 Durability from a friendly location, then heal the hero
+	const loc = state.players[pi].board.find(c => c.type === 'location' && !isDead(c) && (c.durability || 0) > 0);
+	if (!loc) return; // no location: the drink is wasted (matches HS: needs a location)
+	loc.durability -= 1;
+	emit(state, { type: 'locationDurability', player: pi, uid: loc.uid, durability: loc.durability });
+	healHero(state, pi, e.value || 8);
+	sweepDeaths(state);
+});

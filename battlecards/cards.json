@@ -149098,12 +149098,16 @@
       "set": "ESCAPEFROM_VIOLET_HOLD",
       "tribe": "Holy",
       "collectible": true,
-      "description": "Gain 4 life.",
+      "description": "Gain 4 life. Get a Dark Embrace that deals 4 damage.",
       "effects": [
         {
           "type": "heal",
           "value": 4,
           "target": "friendly-any"
+        },
+        {
+          "type": "conjure-id",
+          "id": "dark_embrace"
         }
       ]
     },
@@ -150250,12 +150254,13 @@
       "set": "EMERALD_DREAM",
       "collectible": true,
       "tribe": "Arcane",
-      "description": "Deal 1 damage to a creature.",
+      "description": "Deal 1 damage to a creature. Improved by each friendly creature that died this game.",
       "effects": [
         {
           "type": "damage",
           "value": 1,
-          "target": "creature"
+          "target": "creature",
+          "plusPerFriendlyDied": true
         }
       ]
     },
@@ -171338,14 +171343,15 @@
       "cardClass": "warlock",
       "rarity": "epic",
       "set": "SPACE",
-      "description": "Gain life.",
+      "description": "Tradeable. Gain life equal to the damage your hero has taken this turn.",
       "effects": [
         {
           "type": "heal",
-          "value": 8,
+          "valueFromHeroDamage": true,
           "target": "self"
         }
-      ]
+      ],
+      "tradeable": true
     },
     {
       "id": "black_hole",
@@ -171896,12 +171902,11 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "SPACE",
-      "description": "Gain 8 life.",
+      "description": "Remove 1 Durability from a friendly location to gain 8 life.",
       "effects": [
         {
-          "type": "heal",
-          "value": 8,
-          "target": "self"
+          "type": "spend-location-durability-heal",
+          "value": 8
         }
       ]
     },
@@ -174120,6 +174125,24 @@
         }
       ],
       "description": "Target creature you control gains Lifesteal."
+    },
+    {
+      "id": "dark_embrace",
+      "name": "Dark Embrace",
+      "type": "sorcery",
+      "cost": 2,
+      "rarity": "common",
+      "cardClass": "priest",
+      "token": true,
+      "collectible": false,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "any"
+        }
+      ],
+      "description": "Deal 4 damage."
     }
   ]
 }

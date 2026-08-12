@@ -1464,6 +1464,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			// friendly Spell Damage boosts direct spell damage
 			let v = e.value === 'source-attack' ? (source?.attack || 0) : scaled(e); // Sergeant Sally
 			if (e.valueFromHeroDamage) v = state.players[pi].heroDamageTakenThisTurn || 0; // Shadowblade Slinger
+			if (e.plusPerFriendlyDied) v += state.players[pi].deathLogIds.filter(id => state.cardsById[id]?.type === 'creature').length; // Starsurge: +1 per friendly minion that died this game
 				if (e.valueFromSelfHealth && source) v = hp(source); // Cleansing Lightspawn: damage = this minion's Health
 				if (e.valueFromSelfAttack && source) v = source.attack || 0; // Ebonscale Scout: damage = this minion's Attack
 				if (e.altValueIfDrawn != null && source && source.drawnThisTurn) v = e.altValueIfDrawn; // Oil Rig Ambusher
