@@ -166867,19 +166867,19 @@
       "cardClass": "paladin",
       "rarity": "rare",
       "set": "ISLAND_VACATION",
-      "description": "Discover two minions that cost (5) or less.",
+      "description": "Discover two creatures that cost (5) or less. They gain each other's Attack and Health.",
       "effects": [
         {
           "type": "discover",
-          "pick": 3,
           "cardType": "creature",
-          "maxCost": 5
+          "maxCost": 5,
+          "pairFirst": true
         },
         {
           "type": "discover",
-          "pick": 3,
           "cardType": "creature",
-          "maxCost": 5
+          "maxCost": 5,
+          "pairSecond": true
         }
       ]
     },

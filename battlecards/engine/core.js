@@ -3765,6 +3765,14 @@ export function resolvePick(state, id) {
 		if (pend.darkGift) appliedGift = applyGift(state, card); // Emerald Dream: the discovered card carries a Dark Gift
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		// Trust Fall: the two discovered minions gain each other's Attack/Health
+		if (pend.pairFirst) p._trustPairFirst = { card, atk: card.attack, hp: card.maxHealth };
+		else if (pend.pairSecond && p._trustPairFirst) {
+			const f = p._trustPairFirst; p._trustPairFirst = null;
+			const a2 = card.attack, h2 = card.maxHealth;
+			if (f.card) { f.card.attack += a2; f.card.maxHealth += h2; emit(state, { type: 'buff', uid: f.card.uid, attack: f.card.attack, hp: hp(f.card) }); }
+			card.attack += f.atk; card.maxHealth += f.hp; emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) });
+		}
 		// The Origin Stone: after you Discover, the other options are played too
 		// (custom flags live on the DEF — instantiate doesn't copy them)
 		if (pend.discover && p.weapon && (p.weapon.playsDiscoverRest || state.cardsById[p.weapon.id]?.playsDiscoverRest) && !p.eliminated) {
