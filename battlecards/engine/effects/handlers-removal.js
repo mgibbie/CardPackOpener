@@ -2014,3 +2014,33 @@ register('summon-attack-lowest-if-deck-empty', ({ state, pi, enemies }, e) => {
 	}
 	sweepDeaths(state);
 });
+
+register('damage-excess-to-bottle', ({ state, pi, chosenCreature }, e) => {
+	// Invasive Shadeleaf: deal N to the chosen enemy creature; bank any excess
+	// (beyond its Health) in a 1-Cost Bottle spell added to your hand
+	const t = chosenCreature();
+	if (!t) return;
+	const before = hp(t);
+	damageCreature(state, t, e.value || 10, null);
+	sweepDeaths(state);
+	const excess = Math.max(0, (e.value || 10) - before);
+	if (excess > 0 && state.players[pi].hand.length < MAX_HAND) {
+		const cp = instantiate({ id: 'shade_bottle', name: 'Bottle', type: 'sorcery', cost: 1, token: true, rarity: 'common', cardClass: 'druid', description: `Deal ${excess} damage.` }, pi);
+		cp.zone = 'hand';
+		cp.effects = [{ type: 'damage', value: excess, target: 'any' }];
+		cp.description = `Deal ${excess} damage.`;
+		state.players[pi].hand.push(cp);
+		emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+	}
+});
+
+register('summon-raptors-outcast', ({ state, pi, source }, e) => {
+	// Horn of Feasting: create N Rush Raptors; Outcast (played from hand's edge)
+	// also gives them Immune while attacking
+	const outcast = !!(source && source._outcast);
+	const def = { id: e.id || 'feast_raptor', name: e.name || 'Raptor', type: 'creature', cost: 0, token: true, tribe: e.tribe || 'Beast', rarity: 'common', attack: e.attack || 2, health: e.health || 1, keywords: e.keywords || ['rush'], description: 'Rush.' };
+	for (let n = 0; n < (e.count || 3); n++) {
+		const c = summon(state, pi, def);
+		if (c && outcast) c.immuneWhileAttacking = true;
+	}
+});

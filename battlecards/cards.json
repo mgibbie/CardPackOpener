@@ -148633,10 +148633,10 @@
       "rarity": "common",
       "set": "THE_LOST_CITY",
       "collectible": true,
-      "description": "Create three 2/1 Raptor creature tokens with Rush.",
+      "description": "Create three 2/1 Raptors with Rush. Outcast: Give them Immune while attacking this turn.",
       "effects": [
         {
-          "type": "summon",
+          "type": "summon-raptors-outcast",
           "count": 3,
           "attack": 2,
           "health": 1,
@@ -148646,7 +148646,10 @@
             "rush"
           ]
         }
-      ]
+      ],
+      "outcast": {
+        "effects": []
+      }
     },
     {
       "id": "hounds_of_fury",
@@ -164727,10 +164730,10 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "WILD_WEST",
-      "description": "Deal 10 damage to an enemy minion.",
+      "description": "Deal 10 damage to an enemy creature. Save any excess in a 1-Cost Bottle.",
       "effects": [
         {
-          "type": "damage",
+          "type": "damage-excess-to-bottle",
           "value": 10,
           "target": "enemy-creature"
         }
