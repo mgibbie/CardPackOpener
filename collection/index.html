@@ -19,6 +19,23 @@
 	.toolbar select { padding: 6px 8px; border: 1px solid #cfd6e4; border-radius: 6px; font: inherit; background: #fff; }
 	.own-summary { color: #76819c; margin: 6px 0 0; }
 	.count-line { color: #98a2bd; font-size: 12.5px; margin: 8px 0 0; }
+	/* completion meter + per-class breakdown */
+	.completion { margin: 10px 0 4px; }
+	.meter { position: relative; height: 26px; border-radius: 999px; background: #e7ebf3; border: 1px solid #cfd6e4; overflow: hidden; }
+	.meter-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6ea8ff, #7a5bd6); transition: width .6s ease; }
+	.meter-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; color: #26304a; text-shadow: 0 1px 2px rgba(255,255,255,.5); }
+	.class-breakdown { margin-top: 10px; }
+	.class-breakdown > summary { cursor: pointer; color: #5a6a90; font-size: 13px; font-weight: 600; user-select: none; }
+	.cb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px 16px; margin-top: 10px; }
+	.cb-row { font-size: 12.5px; }
+	.cb-row .cb-top { display: flex; justify-content: space-between; color: #55607e; }
+	.cb-row .cb-top b { color: #2a3350; }
+	.cb-bar { height: 7px; border-radius: 999px; background: #e7ebf3; border: 1px solid #d7ddea; overflow: hidden; margin-top: 3px; }
+	.cb-bar > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #6ea8ff, #7a5bd6); }
+	/* cards you don't own, shown in Missing / All view */
+	.wiki-card.unowned img { filter: grayscale(1) brightness(.62); opacity: .72; }
+	.wiki-card.unowned { position: relative; }
+	.wiki-card.unowned::after { content: 'Not owned'; position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); background: rgba(20,15,32,.82); color: #cbd2e6; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .3px; }
 	/* hover tooltip — same voice as the pack-opening inspect tip */
 	#tip {
 		display: none; position: fixed; z-index: 50; max-width: 300px;
@@ -46,8 +63,17 @@
 <div id="content">
 	<h1>Your Collection</h1>
 	<p class="own-summary" id="summary">Loading your collection…</p>
+	<div class="completion" id="completion" hidden>
+		<div class="meter"><div class="meter-fill" id="meter-fill"></div><span class="meter-label" id="meter-label"></span></div>
+		<details class="class-breakdown"><summary>Completion by class</summary><div class="cb-grid" id="cb-grid"></div></details>
+	</div>
 	<div class="toolbar" id="toolbar" hidden>
-		<input type="search" id="q" placeholder="Search your cards…">
+		<input type="search" id="q" placeholder="Search cards…">
+		<select id="f-owned">
+			<option value="owned">Show: Owned</option>
+			<option value="missing">Show: Missing</option>
+			<option value="all">Show: All cards</option>
+		</select>
 		<select id="f-class"><option value="">All classes</option></select>
 		<select id="f-type"><option value="">All types</option></select>
 		<select id="f-rarity"><option value="">All rarities</option></select>
@@ -77,7 +103,7 @@ const $ = id => document.getElementById(id);
 const grid = $('grid');
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'special'];
 
-let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, state = null;
+let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, poolIds = [], state = null;
 
 (async () => {
 	// account state (server-owned collection) + the card database + the renderer
@@ -100,36 +126,62 @@ let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, state = null;
 		.filter(([id, n]) => n > 0 && byId[id])
 		.map(([id, n]) => ({ card: byId[id], count: n }));
 
-	const copies = owned.reduce((a, o) => a + o.count, 0);
-	$('summary').textContent = `You own ${owned.length.toLocaleString()} different cards` +
-		(poolSize ? ` — ${Math.round(owned.length / poolSize * 100)}% of the ${poolSize.toLocaleString()}-card pool` : '') +
-		` (${copies.toLocaleString()} total copies).`;
+	// the collectible universe = the pack pool (fall back to owned if it's missing)
+	poolIds = pool ? Object.keys(pool).filter(id => byId[id]) : owned.map(o => o.card.id);
+	poolSize = poolIds.length;
+	const canon = c => CardArt.canonClass(c) || 'neutral';
+	const clsName = v => (CardArt.classNameOf ? CardArt.classNameOf(v) : v);
 
-	// filter options from what you actually own
+	// completion meter (distinct pool cards owned / pool size)
+	const ownedDistinct = poolIds.filter(id => (col[id] || 0) > 0).length;
+	const copies = owned.reduce((a, o) => a + o.count, 0);
+	const pct = poolSize ? Math.round(ownedDistinct / poolSize * 100) : 0;
+	$('meter-fill').style.width = pct + '%';
+	$('meter-label').textContent = `${ownedDistinct.toLocaleString()} / ${poolSize.toLocaleString()} collected · ${pct}%`;
+	$('summary').textContent = `${copies.toLocaleString()} total copies across ${owned.length.toLocaleString()} different cards.`;
+
+	// per-class breakdown
+	const poolByClass = {}, ownedByClass = {};
+	for (const id of poolIds) { const k = canon(byId[id].cardClass); poolByClass[k] = (poolByClass[k] || 0) + 1; if ((col[id] || 0) > 0) ownedByClass[k] = (ownedByClass[k] || 0) + 1; }
+	const classesBySize = Object.keys(poolByClass).sort((a, b) => poolByClass[b] - poolByClass[a] || a.localeCompare(b));
+	const cbGrid = $('cb-grid');
+	for (const k of classesBySize) {
+		const tot = poolByClass[k], own = ownedByClass[k] || 0, p = tot ? Math.round(own / tot * 100) : 0;
+		const row = document.createElement('div'); row.className = 'cb-row';
+		row.innerHTML = `<div class="cb-top"><span>${esc(clsName(k))}</span><b>${own}/${tot}</b></div><div class="cb-bar"><div style="width:${p}%"></div></div>`;
+		cbGrid.appendChild(row);
+	}
+	$('completion').hidden = false;
+
+	// filter options span the whole pool so Missing / All can filter too
 	const opts = (sel, values, label) => {
-		for (const v of values) {
-			const o = document.createElement('option');
-			o.value = v; o.textContent = label ? label(v) : v;
-			sel.appendChild(o);
-		}
+		for (const v of values) { const o = document.createElement('option'); o.value = v; o.textContent = label ? label(v) : v; sel.appendChild(o); }
 	};
-	const classes = [...new Set(owned.map(o => CardArt.canonClass(o.card.cardClass)))].sort();
-	opts($('f-class'), classes, v => CardArt.classNameOf ? CardArt.classNameOf(v) : v);
-	opts($('f-type'), [...new Set(owned.map(o => o.card.type))].sort());
-	opts($('f-rarity'), RARITY_ORDER.filter(r => owned.some(o => (o.card.rarity || 'common') === r)));
+	opts($('f-class'), [...classesBySize].sort((a, b) => clsName(a).localeCompare(clsName(b))), clsName);
+	opts($('f-type'), [...new Set(poolIds.map(id => byId[id].type))].sort());
+	opts($('f-rarity'), RARITY_ORDER.filter(r => poolIds.some(id => (byId[id].rarity || 'common') === r)));
 	$('toolbar').hidden = false;
 
-	for (const id of ['q', 'f-class', 'f-type', 'f-rarity', 'f-sort']) $(id).addEventListener('input', render);
+	for (const id of ['q', 'f-owned', 'f-class', 'f-type', 'f-rarity', 'f-sort']) $(id).addEventListener('input', render);
 	$('f-size').addEventListener('input', () => { grid.className = 'card-grid size-' + $('f-size').value; });
 	render();
 })().catch(e => { $('summary').textContent = 'Could not load your collection: ' + e.message; });
 
 let gen = 0; // render generation — a filter change cancels the in-flight chunked render
+const RENDER_CAP = 750; // Missing / All can span the whole pool — cap the render, note the rest
 async function render() {
 	const my = ++gen;
 	const q = $('q').value.trim().toLowerCase();
+	const mode = $('f-owned').value;
 	const fc = $('f-class').value, ft = $('f-type').value, fr = $('f-rarity').value, sort = $('f-sort').value;
-	let list = owned.filter(({ card: c }) =>
+	const col = state.collection || {};
+	// the working universe depends on the Owned / Missing / All mode
+	let universe = owned;
+	if (mode !== 'owned') {
+		universe = poolIds.map(id => ({ card: byId[id], count: col[id] || 0 }));
+		if (mode === 'missing') universe = universe.filter(o => o.count === 0);
+	}
+	let list = universe.filter(({ card: c }) =>
 		(!q || c.name.toLowerCase().includes(q) || (c.description || '').toLowerCase().includes(q)) &&
 		(!fc || CardArt.canonClass(c.cardClass) === fc) &&
 		(!ft || c.type === ft) &&
@@ -141,8 +193,12 @@ async function render() {
 		sort === 'rarity' ? rk(b.card) - rk(a.card) || (a.card.cost ?? 0) - (b.card.cost ?? 0) :
 		(a.card.cost ?? 0) - (b.card.cost ?? 0) || a.card.name.localeCompare(b.card.name));
 
-	$('countline').textContent = list.length === owned.length
-		? '' : `${list.length.toLocaleString()} of ${owned.length.toLocaleString()} cards match.`;
+	const total = list.length;
+	if (total > RENDER_CAP) list = list.slice(0, RENDER_CAP);
+	const kind = mode === 'missing' ? 'missing' : mode === 'all' ? 'total' : 'owned';
+	$('countline').textContent = total > RENDER_CAP
+		? `Showing ${RENDER_CAP.toLocaleString()} of ${total.toLocaleString()} ${kind} cards — narrow with the filters.`
+		: `${total.toLocaleString()} ${kind} card${total === 1 ? '' : 's'}.`;
 	grid.replaceChildren();
 
 	// chunked: preload each chunk's real art, snapshot the in-game faces, keep the page responsive
@@ -159,7 +215,7 @@ async function render() {
 			img.className = 'wiki-face'; img.loading = 'lazy'; img.alt = card.name;
 			img.src = canvas.toDataURL();
 			const a = document.createElement('a');
-			a.className = 'wiki-card'; // no title attr — the custom tooltip handles hover
+			a.className = 'wiki-card' + (count === 0 ? ' unowned' : ''); // dim the ones you don't own
 			a.dataset.cid = card.id; a.dataset.count = count;
 			a.href = '/designwiki/#/cards/' + card.id;
 			a.appendChild(img);
@@ -182,7 +238,7 @@ function tipHtml(def, count) {
 	const kwLines = keywordsFor(def).map(k =>
 		`<div class="kwline"><b>${esc(k.label)}</b> <span style="opacity:0.85">${esc(k.text)}</span></div>`).join('');
 	return `<div class="nm">${esc(def.name)} <span class="cost">(${def.cost ?? 0})</span></div>`
-		+ `<div class="meta">${esc(def.rarity || 'common')}${cls}${stat}${def.tribe ? ' · ' + esc(def.tribe) : ''} · ×${count} owned</div>`
+		+ `<div class="meta">${esc(def.rarity || 'common')}${cls}${stat}${def.tribe ? ' · ' + esc(def.tribe) : ''} · ${count > 0 ? '×' + count + ' owned' : 'not owned'}</div>`
 		+ kw
 		+ (def.description ? `<div class="rules">${richHtml(def.description)}</div>` : '')
 		+ kwLines;
