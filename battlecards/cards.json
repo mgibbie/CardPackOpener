@@ -164538,15 +164538,30 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "THE_LOST_CITY",
-      "description": "Create a random 4-Cost minion and give it Taunt.",
+      "description": "Create a random 4-Cost creature and give it Taunt. Kindred: Do it again.",
       "effects": [
         {
           "type": "summon-random",
           "cost": 4,
           "count": 1,
           "grant": "taunt"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "kindredActive": true
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 4,
+              "count": 1,
+              "grant": "taunt"
+            }
+          ]
         }
-      ]
+      ],
+      "kindredCard": true
     },
     {
       "id": "greater_healing_potion",
@@ -164637,11 +164652,14 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "TITANS",
-      "description": "Give all enemy minions -2 Attack.",
+      "description": "Give all enemy creatures -2 Attack. Destroy any with 0 Attack.",
       "effects": [
         {
           "type": "debuff-enemies-attack-turn",
           "value": 2
+        },
+        {
+          "type": "destroy-zero-attack-enemies"
         }
       ]
     },
@@ -171261,11 +171279,14 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "SPACE",
-      "description": "In 2 turns, create two 6/6 Demons with Taunt.",
+      "description": "In 2 turns, create two 6/6 Demons with Taunt. If you're building a Starship, create them now.",
       "effects": [
         {
-          "type": "delay-to-turn-start",
-          "effects": [
+          "type": "conditional",
+          "if": {
+            "buildingStarship": true
+          },
+          "then": [
             {
               "type": "summon",
               "count": 2,
@@ -171275,6 +171296,24 @@
               "tribe": "Demon",
               "keywords": [
                 "taunt"
+              ]
+            }
+          ],
+          "else": [
+            {
+              "type": "delay-to-turn-start",
+              "effects": [
+                {
+                  "type": "summon",
+                  "count": 2,
+                  "attack": 6,
+                  "health": 6,
+                  "name": "Demon",
+                  "tribe": "Demon",
+                  "keywords": [
+                    "taunt"
+                  ]
+                }
               ]
             }
           ]

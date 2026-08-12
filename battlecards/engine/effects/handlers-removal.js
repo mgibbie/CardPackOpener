@@ -1970,3 +1970,12 @@ const _h_repeat_battlecries = ({ state, pi, target, source, enemies, scaled, hm,
 register('repeat-battlecries', _h_repeat_battlecries);
 register('replay-other-class', _h_repeat_battlecries); // shared or-branch handler
 
+
+register('destroy-zero-attack-enemies', ({ state, pi, enemies }) => {
+	// Serenity: after the -Attack debuff, destroy every enemy creature at 0 Attack
+	for (const o of enemies) for (const c of [...state.players[o].board]) {
+		if (isDead(c) || c.type === 'location') continue;
+		if ((c.attack || 0) <= 0) { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+	}
+	sweepDeaths(state);
+});
