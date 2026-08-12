@@ -1216,3 +1216,22 @@ register('conjure', _h_conjure);
 register('conjure-named', _h_conjure); // shared or-branch handler
 
 
+
+register('conjure-spells-heal-by-cost', ({ state, pi }, e) => {
+	// Mend the Timeline: add N random spells of a school to your hand and heal
+	// your hero for the sum of their Costs
+	let pool = Object.values(state.cardsById).filter(d => isSpellType(d) && d.collectible !== false && !d.token && !(d.colors && d.colors.length));
+	if (e.tribe) pool = pool.filter(d => (d.tribe || '') === e.tribe);
+	if (!pool.length) return;
+	const p = state.players[pi];
+	let totalCost = 0;
+	for (let n = 0; n < (e.count || 2); n++) {
+		if (p.hand.length >= MAX_HAND) break;
+		const def = pool[Math.floor(state.rng() * pool.length)];
+		const c = instantiate(def, pi);
+		c.zone = 'hand'; p.hand.push(c);
+		totalCost += def.cost || 0;
+		emit(state, { type: 'conjure', player: pi, card: c, color: null });
+	}
+	if (totalCost > 0) healHero(state, pi, totalCost);
+});

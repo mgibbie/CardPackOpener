@@ -164200,20 +164200,15 @@
       "cardClass": "paladin",
       "rarity": "epic",
       "set": "TIME_TRAVEL",
-      "description": "Get 2 random Holy spells. Gain 6 life.",
+      "description": "Rewind. Get 2 random Holy spells. Gain life equal to their Costs.",
       "effects": [
         {
-          "type": "conjure-random",
-          "cardType": "spell",
+          "type": "conjure-spells-heal-by-cost",
           "tribe": "Holy",
           "count": 2
-        },
-        {
-          "type": "heal",
-          "value": 6,
-          "target": "self"
         }
-      ]
+      ],
+      "rewind": 1
     },
     {
       "id": "neon_innovation",
