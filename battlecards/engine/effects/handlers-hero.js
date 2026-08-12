@@ -544,3 +544,16 @@ register('set-holy-refresh-shield', ({ state, pi }) => {
 	// your hero's Divine Shield
 	state.players[pi].holyRefreshShield = true;
 });
+
+register('unidentified-shield', ({ state, pi }, e) => {
+	// Unidentified Shield: gain 5 Armor plus one random "identified" bonus
+	// (the four real HS variants, picked at play time)
+	gainArmor(state, pi, e.value || 5);
+	const bonuses = [
+		[{ type: 'armor', value: 5 }],                                              // Belligerent: more Armor
+		[{ type: 'draw', value: 1 }],                                               // Sturdy: draw a card
+		[{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Silver Hand Recruit' }], // Ornate: a body
+		[{ type: 'buff', attack: 2, health: 2, target: 'friendly-creatures' }],     // Mysterious: buff your board
+	];
+	execEffects(state, pi, JSON.parse(JSON.stringify(bonuses[Math.floor(state.rng() * bonuses.length)])), null, null);
+});

@@ -149557,14 +149557,15 @@
       "set": "STORMWIND",
       "tribe": "Nature",
       "collectible": true,
-      "description": "Discover a 1-Cost creature and put it onto the battlefield.",
+      "description": "Discover a 1-Cost creature and create it, with +1/+1 for each Overloaded crystal this game.",
       "effects": [
         {
           "type": "discover",
           "cardType": "creature",
           "cost": 1,
           "count": 1,
-          "to": "board"
+          "to": "board",
+          "buffPerOverload": true
         }
       ]
     },
@@ -152403,10 +152404,10 @@
       "rarity": "common",
       "set": "LOOTAPALOOZA",
       "collectible": true,
-      "description": "Gain 5 Armor.",
+      "description": "Gain 5 Armor. Gains a bonus effect when played.",
       "effects": [
         {
-          "type": "armor",
+          "type": "unidentified-shield",
           "value": 5
         }
       ]

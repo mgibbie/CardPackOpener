@@ -3685,7 +3685,8 @@ export function resolvePick(state, id) {
 		return true;
 	}
 	if (def && !p.eliminated && pend.to === 'board') {
-		summon(state, pend.player, def);
+		const _s = summon(state, pend.player, def);
+		if (_s && pend.buff) { _s.attack += pend.buff.attack || 0; _s.maxHealth += pend.buff.health || 0; emit(state, { type: 'buff', uid: _s.uid, attack: _s.attack, hp: hp(_s) }); } // Charged Call: the summoned minion carries the discover buff
 		if (pend.summonTwice) summon(state, pend.player, def); // Zarog's Crown
 		return true;
 	}
