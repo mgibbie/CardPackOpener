@@ -148161,7 +148161,7 @@
       "rarity": "common",
       "set": "SPACE",
       "collectible": true,
-      "description": "Target creature gains Taunt & Lifesteal.",
+      "description": "Give a creature Taunt and Lifesteal. If you played an adjacent card this turn, also give it Reborn.",
       "type": "sorcery",
       "effects": [
         {
@@ -148173,13 +148173,27 @@
           "type": "grant",
           "keyword": "lifesteal",
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "adjacentPlayedWhileHeld": true
+          },
+          "then": [
+            {
+              "type": "grant",
+              "keyword": "reborn",
+              "target": "creature"
+            }
+          ]
         }
       ],
       "runes": {
         "blood": 0,
         "frost": 0,
         "unholy": 0
-      }
+      },
+      "tracksAdjacentPlayed": true
     },
     {
       "id": "rite_of_atrocity",
@@ -165152,12 +165166,17 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "SCHOLOMANCE",
-      "description": "Deal 4 damage to a minion.",
+      "description": "Deal 4 damage to a creature. If it dies, create a new copy.",
       "effects": [
         {
-          "type": "damage",
+          "type": "damage-then",
           "value": 4,
-          "target": "creature"
+          "target": "creature",
+          "ifDies": [
+            {
+              "type": "summon-copy-of-target-buffed"
+            }
+          ]
         }
       ]
     },

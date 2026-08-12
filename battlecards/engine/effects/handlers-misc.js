@@ -1994,6 +1994,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.controlMinAttack != null) ok = p.board.some(c => !isDead(c) && c !== source && c.attack >= e.if.controlMinAttack);
 			else if (e.if.cthunMinAttack != null) ok = (CTHUN_BASE + p.cthunAtk) >= e.if.cthunMinAttack;
 			else if (e.if.holdingTribe) ok = p.hand.some(c => (c.tribe || '').includes(e.if.holdingTribe));
+			else if (e.if.adjacentPlayedWhileHeld) ok = !!source && (source.adjacentPlayedWhileHeld || 0) > 0; // Orbital Moon: you played an adjacent card this turn
 			else if (e.if.handEmpty) ok = p.hand.length === 0;
 			else if (e.if.excavatedTwice) ok = (p.excavateCount || 0) >= 2;
 			else if (e.if.manathirst != null) ok = (p.mana.max || 0) >= e.if.manathirst; // mana crystals this turn, regardless of spend
