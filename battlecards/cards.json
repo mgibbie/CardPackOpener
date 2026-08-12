@@ -164873,12 +164873,27 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "EMERALD_DREAM",
-      "description": "Create two random 3-Cost minions.",
+      "description": "Create two random 3-Cost creatures. Cast 3 spells while this is held to create 6-Cost creatures instead.",
       "effects": [
         {
-          "type": "summon-random",
-          "cost": 3,
-          "count": 2
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "summon-random",
+              "cost": 6,
+              "count": 2
+            }
+          ],
+          "else": [
+            {
+              "type": "summon-random",
+              "cost": 3,
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -170733,13 +170748,27 @@
       "cardClass": "shaman",
       "rarity": "epic",
       "set": "ESCAPEFROM_VIOLET_HOLD",
-      "description": "Lifesteal. Deal 2 damage to all enemy minions.",
+      "description": "Lifesteal. Deal 2 damage to all enemy creatures. Cast 3 spells while this is held to deal 4 instead.",
       "effects": [
         {
           "type": "damage-all-enemies",
           "value": 2,
           "target": "enemy-creature",
           "lifesteal": true
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "spellsCastWhileHeld": 3
+          },
+          "then": [
+            {
+              "type": "damage-all-enemies",
+              "value": 2,
+              "target": "enemy-creature",
+              "lifesteal": true
+            }
+          ]
         }
       ]
     },
