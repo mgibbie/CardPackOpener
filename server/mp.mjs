@@ -847,7 +847,7 @@ export default async function handler(req, env) {
 		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
 		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
-		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now() };
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now(), stats: body.stats || null };
 		await store.setJSON('cardmatchstate:' + id, payload);
 		await store.setJSON('cardstate:' + username, payload); // spectators
 		await store.setJSON('presence:' + username, {

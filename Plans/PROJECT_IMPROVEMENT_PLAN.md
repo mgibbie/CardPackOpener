@@ -188,6 +188,13 @@ world**. FFA (3–4 player) games fall back to a one-line self-summary, and resu
 spectated games (no turn 1 to seed the tally) degrade to just the result. Verified the
 stat attribution (both seat perspectives), the FFA fallback, the button wiring, and all
 three result titles by running the real functions headless.
+- **Guest duel stats — ✅ DONE (2026-08-12):** in a PvP duel only the host runs the
+  event stream, so the guest (who renders from relayed snapshots) had no tally. The host
+  now publishes its seat-indexed stats (with the duration baked in, since the guest can't
+  read the host's clock) inside the `card-publish` payload; the guest adopts them at
+  game-over and renders the same You-vs-opponent table from its own seat (life still read
+  from its own final board). An older host that doesn't send stats degrades to the plain
+  result. Verified the payload shape and the guest-seat render headless.
 
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are

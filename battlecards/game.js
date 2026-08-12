@@ -3655,6 +3655,10 @@ function startDuelGuest(cardsById) {
 				: (won ? `You beat ${cm.host}!` : `${cm.host} wins the duel.`);
 			const el = dungeonOverlay(won ? 'YOU WIN!' : 'DEFEAT', msg);
 			el.id = 'duel-over';
+			// the guest never ran the event stream, so adopt the host's published,
+			// seat-indexed tally; appendMatchSummary renders it from HUMAN=1's view
+			// (life comes from the guest's own ingested final board)
+			if (data.stats) { matchStats = data.stats; appendMatchSummary(el); }
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
@@ -3716,12 +3720,20 @@ let duelPubSeq = 0, duelPubStarted = false;
 function snapshotForDuel() {
 	return E.toSnapshot(state);
 }
+// seat-indexed match stats for the guest's post-game summary. Duration is baked
+// in (durS) because the guest can't read the host's performance.now() clock.
+function duelStatsPayload() {
+	if (!matchStats) return null;
+	return { turns: matchStats.turns, cards: matchStats.cards, summons: matchStats.summons,
+		heroDmgTaken: matchStats.heroDmgTaken, durS: Math.max(1, Math.round((performance.now() - matchStats.start) / 1000)) };
+}
 function publishDuel() {
 	const cm = duel.config;
 	MPX.call('card-publish', {
 		id: duel.id, snapshot: snapshotForDuel(), seq: ++duelPubSeq,
 		label: `${cm.host} vs ${cm.guest}`,
 		over: !!state?.over, winner: state?.winner ?? null,
+		stats: duelStatsPayload(),
 	}).then(r => {
 		if (r?.error) throw new Error(r.error);
 		duelDebug.pubOk++; duelDebug.lastPubAt = performance.now();
@@ -4067,7 +4079,9 @@ function applyTreasures(ids) {
 function appendMatchSummary(el) {
 	if (!matchStats || !state || !state.players) return;
 	const ms = matchStats, pc = state.players.length;
-	const durS = Math.max(1, Math.round((performance.now() - ms.start) / 1000));
+	// the guest renders from the host's published stats (durS baked in); the host
+	// has a live `start` timestamp to measure against
+	const durS = ms.durS != null ? ms.durS : Math.max(1, Math.round((performance.now() - ms.start) / 1000));
 	const dur = `${Math.floor(durS / 60)}:${String(durS % 60).padStart(2, '0')}`;
 	const box = document.createElement('div');
 	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:440px;width:100%;font-size:14px;';
