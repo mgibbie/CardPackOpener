@@ -148695,13 +148695,16 @@
       "rarity": "rare",
       "set": "BATTLE_OF_THE_BANDS",
       "collectible": true,
-      "description": "Deal 3 damage to all creatures.",
+      "description": "Deal 3 damage to all creatures. Gains an extra effect in your hand that changes each turn.",
       "effects": [
         {
-          "type": "damage-all-minions",
+          "type": "remix-damage-all-rotating-bonus",
           "value": 3
         }
-      ]
+      ],
+      "remix": {
+        "index": 0
+      }
     },
     {
       "id": "multi_strike",

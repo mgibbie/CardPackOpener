@@ -2062,3 +2062,18 @@ register('imp-losion', ({ state, pi, source, chosenCreature }, e) => {
 	const def = { id: 'implosion_imp', name: 'Imp', type: 'creature', cost: 1, token: true, tribe: 'Demon', rarity: 'common', attack: 1, health: 1, description: 'A 1/1 Imp.' };
 	for (let n = 0; n < amt; n++) if (!summon(state, pi, def)) break;
 });
+
+register('remix-damage-all-rotating-bonus', ({ state, pi, source }, e) => {
+	// Remixed Rhapsody: deal N to all creatures, then run the current rotating
+	// bonus (which changes each turn the card is held)
+	for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type === 'creature') damageCreature(state, c, e.value || 3, source);
+	sweepDeaths(state);
+	const bonuses = [
+		[{ type: 'draw', value: 1 }],
+		[{ type: 'armor', value: 3 }],
+		[{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Encore' }],
+		[{ type: 'conjure-random', cardType: 'spell' }],
+	];
+	const idx = ((source && source.remix && source.remix.index) || 0) % bonuses.length;
+	execEffects(state, pi, JSON.parse(JSON.stringify(bonuses[idx])), null, source);
+});

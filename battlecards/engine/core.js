@@ -300,6 +300,7 @@ export function instantiate(def, controller) {
 		immuneWhileAttacking: def.immuneWhileAttacking || false, // Stalwart Avenger: Immune during its own attacks
 		diesToAnyDamage: def.diesToAnyDamage || false, // Reverberations: this copy dies after taking any damage
 		smolder: def.smolder ? { ...def.smolder } : null, // Smoldering Strength/Grove/Ascent: escalate in hand each turn, then discard
+		remix: def.remix ? { ...def.remix } : null, // Remixed Rhapsody: a bonus effect that rotates each turn in hand
 		echo: !!def.echo,             // leaves a ghost copy in hand until end of turn
 		miniaturize: !!def.miniaturize, // playing it hands you a 1/1 Mini copy for 1
 		echoGhost: false,
@@ -4508,6 +4509,8 @@ export function endTurn(state) {
 		const q = np.turnStartEffects; np.turnStartEffects = [];
 		for (const fx of q) { execEffects(state, state.current, fx, null, null); sweepDeaths(state); }
 	}
+	// Remixed Rhapsody: its bonus effect rotates each of your turns while held
+	for (const c of np.hand) if (c.remix) c.remix.index = ((c.remix.index || 0) + 1);
 	// Smoldering cards: each of your turns they upgrade in hand and count down;
 	// when the countdown expires the card discards itself
 	for (const c of [...np.hand]) {
