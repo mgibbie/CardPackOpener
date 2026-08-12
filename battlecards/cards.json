@@ -146133,32 +146133,6 @@
       ]
     },
     {
-      "id": "mind_sear",
-      "name": "Mind Sear",
-      "cardClass": "priest",
-      "cost": 1,
-      "rarity": "common",
-      "set": "RETURN_OF_THE_LICH_KING",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Shadow",
-      "description": "Deal 2 damage to a creature. If it dies, deal 3 damage to target opponent.",
-      "effects": [
-        {
-          "type": "damage-then",
-          "value": 2,
-          "target": "creature",
-          "ifDies": [
-            {
-              "type": "damage",
-              "value": 3,
-              "target": "enemy-hero"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "pint_size_potion",
       "name": "Pint-Size Potion",
       "type": "sorcery",
@@ -146633,29 +146607,6 @@
       ]
     },
     {
-      "id": "gear_shift",
-      "name": "Gear Shift",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "rogue",
-      "rarity": "rare",
-      "set": "TITANS",
-      "collectible": true,
-      "description": "Shuffle the two left-most cards in your hand into your deck. Draw 3 cards.",
-      "effects": [
-        {
-          "type": "shuffle-leftmost-hand-into-deck"
-        },
-        {
-          "type": "shuffle-leftmost-hand-into-deck"
-        },
-        {
-          "type": "draw",
-          "value": 3
-        }
-      ]
-    },
-    {
       "id": "journey_below",
       "name": "Journey Below",
       "cardClass": "rogue",
@@ -146875,25 +146826,6 @@
       ]
     },
     {
-      "id": "crystology",
-      "name": "Crystology",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "paladin",
-      "rarity": "rare",
-      "set": "BOOMSDAY",
-      "collectible": true,
-      "description": "Draw two 1-Attack creatures from your deck.",
-      "effects": [
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "attack": 1,
-          "count": 2
-        }
-      ]
-    },
-    {
       "id": "divine_brew",
       "name": "Divine Brew",
       "cardClass": "paladin",
@@ -146929,25 +146861,6 @@
           "requireKeyword": "divine_shield",
           "attack": 2,
           "health": 3
-        }
-      ]
-    },
-    {
-      "id": "first_day_of_school",
-      "name": "First Day of School",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "paladin",
-      "rarity": "common",
-      "set": "SCHOLOMANCE",
-      "collectible": true,
-      "description": "Add 2 random 1-Cost creatures to your hand.",
-      "effects": [
-        {
-          "type": "conjure-random",
-          "cardType": "creature",
-          "cost": 1,
-          "count": 2
         }
       ]
     },
@@ -147026,32 +146939,6 @@
           "requireDamaged": true,
           "attack": 3,
           "grant": "divine_shield"
-        }
-      ]
-    },
-    {
-      "id": "a_light_in_the_darkness",
-      "name": "A Light in the Darkness",
-      "cardClass": "paladin",
-      "cost": 2,
-      "rarity": "common",
-      "type": "sorcery",
-      "set": "OG",
-      "collectible": true,
-      "tribe": "Holy",
-      "description": "Discover a Paladin creature. Give it +2/+2.",
-      "effects": [
-        {
-          "type": "discover",
-          "pick": 3,
-          "cardType": "creature",
-          "cardClasses": [
-            "paladin"
-          ],
-          "buff": {
-            "attack": 2,
-            "health": 2
-          }
         }
       ]
     },
@@ -147341,34 +147228,6 @@
       ]
     },
     {
-      "id": "witchwood_apple",
-      "name": "Witchwood Apple",
-      "cardClass": "druid",
-      "cost": 1,
-      "rarity": "common",
-      "type": "sorcery",
-      "tribe": "Nature",
-      "set": "PLACEHOLDER_202204",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "add-token",
-          "name": "Treant",
-          "attack": 2,
-          "health": 2,
-          "cost": 1
-        },
-        {
-          "type": "add-token",
-          "name": "Treant",
-          "attack": 2,
-          "health": 2,
-          "cost": 1
-        }
-      ],
-      "description": "Add two 2/2 Treants to your hand."
-    },
-    {
       "id": "horn_of_plenty",
       "name": "Horn of Plenty",
       "cardClass": "druid",
@@ -147628,27 +147487,6 @@
       ]
     },
     {
-      "id": "reincarnate",
-      "name": "Reincarnate",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "shaman",
-      "rarity": "common",
-      "set": "NAXX",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Destroy a creature, then return it to life with full Health.",
-      "effects": [
-        {
-          "type": "destroy-and-remember",
-          "target": "friendly-creature"
-        },
-        {
-          "type": "resummon-remembered"
-        }
-      ]
-    },
-    {
       "id": "schooling",
       "name": "Schooling",
       "type": "sorcery",
@@ -147720,30 +147558,6 @@
         }
       ],
       "description": "Deal 3-6 damage.\nOverload: (1)"
-    },
-    {
-      "id": "cryostasis",
-      "name": "Cryostasis",
-      "cardClass": "shaman",
-      "cost": 2,
-      "rarity": "epic",
-      "set": "PLACEHOLDER_202204",
-      "type": "sorcery",
-      "tribe": "Frost",
-      "collectible": true,
-      "description": "Target creature gains +3/+3 and Freeze it.",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 3,
-          "health": 3,
-          "target": "creature"
-        },
-        {
-          "type": "freeze",
-          "target": "creature"
-        }
-      ]
     },
     {
       "id": "earthen_might",
@@ -147946,33 +147760,6 @@
       ]
     },
     {
-      "id": "blood_to_ichor",
-      "name": "Blood to Ichor",
-      "cardClass": "warrior",
-      "cost": 1,
-      "rarity": "rare",
-      "type": "sorcery",
-      "collectible": true,
-      "set": "OG",
-      "effects": [
-        {
-          "type": "damage-then",
-          "value": 1,
-          "target": "creature",
-          "ifSurvives": [
-            {
-              "type": "summon",
-              "count": 1,
-              "attack": 2,
-              "health": 2,
-              "name": "Slime"
-            }
-          ]
-        }
-      ],
-      "description": "Deal 1 damage to a creature. If it survives, create a 2/2 Slime creature token."
-    },
-    {
       "id": "burning_heart",
       "name": "Burning Heart",
       "cardClass": "warrior",
@@ -148016,25 +147803,6 @@
       ]
     },
     {
-      "id": "devastate",
-      "name": "Devastate",
-      "type": "sorcery",
-      "cardClass": "warrior",
-      "cost": 1,
-      "rarity": "common",
-      "set": "TROLL",
-      "collectible": true,
-      "description": "Deal 4 damage to a damaged creature.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature",
-          "requireDamaged": true
-        }
-      ]
-    },
-    {
       "id": "improve_morale",
       "name": "Improve Morale",
       "cardClass": "warrior",
@@ -148056,25 +147824,6 @@
         }
       ],
       "description": "Deal 1 damage to a creature. If it survives, add a Lackey to your hand."
-    },
-    {
-      "id": "into_the_fray",
-      "name": "Into the Fray",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "warrior",
-      "rarity": "rare",
-      "set": "ULDUM",
-      "collectible": true,
-      "description": "Give all Taunt creatures in your hand +2/+2.",
-      "effects": [
-        {
-          "type": "buff-hand-keyword",
-          "keyword": "taunt",
-          "attack": 2,
-          "health": 2
-        }
-      ]
     },
     {
       "id": "shiver_their_timbers",
@@ -148167,25 +147916,6 @@
           "type": "buff-hand-minions",
           "attack": 1,
           "health": 1
-        }
-      ]
-    },
-    {
-      "id": "dragon_roar",
-      "name": "Dragon Roar",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "warrior",
-      "rarity": "common",
-      "set": "TROLL",
-      "collectible": true,
-      "description": "Add 2 random Dragons to your hand.",
-      "effects": [
-        {
-          "type": "conjure-random",
-          "cardType": "creature",
-          "tribe": "Dragon",
-          "count": 2
         }
       ]
     },
@@ -148445,30 +148175,6 @@
       }
     },
     {
-      "id": "poison_breath",
-      "name": "Poison Breath",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "deathknight",
-      "rarity": "rare",
-      "set": "CORE",
-      "collectible": true,
-      "description": "Give a friendly Undead Poisonous.",
-      "effects": [
-        {
-          "type": "grant",
-          "target": "friendly-creature",
-          "tribe": "Undead",
-          "keyword": "poisonous"
-        }
-      ],
-      "runes": {
-        "blood": 0,
-        "frost": 0,
-        "unholy": 2
-      }
-    },
-    {
       "id": "cremate",
       "name": "Cremate",
       "type": "sorcery",
@@ -148489,35 +148195,6 @@
       "runes": {
         "blood": 0,
         "frost": 0,
-        "unholy": 0
-      }
-    },
-    {
-      "id": "howling_blast",
-      "name": "Howling Blast",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "deathknight",
-      "rarity": "common",
-      "set": "PATH_OF_ARTHAS",
-      "collectible": true,
-      "tribe": "Frost",
-      "description": "Deal 3 damage to an enemy and Freeze it. Deal 1 damage to all other enemies.",
-      "effects": [
-        {
-          "type": "swipe",
-          "value": 3,
-          "splash": 1,
-          "target": "enemy-any"
-        },
-        {
-          "type": "freeze",
-          "target": "enemy-any"
-        }
-      ],
-      "runes": {
-        "blood": 0,
-        "frost": 1,
         "unholy": 0
       }
     },
@@ -148718,26 +148395,6 @@
       ]
     },
     {
-      "id": "spontaneous_combustion",
-      "name": "Spontaneous Combustion",
-      "cardClass": "mage",
-      "cost": 2,
-      "rarity": "common",
-      "set": "SPACE",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Fire",
-      "description": "Deal 4 damage to a random enemy.",
-      "effects": [
-        {
-          "type": "random-damage",
-          "value": 4,
-          "pool": "enemies",
-          "count": 1
-        }
-      ]
-    },
-    {
       "id": "tear_reality",
       "name": "Tear Reality",
       "cardClass": "mage",
@@ -148775,86 +148432,6 @@
           "value": 4,
           "pool": "enemies",
           "count": 1
-        }
-      ]
-    },
-    {
-      "id": "multi_strike",
-      "name": "Multi-Strike",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "demonhunter",
-      "rarity": "rare",
-      "set": "THE_SUNKEN_CITY",
-      "collectible": true,
-      "tribe": "Fel",
-      "description": "Give your hero +2 Attack this turn.",
-      "effects": [
-        {
-          "type": "hero-temp-attack",
-          "value": 2
-        }
-      ]
-    },
-    {
-      "id": "horn_of_feasting",
-      "name": "Horn of Feasting",
-      "type": "sorcery",
-      "cost": 4,
-      "cardClass": "demonhunter",
-      "rarity": "common",
-      "set": "THE_LOST_CITY",
-      "collectible": true,
-      "description": "Create three 2/1 Raptor creature tokens with Rush.",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 3,
-          "attack": 2,
-          "health": 1,
-          "name": "Raptor",
-          "tribe": "Beast",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "hounds_of_fury",
-      "name": "Hounds of Fury",
-      "cardClass": "demonhunter",
-      "cost": 4,
-      "rarity": "rare",
-      "type": "sorcery",
-      "collectible": true,
-      "set": "TIME_TRAVEL",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 2,
-          "name": "Demon",
-          "tribe": "Demon"
-        }
-      ],
-      "description": "Create two 3/2 Demon creature tokens."
-    },
-    {
-      "id": "remixed_rhapsody",
-      "name": "Remixed Rhapsody",
-      "type": "sorcery",
-      "cost": 5,
-      "cardClass": "demonhunter",
-      "rarity": "rare",
-      "set": "BATTLE_OF_THE_BANDS",
-      "collectible": true,
-      "description": "Deal 3 damage to all creatures.",
-      "effects": [
-        {
-          "type": "damage-all-minions",
-          "value": 3
         }
       ]
     },
@@ -148955,143 +148532,6 @@
           "value": 2
         }
       ]
-    },
-    {
-      "id": "spirit_bond",
-      "name": "Spirit Bond",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "hunter",
-      "rarity": "rare",
-      "set": "EMERALD_DREAM",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Deal 3 damage to a creature. If it dies, create a 3/2 Wolf creature token with Rush.",
-      "effects": [
-        {
-          "type": "damage-then",
-          "value": 3,
-          "target": "creature",
-          "ifDies": [
-            {
-              "type": "summon",
-              "count": 1,
-              "attack": 3,
-              "health": 2,
-              "name": "Wolf",
-              "tribe": "Beast",
-              "keywords": [
-                "rush"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "shellshot",
-      "name": "Shellshot",
-      "cardClass": "hunter",
-      "cost": 3,
-      "rarity": "rare",
-      "set": "THE_SUNKEN_CITY",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Nature",
-      "effects": [
-        {
-          "type": "random-damage",
-          "value": 3,
-          "pool": "enemy-creatures",
-          "count": 1
-        },
-        {
-          "type": "random-damage",
-          "value": 2,
-          "pool": "enemy-creatures",
-          "count": 1
-        },
-        {
-          "type": "random-damage",
-          "value": 1,
-          "pool": "enemy-creatures",
-          "count": 1
-        }
-      ],
-      "description": "Deal 3 damage to a random creature an opponent controls. Repeat this with 1 less damage."
-    },
-    {
-      "id": "scrap_shot",
-      "name": "Scrap Shot",
-      "type": "sorcery",
-      "cardClass": "hunter",
-      "cost": 4,
-      "rarity": "rare",
-      "set": "BLACK_TEMPLE",
-      "collectible": true,
-      "description": "Deal 3 damage. Give a random Beast in your hand +3/+3.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "any"
-        },
-        {
-          "type": "buff-random-hand-tribe",
-          "tribe": "Beast",
-          "attack": 3,
-          "health": 3
-        }
-      ]
-    },
-    {
-      "id": "eversong_portal",
-      "name": "Eversong Portal",
-      "cardClass": "hunter",
-      "cost": 4,
-      "rarity": "rare",
-      "set": "RETURN_OF_THE_LICH_KING",
-      "tribe": "Arcane",
-      "type": "sorcery",
-      "collectible": true,
-      "description": "Create a 4/4 Lynx creature token with Rush.",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Lynx",
-          "tribe": "Beast",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "dig_for_freedom",
-      "name": "Dig for Freedom",
-      "cardClass": "hunter",
-      "cost": 4,
-      "rarity": "rare",
-      "set": "ESCAPEFROM_VIOLET_HOLD",
-      "collectible": true,
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "grant-deathrattle",
-          "target": "creature",
-          "effects": [
-            {
-              "type": "summon-random",
-              "cost": 4,
-              "count": 2
-            }
-          ]
-        }
-      ],
-      "description": "Target creature you control gains \"Deathrattle: Create two random 4-Cost creatures.\""
     },
     {
       "id": "r_c_rampage",
@@ -149323,73 +148763,6 @@
         {
           "type": "discover",
           "costFromMana": true
-        }
-      ]
-    },
-    {
-      "id": "coerce",
-      "name": "Coerce",
-      "cardClass": "neutral",
-      "cost": 3,
-      "rarity": "rare",
-      "set": "SCHOLOMANCE",
-      "collectible": true,
-      "type": "sorcery",
-      "combo": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ],
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature",
-          "requireDamaged": true
-        }
-      ],
-      "description": "Destroy a damaged creature. Combo: Destroy any creature."
-    },
-    {
-      "id": "barricade",
-      "name": "Barricade",
-      "cardClass": "neutral",
-      "cost": 4,
-      "rarity": "common",
-      "type": "sorcery",
-      "set": "DARKMOON_FAIRE",
-      "collectible": true,
-      "description": "Create a 2/4 Guard creature token with Taunt. If it's your only creature, create another.",
-      "effects": [
-        {
-          "type": "conditional",
-          "if": {
-            "noOtherCreatures": true
-          },
-          "then": [
-            {
-              "type": "summon",
-              "count": 2,
-              "attack": 2,
-              "health": 4,
-              "name": "Guard",
-              "keywords": [
-                "taunt"
-              ]
-            }
-          ],
-          "else": [
-            {
-              "type": "summon",
-              "count": 1,
-              "attack": 2,
-              "health": 4,
-              "name": "Guard",
-              "keywords": [
-                "taunt"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -149762,42 +149135,6 @@
       ]
     },
     {
-      "id": "nether_breath",
-      "name": "Nether Breath",
-      "cardClass": "warlock",
-      "cost": 2,
-      "rarity": "rare",
-      "set": "DRAGONS",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Fel",
-      "description": "Deal 2 damage. If you're holding a Dragon, deal 4 damage with Lifesteal instead.",
-      "effects": [
-        {
-          "type": "conditional",
-          "target": "any",
-          "if": {
-            "holdingTribe": "Dragon"
-          },
-          "then": [
-            {
-              "type": "damage",
-              "value": 4,
-              "target": "any",
-              "lifesteal": true
-            }
-          ],
-          "else": [
-            {
-              "type": "damage",
-              "value": 2,
-              "target": "any"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "plot_twist",
       "name": "Plot Twist",
       "type": "sorcery",
@@ -149810,29 +149147,6 @@
       "effects": [
         {
           "type": "shuffle-hand-redraw"
-        }
-      ]
-    },
-    {
-      "id": "soul_shear",
-      "name": "Soul Shear",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "warlock",
-      "rarity": "rare",
-      "set": "SCHOLOMANCE",
-      "collectible": true,
-      "tribe": "Shadow",
-      "description": "Deal 3 damage to a creature. Shuffle 2 Soul Fragments into your deck.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "shuffle-soul-fragments",
-          "count": 2
         }
       ]
     },
@@ -149998,47 +149312,6 @@
       ]
     },
     {
-      "id": "lava_shock",
-      "name": "Lava Shock",
-      "cardClass": "shaman",
-      "cost": 2,
-      "rarity": "rare",
-      "set": "BRM",
-      "collectible": true,
-      "tribe": "Fire",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "any"
-        },
-        {
-          "type": "unlock-overload"
-        }
-      ],
-      "description": "Deal 2 damage. Unlock your Overloaded Mana Crystals."
-    },
-    {
-      "id": "malted_magma",
-      "name": "Malted Magma",
-      "cardClass": "shaman",
-      "cost": 2,
-      "rarity": "common",
-      "set": "ISLAND_VACATION",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Fire",
-      "description": "Deal 1 damage to all enemies.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemies"
-        }
-      ]
-    },
-    {
       "id": "spirit_echo",
       "name": "Spirit Echo",
       "type": "sorcery",
@@ -150143,40 +149416,6 @@
         }
       ],
       "description": "Deal 2 damage and gain 2 Armor."
-    },
-    {
-      "id": "revenge",
-      "name": "Revenge",
-      "cardClass": "warrior",
-      "cost": 2,
-      "rarity": "rare",
-      "set": "BRM",
-      "collectible": true,
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "conditional",
-          "target": "all-creatures",
-          "if": {
-            "maxHealthSelf": 12
-          },
-          "then": [
-            {
-              "type": "damage",
-              "value": 3,
-              "target": "all-creatures"
-            }
-          ],
-          "else": [
-            {
-              "type": "damage",
-              "value": 1,
-              "target": "all-creatures"
-            }
-          ]
-        }
-      ],
-      "description": "Deal 1 damage to all creatures. If you have 12 or less Health, deal 3 damage instead."
     },
     {
       "id": "through_fel_and_flames",
@@ -150324,24 +149563,6 @@
       ]
     },
     {
-      "id": "garrote",
-      "name": "Garrote",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "rogue",
-      "rarity": "epic",
-      "set": "STORMWIND",
-      "collectible": true,
-      "description": "Deal 2 damage to target opponent.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-hero"
-        }
-      ]
-    },
-    {
       "id": "reconnaissance",
       "name": "Reconnaissance",
       "type": "sorcery",
@@ -150357,49 +149578,6 @@
           "cardType": "creature",
           "requireKeyword": "deathrattle",
           "costMod": -2
-        }
-      ]
-    },
-    {
-      "id": "serrated_bone_spike",
-      "name": "Serrated Bone Spike",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "rogue",
-      "rarity": "rare",
-      "set": "PLACEHOLDER_202204",
-      "collectible": true,
-      "description": "Deal 3 damage to a creature. If it dies, your next card this turn costs (2) less.",
-      "effects": [
-        {
-          "type": "damage-then",
-          "value": 3,
-          "target": "creature",
-          "ifDies": [
-            {
-              "type": "set-next-cards-discount",
-              "count": 1,
-              "value": 2
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "stolen_steel",
-      "name": "Stolen Steel",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "rogue",
-      "rarity": "common",
-      "set": "TROLL",
-      "collectible": true,
-      "description": "Discover a weapon.",
-      "effects": [
-        {
-          "type": "discover",
-          "pick": 3,
-          "cardType": "weapon"
         }
       ]
     },
@@ -150614,81 +149792,6 @@
       "description": "Target creature gains \"Deathrattle: Return this to life with 1 Health.\""
     },
     {
-      "id": "call_to_adventure",
-      "name": "Call to Adventure",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "paladin",
-      "rarity": "rare",
-      "set": "DALARAN",
-      "collectible": true,
-      "description": "Draw the lowest Cost creature from your deck. Give it +2/+2.",
-      "effects": [
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "lowest": true,
-          "buff": {
-            "attack": 2,
-            "health": 2
-          }
-        }
-      ]
-    },
-    {
-      "id": "hold_the_bridge",
-      "name": "Hold the Bridge",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "paladin",
-      "rarity": "common",
-      "set": "ALTERAC_VALLEY",
-      "tribe": "Holy",
-      "collectible": true,
-      "description": "Target creature gains +2/+1 and Divine Shield. It gains Lifesteal until end of turn.",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "creature",
-          "grant": "divine_shield"
-        },
-        {
-          "type": "grant",
-          "keyword": "lifesteal",
-          "target": "creature"
-        }
-      ]
-    },
-    {
-      "id": "jury_duty",
-      "name": "Jury Duty",
-      "cardClass": "paladin",
-      "cost": 3,
-      "rarity": "common",
-      "type": "sorcery",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Silver Hand Recruit"
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "name": "Silver Hand Recruit"
-        }
-      ],
-      "description": "Create two Silver Hand Recruits. Give your Silver Hand Recruits +1/+1.",
-      "set": "PLACEHOLDER_202204"
-    },
-    {
       "id": "aegis_of_light",
       "name": "Aegis of Light",
       "type": "sorcery",
@@ -150784,31 +149887,6 @@
       ]
     },
     {
-      "id": "heart_of_the_wild",
-      "name": "Heart of the Wild",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "druid",
-      "rarity": "common",
-      "set": "ALTERAC_VALLEY",
-      "collectible": true,
-      "description": "Target creature gains +2/+2, then give your Beasts +1/+1.",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "tribe": "Beast"
-        }
-      ]
-    },
-    {
       "id": "lethal_recipe",
       "name": "Lethal Recipe",
       "type": "sorcery",
@@ -150841,67 +149919,6 @@
               "cardType": "creature",
               "count": 2
             }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "take_to_the_skies",
-      "name": "Take to the Skies",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "druid",
-      "rarity": "common",
-      "set": "WILD_WEST",
-      "collectible": true,
-      "description": "Draw two Dragons. Give them +1/+1.",
-      "effects": [
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "tribe": "Dragon",
-          "count": 2,
-          "buff": {
-            "attack": 1,
-            "health": 1
-          }
-        }
-      ]
-    },
-    {
-      "id": "witching_hour",
-      "name": "Witching Hour",
-      "type": "sorcery",
-      "cardClass": "druid",
-      "cost": 3,
-      "rarity": "rare",
-      "set": "GILNEAS",
-      "collectible": true,
-      "description": "Create a random friendly Beast that died this game.",
-      "effects": [
-        {
-          "type": "resurrect-tribe",
-          "tribe": "Beast"
-        }
-      ]
-    },
-    {
-      "id": "germination",
-      "name": "Germination",
-      "type": "sorcery",
-      "cost": 4,
-      "cardClass": "druid",
-      "rarity": "rare",
-      "set": "BLACK_TEMPLE",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Create a token that's a copy of a creature you control. Give the copy Taunt.",
-      "effects": [
-        {
-          "type": "summon-copy-of-target-buffed",
-          "target": "friendly-creature",
-          "keywords": [
-            "taunt"
           ]
         }
       ]
@@ -151031,43 +150048,6 @@
       ]
     },
     {
-      "id": "unexpected_results",
-      "name": "Unexpected Results",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "mage",
-      "rarity": "epic",
-      "set": "BOOMSDAY",
-      "collectible": true,
-      "description": "Create two random 2-Cost creatures.",
-      "effects": [
-        {
-          "type": "summon-random",
-          "cost": 2,
-          "count": 2
-        }
-      ]
-    },
-    {
-      "id": "scorch",
-      "name": "Scorch",
-      "type": "sorcery",
-      "cost": 4,
-      "cardClass": "mage",
-      "rarity": "rare",
-      "set": "TROLL",
-      "collectible": true,
-      "tribe": "Fire",
-      "description": "Deal 4 damage to a creature.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        }
-      ]
-    },
-    {
       "id": "apexis_blast",
       "name": "Apexis Blast",
       "type": "sorcery",
@@ -151117,43 +150097,6 @@
       "description": "Deal 2 damage to all creatures."
     },
     {
-      "id": "crystallized_leyline",
-      "name": "Crystallized Leyline",
-      "type": "sorcery",
-      "cost": 5,
-      "cardClass": "mage",
-      "rarity": "rare",
-      "set": "CATACLYSM",
-      "tribe": "Arcane",
-      "collectible": true,
-      "description": "Create a random 5-Cost creature token.",
-      "effects": [
-        {
-          "type": "summon-random",
-          "cost": 5
-        }
-      ]
-    },
-    {
-      "id": "blast_wave",
-      "name": "Blast Wave",
-      "cardClass": "mage",
-      "cost": 5,
-      "rarity": "epic",
-      "type": "sorcery",
-      "tribe": "Fire",
-      "set": "TROLL",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "all-creatures"
-        }
-      ],
-      "description": "Deal 2 damage to all creatures."
-    },
-    {
       "id": "scorch",
       "name": "Scorch",
       "type": "sorcery",
@@ -151205,159 +150148,6 @@
         {
           "type": "summon-random",
           "cost": 5
-        }
-      ]
-    },
-    {
-      "id": "wing_blast",
-      "name": "Wing Blast",
-      "type": "sorcery",
-      "cost": 4,
-      "cardClass": "hunter",
-      "rarity": "rare",
-      "set": "GILNEAS",
-      "collectible": true,
-      "description": "Deal 4 damage to a creature.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        }
-      ]
-    },
-    {
-      "id": "baited_arrow",
-      "name": "Baited Arrow",
-      "type": "sorcery",
-      "cardClass": "hunter",
-      "cost": 5,
-      "rarity": "common",
-      "set": "TROLL",
-      "collectible": true,
-      "mechanics": [
-        "overkill"
-      ],
-      "description": "Deal 3 damage.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "any"
-        }
-      ]
-    },
-    {
-      "id": "supreme_dinomancy",
-      "name": "Supreme Dinomancy",
-      "cardClass": "hunter",
-      "cost": 5,
-      "rarity": "epic",
-      "type": "sorcery",
-      "set": "THE_LOST_CITY",
-      "collectible": true,
-      "description": "Give +2/+2 to all Beasts in your hand, deck, and battlefield.",
-      "effects": [
-        {
-          "type": "buff-all-tribe",
-          "tribe": "Beast",
-          "attack": 2,
-          "health": 2
-        }
-      ]
-    },
-    {
-      "id": "alien_encounters",
-      "name": "Alien Encounters",
-      "cardClass": "hunter",
-      "cost": 5,
-      "rarity": "rare",
-      "set": "SPACE",
-      "collectible": true,
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 5,
-          "name": "Beast",
-          "tribe": "Beast",
-          "keywords": [
-            "taunt"
-          ]
-        }
-      ],
-      "description": "Create two 2/5 Beast creature tokens with Taunt."
-    },
-    {
-      "id": "rats_of_extraordinary_size",
-      "name": "Rats of Extraordinary Size",
-      "cardClass": "hunter",
-      "cost": 6,
-      "rarity": "epic",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 7,
-          "attack": 1,
-          "health": 1,
-          "name": "Rat"
-        }
-      ],
-      "description": "Create seven 1/1 Rat creature tokens.",
-      "set": "STORMWIND",
-      "collectible": true
-    },
-    {
-      "id": "to_my_side",
-      "name": "To My Side!",
-      "type": "sorcery",
-      "cost": 6,
-      "cardClass": "hunter",
-      "rarity": "epic",
-      "set": "LOOTAPALOOZA",
-      "collectible": true,
-      "description": "Create a Animal Companion creature token.",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "options": [
-            {
-              "name": "Huffer",
-              "attack": 4,
-              "health": 2,
-              "keywords": [
-                "charge"
-              ],
-              "tribe": "Beast",
-              "description": "Charge."
-            },
-            {
-              "name": "Misha",
-              "attack": 4,
-              "health": 4,
-              "keywords": [
-                "taunt"
-              ],
-              "tribe": "Beast",
-              "description": "Taunt."
-            },
-            {
-              "name": "Leokk",
-              "attack": 2,
-              "health": 4,
-              "tribe": "Beast",
-              "aura": {
-                "attack": 1,
-                "health": 0,
-                "others": true
-              },
-              "description": "Your other creatures have +1 Attack."
-            }
-          ]
         }
       ]
     },
@@ -152041,24 +150831,6 @@
       }
     },
     {
-      "id": "call_to_arms",
-      "name": "Call to Arms",
-      "cardClass": "paladin",
-      "cost": 4,
-      "rarity": "epic",
-      "set": "LOOTAPALOOZA",
-      "collectible": true,
-      "type": "sorcery",
-      "description": "Recruit 3 creatures that cost (2) or less.",
-      "effects": [
-        {
-          "type": "recruit",
-          "maxCost": 2,
-          "count": 3
-        }
-      ]
-    },
-    {
       "id": "small_time_recruits",
       "name": "Small-Time Recruits",
       "type": "sorcery",
@@ -152268,26 +151040,6 @@
       ]
     },
     {
-      "id": "seal_of_champions",
-      "name": "Seal of Champions",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "paladin",
-      "rarity": "common",
-      "set": "TGT",
-      "collectible": true,
-      "tribe": "Holy",
-      "description": "Target creature gains +3 Attack and Divine Shield.",
-      "effects": [
-        {
-          "type": "buff",
-          "target": "creature",
-          "attack": 3,
-          "grant": "divine_shield"
-        }
-      ]
-    },
-    {
       "id": "rebuke",
       "name": "Rebuke",
       "type": "sorcery",
@@ -152408,23 +151160,6 @@
           "count": 1,
           "pool": "enemies",
           "perFriendlyTribe": "Pirate"
-        }
-      ]
-    },
-    {
-      "id": "daring_escape",
-      "name": "Daring Escape",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "rogue",
-      "rarity": "common",
-      "set": "DALARAN",
-      "collectible": true,
-      "description": "Return all creatures you control to your hand.",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "friendly-others"
         }
       ]
     },
@@ -152562,24 +151297,6 @@
         {
           "type": "bounce",
           "target": "friendly-others"
-        }
-      ]
-    },
-    {
-      "id": "evolve",
-      "name": "Evolve",
-      "type": "sorcery",
-      "cost": 1,
-      "cardClass": "shaman",
-      "rarity": "rare",
-      "set": "OG",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Transform creatures you control into random creatures that cost (1) more.",
-      "effects": [
-        {
-          "type": "transform-friendly-costplus",
-          "costDelta": 1
         }
       ]
     },
@@ -152871,27 +151588,6 @@
       ]
     },
     {
-      "id": "crystalsong_portal",
-      "name": "Crystalsong Portal",
-      "type": "sorcery",
-      "cost": 2,
-      "cardClass": "druid",
-      "rarity": "epic",
-      "set": "DALARAN",
-      "tribe": "Nature",
-      "collectible": true,
-      "description": "Discover a Druid creature.",
-      "effects": [
-        {
-          "type": "discover",
-          "cardType": "creature",
-          "cardClasses": [
-            "druid"
-          ]
-        }
-      ]
-    },
-    {
       "id": "dark_wispers",
       "name": "Dark Wispers",
       "cardClass": "druid",
@@ -152932,64 +151628,6 @@
         }
       ],
       "description": "Choose One - Create 5 Wisps; or Target creature gains +5/+5 and Taunt."
-    },
-    {
-      "id": "juicy_psychmelon",
-      "name": "Juicy Psychmelon",
-      "type": "sorcery",
-      "cost": 4,
-      "cardClass": "druid",
-      "rarity": "epic",
-      "set": "BOOMSDAY",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Draw a 7, 8, 9, and 1-Cost creature from your deck.",
-      "effects": [
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "cost": 7,
-          "count": 1
-        },
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "cost": 8,
-          "count": 1
-        },
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "cost": 9,
-          "count": 1
-        },
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "cost": 1,
-          "count": 1
-        }
-      ]
-    },
-    {
-      "id": "blessing_of_the_ancients",
-      "name": "Blessing of the Ancients",
-      "type": "sorcery",
-      "cost": 3,
-      "cardClass": "druid",
-      "rarity": "common",
-      "set": "DALARAN",
-      "collectible": true,
-      "tribe": "Nature",
-      "description": "Give creatures you control +1/+1.",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
     },
     {
       "id": "spreading_plague",
@@ -153165,29 +151803,6 @@
       ]
     },
     {
-      "id": "stolen_goods",
-      "name": "Stolen Goods",
-      "cardClass": "warrior",
-      "cost": 2,
-      "rarity": "rare",
-      "type": "sorcery",
-      "set": "GANGS",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "tutor",
-          "cardType": "creature",
-          "requireKeyword": "taunt",
-          "count": 1,
-          "buff": {
-            "attack": 2,
-            "health": 2
-          }
-        }
-      ],
-      "description": "Draw a Taunt creature. Give it +2/+2."
-    },
-    {
       "id": "omega_assembly",
       "name": "Omega Assembly",
       "type": "sorcery",
@@ -153223,39 +151838,6 @@
           "type": "grant",
           "keyword": "cleave",
           "target": "creature"
-        }
-      ]
-    },
-    {
-      "id": "plague_of_wrath",
-      "name": "Plague of Wrath",
-      "type": "sorcery",
-      "cost": 5,
-      "cardClass": "warrior",
-      "rarity": "rare",
-      "set": "PLACEHOLDER_202204",
-      "collectible": true,
-      "description": "Destroy all damaged creatures.",
-      "effects": [
-        {
-          "type": "destroy-all",
-          "requireDamaged": true
-        }
-      ]
-    },
-    {
-      "id": "gather_your_party",
-      "name": "Gather Your Party",
-      "cardClass": "warrior",
-      "cost": 6,
-      "rarity": "rare",
-      "set": "LOOTAPALOOZA",
-      "collectible": true,
-      "type": "sorcery",
-      "description": "Recruit a creature.",
-      "effects": [
-        {
-          "type": "recruit"
         }
       ]
     },
@@ -153333,57 +151915,6 @@
       ]
     },
     {
-      "id": "call_of_the_wild",
-      "name": "Call of the Wild",
-      "type": "sorcery",
-      "cost": 8,
-      "cardClass": "hunter",
-      "rarity": "epic",
-      "set": "CORE",
-      "collectible": true,
-      "description": "Create all three Animal Companions as creature tokens.",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "name": "Huffer",
-          "attack": 4,
-          "health": 2,
-          "keywords": [
-            "charge"
-          ],
-          "tribe": "Beast",
-          "description": "Charge."
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "name": "Misha",
-          "attack": 4,
-          "health": 4,
-          "keywords": [
-            "taunt"
-          ],
-          "tribe": "Beast",
-          "description": "Taunt."
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "name": "Leokk",
-          "attack": 2,
-          "health": 4,
-          "tribe": "Beast",
-          "aura": {
-            "attack": 1,
-            "health": 0,
-            "others": true
-          },
-          "description": "Your other creatures have +1 Attack."
-        }
-      ]
-    },
-    {
       "id": "nine_lives",
       "name": "Nine Lives",
       "type": "sorcery",
@@ -153407,29 +151938,6 @@
       ]
     },
     {
-      "id": "unleash_the_beast",
-      "name": "Unleash the Beast",
-      "cardClass": "hunter",
-      "cost": 6,
-      "rarity": "rare",
-      "type": "sorcery",
-      "set": "DALARAN",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 5,
-          "health": 5,
-          "name": "Wyvern",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ],
-      "description": "Create a 5/5 Wyvern creature token with Rush."
-    },
-    {
       "id": "call_of_the_wild",
       "name": "Call of the Wild",
       "type": "sorcery",
@@ -153504,85 +152012,6 @@
       "description": "Create a 5/5 Wyvern creature token with Rush."
     },
     {
-      "id": "deck_of_wonders",
-      "name": "Deck of Wonders",
-      "type": "sorcery",
-      "cost": 5,
-      "cardClass": "mage",
-      "rarity": "epic",
-      "set": "LOOTAPALOOZA",
-      "tribe": "Arcane",
-      "collectible": true,
-      "description": "Shuffle 5 Scrolls into your deck. When drawn, cast a random spell.",
-      "effects": [
-        {
-          "type": "shuffle-ids-into-deck",
-          "ids": [
-            "dala_scroll_of_wonder",
-            "dala_scroll_of_wonder",
-            "dala_scroll_of_wonder",
-            "dala_scroll_of_wonder",
-            "dala_scroll_of_wonder"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "power_of_creation",
-      "name": "Power of Creation",
-      "type": "sorcery",
-      "cost": 8,
-      "cardClass": "mage",
-      "rarity": "epic",
-      "set": "DALARAN",
-      "collectible": true,
-      "tribe": "Arcane",
-      "description": "Discover a 6-Cost creature. Create two tokens that are copies of it.",
-      "effects": [
-        {
-          "type": "discover",
-          "cardType": "creature",
-          "cost": 6,
-          "to": "board",
-          "summonTwice": true
-        }
-      ]
-    },
-    {
-      "id": "ray_of_frost",
-      "name": "Ray of Frost",
-      "cardClass": "mage",
-      "cost": 1,
-      "rarity": "common",
-      "set": "DALARAN",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Frost",
-      "description": "Freeze a creature. If it's already Frozen, deal 2 damage to it.",
-      "effects": [
-        {
-          "type": "conditional",
-          "target": "creature",
-          "if": {
-            "targetFrozen": true
-          },
-          "then": [
-            {
-              "type": "damage",
-              "value": 2,
-              "target": "creature"
-            }
-          ],
-          "else": [
-            {
-              "type": "freeze",
-              "target": "creature"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "power_of_creation",
       "name": "Power of Creation",
       "type": "sorcery",
@@ -153660,49 +152089,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "cataclysm",
-      "name": "Cataclysm",
-      "cardClass": "warlock",
-      "cost": 5,
-      "rarity": "epic",
-      "set": "LOOTAPALOOZA",
-      "collectible": true,
-      "type": "sorcery",
-      "tribe": "Fire",
-      "effects": [
-        {
-          "type": "destroy-all"
-        },
-        {
-          "type": "discard-random",
-          "count": 2
-        }
-      ],
-      "description": "Destroy all creatures. Discard 2 cards."
-    },
-    {
-      "id": "dark_bargain",
-      "name": "Dark Bargain",
-      "cardClass": "warlock",
-      "cost": 4,
-      "rarity": "epic",
-      "set": "TGT",
-      "tribe": "Shadow",
-      "type": "sorcery",
-      "collectible": true,
-      "effects": [
-        {
-          "type": "destroy-random",
-          "count": 2
-        },
-        {
-          "type": "discard-random",
-          "count": 2
-        }
-      ],
-      "description": "Destroy 2 random creatures your opponents control. Discard 2 random cards."
     },
     {
       "id": "dark_possession",
@@ -153728,29 +152114,6 @@
           "pick": 3
         }
       ]
-    },
-    {
-      "id": "demonbolt",
-      "name": "Demonbolt",
-      "type": "sorcery",
-      "cost": 8,
-      "cardClass": "warlock",
-      "rarity": "common",
-      "set": "TROLL",
-      "collectible": true,
-      "tribe": "Shadow",
-      "description": "Destroy a creature. Costs (1) less for each creature you control.",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ],
-      "selfCost": {
-        "per": "tribe-controlled",
-        "tribe": "",
-        "amount": -1
-      }
     },
     {
       "id": "cataclysm",
@@ -174732,6 +173095,174 @@
           ]
         }
       ]
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "mine",
+      "name": "Burrowing Mine",
+      "type": "sorcery",
+      "cost": 0,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "damage",
+          "value": 10,
+          "target": "own-hero"
+        }
+      ],
+      "description": "When drawn, it explodes for 10 damage."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "warrior",
+      "id": "gear",
+      "name": "Gear",
+      "type": "sorcery",
+      "cost": 0,
+      "drawTrigger": true,
+      "onDraw": [
+        {
+          "type": "armor",
+          "value": 2
+        }
+      ],
+      "description": "When drawn, gain 2 Armor."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "warlock",
+      "id": "worthless_imp",
+      "name": "Worthless Imp",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Demon",
+      "description": "He's worthless, but he's yours."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "ww_murloc_11",
+      "name": "Murloc",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Murloc",
+      "description": "Mrgglglglgl!"
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "demonhunter",
+      "id": "all_fel_breaks_loose_infused",
+      "name": "All Fel Breaks Loose",
+      "type": "sorcery",
+      "cost": 5,
+      "tribe": "Fel",
+      "effects": [
+        {
+          "type": "summon-died-this-game",
+          "tribe": "Demon",
+          "random": true,
+          "count": 3
+        }
+      ],
+      "description": "Infused. Create three friendly Demons that died this game."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "warlock",
+      "id": "token_imp",
+      "name": "Imp",
+      "type": "creature",
+      "cost": 1,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Demon",
+      "description": "A 3/3 Imp."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "token_soul",
+      "name": "Soul",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Undead",
+      "description": "A wailing fragment of spirit."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "bt_rot",
+      "name": "Rot",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "description": "A festering copy."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "ttn_chimaera",
+      "name": "Chimaera",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Beast",
+      "description": "A frost-twisted beast."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "token_muenster_elemental",
+      "name": "Elemental",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elemental",
+      "description": "A cheesy elemental."
+    },
+    {
+      "rarity": "common",
+      "token": true,
+      "collectible": false,
+      "cardClass": "neutral",
+      "id": "token_bronze_dragon",
+      "name": "Bronze Dragon",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Dragon",
+      "description": "A timely ally."
     }
   ]
 }
