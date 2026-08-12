@@ -23,21 +23,22 @@ Run modes used to exist only via URL params (`?heist=1`, `?tombs=1`, `?dungeon=1
 - Follow-ups: split "New run" vs "Continue" explicitly; a starter-deck picker for Duels;
   boss-select for one-off encounters (`?boss=<id>`).
 
-### 2. First-run onboarding for Battlecards
-A new player lands mid-match with no idea what to do.
-- On first visit (no account / flag in localStorage), show a 3-slide "how a turn works"
-  overlay, then start a scripted tutorial match, OR a prominent "New? Read the 60-second
-  rules" button linking to `learnmagepunk/`.
-- Ship 1–2 **precon starter decks** per class so new players aren't staring at an empty
-  deckbuilder. (You already have run-mode stock decks to draw from.)
-- Effort: 1 day. Impact: cuts the bounce rate for first-timers dramatically.
+### 2. First-run onboarding for Battlecards — ✅ DONE (2026-08-12)
+Built a first-run tour on `battlecards/start.html`: a 3-slide overlay (welcome →
+how a turn works, linking to the full rules → "you're ready, you have a Mage Starter
+deck") that shows once (localStorage flag) and is replayable via a "Take the tour"
+footer link. New accounts already receive a 40-card **Mage Starter** deck + welcome
+packs from the backend, and own the card pool for the other classes' starters.
+- Follow-up: add per-class 40-card **precon starter decks** (only Mage exists as a
+  valid 40-card PvP deck today) and a one-click "claim starter" in the deck builder.
+- Follow-up: a scripted tutorial match for the true first game.
 
-### 3. Cross-link the site consistently
-The new main page is the hub, but sub-pages are islands.
-- Add the same top bar (⚙️ Magepunk wordmark → home, account chip) to `battlecards/`,
-  `overworld/`, `learnmagepunk/`, `magepunknews/`, `collection/`, `profile/`.
-- Add a persistent "◀ Magepunk" back-link on every game.
-- Effort: 1–2 hours. Impact: the whole thing finally feels like one product.
+### 3. Cross-link the site consistently — ✅ DONE (2026-08-12)
+Built `/site/topbar.js` — one shared bar (⚙️ Magepunk wordmark → home + account +
+inbox bell) now on the hub, Battlecards start, collection, profile, learn, news, and
+og pages. See also the social inbox below (#12).
+- Follow-up: add the bar to the Overworld and the in-game Battlecards screens (they're
+  full-screen apps, so they need a lighter/collapsible variant).
 
 ### 4. SEO & link-sharing basics
 - Per-page `<title>` + `<meta name="description">` (main page done; audit the rest).
@@ -100,11 +101,19 @@ Analytics — no cookies) to learn which games/modes people actually open. Effor
 
 ## Tier 3 — Bigger bets (worth planning, not "easy")
 
-### 12. Finish multiplayer
-`Plans/MULTIPLAYER_FIX_PLAN.md` tracks the known bugs. Beyond fixing them:
-- A minimal **lobby / matchmaking** (share-a-code or quick-match queue).
-- **Spectate** and a post-game summary.
-- This is the path from "single-player toy" to "thing friends play together."
+### 12. Finish multiplayer  — social layer ✅ DONE (2026-08-12)
+Built a shared **social inbox** into the top bar (`/site/topbar.js`), on the existing
+`/api/mp` backend, so you can be social without opening the Overworld:
+- **Challenges** — accept card duels right there (they launch `?cardpvp=<id>`); Pokémon
+  routes to the Overworld where the party/renderer live.
+- **Friends** — presence + one-click "Card battle" (deck-picker → challenge → launch)
+  and "Message".
+- **Messages** — per-friend DM threads over the `u:<name>` chat rooms.
+
+Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs, a real **lobby / matchmaking**
+(quick-match queue), **spectate**, and a post-game summary. Also worth doing: let the
+inbox **send** Pokémon challenges standalone (needs the team snapshot, which currently
+only the Overworld builds).
 
 ### 13. Mobile-first match layout
 The hub and tiles are responsive; the Battlecards match board likely is not. A

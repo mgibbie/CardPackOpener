@@ -171,11 +171,63 @@
 		</div>
 
 		<footer>
-			<p>Prefer the world? <a href="../overworld/">Play the RPG</a>.
+			<p>New to Battlecards? <a href="#" id="take-tour">Take the tour</a> · Prefer the world? <a href="../overworld/">Play the RPG</a>.
 				<button class="theme-toggle" id="theme-toggle" title="Toggle theme">◐ Theme</button>
 			</p>
 		</footer>
 	</div>
+
+	<!-- first-run onboarding tour -->
+	<div id="onboard" class="ob-overlay" hidden>
+		<div class="ob-card">
+			<button class="ob-skip" id="ob-skip" title="Skip">Skip ✕</button>
+			<div class="ob-slides" id="ob-slides">
+				<div class="ob-slide" data-i="0">
+					<div class="ob-art">🃏</div>
+					<h2>Welcome to Battlecards</h2>
+					<p>A deep collectible card game — thousands of cards, thirteen classes, and a full deck builder. Play quick matches against the AI, dive into run modes, or challenge your friends.</p>
+				</div>
+				<div class="ob-slide" data-i="1" hidden>
+					<div class="ob-art">⚔️</div>
+					<h2>How a turn works</h2>
+					<p>Each turn you gain a Mana crystal, play creatures and spells, and attack. Reduce your opponent from 40 life to 0. Lands, keywords, and class powers add the depth.</p>
+					<p class="ob-link"><a href="../learnmagepunk/">Read the full rules →</a></p>
+				</div>
+				<div class="ob-slide" data-i="2" hidden>
+					<div class="ob-art">🎁</div>
+					<h2>You're ready to play</h2>
+					<p>Your account comes with a <b>Mage Starter</b> deck and a stack of packs. Jump into a <b>Quick Match</b> now, then build your own deck in the <b>Deck Builder</b> as your collection grows.</p>
+				</div>
+			</div>
+			<div class="ob-foot">
+				<div class="ob-dots" id="ob-dots"></div>
+				<div class="ob-btns">
+					<button class="ob-btn ghost" id="ob-back" hidden>Back</button>
+					<button class="ob-btn primary" id="ob-next">Next</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<style>
+	.ob-overlay { position: fixed; inset: 0; z-index: 90; background: rgba(4,7,18,.66); display: flex; align-items: center; justify-content: center; padding: 20px; }
+	.ob-overlay[hidden] { display: none; }
+	.ob-card { position: relative; width: min(460px, 100%); background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 30px 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55); text-align: center; }
+	.ob-skip { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--muted); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+	.ob-skip:hover { color: var(--text); }
+	.ob-art { font-size: 3.4rem; margin-bottom: 8px; filter: drop-shadow(0 8px 20px rgba(0,0,0,.4)); }
+	.ob-slide h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; background: linear-gradient(120deg, var(--gold), var(--violet)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+	.ob-slide p { color: var(--muted); line-height: 1.55; margin: 0 auto; max-width: 40ch; }
+	.ob-slide p + p { margin-top: 10px; }
+	.ob-slide .ob-link a { color: var(--blue); font-weight: 700; }
+	.ob-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+	.ob-dots { display: flex; gap: 7px; }
+	.ob-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background .2s; }
+	.ob-dots span.on { background: var(--gold); }
+	.ob-btns { display: flex; gap: 8px; }
+	.ob-btn { font: inherit; font-weight: 700; border-radius: 10px; padding: 9px 18px; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+	.ob-btn.ghost:hover { border-color: var(--violet); }
+	.ob-btn.primary { border-color: transparent; color: #0c1122; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); }
+	</style>
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
@@ -196,6 +248,33 @@
 			root.setAttribute('data-theme', next);
 			localStorage.setItem(KEY, next);
 		});
+	})();
+	</script>
+	<script>
+	// first-run onboarding tour — shows once, replayable via "Take the tour"
+	(function () {
+		const KEY = 'mp_onboarded_v1';
+		const overlay = document.getElementById('onboard');
+		const slides = [...document.querySelectorAll('.ob-slide')];
+		const dots = document.getElementById('ob-dots');
+		const back = document.getElementById('ob-back'), next = document.getElementById('ob-next');
+		let i = 0;
+		slides.forEach((_, n) => { const d = document.createElement('span'); if (n === 0) d.className = 'on'; dots.appendChild(d); });
+		function show(n) {
+			i = n;
+			slides.forEach(s => s.hidden = +s.dataset.i !== n);
+			[...dots.children].forEach((d, k) => d.classList.toggle('on', k === n));
+			back.hidden = n === 0;
+			next.textContent = n === slides.length - 1 ? "Let's play →" : 'Next';
+		}
+		function open() { overlay.hidden = false; show(0); }
+		function close() { overlay.hidden = true; try { localStorage.setItem(KEY, '1'); } catch (e) {} }
+		next.addEventListener('click', () => { if (i < slides.length - 1) show(i + 1); else close(); });
+		back.addEventListener('click', () => show(Math.max(0, i - 1)));
+		document.getElementById('ob-skip').addEventListener('click', close);
+		overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+		document.getElementById('take-tour').addEventListener('click', e => { e.preventDefault(); open(); });
+		try { if (!localStorage.getItem(KEY)) open(); } catch (e) {}
 	})();
 	</script>
 </body>
