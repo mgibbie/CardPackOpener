@@ -14,6 +14,9 @@ import * as MP from '/battlecards/mpmode.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
+// full-screen apps (the game, the Overworld) opt into a small floating widget
+// via <meta name="mp-topbar" content="compact"> instead of the full bar
+const COMPACT = document.querySelector('meta[name="mp-topbar"]')?.content === 'compact';
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -40,6 +43,13 @@ function injectStyles() {
 	#mp-topbar .tb-bell:hover{ background:var(--tb-panel2); border-color:var(--tb-blue); }
 	#mp-topbar .tb-badge{ position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#e5484d; color:#fff; font-size:.68rem; font-weight:800; display:none; align-items:center; justify-content:center; }
 	#mp-topbar .tb-badge.show{ display:flex; }
+
+	/* compact floating widget for full-screen apps (game / Overworld) */
+	#mp-topbar.tb-compact{ position:fixed; top:10px; right:10px; padding:0; width:auto; background:none; z-index:55; }
+	#mp-topbar.tb-compact .tb-right{ gap:7px; }
+	#mp-topbar.tb-compact .tb-mini{ width:38px; height:38px; display:grid; place-items:center; border-radius:10px; font-size:1.05rem; text-decoration:none;
+		background:color-mix(in srgb, var(--tb-panel) 82%, transparent); border:1px solid var(--tb-border); color:var(--tb-text); backdrop-filter:blur(6px); box-shadow:var(--tb-shadow); position:relative; cursor:pointer; }
+	#mp-topbar.tb-compact .tb-mini:hover{ background:var(--tb-panel); border-color:var(--tb-blue); }
 
 	#mp-inbox-overlay{ position:fixed; inset:0; background:rgba(4,7,18,.5); z-index:60; display:none; }
 	#mp-inbox-overlay.open{ display:block; }
@@ -115,15 +125,24 @@ function buildBar() {
 	if (!bar) { bar = el('div'); bar.id = 'mp-topbar'; document.body.insertBefore(bar, document.body.firstChild); }
 	const loggedIn = MP.hasToken();
 	const name = MP.cachedState()?.username || 'Account';
-	bar.innerHTML = `
-		<a class="tb-brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
-		<div class="tb-right">
-			${loggedIn
-				? `<button class="tb-bell" id="tb-bell" title="Inbox">🔔<span class="tb-badge" id="tb-badge">0</span></button>
-				   <a class="tb-chip" href="/profile/" title="Your profile">👤 ${esc(name)}</a>`
-				: `<a class="tb-login" href="/login/?next=${encodeURIComponent(location.pathname + location.search)}">Log in</a>`}
+	if (COMPACT) {
+		// a small floating cluster (home + inbox) that never covers gameplay
+		bar.classList.add('tb-compact');
+		bar.innerHTML = `<div class="tb-right">
+			<a class="tb-mini" href="/" title="Magepunk home">⚙️</a>
+			${loggedIn ? `<button class="tb-mini" id="tb-bell" title="Inbox">🔔<span class="tb-badge" id="tb-badge">0</span></button>` : ''}
 		</div>`;
-	if (loggedIn) $('#tb-bell', bar).addEventListener('click', openInbox);
+	} else {
+		bar.innerHTML = `
+			<a class="tb-brand" href="/"><span class="cog">⚙️</span> Magepunk</a>
+			<div class="tb-right">
+				${loggedIn
+					? `<button class="tb-bell" id="tb-bell" title="Inbox">🔔<span class="tb-badge" id="tb-badge">0</span></button>
+					   <a class="tb-chip" href="/profile/" title="Your profile">👤 ${esc(name)}</a>`
+					: `<a class="tb-login" href="/login/?next=${encodeURIComponent(location.pathname + location.search)}">Log in</a>`}
+			</div>`;
+	}
+	if (loggedIn) $('#tb-bell', bar)?.addEventListener('click', openInbox);
 }
 
 function setBadge(n) {

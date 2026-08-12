@@ -29,16 +29,20 @@ how a turn works, linking to the full rules → "you're ready, you have a Mage S
 deck") that shows once (localStorage flag) and is replayable via a "Take the tour"
 footer link. New accounts already receive a 40-card **Mage Starter** deck + welcome
 packs from the backend, and own the card pool for the other classes' starters.
-- Follow-up: add per-class 40-card **precon starter decks** (only Mage exists as a
-  valid 40-card PvP deck today) and a one-click "claim starter" in the deck builder.
-- Follow-up: a scripted tutorial match for the true first game.
+- Added two more valid 40-card starters (**Warrior** aggro, **Hunter** beasts); new
+  accounts now get all three (Mage/Warrior/Hunter) and existing accounts receive the
+  new cards + deck slots via a one-time V3 baseline top-up.
+- Follow-up: starters for the remaining classes + a one-click "claim starter" in the
+  deck builder, and a scripted tutorial match for the true first game.
 
 ### 3. Cross-link the site consistently — ✅ DONE (2026-08-12)
 Built `/site/topbar.js` — one shared bar (⚙️ Magepunk wordmark → home + account +
 inbox bell) now on the hub, Battlecards start, collection, profile, learn, news, and
-og pages. See also the social inbox below (#12).
-- Follow-up: add the bar to the Overworld and the in-game Battlecards screens (they're
-  full-screen apps, so they need a lighter/collapsible variant).
+og pages. See also the social inbox below (#12). The Overworld and the in-game Battlecards
+screen opt into a **compact floating variant** (a small home + inbox-bell cluster
+in the corner) via `<meta name="mp-topbar" content="compact">`, so the bar reaches
+every screen without covering gameplay — verified the Overworld's `typingInChat()`
+guard already stops the inbox composer from driving the game.
 
 ### 4. SEO & link-sharing basics
 - Per-page `<title>` + `<meta name="description">` (main page done; audit the rest).
