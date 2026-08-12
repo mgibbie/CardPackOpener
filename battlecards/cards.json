@@ -172391,7 +172391,7 @@
       "rarity": "rare",
       "set": "THE_BARRENS",
       "school": "shadow",
-      "description": "Draw 2 minions. Give your creatures Stealth until your next turn.",
+      "description": "Draw 2 creatures. Any played this turn gain Stealth.",
       "effects": [
         {
           "type": "tutor",
@@ -172399,7 +172399,7 @@
           "count": 2
         },
         {
-          "type": "temp-stealth-all"
+          "type": "set-stealth-summons-turn"
         }
       ]
     },

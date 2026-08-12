@@ -1494,3 +1494,8 @@ register('smolder-buff', ({ state, pi, source, chosenCreature }) => {
 	const t = chosenCreature();
 	if (t) { t.attack += v; t.maxHealth += v; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
 });
+
+register('set-stealth-summons-turn', ({ state, pi }) => {
+	// Shroud of Concealment: minions you play for the rest of this turn gain Stealth
+	state.players[pi].stealthSummonsTurn = state.turnNumber;
+});

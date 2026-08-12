@@ -1072,6 +1072,7 @@ export function summon(state, pi, tokenDef) {
 	if (p.board.filter(x => !isDead(x) && x.type !== 'location').length >= MAX_BOARD) return null;
 	const c = instantiate(tokenDef, pi);
 	c.zone = 'board';
+	if (p.stealthSummonsTurn === state.turnNumber && !c.stealthed) c.stealthed = true; // Shroud of Concealment: minions you play this turn gain Stealth
 	if (p.nextSummonStats) { c.attack = p.nextSummonStats.attack; c.maxHealth = p.nextSummonStats.health; c.damage = 0; p.nextSummonStats = null; } // The Crystal Cove: next summoned minion's stats set
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
 	if (p.recruitAttackBonus && c.name === 'Silver Hand Recruit') c.attack += p.recruitAttackBonus; // Brash Battlemaster
@@ -2084,6 +2085,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else if (card.type === 'creature') {
 		card.zone = 'board';
 		card.sick = true;
+		if (p.stealthSummonsTurn === state.turnNumber && !card.stealthed) card.stealthed = true; // Shroud of Concealment: minions played this turn gain Stealth
 		if (card.scaleOnEntry) { const n = p.enteredCountById?.[card.id] || 0; if (n > 0) { card.attack += (card.scaleOnEntry.attack || 0) * n; card.maxHealth += (card.scaleOnEntry.health || 0) * n; } } // Astral Automaton (played from hand)
 		if (p.nextMinionStats && p.nextMinionStats.count > 0) { card.attack = p.nextMinionStats.attack; card.maxHealth = p.nextMinionStats.health; card.damage = 0; p.nextMinionStats.count--; if (p.nextMinionStats.count <= 0) p.nextMinionStats = null; } // Hodir: set the next N minions to fixed stats
 		// Ebyssian: your Dragons have Rush this game
