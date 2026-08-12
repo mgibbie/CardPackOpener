@@ -878,6 +878,43 @@ export default async function handler(req, env) {
 		return json({ ...cs, over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned });
 	}
 
+	// rematch handshake on a finished duel: either player offers; when the OTHER
+	// player offers (or accepts) the handshake completes and a fresh cardmatch is
+	// minted reusing both decks. Both sides learn the new id via op:'poll'.
+	if (action === 'duel-rematch') {
+		const REMATCH_MS = 120_000;
+		const id = String(body.id || ''), op = String(body.op || 'poll');
+		const cm = await store.get('cardmatch:' + id);
+		if (!cm) return json({ error: 'no such match' }, 404);
+		if (cm.host !== username && cm.guest !== username) return json({ error: 'not your duel' }, 403);
+		const fresh = cm.rematchBy && Date.now() - (cm.rematchTs || 0) < REMATCH_MS;
+		if (op === 'poll') {
+			return json({ rematchBy: fresh ? cm.rematchBy : null, rematchMatchId: cm.rematchMatchId || null });
+		}
+		if (op === 'offer') {
+			if (cm.rematchMatchId) return json({ matchId: cm.rematchMatchId }); // already made
+			// the opponent already offered → this completes the handshake: mint the rematch
+			if (fresh && cm.rematchBy !== username) {
+				const newId = randCode() + randCode();
+				const ncm = {
+					id: newId, type: 'card', host: cm.host, guest: cm.guest,
+					hostDeck: cm.hostDeck || null, hostClass: cm.hostClass || null, hostCommander: cm.hostCommander || null, hostCompanion: cm.hostCompanion || null,
+					guestDeck: cm.guestDeck || null, guestClass: cm.guestClass || null, guestCommander: cm.guestCommander || null, guestCompanion: cm.guestCompanion || null,
+					over: false, winner: null, createdAt: Date.now(), lastActive: Date.now(), rematchOf: id,
+				};
+				await store.setJSON('cardmatch:' + newId, ncm);
+				await store.setJSON('curmatch:' + cm.host, { id: newId, type: 'card', ts: Date.now() });
+				await store.setJSON('curmatch:' + cm.guest, { id: newId, type: 'card', ts: Date.now() });
+				cm.rematchMatchId = newId; await store.setJSON('cardmatch:' + id, cm);
+				return json({ matchId: newId });
+			}
+			cm.rematchBy = username; cm.rematchTs = Date.now();
+			await store.setJSON('cardmatch:' + id, cm);
+			return json({ offered: true });
+		}
+		return json({ error: 'bad op' }, 400);
+	}
+
 	// guest queues an action intent; the host drains and applies them
 	if (action === 'card-act') {
 		const id = String(body.id || '');

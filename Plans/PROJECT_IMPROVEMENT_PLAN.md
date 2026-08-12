@@ -195,6 +195,17 @@ three result titles by running the real functions headless.
   game-over and renders the same You-vs-opponent table from its own seat (life still read
   from its own final board). An older host that doesn't send stats degrades to the plain
   result. Verified the payload shape and the guest-seat render headless.
+- **Duel rematch — ✅ DONE (2026-08-12):** the duel-over overlay now has a **Rematch**
+  button for both players. Either side offers; the moment the other offers (or clicks
+  the **Accept _X_'s rematch** button the poll surfaces), the server mints a fresh
+  `cardmatch` reusing both decks/classes and both clients jump straight into it
+  (`?cardpvp=<newId>`). One server action (`duel-rematch` with `op:offer|poll`) handles
+  it — a second offer from the other player completes the handshake, so the flow is
+  race-safe (double-offer converges to one match) and idempotent; offers expire after
+  120s, and abandoned duels (opponent left) show no rematch. Verified the server
+  handshake (offer/poll/complete, deck reuse, race, staleness, auth — 18/18) and the
+  client wiring (offer→navigate, incoming-offer→Accept→navigate, failure reset — 8/8)
+  headless with the real extracted code.
 
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are

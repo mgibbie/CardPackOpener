@@ -2283,6 +2283,7 @@ function nextEvent() {
 					won ? 'You win the duel!' : ev.winner == null ? "It's a draw." : `${nameOf(ev.winner)} wins the duel.`);
 				el.id = 'duel-over';
 					appendMatchSummary(el); // same stat block as Quick Match
+					mountDuelRematch(el);   // offer/accept a rematch (same decks)
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
@@ -3659,6 +3660,7 @@ function startDuelGuest(cardsById) {
 			// seat-indexed tally; appendMatchSummary renders it from HUMAN=1's view
 			// (life comes from the guest's own ingested final board)
 			if (data.stats) { matchStats = data.stats; appendMatchSummary(el); }
+			if (!data.abandoned) mountDuelRematch(el); // opponent's still here → offer a rematch
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
@@ -4125,6 +4127,34 @@ function showPostGameSummary(winner) {
 	el.appendChild(overlayButton('Find Match', () => { location.href = 'start.html'; }));
 	el.appendChild(overlayButton('Deck Builder', () => { location.href = 'deck.html'; }));
 	el.appendChild(overlayButton('View final board', () => { hideDungeonOverlay(); $('restart').style.display = ''; }));
+}
+// A rematch handshake on a finished duel's overlay: either player offers; the
+// moment the other offers/accepts, the server mints a fresh duel (same decks)
+// and both jump into it. One handler serves both roles — offering a second time
+// completes the handshake server-side, so the "Accept" button also just offers.
+function mountDuelRematch(el) {
+	if (!duel.on || !duel.id || !duel.config) return;
+	const me = HUMAN === 0 ? duel.config.host : duel.config.guest;
+	const opp = HUMAN === 0 ? duel.config.guest : duel.config.host;
+	const btn = overlayButton('Rematch', () => sendOffer());
+	const note = document.createElement('div');
+	note.style.cssText = 'opacity:.75;font-size:12px;min-height:15px;margin:2px 0 6px;';
+	el.appendChild(btn); el.appendChild(note);
+	let done = false, poll = null;
+	const go = (mid) => { done = true; if (poll) clearInterval(poll); location.href = '/battlecards/?cardpvp=' + encodeURIComponent(mid) + '&mp=1'; };
+	async function sendOffer() {
+		btn.disabled = true; btn.textContent = 'Rematch offered'; note.textContent = `Waiting for ${opp}…`;
+		try { const r = await MPX.call('duel-rematch', { id: duel.id, op: 'offer' }); if (r && r.matchId) return go(r.matchId); }
+		catch (e) { note.textContent = 'Could not reach your opponent.'; btn.disabled = false; btn.textContent = 'Rematch'; }
+	}
+	poll = setInterval(async () => {
+		if (done) return;
+		let r; try { r = await MPX.call('duel-rematch', { id: duel.id, op: 'poll' }); } catch (e) { return; }
+		if (!r) return;
+		if (r.rematchMatchId) return go(r.rematchMatchId);
+		// opponent offered → turn our button into an Accept (which just offers back)
+		if (r.rematchBy && r.rematchBy !== me && !done) { btn.disabled = false; btn.textContent = `Accept ${opp}'s rematch`; note.textContent = `${opp} wants a rematch!`; }
+	}, 1500);
 }
 function dungeonOverlay(title, sub) {
 	let el = $('dungeon-overlay');
