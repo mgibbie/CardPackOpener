@@ -2035,6 +2035,8 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.drawsThisTurnAtLeast != null) ok = (p.drawsThisTurn || 0) >= e.if.drawsThisTurnAtLeast; // Careless Mechanist
 			else if (e.if.corpsesAtLeast != null) ok = (p.corpses || 0) >= e.if.corpsesAtLeast; // Eulogizer
 			else if (e.if.dragonsPlayedGame != null) ok = (p.dragonsPlayedGame || 0) >= e.if.dragonsPlayedGame; // Timewinder Zarimi
+			else if (e.if.elementalsPlayedGame != null) ok = (p.elementalsPlayedGame || 0) >= e.if.elementalsPlayedGame; // Lesser Ruby Spellstone
+			else if (e.if.deathrattlesPlayedGame != null) ok = (p.deathrattlesPlayedGame || 0) >= e.if.deathrattlesPlayedGame; // Lesser Onyx Spellstone
 			else if (e.if.holdingCost != null) ok = p.hand.some(c => c !== source && (c.cost || 0) === e.if.holdingCost); // Greedy Partner: holding another N-Cost card
 			else if (e.if.holdingSecret) ok = p.hand.some(c => c.secret); // Sparkjoy Cheat
 			else if (e.if.spellsGame != null) ok = (p.spellsPlayedTotal || 0) >= e.if.spellsGame; // Yogg-Saron, Master of Fate

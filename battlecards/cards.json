@@ -148488,14 +148488,26 @@
       "set": "LOOTAPALOOZA",
       "collectible": true,
       "tribe": "Fire",
-      "description": "Add 1 random Mage spell to your hand.",
+      "description": "Add 1 random Mage spell to your hand. Play 2 Elementals to upgrade (add 2).",
       "type": "sorcery",
       "effects": [
         {
-          "type": "conjure-named",
-          "count": 1,
-          "cardClass": "mage",
-          "cardType": "spell"
+          "type": "conjure-random",
+          "cardType": "spell",
+          "cardClass": "mage"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "elementalsPlayedGame": 2
+          },
+          "then": [
+            {
+              "type": "conjure-random",
+              "cardType": "spell",
+              "cardClass": "mage"
+            }
+          ]
         }
       ]
     },
@@ -151401,7 +151413,7 @@
       "set": "LOOTAPALOOZA",
       "collectible": true,
       "tribe": "Holy",
-      "description": "Create a 2/2 Spirit creature token with Taunt.",
+      "description": "Create a 2/2 Spirit with Taunt. Restore 3 Health to upgrade (create 2).",
       "effects": [
         {
           "type": "summon",
@@ -151411,6 +151423,24 @@
           "name": "Spirit",
           "keywords": [
             "taunt"
+          ]
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "healedGame": 3
+          },
+          "then": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Spirit",
+              "keywords": [
+                "taunt"
+              ]
+            }
           ]
         }
       ]
@@ -151572,10 +151602,23 @@
       "set": "LOOTAPALOOZA",
       "collectible": true,
       "tribe": "Shadow",
-      "description": "Destroy 1 random creature an opponent controls.",
+      "description": "Destroy 1 random enemy creature. Play 3 Deathrattle cards to upgrade (destroy 2).",
       "effects": [
         {
-          "type": "destroy-random"
+          "type": "destroy-random",
+          "count": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "deathrattlesPlayedGame": 3
+          },
+          "then": [
+            {
+              "type": "destroy-random",
+              "count": 1
+            }
+          ]
         }
       ]
     },

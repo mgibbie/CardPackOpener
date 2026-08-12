@@ -2031,6 +2031,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	// history for Tess Greymane (other-class cards) and Shudderwock (Battlecries)
 	if (card.cardClass && card.cardClass !== 'neutral' && card.cardClass !== p.heroClass && card.id !== 'tess_greymane') p.otherClassPlayedGame.push(card.id);
 	if ((card.keywords || []).includes('battlecry') && card.effects && card.id !== 'shudderwock') p.battlecriesPlayedGame.push(card.id);
+	if ((card.keywords || []).includes('deathrattle') || (card.deathrattle && card.deathrattle.length)) p.deathrattlesPlayedGame = (p.deathrattlesPlayedGame || 0) + 1; // Lesser Onyx Spellstone: Deathrattle cards played this game
 	fireOngoing(state, pi, 'card-played', { played: card });
 	if (wasRightmost) fireOngoing(state, pi, 'rightmost-card-played', { played: card }); // Stargazer Luna
 	if (card.combo) fireOngoing(state, pi, 'combo-card-played', { played: card }); // Whirlkick Master
