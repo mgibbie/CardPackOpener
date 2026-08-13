@@ -3473,6 +3473,22 @@ async function startDuel(cardsById) {
 	else startDuelGuest(cardsById);
 }
 
+// A deterministic uint32 seed from the (shared) match id, so a duel's randomness
+// is reproducible and — crucially — the guest can reconstruct the host's stream.
+// The host seeds its engine with this; every published snapshot carries the rng
+// POSITION (serialize.js), so the guest's optimistic rolls (conjure, discover,
+// random targets) match the host's exactly instead of flickering to a guess.
+// (xmur3 string hash; never returns 0, which mulberry32 tolerates but we avoid.)
+function duelSeed(id) {
+	const s = String(id);
+	let h = 1779033703 ^ s.length;
+	for (let i = 0; i < s.length; i++) {
+		h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+		h = (h << 13) | (h >>> 19);
+	}
+	return (h >>> 0) || 1;
+}
+
 // the host owns the engine: player 0 = host, player 1 = guest
 async function startDuelHost(cardsById) {
 	HUMAN = 0;
@@ -3504,7 +3520,7 @@ async function startDuelHost(cardsById) {
 			{ commander: cm.hostCommander || null, companion: cm.hostCompanion || null },
 			{ commander: cm.guestCommander || null, companion: cm.guestCompanion || null },
 		];
-		state = E.createGame(cardsById, Math.random, cm.hostDeck ? [...cm.hostDeck] : null, 2, picks, loadouts);
+		state = E.createGame(cardsById, E.seededRng(duelSeed(duel.id)), cm.hostDeck ? [...cm.hostDeck] : null, 2, picks, loadouts);
 		state.classPicks = picks;
 		// give the guest their own deck + a fresh opening hand and the coin
 		if (cm.guestDeck?.length) {

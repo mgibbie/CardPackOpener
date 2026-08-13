@@ -218,6 +218,28 @@ three result titles by running the real functions headless.
   handshake (offer/poll/complete, deck reuse, race, staleness, auth — 18/18) and the
   client wiring (offer→navigate, incoming-offer→Accept→navigate, failure reset — 8/8)
   headless with the real extracted code.
+- **Duel relay desync fixes — ✅ DONE (2026-08-13):** a friend playtest surfaced that
+  the Swamp double-tap (conjure a black card) desynced for the guest — the card
+  flickered in and vanished. Root cause: guest-reachable actions that mutated the
+  engine directly instead of relaying an intent, so the host never ran them and its
+  snapshot reverted the guest's optimistic result. Fixed the land-tap/sacrifice path,
+  then swept for the rest and fixed 5 more (untargeted activate/walker, artifact tap
+  incl. a stray-`play` in `commitPending`, token sacrifice, hero attack) — each now
+  goes through a relay wrapper and the host applies it on seat 1.
+- **Deterministic duel RNG — ✅ DONE (2026-08-13):** even with the relays fixed, a
+  *random* effect could still flicker: the host ran unseeded `Math.random` and the
+  guest's optimistic copy re-attached its own `Math.random`, so a conjure/discover/
+  random-target briefly resolved to a different card before the host's snapshot
+  corrected it. The engine already routes **all** randomness through `state.rng` (no
+  raw `Math.random`) and ships a serializable seeded PRNG (`seededRng`/`restoreRng`,
+  `rng.snapshot()→{seed,calls}`), it just wasn't wired into duels. Now: the host seeds
+  its game from the shared match id (`seededRng(duelSeed(duel.id))`), `toSnapshot`
+  carries the rng **position**, and `fromSnapshot` (given no explicit rng)
+  reconstructs that exact stream — so the guest's rolls are byte-identical to the
+  host's and its optimistic board matches. Duel-only: unseeded solo/AI/run games emit
+  no rng field and still fall back to `Math.random` (digests stay rng-agnostic).
+  Verified with a new `deterministic_duel_test` (16/16) plus the full engine suite
+  (188/188, incl. the seeded fuzz determinism test).
 
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are

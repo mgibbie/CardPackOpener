@@ -18,9 +18,15 @@
 // fns here (adapter); the guest/spectator ingest switch to fromSnapshot is a
 // separate PR (docs/09 PR 7).
 
+import { restoreRng } from './rng.js';
+
 export const SCHEMA_VERSION = 1;
 
-// Runtime attachments + dev scratch — never serialized.
+// Runtime attachments + dev scratch — never serialized as live fields. `rng` is
+// special: the function itself can't cross the wire, but if it's a SEEDED rng
+// (engine/rng.js seededRng — has .snapshot()) toSnapshot records its {seed,
+// calls} POSITION under a top-level `rng` key so an ingester can rebuild the
+// identical stream (deterministic duels/replays). fromSnapshot restores it.
 const EXCLUDED = new Set(['rng', 'cardsById', 'events', 'debug', '_fxCount']);
 
 // Every top-level state field the engine writes, with the default a fresh /
@@ -89,6 +95,10 @@ export function toSnapshot(state) {
 		}
 	}
 	snap.playerCount = state.players.length; // legacy ingest sites read this
+	// deterministic-rng carry: only a SEEDED rng exposes .snapshot(); an unseeded
+	// Math.random game emits no `rng` field, so its ingest falls back to Math.random
+	// (unchanged behavior). {seed, calls} is JSON-safe.
+	if (state.rng && typeof state.rng.snapshot === 'function') snap.rng = state.rng.snapshot();
 	return snap;
 }
 
@@ -147,15 +157,19 @@ export function maxSnapshotUid(snap) {
 	return max;
 }
 
-export function fromSnapshot(snap, cardsById, rng = Math.random) {
+export function fromSnapshot(snap, cardsById, rng) {
 	if (!snap || !Array.isArray(snap.players) || !snap.players.length) {
 		throw new Error('fromSnapshot: snapshot has no players');
 	}
 	const state = migrate(snap);
 	delete state.schemaVersion; // transport-only fields; not engine state
 	delete state.playerCount;
+	delete state.rng;           // the {seed,calls} carry (below) is not a live rng
 	state.cardsById = cardsById;
-	state.rng = rng;
+	// An explicit rng arg always wins (tests pass their own). Otherwise, if the
+	// snapshot carried a seeded-rng position, rebuild that exact stream so a guest
+	// or spectator's rolls track the host's; an unseeded snapshot → Math.random.
+	state.rng = rng !== undefined ? rng : (snap.rng ? restoreRng(snap.rng) : Math.random);
 	state.events = [];
 	return state;
 }
@@ -196,5 +210,6 @@ export function normalize(state) {
 	const snap = toSnapshot(state);
 	delete snap.schemaVersion;
 	delete snap.playerCount;
+	delete snap.rng; // rng POSITION is transport, not gameplay — a digest is stream-agnostic
 	return sort(snap);
 }
