@@ -1065,6 +1065,18 @@ export function checkGameOver(state) {
 	}
 }
 
+// A player forfeits: drop them to 0 life and run the standard elimination/win
+// check. In 1v1 the opponent wins immediately; in an FFA the conceder is out and
+// the remaining players play on (the caller advances the turn if it was theirs).
+export function concede(state, pi) {
+	if (state.over) return;
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	p.life = 0;
+	emit(state, { type: 'concede', player: pi });
+	checkGameOver(state);
+}
+
 // ---------- summoning ----------
 // the Creatures row has no size cap; only eliminated players can't summon
 export function summon(state, pi, tokenDef) {

@@ -121,6 +121,21 @@ function dealHostGame(N, seed = 12345) {
 	ok('seat-2 guest rolls match the host exactly', JSON.stringify(hr) === JSON.stringify(gr));
 }
 
+// --- concede: 1v1 ends immediately; FFA drops the conceder and plays on ---
+{
+	const { state: two } = dealHostGame(2, 4242);
+	E.concede(two, 0);
+	ok('1v1 concede ends the game, the opponent wins', two.over && two.winner === 1, `over=${two.over} winner=${two.winner}`);
+
+	const { state: four } = dealHostGame(4, 4243);
+	E.concede(four, 1);
+	ok('FFA concede eliminates only the conceder; the game continues',
+		!four.over && four.players[1].eliminated && !four.players[0].eliminated && !four.players[2].eliminated && !four.players[3].eliminated);
+	ok('a conceded (eliminated) player is a safe no-op if it concedes again', (() => { E.concede(four, 1); return four.players[1].eliminated; })());
+	E.concede(four, 2); E.concede(four, 3); // down to seat 0
+	ok('FFA last hero standing after the others concede wins', four.over && four.winner === 0, `over=${four.over} winner=${four.winner}`);
+}
+
 // --- sizes 2 and 8 also deal cleanly (bounds of the 2-8 selector) ---
 for (const N of [2, 8]) {
 	const { state } = dealHostGame(N, 1000 + N);

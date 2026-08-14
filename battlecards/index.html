@@ -204,6 +204,25 @@
 			border-radius: 8px; cursor: pointer; opacity: 0.8;
 		}
 		#concede:hover { opacity: 1; }
+		#log-btn {
+			position: fixed; right: 12px; top: 76px; z-index: 40;
+			padding: 5px 10px; font-size: 12px; letter-spacing: .5px;
+			background: #3a2f57; color: #cbb8e8; border: 1px solid #5a4a80;
+			border-radius: 8px; cursor: pointer; opacity: 0.8;
+		}
+		#log-btn:hover { opacity: 1; }
+		#log-full {
+			position: fixed; right: 12px; top: 110px; width: 300px; max-height: 56vh; z-index: 60;
+			display: none; flex-direction: column;
+			background: rgba(20,15,34,0.95); border: 1px solid #5a4a80; border-radius: 10px;
+			box-shadow: 0 14px 44px rgba(0,0,0,0.6); overflow: hidden;
+		}
+		#log-full.open { display: flex; }
+		#log-full .lf-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #3a2f57; color: #e8e2f4; font-weight: 700; font-size: 13px; }
+		#log-full .lf-close { background: none; border: none; color: #cbb8e8; font-size: 16px; line-height: 1; cursor: pointer; }
+		#log-full .lf-body { overflow-y: auto; padding: 8px 12px; font-size: 12.5px; line-height: 1.5; color: #b9b0d4; }
+		#log-full .lf-body div { padding: 1px 0; }
+		#log-full .lf-body div:nth-child(even) { color: #a89ec8; }
 
 		/* phones + small screens: compact chrome, finger-sized controls */
 		@media (max-width: 760px) {
@@ -221,6 +240,7 @@
 			#mana-hud { left: 10px; bottom: 10px; padding: 6px 11px; }
 			#mana-hud .mh-val { font-size: 19px; }
 			#log { display: none; }
+			#log-full { right: 8px; left: 8px; width: auto; top: 96px; max-height: 62vh; }
 			#hint { font-size: 12.5px; bottom: 6px; width: 94%; text-align: center; }
 			#banner { font-size: 34px; }
 			#tooltip { width: 216px; }
@@ -283,6 +303,8 @@
 	<button id="autopass-btn" title="When on, you auto-pass priority. Turn off to get a 4s window to respond at instant speed.">Auto-pass: ON</button>
 	<div id="mana-hud" class="hud"><span class="mh-icon">🔷</span><span class="mh-label">MANA</span><span class="mh-val" id="mana-hud-val">1/1</span></div>
 	<div id="log" class="hud"></div>
+	<button id="log-btn" title="Full game log">📜 Log</button>
+	<div id="log-full"><div class="lf-head"><span>Game log</span><button class="lf-close" title="Close">✕</button></div><div class="lf-body"></div></div>
 	<div id="hint" class="hud"></div>
 	<div id="banner"></div>
 	<div id="tooltip"></div>
@@ -291,7 +313,7 @@
 	<div id="walker-menu"></div>
 	<div id="scry-modal"></div>
 	<button id="restart" style="display:none">Play Again</button>
-	<button id="concede" style="display:none">🏳 Concede run</button>
+	<button id="concede" style="display:none">🏳 Concede</button>
 	<div id="rotate-hint"><span class="rh-ico">📱↻</span> Rotate to landscape for the full board<button id="rotate-x" title="Dismiss">✕</button></div>
 	<script>
 	// remember if the player dismissed the rotate hint

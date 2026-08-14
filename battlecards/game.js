@@ -956,11 +956,35 @@ function heroPos(pi) {
 // ---------- HUD ----------
 const $ = id => document.getElementById(id);
 const logEl = $('log');
+// full match history (for the scrollable log drawer); the inline #log HUD keeps
+// only the last few lines. Bounded so a very long game can't grow without limit.
+const logHistory = [];
 function log(msg) {
+	logHistory.push(msg);
+	if (logHistory.length > 500) logHistory.shift();
 	const div = document.createElement('div');
 	div.textContent = msg;
 	logEl.appendChild(div);
 	while (logEl.children.length > 7) logEl.removeChild(logEl.firstChild);
+	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg);
+}
+const logFull = $('log-full');
+const logFullBody = logFull && logFull.querySelector('.lf-body');
+function appendLogFullLine(msg) {
+	const d = document.createElement('div'); d.textContent = msg; logFullBody.appendChild(d);
+	logFullBody.scrollTop = logFullBody.scrollHeight;
+}
+function renderLogFull() {
+	logFullBody.innerHTML = '';
+	for (const line of logHistory) { const d = document.createElement('div'); d.textContent = line; logFullBody.appendChild(d); }
+	logFullBody.scrollTop = logFullBody.scrollHeight;
+}
+if (logFull) {
+	$('log-btn').addEventListener('click', () => {
+		logFull.classList.toggle('open');
+		if (logFull.classList.contains('open')) renderLogFull();
+	});
+	logFull.querySelector('.lf-close').addEventListener('click', () => logFull.classList.remove('open'));
 }
 
 // one small projected panel per opponent, rebuilt on new game
@@ -1266,8 +1290,9 @@ function updateHud() {
 	const pwOk = E.canPlaneswalk(state, HUMAN);
 	$('planeswalk-btn').style.display = pwOk ? '' : 'none';
 	if (pwOk) { const rc = E.planarRollCost(state, HUMAN); $('planeswalk-btn').textContent = rc > 0 ? `Planeswalk (${rc})` : 'Planeswalk'; }
-	// dungeon runs can be conceded mid-fight — a conceded run never pays a pack
-	$('concede').style.display = (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) && !state.over ? '' : 'none';
+	// concede is available in any active game you're playing (runs, Quick Match, AI,
+	// duels) — but not while merely spectating someone else's match
+	$('concede').style.display = state && !state.over && !spectateMode ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
 	$('end-turn').textContent = state.over ? 'Game Over'
@@ -2255,6 +2280,7 @@ function nextEvent() {
 		case 'coin': log(`${nameOf(ev.player)} played The Coin (+1 mana)`); delay = 250; break;
 		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
+		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
 		case 'eliminated':
 			banner(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} eliminated!`, 1800);
 			log(`${nameOf(ev.player)} eliminated`);
@@ -2274,7 +2300,7 @@ function nextEvent() {
 					won ? 'You win the duel!' : ev.winner == null ? "It's a draw." : `${nameOf(ev.winner)} wins the duel.`);
 				el.id = 'duel-over';
 					appendMatchSummary(el); // same stat block as Quick Match
-					mountDuelRematch(el);   // offer/accept a rematch (same decks)
+					if ((duel.size || 2) <= 2) mountDuelRematch(el); // rematch is 1v1-only for now
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
@@ -3127,18 +3153,48 @@ $('restart').addEventListener('click', () => start());
 
 // conceding forfeits the run outright: no defeat payout, no pack
 $('concede').addEventListener('click', () => {
-	if ((!dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode) || !state || state.over) return;
-	const run = duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
-	const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
-	el.appendChild(overlayButton('Concede the run', () => {
-		if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
-		state.over = true; // freezes play without firing the defeat payout path
-		const done = dungeonOverlay('RUN CONCEDED',
-			`You walked away at level ${run?.level ?? 1}. No pack this time.`);
-		done.appendChild(overlayButton('New Run', () => location.reload()));
-		updateHud();
+	if (!state || state.over) return;
+	// run modes keep their own copy (a conceded run clears the save + pays no pack)
+	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) {
+		const run = duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
+		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
+		el.appendChild(overlayButton('Concede the run', () => {
+			if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
+			state.over = true; // freezes play without firing the defeat payout path
+			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
+			done.appendChild(overlayButton('New Run', () => location.reload()));
+			updateHud();
+		}));
+		el.appendChild(overlayButton('Keep fighting', () => hideDungeonOverlay()));
+		return;
+	}
+	// Quick Match / AI / duel: forfeit
+	const ffa = duel.on && (duel.size || 2) > 2;
+	const el = dungeonOverlay('CONCEDE?', ffa ? 'Forfeit and drop out of the free-for-all?' : 'Forfeit this match? Your opponent takes the win.');
+	el.appendChild(overlayButton('Concede', () => {
+		hideDungeonOverlay();
+		if (isGuest()) {
+			// online guest: relay the forfeit — the host is authoritative
+			guestApply(() => E.concede(state, HUMAN), { k: 'concede' });
+			const o = dungeonOverlay('YOU CONCEDED', ffa ? "You've dropped out of the free-for-all." : 'You forfeited the match.');
+			o.id = 'duel-over';
+			o.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+			return;
+		}
+		E.concede(state, HUMAN);
+		if (!state.over && state.current === HUMAN) E.endTurn(state); // FFA: hand the turn on
+		if (!state.over && !duel.on) { // local FFA vs bots — end it rather than watch the bots
+			state.over = true;
+			const o = dungeonOverlay('YOU CONCEDED', 'You dropped out of the free-for-all.');
+			o.appendChild(overlayButton('Play again', () => location.reload()));
+			o.appendChild(overlayButton('Mode picker', () => { location.href = 'start.html'; }));
+		} else if (duel.on && !state.over) {
+			banner('You conceded — still hosting the table for the others.', 3000);
+		}
+		pump();
+		if (duel.on) publishDuel();
 	}));
-	el.appendChild(overlayButton('Keep fighting', () => hideDungeonOverlay()));
+	el.appendChild(overlayButton(ffa ? 'Keep playing' : 'Keep fighting', () => hideDungeonOverlay()));
 });
 $('player-count').addEventListener('change', ev => {
 	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
@@ -3613,7 +3669,7 @@ function applyGuestIntent(it) {
 	// queue/priority resolutions (scry, loot, discover, sac-cost, dredge, counter
 	// response) can land on ANY player's turn; each self-guards inside the switch by
 	// checking the front of its queue, so they bypass the turn gate below.
-	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond';
+	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond' || it.k === 'concede';
 	if (!isResolve && state.current !== P) return; // turn actions apply only on that seat's turn
 	try {
 		switch (it.k) {
@@ -3637,6 +3693,7 @@ function applyGuestIntent(it) {
 			case 'unmask': E.unmask(state, P, it.uid); break;
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
+			case 'concede': { const wasCur = state.current === P; E.concede(state, P); if (!state.over && wasCur) E.endTurn(state); break; } // FFA: hand the turn on
 			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
@@ -3971,6 +4028,8 @@ async function start() {
 	$('restart').style.display = 'none';
 	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
+	logHistory.length = 0; // fresh match → fresh log history
+	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
 	const data = await (await fetch('cards.json')).json();
