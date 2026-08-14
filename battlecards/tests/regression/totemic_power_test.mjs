@@ -6,7 +6,12 @@ import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
-const art = new Set(JSON.parse(fs.readFileSync(new URL('../../art/index.json', import.meta.url))));
+// art/index.json is an OFFLOADED, gitignored asset — present on a dev machine but
+// not in a clean CI checkout. Load it if we can; otherwise skip the art-coverage
+// assertions (the engine-behaviour assertions below don't need it).
+let art = null;
+try { art = new Set(JSON.parse(fs.readFileSync(new URL('../../art/index.json', import.meta.url)))); }
+catch { console.log('(art/index.json absent — skipping art-coverage checks)'); }
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', l, x ?? ''); } };
 
@@ -28,7 +33,7 @@ const fire = (seed, overloaded) => {
 	for (let s = 0; s < 40; s++) { const t = fire(s, false); if (t) seen.add(t.id); }
 	ok('not overloaded: only ever summons the 4 basic totems', [...seen].every(id => BASICS.has(id)), [...seen]);
 	ok('not overloaded: covers multiple basics (randomized)', seen.size >= 2, [...seen]);
-	ok('every summoned basic has art', [...seen].every(id => art.has(id)), [...seen]);
+	if (art) ok('every summoned basic has art', [...seen].every(id => art.has(id)), [...seen]);
 }
 
 // Overloaded -> a non-basic Totem (never a basic), reasonable size (cost <= 3), with art
@@ -38,7 +43,7 @@ const fire = (seed, overloaded) => {
 	ok('overloaded: never summons a basic totem', [...seen].every(id => !BASICS.has(id)), [...seen]);
 	ok('overloaded: summons real non-basic Totem-tribe minions', seen.size >= 1 && [...seen].every(id => (cardsById[id].tribe || '').includes('Totem')), [...seen]);
 	ok('overloaded: never the oversized totems (Gigantotem/Totem Goliath)', ![...seen].some(id => id === 'gigantotem' || id === 'totem_goliath'), [...seen]);
-	ok('every summoned non-basic has art', [...seen].every(id => art.has(id)), [...seen]);
+	if (art) ok('every summoned non-basic has art', [...seen].every(id => art.has(id)), [...seen]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
