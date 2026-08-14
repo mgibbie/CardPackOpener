@@ -2371,7 +2371,7 @@ function nextEvent() {
 					won ? 'You win the duel!' : ev.winner == null ? "It's a draw." : `${nameOf(ev.winner)} wins the duel.`);
 				el.id = 'duel-over';
 					appendMatchSummary(el); // same stat block as Quick Match
-					if ((duel.size || 2) <= 2) mountDuelRematch(el); // rematch is 1v1-only for now
+					mountDuelRematch(el); // rematch lobby (1v1 or FFA)
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
@@ -3859,7 +3859,7 @@ function startDuelGuest(cardsById) {
 			// seat-indexed tally; appendMatchSummary renders it from this seat's view
 			// (life comes from the guest's own ingested final board)
 			if (data.stats) { matchStats = data.stats; appendMatchSummary(el); }
-			if (!data.abandoned && !ffa) mountDuelRematch(el); // rematch is 1v1-only for now
+			if (!data.abandoned) mountDuelRematch(el); // rematch lobby (1v1 or FFA)
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
@@ -4374,32 +4374,50 @@ function showPostGameSummary(winner) {
 	el.appendChild(overlayButton('Deck Builder', () => { location.href = 'deck.html'; }));
 	el.appendChild(overlayButton('View final board', () => { hideDungeonOverlay(); $('restart').style.display = ''; }));
 }
-// A rematch handshake on a finished duel's overlay: either player offers; the
-// moment the other offers/accepts, the server mints a fresh duel (same decks)
-// and both jump into it. One handler serves both roles — offering a second time
-// completes the handshake server-side, so the "Accept" button also just offers.
+// Rematch lobby on a finished match's overlay (1v1 OR N-player FFA): tap Rematch
+// to opt in; when enough of the table opts in (or a short grace passes) the server
+// mints a fresh match reusing everyone's decks — AI-backfilling anyone who didn't
+// return — and all opted-in players jump into it. Poll surfaces the live count and
+// lets a late player join.
 function mountDuelRematch(el) {
 	if (!duel.on || !duel.id || !duel.config) return;
-	const me = HUMAN === 0 ? duel.config.host : duel.config.guest;
-	const opp = HUMAN === 0 ? duel.config.guest : duel.config.host;
+	const cm = duel.config;
+	const seatsArr = duelSeats(cm);
+	const humans = cm.humans || seatsArr.filter(s => s.name).map(s => s.name);
+	const me = (seatsArr[HUMAN] && seatsArr[HUMAN].name) || (HUMAN === 0 ? cm.host : cm.guest);
+	const ffa = humans.length > 2;
+	const opp = () => humans.find(n => n !== me) || 'your opponent';
 	const btn = overlayButton('Rematch', () => sendOffer());
 	const note = document.createElement('div');
 	note.style.cssText = 'opacity:.75;font-size:12px;min-height:15px;margin:2px 0 6px;';
 	el.appendChild(btn); el.appendChild(note);
-	let done = false, poll = null;
+	let done = false, joinedSelf = false, poll = null;
 	const go = (mid) => { done = true; if (poll) clearInterval(poll); location.href = '/battlecards/?cardpvp=' + encodeURIComponent(mid) + '&mp=1'; };
+	const status = (joined) => {
+		joined = joined || [];
+		if (joinedSelf) note.textContent = ffa ? `Rematch lobby — ${joined.length}/${humans.length} ready…` : `Waiting for ${opp()}…`;
+		else if (joined.length) note.textContent = ffa ? `${joined.length} player${joined.length > 1 ? 's' : ''} want a rematch — join!` : `${opp()} wants a rematch!`;
+		else note.textContent = '';
+	};
 	async function sendOffer() {
-		btn.disabled = true; btn.textContent = 'Rematch offered'; note.textContent = `Waiting for ${opp}…`;
-		try { const r = await MPX.call('duel-rematch', { id: duel.id, op: 'offer' }); if (r && r.matchId) return go(r.matchId); }
-		catch (e) { note.textContent = 'Could not reach your opponent.'; btn.disabled = false; btn.textContent = 'Rematch'; }
+		joinedSelf = true;
+		btn.disabled = true; btn.textContent = ffa ? 'In the rematch lobby' : 'Rematch offered';
+		try {
+			const r = await MPX.call('duel-rematch', { id: duel.id, op: 'offer' });
+			if (r && (r.matchId || r.rematchMatchId)) return go(r.matchId || r.rematchMatchId);
+			status(r && r.joined);
+		} catch (e) { note.textContent = 'Could not reach the table.'; btn.disabled = false; btn.textContent = 'Rematch'; joinedSelf = false; }
 	}
 	poll = setInterval(async () => {
 		if (done) return;
 		let r; try { r = await MPX.call('duel-rematch', { id: duel.id, op: 'poll' }); } catch (e) { return; }
 		if (!r) return;
 		if (r.rematchMatchId) return go(r.rematchMatchId);
-		// opponent offered → turn our button into an Accept (which just offers back)
-		if (r.rematchBy && r.rematchBy !== me && !done) { btn.disabled = false; btn.textContent = `Accept ${opp}'s rematch`; note.textContent = `${opp} wants a rematch!`; }
+		const joined = r.joined || [];
+		joinedSelf = joined.includes(me);
+		// someone opted in but I haven't → prompt me to join (the button stays live)
+		if (!joinedSelf && joined.length) btn.textContent = ffa ? `Join rematch (${joined.length}/${humans.length})` : `Accept ${opp()}'s rematch`;
+		status(joined);
 	}, 1500);
 }
 function dungeonOverlay(title, sub) {

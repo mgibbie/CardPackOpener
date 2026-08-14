@@ -79,8 +79,21 @@ and "cards you own vs. all." With 7,491 cards this is essential for it to feel u
 - Verified: engine `mulligan_test` (12) + concede assertions in `ffa_duel_test` (31),
   client relay/AI extract tests, a headless Quick-Match boot that confirms the mulligan
   modal appears/marks/confirms/logs with no errors, and the full engine suite (190).
-- Still open from here: **rematch** is 1v1-only (an N-way FFA rematch is its own piece);
-  clearer priority/end-turn affordances.
+- Still open from here: clearer priority/end-turn affordances.
+
+### 6b. FFA rematch lobby — ✅ DONE (2026-08-14)
+The 1v1 rematch handshake generalized to an **N-player rematch lobby**. On a finished
+match's overlay (1v1 or FFA) you tap **Rematch** to opt in; the server (`duel-rematch`)
+collects joiners and, once **≥2 are in AND either everyone present has joined or a short
+grace (~12s) elapses**, a deterministic minter (the lowest-original-seat joiner → the
+new host) mints a fresh cardmatch **reusing each returning player's original seat + deck
+and AI-backfilling anyone who didn't come back**. The mint is idempotent (`rematchMatchId`)
+and minter-only, so concurrent polls can't double-mint. The client shows a live lobby
+count (`joined/present`) and lets a late player join; 1v1 keeps its exact behavior (both
+must join → mint) and "Accept X's rematch" phrasing. Verified with a server extract test
+(19 — 1v1 preserved, FFA grace-mint + AI backfill, seat/deck reuse, minter-only,
+idempotency, auth) and a client extract test (6 — join relays op:offer, mint navigates,
+lobby relabel, seat-aware identity).
 
 ### 7. Collection completion goals — ✅ DONE (2026-08-12)
 The collection page now has a **completion meter** ("N / 6,265 collected · X%"), a

@@ -896,41 +896,64 @@ export default async function handler(req, env) {
 		return json({ ...cs, ...tail });
 	}
 
-	// rematch handshake on a finished duel: either player offers; when the OTHER
-	// player offers (or accepts) the handshake completes and a fresh cardmatch is
-	// minted reusing both decks. Both sides learn the new id via op:'poll'.
+	// rematch lobby on a finished match (1v1 OR N-player FFA): humans opt in with
+	// op:'offer'; a deterministic minter (the lowest-original-seat joiner = the new
+	// host) mints a fresh cardmatch reusing each rejoined human's seat/deck and
+	// backfilling AI for anyone who didn't return, once >=2 have joined AND either
+	// everyone present has joined or a short grace has passed. 1v1 is the special
+	// case where "everyone present" = both, so it still mints the instant both join.
 	if (action === 'duel-rematch') {
-		const REMATCH_MS = 120_000;
+		const REMATCH_MS = 120_000;   // a join is valid for this long
+		const GRACE_MS = 12_000;      // wait this long for stragglers before AI-backfilling
 		const id = String(body.id || ''), op = String(body.op || 'poll');
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
-		if (cm.host !== username && cm.guest !== username) return json({ error: 'not your duel' }, 403);
-		const fresh = cm.rematchBy && Date.now() - (cm.rematchTs || 0) < REMATCH_MS;
-		if (op === 'poll') {
-			return json({ rematchBy: fresh ? cm.rematchBy : null, rematchMatchId: cm.rematchMatchId || null });
-		}
-		if (op === 'offer') {
-			if (cm.rematchMatchId) return json({ matchId: cm.rematchMatchId }); // already made
-			// the opponent already offered → this completes the handshake: mint the rematch
-			if (fresh && cm.rematchBy !== username) {
-				const newId = randCode() + randCode();
-				const ncm = {
-					id: newId, type: 'card', host: cm.host, guest: cm.guest,
-					hostDeck: cm.hostDeck || null, hostClass: cm.hostClass || null, hostCommander: cm.hostCommander || null, hostCompanion: cm.hostCompanion || null,
-					guestDeck: cm.guestDeck || null, guestClass: cm.guestClass || null, guestCommander: cm.guestCommander || null, guestCompanion: cm.guestCompanion || null,
-					over: false, winner: null, createdAt: Date.now(), lastActive: Date.now(), rematchOf: id,
-				};
-				await store.setJSON('cardmatch:' + newId, ncm);
-				await store.setJSON('curmatch:' + cm.host, { id: newId, type: 'card', ts: Date.now() });
-				await store.setJSON('curmatch:' + cm.guest, { id: newId, type: 'card', ts: Date.now() });
-				cm.rematchMatchId = newId; await store.setJSON('cardmatch:' + id, cm);
-				return json({ matchId: newId });
-			}
-			cm.rematchBy = username; cm.rematchTs = Date.now();
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+		if (!humans.includes(username)) return json({ error: 'not your duel' }, 403);
+		const size = cm.size || seats.length || 2;
+		const origSeat = n => { const s = seats.find(x => x.name === n); return s ? s.seat : 99; };
+		// expire a stale lobby
+		if (cm.rematchTs && Date.now() - cm.rematchTs > REMATCH_MS && !cm.rematchMatchId) { cm.rematchJoined = []; }
+		let joined = Array.isArray(cm.rematchJoined) ? cm.rematchJoined.filter(n => humans.includes(n)) : [];
+
+		if (op === 'offer' && !cm.rematchMatchId && !joined.includes(username)) {
+			if (!joined.length) cm.rematchTs = Date.now();
+			joined.push(username);
+			cm.rematchJoined = joined;
 			await store.setJSON('cardmatch:' + id, cm);
-			return json({ offered: true });
 		}
-		return json({ error: 'bad op' }, 400);
+
+		// mint conditions — evaluated on both offer and poll so the grace timer fires
+		const bySeat = [...joined].sort((a, b) => origSeat(a) - origSeat(b)); // new-host first
+		const everyonePresent = joined.length >= humans.length;
+		const graceUp = cm.rematchTs && Date.now() - cm.rematchTs > GRACE_MS;
+		const ready = joined.length >= 2 && (everyonePresent || graceUp);
+		const iAmMinter = bySeat[0] === username; // only the new host mints (race-free)
+
+		if (cm.rematchMatchId) return json({ matchId: cm.rematchMatchId, rematchMatchId: cm.rematchMatchId, joined, humans });
+		if (ready && iAmMinter) {
+			const origByName = {}; for (const s of seats) if (s.name) origByName[s.name] = s;
+			const newId = randCode() + randCode();
+			const ns = [];
+			for (let sidx = 0; sidx < size; sidx++) {
+				const hn = bySeat[sidx];
+				if (hn) { const o = origByName[hn] || {}; ns.push({ seat: sidx, name: hn, ai: false, deck: o.deck || cm.hostDeck || null, classId: o.classId ?? cm.hostClass ?? null, commander: o.commander || null, companion: o.companion || null }); }
+				else { const ai = await pickAiDeck(store, null); ns.push({ seat: sidx, name: null, ai: true, aiName: botName(ai), deck: ai.deck, classId: ai.classId, commander: ai.commander || null, companion: ai.companion || null }); }
+			}
+			const humanNames = ns.filter(s => !s.ai).map(s => s.name);
+			const ncm = {
+				id: newId, type: 'card', size, seats: ns, host: ns[0].name, humans: humanNames, guest: humanNames[1] || null,
+				hostDeck: ns[0].deck, hostClass: ns[0].classId, hostCommander: ns[0].commander, hostCompanion: ns[0].companion,
+				guestDeck: ns[1] ? ns[1].deck : null, guestClass: ns[1] ? ns[1].classId : null, guestCommander: ns[1] ? ns[1].commander : null, guestCompanion: ns[1] ? ns[1].companion : null,
+				over: false, winner: null, createdAt: Date.now(), lastActive: Date.now(), rematchOf: id,
+			};
+			await store.setJSON('cardmatch:' + newId, ncm);
+			for (const hn of humanNames) await store.setJSON('curmatch:' + hn, { id: newId, type: 'card', ts: Date.now() });
+			cm.rematchMatchId = newId; await store.setJSON('cardmatch:' + id, cm);
+			return json({ matchId: newId, rematchMatchId: newId, joined, humans });
+		}
+		return json({ offered: joined.includes(username), joined, humans, rematchMatchId: null });
 	}
 
 	// a guest queues an action intent; the host drains and applies them. The seat
