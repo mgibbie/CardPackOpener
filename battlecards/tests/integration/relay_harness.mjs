@@ -130,7 +130,7 @@ async function loadHandler() {
 		// ---- 2. launch clients into the duel (host first so it deals + publishes) ----
 		browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 		const errors = [];
-		const snap = p => p.evaluate(() => { const s = window.__game && window.__game.state; return s ? { turn: s.turnNumber, current: s.current, over: s.over, winner: s.winner, life: s.players.map(x => x.life), n: s.players.length } : null; }).catch(() => null);
+		const snap = p => p.evaluate(() => { const s = window.__game && window.__game.state; return s ? { turn: s.turnNumber, current: s.current, over: s.over, winner: s.winner, life: s.players.map(x => x.life), elim: s.players.map(x => !!x.eliminated), n: s.players.length } : null; }).catch(() => null);
 		const allSnaps = () => Promise.all(users.map(u => snap(u.page)));
 		const same = ss => { const a = ss[0]; return a && ss.every(s => s && s.turn === a.turn && s.current === a.current && s.n === a.n && JSON.stringify(s.life) === JSON.stringify(a.life)); };
 		const waitFor = async (fn, ms) => { for (let t = 0; t < ms; t += 250) { if (await fn()) return true; await sleep(250); } return false; };
@@ -174,10 +174,49 @@ async function loadHandler() {
 				const converged = await waitFor(async () => same(await allSnaps()), 12000);
 				A(converged, `all clients re-converged after seat ${cur} acted`, JSON.stringify(await allSnaps()));
 			}
+			// ---- 4. concede → game over ----
+			const concede = async page => {
+				await page.evaluate(() => document.querySelector('#concede')?.click());
+				await sleep(350);
+				await page.evaluate(() => { const b = [...document.querySelectorAll('#dungeon-overlay button')].find(x => x.textContent.trim() === 'Concede'); if (b) b.click(); });
+			};
+			const g1 = users.find(u => u.seat === 1), g2 = users.find(u => u.seat === 2);
+			await concede(g1.page);
+			const elim1 = await waitFor(async () => { const s = await snap(host.page); return s && (s.elim[1] || s.over); }, 12000);
+			A(elim1, 'a guest\'s concede is applied on the host (seat 1 eliminated)', JSON.stringify(await snap(host.page)));
+			const g2sees = await waitFor(async () => { const s = await snap(g2.page); return s && s.elim[1]; }, 8000);
+			A(g2sees, 'the other active guest sees the concede via its poll');
+
+			await concede(g2.page);
+			const gameOver = await waitFor(async () => { const s = await snap(host.page); return s && s.over; }, 12000);
+			A(gameOver, 'the last concede ends the game', JSON.stringify(await snap(host.page)));
+			A((await snap(host.page))?.winner === 0, 'the last player standing (the host) wins');
+			const g1over = await g1.page.evaluate(() => { const o = document.querySelector('#duel-over'); return !!o && /concede/i.test(o.textContent); });
+			A(g1over, 'a conceded guest sees the "You conceded" screen');
+
+			// ---- 5. rematch ----
+			// conceders correctly don't get a UI rematch button (they left), so exercise the
+			// real rematch handler against the REAL finished match: all three opt in → mint.
+			// the #duel-over overlay renders after the elimination animations settle (state
+			// goes `over` before the overlay paints), so wait for the Rematch button
+			const hostRematchBtn = await waitFor(() => host.page.evaluate(() => { const o = document.querySelector('#duel-over'); return !!(o && [...o.querySelectorAll('button')].some(b => /rematch/i.test(b.textContent))); }), 10000);
+			A(hostRematchBtn, 'the host over-screen offers a Rematch');
+			let rematchId = null;
+			for (let i = 0; i < 12 && !rematchId; i++) {
+				for (const u of users) { const r = await api('duel-rematch', { id: matchId, op: 'offer' }, u.token); if (r.matchId || r.rematchMatchId) { rematchId = r.matchId || r.rematchMatchId; break; } }
+				if (!rematchId) for (const u of users) { const r = await api('duel-rematch', { id: matchId, op: 'poll' }, u.token); if (r.rematchMatchId) { rematchId = r.rematchMatchId; break; } }
+				await sleep(120);
+			}
+			A(!!rematchId, 'a rematch mints when all three opt in (real handler, finished match)');
+			const raw = rematchId && db._map.get('cardmatch:' + rematchId);
+			const ncm = raw ? JSON.parse(raw) : null;
+			A(ncm && ncm.size === 3 && (ncm.humans || []).length === 3 && ncm.rematchOf === matchId && ncm.seats.every(s => !s.ai && s.deck),
+				'the rematch reuses all 3 humans + their decks', JSON.stringify(ncm && { size: ncm.size, humans: ncm.humans, rematchOf: ncm.rematchOf }));
+
 			// uncaught JS errors are fatal; benign network 4xx (chat-poll for a room you're
 			// not in) surface as "Failed to load resource" and are client-handled
 			const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
-			A(fatal.length === 0, 'no fatal client errors during the relay', fatal.slice(0, 3).join(' | '));
+			A(fatal.length === 0, 'no fatal client errors across the whole flow', fatal.slice(0, 3).join(' | '));
 		}
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);

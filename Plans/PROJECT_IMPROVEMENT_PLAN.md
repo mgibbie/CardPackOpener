@@ -388,10 +388,13 @@ all three result titles by running the real functions headless.
   imports for Node), **registers 3 accounts + matchmakes them into a size-3 FFA through the real
   backend**, then launches **3 headless browser clients** (each in an ISOLATED context — same-
   origin pages share `localStorage`, which would otherwise collapse them into one user) into the
-  live duel and asserts the relay via `window.__game.state`: all clients **converge on the host's
-  authoritative board**, a host end-turn propagates to the guests, and a **guest end-turn relays
-  back through the host and re-converges** (the exact round-trip the per-intent race fix
-  protects). 11/11, stable across repeated runs. Standalone (needs headless Chrome), not in
+  live duel and asserts the whole lifecycle via `window.__game.state`: all clients **converge on
+  the host's authoritative board**, a host end-turn propagates to the guests, a **guest end-turn
+  relays back through the host and re-converges** (the exact round-trip the per-intent race fix
+  protects), then **concede → game over** (both guests concede, eliminations propagate, the host
+  wins, conceders see the "You conceded" screen) and **rematch** (the host's over-screen offers it
+  and the real handler mints a fresh match reusing all 3 humans + decks against the finished
+  match). 19/19, stable across repeated runs. Standalone (needs headless Chrome), not in
   `run-all`; run with `node battlecards/tests/integration/relay_harness.mjs`. Bugs it caught while
   building: 3 clients sharing one token via shared `localStorage`, and WebGL contention on
   simultaneous boot (fixed by isolated contexts + host-first sequential boot).
