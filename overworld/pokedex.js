@@ -1,20 +1,18 @@
 // pokedex.js — persistent "seen" and "caught" species tracking, backing the
 // Pokédex menu and the Trainer Card counts. Seen is recorded when a species
 // shows up in battle; caught when it joins the party (or is already there).
+import { safeLoad, safeSave } from './safestore.js';
 const KEY = 'magepunk_dex_v1';
 
 function load() {
-	try {
-		const d = JSON.parse(localStorage.getItem(KEY));
-		if (d && Array.isArray(d.seen) && Array.isArray(d.caught)) {
-			return { seen: new Set(d.seen), caught: new Set(d.caught) };
-		}
-	} catch (e) {}
+	const d = safeLoad(KEY, null);
+	if (d && Array.isArray(d.seen) && Array.isArray(d.caught)) {
+		return { seen: new Set(d.seen), caught: new Set(d.caught) };
+	}
 	return { seen: new Set(), caught: new Set() };
 }
 function save(d) {
-	try { localStorage.setItem(KEY, JSON.stringify({ seen: [...d.seen], caught: [...d.caught] })); }
-	catch (e) {}
+	safeSave(KEY, { seen: [...d.seen], caught: [...d.caught] });
 }
 
 let dex = load();

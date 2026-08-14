@@ -3,17 +3,18 @@
 // from the decomp map scripts. The interpreter is label-addressable with a call
 // stack, so ported scripts' goto/call/return control flow works. While a
 // cutscene runs it freezes player input and drives NPC/player movement + text.
+import { safeLoad, safeSave } from './safestore.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
 function load() {
-	try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && typeof d === 'object') return d; } catch (e) {}
-	return { flags: {}, vars: {} };
+	const d = safeLoad(KEY, null);
+	return (d && typeof d === 'object') ? d : { flags: {}, vars: {} };
 }
 let store = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+function save() { safeSave(KEY, store); }
 
 export function getFlag(f) { return !!store.flags[f]; }
 export function setFlag(f) { store.flags[f] = true; save(); }

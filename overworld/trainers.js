@@ -3,6 +3,7 @@
 // pokecrystal + hand-crafted gym leaders); fallback teams from class pools.
 import { getJSON, getImage, META } from './engine.js';
 import { buildMon } from './battle.js';
+import { safeLoad, safeSave } from './safestore.js';
 
 const FACE_OF = {
 	MOVEMENT_TYPE_FACE_DOWN: 'down', MOVEMENT_TYPE_FACE_UP: 'up',
@@ -67,8 +68,7 @@ export class Trainers {
 		this.gfx = null;
 		this.engagement = null; // { trainer, phase: 'exclaim'|'walk', t }
 		this.onEngage = null;   // set by main.js
-		try { this.defeated = new Set(JSON.parse(localStorage.getItem(DEFEATED_KEY) || '[]')); }
-		catch (e) { this.defeated = new Set(); }
+		{ const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []); }
 	}
 
 	async init() {
@@ -86,7 +86,7 @@ export class Trainers {
 
 	markDefeated(t) {
 		this.defeated.add(this.keyOf(t));
-		try { localStorage.setItem(DEFEATED_KEY, JSON.stringify([...this.defeated])); } catch (e) {}
+		safeSave(DEFEATED_KEY, [...this.defeated]);
 	}
 
 	// battleable = flagged trainer event OR any NPC whose script has a roster

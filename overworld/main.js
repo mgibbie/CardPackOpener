@@ -18,6 +18,7 @@ import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
 import * as Story from './events.js';
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
@@ -109,10 +110,7 @@ function startTrainerBattle(t, foeParty, info) {
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
-			try {
-				const money = (parseInt(localStorage.getItem('magepunk_money'), 10) || 0) + info.money;
-				localStorage.setItem('magepunk_money', String(money));
-			} catch (e) {}
+			safeSaveStr('magepunk_money', (parseInt(localStorage.getItem('magepunk_money'), 10) || 0) + info.money);
 			saveParty(party);
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
@@ -158,9 +156,7 @@ addEventListener('keyup', e => {
 // where you are, so a return visit resumes there (URL params still win)
 const POS_KEY = 'magepunk_pos_v1';
 function savePos() {
-	try {
-		localStorage.setItem(POS_KEY, JSON.stringify({ map: world.current.name, x: player.tx, y: player.ty }));
-	} catch (e) {}
+	safeSave(POS_KEY, { map: world.current.name, x: player.tx, y: player.ty });
 }
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 function interact() {
@@ -778,10 +774,11 @@ const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
 const pcMenu = { open: false, side: 0, idx: 0 }; // side 0 = party (deposit), 1 = box (withdraw)
 
 function getBox() {
-	try { return JSON.parse(localStorage.getItem('magepunk_box_v1') || '[]'); } catch (e) { return []; }
+	const b = safeLoad('magepunk_box_v1', []);
+	return Array.isArray(b) ? b : [];
 }
 function setBox(box) {
-	try { localStorage.setItem('magepunk_box_v1', JSON.stringify(box)); } catch (e) {}
+	safeSave('magepunk_box_v1', box);
 }
 
 function shopKey(k) {
@@ -1015,7 +1012,7 @@ function starterKey(k) {
 		party = createStarter(id, battle.data);
 		Dex.seedFrom(party);
 		seedStoryState(row.region);
-		try { localStorage.setItem('magepunk_region', row.region); } catch (e) {}
+		safeSaveStr('magepunk_region', row.region);
 		starterMenu.open = false;
 		// the row you picked from is the region you begin in
 		const home = { KANTO: 'PalletTown', JOHTO: 'NewBarkTown', HOENN: 'LittlerootTown' }[row.region];
@@ -1196,8 +1193,8 @@ async function refreshMapContent(label) {
 let flyPoints = null;
 function loadFlyPoints() {
 	if (flyPoints) return flyPoints;
-	try { flyPoints = new Set(JSON.parse(localStorage.getItem('magepunk_flypoints') || '[]')); }
-	catch (e) { flyPoints = new Set(); }
+	const fp = safeLoad('magepunk_flypoints', []);
+	flyPoints = new Set(Array.isArray(fp) ? fp : []);
 	return flyPoints;
 }
 function markFlyPoint(mapId) {
@@ -1205,7 +1202,7 @@ function markFlyPoint(mapId) {
 	const fp = loadFlyPoints();
 	if (fp.has(mapId)) return;
 	fp.add(mapId);
-	try { localStorage.setItem('magepunk_flypoints', JSON.stringify([...fp])); } catch (e) {}
+	safeSave('magepunk_flypoints', [...fp]);
 }
 function hasFlyPoint(mapId) { return loadFlyPoints().has(mapId); }
 
@@ -1952,7 +1949,7 @@ function tick(now) {
 	playAccum += dt;
 	if (playAccum >= 5) {
 		const s = (parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0) + Math.floor(playAccum);
-		try { localStorage.setItem('magepunk_playtime', String(s)); } catch (e) {}
+		safeSaveStr('magepunk_playtime', s);
 		playAccum -= Math.floor(playAccum);
 	}
 
@@ -3097,8 +3094,7 @@ async function visitWorld(f) {
 async function leaveVisit() {
 	visiting = null;
 	ghosts.clear();
-	let home = null;
-	try { home = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) {}
+	const home = safeLoad(POS_KEY, null);
 	await moveToMap(home?.map ? (world.fileFor(home.map) || home.map) : 'PalletTown', home?.x, home?.y);
 }
 
@@ -3220,9 +3216,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	const params = new URLSearchParams(location.search);
 	// resume from the saved position unless the URL pins a map
 	let saved = null;
-	if (!params.has('map')) {
-		try { saved = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) {}
-	}
+	if (!params.has('map')) saved = safeLoad(POS_KEY, null);
 	const startMap = params.get('map') || saved?.map || 'PalletTown';
 	try { await world.load(startMap); } catch (e) { saved = null; await world.load('PalletTown'); }
 	const sx = params.has('x') ? +params.get('x')

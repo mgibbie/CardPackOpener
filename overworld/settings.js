@@ -1,5 +1,6 @@
 // settings.js — player-facing options, persisted in localStorage. Other modules
 // read these live (sound volume, dialog speed, auto-run, day/night tint).
+import { safeLoad, safeSave } from './safestore.js';
 const KEY = 'magepunk_settings';
 
 // each option: ordered value list; the stored value is one of these
@@ -13,14 +14,12 @@ export const OPTIONS = {
 const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true, followers: true };
 
 function load() {
-	try {
-		const d = JSON.parse(localStorage.getItem(KEY));
-		if (d && typeof d === 'object') return { ...DEFAULTS, ...d };
-	} catch (e) {}
+	const d = safeLoad(KEY, null);
+	if (d && typeof d === 'object') return { ...DEFAULTS, ...d };
 	return { ...DEFAULTS };
 }
 let cfg = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }
+function save() { safeSave(KEY, cfg); }
 
 export function get(k) { return cfg[k]; }
 export function set(k, v) { if (k in cfg) { cfg[k] = v; save(); } }

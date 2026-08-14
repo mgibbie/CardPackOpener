@@ -2,6 +2,7 @@
 // compatible pair (opposite genders, or a Ditto) lays an Egg that hatches into
 // the mother's base-form baby after more steps. State persists in localStorage.
 import { buildMon, statsFor } from './battle.js';
+import { safeLoad, safeSave } from './safestore.js';
 
 const KEY = 'magepunk_daycare';
 const EGG_LAY_STEPS = 128;   // both slots filled -> egg appears
@@ -10,13 +11,10 @@ const WITHDRAW_BASE = 100;   // + 100 per level gained
 
 function fresh() { return { slots: [null, null], breedSteps: 0, egg: null }; }
 function load() {
-	try {
-		const d = JSON.parse(localStorage.getItem(KEY));
-		if (d && Array.isArray(d.slots)) return d;
-	} catch (e) {}
-	return fresh();
+	const d = safeLoad(KEY, null);
+	return (d && Array.isArray(d.slots)) ? d : fresh();
 }
-function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+function save(d) { safeSave(KEY, d); }
 
 let state = load();
 export function get() { return state; }

@@ -56,5 +56,17 @@ function mockLS({ throwOnSet = false } = {}) {
 	ok('safeSaveStr returns false when there is no storage', safeSaveStr('x', 1) === false);
 }
 
+// --- the overworld copy must behave identically (drift guard) ---
+{
+	const ow = await import('../../../overworld/safestore.js');
+	ok('overworld exports the same three helpers', typeof ow.safeLoad === 'function' && typeof ow.safeSave === 'function' && typeof ow.safeSaveStr === 'function');
+	globalThis.localStorage = mockLS(); reports.length = 0;
+	globalThis.localStorage.setItem('bad', '{oops,,,');
+	ok('overworld safeLoad: corrupt → fallback + reported', JSON.stringify(ow.safeLoad('bad', { d: 1 })) === '{"d":1}' && reports.some(r => /corrupt/.test(r.msg)));
+	ok('overworld safeLoad: missing → fallback', ow.safeLoad('nope', 42) === 42);
+	globalThis.localStorage = mockLS({ throwOnSet: true }); reports.length = 0;
+	ok('overworld safeSave: quota → false + reported', ow.safeSave('k', { a: 1 }) === false && reports.some(r => /save failed/.test(r.msg)));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

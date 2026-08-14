@@ -1,5 +1,6 @@
 // party.js — the player's party, persisted in localStorage.
 import { buildMon } from './battle.js';
+import { safeLoad, safeSave } from './safestore.js';
 
 const KEY = 'magepunk_party_v1';
 const BOX_KEY = 'magepunk_box_v1';
@@ -21,13 +22,8 @@ function migrate(mon, data) {
 
 // returns the saved party, or null on a fresh save (main shows the starter picker)
 export function loadParty(data) {
-	try {
-		const raw = localStorage.getItem(KEY);
-		if (raw) {
-			const party = JSON.parse(raw);
-			if (Array.isArray(party) && party.length && party[0].stats) return party.map(m => migrate(m, data));
-		}
-	} catch (e) { /* fresh save */ }
+	const party = safeLoad(KEY, null);
+	if (Array.isArray(party) && party.length && party[0] && party[0].stats) return party.map(m => migrate(m, data));
 	return null;
 }
 
@@ -45,16 +41,15 @@ export function addCaught(party, mon) {
 		saveParty(party);
 		return 'party';
 	}
-	try {
-		const box = JSON.parse(localStorage.getItem(BOX_KEY) || '[]');
-		box.push(mon);
-		localStorage.setItem(BOX_KEY, JSON.stringify(box));
-	} catch (e) { /* private mode */ }
+	const box = safeLoad(BOX_KEY, []);
+	const arr = Array.isArray(box) ? box : [];
+	arr.push(mon);
+	safeSave(BOX_KEY, arr);
 	return 'box';
 }
 
 export function saveParty(party) {
-	try { localStorage.setItem(KEY, JSON.stringify(party)); } catch (e) { /* private mode */ }
+	safeSave(KEY, party);
 }
 
 export function healParty(party) {

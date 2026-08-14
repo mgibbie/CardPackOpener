@@ -3,6 +3,7 @@
 // MapItems.lua + MapTrees.lua; collected state persists in localStorage.
 import { getJSON, getImage, META } from './engine.js';
 import * as Bag from './bag.js';
+import { safeLoad, safeSave } from './safestore.js';
 
 const COLLECTED_KEY = 'magepunk_collected_v1';
 const HARVEST_AMOUNT = 2;
@@ -45,8 +46,7 @@ export class Items {
 		this.fieldObjs = [];
 		this.fruitMap = {};
 		this.ballImg = null;
-		try { this.collected = new Set(JSON.parse(localStorage.getItem(COLLECTED_KEY) || '[]')); }
-		catch (e) { this.collected = new Set(); }
+		{ const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []); }
 	}
 
 	async init() {
@@ -56,7 +56,7 @@ export class Items {
 
 	markCollected(key) {
 		this.collected.add(key);
-		try { localStorage.setItem(COLLECTED_KEY, JSON.stringify([...this.collected])); } catch (e) {}
+		safeSave(COLLECTED_KEY, [...this.collected]);
 	}
 
 	keyFor(prefix, ev) {

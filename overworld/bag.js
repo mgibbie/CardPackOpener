@@ -1,4 +1,5 @@
 // bag.js — money + item inventory, persisted in localStorage.
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 const MONEY_KEY = 'magepunk_money';
 const BAG_KEY = 'magepunk_bag_v1';
 const STARTING_MONEY = 3000;
@@ -110,20 +111,16 @@ export const ITEMS = {
 const NAMES_KEY = 'magepunk_itemnames_v1';
 export function registerName(id, name) {
 	if (ITEMS[id]) return;
-	try {
-		const names = JSON.parse(localStorage.getItem(NAMES_KEY) || '{}');
-		if (!names[id]) {
-			names[id] = name;
-			localStorage.setItem(NAMES_KEY, JSON.stringify(names));
-		}
-	} catch (e) {}
+	const names = safeLoad(NAMES_KEY, {});
+	if (names && typeof names === 'object' && !names[id]) {
+		names[id] = name;
+		safeSave(NAMES_KEY, names);
+	}
 }
 export function nameOf(id) {
 	if (ITEMS[id]) return ITEMS[id].name;
-	try {
-		const names = JSON.parse(localStorage.getItem(NAMES_KEY) || '{}');
-		if (names[id]) return names[id];
-	} catch (e) {}
+	const names = safeLoad(NAMES_KEY, {});
+	if (names && names[id]) return names[id];
 	return id.toUpperCase();
 }
 export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion',
@@ -140,42 +137,40 @@ export const WILD_HELD = ['oranberry', 'sitrusberry', 'lumberry', 'chestoberry',
 export function getMoney() {
 	const v = parseInt(localStorage.getItem(MONEY_KEY), 10);
 	if (isNaN(v)) {
-		localStorage.setItem(MONEY_KEY, String(STARTING_MONEY));
+		safeSaveStr(MONEY_KEY, STARTING_MONEY);
 		return STARTING_MONEY;
 	}
 	return v;
 }
 export function earn(amount) {
-	localStorage.setItem(MONEY_KEY, String(getMoney() + amount));
+	safeSaveStr(MONEY_KEY, getMoney() + amount);
 }
 export function spend(amount) {
 	const m = getMoney();
 	if (m < amount) return false;
-	localStorage.setItem(MONEY_KEY, String(m - amount));
+	safeSaveStr(MONEY_KEY, m - amount);
 	return true;
 }
 
 export function getBag() {
-	try {
-		const b = JSON.parse(localStorage.getItem(BAG_KEY));
-		if (b && typeof b === 'object') return b;
-	} catch (e) {}
+	const b = safeLoad(BAG_KEY, null);
+	if (b && typeof b === 'object' && !Array.isArray(b)) return b;
 	const fresh = { pokeball: 5, potion: 3 }; // starter kit
-	localStorage.setItem(BAG_KEY, JSON.stringify(fresh));
+	safeSave(BAG_KEY, fresh);
 	return fresh;
 }
 export function count(itemId) { return getBag()[itemId] || 0; }
 export function addItem(itemId, n = 1) {
 	const b = getBag();
 	b[itemId] = (b[itemId] || 0) + n;
-	localStorage.setItem(BAG_KEY, JSON.stringify(b));
+	safeSave(BAG_KEY, b);
 }
 export function consume(itemId) {
 	const b = getBag();
 	if (!b[itemId]) return false;
 	b[itemId]--;
 	if (b[itemId] <= 0) delete b[itemId];
-	localStorage.setItem(BAG_KEY, JSON.stringify(b));
+	safeSave(BAG_KEY, b);
 	return true;
 }
 export function buy(itemId) {
