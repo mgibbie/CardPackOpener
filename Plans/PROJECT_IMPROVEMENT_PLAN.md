@@ -62,11 +62,25 @@ Verify/upgrade the deckbuilder to have: text search, filter by class/cost/type/k
 and "cards you own vs. all." With 7,491 cards this is essential for it to feel usable.
 (Collection + deckbuilder already have hover tooltips — good.)
 
-### 6. Match UX niceties
-- A visible **game log** panel (what happened, whose turn) — huge for a deep card game.
-- **Concede / rematch** buttons on the match screen.
-- A "mulligan" confirmation and clearer priority/end-turn affordances.
-- Effort: a day, incremental.
+### 6. Match UX niceties — ✅ DONE (2026-08-14)
+- **Scrollable game log** — the in-game log was a 7-line ephemeral strip (hidden on
+  mobile). A **📜 Log** button now opens a scrollable drawer with the full match
+  history (bounded to 500 lines), mobile-friendly; the inline strip still shows the
+  last few lines.
+- **Concede everywhere** — was runs-only; now works in Quick Match / AI / duels
+  (engine `concede()` = 0 life + `checkGameOver`; 1v1 gives the opponent the win, FFA
+  drops just the conceder). Guests relay a `{k:'concede'}` intent (host authoritative).
+- **Mulligan** — an opening-hand mulligan at the start of your first turn: tap cards to
+  swap, confirm; the picks shuffle back and replacements come off the top (the Coin
+  can't be swapped). Engine `mulligan(state, pi, uids)` primitive; the client offers it
+  to the human (modal), auto-mulligans AI seats (toss cost≥5), and the guest relays
+  `{k:'mulligan',uids}`. Quick Match / AI / duels only — the PvE run modes keep their
+  tuned openings. Deterministic (seeded rng), so a duel guest's swap matches the host.
+- Verified: engine `mulligan_test` (12) + concede assertions in `ffa_duel_test` (31),
+  client relay/AI extract tests, a headless Quick-Match boot that confirms the mulligan
+  modal appears/marks/confirms/logs with no errors, and the full engine suite (190).
+- Still open from here: **rematch** is 1v1-only (an N-way FFA rematch is its own piece);
+  clearer priority/end-turn affordances.
 
 ### 7. Collection completion goals — ✅ DONE (2026-08-12)
 The collection page now has a **completion meter** ("N / 6,265 collected · X%"), a

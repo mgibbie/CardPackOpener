@@ -822,6 +822,23 @@ export const ALL_AZERITE_LEGENDARIES = [...new Set(Object.values(EXCAVATE_LEGEND
 // The Coin: an opponent developing a land (or a "gain a coin" effect) puts a
 // coin CARD into your hand instead of a hidden counter — play it any time for
 // +1 mana this turn, Hearthstone-style.
+// Opening-hand mulligan (once per player): return the chosen cards to the deck
+// and draw that many replacements off the top FIRST, then shuffle the returned
+// cards back in — so a tossed card can't be drawn straight back. The Coin can't
+// be mulliganed. Idempotent per player via p.mulliganed.
+export function mulligan(state, pi, uids) {
+	const p = state.players[pi];
+	if (!p || p.mulliganed || p.eliminated) return;
+	p.mulliganed = true;
+	const swap = (uids || []).map(u => p.hand.find(c => c.uid === u)).filter(c => c && c.id !== 'coin');
+	if (!swap.length) { emit(state, { type: 'mulligan', player: pi, count: 0 }); return; }
+	for (const c of swap) { const idx = p.hand.indexOf(c); if (idx >= 0) p.hand.splice(idx, 1); }
+	drawCards(state, pi, swap.length);          // replacements come off the top first
+	for (const c of swap) p.deck.push(c.id);     // returned cards go back into the deck (as ids)
+	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+	emit(state, { type: 'mulligan', player: pi, count: swap.length });
+}
+
 export function addCoin(state, pi) {
 	const p = state.players[pi];
 	if (p.eliminated) return;

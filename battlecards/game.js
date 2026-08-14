@@ -1767,6 +1767,76 @@ function openPickModal() {
 	modal.style.display = 'block';
 }
 
+// ---------- opening-hand mulligan ----------
+// Offered once, at the start of YOUR first turn, before you act. Tap cards to
+// mark them for a swap, then confirm. Works for the host (seat 0), a guest (its
+// own seat, relayed), and every AI seat (auto-resolved by the host).
+let mulliganModalOpen = false;
+let mulliganPicks = null;
+// mulligan is a Quick Match / AI / duel feature; the PvE run modes keep their
+// tuned openings (boss decks, treasures) untouched.
+const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode;
+function maybeOfferMulligan() {
+	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
+	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
+	if (mulliganModalOpen) return;
+	if (queue.length || queueBusy) return;         // wait for the opening animation to settle
+	const me = state.players[HUMAN];
+	if (!me || me.mulliganed || me.eliminated) return;
+	if (state.current !== HUMAN) return;           // only on your own turn (its start)
+	if (pending) return;                            // not mid-targeting
+	// resolve any pending decision (scry/loot/discover/counter) first
+	if (state.scryQueue.length || state.pickQueue.length || state.discardQueue.length
+		|| state.askQueue.length || state.sacQueue.length || state.dredgeQueue.length || state.priority != null) return;
+	openMulliganModal();
+}
+function openMulliganModal() {
+	const me = state.players[HUMAN];
+	const cards = me.hand.filter(c => c.id !== 'coin'); // the Coin can't be mulliganed
+	if (!cards.length) { doMulligan([]); return; } // nothing to swap — auto-keep (relays if guest)
+	mulliganModalOpen = true;
+	mulliganPicks = new Set();
+	const modal = $('scry-modal');
+	const render = () => {
+		modal.innerHTML = `<div class="wm-title">Mulligan — tap cards to swap, then confirm</div><div class="scry-row mull-row"></div><div class="mull-actions"></div>`;
+		const row = modal.querySelector('.scry-row');
+		cards.forEach(c => {
+			const def = state.cardsById[c.id] || c;
+			const swap = mulliganPicks.has(c.uid);
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell' + (swap ? ' mull-swap' : '');
+			const face = drawCardFace(def);
+			face.style.width = '104px';
+			cell.appendChild(face);
+			const tag = document.createElement('div');
+			tag.className = 'mull-tag';
+			tag.textContent = swap ? '↺ Swap' : 'Keep';
+			cell.appendChild(tag);
+			cell.addEventListener('pointerdown', e => { e.stopPropagation(); if (swap) mulliganPicks.delete(c.uid); else mulliganPicks.add(c.uid); render(); });
+			row.appendChild(cell);
+		});
+		const actions = modal.querySelector('.mull-actions');
+		const confirm = document.createElement('button');
+		confirm.textContent = mulliganPicks.size ? `Mulligan ${mulliganPicks.size}` : 'Keep hand';
+		confirm.addEventListener('pointerdown', e => { e.stopPropagation(); doMulligan([...mulliganPicks]); });
+		actions.appendChild(confirm);
+	};
+	render();
+	modal.style.display = 'block';
+}
+function doMulligan(uids) {
+	$('scry-modal').style.display = 'none';
+	mulliganModalOpen = false;
+	if (isGuest()) return guestApply(() => E.mulligan(state, HUMAN, uids), { k: 'mulligan', uids });
+	E.mulligan(state, HUMAN, uids); pump(); if (duel.on) publishDuel();
+}
+// AI mulligan heuristic: toss the clunky top of the curve (cost >= 5) so the
+// bots keep a playable early hand; the Coin is never tossed (mulligan skips it).
+function aiMulliganUids(pi) {
+	const p = state.players[pi];
+	return p.hand.filter(c => c.id !== 'coin' && (c.cost || 0) >= 5).map(c => c.uid);
+}
+
 // optional "you may …" prompt: a centered yes/no using the decision popup
 function openAskModal() {
 	const pend = state.askQueue[0];
@@ -1873,7 +1943,7 @@ function openSacModal() {
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); if (state && state.priority === HUMAN) openRespondModal(); maybeRunAI(); return; }
+	if (!ev) { queueBusy = false; updateHud(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; }
 	queueBusy = true;
 	let delay = 120;
 	switch (ev.type) {
@@ -2281,6 +2351,7 @@ function nextEvent() {
 		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
 		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
+		case 'mulligan': log(ev.count ? `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} mulliganed ${ev.count} card${ev.count === 1 ? '' : 's'}` : `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} kept the opening hand`); delay = 200; break;
 		case 'eliminated':
 			banner(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} eliminated!`, 1800);
 			log(`${nameOf(ev.player)} eliminated`);
@@ -2350,7 +2421,10 @@ function maybeRunAI() {
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
 		if (!state || state.over || !isAiSeat(state.current)) return;
-		const acted = AI.step(state, state.current);
+		const seat = state.current;
+		// mulligan the AI's opening hand on its first turn, then act on the next tick
+		if (mulliganEnabled() && !state.players[seat].mulliganed) { E.mulligan(state, seat, aiMulliganUids(seat)); pump(); if (duel.on) publishDuel(); return; }
+		const acted = AI.step(state, seat);
 		if (!acted) E.endTurn(state);
 		pump();
 		if (duel.on) publishDuel(); // host: broadcast the AI seat's move to the guests
@@ -3669,7 +3743,7 @@ function applyGuestIntent(it) {
 	// queue/priority resolutions (scry, loot, discover, sac-cost, dredge, counter
 	// response) can land on ANY player's turn; each self-guards inside the switch by
 	// checking the front of its queue, so they bypass the turn gate below.
-	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond' || it.k === 'concede';
+	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond' || it.k === 'concede' || it.k === 'mulligan';
 	if (!isResolve && state.current !== P) return; // turn actions apply only on that seat's turn
 	try {
 		switch (it.k) {
@@ -3694,6 +3768,7 @@ function applyGuestIntent(it) {
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
 			case 'concede': { const wasCur = state.current === P; E.concede(state, P); if (!state.over && wasCur) E.endTurn(state); break; } // FFA: hand the turn on
+			case 'mulligan': E.mulligan(state, P, it.uids || []); break;
 			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;
 			case 'pick': if (state.pickQueue[0]?.player === P) E.resolvePick(state, it.id); else return; break;
@@ -3813,6 +3888,8 @@ function openDuelModals() {
 	else if (aq && aq.player === HUMAN) { sig = 'ask:' + (aq.prompt || '') + ':' + (aq.counterPay?.targetUid ?? aq.payOr?.amount ?? ''); open = openAskModal; }
 	else if (scq && scq.player === HUMAN) { sig = 'sac:' + scq.uids.join(','); open = openSacModal; }
 	else if (state.priority === HUMAN) { sig = 'respond:' + (state.stack[state.stack.length - 1] || {}).uid; open = openRespondModal; }
+	// lowest priority: the once-per-game opening mulligan, at the start of your turn
+	else if (state.current === HUMAN && state.players[HUMAN] && !state.players[HUMAN].mulliganed && !state.players[HUMAN].eliminated) { sig = 'mulligan'; open = openMulliganModal; }
 	if (sig === duel.modalSig) return; // already showing (or already submitted) this one
 	duel.modalSig = sig;
 	const modal = $('scry-modal');
