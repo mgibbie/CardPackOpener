@@ -1,0 +1,49 @@
+name: Deploy to Cloudflare Pages
+
+# Gates the deploy on CI: this runs ONLY after the "Tests" workflow succeeds on
+# main, so a red suite can never ship. It is INERT until you activate it — the job
+# is skipped unless the repo variable DEPLOY_VIA_CI == 'true' — so merely committing
+# this file changes nothing about how the site deploys today.
+#
+# ACTIVATE (one-time) to move deploys behind the tests:
+#   1. Cloudflare dashboard → create an API token with the "Cloudflare Pages: Edit"
+#      permission. Then repo → Settings → Secrets and variables → Actions:
+#        secret   CLOUDFLARE_API_TOKEN   = <that token>
+#        secret   CLOUDFLARE_ACCOUNT_ID  = <your Cloudflare account id>
+#        variable CF_PAGES_PROJECT       = <your Pages project name>
+#        variable DEPLOY_VIA_CI          = true
+#   2. Cloudflare dashboard → the Pages project → Settings → Builds & deployments →
+#      turn OFF automatic Git deployment for the production branch, so ONLY this
+#      workflow deploys (otherwise each push deploys twice — the old ungated Git
+#      deploy AND this gated one).
+# To pause gated deploys later, set DEPLOY_VIA_CI to anything but "true".
+#
+# `pages deploy .` uploads the repo root — the same content the Git integration
+# publishes (the offloaded art/data live on separate Pages projects via _redirects;
+# functions/ and _headers/_redirects are picked up automatically). If your project's
+# build-output directory isn't the repo root, change the "." below to match it.
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # only when the tests passed AND deploys-via-CI has been switched on
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_VIA_CI == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }} # deploy the exact commit that passed
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy . --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main
