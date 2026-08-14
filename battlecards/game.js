@@ -3387,6 +3387,7 @@ animate();
 // headless test hook
 window.__game = {
 	get state() { return state; },
+	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
 	E, AI,
 	pump,
 	screenPosOf(uid) {
@@ -3447,7 +3448,9 @@ function pickClasses() {
 // previously-dropped lazily-created state (forcedTurns, expanseEvents, dealt, …),
 // so old ingesters keep working and resumed/spectated games stop losing state.
 function snapshotState() {
-	return E.toSnapshot(state);
+	const s = E.toSnapshot(state);
+	if (s) s.digest = E.stateDigest(state); // guests verify the wire round-trip against this
+	return s;
 }
 
 let publishSeq = 0;
@@ -3824,6 +3827,17 @@ function startDuelGuest(cardsById) {
 				// COMPLETE host state (the old spread-rebuild dropped the lazily-created
 				// fields, so guest-side predictions ran on a subtly different game)
 				state = E.fromSnapshot(snap, cardsById);
+				// Desync self-heal: fromSnapshot IS the authoritative rebuild, so play is
+				// already corrected — but verify the wire round-trip actually reproduced the
+				// host's state. A digest mismatch means a gameplay field silently dropped or
+				// mangled in transit (the exact bug that used to desync guests unseen); report
+				// it through the throttled beacon so it surfaces on /errors.html instead of
+				// two clients quietly diverging.
+				if (snap.digest && E.stateDigest(state) !== snap.digest) {
+					duelDebug.desyncs++;
+					window.reportErr?.(`duel desync: snapshot round-trip mismatch (v${snap.schemaVersion ?? 0}, ${state.players.length}p)`, 'game.js duel ingest');
+					console.warn('duel desync: rebuilt state digest != host digest', snap.digest);
+				}
 				// the guest's own instantiate calls (optimistic plays) must never mint
 				// uids that collide with host-minted ones on the ingested board
 				E.ensureUidsAbove(E.maxSnapshotUid(snap));
@@ -3903,7 +3917,7 @@ function openDuelModals() {
 
 // live counters for the ?debug=1 overlay + failure banners — the first friend
 // test failed with "it never loaded" and zero data; never again
-const duelDebug = { pubFails: 0, pubOk: 0, pollErrors: 0, ingestErrors: 0, lastError: '', lastPollAt: 0, lastPubAt: 0 };
+const duelDebug = { pubFails: 0, pubOk: 0, pollErrors: 0, ingestErrors: 0, desyncs: 0, lastError: '', lastPollAt: 0, lastPubAt: 0 };
 function startDebugOverlay() {
 	if (!new URLSearchParams(location.search).has('debug')) return;
 	const el = document.createElement('div');
@@ -3925,7 +3939,9 @@ let duelPubSeq = 0, duelPubStarted = false;
 // Same authoritative snapshot as spectate (see snapshotState) — the two
 // hand-maintained allow-lists this replaced had already drifted by construction.
 function snapshotForDuel() {
-	return E.toSnapshot(state);
+	const s = E.toSnapshot(state);
+	if (s) s.digest = E.stateDigest(state); // guests verify the wire round-trip against this
+	return s;
 }
 // seat-indexed match stats for the guest's post-game summary. Duration is baked
 // in (durS) because the guest can't read the host's performance.now() clock.

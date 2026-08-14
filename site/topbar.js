@@ -879,6 +879,9 @@ function reportErr(msg, where) {
 		else fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
 	} catch {}
 }
+// expose the deduped/capped beacon so other modules (e.g. the duel engine's
+// desync check) can report a handled anomaly through the same throttle
+if (typeof window !== 'undefined') window.reportErr = reportErr;
 addEventListener('error', e => { if (e && (e.message || e.filename)) reportErr(e.message || 'error', (e.filename || '') + (e.lineno ? ':' + e.lineno : '')); });
 addEventListener('unhandledrejection', e => { const r = e && e.reason; const w = r && r.stack ? String(r.stack).split('\n').slice(1, 2).join('').trim() : 'unhandledrejection'; reportErr((r && (r.message || r)) || 'unhandledrejection', w); });
 

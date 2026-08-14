@@ -4757,5 +4757,5 @@ export function ensureUidsAbove(n) {
 // Facade re-exports (docs/engine-hardening/05: engine.js will become a thin
 // shim over engine/ modules; extractions surface here so callers keep their
 // single `import * as E from './engine.js'` line).
-export { SCHEMA_VERSION, toSnapshot, fromSnapshot, migrate, normalize, maxSnapshotUid } from './serialize.js';
+export { SCHEMA_VERSION, toSnapshot, fromSnapshot, migrate, normalize, stateDigest, maxSnapshotUid } from './serialize.js';
 export { seededRng, restoreRng, makeRand } from './rng.js';

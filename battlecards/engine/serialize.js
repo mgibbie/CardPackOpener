@@ -164,6 +164,7 @@ export function fromSnapshot(snap, cardsById, rng) {
 	const state = migrate(snap);
 	delete state.schemaVersion; // transport-only fields; not engine state
 	delete state.playerCount;
+	delete state.digest;        // the host's wire fingerprint; not engine state (would else leak into re-serialization)
 	delete state.rng;           // the {seed,calls} carry (below) is not a live rng
 	state.cardsById = cardsById;
 	// An explicit rng arg always wins (tests pass their own). Otherwise, if the
@@ -212,4 +213,22 @@ export function normalize(state) {
 	delete snap.playerCount;
 	delete snap.rng; // rng POSITION is transport, not gameplay — a digest is stream-agnostic
 	return sort(snap);
+}
+
+// A compact FNV-1a fingerprint of normalize(state) — identical for any two
+// gameplay-identical states regardless of rng position or raw uid numbering
+// (normalize strips events/rng/cardsById and remaps uids). The host stamps
+// stateDigest(liveState) into each wire snapshot; a guest recomputes it on its
+// freshly-deserialized state and, on a mismatch, knows the wire round-trip
+// silently dropped or mangled a gameplay field it can't otherwise see. The guest
+// is already on the authoritative rebuild (so play self-heals), but the drift is
+// reported instead of passing unseen. A faithful round-trip ALWAYS matches, so
+// this never false-alarms. (Do NOT compute this inside toSnapshot — normalize
+// calls toSnapshot, which would recurse.)
+export function stateDigest(state) {
+	if (!state || !Array.isArray(state.players)) return '00000000';
+	const s = JSON.stringify(normalize(state));
+	let h = 0x811c9dc5;
+	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+	return (h >>> 0).toString(16).padStart(8, '0');
 }

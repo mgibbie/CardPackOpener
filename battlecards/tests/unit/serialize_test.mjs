@@ -8,7 +8,7 @@ import fs from 'fs';
 import * as E from '../../engine.js';
 import { validateGameState } from '../../engine/validate.js';
 import { seededRng, restoreRng } from '../../engine/rng.js';
-import { SCHEMA_VERSION, toSnapshot, fromSnapshot, migrate, normalize } from '../../engine/serialize.js';
+import { SCHEMA_VERSION, toSnapshot, fromSnapshot, migrate, normalize, stateDigest } from '../../engine/serialize.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
@@ -105,6 +105,40 @@ const digest = st => JSON.stringify(normalize(st));
 		if (seen.has(c.uid)) dup = c.uid; seen.add(c.uid);
 	}
 	ok('no uid collisions after restore + ensureUidsAbove', dup === null, `dup uid ${dup}`);
+}
+// --- stateDigest: the guest desync self-heal fingerprint ---
+// The host stamps stateDigest(liveState) into each wire snapshot; the guest
+// recomputes it on the deserialized state. A faithful round-trip must match
+// (no false alarm); any dropped/mangled gameplay field must NOT (real desync).
+{
+	const state = E.createGame(byId, seededRng(77), null, 3); // FFA to exercise multiple seats
+	for (let s = 1; s < 3; s++) { E.drawCards(state, s, 3); }
+	for (let i = 0; i < 6; i++) E.endTurn(state);
+	state.expanseEvents = 9; state.forcedTurns = [2]; // lazily-created fields too
+
+	ok('stateDigest is re-exported through the engine.js aggregation (what game.js E.stateDigest uses)', typeof E.stateDigest === 'function');
+	const hostDigest = stateDigest(state);
+	ok('stateDigest is a stable 8-hex fingerprint', /^[0-9a-f]{8}$/.test(hostDigest), hostDigest);
+	ok('the aggregated E.stateDigest agrees with the direct import', E.stateDigest(state) === hostDigest);
+
+	// what the host ships and the guest ingests (server relay = JSON round-trip)
+	const wire = JSON.parse(JSON.stringify((() => { const s = toSnapshot(state); s.digest = hostDigest; return s; })()));
+	const guest = fromSnapshot(wire, byId, seededRng(999)); // guest restores on a DIFFERENT rng stream
+	ok('faithful round-trip: guest digest matches the host (no false desync)', stateDigest(guest) === wire.digest, `${stateDigest(guest)} vs ${wire.digest}`);
+	ok('digest is stream-agnostic (rng seed 999 ≠ 77, yet equal)', stateDigest(guest) === hostDigest);
+	ok('the host fingerprint does not leak onto the rebuilt state', guest.digest === undefined && toSnapshot(guest).digest === undefined);
+
+	// a real desync: a gameplay field silently drops/mangles in transit → detected
+	const dropped = JSON.parse(JSON.stringify(wire)); dropped.players[1].hand.pop(); // a card vanished from a hand
+	ok('a dropped hand card is caught (digest diverges)', stateDigest(fromSnapshot(dropped, byId, seededRng(1))) !== wire.digest);
+	const bumped = JSON.parse(JSON.stringify(wire)); bumped.players[0].life += 1; // life off by one
+	ok('an off-by-one life is caught (digest diverges)', stateDigest(fromSnapshot(bumped, byId, seededRng(1))) !== wire.digest);
+	const swapped = JSON.parse(JSON.stringify(wire)); swapped.current = (swapped.current + 1) % 3; // wrong active seat
+	ok('a wrong active seat is caught (digest diverges)', stateDigest(fromSnapshot(swapped, byId, seededRng(1))) !== wire.digest);
+
+	// but re-ordering nothing / re-serializing IS idempotent
+	ok('digest is idempotent across a second clean round-trip',
+		stateDigest(fromSnapshot(JSON.parse(JSON.stringify(toSnapshot(guest))), byId, seededRng(5))) === hostDigest);
 }
 // --- dungeon RUN_KEY canary: saved-run contract must keep loading ---
 {

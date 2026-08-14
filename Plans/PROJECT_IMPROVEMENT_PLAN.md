@@ -234,6 +234,23 @@ no third-party, no accounts, no IPs stored.
   real messages; `errors.html` renders the rollup — 5). Note: same-origin app errors give full
   messages; cross-origin (CDN) scripts still mask to "Script error." per the browser.
 
+- **Guest desync self-heal — ✅ DONE (2026-08-14):** in the host-authoritative duel relay a guest
+  applies its own move optimistically and trusts the next host snapshot. `fromSnapshot` already IS
+  the authoritative rebuild on every ingest, so play self-heals — but if a gameplay field ever
+  silently dropped or mangled on the wire (a nested card field, a non-JSON-safe type, a migration
+  gap), two clients would **quietly diverge with no signal**. Now the host stamps
+  `snap.digest = E.stateDigest(state)` into every wire snapshot and the guest recomputes it right
+  after `fromSnapshot`; a mismatch reports through the throttled `window.reportErr` beacon (→
+  `errors.html`) and bumps `duelDebug.desyncs`. **`stateDigest`** (engine/serialize.js) is FNV-1a
+  over `JSON.stringify(normalize(state))` — `normalize` strips events/rng/cardsById and remaps uids,
+  so the fingerprint is **stream- and uid-agnostic**: a faithful round-trip ALWAYS matches (zero
+  false alarm) while any real divergence is caught. Effectively the snapshot-fidelity fuzz check,
+  moved into the RUNTIME on real production games. `fromSnapshot` now drops the transport-only
+  `digest`; `window.reportErr` exposed from topbar.js (reuses its dedup+cap). Verified: serialize
+  test digest block (clean round-trip matches, stream-agnostic, and dropped-card / off-by-one-life /
+  wrong-active-seat each caught — 32) + the 3-browser relay harness asserts **`desyncs===0` across
+  all live clients** (no false positive on a healthy game).
+
 ---
 
 ## Tier 3 — Bigger bets (worth planning, not "easy")

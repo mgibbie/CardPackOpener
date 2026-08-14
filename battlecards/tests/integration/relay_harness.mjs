@@ -213,6 +213,12 @@ async function loadHandler() {
 			A(ncm && ncm.size === 3 && (ncm.humans || []).length === 3 && ncm.rematchOf === matchId && ncm.seats.every(s => !s.ai && s.deck),
 				'the rematch reuses all 3 humans + their decks', JSON.stringify(ncm && { size: ncm.size, humans: ncm.humans, rematchOf: ncm.rematchOf }));
 
+			// the desync self-heal fingerprint must not false-alarm on a HEALTHY game:
+			// every guest ingested many authoritative snapshots above, and each verified
+			// its rebuilt state against the host's stateDigest — all round-trips must match
+			const desyncs = await Promise.all(users.map(u => u.page.evaluate(() => (window.__game && window.__game.duelDebug ? window.__game.duelDebug.desyncs : -1)).catch(() => -1)));
+			A(desyncs.every(d => d === 0), 'zero snapshot-digest desyncs across all clients (round-trip fidelity held live)', 'desyncs=' + JSON.stringify(desyncs));
+
 			// uncaught JS errors are fatal; benign network 4xx (chat-poll for a room you're
 			// not in) surface as "Failed to load resource" and are client-handled
 			const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
