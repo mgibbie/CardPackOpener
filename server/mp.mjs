@@ -42,6 +42,24 @@ const RATE_LIMITS = {
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
 
+// ---------- lazy GC of ephemeral keys ----------
+// D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
+// sweep — at most once per GC_INTERVAL_MS, gated by a `gc:last` marker — deletes
+// rows whose LAST WRITE (the maintained `updated_at` column) is older than the
+// prefix's TTL. Only EPHEMERAL prefixes are listed; durable data (the user record,
+// `code:`, `stat:`, `err:`, `aideckpool`, `mm:queue`, `gc:last`) is never swept.
+// Every TTL is far longer than a match can live (matches auto-abandon after ~18s
+// of no polling; MATCH_MS is 30m), so a live/recent game is never cut. Note
+// `cardmatch:` only gets written at creation / on `over` / on rematch, so its
+// updated_at can lag a live match by up to its length — hence the generous 12h.
+const GC_INTERVAL_MS = 30 * 60_000;
+const HR = 3600; // seconds
+const GC_TABLE = [
+	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
+	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
+	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
+];
+
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
 const MAGE_STARTER = ['arcane_missiles', 'arcane_missiles', 'mirror_image', 'mirror_image', 'arcane_explosion', 'arcane_explosion', 'frostbolt', 'frostbolt', 'arcane_intellect', 'arcane_intellect', 'fireball', 'fireball', 'flamestrike', 'flamestrike', 'babbling_book', 'babbling_book', 'glacier_racer', 'glacier_racer', 'lab_partner', 'lab_partner', 'mana_wyrm', 'mana_wyrm', 'time_twisted_seer', 'time_twisted_seer', 'wand_thief', 'wand_thief', 'winterspring_whelp', 'winterspring_whelp', 'aqua_archivist', 'aqua_archivist', 'arcanologist', 'arcanologist', 'chill_o_matic', 'chill_o_matic', 'game_master', 'game_master', 'imprisoned_phoenix', 'imprisoned_phoenix', 'magic_dart_frog', 'magic_dart_frog'];
@@ -230,6 +248,13 @@ function userStore(db) {
 			const ph = keys.map(() => '?').join(',');
 			await db.prepare(`DELETE FROM mp_store WHERE key IN (${ph})`).bind(...keys).run();
 		},
+		// GC: drop rows under a prefix whose last write is older than ttlSec (uses the
+		// maintained updated_at column, so it's one indexed DELETE — no read/parse).
+		// Controlled prefixes only (no LIKE metacharacters), same as list().
+		sweepOld: async (prefix, ttlSec) => {
+			const cutoff = Math.floor(Date.now() / 1000) - ttlSec;
+			await db.prepare('DELETE FROM mp_store WHERE key LIKE ? AND updated_at < ?').bind(prefix + '%', cutoff).run();
+		},
 	};
 }
 
@@ -249,6 +274,18 @@ async function rateLimit(store, bucket, limit, windowMs) {
 // Cloudflare sets cf-connecting-ip; fall back through x-forwarded-for to a shared
 // bucket. Only used to bucket the two unauthenticated beacons — never stored.
 const clientIp = (req) => ((req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'anon').split(',')[0].trim() || 'anon').slice(0, 45);
+
+// Lazy garbage collection. Runs at most once per GC_INTERVAL_MS across all requests
+// (a `gc:last` marker gates it), sweeping each ephemeral prefix past its TTL. The
+// gc:last read-modify-write isn't atomic, but a concurrent double-sweep just deletes
+// the same dead rows twice — idempotent. Returns whether it swept.
+async function maybeGC(store, now) {
+	const last = await store.get('gc:last');
+	if (last && now - last < GC_INTERVAL_MS) return false;
+	await store.setJSON('gc:last', now); // claim the slot first
+	for (const [prefix, ttl] of GC_TABLE) await store.sweepOld(prefix, ttl);
+	return true;
+}
 
 // ---------- auth ----------
 const sign = (payload) => createHmac('sha256', SECRET).update(payload).digest('hex');
@@ -578,6 +615,9 @@ export default async function handler(req, env) {
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
 	if (rl && !(await rateLimit(store, action + ':' + username, rl[0], rl[1]))) return json({ error: 'slow down' }, 429);
+	// opportunistic GC on a fraction of authenticated traffic (the interval marker
+	// keeps the actual sweep to ~once per GC_INTERVAL_MS regardless of how often it's called)
+	if (Math.random() < 0.1) await maybeGC(store, Date.now());
 	await ensureFriendFields(store, username, user); // backfill code/friends
 	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
 	await grantStarterBaseline(store, username, user); // starter-deck playset + welcome packs (once)

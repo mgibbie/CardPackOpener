@@ -309,6 +309,23 @@ no third-party, no accounts, no IPs stored.
   multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
   Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
 
+- **Backend state GC — ✅ DONE (2026-08-14):** D1 has no TTL, so `/api/mp`'s per-match / per-session
+  rows (cardmatch / cardmatchstate / alive / cardintent / chat / trade / presence / rl / …) grew
+  unbounded — partial cleanup existed but no systematic sweep. Added a lazy GC: `maybeGC(store, now)`
+  runs at most once per **30 min** (a `gc:last` marker gates it; a concurrent double-sweep just deletes
+  the same dead rows, so it's idempotent), triggered on ~10% of authenticated requests so the common
+  path is untaxed. New `userStore.sweepOld(prefix, ttlSec)` is a single indexed
+  `DELETE ... WHERE key LIKE ? AND updated_at < ?` keyed off the already-maintained `updated_at` column
+  (no listing/parsing). `GC_TABLE` TTLs — 1h (cardmatchstate / alive / cardintent / mm:matched / rl),
+  6h (cardstate / trade / tradeptr / curmatch / ready / challenge), 12h (cardmatch / chat), 24h
+  (presence) — all far longer than a match can live (auto-abandon after ~18s idle, MATCH_MS 30m), so
+  nothing live/recent is ever cut. Durable data (the bare user record, `code:` / `stat:` / `err:` /
+  `aideckpool` / `mm:queue` / `gc:last`) is never touched. Verified: `tests/unit/server_gc_test.mjs`
+  (in run-all) extracts the REAL GC_TABLE + maybeGC by source-slice and runs them against a faithful
+  updated_at shim — stale rows swept, fresh/within-TTL kept, durable rows safe, interval guard blocks
+  re-sweep — plus source guards. The relay harness still passes (the new SQL no-ops against its mock
+  but doesn't error).
+
 - **Server input hardening — ✅ DONE (2026-08-14):** `/api/mp` (`server/mp.mjs`) is internet-facing —
   anyone can POST — and had solid per-field validation in spots but **no rate limiting** and several
   hot paths wrote verbatim client blobs to KV (worst: `card-act` writes each intent as its own row,
