@@ -382,6 +382,19 @@ all three result titles by running the real functions headless.
   concurrent (would need row CAS); analytics counters are approximate. Verified: an
   extract test proving concurrent relays lose no intents + order preserved (8) and the
   rematch client test still green (6).
+- **Multi-client relay integration harness — ✅ DONE (2026-08-14):** closed the long-standing
+  "can't verify N real browsers" gap. `battlecards/tests/integration/relay_harness.mjs` wires
+  the **real `mp.mjs` handler** to an in-memory D1 shim (patching its attribute-less JSON
+  imports for Node), **registers 3 accounts + matchmakes them into a size-3 FFA through the real
+  backend**, then launches **3 headless browser clients** (each in an ISOLATED context — same-
+  origin pages share `localStorage`, which would otherwise collapse them into one user) into the
+  live duel and asserts the relay via `window.__game.state`: all clients **converge on the host's
+  authoritative board**, a host end-turn propagates to the guests, and a **guest end-turn relays
+  back through the host and re-converges** (the exact round-trip the per-intent race fix
+  protects). 11/11, stable across repeated runs. Standalone (needs headless Chrome), not in
+  `run-all`; run with `node battlecards/tests/integration/relay_harness.mjs`. Bugs it caught while
+  building: 3 clients sharing one token via shared `localStorage`, and WebGL contention on
+  simultaneous boot (fixed by isolated contexts + host-first sequential boot).
 
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are

@@ -9,3 +9,4 @@ tools/data/hs_cards_full.json
 # 20,000-file Pages limit. Kept on disk locally to redeploy those projects.
 battlecards/art/
 overworld/data/
+server/__mp_harness_tmp.mjs
