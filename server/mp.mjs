@@ -169,6 +169,20 @@ const scrypt = (pw, salt) => new Promise((res, rej) =>
 	scryptCb(pw, salt, 32, (e, k) => e ? rej(e) : res(k)));
 
 // ---------- storage (Cloudflare D1) ----------
+// CONCURRENCY NOTE. get→setJSON is read-modify-write and NOT atomic, so a key
+// written by multiple DIFFERENT users at the same instant can lose an update.
+// Audited hot paths:
+//  • card-intent queue — FIXED: each intent is its own row (list/deleteKeys below),
+//    so concurrent FFA relays never clobber → no lost move (the sharpest case).
+//  • rematch join — client self-heals (re-offers if its join was dropped); the
+//    lobby is low-frequency (end of game) so this is sufficient.
+//  • matchmaking queue (mm:queue) — self-heals: pollers re-write every ~2.5s and an
+//    idle/dropped waiter re-joins on its next poll; the deterministic minter avoids
+//    double-mint. A lost update only delays a match briefly.
+//  • per-user record (collection/packs) — a single user rarely fires two
+//    collection-mutating requests at once (sequential UI); a full fix would need
+//    compare-and-swap on the user row. Low stakes.
+//  • analytics stat:<day> — approximate counters; a lost increment is immaterial.
 function userStore(db) {
 	if (!db) throw new Error('MP_DB binding is missing');
 	return {
@@ -188,6 +202,18 @@ function userStore(db) {
 		},
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
+		},
+		// prefix scan, ordered by key — for per-item queues (each row a separate key)
+		// that must survive concurrent writers. Callers use controlled prefixes with
+		// no LIKE metacharacters (no _ or %), so no escaping is needed.
+		list: async (prefix) => {
+			const res = await db.prepare('SELECT key, value FROM mp_store WHERE key LIKE ? ORDER BY key').bind(prefix + '%').all();
+			return (res.results || []).map(r => ({ key: r.key, value: JSON.parse(r.value) }));
+		},
+		deleteKeys: async (keys) => {
+			if (!keys || !keys.length) return;
+			const ph = keys.map(() => '?').join(',');
+			await db.prepare(`DELETE FROM mp_store WHERE key IN (${ph})`).bind(...keys).run();
 		},
 	};
 }
@@ -991,9 +1017,12 @@ export default async function handler(req, env) {
 		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
 		const mine = seats.find(s => s.name === username);
 		if (!mine || mine.seat === 0) return json({ error: 'only a guest relays intents' }, 403);
-		const list = (await store.get('cardintent:' + id)) || [];
-		list.push({ intent: body.intent || {}, seat: mine.seat, ts: Date.now() });
-		await store.setJSON('cardintent:' + id, list);
+		// each intent is its OWN row — a shared list would DROP a move when two guests
+		// relay at the same instant (both read the list, both append, last write wins).
+		// The key sorts by (seat, client seq) so the host drains each guest's moves in
+		// the order it made them, regardless of network reordering.
+		const seq = String(Math.max(0, Math.min(999999, parseInt(body.seq, 10) || 0))).padStart(6, '0');
+		await store.setJSON(`cardintent:${id}:${mine.seat}_${seq}`, { intent: body.intent || {}, seat: mine.seat });
 		return json({ ok: true });
 	}
 
@@ -1018,9 +1047,9 @@ export default async function handler(req, env) {
 			}
 			if (oppGone) await store.setJSON('cardmatch:' + id, cm);
 		}
-		const list = (await store.get('cardintent:' + id)) || [];
-		if (list.length) await store.setJSON('cardintent:' + id, []);
-		return json({ intents: list.map(x => ({ ...x.intent, seat: x.seat ?? 1 })), oppGone, staleSeats, over: !!cm.over });
+		const rows = await store.list(`cardintent:${id}:`); // ordered by key = (seat, seq)
+		if (rows.length) await store.deleteKeys(rows.map(r => r.key)); // delete exactly what we drained — a row added meanwhile survives for the next drain
+		return json({ intents: rows.map(r => ({ ...(r.value.intent || {}), seat: r.value.seat ?? 1 })), oppGone, staleSeats, over: !!cm.over });
 	}
 
 	// poll a match (participants play; friends may spectate)

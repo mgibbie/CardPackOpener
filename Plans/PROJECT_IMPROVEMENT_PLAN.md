@@ -367,6 +367,21 @@ all three result titles by running the real functions headless.
   no rng field and still fall back to `Math.random` (digests stay rng-agnostic).
   Verified with a new `deterministic_duel_test` (16/16) plus the full engine suite
   (188/188, incl. the seeded fuzz determinism test).
+- **Relay concurrency hardening — ✅ DONE (2026-08-14):** the backend is KV on D1 and
+  `get→setJSON` is read-modify-write (NOT atomic), so a key written by different users at
+  once can lose an update. The sharpest case was the **card-intent queue**: in an FFA, two
+  guests relaying at the same instant both read the shared list, both append, last write
+  wins → **a move silently vanished → desync**. Fixed by making **each intent its own row**
+  (`cardintent:<id>:<seat>_<seq>`, append-safe — unique keys can't clobber), drained via a
+  prefix `list()` + delete-exactly-what-was-drained (a row added meanwhile survives); the
+  client sends a **monotonic seq** so a guest's moves apply in order even if the
+  fire-and-forget relays arrive reordered. Added `store.list(prefix)` + `deleteKeys(keys)`.
+  Also **rematch-join self-heal** (the client re-offers if a concurrent write dropped its
+  join). Audited + documented the rest (a CONCURRENCY NOTE in `mp.mjs`): matchmaking
+  self-heals via repeated polls + the deterministic minter; per-user collection is rarely
+  concurrent (would need row CAS); analytics counters are approximate. Verified: an
+  extract test proving concurrent relays lose no intents + order preserved (8) and the
+  rematch client test still green (6).
 
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are

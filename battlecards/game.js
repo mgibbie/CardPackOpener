@@ -77,7 +77,7 @@ const spectateMode = !!spectateName;
 // runs the real engine as player 0; the guest is player 1, renders the host's
 // published board, and relays action intents the host applies.
 const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
-const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seat: 0, size: 2, aiSeats: null, soloAi: false, seq: -1, busy: false, config: null, modalSig: null };
+const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seat: 0, size: 2, aiSeats: null, soloAi: false, seq: -1, relaySeq: 0, busy: false, config: null, modalSig: null };
 // ?aimatch=<id> — a matchmaking AI game: a normal local game vs the AI, but the
 // AI plays a specific decklist (a starter or a harvested real-player deck)
 const aiMatchId = MP_ON ? new URLSearchParams(location.search).get('aimatch') : null;
@@ -3971,7 +3971,9 @@ function guestApply(localFn, intent) {
 	try { localFn(); E.takeEvents(state); } catch (e) { log('(move rejected)'); return; }
 	duel.hold = performance.now() + 1300; // don't ingest a stale echo before the host catches up
 	updateHud();
-	MPX.call('card-act', { id: duel.id, intent }).catch(() => {});
+	// a monotonic per-guest seq so the host applies our moves in order even if the
+	// fire-and-forget relays arrive out of order (the server keys the row by it)
+	MPX.call('card-act', { id: duel.id, intent, seq: duel.relaySeq++ }).catch(() => {});
 }
 // ---------- daily-quest reporting ----------
 // Report the cards you play + your match wins so the account backend can advance
@@ -4418,7 +4420,7 @@ function mountDuelRematch(el) {
 	const note = document.createElement('div');
 	note.style.cssText = 'opacity:.75;font-size:12px;min-height:15px;margin:2px 0 6px;';
 	el.appendChild(btn); el.appendChild(note);
-	let done = false, joinedSelf = false, poll = null;
+	let done = false, joinedSelf = false, iClicked = false, poll = null;
 	const go = (mid) => { done = true; if (poll) clearInterval(poll); location.href = '/battlecards/?cardpvp=' + encodeURIComponent(mid) + '&mp=1'; };
 	const status = (joined) => {
 		joined = joined || [];
@@ -4427,13 +4429,13 @@ function mountDuelRematch(el) {
 		else note.textContent = '';
 	};
 	async function sendOffer() {
-		joinedSelf = true;
+		iClicked = true; joinedSelf = true;
 		btn.disabled = true; btn.textContent = ffa ? 'In the rematch lobby' : 'Rematch offered';
 		try {
 			const r = await MPX.call('duel-rematch', { id: duel.id, op: 'offer' });
 			if (r && (r.matchId || r.rematchMatchId)) return go(r.matchId || r.rematchMatchId);
 			status(r && r.joined);
-		} catch (e) { note.textContent = 'Could not reach the table.'; btn.disabled = false; btn.textContent = 'Rematch'; joinedSelf = false; }
+		} catch (e) { note.textContent = 'Could not reach the table.'; btn.disabled = false; btn.textContent = 'Rematch'; iClicked = false; joinedSelf = false; }
 	}
 	poll = setInterval(async () => {
 		if (done) return;
@@ -4441,8 +4443,10 @@ function mountDuelRematch(el) {
 		if (!r) return;
 		if (r.rematchMatchId) return go(r.rematchMatchId);
 		const joined = r.joined || [];
-		joinedSelf = joined.includes(me);
-		// someone opted in but I haven't → prompt me to join (the button stays live)
+		// self-heal: I opted in but a concurrent write dropped my join → re-send it
+		if (iClicked && !joined.includes(me)) MPX.call('duel-rematch', { id: duel.id, op: 'offer' }).catch(() => {});
+		joinedSelf = iClicked || joined.includes(me); // stay "in the lobby" once I've clicked
+		// someone opted in but I'm not in yet → prompt me to join (the button stays live)
 		if (!joinedSelf && joined.length) btn.textContent = ffa ? `Join rematch (${joined.length}/${humans.length})` : `Accept ${opp()}'s rematch`;
 		status(joined);
 	}, 1500);
