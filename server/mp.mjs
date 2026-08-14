@@ -27,6 +27,21 @@ const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
 
+// ---------- input-hardening limits ----------
+const MAX_BODY_BYTES = 2_000_000;   // reject an absurd request body outright (413) — a big FFA snapshot is well under this
+const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action descriptor, not a payload
+// Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
+// abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
+// burst can slightly under-count), which is fine. Legit play stays far under them
+// — writes/relays are ~1-2/s, matchmaking joins are rare. Authenticated actions
+// bucket by username; the two unauthenticated beacons bucket by client IP.
+const RATE_LIMITS = {
+	'card-act': [120, 10_000], 'card-publish': [120, 10_000], 'publish-cardstate': [120, 10_000],
+	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
+};
+const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
+const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
+
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
 const MAGE_STARTER = ['arcane_missiles', 'arcane_missiles', 'mirror_image', 'mirror_image', 'arcane_explosion', 'arcane_explosion', 'frostbolt', 'frostbolt', 'arcane_intellect', 'arcane_intellect', 'fireball', 'fireball', 'flamestrike', 'flamestrike', 'babbling_book', 'babbling_book', 'glacier_racer', 'glacier_racer', 'lab_partner', 'lab_partner', 'mana_wyrm', 'mana_wyrm', 'time_twisted_seer', 'time_twisted_seer', 'wand_thief', 'wand_thief', 'winterspring_whelp', 'winterspring_whelp', 'aqua_archivist', 'aqua_archivist', 'arcanologist', 'arcanologist', 'chill_o_matic', 'chill_o_matic', 'game_master', 'game_master', 'imprisoned_phoenix', 'imprisoned_phoenix', 'magic_dart_frog', 'magic_dart_frog'];
@@ -217,6 +232,23 @@ function userStore(db) {
 		},
 	};
 }
+
+// ---------- abuse brakes ----------
+// One coarse fixed-window counter per bucket — a SINGLE key, overwritten each hit
+// (the current window is stored in the value), so the rl:* keyspace stays bounded
+// by identities × actions rather than growing a row per window. Returns true when
+// the hit is within the limit. Approximate under concurrency, by design.
+async function rateLimit(store, bucket, limit, windowMs) {
+	const key = 'rl:' + bucket;
+	const win = Math.floor(Date.now() / windowMs);
+	const cur = await store.get(key);
+	const n = (cur && cur.win === win) ? cur.n + 1 : 1;
+	await store.setJSON(key, { win, n });
+	return n <= limit;
+}
+// Cloudflare sets cf-connecting-ip; fall back through x-forwarded-for to a shared
+// bucket. Only used to bucket the two unauthenticated beacons — never stored.
+const clientIp = (req) => ((req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'anon').split(',')[0].trim() || 'anon').slice(0, 45);
 
 // ---------- auth ----------
 const sign = (payload) => createHmac('sha256', SECRET).update(payload).digest('hex');
@@ -427,8 +459,11 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 // ---------- handler ----------
 export default async function handler(req, env) {
 	if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
+	// reject an oversized body before reading it (a huge snapshot/intent/junk blob)
+	if (+(req.headers.get('content-length') || 0) > MAX_BODY_BYTES) return json({ error: 'payload too large' }, 413);
 	let body;
 	try { body = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
+	if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'bad request' }, 400);
 	const store = userStore(env.MP_DB);
 	const action = body.action;
 
@@ -481,6 +516,7 @@ export default async function handler(req, env) {
 	// see what people actually use. Unauthenticated by design (anonymous visitors
 	// count too); a per-day key cap stops junk from growing the doc without bound.
 	if (action === 'hit') {
+		if (!(await rateLimit(store, 'hit:' + clientIp(req), HIT_LIMIT[0], HIT_LIMIT[1]))) return json({ ok: true }); // silently drop a flood — it's fire-and-forget analytics
 		const ev = String(body.ev || '').toLowerCase().replace(/[^a-z0-9:_-]/g, '').slice(0, 40);
 		if (ev) {
 			const key = 'stat:' + new Date().toISOString().slice(0, 10); // UTC day
@@ -507,6 +543,7 @@ export default async function handler(req, env) {
 	// only); deduped by a hash of msg+where so an error LOOP can't flood, and the
 	// per-day key cap bounds the doc.
 	if (action === 'err') {
+		if (!(await rateLimit(store, 'err:' + clientIp(req), ERR_LIMIT[0], ERR_LIMIT[1]))) return json({ ok: true }); // drop a flood; the client already dedups + caps
 		const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 		const msg = clip(body.msg, 300), where = clip(body.where, 200);
 		const page = clip(body.page, 80).replace(/[^a-z0-9:/_.-]/gi, ''), ua = clip(body.ua, 120);
@@ -537,6 +574,10 @@ export default async function handler(req, env) {
 	if (!username) return json({ error: 'not logged in' }, 401);
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
+	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
+	// before the per-request maintenance writes below so a flood is cheap to reject
+	const rl = RATE_LIMITS[action];
+	if (rl && !(await rateLimit(store, action + ':' + username, rl[0], rl[1]))) return json({ error: 'slow down' }, 429);
 	await ensureFriendFields(store, username, user); // backfill code/friends
 	await normalizeDecks(store, username, user); // migrate to 40 PvP deck slots + seed a Mage Starter
 	await grantStarterBaseline(store, username, user); // starter-deck playset + welcome packs (once)
@@ -584,10 +625,10 @@ export default async function handler(req, env) {
 	if (action === 'heartbeat') {
 		await store.setJSON('presence:' + username, {
 			name: username,
-			map: String(body.map || ''), x: +body.x || 0, y: +body.y || 0,
-			facing: String(body.facing || 'down'),
-			status: String(body.status || 'roaming'),
-			region: String(body.region || ''),
+			map: String(body.map || '').slice(0, 64), x: +body.x || 0, y: +body.y || 0,
+			facing: String(body.facing || 'down').slice(0, 16),
+			status: String(body.status || 'roaming').slice(0, 32),
+			region: String(body.region || '').slice(0, 48),
 			lastSeen: Date.now(),
 		});
 		return json({ ok: true });
@@ -631,18 +672,19 @@ export default async function handler(req, env) {
 	// the player in a dungeon run / card battle publishes a board snapshot here
 	// every ~1.2s; it doubles as a presence ping so friends see them "in a run"
 	if (action === 'publish-cardstate') {
+		const csMode = String(body.mode || 'battle').slice(0, 24), csLabel = String(body.label || '').slice(0, 48);
 		await store.setJSON('cardstate:' + username, {
 			snapshot: body.snapshot || null,
-			mode: String(body.mode || 'battle'),
-			label: String(body.label || ''),
+			mode: csMode,
+			label: csLabel,
 			room: 'u:' + username, // spectators join the runner's chat room
 			seq: +body.seq || 0,
 			ts: Date.now(),
 		});
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
-			status: 'card:' + String(body.mode || 'battle'),
-			region: String(body.label || ''),
+			status: 'card:' + csMode,
+			region: csLabel,
 			lastSeen: Date.now(),
 		});
 		return json({ ok: true });
@@ -943,7 +985,7 @@ export default async function handler(req, env) {
 		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
 		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
-		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel'), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now(), stats: body.stats || null };
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now(), stats: body.stats || null };
 		await store.setJSON('cardmatchstate:' + id, payload);
 		await store.setJSON('cardstate:' + username, payload); // spectators
 		await store.setJSON('presence:' + username, {
@@ -1048,12 +1090,16 @@ export default async function handler(req, env) {
 		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
 		const mine = seats.find(s => s.name === username);
 		if (!mine || mine.seat === 0) return json({ error: 'only a guest relays intents' }, 403);
+		// the intent is a small action descriptor — an object, not an array or blob;
+		// reject junk and bound the row so a guest can't stuff arbitrary data into KV
+		const intent = body.intent;
+		if (!intent || typeof intent !== 'object' || Array.isArray(intent) || JSON.stringify(intent).length > INTENT_MAX_BYTES) return json({ error: 'bad intent' }, 400);
 		// each intent is its OWN row — a shared list would DROP a move when two guests
 		// relay at the same instant (both read the list, both append, last write wins).
 		// The key sorts by (seat, client seq) so the host drains each guest's moves in
 		// the order it made them, regardless of network reordering.
 		const seq = String(Math.max(0, Math.min(999999, parseInt(body.seq, 10) || 0))).padStart(6, '0');
-		await store.setJSON(`cardintent:${id}:${mine.seat}_${seq}`, { intent: body.intent || {}, seat: mine.seat });
+		await store.setJSON(`cardintent:${id}:${mine.seat}_${seq}`, { intent, seat: mine.seat });
 		return json({ ok: true });
 	}
 

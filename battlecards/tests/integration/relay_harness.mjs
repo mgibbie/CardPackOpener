@@ -213,6 +213,16 @@ async function loadHandler() {
 			A(ncm && ncm.size === 3 && (ncm.humans || []).length === 3 && ncm.rematchOf === matchId && ncm.seats.every(s => !s.ai && s.deck),
 				'the rematch reuses all 3 humans + their decks', JSON.stringify(ncm && { size: ncm.size, humans: ncm.humans, rematchOf: ncm.rematchOf }));
 
+			// ---- server input hardening (abuse brakes) ----
+			const hostTok = host.token, gTok = (users.find(u => u.seat === 1) || {}).token;
+			const bigResp = await fetch(`http://localhost:${PORT}/api/mp`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + hostTok }, body: JSON.stringify({ action: 'state', pad: 'x'.repeat(2_100_000) }) });
+			A(bigResp.status === 413, 'an oversized request body is rejected before parsing (413)', 'status ' + bigResp.status);
+			const bloated = await api('card-act', { id: matchId, intent: { k: 'x', pad: 'y'.repeat(6000) }, seq: 5 }, gTok);
+			A(bloated.error === 'bad intent', 'a bloated guest intent is rejected (bounds the KV row)', JSON.stringify(bloated).slice(0, 50));
+			let hit429 = false;
+			for (let i = 0; i < 140 && !hit429; i++) { const r = await api('card-act', { id: matchId, intent: { k: 'noop' }, seq: 200 + i }, gTok); if (r.error === 'slow down') hit429 = true; }
+			A(hit429, 'flooding card-act trips the per-account rate limit (429)');
+
 			// the desync self-heal fingerprint must not false-alarm on a HEALTHY game:
 			// every guest ingested many authoritative snapshots above, and each verified
 			// its rebuilt state against the host's stateDigest — all round-trips must match

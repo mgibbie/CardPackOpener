@@ -234,6 +234,25 @@ no third-party, no accounts, no IPs stored.
   real messages; `errors.html` renders the rollup — 5). Note: same-origin app errors give full
   messages; cross-origin (CDN) scripts still mask to "Script error." per the browser.
 
+- **Server input hardening — ✅ DONE (2026-08-14):** `/api/mp` (`server/mp.mjs`) is internet-facing —
+  anyone can POST — and had solid per-field validation in spots but **no rate limiting** and several
+  hot paths wrote verbatim client blobs to KV (worst: `card-act` writes each intent as its own row,
+  seq clamped 0–999999 = up to 1M rows/seat a malicious guest could flood). Added defense-in-depth:
+  (1) **body cap** — reject `content-length > 2MB` → 413 before parsing; the body must be a plain
+  object. (2) **Rate limits** — `rateLimit()` is a coarse fixed-window counter keyed by identity, one
+  overwritten `rl:<bucket>` key per identity×action (bounded keyspace; approximate under concurrency,
+  which is fine for an abuse brake). An authenticated gate (after the token check, before the
+  per-request maintenance writes) throttles the write/relay-heavy actions per account → 429
+  (card-act/card-publish/publish-cardstate 120·10s, matchmake-join 30·60s, chat-post 40·10s, challenge
+  20·60s); the two unauthenticated beacons (`hit`/`err`) bucket by client IP (cf-connecting-ip) and
+  silently drop over-limit. (3) **Shape/size caps** — a relayed `card-act` intent must be a non-array
+  object ≤ 4KB (bounds each KV row) else 400; presence/label free-text is length-capped in
+  heartbeat / publish-cardstate / card-publish. Limits are 5–12× legit play so real traffic never
+  trips. Verified: `tests/unit/server_hardening_test.mjs` extracts + exercises the limiter (window
+  fill/block/reset, per-bucket isolation, bounded keyspace) + source guards (15, in run-all); the
+  3-browser relay harness proves 413 / bad-intent / 429 END-TO-END and that legit multiplayer play is
+  untouched (all assertions green). Full suite 191/191.
+
 - **Guest desync self-heal — ✅ DONE (2026-08-14):** in the host-authoritative duel relay a guest
   applies its own move optimistically and trusts the next host snapshot. `fromSnapshot` already IS
   the authoritative rebuild on every ingest, so play self-heals — but if a gameplay field ever
