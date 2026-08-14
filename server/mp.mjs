@@ -368,6 +368,7 @@ const publicState = (u, username) => ({
 	stats: u.stats,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
+	featuredClaimed: !!(u.featuredClaims && u.featuredClaims[Math.floor(Date.now() / (7 * 86400000))]), // Card of the Week already collected this week?
 });
 
 // ---------- friends ----------
@@ -1232,6 +1233,31 @@ export default async function handler(req, env) {
 		for (const id of cards) user.collection[id] = (user.collection[id] || 0) + 1;
 		await store.setJSON(username, user);
 		return json({ cards, state: publicState(user, username) });
+	}
+
+	// Card of the Week: one free copy per UTC-week. The card is derived SERVER-side
+	// from the deployed featured.json (so a tampered client can't swap it for a
+	// chosen card), and the per-week key makes the Collect button a genuine
+	// once-per-week claim rather than client-trust.
+	if (action === 'claim-featured') {
+		const week = Math.floor(Date.now() / (7 * 86400000));
+		const claims = user.featuredClaims || {};
+		if (claims[week]) return json({ error: 'already collected this week', already: true, cardId: claims[week], state: publicState(user, username) });
+		let pool = null;
+		try {
+			const origin = new URL(req.url).origin;
+			const r = await fetch(origin + '/battlecards/featured.json', { cf: { cacheTtl: 300 } });
+			if (r.ok) pool = (await r.json()).cards;
+		} catch {}
+		if (!Array.isArray(pool) || !pool.length) return json({ error: "couldn't load this week's card — try again shortly" }, 503);
+		const card = pool[week % pool.length];
+		if (!card || !card.id) return json({ error: 'no featured card available' }, 503);
+		user.collection[card.id] = (user.collection[card.id] || 0) + 1;
+		claims[week] = card.id;
+		for (const k of Object.keys(claims)) if (+k < week - 26) delete claims[k]; // prune old weeks
+		user.featuredClaims = claims;
+		await store.setJSON(username, user);
+		return json({ ok: true, cardId: card.id, name: card.name, state: publicState(user, username) });
 	}
 
 	if (action === 'run-reward') {

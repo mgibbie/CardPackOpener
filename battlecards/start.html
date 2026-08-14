@@ -118,6 +118,12 @@
 	.cotw .cw-kw b { color: var(--blue); }
 	.cotw .cw-cta { display: inline-block; margin-top: 13px; color: var(--gold); font-weight: 700; font-size: .84rem; text-decoration: none; }
 	.cotw .cw-cta:hover { text-decoration: underline; }
+	.cotw .cw-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+	.cotw .cw-actions .cw-cta { margin-top: 0; }
+	.cotw .cw-collect { padding: 8px 16px; border-radius: 9px; border: none; background: var(--green); color: #05230f; font-weight: 800; font-size: .86rem; cursor: pointer; }
+	.cotw .cw-collect:hover:not(:disabled) { filter: brightness(1.08); }
+	.cotw .cw-collect:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
+	.cotw .cw-note { color: var(--green); font-size: .8rem; margin-top: 8px; min-height: 1.1em; }
 	.cotw-empty { color: var(--muted); padding: 8px; }
 
 	@media (prefers-reduced-motion: reduce) { .tile, .primary { transition: none; } }
@@ -380,16 +386,16 @@
 	     loads the full 4MB cards.json or THREE just to show one card. -->
 	<script type="module">
 	import { keywordsFor, richHtml } from './keywords.js';
+	import * as MP from './mpmode.js';
 	const ART = 'https://magepunk-cardart.pages.dev/'; // direct offload (skips the /battlecards/art 302)
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+	const weekIndex = () => Math.floor(Date.now() / (7 * 86400000)); // UTC weeks since epoch — stable all week
 	(async function cardOfWeek() {
 		const el = document.getElementById('cotw');
 		let pool;
 		try { pool = (await (await fetch('featured.json')).json()).cards; } catch { el.remove(); document.querySelectorAll('.section-label')[0]?.remove(); return; }
 		if (!pool || !pool.length) { el.remove(); return; }
-		// UTC weeks since the epoch → stable all week, advances every Monday-ish
-		const week = Math.floor(Date.now() / (7 * 86400000));
-		const c = pool[week % pool.length];
+		const c = pool[weekIndex() % pool.length];
 		const stats = c.type === 'creature' ? `${c.attack}/${c.health}`
 			: c.type === 'weapon' ? `${c.attack}/${c.durability}`
 			: c.type === 'location' ? `${c.durability} uses` : '';
@@ -402,11 +408,33 @@
 			+ `<div class="cw-meta">${cls} · ${c.tribe ? esc(c.tribe) + ' ' : ''}${esc(c.type)} · Legendary${stats ? ' · ' + stats : ''}</div>`
 			+ `<div class="cw-desc">${c.description ? richHtml(c.description) : '<i>No rules text.</i>'}</div>`
 			+ kws
-			+ `<a class="cw-cta" href="viewer.html">See it in the Card Gallery →</a>`
+			+ `<div class="cw-actions"><button class="cw-collect" disabled>…</button>`
+			+ `<a class="cw-cta" href="viewer.html">See it in the Card Gallery →</a></div>`
+			+ `<div class="cw-note" role="status"></div>`
 			+ `</div>`;
 		const art = el.querySelector('.cw-art'), img = art.querySelector('img');
 		img.addEventListener('error', () => { art.style.display = 'none'; }, { once: true });
 		img.src = ART + c.id + '.jpg';
+
+		// ---- Collect: one free copy of this week's card, added to your collection ----
+		const btn = el.querySelector('.cw-collect'), note = el.querySelector('.cw-note');
+		if (!MP.hasToken()) {
+			btn.disabled = false; btn.textContent = '🔒 Log in to collect';
+			btn.onclick = () => { location.href = '/login/?next=' + encodeURIComponent('/battlecards/start.html'); };
+			return;
+		}
+		let resolved = false; // once definitively collected, a late poll can't flip the button back
+		const showClaimed = () => { resolved = true; btn.disabled = true; btn.textContent = '✓ Collected this week'; };
+		const showClaimable = () => { if (resolved) return; btn.disabled = false; btn.textContent = '＋ Collect (free)'; btn.onclick = collect; };
+		async function collect() {
+			btn.disabled = true; btn.textContent = 'Collecting…'; note.textContent = '';
+			let r; try { r = await MP.call('claim-featured', { week: weekIndex() }); } catch { r = null; }
+			if (r && (r.ok || r.already)) { showClaimed(); note.textContent = r.already ? 'Already collected this week.' : `Added ${esc(r.name || c.name)} to your collection!`; }
+			else { showClaimable(); note.textContent = (r && r.error) || 'Could not collect — try again.'; }
+		}
+		const cached = MP.cachedState();
+		(cached && cached.featuredClaimed) ? showClaimed() : showClaimable();
+		MP.freshState().then(s => { if (s && typeof s.featuredClaimed === 'boolean') (s.featuredClaimed ? showClaimed() : showClaimable()); }).catch(() => {});
 	})();
 	</script>
 

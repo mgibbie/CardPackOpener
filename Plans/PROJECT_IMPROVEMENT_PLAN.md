@@ -179,9 +179,15 @@ legendaries with real art + rules, class-diverse, ~32 KB / ~8 KB gz) generated b
 `tools/gen_featured.mjs` — so the start screen never has to load the 4 MB `cards.json` (or THREE)
 just to show one card. Renders an HTML/CSS spotlight: the art crop (from the **direct offload
 URL**), mana badge, name, class/type/rarity + stats, the rules text via `keywords.js` `richHtml`
-(keyword-highlighted), a keyword blurb, and a "See it in the Card Gallery" CTA. Verified: weekly
-determinism (stable within a week, advances the next) + a headless render (name/meta/blurb/art
-URL/CTA, and the rendered card equals the deterministic pick).
+(keyword-highlighted), a keyword blurb, a "See it in the Card Gallery" CTA, and a **Collect
+button** — one free copy of the week's card added to your collection. The claim is
+**server-authoritative**: `claim-featured` derives THIS week's card from the deployed
+`featured.json` (so a tampered client can't swap it for a chosen card) and grants it **once per
+UTC-week** (`user.featuredClaims`, old keys pruned); `publicState.featuredClaimed` drives the
+initial button state (logged-out → "Log in to collect", claimable → "Collect (free)", claimed →
+"Collected this week"). Verified: weekly determinism, a headless render, the server claim (11 —
+once/week, server-derived/un-spoofable, 503 on pool-load failure, prune), and the button states +
+claim flow headless (7).
 - Follow-up: a **featured deck of the week** — deferred because it needs hand-curated decklists
   (the mechanism/JSON pattern is in place to add them). Re-run `gen_featured.mjs` after big card
   imports to fold new legendaries into the pool (optional — rotation works on the existing pool).
