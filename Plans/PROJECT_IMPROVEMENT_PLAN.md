@@ -309,6 +309,19 @@ no third-party, no accounts, no IPs stored.
   multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
   Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
 
+- **Wire the tests into CI — ✅ DONE (2026-08-14):** GitHub Actions was set up (art audit, news
+  refresh — both workflow_dispatch-only) but NOTHING ran the tests, so the 195 node suites only ran
+  by hand; Cloudflare Pages deployed without them. New `.github/workflows/tests.yml` runs
+  `node battlecards/tests/run-all.mjs` on **push to main + pull_request + manual dispatch**
+  (ubuntu-latest, node 22, no npm install — the suite uses only in-repo data + node builtins). The
+  first run caught a real environment gap the Windows dev box hid: `totemic_power_test` read the
+  OFFLOADED, gitignored `battlecards/art/index.json` at load and crashed with ENOENT on the clean Linux
+  checkout (194/195) — fixed by guarding the art load (skip only the art-coverage asserts when absent;
+  the engine asserts always run). **CI is now green (195/195 on Linux).** Lesson recorded: any run-all
+  test reading an offloaded asset (`battlecards/art/`, `overworld/data/`) must guard the read; simulate
+  with `mv art art_tmp && node tests/run-all.mjs`. Browser harnesses stay out of CI (need Chrome +
+  gitignored assets). Every push/PR is now gated by the full suite.
+
 - **Backend state GC — ✅ DONE (2026-08-14):** D1 has no TTL, so `/api/mp`'s per-match / per-session
   rows (cardmatch / cardmatchstate / alive / cardintent / chat / trade / presence / rl / …) grew
   unbounded — partial cleanup existed but no systematic sweep. Added a lazy GC: `maybeGC(store, now)`
