@@ -234,6 +234,23 @@ no third-party, no accounts, no IPs stored.
   real messages; `errors.html` renders the rollup — 5). Note: same-origin app errors give full
   messages; cross-origin (CDN) scripts still mask to "Script error." per the browser.
 
+- **Save/persistence resilience — ✅ DONE (2026-08-14):** two localStorage failure modes could kill a
+  page: a **corrupt/truncated blob** → `JSON.parse` throws on load → the page dies before it renders,
+  and a **failed write** (quota exceeded, Safari private mode, storage disabled) → `setItem` throws
+  mid-flow → the action that was saving blows up. Most reads were already try-wrapped, but EVERY write
+  was unguarded against quota and there was no observability. New `battlecards/safestore.js`:
+  `safeLoad(key, fallback)` (missing → fallback silently; corrupt → fallback + a reported anomaly),
+  `safeSave` / `safeSaveStr` (never throw — a failed write returns false + is reported). Both surface
+  through the `window.reportErr` beacon so a real player's storage trouble shows up on `/errors.html`.
+  Routed the battlecards persistence through it: `collection.js` (the player's collection / decks /
+  gold — `addToCollection` was the one genuinely unguarded corrupt-blob read), `game.js` run-state
+  saves+loads (dungeon / heist / tombs / duels), `deck.js` (slots + class), `mpmode.js` (auth token +
+  cached state). Node-safe (no `localStorage` → fallback / false). Verified: `tests/unit/
+  safestore_test.mjs` (corrupt → fallback + report, quota-write → false + report, no-storage path — 14,
+  in run-all) + the 3-browser relay harness confirms game.js still boots + plays through the routed
+  modules. Full suite 192/192. Follow-up: the overworld's unguarded reads (bag / party / daycare) can
+  route through the same helper.
+
 - **Server input hardening — ✅ DONE (2026-08-14):** `/api/mp` (`server/mp.mjs`) is internet-facing —
   anyone can POST — and had solid per-field validation in spots but **no rate limiting** and several
   hot paths wrote verbatim client blobs to KV (worst: `card-act` writes each intent as its own row,

@@ -4,6 +4,7 @@
 // The overworld and the battlecards 3D game additionally REQUIRE a login and
 // bounce you to the /login door when you have none. Read-only pages
 // (the gallery, deck browser) stay usable logged-out in local mode.
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 const TOKEN_KEY = 'magepunk_mp_token_v1';
 const STATE_KEY = 'magepunk_mp_state_v1';
 const API = '/api/mp';
@@ -36,15 +37,15 @@ export async function call(action, payload = {}) {
 		logout(); // stale/forged token: back to the door
 		return data;
 	}
-	if (data.state) localStorage.setItem(STATE_KEY, JSON.stringify(data.state));
+	if (data.state) safeSave(STATE_KEY, data.state);
 	return data;
 }
 
 export async function auth(action, username, password) {
 	const data = await call(action, { username, password });
 	if (data.token) {
-		localStorage.setItem(TOKEN_KEY, data.token);
-		localStorage.setItem(STATE_KEY, JSON.stringify(data.state));
+		safeSaveStr(TOKEN_KEY, data.token);
+		safeSave(STATE_KEY, data.state);
 	}
 	return data;
 }
@@ -57,7 +58,7 @@ export function logout() {
 
 // last known server state (refresh with call('state'))
 export function cachedState() {
-	try { return JSON.parse(localStorage.getItem(STATE_KEY)); } catch { return null; }
+	return safeLoad(STATE_KEY, null);
 }
 
 export async function freshState() {

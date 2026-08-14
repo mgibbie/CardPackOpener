@@ -4,6 +4,7 @@
 import { drawCardFace, canonClass, classNameOf, classColorOf, artListeners, preloadArt } from './cardart.js';
 import { keywordsFor, richHtml } from './keywords.js';
 import * as Col from './collection.js';
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as MPX from './mpmode.js';
 
 const MP_ON = MPX.mpMode();
@@ -37,14 +38,14 @@ const newId = () => 'd_' + Math.random().toString(36).slice(2, 10);
 function loadSlots() {
 	if (MP_ON) return Array.isArray(mpState?.decks) ? mpState.decks : [];
 	let arr = [];
-	try { const p = JSON.parse(localStorage.getItem(SLOTS_KEY)); if (Array.isArray(p)) arr = p; } catch (e) {}
+	const p = safeLoad(SLOTS_KEY, null); if (Array.isArray(p)) arr = p;
 	if (!arr.length) {
 		const old = Col.loadDeck();
 		if (old.length) arr = [{ id: newId(), name: 'My Deck', classId: localStorage.getItem('magepunk_class_v1') || '', cards: old }];
 	}
 	return arr;
 }
-const persistFree = () => localStorage.setItem(SLOTS_KEY, JSON.stringify(slots));
+const persistFree = () => safeSave(SLOTS_KEY, slots);
 
 // ---------- deck logic ----------
 const inDeck = id => deck.filter(d => d === id).length;
@@ -361,7 +362,7 @@ $('save').onclick = async () => {
 	}
 	persistFree();
 	Col.saveDeck(deck); // keep the single-deck save in sync for legacy code
-	localStorage.setItem('magepunk_class_v1', myClass());
+	safeSaveStr('magepunk_class_v1', myClass());
 	renderSlots(); flash('Deck saved!');
 };
 $('delete-deck').onclick = async () => {

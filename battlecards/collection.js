@@ -1,4 +1,5 @@
 // collection.js — card collection, gold, deck persistence, and pack rolls.
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 const GOLD_KEY = 'magepunk_cardgold_v1';
 const COLLECTION_KEY = 'magepunk_cards_v1';
 const DECK_KEY = 'magepunk_deck_v1';
@@ -13,18 +14,18 @@ const STARTING_GOLD = 300;
 export function getGold() {
 	const v = parseInt(localStorage.getItem(GOLD_KEY), 10);
 	if (isNaN(v)) {
-		localStorage.setItem(GOLD_KEY, String(STARTING_GOLD));
+		safeSaveStr(GOLD_KEY, STARTING_GOLD);
 		return STARTING_GOLD;
 	}
 	return v;
 }
 export function earnGold(n) {
-	localStorage.setItem(GOLD_KEY, String(getGold() + n));
+	safeSaveStr(GOLD_KEY, getGold() + n);
 }
 export function spendGold(n) {
 	const g = getGold();
 	if (g < n) return false;
-	localStorage.setItem(GOLD_KEY, String(g - n));
+	safeSaveStr(GOLD_KEY, g - n);
 	return true;
 }
 
@@ -38,25 +39,22 @@ export function collectible(def) {
 }
 
 export function getCollection(cards) {
-	let c = null;
-	try {
-		const parsed = JSON.parse(localStorage.getItem(COLLECTION_KEY));
-		if (parsed && typeof parsed === 'object') c = parsed;
-	} catch (e) {}
-	if (!c) c = {};
+	let c = safeLoad(COLLECTION_KEY, {});
+	if (!c || typeof c !== 'object' || Array.isArray(c)) c = {}; // a valid-JSON-but-wrong-shape blob is unusable
 	let changed = false;
 	for (const def of cards) {
 		if (def.id in c || !collectible(def)) continue;
 		if (def.rarity === 'common' || !def.rarity) { c[def.id] = 2; changed = true; }
 		else if (def.rarity === 'uncommon') { c[def.id] = 1; changed = true; }
 	}
-	if (changed) localStorage.setItem(COLLECTION_KEY, JSON.stringify(c));
+	if (changed) safeSave(COLLECTION_KEY, c);
 	return c;
 }
 export function addToCollection(ids) {
-	const c = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}');
+	const loaded = safeLoad(COLLECTION_KEY, {}); // was a bare JSON.parse — a corrupt blob threw here
+	const c = (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) ? loaded : {};
 	for (const id of ids) c[id] = (c[id] || 0) + 1;
-	localStorage.setItem(COLLECTION_KEY, JSON.stringify(c));
+	safeSave(COLLECTION_KEY, c);
 	return c;
 }
 
@@ -98,14 +96,11 @@ export function rollPack(cards) {
 
 // deck: array of card ids (may repeat up to copy limits)
 export function loadDeck() {
-	try {
-		const d = JSON.parse(localStorage.getItem(DECK_KEY));
-		if (Array.isArray(d)) return d;
-	} catch (e) {}
-	return [];
+	const d = safeLoad(DECK_KEY, []);
+	return Array.isArray(d) ? d : [];
 }
 export function saveDeck(ids) {
-	localStorage.setItem(DECK_KEY, JSON.stringify(ids));
+	safeSave(DECK_KEY, ids);
 }
 
 // does a card fit a class identity? (neutrals always; duals count for both)

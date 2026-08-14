@@ -10,6 +10,7 @@ import * as Tombs from './tombs.js';
 import * as Duels from './duels.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
+import { safeLoad, safeSave } from './safestore.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
@@ -91,17 +92,17 @@ let matchStats = null;
 function resetMatchStats() { matchStats = { start: performance.now(), turns: 0, cards: [], summons: [], heroDmgTaken: [], elim: [] }; }
 function statInc(arr, i, n = 1) { if (i == null || i < 0) return; arr[i] = (arr[i] || 0) + n; }
 
-const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
-const saveRun = run => localStorage.setItem(RUN_KEY, JSON.stringify(run));
+const loadRun = () => safeLoad(RUN_KEY, null);
+const saveRun = run => safeSave(RUN_KEY, run);
 const clearRun = () => localStorage.removeItem(RUN_KEY);
-const loadHeist = () => { try { return JSON.parse(localStorage.getItem(HEIST_KEY)); } catch (e) { return null; } };
-const saveHeist = run => localStorage.setItem(HEIST_KEY, JSON.stringify(run));
+const loadHeist = () => safeLoad(HEIST_KEY, null);
+const saveHeist = run => safeSave(HEIST_KEY, run);
 const clearHeist = () => localStorage.removeItem(HEIST_KEY);
-const loadTombs = () => { try { return JSON.parse(localStorage.getItem(TOMBS_KEY)); } catch (e) { return null; } };
-const saveTombs = run => localStorage.setItem(TOMBS_KEY, JSON.stringify(run));
+const loadTombs = () => safeLoad(TOMBS_KEY, null);
+const saveTombs = run => safeSave(TOMBS_KEY, run);
 const clearTombs = () => localStorage.removeItem(TOMBS_KEY);
-const loadDuels = () => { try { return JSON.parse(localStorage.getItem(DUELS_KEY)); } catch (e) { return null; } };
-const saveDuels = run => localStorage.setItem(DUELS_KEY, JSON.stringify(run));
+const loadDuels = () => safeLoad(DUELS_KEY, null);
+const saveDuels = run => safeSave(DUELS_KEY, run);
 const clearDuels = () => localStorage.removeItem(DUELS_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
