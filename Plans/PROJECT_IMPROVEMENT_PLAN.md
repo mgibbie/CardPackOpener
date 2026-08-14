@@ -410,6 +410,23 @@ all three result titles by running the real functions headless.
   building: 3 clients sharing one token via shared `localStorage`, and WebGL contention on
   simultaneous boot (fixed by isolated contexts + host-first sequential boot).
 
+- **Deeper engine fuzzing — ✅ DONE (2026-08-14, partial):** ran `tests/fuzz/fuzz_test.mjs` far
+  harder (`--games=150 --actions=600 --split`) and **extended it to fuzz 3–8 player FFA** (new
+  `--players` arg: `0` = seed-derived random 2–8 per game via a dedicated stream so legacy 2-player
+  seeds stay byte-identical; the action loop was already seat-generalized). Findings:
+  - **FIXED — `damage.js` crash** (`Cannot read properties of null (reading 'healInsteadOnOwnTurn')`):
+    Felstring Harp broke on the same hit it healed (`breakWeapon` nulls `p.weapon`, then line 163 read
+    it) — now captures the heal amount before breaking. 2-player deep fuzz clean afterward (151/151).
+  - **FOUND (deferred) — FFA "current player is eliminated" invariant** (~23/120 FFA games): when the
+    CURRENT player dies mid-turn in a 3+ player game (game not over), `state.current` is left on the
+    eliminated seat. Real impact: in live FFA, self-eliminating on your turn would **stall the game**
+    (nothing advances `current`). Root cause: `checkGameOver` (called from `sweepDeaths` mid-resolution)
+    eliminates but doesn't hand off the turn, and `endTurn` there would be unsafe re-entrancy. Fix
+    belongs at a safe point — either a deferred engine turn-advance after death resolution, or a
+    game.js settle-time `endTurn` when `state.current` is eliminated + `!over`. Not attempted here
+    (context limit); committing a failing seed as a regression fixture is the natural next step.
+  Full engine suite still 190/190.
+
 Still bigger bets: `Plans/MULTIPLAYER_FIX_PLAN.md` bugs. (Standalone Pokémon challenge
 send/accept, inbox spectate, and the post-game summary — the old open items here — are
 all done now; see the notes above.)

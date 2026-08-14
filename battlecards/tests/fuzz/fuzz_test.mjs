@@ -23,9 +23,9 @@ const byId = {}; for (const c of raw.cards) byId[c.id] = c;
 const CLASSES = JSON.parse(fs.readFileSync(new URL('../../classes.json', import.meta.url))).classes;
 // split mode plays WITH hero classes (powers, passives): picks derive from the
 // game seed via a dedicated stream so replayActions can re-derive them
-export const pickClasses = seed => {
+export const pickClasses = (seed, n = 2) => {
 	const r = seededRng((seed ^ 0xc1a55) >>> 0);
-	return [CLASSES[Math.floor(r() * CLASSES.length)], CLASSES[Math.floor(r() * CLASSES.length)]];
+	return Array.from({ length: n }, () => CLASSES[Math.floor(r() * CLASSES.length)]);
 };
 
 const arg = (name, dflt) => {
@@ -35,6 +35,7 @@ const arg = (name, dflt) => {
 const GAMES = arg('games', 8);
 const MAX_ACTIONS = arg('actions', 300);
 const BASE_SEED = arg('seed', 20260728);
+const PLAYERS = arg('players', 2); // 2 (default) keeps legacy seeds identical; 0 = random 2-8 per game (FFA); N forces N
 const SPLIT = process.argv.includes('--split'); // game rng separate from driver rng -> traces replay + shrink
 const MAX_PER_TURN = 25;
 
@@ -56,8 +57,11 @@ function playOneGame(seed) {
 		actions.push(action);
 		return dispatch(state, action);
 	};
-	const classPicks = SPLIT ? pickClasses(seed) : null; // legacy seeds predate classes — keep their games identical
-	const state = E.createGame(byId, rngGame, null, 2, classPicks);
+	// player count: 2 by default (legacy determinism); PLAYERS=0 fuzzes FFA at a
+	// seed-derived 2-8 (a dedicated stream, so rngGame stays reproducible)
+	const nPlayers = PLAYERS === 0 ? (2 + Math.floor(seededRng((seed ^ 0xba5e1) >>> 0)() * 7)) : Math.max(2, Math.min(8, PLAYERS));
+	const classPicks = SPLIT ? pickClasses(seed, nPlayers) : null; // legacy seeds predate classes — keep their games identical
+	const state = E.createGame(byId, rngGame, null, nPlayers, classPicks);
 	// strict dev mode: unknown effect types throw; runaway compositions trip a budget
 	state.debug = { strictEffects: true, effectBudget: 4000 };
 

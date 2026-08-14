@@ -157,10 +157,11 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	// Felstring Harp: on your turn, damage your hero would take becomes healing instead (weapon loses 1 Durability)
 	if (state.current === pi && p.weapon?.healInsteadOnOwnTurn) {
+		const healAmt = p.weapon.healInsteadOnOwnTurn; // capture before breakWeapon nulls p.weapon
 		p.weapon.durability -= 1;
 		emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability });
 		if (p.weapon.durability <= 0) breakWeapon(state, pi, false);
-		healHero(state, pi, p.weapon.healInsteadOnOwnTurn);
+		healHero(state, pi, healAmt);
 		return 0;
 	}
 	if (pierce) {
