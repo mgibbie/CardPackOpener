@@ -252,6 +252,10 @@
 	<!-- matchmaking overlays -->
 	<div id="mm-deckpick" class="mm-ov" hidden><div class="mm-box">
 		<h2>Choose your deck</h2>
+		<div class="mm-size-block">
+			<div class="mm-size-label">Table size — empty seats fill with AI</div>
+			<div class="mm-size-row" id="mm-size-row"></div>
+		</div>
 		<div id="mm-decks"></div>
 		<button class="mm-cancel" id="mm-deck-cancel">Cancel</button>
 	</div></div>
@@ -277,12 +281,30 @@
 	.mm-deck { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
 	.mm-deck:hover { border-color: var(--blue); }
 	.mm-deck .cls { color: var(--muted); font-size: .82rem; text-transform: capitalize; }
+	.mm-size-block { margin-bottom: 16px; }
+	.mm-size-label { color: var(--muted); font-size: .82rem; margin-bottom: 8px; }
+	.mm-size-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+	.mm-size-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 800; cursor: pointer; }
+	.mm-size-btn:hover { border-color: var(--blue); }
+	.mm-size-btn.sel { border-color: var(--gold); color: var(--gold); background: rgba(255,210,95,.12); }
 	</style>
 	<script type="module">
 	import * as MP from './mpmode.js';
 	const $ = id => document.getElementById(id);
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-	let mmParty = null, mmStart = 0, mmActive = false, tick = null, poller = null;
+	let mmParty = null, mmStart = 0, mmActive = false, tick = null, poller = null, mmSize = 2;
+
+	// table-size chooser (2-8); empty seats fill with AI after a short wait
+	(function buildSizeRow() {
+		const row = $('mm-size-row'); if (!row) return;
+		for (let n = 2; n <= 8; n++) {
+			const b = document.createElement('button');
+			b.className = 'mm-size-btn' + (n === mmSize ? ' sel' : '');
+			b.textContent = String(n);
+			b.addEventListener('click', () => { mmSize = n; [...row.children].forEach(c => c.classList.toggle('sel', +c.textContent === n)); });
+			row.appendChild(b);
+		}
+	})();
 
 	$('find-match').addEventListener('click', async (e) => {
 		e.preventDefault();
@@ -305,9 +327,11 @@
 	async function beginSearch(deck) {
 		mmParty = { deck: deck.cards, classId: deck.classId, commander: deck.commander || null, companion: deck.companion || null };
 		mmActive = true; mmStart = Date.now();
-		$('mm-title').textContent = 'Finding a match…'; $('mm-status').textContent = 'Searching for an opponent'; $('mm-elapsed').textContent = '0s';
+		const ffa = mmSize > 2;
+		$('mm-title').textContent = ffa ? `Finding a ${mmSize}-player game…` : 'Finding a match…';
+		$('mm-status').textContent = ffa ? 'Looking for players' : 'Searching for an opponent'; $('mm-elapsed').textContent = '0s';
 		$('mm-overlay').hidden = false;
-		try { const r = await MP.call('matchmake-join', { party: mmParty }); if (r.error) throw new Error(r.error); }
+		try { const r = await MP.call('matchmake-join', { party: mmParty, size: mmSize }); if (r.error) throw new Error(r.error); }
 		catch (err) { cancelSearch(); $('mm-status').textContent = 'Could not queue: ' + (err.message || 'error'); $('mm-overlay').hidden = false; return; }
 		tick = setInterval(() => { $('mm-elapsed').textContent = Math.floor((Date.now() - mmStart) / 1000) + 's'; }, 1000);
 		poll(); poller = setInterval(poll, 2500);
@@ -317,8 +341,14 @@
 		let r; try { r = await MP.call('matchmake-poll'); } catch { return; }
 		if (r.status === 'matched') { const id = r.matchId; stop(); location.href = 'index.html?cardpvp=' + encodeURIComponent(id) + '&mp=1'; }
 		else if (r.status === 'ai') { const id = r.aimatchId; $('mm-title').textContent = 'Opponent found!'; $('mm-status').textContent = (r.aiName || 'A challenger') + ' is ready'; stop(); setTimeout(() => { location.href = 'index.html?aimatch=' + encodeURIComponent(id) + '&mp=1'; }, 750); }
-		else if (r.status === 'idle') { try { await MP.call('matchmake-join', { party: mmParty }); } catch {} }
-		else { const w = Math.floor((Date.now() - mmStart) / 1000); $('mm-status').textContent = w < 11 ? 'Searching for an opponent…' : 'No one around — bringing in a challenger…'; }
+		else if (r.status === 'idle') { try { await MP.call('matchmake-join', { party: mmParty, size: mmSize }); } catch {} }
+		else {
+			const w = Math.floor((Date.now() - mmStart) / 1000);
+			const ffa = mmSize > 2;
+			$('mm-status').textContent = w < 11
+				? (ffa ? `Looking for players (${mmSize}-player game)…` : 'Searching for an opponent…')
+				: (ffa ? 'Filling the remaining seats with AI…' : 'No one around — bringing in a challenger…');
+		}
 	}
 	function stop() { mmActive = false; clearInterval(tick); clearInterval(poller); tick = poller = null; }
 	function cancelSearch() { stop(); $('mm-overlay').hidden = true; MP.call('matchmake-leave').catch(() => {}); }

@@ -186,6 +186,23 @@ into a host-authoritative `cardpvp` duel, or mints an `aimatch`) + `ai-match`. E
 `createGame` gained `opponentDeckIds` so player 1 can be dealt a specific deck. Game:
 `?aimatch=<id>` boots a local match where the AI plays that deck. Verified the pairing,
 AI-timeout fallback, deck harvesting, the engine deck-override, and the full UI flow.
+- **Multiplayer free-for-all (2-8 players) — ✅ DONE (2026-08-14):** Find Match now has a
+  **table-size selector (2-8)**. Matchmaking gathers other waiters who chose the SAME size
+  (a deterministic oldest-waiter "minter" seats them, so no double-mint race) and **backfills
+  empty seats with AI** on the same 12s timeout — so an 8-player table still starts promptly
+  as humans + bots. The match record generalized from a `host`/`guest` pair to a `seats[]`
+  array (2-player `host`/`guest` aliases kept so the rematch handshake is untouched). The
+  relay generalized too: `card-act` stamps each intent with the sender's seat (server-side, un-spoofable),
+  `card-drain` returns seat-tagged intents, per-seat aliveness lets the host **auto-pilot a
+  dropped human's seat** (FFA) or end by abandonment (1v1). Client: the host deals all N seats
+  (each its own deck/hand/coin, seeded via `duelSeed`), and a single `isAiSeat(seat)` predicate
+  replaces the old `=== HUMAN` binary so the host runs `AI.step` + `resolveAI*` only for seats
+  with no live human behind them; `applyGuestIntent` applies on `it.seat`; each guest learns its
+  own seat (`HUMAN = seat`, was hardcoded 1). The deterministic-RNG work pays off here — every
+  guest restores the host's rng stream, so N optimistic mirrors stay in lockstep. FFA win =
+  last hero standing (already in the engine); rematch stays 1v1-only for now. Verified with new
+  `ffa_duel_test` (27, engine N-seat deal + AI FFA to a winner + seat-2 guest ingest), extract-run
+  seat-routing (11) and matchmaker minter/backfill (19) tests, plus the full engine suite (189).
 
 **Post-game summary — ✅ DONE (2026-08-12):** Battlecards matches used to end on a
 bare banner + a restart button. Now Quick Match, AI matchmaking matches, and PvP duels

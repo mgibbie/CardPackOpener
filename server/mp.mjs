@@ -841,10 +841,14 @@ export default async function handler(req, env) {
 	if (action === 'card-match') {
 		const cm = await store.get('cardmatch:' + String(body.id || ''));
 		if (!cm) return json({ error: 'no such match' }, 404);
-		const isPlayer = cm.host === username || cm.guest === username;
-		if (!isPlayer && !(user.friends.includes(cm.host) || user.friends.includes(cm.guest)))
+		// seats[] is the N-player shape; older/rematch matches only have host/guest
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+		const mySeat = seats.find(s => s.name === username);
+		const isPlayer = !!mySeat;
+		if (!isPlayer && !humans.some(h => user.friends.includes(h)))
 			return json({ error: 'not allowed to watch' }, 403);
-		return json({ cardmatch: cm, role: cm.host === username ? 'host' : cm.guest === username ? 'guest' : 'spectator' });
+		return json({ cardmatch: cm, role: cm.host === username ? 'host' : isPlayer ? 'guest' : 'spectator', seat: mySeat ? mySeat.seat : null });
 	}
 
 	// host publishes the authoritative board; also mirrored to cardstate:<host>
@@ -872,19 +876,24 @@ export default async function handler(req, env) {
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
 		const now = Date.now();
-		// the guest polling proves they're here; if the host stopped publishing,
-		// the guest wins by abandonment
-		if (cm.guest === username && !cm.over) {
-			await store.setJSON('alive:' + id + ':guest', now);
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const mySeat = seats.find(s => s.name === username);
+		// a non-host human polling proves its seat is here; only the host runs the
+		// engine, so if the host stopped publishing the match is over (1v1: the lone
+		// remaining human wins by abandonment; FFA: no winner — nobody can continue)
+		if (mySeat && mySeat.seat !== 0 && !cm.over) {
+			await store.setJSON('alive:' + id + ':seat' + mySeat.seat, now);
 			const hostAlive = await store.get('alive:' + id + ':host');
 			if (hostAlive && now - hostAlive > ABANDON_MS) {
-				cm.over = true; cm.winner = 1; cm.abandoned = true; // guest = player 1
+				cm.over = true; cm.abandoned = true;
+				cm.winner = (cm.size && cm.size > 2) ? null : mySeat.seat;
 				await store.setJSON('cardmatch:' + id, cm);
 			}
 		}
 		const cs = await store.get('cardmatchstate:' + id);
-		if (!cs || now - cs.ts > CARDSTATE_MS) return json({ snapshot: null, over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned });
-		return json({ ...cs, over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned });
+		const tail = { over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned, seat: mySeat ? mySeat.seat : null };
+		if (!cs || now - cs.ts > CARDSTATE_MS) return json({ snapshot: null, ...tail });
+		return json({ ...cs, ...tail });
 	}
 
 	// rematch handshake on a finished duel: either player offers; when the OTHER
@@ -924,19 +933,24 @@ export default async function handler(req, env) {
 		return json({ error: 'bad op' }, 400);
 	}
 
-	// guest queues an action intent; the host drains and applies them
+	// a guest queues an action intent; the host drains and applies them. The seat
+	// is stamped from the sender's identity (a client can't spoof another seat).
 	if (action === 'card-act') {
 		const id = String(body.id || '');
 		const cm = await store.get('cardmatch:' + id);
 		if (!cm) return json({ error: 'no such match' }, 404);
-		if (cm.guest !== username) return json({ error: 'only the guest relays intents' }, 403);
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const mine = seats.find(s => s.name === username);
+		if (!mine || mine.seat === 0) return json({ error: 'only a guest relays intents' }, 403);
 		const list = (await store.get('cardintent:' + id)) || [];
-		list.push({ intent: body.intent || {}, ts: Date.now() });
+		list.push({ intent: body.intent || {}, seat: mine.seat, ts: Date.now() });
 		await store.setJSON('cardintent:' + id, list);
 		return json({ ok: true });
 	}
 
-	// host drains the guest's queued intents (returns + clears them)
+	// host drains the guests' queued intents (returns seat-tagged + clears them).
+	// Aliveness: 1v1 keeps the old "host wins if the guest vanished" (oppGone); an
+	// FFA reports any silent human seat as stale so the host auto-pilots it (AI).
 	if (action === 'card-drain') {
 		const id = String(body.id || '');
 		const cm = await store.get('cardmatch:' + id);
@@ -944,19 +958,20 @@ export default async function handler(req, env) {
 		if (cm.host !== username) return json({ error: 'only the host drains' }, 403);
 		const now = Date.now();
 		await store.setJSON('alive:' + id + ':host', now); // draining also proves the host is here
-		let oppGone = false;
-		// if the guest stopped polling, the host wins by abandonment
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const twoP = !(cm.size && cm.size > 2);
+		let oppGone = false; const staleSeats = [];
 		if (!cm.over) {
-			const guestAlive = await store.get('alive:' + id + ':guest');
-			if (guestAlive && now - guestAlive > ABANDON_MS) {
-				cm.over = true; cm.winner = 0; cm.abandoned = true; // host = player 0
-				await store.setJSON('cardmatch:' + id, cm);
-				oppGone = true;
+			for (const s of seats) {
+				if (s.seat === 0 || !s.name) continue;
+				const a = await store.get('alive:' + id + ':seat' + s.seat);
+				if (a && now - a > ABANDON_MS) { if (twoP) { cm.over = true; cm.winner = 0; cm.abandoned = true; oppGone = true; } else staleSeats.push(s.seat); }
 			}
+			if (oppGone) await store.setJSON('cardmatch:' + id, cm);
 		}
 		const list = (await store.get('cardintent:' + id)) || [];
 		if (list.length) await store.setJSON('cardintent:' + id, []);
-		return json({ intents: list.map(x => x.intent), oppGone, over: !!cm.over });
+		return json({ intents: list.map(x => ({ ...x.intent, seat: x.seat ?? 1 })), oppGone, staleSeats, over: !!cm.over });
 	}
 
 	// poll a match (participants play; friends may spectate)
@@ -1070,9 +1085,10 @@ export default async function handler(req, env) {
 		const party = body.party || {};
 		const err = deckError(party.classId, party.deck, effectiveCollection(user)) || loadoutError(party.classId, party.commander, party.companion);
 		if (err) return json({ error: err }, 400);
+		const size = Math.max(2, Math.min(8, parseInt(body.size, 10) || 2)); // table size 2-8 (FFA); empty seats fill with AI
 		const now = Date.now();
 		const q = ((await store.get('mm:queue')) || []).filter(e => e.name !== username && now - (e.poll || e.ts) < MM_STALE_MS);
-		q.push({ name: username, party: { deck: party.deck.map(String), classId: party.classId, commander: party.commander || null, companion: party.companion || null }, ts: now, poll: now });
+		q.push({ name: username, party: { deck: party.deck.map(String), classId: party.classId, commander: party.commander || null, companion: party.companion || null }, size, ts: now, poll: now });
 		await store.setJSON('mm:queue', q);
 		await store.setJSON('mm:matched:' + username, null); // clear any stale pairing
 		await harvestDeck(store, party);                     // grow the AI deck pool
@@ -1084,40 +1100,54 @@ export default async function handler(req, env) {
 	}
 	if (action === 'matchmake-poll') {
 		const now = Date.now();
+		const sizeOf = e => Math.max(2, Math.min(8, e.size || 2));
+		// already seated on a previous poll (the minter set this for us)?
 		const matched = await store.get('mm:matched:' + username);
-		if (matched && now - matched.ts < 60_000) { await store.setJSON('mm:matched:' + username, null); return json({ status: 'matched', matchId: matched.matchId, role: matched.role, type: 'card' }); }
+		if (matched && now - matched.ts < 60_000) { await store.setJSON('mm:matched:' + username, null); return json({ status: 'matched', matchId: matched.matchId, role: matched.role, seat: matched.seat ?? 1, type: 'card' }); }
 		let q = ((await store.get('mm:queue')) || []).filter(e => now - (e.poll || e.ts) < MM_STALE_MS);
 		const me = q.find(e => e.name === username);
 		if (!me) return json({ status: 'idle' }); // not queued (dropped / never joined)
 		me.poll = now;
-		const partner = q.find(e => e.name !== username);
-		if (partner) {
+		const size = sizeOf(me);
+		// everyone waiting for the SAME table size, oldest first; the oldest is the
+		// sole "minter" (deterministic → no double-mint race). It seats itself at 0
+		// (host) and fills the rest with the other waiters, backfilling AI on timeout.
+		const cohort = q.filter(e => sizeOf(e) === size).sort((a, b) => (a.ts - b.ts) || (a.name < b.name ? -1 : 1));
+		const iAmMinter = cohort[0] && cohort[0].name === username;
+		const waited = now - me.ts;
+		const full = cohort.length >= size;                 // a full human table is ready
+		const backfill = waited > MM_AI_TIMEOUT_MS;          // waited long enough → AI fills empties
+		if (iAmMinter && (full || backfill)) {
+			const humans = cohort.slice(0, size); // host = humans[0] = me
 			const matchId = randCode() + randCode();
+			const seats = [];
+			for (let s = 0; s < size; s++) {
+				const h = humans[s];
+				if (h) seats.push({ seat: s, name: h.name, ai: false, deck: h.party.deck, classId: h.party.classId, commander: h.party.commander || null, companion: h.party.companion || null });
+				else { const ai = await pickAiDeck(store, me.party); seats.push({ seat: s, name: null, ai: true, aiName: botName(ai), deck: ai.deck, classId: ai.classId, commander: ai.commander || null, companion: ai.companion || null }); }
+			}
+			const humanNames = seats.filter(x => !x.ai).map(x => x.name);
 			const cm = {
-				id: matchId, type: 'card', host: username, guest: partner.name,
-				hostDeck: me.party.deck, hostClass: me.party.classId, hostCommander: me.party.commander, hostCompanion: me.party.companion,
-				guestDeck: partner.party.deck, guestClass: partner.party.classId, guestCommander: partner.party.commander, guestCompanion: partner.party.companion,
+				id: matchId, type: 'card', size, seats, host: seats[0].name, humans: humanNames,
+				// size-2 compat aliases so the rematch handshake keeps working unchanged
+				// (humans fill seats 0..h-1 contiguously, so humanNames[1] is the seat-1 human)
+				guest: humanNames[1] || null,
+				hostDeck: seats[0].deck, hostClass: seats[0].classId, hostCommander: seats[0].commander, hostCompanion: seats[0].companion,
+				guestDeck: seats[1] ? seats[1].deck : null, guestClass: seats[1] ? seats[1].classId : null, guestCommander: seats[1] ? seats[1].commander : null, guestCompanion: seats[1] ? seats[1].companion : null,
 				over: false, winner: null, createdAt: now, lastActive: now,
 			};
 			await store.setJSON('cardmatch:' + matchId, cm);
-			await store.setJSON('mm:matched:' + partner.name, { matchId, role: 'guest', ts: now });
-			await store.setJSON('curmatch:' + username, { id: matchId, type: 'card', ts: now });
-			await store.setJSON('curmatch:' + partner.name, { id: matchId, type: 'card', ts: now });
-			await store.setJSON('mm:queue', q.filter(e => e.name !== username && e.name !== partner.name));
-			return json({ status: 'matched', matchId, role: 'host', type: 'card' });
-		}
-		if (now - me.ts > MM_AI_TIMEOUT_MS) {
-			const ai = await pickAiDeck(store, me.party);
-			const aid = randCode() + randCode();
-			await store.setJSON('aimatch:' + aid, {
-				human: username, humanDeck: me.party.deck, humanClass: me.party.classId, humanCommander: me.party.commander, humanCompanion: me.party.companion,
-				aiDeck: ai.deck, aiClass: ai.classId, aiCommander: ai.commander || null, aiCompanion: ai.companion || null, aiName: botName(ai), createdAt: now,
-			});
-			await store.setJSON('mm:queue', q.filter(e => e.name !== username));
-			return json({ status: 'ai', aimatchId: aid, aiName: botName(ai), aiClass: ai.classId });
+			for (const x of seats) {
+				if (x.ai) continue;
+				await store.setJSON('curmatch:' + x.name, { id: matchId, type: 'card', ts: now });
+				if (x.name !== username) await store.setJSON('mm:matched:' + x.name, { matchId, role: 'guest', seat: x.seat, ts: now });
+			}
+			const seated = new Set(humanNames);
+			await store.setJSON('mm:queue', q.filter(e => !seated.has(e.name)));
+			return json({ status: 'matched', matchId, role: 'host', seat: 0, type: 'card' });
 		}
 		await store.setJSON('mm:queue', q);
-		return json({ status: 'searching', waited: now - me.ts, queueSize: q.length });
+		return json({ status: 'searching', waited, queueSize: cohort.length, size });
 	}
 	if (action === 'ai-match') {
 		const m = await store.get('aimatch:' + String(body.id || ''));

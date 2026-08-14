@@ -77,7 +77,7 @@ const spectateMode = !!spectateName;
 // runs the real engine as player 0; the guest is player 1, renders the host's
 // published board, and relays action intents the host applies.
 const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
-const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seq: -1, busy: false, config: null, modalSig: null };
+const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seat: 0, size: 2, aiSeats: null, soloAi: false, seq: -1, busy: false, config: null, modalSig: null };
 // ?aimatch=<id> — a matchmaking AI game: a normal local game vs the AI, but the
 // AI plays a specific decklist (a starter or a harvested real-player deck)
 const aiMatchId = MP_ON ? new URLSearchParams(location.search).get('aimatch') : null;
@@ -1443,8 +1443,7 @@ let queueBusy = false;
 // AI-owned scry/gaze decisions resolve immediately (Morbid can queue them
 // off-turn); only human decisions wait for the modal
 function resolveAIScries() {
-	if (duel.on) return; // the opponent is a real player: wait for their relayed pick
-	while (state.scryQueue.length && state.scryQueue[0].chooser !== HUMAN) {
+	while (state.scryQueue.length && isAiSeat(state.scryQueue[0].chooser)) {
 		const pend = state.scryQueue[0];
 		const picks = pend.ids.map(id => {
 			const cost = state.cardsById[id]?.cost || 0;
@@ -1470,8 +1469,7 @@ function pump() {
 
 // AI loot discards: dump the most expensive card
 function resolveAIDiscards() {
-	if (duel.on) return; // guest resolves their own loot discards
-	while (state.discardQueue.length && state.discardQueue[0].player !== HUMAN) {
+	while (state.discardQueue.length && isAiSeat(state.discardQueue[0].player)) {
 		const pend = state.discardQueue[0];
 		const p = state.players[pend.player];
 		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
@@ -1480,8 +1478,7 @@ function resolveAIDiscards() {
 }
 
 function resolveAISacs() {
-	if (duel.on) return; // guest resolves their own sacrifice-as-cost picks
-	while (state.sacQueue.length && state.sacQueue[0].player !== HUMAN) {
+	while (state.sacQueue.length && isAiSeat(state.sacQueue[0].player)) {
 		const pend = state.sacQueue[0];
 		const p = state.players[pend.player];
 		// sacrifice the cheapest eligible permanent (prefer tokens/Treasures)
@@ -1493,8 +1490,7 @@ function resolveAISacs() {
 
 // AI counters an impactful pending spell (cost >= 3) if it holds a Counter
 function resolveAIResponds() {
-	if (duel.on) return; // a real opponent relays their own response
-	while (state.priority != null && state.priority !== HUMAN && !state.players[state.priority].eliminated) {
+	while (state.priority != null && isAiSeat(state.priority) && !state.players[state.priority].eliminated) {
 		const pi = state.priority;
 		E.resolveResponse(state, pi, aiChooseResponse(state, pi));
 	}
@@ -1633,8 +1629,7 @@ function openRespondModal() {
 
 // AI Discover/Draft picks: take the biggest card
 function resolveAIPicks() {
-	if (duel.on) return; // guest resolves their own Discover/Draft picks
-	while (state.pickQueue.length && state.pickQueue[0].player !== HUMAN) {
+	while (state.pickQueue.length && isAiSeat(state.pickQueue[0].player)) {
 		const pend = state.pickQueue[0];
 		if (pend.mode === 'adapt') { E.resolvePick(state, bestAdaptId(pend)); continue; }
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
@@ -1650,16 +1645,14 @@ function bestAdaptId(pend) {
 
 // AI optional "you may …" prompts: the AI takes the beneficial option (yes)
 function resolveAIAsks() {
-	if (duel.on) return; // guest resolves their own optional prompts
-	while (state.askQueue.length && state.askQueue[0].player !== HUMAN) {
+	while (state.askQueue.length && isAiSeat(state.askQueue[0].player)) {
 		E.resolveAsk(state, true);
 	}
 }
 
 // AI Dredge: put the biggest card from the bottom three onto the deck
 function resolveAIDredges() {
-	if (duel.on) return; // guest resolves their own dredge
-	while (state.dredgeQueue.length && state.dredgeQueue[0].player !== HUMAN) {
+	while (state.dredgeQueue.length && isAiSeat(state.dredgeQueue[0].player)) {
 		const pend = state.dredgeQueue[0];
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolveDredge(state, best);
@@ -2306,26 +2299,35 @@ function nextEvent() {
 	setTimeout(nextEvent, delay);
 }
 
-// ---------- AI driver (every non-human seat) ----------
+// ---------- AI driver (every seat with no live human behind it) ----------
+// Local game: every non-HUMAN seat is auto-piloted. Online duel: ONLY the host
+// simulates, and only seats the match assigned to AI (or a guest who dropped and
+// was converted — duel.aiSeats). Guests never simulate. This single predicate
+// replaces the old "=== HUMAN / !== HUMAN" binary everywhere the AI drives play.
+function isAiSeat(seat) {
+	if (!duel.on) return seat !== HUMAN;
+	if (HUMAN !== 0) return false;              // a guest never runs the engine
+	return !!(duel.aiSeats && duel.aiSeats.has(seat));
+}
 let aiTimer = null;
 function maybeRunAI() {
-	if (!state || state.over || state.current === HUMAN || queue.length || queueBusy) return;
-	// in a live duel the opponent is a real player, not the AI: the guest never
-	// runs the engine, and the host waits for the guest's relayed intents
-	if (duel.on) return;
-	if (state.scryQueue.length && state.scryQueue[0].chooser === HUMAN) return; // your call first
-	if (state.discardQueue.length && state.discardQueue[0].player === HUMAN) return; // loot pick first
-	if (state.pickQueue.length && state.pickQueue[0].player === HUMAN) return; // discover pick first
-	if (state.dredgeQueue.length && state.dredgeQueue[0].player === HUMAN) return; // dredge pick first
-	if (state.askQueue.length && state.askQueue[0].player === HUMAN) return; // your yes/no prompt (e.g. soft-counter pay) first
-	if (state.sacQueue.length && state.sacQueue[0].player === HUMAN) return; // your sacrifice-as-cost pick first
-	if (state.priority === HUMAN) return; // your counter window first
+	if (!state || state.over || queue.length || queueBusy) return;
+	if (!isAiSeat(state.current)) return; // it's a human's turn (yours or a guest's) — wait
+	// a human with a pending decision (any seat) must resolve it before the AI proceeds
+	if (state.scryQueue.length && !isAiSeat(state.scryQueue[0].chooser)) return;
+	if (state.discardQueue.length && !isAiSeat(state.discardQueue[0].player)) return;
+	if (state.pickQueue.length && !isAiSeat(state.pickQueue[0].player)) return;
+	if (state.dredgeQueue.length && !isAiSeat(state.dredgeQueue[0].player)) return;
+	if (state.askQueue.length && !isAiSeat(state.askQueue[0].player)) return;
+	if (state.sacQueue.length && !isAiSeat(state.sacQueue[0].player)) return;
+	if (state.priority != null && !isAiSeat(state.priority)) return; // a human's counter window first
 	clearTimeout(aiTimer);
 	aiTimer = setTimeout(() => {
-		if (!state || state.over || state.current === HUMAN) return;
+		if (!state || state.over || !isAiSeat(state.current)) return;
 		const acted = AI.step(state, state.current);
 		if (!acted) E.endTurn(state);
 		pump();
+		if (duel.on) publishDuel(); // host: broadcast the AI seat's move to the guests
 	}, 650);
 }
 
@@ -3465,6 +3467,8 @@ async function startDuel(cardsById) {
 	}
 	duel.config = data.cardmatch;
 	duel.role = data.role; // 'host' | 'guest'
+	duel.size = data.cardmatch.size || 2;
+	duel.seat = data.seat ?? (data.role === 'host' ? 0 : 1); // my seat index (FFA: 0..N-1)
 	startDebugOverlay();
 	$('player-count').style.display = 'none';
 	$('class-select').style.display = 'none';
@@ -3489,10 +3493,29 @@ function duelSeed(id) {
 	return (h >>> 0) || 1;
 }
 
-// the host owns the engine: player 0 = host, player 1 = guest
+// the seat roster for a match — the N-player seats[] array, or a synthesized
+// 2-seat roster for older/rematch matches that only carry host/guest fields
+function duelSeats(cm) {
+	if (cm.seats && cm.seats.length) return cm.seats;
+	return [
+		{ seat: 0, name: cm.host, ai: false, deck: cm.hostDeck, classId: cm.hostClass, commander: cm.hostCommander, companion: cm.hostCompanion },
+		{ seat: 1, name: cm.guest || null, ai: !cm.guest, deck: cm.guestDeck, classId: cm.guestClass, commander: cm.guestCommander, companion: cm.guestCompanion },
+	];
+}
+function seatLabel(cm, seat) {
+	const s = duelSeats(cm)[seat];
+	return s ? (s.ai ? (s.aiName || `AI ${seat}`) : s.name) : `Seat ${seat}`;
+}
+
+// the host owns the engine: seat 0 = host; seats 1..N-1 are human guests or AI
 async function startDuelHost(cardsById) {
 	HUMAN = 0;
 	const cm = duel.config;
+	const seats = duelSeats(cm);
+	const N = seats.length;
+	duel.size = N;
+	duel.aiSeats = new Set(seats.filter(s => s.ai).map(s => s.seat)); // seats the host auto-pilots
+	const humanGuests = seats.filter(s => !s.ai && s.seat !== 0).length;
 	// a reconnecting host rehydrates the engine from its last published board
 	// rather than dealing a fresh game (the snapshot is the complete state)
 	let resumed = false;
@@ -3514,19 +3537,19 @@ async function startDuelHost(cardsById) {
 		}
 	} catch (e) {}
 	if (!resumed) {
-		const picks = [classPickFor(cm.hostClass), classPickFor(cm.guestClass)];
-		// each side brings its own (optional) commander + companion loadout
-		const loadouts = [
-			{ commander: cm.hostCommander || null, companion: cm.hostCompanion || null },
-			{ commander: cm.guestCommander || null, companion: cm.guestCompanion || null },
-		];
-		state = E.createGame(cardsById, E.seededRng(duelSeed(duel.id)), cm.hostDeck ? [...cm.hostDeck] : null, 2, picks, loadouts);
+		const picks = seats.map(s => classPickFor(s.classId));
+		const loadouts = seats.map(s => ({ commander: s.commander || null, companion: s.companion || null }));
+		state = E.createGame(cardsById, E.seededRng(duelSeed(duel.id)), seats[0].deck ? [...seats[0].deck] : null, N, picks, loadouts);
 		state.classPicks = picks;
-		// give the guest their own deck + a fresh opening hand and the coin
-		if (cm.guestDeck?.length) {
-			E.resetDeckAndHand(state, 1, cm.guestDeck);
-			E.drawCards(state, 1, 4);
-			E.addCoin(state, 1); // the 2nd player starts with The Coin (as a card)
+		// createGame only deals seat 0 the host deck; give every other seat its own
+		// deck + a fresh opening hand and the coin (resetDeckAndHand clears the hand,
+		// so the later addCoin leaves exactly one coin card)
+		for (let s = 1; s < N; s++) {
+			if (seats[s].deck?.length) {
+				E.resetDeckAndHand(state, s, seats[s].deck);
+				E.drawCards(state, s, 4);
+				E.addCoin(state, s);
+			}
 		}
 	}
 	frameCamera();
@@ -3535,20 +3558,31 @@ async function startDuelHost(cardsById) {
 	pump();
 	updateHud();
 	Chat.mount({ room: 'm:' + duel.id, canPost: true });
-	log(resumed ? `Rejoined your duel vs ${cm.guest}.` : `Live duel: you vs ${cm.guest}.`);
-	// drain the guest's queued intents and apply them, then republish
+	log(resumed ? 'Rejoined your duel.'
+		: N > 2 ? `Free-for-all: ${N} players (${humanGuests + 1} human), last hero standing wins.`
+		: `Live duel: you vs ${seatLabel(cm, 1)}.`);
+	// drain the guests' queued intents and apply them, then republish. A silent
+	// human seat is converted to AI (FFA) or ends the duel (1v1 abandonment).
 	const drainTick = async () => {
 		if (state?.over) return;
 		try {
 			const d = await MPX.call('card-drain', { id: duel.id });
 			for (const it of (d.intents || [])) { applyGuestIntent(it); }
-			if (d.oppGone && state && !state.over) endDuelByAbandon(cm.guest); // guest left
+			for (const s of (d.staleSeats || [])) {
+				if (duel.aiSeats && !duel.aiSeats.has(s)) {
+					duel.aiSeats.add(s); // that human dropped — the host auto-pilots the seat
+					log(`${seatLabel(cm, s)} disconnected — the AI is taking over their seat.`);
+					maybeRunAI();
+				}
+			}
+			if (d.oppGone && state && !state.over) endDuelByAbandon(seatLabel(cm, 1)); // 1v1 guest left
 		} catch (e) {}
 	};
-	// adaptive: drain fast while it's the guest's turn (intents incoming), relax on yours
+	// adaptive: drain fast while a human guest is acting (intents incoming), relax otherwise
 	const drainLoop = () => drainTick().finally(() => {
 		if (state?.over) return;
-		setTimeout(drainLoop, state && state.current === 1 ? 300 : 850);
+		const humanGuestTurn = state && state.current !== 0 && duel.aiSeats && !duel.aiSeats.has(state.current);
+		setTimeout(drainLoop, humanGuestTurn ? 300 : 850);
 	});
 	drainLoop();
 	startDuelPublish();
@@ -3568,14 +3602,19 @@ function endDuelByAbandon(whoLeft) {
 	}
 }
 
-// apply a relayed guest action to the authoritative engine (guest = player 1)
+// apply a relayed guest action to the authoritative engine. The seat is stamped
+// by the server from the sender's identity (see card-act); each guest owns one
+// seat 1..N-1. A seat converted to AI (dropped guest) ignores late relays.
 function applyGuestIntent(it) {
 	if (!state || state.over) return;
-	const P = 1;
-	// scry/loot/discover resolutions can land on either player's turn; they only
-	// apply when the guest's decision is at the front of the matching queue.
-	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask';
-	if (!isResolve && state.current !== 1) return; // plays only on the guest's turn
+	const P = it.seat;
+	if (P == null || P === 0 || !state.players[P]) return;   // seat 0 is the host; ignore junk
+	if (duel.aiSeats && duel.aiSeats.has(P)) return;         // seat auto-piloted now — drop stale intents
+	// queue/priority resolutions (scry, loot, discover, sac-cost, dredge, counter
+	// response) can land on ANY player's turn; each self-guards inside the switch by
+	// checking the front of its queue, so they bypass the turn gate below.
+	const isResolve = it.k === 'scry' || it.k === 'discard' || it.k === 'pick' || it.k === 'ask' || it.k === 'sac' || it.k === 'dredge' || it.k === 'respond';
+	if (!isResolve && state.current !== P) return; // turn actions apply only on that seat's turn
 	try {
 		switch (it.k) {
 			case 'play': E.playCard(state, P, it.uid, it.target || null, it.choice, it.position, it.useAlt, it.kicked); break;
@@ -3615,10 +3654,12 @@ function applyGuestIntent(it) {
 // the guest renders the host's published board and relays intents; it never
 // mutates its own copy — the next authoritative snapshot is the truth
 function startDuelGuest(cardsById) {
-	HUMAN = 1;
+	HUMAN = duel.seat; // my seat index in the FFA (was hardcoded 1 for 1v1)
 	const cm = duel.config;
-	banner(`Duel vs ${cm.host}`);
-	log(`Live duel: you vs ${cm.host}. Waiting for the board…`);
+	const ffa = (duel.size || 2) > 2;
+	banner(ffa ? `Free-for-all — ${duel.size} players` : `Duel vs ${cm.host}`);
+	log(ffa ? `Live free-for-all: ${duel.size} players, last hero standing wins. Waiting for the board…`
+		: `Live duel: you vs ${cm.host}. Waiting for the board…`);
 	Chat.mount({ room: 'm:' + duel.id, canPost: true });
 	let panelsFor = 0;
 	const t0 = performance.now();
@@ -3667,16 +3708,26 @@ function startDuelGuest(cardsById) {
 		}
 		if (data.over && !$('duel-over')) {
 			const won = data.winner === HUMAN;
-			const msg = data.abandoned
-				? (won ? `${cm.host} left the duel.` : 'You left the duel.')
-				: (won ? `You beat ${cm.host}!` : `${cm.host} wins the duel.`);
-			const el = dungeonOverlay(won ? 'YOU WIN!' : 'DEFEAT', msg);
+			let title, msg;
+			if (data.abandoned && data.winner == null) {
+				title = 'DUEL ENDED'; msg = 'The host disconnected — the game ended.'; // FFA: only the host runs the engine
+			} else if (won) {
+				title = 'YOU WIN!';
+				msg = ffa ? 'Last hero standing — you win the free-for-all!'
+					: data.abandoned ? `${cm.host} left the duel.` : `You beat ${cm.host}!`;
+			} else {
+				title = 'DEFEAT';
+				const winnerName = data.winner != null ? seatLabel(cm, data.winner) : 'Someone';
+				msg = data.abandoned ? 'You left the duel.'
+					: ffa ? `${winnerName} wins the free-for-all.` : `${cm.host} wins the duel.`;
+			}
+			const el = dungeonOverlay(title, msg);
 			el.id = 'duel-over';
 			// the guest never ran the event stream, so adopt the host's published,
-			// seat-indexed tally; appendMatchSummary renders it from HUMAN=1's view
+			// seat-indexed tally; appendMatchSummary renders it from this seat's view
 			// (life comes from the guest's own ingested final board)
 			if (data.stats) { matchStats = data.stats; appendMatchSummary(el); }
-			if (!data.abandoned) mountDuelRematch(el); // opponent's still here → offer a rematch
+			if (!data.abandoned && !ffa) mountDuelRematch(el); // rematch is 1v1-only for now
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
