@@ -309,6 +309,16 @@ no third-party, no accounts, no IPs stored.
   multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
   Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
 
+- **Nightly deep-fuzz workflow — ✅ DONE (2026-08-14):** per-push CI runs only a small (8-game) fuzz
+  for speed. `.github/workflows/nightly-fuzz.yml` (schedule `0 7 * * *` UTC + manual dispatch) runs the
+  engine fuzzer HARD nightly — 2-player 600 games × 800 actions AND FFA 400 games × 800 actions
+  (`--players=0`, random 2–8) — so the rare bugs the deep fuzz is good at (it found the Felstring Harp
+  crash and the FFA self-elimination stall) surface over time instead of only when run by hand. The
+  seed is the UTC date (`YYYYMMDD`): reproducible (a failed run names the seed, the failing game seed,
+  and a `--split` shrunk action trace) yet different games each night, so coverage accumulates. A found
+  bug fails the run and shows in the Actions UI. Verified green end-to-end via `gh workflow run` on the
+  Linux runner. 20-min timeout, no npm install.
+
 - **Wire the tests into CI — ✅ DONE (2026-08-14):** GitHub Actions was set up (art audit, news
   refresh — both workflow_dispatch-only) but NOTHING ran the tests, so the 195 node suites only ran
   by hand; Cloudflare Pages deployed without them. New `.github/workflows/tests.yml` runs
