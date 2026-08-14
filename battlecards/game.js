@@ -1488,6 +1488,10 @@ function pump() {
 	resolveAISacs();
 	resolveAIDredges();
 	resolveAIResponds();
+	// FFA: if the just-applied action — or any AI queue-resolution above — left the
+	// active player eliminated, hand the turn on now (before events flush / the AI
+	// driver re-arms). A no-op in 1v1/solo, where a self-elimination ends the game.
+	E.settleTurn(state);
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
 }
@@ -3256,8 +3260,7 @@ $('concede').addEventListener('click', () => {
 			o.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			return;
 		}
-		E.concede(state, HUMAN);
-		if (!state.over && state.current === HUMAN) E.endTurn(state); // FFA: hand the turn on
+		E.concede(state, HUMAN); // if you were the active player, pump()'s settleTurn hands the turn on
 		if (!state.over && !duel.on) { // local FFA vs bots — end it rather than watch the bots
 			state.over = true;
 			const o = dungeonOverlay('YOU CONCEDED', 'You dropped out of the free-for-all.');
@@ -3768,7 +3771,7 @@ function applyGuestIntent(it) {
 			case 'unmask': E.unmask(state, P, it.uid); break;
 			case 'coin': E.useCoin(state, P); break;
 			case 'endTurn': E.endTurn(state); break;
-			case 'concede': { const wasCur = state.current === P; E.concede(state, P); if (!state.over && wasCur) E.endTurn(state); break; } // FFA: hand the turn on
+			case 'concede': E.concede(state, P); break; // pump()'s settleTurn hands the turn on if P was active
 			case 'mulligan': E.mulligan(state, P, it.uids || []); break;
 			case 'scry': if (state.scryQueue[0]?.chooser === P) E.resolveScry(state, it.picks || []); else return; break;
 			case 'discard': if (state.discardQueue[0]?.player === P) E.resolveDiscard(state, it.picks || []); else return; break;

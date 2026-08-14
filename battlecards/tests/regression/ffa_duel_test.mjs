@@ -136,6 +136,49 @@ function dealHostGame(N, seed = 12345) {
 	ok('FFA last hero standing after the others concede wins', four.over && four.winner === 0, `over=${four.over} winner=${four.winner}`);
 }
 
+// --- REGRESSION (FFA fuzzer finding): the ACTIVE player eliminating itself
+// mid-turn must hand the turn on. checkGameOver runs deep inside sweepDeaths,
+// mid effect-resolution, so it can't safely advance — it leaves state.current on
+// the now-dead seat. settleTurn (called by dispatch and by the host's pump at a
+// safe top-level boundary) drains that. concede-on-your-own-turn is the smallest
+// reproduction of any self-lethal action (self-damage, attacking into a lethal
+// counter, fatigue, …). Before the fix a live FFA would STALL on the dead seat.
+{
+	const { state } = dealHostGame(4, 909);
+	const active = state.current; // seat 0 leads
+	E.concede(state, active);     // stand-in for any action that drops the active player to 0 life
+	// the bug, unfixed: current still points at the eliminated active seat, and
+	// the validator catches exactly that
+	ok('a self-eliminated active seat is a caught invariant violation (the gap settleTurn closes)',
+		state.players[active].eliminated && !state.over && state.current === active
+		&& validateGameState(state).some(v => /current player is eliminated/.test(v)),
+		validateGameState(state).join(' | '));
+	const before = state.turnNumber;
+	E.settleTurn(state); // what dispatch / pump call at the safe boundary
+	ok('settleTurn advances off the dead seat to a living player',
+		state.current !== active && !state.players[state.current].eliminated, `current=${state.current}`);
+	ok('settleTurn leaves a valid state (no stranded turn)', validateGameState(state).length === 0, validateGameState(state).join(' | '));
+	ok('settleTurn hands the turn to the next living seat (1), advancing one turn',
+		state.current === 1 && state.turnNumber === before + 1, `current=${state.current} turn ${before}→${state.turnNumber}`);
+}
+
+// --- settleTurn is inert whenever the active player is alive, and once the game
+// is over — so 1v1/solo play (where a self-elimination always ends the game) is
+// byte-for-byte untouched, preserving recorded-seed determinism.
+{
+	const { state } = dealHostGame(4, 910);
+	const cur = state.current, turn = state.turnNumber;
+	E.settleTurn(state);
+	ok('settleTurn is a no-op when the active player is alive', state.current === cur && state.turnNumber === turn);
+
+	const { state: two } = dealHostGame(2, 911);
+	E.concede(two, two.current); // 1v1: the active player forfeits → game over
+	const t = two.turnNumber;
+	E.settleTurn(two);
+	ok('settleTurn is a no-op once the game is over (1v1 self-concede)', two.over && two.turnNumber === t && two.winner === 1,
+		`over=${two.over} turn=${two.turnNumber} winner=${two.winner}`);
+}
+
 // --- sizes 2 and 8 also deal cleanly (bounds of the 2-8 selector) ---
 for (const N of [2, 8]) {
 	const { state } = dealHostGame(N, 1000 + N);

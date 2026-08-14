@@ -4720,6 +4720,24 @@ export function endTurn(state) {
 	}
 }
 
+// Hand the turn off when the active player eliminated THEMSELVES mid-turn.
+// This only happens in a 3+ player FFA (in 1v1 a self-elimination ends the
+// game, so state.over is already set): checkGameOver runs deep inside
+// sweepDeaths, mid effect-resolution, where re-entering endTurn would run the
+// next player's whole turn on top of a half-finished effect — corruption. So
+// checkGameOver leaves state.current pointing at the dead seat, and callers
+// settle it HERE at a safe top-level boundary (dispatch; the host after it
+// applies an intent). Loops in case the new current player also dies during
+// their own start-of-turn triggers (fatigue, a start-of-turn bomb, …). A
+// no-op whenever the current player is alive, so 1v1/solo play is untouched.
+export function settleTurn(state) {
+	let guard = state.players.length + 2;
+	while (!state.over && state.players[state.current]?.eliminated && guard-- > 0) {
+		endTurn(state);
+	}
+	return state.current;
+}
+
 // drain event queue (renderer calls this each frame/action)
 export function takeEvents(state) {
 	const evs = state.events;

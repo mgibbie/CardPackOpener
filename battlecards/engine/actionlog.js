@@ -25,10 +25,18 @@ import { validateGameState } from './validate.js';
 import {
 	createGame, playCard, attack, heroAttack, useHeroPower, endTurn,
 	resolvePick, resolveAsk, resolveScry, resolveDredge, resolveDiscard,
-	resolveSac, resolveResponse, tradeCard, prepareCard,
+	resolveSac, resolveResponse, tradeCard, prepareCard, settleTurn,
 } from './core.js';
 
 export function dispatch(state, a) {
+	const r = dispatchOne(state, a);
+	// If this action eliminated the active player in an FFA, hand the turn off
+	// now — at this safe top-level boundary — before anyone observes the state.
+	settleTurn(state);
+	return r;
+}
+
+function dispatchOne(state, a) {
 	switch (a.k) {
 		case 'play': return playCard(state, a.pi, a.uid, a.target ?? null, a.choice ?? null, a.position ?? 0);
 		case 'attack': return attack(state, a.pi, a.uid, a.target);
