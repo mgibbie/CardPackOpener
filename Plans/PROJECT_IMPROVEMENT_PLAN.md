@@ -309,6 +309,19 @@ no third-party, no accounts, no IPs stored.
   multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
   Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
 
+- **Production health canary — ✅ DONE (2026-08-14):** everything else tests the code; nothing watched
+  the LIVE site. `.github/workflows/health-canary.yml` (every 15 min + dispatch) curls the site (root,
+  /battlecards/, /overworld/ = 200), the API (POST /api/mp `{stats}` = 200 with a `days` array — proves
+  the Pages Function + D1 read, unauth/no-write), and the auth gate (a protected action with no token =
+  401). A failed scheduled run emails the repo owner, so a real outage (bad deploy, Cloudflare/D1
+  incident) pages you first. Public repo → free Actions minutes; `curl --retry` rides out blips.
+  Verified green against production via `gh workflow run`. **Real finding while building it:** the apex
+  `michaelgibalerio.com` **rejects non-browser TLS clients** — curl gets `sslv3 alert handshake failure`
+  from both OpenSSL (Linux runner) and schannel (Windows), while `www.michaelgibalerio.com` serves 200
+  to all of them and a Cloudflare `pages.dev` is reachable. Browsers reach both, so users are fine, but
+  API/monitoring/integration tools can't reach the canonical apex — worth investigating the apex's
+  Cloudflare TLS/SSL config. The canary probes www (same Pages project → a faithful health proxy).
+
 - **Gate deploys on CI — ✅ DONE / inert (2026-08-14):** CI ran on push but did NOT block the
   Cloudflare Pages Git deploy — a red suite still shipped. `.github/workflows/deploy.yml` runs ONLY
   after the "Tests" workflow succeeds on main (`workflow_run` + `conclusion == 'success'`) and deploys
