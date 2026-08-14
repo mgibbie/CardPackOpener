@@ -309,6 +309,19 @@ no third-party, no accounts, no IPs stored.
   multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
   Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
 
+- **Gate deploys on CI — ✅ DONE / inert (2026-08-14):** CI ran on push but did NOT block the
+  Cloudflare Pages Git deploy — a red suite still shipped. `.github/workflows/deploy.yml` runs ONLY
+  after the "Tests" workflow succeeds on main (`workflow_run` + `conclusion == 'success'`) and deploys
+  the exact passing commit via `wrangler pages deploy .`. Built **inert**: the deploy job is skipped
+  unless the repo variable `DEPLOY_VIA_CI == 'true'`, so committing it changed nothing about today's
+  deploy — verified (the workflow_run fired after Tests and the job showed "skipped"). Keeps
+  direct-push-to-main (no PR flow forced). **Activation is one-time and the user's to do** (I can't
+  touch the Cloudflare dashboard or add secrets): add `CLOUDFLARE_API_TOKEN` (Pages:Edit) +
+  `CLOUDFLARE_ACCOUNT_ID` secrets, `CF_PAGES_PROJECT` + `DEPLOY_VIA_CI=true` variables, and turn OFF
+  the Pages project's automatic Git deploy so only the gated workflow ships. Until then CF still
+  auto-deploys ungated. (Alternative not taken: branch protection requiring the Tests check — cleaner
+  but forces a PR flow; or setting the Pages build command to run the suite — needs a dashboard change.)
+
 - **Nightly deep-fuzz workflow — ✅ DONE (2026-08-14):** per-push CI runs only a small (8-game) fuzz
   for speed. `.github/workflows/nightly-fuzz.yml` (schedule `0 7 * * *` UTC + manual dispatch) runs the
   engine fuzzer HARD nightly — 2-player 600 games × 800 actions AND FFA 400 games × 800 actions
