@@ -70,7 +70,14 @@ owned-vs-all, type, keyword, mana, search, and combinations) and a headless deck
 boot (7 — dropdowns populate, controls visible, the toggle re-filters and changes the pool,
 a type filter re-runs and only narrows). (Collection + deckbuilder hover tooltips already
 existed.)
-- Follow-up: a sort control (cost / rarity / name) and a "craftable/affordable" hint.
+- **Sort + set filter — ✅ DONE (2026-08-14):** a **Sort** dropdown (Cost / Rarity / Name) and a
+  **Set** filter (built from the pool's `set` values — 57 sets, short codes upper-cased) now sit
+  alongside the type/keyword/owned filters and compose with them. Verified with the extract-test of
+  the real `applyFilters`/`sortCards` predicate (8 — cost/rarity/name sort, set filter, composition)
+  and the deck-builder boot (dropdowns populate, no regression).
+- Dropped the **"craftable/affordable" hint**: there's no crafting or targeted-buy economy — gold
+  only buys *random* packs (and MP accounts use earned packs, not gold), so a craft hint would
+  mislead. Cards come from packs + starter decks + the weekly Collect.
 
 ### 6. Match UX niceties — ✅ DONE (2026-08-14)
 - **Scrollable game log** — the in-game log was a 7-line ephemeral strip (hidden on

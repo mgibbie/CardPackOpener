@@ -27,7 +27,8 @@ let firstClass = '';   // first class alphabetically — the default for a new d
 let deck = [];         // working card ids
 let curCommander = null, curCompanion = null; // optional loadout (own zones, +1 each)
 
-const filters = { tab: 'class', search: '', mana: null, type: '', keyword: '', owned: true };
+const filters = { tab: 'class', search: '', mana: null, type: '', keyword: '', set: '', sort: 'cost', owned: true };
+const RARITY_RANK = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, basic: 5, special: 6 };
 let filtered = [], page = 0;
 const tileById = new Map(); // id -> { tile, badge, own } for cheap count updates
 
@@ -78,27 +79,38 @@ function baseList() {
 	if (!curClass) return [];
 	return filters.tab === 'neutral' ? cards.filter(isNeutral) : cards.filter(fitsThisClass);
 }
+const byName = (a, b) => a.name.localeCompare(b.name);
+function sortCards(arr) {
+	if (filters.sort === 'name') return arr.sort(byName);
+	if (filters.sort === 'rarity') return arr.sort((a, b) =>
+		(RARITY_RANK[a.rarity || 'common'] - RARITY_RANK[b.rarity || 'common']) || ((a.cost ?? 0) - (b.cost ?? 0)) || byName(a, b));
+	return arr.sort((a, b) => // cost (default)
+		((a.cost ?? 0) - (b.cost ?? 0)) || (RARITY_RANK[a.rarity || 'common'] - RARITY_RANK[b.rarity || 'common']) || byName(a, b));
+}
 function applyFilters() {
-	filtered = baseList().filter(c => {
+	filtered = sortCards(baseList().filter(c => {
 		if (filters.owned && !(collection[c.id] > 0)) return false; // "All" shows the whole pool
 		if (filters.search && !(`${c.name} ${c.description || ''} ${c.type}`.toLowerCase().includes(filters.search))) return false;
 		if (filters.mana != null) { const cost = c.cost ?? 0; if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false; }
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.keyword && !(c.keywords || []).includes(filters.keyword)) return false;
+		if (filters.set && c.set !== filters.set) return false;
 		return true;
-	});
+	}));
 	page = 0;
 	renderPage();
 }
-// populate the type + keyword dropdowns from what the collectible pool actually
-// contains (so no dead options), each shown title-cased
+// populate the type + keyword + set dropdowns from what the collectible pool
+// actually contains (so no dead options), each shown title-cased
 function buildFilterOptions() {
-	const titleCase = s => String(s).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
-	const addOpts = (sel, values) => {
-		for (const v of values) { const o = document.createElement('option'); o.value = v; o.textContent = titleCase(v); sel.appendChild(o); }
+	// short lowercase codes read better upper-cased (hsx, hs, wubrg); the rest title-case
+	const pretty = s => (/^[a-z0-9]{1,5}$/.test(s) ? s.toUpperCase() : String(s).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()));
+	const addOpts = (sel, values, label = pretty) => {
+		for (const v of values) { const o = document.createElement('option'); o.value = v; o.textContent = label(v); sel.appendChild(o); }
 	};
-	addOpts($('type-filter'), [...new Set(cards.map(c => c.type).filter(Boolean))].sort());
-	addOpts($('kw-filter'), [...new Set(cards.flatMap(c => c.keywords || []))].filter(Boolean).sort());
+	addOpts($('type-filter'), [...new Set(cards.map(c => c.type).filter(Boolean))].sort(), s => s.replace(/\b\w/g, m => m.toUpperCase()));
+	addOpts($('kw-filter'), [...new Set(cards.flatMap(c => c.keywords || []))].filter(Boolean).sort(), s => String(s).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()));
+	addOpts($('set-filter'), [...new Set(cards.map(c => c.set).filter(Boolean))].sort());
 }
 
 function tileFor(card) {
@@ -376,6 +388,8 @@ for (const btn of document.querySelectorAll('.tab')) {
 $('search').addEventListener('input', ev => { filters.search = ev.target.value.toLowerCase(); applyFilters(); });
 $('type-filter').addEventListener('change', ev => { filters.type = ev.target.value; applyFilters(); });
 $('kw-filter').addEventListener('change', ev => { filters.keyword = ev.target.value; applyFilters(); });
+$('set-filter').addEventListener('change', ev => { filters.set = ev.target.value; applyFilters(); });
+$('sort-by').addEventListener('change', ev => { filters.sort = ev.target.value; applyFilters(); });
 $('owned-toggle').addEventListener('click', () => {
 	filters.owned = !filters.owned;
 	const b = $('owned-toggle');
