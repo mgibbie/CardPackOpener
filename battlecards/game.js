@@ -3389,6 +3389,8 @@ animate();
 window.__game = {
 	get state() { return state; },
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
+	get duel() { return duel; },           // seat/size/aiSeats — the relay-fuzz harness reads these
+	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
 	E, AI,
 	pump,
 	screenPosOf(uid) {

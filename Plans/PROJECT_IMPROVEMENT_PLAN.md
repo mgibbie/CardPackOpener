@@ -268,6 +268,22 @@ no third-party, no accounts, no IPs stored.
   (5). Gives the overworld the same live-boot safety net battlecards has, and exercises the whole
   overworld module graph — including the save-resilience routing above — end-to-end.
 
+- **Relay-intent adversarial fuzz — ✅ DONE (2026-08-14):** the host applies UNTRUSTED guest intents
+  via `applyGuestIntent` (turn-gated, queue-guarded, seat-checked, try/catch-wrapped, server shape-
+  validated) — never fuzzed. `game.js` isn't node-importable, so `battlecards/tests/integration/
+  relay_fuzz.mjs` (standalone, needs Chrome) boots ONE real host into a 3-human FFA — the two guests
+  never connect, so their seats stay human (a never-polled seat is never marked stale ⇒ `aiSeats`
+  empty ⇒ intents actually apply) — then fires 1500 adversarial intents at
+  `window.__game.applyGuestIntent` IN-BROWSER: junk/blank `k`, invalid seats (host seat 0 / out-of-
+  range / null / string), wrong-turn, bad uids/targets. After EACH it asserts: no throw,
+  `validateGameState()==0`, the current player is never left eliminated, and — for an invalid seat —
+  the state fingerprint is UNCHANGED (no cross-seat leakage / unauthorized mutation). Exposed
+  `applyGuestIntent` + `duel` on the `window.__game` hook; `validateGameState` is a test-only oracle
+  (rightly NOT in the client `E` bundle), so the harness dynamic-imports `engine/validate.js` into the
+  page as the node suites do. **8/8, 0 findings** (1500 intents: 32 applied, 511 invalid-seat
+  rejections checked) — the guard layer holds under a hostile intent firehose. Reject-heavy by design:
+  the engine fuzzer already covers legal moves; this covers the untrusted-relay guards above them.
+
 - **Overworld import-graph lint (CI) — ✅ DONE (2026-08-14):** the boot smoke test needs a browser +
   the offloaded data assets, so it can't run in CI. `battlecards/tests/unit/overworld_imports_test.mjs`
   (in run-all → 193 suites) is the CI-safe counterpart: it only PARSES `overworld/*.js`, asserting
