@@ -1,0 +1,27 @@
+name: Tests
+
+# Gates every push to main and every PR on the node test suite (battlecards
+# engine + fuzz, save-resilience, both import-graph lints, server hardening + GC).
+# The suite reads only in-repo data and node builtins — no npm install needed. The
+# browser harnesses (relay_harness / relay_fuzz / boot_smoke) are NOT run here: they
+# need headless Chrome and the offloaded, gitignored overworld/data assets, so they
+# stay dev-machine checks.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run the test suite
+        run: node battlecards/tests/run-all.mjs
