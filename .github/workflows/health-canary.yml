@@ -1,14 +1,8 @@
 name: Production health canary
 
-# Everything else tests the CODE; this watches the LIVE site. Every 15 minutes it
-# checks that michaelgibalerio.com and its /api/mp backend are up and behaving, and
-# FAILS if not — a failed scheduled run emails the repo owner, so a real outage (a
-# bad deploy, a Cloudflare/D1 incident) pages you instead of a player noticing first.
-# Public repo ⇒ Actions minutes are free. curl --retry rides out transient blips so
-# only a sustained outage alerts.
+# TEMPORARY DIAGNOSTIC build — characterizing why curl gets a TLS handshake failure
+# to the apex while browsers work. Will be replaced with the real canary.
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,32 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Probe the live site + API
+      - name: Diagnose reachability
         run: |
-          set -u
-          BASE="https://michaelgibalerio.com"
-          UA="magepunk-health-canary"
-          fail=0
-          # curl a URL, retrying transient errors; echo the final HTTP status
-          code() { curl -sS -A "$UA" --max-time 20 --retry 3 --retry-delay 5 --retry-all-errors \
-            -o /dev/null -w '%{http_code}' "$@"; }
-
-          c=$(code "$BASE/");                     [ "$c" = 200 ] && echo "ok   site root ($c)"        || { echo "FAIL site root: $c"; fail=1; }
-          c=$(code "$BASE/battlecards/");         [ "$c" = 200 ] && echo "ok   battlecards page ($c)" || { echo "FAIL battlecards page: $c"; fail=1; }
-          c=$(code "$BASE/overworld/");           [ "$c" = 200 ] && echo "ok   overworld page ($c)"   || { echo "FAIL overworld page: $c"; fail=1; }
-
-          # API is up AND its D1 read path works: `stats` is unauthenticated, reads
-          # the analytics rollups, and returns { days: [...] } — no write, no auth.
-          resp=$(curl -sS -A "$UA" --max-time 20 --retry 3 --retry-delay 5 --retry-all-errors \
-            -w $'\n%{http_code}' -X POST "$BASE/api/mp" -H 'content-type: application/json' -d '{"action":"stats","days":1}')
-          apicode=$(printf '%s' "$resp" | tail -n1)
-          apibody=$(printf '%s' "$resp" | sed '$d')
-          if [ "$apicode" = 200 ] && printf '%s' "$apibody" | grep -q '"days"'; then echo "ok   /api/mp stats (200, D1 read ok)";
-          else echo "FAIL /api/mp stats: status=$apicode body=$(printf '%s' "$apibody" | head -c 120)"; fail=1; fi
-
-          # the auth gate is live: a protected action with no token must be 401, not 200
-          c=$(code -X POST "$BASE/api/mp" -H 'content-type: application/json' -d '{"action":"state"}')
-          [ "$c" = 401 ] && echo "ok   /api/mp auth gate rejects no-token ($c)" || { echo "FAIL auth gate (expected 401): $c"; fail=1; }
-
-          echo "---"; [ "$fail" = 0 ] && echo "all healthy" || echo "one or more checks FAILED"
-          exit $fail
+          set +e
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+          for t in \
+            "https://michaelgibalerio.com/" \
+            "https://www.michaelgibalerio.com/" \
+            "https://magepunk-cardart.pages.dev/" ; do
+            echo "=== $t"
+            printf 'default:   '; curl -sS -o /dev/null -w '%{http_code}\n' --max-time 15 "$t" 2>&1 | head -1
+            printf 'browserUA: '; curl -sS -o /dev/null -w '%{http_code}\n' --max-time 15 -A "$UA" "$t" 2>&1 | head -1
+            printf 'tls1.2:    '; curl -sS -o /dev/null -w '%{http_code}\n' --max-time 15 --tlsv1.2 --tls-max 1.2 "$t" 2>&1 | head -1
+            printf 'tls1.3:    '; curl -sS -o /dev/null -w '%{http_code}\n' --max-time 15 --tlsv1.3 "$t" 2>&1 | head -1
+            printf 'http1.1:   '; curl -sS -o /dev/null -w '%{http_code}\n' --max-time 15 --http1.1 "$t" 2>&1 | head -1
+          done
+          exit 0
