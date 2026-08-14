@@ -256,8 +256,17 @@ no third-party, no accounts, no IPs stored.
     playtime), `daycare.js`, `pokedex.js`, `settings.js`, `events.js` (story flags), `items.js`
     (collected), `trainers.js` (defeated). Zero `JSON.parse(localStorage)` / `localStorage.setItem`
     remain in overworld. The already-`try`-wrapped sites were resilient but silent → now uniform + a
-    corrupt/failed save is reported. `safestore_test.mjs` (18) also drift-guards the two copies. No
-    overworld headless harness exists; validation was static (syntax + semantic-equivalence review).
+    corrupt/failed save is reported. `safestore_test.mjs` (18) also drift-guards the two copies.
+
+- **Overworld boot smoke test — ✅ DONE (2026-08-14):** the overworld had NO live boot coverage (unlike
+  battlecards' relay harness), so a bad import or broken module could reach production silently. New
+  `overworld/tests/boot_smoke.mjs` (standalone; needs local Chrome + the .gitignored `overworld/data/`)
+  serves the repo with a permissive `/api/mp` stub, seeds a login token + cached account (so
+  `requireLogin` passes and `freshState` is skipped — no real backend), boots `overworld/index.html`
+  headless, and asserts: no bounce to /login, `window.__ow` reached the world with a real map layout +
+  player, the `pumpPlayer` game-loop step runs without throwing, and zero uncaught errors across boot
+  (5). Gives the overworld the same live-boot safety net battlecards has, and exercises the whole
+  overworld module graph — including the save-resilience routing above — end-to-end.
 
 - **Server input hardening — ✅ DONE (2026-08-14):** `/api/mp` (`server/mp.mjs`) is internet-facing —
   anyone can POST — and had solid per-field validation in spots but **no rate limiting** and several
