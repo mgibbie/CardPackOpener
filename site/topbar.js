@@ -819,9 +819,44 @@ async function declineChallenge(from) {
 	renderTabs(); renderBody(); poll();
 }
 
+// ---------- analytics beacon (cookieless, no PII) ----------
+// One page-open hit with a coarse mode label so we can see what people use.
+function analyticsLabel() {
+	const p = (location.pathname || '/').replace(/\/+$/, '') || '/';
+	const q = new URLSearchParams(location.search);
+	if (p === '/' || p === '/index.html') return 'home';
+	if (p.includes('/battlecards')) {
+		if (q.has('cardpvp')) return 'bc:duel';
+		if (q.has('aimatch')) return 'bc:ai';
+		if (q.has('spectate') || q.has('watch')) return 'bc:spectate';
+		for (const m of ['dungeon', 'heist', 'tombs', 'duels']) if (q.has(m)) return 'bc:' + m;
+		if (p.includes('deck')) return 'bc:deck';
+		if (p.includes('packs')) return 'bc:packs';
+		if (p.includes('viewer')) return 'bc:gallery';
+		if (p.includes('start')) return 'bc:start';
+		if (q.has('players')) return 'bc:quickmatch';
+		return 'bc';
+	}
+	if (p.includes('/overworld')) return q.has('battle') ? 'ow:battle' : q.has('watch') ? 'ow:spectate' : 'overworld';
+	if (p.includes('/collection')) return 'collection';
+	if (p.includes('/designwiki')) return 'wiki';
+	if (p.includes('/learn')) return 'learn';
+	if (p.includes('news')) return 'news';
+	if (p.includes('/profile')) return 'profile';
+	return p.split('/').filter(Boolean)[0] || 'other';
+}
+function sendHit() {
+	try {
+		const body = JSON.stringify({ action: 'hit', ev: analyticsLabel() });
+		if (navigator.sendBeacon) navigator.sendBeacon('/api/mp', new Blob([body], { type: 'application/json' }));
+		else fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+	} catch {}
+}
+
 // ---------- boot ----------
 function start() {
 	buildBar();
+	sendHit(); // count this page open (fires for logged-out visitors too)
 	if (!MP.hasToken()) return;
 	poll();
 	pollTimer = setInterval(poll, 12000);

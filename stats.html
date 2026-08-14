@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magepunk — Usage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; background: #0e0b16; color: #e8e2f4; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+	h1 { font-size: 20px; letter-spacing: 1px; margin: 0 0 4px; }
+	.sub { color: #9b93b3; font-size: 13px; margin-bottom: 16px; }
+	.controls { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+	select, button { background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+	button:hover, select:hover { border-color: #8f6fff; }
+	.wrap { max-width: 720px; }
+	.card { background: #16121f; border: 1px solid #2a2340; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+	.card h2 { font-size: 15px; margin: 0 0 12px; color: #c9b8ff; }
+	.row { display: grid; grid-template-columns: 150px 1fr 54px; align-items: center; gap: 10px; margin-bottom: 6px; }
+	.row .lbl { font-size: 13px; color: #d9ccff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.row .bar { height: 16px; background: linear-gradient(90deg, #6b4fd4, #8f6fff); border-radius: 4px; min-width: 2px; }
+	.row .n { font-size: 13px; font-weight: 700; text-align: right; color: #cbb8e8; }
+	.day { color: #9b93b3; font-size: 12px; margin: 14px 0 6px; letter-spacing: .5px; }
+	.mini { color: #b7abd6; font-size: 12.5px; line-height: 1.7; }
+	.mini b { color: #e8e2f4; }
+	#msg { color: #9b93b3; font-size: 14px; padding: 8px 0; }
+	.tot { color: #9fd8b0; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="wrap">
+	<h1>Magepunk — Usage</h1>
+	<div class="sub">Cookieless page-open counts (no accounts, no IPs). Which modes people actually open.</div>
+	<div class="controls">
+		<label>Window
+			<select id="days">
+				<option value="7">7 days</option>
+				<option value="14" selected>14 days</option>
+				<option value="31">31 days</option>
+			</select>
+		</label>
+		<button id="refresh">Refresh</button>
+	</div>
+	<div id="msg">Loading…</div>
+	<div id="summary" class="card" style="display:none">
+		<h2>Totals over the window</h2>
+		<div id="summary-rows"></div>
+	</div>
+	<div id="daily"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const NICE = {
+	'home': 'Home', 'overworld': 'Overworld', 'collection': 'Collection', 'wiki': 'Design Wiki',
+	'learn': 'Learn', 'news': 'News', 'profile': 'Profile',
+	'bc': 'Battlecards', 'bc:start': 'BC · Mode picker', 'bc:deck': 'BC · Deck builder',
+	'bc:packs': 'BC · Packs', 'bc:gallery': 'BC · Gallery', 'bc:quickmatch': 'BC · Quick Match',
+	'bc:ai': 'BC · Matchmade AI', 'bc:duel': 'BC · PvP duel', 'bc:spectate': 'BC · Spectating',
+	'bc:dungeon': 'BC · Dungeon', 'bc:heist': 'BC · Heist', 'bc:tombs': 'BC · Tombs', 'bc:duels': 'BC · Duels',
+	'ow:battle': 'OW · Pokémon battle', 'ow:spectate': 'OW · Spectating',
+};
+const nice = k => NICE[k] || k;
+
+async function load() {
+	const days = +$('days').value;
+	$('msg').textContent = 'Loading…';
+	$('summary').style.display = 'none';
+	$('daily').innerHTML = '';
+	let data;
+	try {
+		const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'stats', days }) });
+		data = await r.json();
+	} catch (e) { $('msg').textContent = 'Could not load stats (' + (e.message || 'error') + ').'; return; }
+	const list = (data && data.days) || [];
+	if (!list.length) { $('msg').textContent = 'No data yet — open a few pages, then refresh.'; return; }
+	$('msg').textContent = '';
+
+	// aggregate across the window (skip the _total bookkeeping key)
+	const agg = {};
+	let grand = 0;
+	for (const d of list) for (const [k, v] of Object.entries(d.counts || {})) {
+		if (k === '_total') { grand += v; continue; }
+		agg[k] = (agg[k] || 0) + v;
+	}
+	const entries = Object.entries(agg).sort((a, b) => b[1] - a[1]);
+	const max = entries.length ? entries[0][1] : 1;
+	$('summary-rows').innerHTML = `<div class="row"><div class="lbl tot">Total page opens</div><div></div><div class="n tot">${grand}</div></div>`
+		+ entries.map(([k, v]) =>
+			`<div class="row"><div class="lbl">${nice(k)}</div><div class="bar" style="width:${Math.max(2, Math.round(v / max * 100))}%"></div><div class="n">${v}</div></div>`).join('');
+	$('summary').style.display = '';
+
+	// per-day compact breakdown
+	$('daily').innerHTML = list.map(d => {
+		const items = Object.entries(d.counts || {}).filter(([k]) => k !== '_total').sort((a, b) => b[1] - a[1]);
+		const total = (d.counts && d.counts._total) || items.reduce((s, [, v]) => s + v, 0);
+		return `<div class="day">${d.date} · <b style="color:#9fd8b0">${total}</b> opens</div>`
+			+ `<div class="mini">${items.map(([k, v]) => `${nice(k)} <b>${v}</b>`).join(' · ') || '—'}</div>`;
+	}).join('');
+}
+$('refresh').addEventListener('click', load);
+$('days').addEventListener('change', load);
+load();
+</script>
+</body>
+</html>

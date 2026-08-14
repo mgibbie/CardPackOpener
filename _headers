@@ -1,0 +1,48 @@
+# Cloudflare Pages response headers for the MAIN project. Big art / overworld data /
+# wiki sprites live on separate offload projects (see _redirects) with their own
+# _headers. Asset names here are NOT content-hashed, so code + markup REVALIDATE
+# (etag → cheap 304) to make a new deploy take effect immediately, while genuinely
+# immutable media caches in the browser.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# code + markup: always revalidate so a deploy is live at once
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+/*.mjs
+  Cache-Control: public, max-age=0, must-revalidate
+/*.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+# card / data JSON changes on imports — a short cache keeps repeat page loads fast
+# but refreshes within minutes of a deploy
+/*.json
+  Cache-Control: public, max-age=300
+
+# immutable media — cache hard in the browser
+/*.png
+  Cache-Control: public, max-age=604800
+/*.jpg
+  Cache-Control: public, max-age=604800
+/*.jpeg
+  Cache-Control: public, max-age=604800
+/*.webp
+  Cache-Control: public, max-age=604800
+/*.gif
+  Cache-Control: public, max-age=604800
+/*.svg
+  Cache-Control: public, max-age=604800
+/*.ico
+  Cache-Control: public, max-age=604800
+/*.woff2
+  Cache-Control: public, max-age=2592000, immutable
+/*.woff
+  Cache-Control: public, max-age=2592000, immutable
+/*.mp3
+  Cache-Control: public, max-age=2592000
+/*.ogg
+  Cache-Control: public, max-age=2592000

@@ -449,6 +449,31 @@ export default async function handler(req, env) {
 		return json({ token: makeToken(username), state: publicState(user, username) });
 	}
 
+	// ---------- lightweight, cookieless analytics (no accounts / cookies / IPs) ----------
+	// A page beacon bumps a daily rollup of which pages/modes get opened, so we can
+	// see what people actually use. Unauthenticated by design (anonymous visitors
+	// count too); a per-day key cap stops junk from growing the doc without bound.
+	if (action === 'hit') {
+		const ev = String(body.ev || '').toLowerCase().replace(/[^a-z0-9:_-]/g, '').slice(0, 40);
+		if (ev) {
+			const key = 'stat:' + new Date().toISOString().slice(0, 10); // UTC day
+			const doc = (await store.get(key)) || {};
+			if ((ev in doc) || Object.keys(doc).length < 400) { doc[ev] = (doc[ev] || 0) + 1; doc._total = (doc._total || 0) + 1; }
+			await store.setJSON(key, doc);
+		}
+		return json({ ok: true });
+	}
+	if (action === 'stats') {
+		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
+		const now = Date.now(), days = [];
+		for (let i = 0; i < n; i++) {
+			const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
+			const doc = await store.get('stat:' + day);
+			if (doc) days.push({ date: day, counts: doc });
+		}
+		return json({ days });
+	}
+
 	// everything below requires a valid token
 	const username = verifyToken((req.headers.get('authorization') || '').replace(/^Bearer\s+/i, ''));
 	if (!username) return json({ error: 'not logged in' }, 401);

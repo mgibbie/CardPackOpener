@@ -113,13 +113,29 @@ unowned cards dimmed and tagged "Not owned" (capped at 750 with a "narrow with t
 filters" note for a fresh account's ~6k missing cards).
 - Follow-up: group Missing by set, and a "cards you can craft/afford" hint.
 
-### 8. Loading & perf polish
-- `cards.json` is large (7,491 entries). For pages that only need names/costs, ship a
-  **slim index** (id, name, cost, class, rarity) and lazy-load full defs on demand.
-- Add long-cache headers for static assets (Cloudflare `_headers`), and confirm the
-  art/data offload domains cache aggressively.
-- Run **Lighthouse** on the main page + Battlecards; fix the top 3 findings.
-- Effort: half a day. Impact: faster first paint, less bandwidth.
+### 8. Loading & perf polish — ✅ DONE (2026-08-14, partial)
+- **Root `_headers`** (new): code + markup (`.html/.js/.mjs/.css`) revalidate via etag so a
+  deploy is live immediately (names aren't content-hashed); JSON gets a 5-min cache (fast
+  repeat loads, refreshes within minutes of an import); immutable media caches 7–30 days;
+  plus site-wide `X-Content-Type-Options: nosniff` + `Referrer-Policy`. (A known Lighthouse
+  "efficient cache policy" win.)
+- **Offload art cache bumped** 1 day → 7 days (`battlecards/art/_headers`, the magepunk-cardart
+  project) — card crops are effectively immutable, so repeat visits stop re-fetching them.
+- **Preconnect / dns-prefetch** to the offload domains (magepunk-cardart, magepunk-owdata) on
+  the art-heavy pages (battlecards index/deck/packs/viewer/start, overworld) so the TLS
+  connection is warm before the first image/data request.
+- Verified the beacon/label + a headless boot (preconnect present on an art page).
+- **Follow-ups (deferred, deliberately):**
+  - **Direct art URL** — cardart.js requests `/battlecards/art/*` (relative), which 302-redirects
+    to the offload project, so every card image pays a redirect hop on a cold cache. Requesting
+    `magepunk-cardart.pages.dev` directly (with an onerror fallback to the redirect path) removes
+    it — the single biggest first-load win, but it touches the render hot path and has a
+    double-request failure mode if the offload host is ever wrong, so it wants a prod check first.
+  - **Minify `cards.json`** (4.1 MB → 2.6 MB raw, −38% parse; −14% gzipped) — real, but the source
+    is pretty-printed for the card-import tooling + reviewable diffs, so it needs a build step
+    (this is a no-build static deploy) rather than an in-place minify that the importers revert.
+  - A **slim index** doesn't help the heavy consumers (game/deck/collection all need full defs to
+    render faces), so it was dropped.
 
 ---
 
@@ -155,9 +171,18 @@ You have the whole import + wiki pipeline. Rotate:
 - A **spotlight card** with its wiki blurb.
 - Effort: small once templated; can even be data-driven from a JSON.
 
-### 11. Lightweight, privacy-friendly analytics
-You can't improve what you can't see. Add a self-hosted counter (or Cloudflare Web
-Analytics — no cookies) to learn which games/modes people actually open. Effort: 30 min.
+### 11. Lightweight, privacy-friendly analytics — ✅ DONE (2026-08-14)
+Self-hosted, **cookieless, no-PII** page-open analytics on the existing `/api/mp` + D1 backend —
+no third-party, no accounts, no IPs stored.
+- `hit` + `stats` actions in `server/mp.mjs`, **before the token gate** so anonymous visitors
+  count too; a daily rollup doc (`stat:<UTC-day>`) with a per-day key cap (400) so junk can't
+  grow it, and slug-sanitised event labels (no injection reaches storage).
+- A `sendBeacon` **page-open beacon** in the shared `site/topbar.js` that derives a coarse mode
+  label from the URL (`home`, `bc:duel`, `bc:dungeon`, `bc:deck`, `overworld`, `ow:battle`, …).
+- A minimal **`stats.html`** (noindex) that renders totals-over-window bars + a per-day breakdown.
+- Verified: analytics logic (10 — hit rollup, sanitisation, key cap, stats window, label
+  derivation across 15 URLs) + a headless boot (beacon fires with the right label; stats.html
+  renders the summary + per-day).
 
 ---
 
