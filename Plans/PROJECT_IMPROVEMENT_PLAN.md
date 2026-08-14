@@ -268,6 +268,16 @@ no third-party, no accounts, no IPs stored.
   (5). Gives the overworld the same live-boot safety net battlecards has, and exercises the whole
   overworld module graph — including the save-resilience routing above — end-to-end.
 
+- **Overworld import-graph lint (CI) — ✅ DONE (2026-08-14):** the boot smoke test needs a browser +
+  the offloaded data assets, so it can't run in CI. `battlecards/tests/unit/overworld_imports_test.mjs`
+  (in run-all → 193 suites) is the CI-safe counterpart: it only PARSES `overworld/*.js`, asserting
+  every relative import path resolves to a file, every NAMED import matches an export in its target
+  (the missing-export class the relay harness caught for `E.stateDigest`), and every module passes
+  `node --check`. The overworld uses a clean ESM subset (only `import * as` / `import {}`, all relative,
+  no re-exports/defaults/externals) so a line-anchored scan is exact; the one parser subtlety —
+  multi-declarator `export const A=, B=, C=` (engine.js's `TILE/META/VIEW_W/VIEW_H`) — is handled.
+  Proven non-vacuous: a deliberately broken import (bad path + missing named export) makes it exit 1.
+
 - **Server input hardening — ✅ DONE (2026-08-14):** `/api/mp` (`server/mp.mjs`) is internet-facing —
   anyone can POST — and had solid per-field validation in spots but **no rate limiting** and several
   hot paths wrote verbatim client blobs to KV (worst: `card-act` writes each intent as its own row,
