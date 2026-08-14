@@ -1,0 +1,32 @@
+name: Nightly deep fuzz
+
+# Per-push CI runs only a small (8-game) fuzz for speed. This runs the engine
+# fuzzer HARD every night so rare engine / FFA bugs surface over time (the deep
+# fuzz is what found the Felstring Harp crash and the FFA self-elimination stall).
+# The seed is the UTC date (YYYYMMDD): reproducible — a failed run names the seed,
+# the failing game seed, and a shrunk action trace — yet different games each night,
+# so coverage accumulates. A found bug fails the run and shows up in the Actions UI.
+on:
+  schedule:
+    - cron: "0 7 * * *" # 07:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deep-fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Pick a reproducible, date-varying seed
+        id: seed
+        run: echo "seed=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+      - name: Deep fuzz — 2-player (determinism + broad legal-move coverage)
+        run: node battlecards/tests/fuzz/fuzz_test.mjs --games=600 --actions=800 --split --seed=${{ steps.seed.outputs.seed }}
+      - name: Deep fuzz — FFA (random 2–8 players)
+        run: node battlecards/tests/fuzz/fuzz_test.mjs --games=400 --actions=800 --split --players=0 --seed=${{ steps.seed.outputs.seed }}
