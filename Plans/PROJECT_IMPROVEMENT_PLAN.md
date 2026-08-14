@@ -119,8 +119,10 @@ filters" note for a fresh account's ~6k missing cards).
   repeat loads, refreshes within minutes of an import); immutable media caches 7–30 days;
   plus site-wide `X-Content-Type-Options: nosniff` + `Referrer-Policy`. (A known Lighthouse
   "efficient cache policy" win.)
-- **Offload art cache bumped** 1 day → 7 days (`battlecards/art/_headers`, the magepunk-cardart
-  project) — card crops are effectively immutable, so repeat visits stop re-fetching them.
+- **Offload art cache** — edited `battlecards/art/_headers` 1 day → 7 days (crops are effectively
+  immutable). NOTE: `battlecards/art/` is **.gitignored** (it's the separate magepunk-cardart
+  project's source), so this local edit only takes effect when that offload project is redeployed
+  — it does NOT ship with the main repo's push.
 - **Preconnect / dns-prefetch** to the offload domains (magepunk-cardart, magepunk-owdata) on
   the art-heavy pages (battlecards index/deck/packs/viewer/start, overworld) so the TLS
   connection is warm before the first image/data request.
