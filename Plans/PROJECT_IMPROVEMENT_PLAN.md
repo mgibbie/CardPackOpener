@@ -268,6 +268,21 @@ no third-party, no accounts, no IPs stored.
   (5). Gives the overworld the same live-boot safety net battlecards has, and exercises the whole
   overworld module graph — including the save-resilience routing above — end-to-end.
 
+- **Battlecards import-graph lint (CI) — ✅ DONE (2026-08-14):** the relay harness caught
+  `E.stateDigest` missing from the engine aggregation, but only in a real browser (not CI). This is
+  the CI-safe generalization: `battlecards/tests/unit/battlecards_imports_test.mjs` (in run-all → 194
+  suites) PARSES `battlecards/*.js` + `engine/*.js` and asserts every relative import path resolves,
+  every NAMED import matches an export **following the `export *` / `export { } from` re-export chain**
+  (engine.js → index.js → core.js → serialize/rng, so `exportsOf(engine.js)` is the full aggregated
+  surface), every **namespace access** `NS.name` (E./Col./MPX./AI.…, for `import * as NS from './local'`)
+  is a real export of that module — the last one is the `E.stateDigest` class: a namespace property the
+  aggregation doesn't re-export is `undefined`, which the named-import check alone can't see — and every
+  module parses. Two parser subtleties the lint surfaced (and I fixed): a `?v=…` cache-bust query on
+  import paths (`viewer.js`), and string literals (`'E.V.I.L.'` flavor text read as a false `E.V`) —
+  now the access scan runs on a string-stripped copy. Bare `three` is skipped. Proven non-vacuous: a
+  probe with `E.stateDigestXYZ` + a missing named import makes it report both and exit 1 (while `E.hp`,
+  a real export reached through the chain, is correctly accepted). Now BOTH games have a CI import lint.
+
 - **Relay-intent adversarial fuzz — ✅ DONE (2026-08-14):** the host applies UNTRUSTED guest intents
   via `applyGuestIntent` (turn-gated, queue-guarded, seat-checked, try/catch-wrapped, server shape-
   validated) — never fuzzed. `game.js` isn't node-importable, so `battlecards/tests/integration/
