@@ -57,10 +57,20 @@ guard already stops the inbox composer from driving the game.
 
 ## Tier 1 — Easy quality-of-life
 
-### 5. Deck Builder search & filters
-Verify/upgrade the deckbuilder to have: text search, filter by class/cost/type/keyword,
-and "cards you own vs. all." With 7,491 cards this is essential for it to feel usable.
-(Collection + deckbuilder already have hover tooltips — good.)
+### 5. Deck Builder search & filters — ✅ DONE (2026-08-14)
+The builder already had CLASS/NEUTRAL tabs, text search, and a mana-cost row — but was
+**owned-only** with no type/keyword filters. Added:
+- a **card-type** dropdown and a **keyword** dropdown, both **built from the actual
+  collectible pool** (no dead options — 39 keywords surfaced), title-cased;
+- an **Owned / All** toggle (the builder was hard-filtered to owned cards) — All shows the
+  whole class/neutral pool with unowned cards **dimmed + "Not owned"** and still non-addable;
+- all filters **compose** with the existing tab/search/mana.
+Verified with an extract test of the real `applyFilters`/`baseList` predicate (11 —
+owned-vs-all, type, keyword, mana, search, and combinations) and a headless deck-builder
+boot (7 — dropdowns populate, controls visible, the toggle re-filters and changes the pool,
+a type filter re-runs and only narrows). (Collection + deckbuilder hover tooltips already
+existed.)
+- Follow-up: a sort control (cost / rarity / name) and a "craftable/affordable" hint.
 
 ### 6. Match UX niceties — ✅ DONE (2026-08-14)
 - **Scrollable game log** — the in-game log was a 7-line ephemeral strip (hidden on

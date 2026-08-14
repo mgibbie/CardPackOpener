@@ -27,7 +27,7 @@ let firstClass = '';   // first class alphabetically — the default for a new d
 let deck = [];         // working card ids
 let curCommander = null, curCompanion = null; // optional loadout (own zones, +1 each)
 
-const filters = { tab: 'class', search: '', mana: null };
+const filters = { tab: 'class', search: '', mana: null, type: '', keyword: '', owned: true };
 let filtered = [], page = 0;
 const tileById = new Map(); // id -> { tile, badge, own } for cheap count updates
 
@@ -80,13 +80,25 @@ function baseList() {
 }
 function applyFilters() {
 	filtered = baseList().filter(c => {
-		if (!(collection[c.id] > 0)) return false;
+		if (filters.owned && !(collection[c.id] > 0)) return false; // "All" shows the whole pool
 		if (filters.search && !(`${c.name} ${c.description || ''} ${c.type}`.toLowerCase().includes(filters.search))) return false;
 		if (filters.mana != null) { const cost = c.cost ?? 0; if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false; }
+		if (filters.type && c.type !== filters.type) return false;
+		if (filters.keyword && !(c.keywords || []).includes(filters.keyword)) return false;
 		return true;
 	});
 	page = 0;
 	renderPage();
+}
+// populate the type + keyword dropdowns from what the collectible pool actually
+// contains (so no dead options), each shown title-cased
+function buildFilterOptions() {
+	const titleCase = s => String(s).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+	const addOpts = (sel, values) => {
+		for (const v of values) { const o = document.createElement('option'); o.value = v; o.textContent = titleCase(v); sel.appendChild(o); }
+	};
+	addOpts($('type-filter'), [...new Set(cards.map(c => c.type).filter(Boolean))].sort());
+	addOpts($('kw-filter'), [...new Set(cards.flatMap(c => c.keywords || []))].filter(Boolean).sort());
 }
 
 function tileFor(card) {
@@ -139,8 +151,9 @@ function renderZoomInfo(card) {
 function refreshTile(id) {
 	const t = tileById.get(id); if (!t) return;
 	const used = inDeck(id), have = collection[id] || 0, cap = Math.min(have, limitOf(id));
-	t.tile.classList.toggle('depleted', used >= cap);
-	t.owned.textContent = used ? `${have - used} left · ×${have}` : `×${have}`;
+	// unowned cards (only visible in "All" mode) are dimmed + tagged, still non-addable
+	t.tile.classList.toggle('depleted', have === 0 || used >= cap);
+	t.owned.textContent = have === 0 ? 'Not owned' : (used ? `${have - used} left · ×${have}` : `×${have}`);
 }
 
 let renderToken = 0;
@@ -361,6 +374,15 @@ for (const btn of document.querySelectorAll('.tab')) {
 	});
 }
 $('search').addEventListener('input', ev => { filters.search = ev.target.value.toLowerCase(); applyFilters(); });
+$('type-filter').addEventListener('change', ev => { filters.type = ev.target.value; applyFilters(); });
+$('kw-filter').addEventListener('change', ev => { filters.keyword = ev.target.value; applyFilters(); });
+$('owned-toggle').addEventListener('click', () => {
+	filters.owned = !filters.owned;
+	const b = $('owned-toggle');
+	b.classList.toggle('on', filters.owned);
+	b.textContent = filters.owned ? 'Owned' : 'All';
+	applyFilters();
+});
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
 $('back-to-decks').addEventListener('click', backToDecks);
@@ -476,6 +498,7 @@ fetch('cards.json').then(r => r.json()).then(async data => {
 		|| (rarityOrder[a.rarity || 'common'] - rarityOrder[b.rarity || 'common'])
 		|| a.name.localeCompare(b.name));
 	for (const d of data.cards) cardsById[d.id] = d;
+	buildFilterOptions(); // type + keyword dropdowns from the loaded pool
 	if (MP_ON) { mpState = await MPX.freshState(); collection = mpState?.collection || {}; }
 	else { collection = Col.getCollection(data.cards); }
 	cardsReady = true;

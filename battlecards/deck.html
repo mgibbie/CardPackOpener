@@ -28,6 +28,9 @@
 		#mana-row { display: flex; gap: 4px; flex-wrap: wrap; }
 		.crystal { width: 30px; height: 30px; border-radius: 6px; background: #241b38; color: #b7abd6; border: 1px solid #4a3f6b; font-size: 13px; font-weight: 700; cursor: pointer; }
 		.crystal.on { background: #2f7fe0; color: #fff; border-color: #6fb0ff; }
+		#filters .dd { background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 6px; padding: 6px 8px; font-size: 13px; cursor: pointer; max-width: 150px; }
+		#filters .ftoggle { background: #241b38; color: #b7abd6; border: 1px solid #4a3f6b; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+		#filters .ftoggle.on { background: #6b4fd4; color: #fff; border-color: #8f6fff; }
 
 		#main { flex: 1; display: grid; grid-template-columns: 1fr 330px; min-height: 0; }
 		#collection { display: flex; flex-direction: column; min-height: 0; }
@@ -161,6 +164,9 @@
 	<div id="filters">
 		<input id="search" placeholder="Search cards…">
 		<div id="mana-row"></div>
+		<select id="type-filter" class="dd" title="Filter by card type"><option value="">All types</option></select>
+		<select id="kw-filter" class="dd" title="Filter by keyword"><option value="">All keywords</option></select>
+		<button id="owned-toggle" class="ftoggle on" title="Show only cards you own, or the whole pool">Owned</button>
 	</div>
 	<div id="main">
 		<div id="collection">
