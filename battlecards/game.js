@@ -88,7 +88,7 @@ const aiMatchId = MP_ON ? new URLSearchParams(location.search).get('aimatch') : 
 // the other seat. Resumed/spectated games (no turn 1) leave this null → the
 // summary shows the result without a stat table.
 let matchStats = null;
-function resetMatchStats() { matchStats = { start: performance.now(), turns: 0, cards: [], summons: [], heroDmgTaken: [] }; }
+function resetMatchStats() { matchStats = { start: performance.now(), turns: 0, cards: [], summons: [], heroDmgTaken: [], elim: [] }; }
 function statInc(arr, i, n = 1) { if (i == null || i < 0) return; arr[i] = (arr[i] || 0) + n; }
 
 const loadRun = () => { try { return JSON.parse(localStorage.getItem(RUN_KEY)); } catch (e) { return null; } };
@@ -2353,6 +2353,7 @@ function nextEvent() {
 		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
 		case 'mulligan': log(ev.count ? `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} mulliganed ${ev.count} card${ev.count === 1 ? '' : 's'}` : `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} kept the opening hand`); delay = 200; break;
 		case 'eliminated':
+			if (matchStats && !matchStats.elim.some(e => e.seat === ev.player)) matchStats.elim.push({ seat: ev.player, turn: matchStats.turns }); // elimination order → FFA placement
 			banner(`${nameOf(ev.player)} ${ev.player === HUMAN ? 'are' : 'is'} eliminated!`, 1800);
 			log(`${nameOf(ev.player)} eliminated`);
 			delay = 900;
@@ -3928,7 +3929,8 @@ function snapshotForDuel() {
 function duelStatsPayload() {
 	if (!matchStats) return null;
 	return { turns: matchStats.turns, cards: matchStats.cards, summons: matchStats.summons,
-		heroDmgTaken: matchStats.heroDmgTaken, durS: Math.max(1, Math.round((performance.now() - matchStats.start) / 1000)) };
+		heroDmgTaken: matchStats.heroDmgTaken, elim: matchStats.elim || [],
+		durS: Math.max(1, Math.round((performance.now() - matchStats.start) / 1000)) };
 }
 function publishDuel() {
 	const cm = duel.config;
@@ -4332,7 +4334,7 @@ function appendMatchSummary(el) {
 	const durS = ms.durS != null ? ms.durS : Math.max(1, Math.round((performance.now() - ms.start) / 1000));
 	const dur = `${Math.floor(durS / 60)}:${String(durS % 60).padStart(2, '0')}`;
 	const box = document.createElement('div');
-	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:440px;width:100%;font-size:14px;';
+	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:520px;width:100%;font-size:14px;';
 	if (pc === 2) {
 		const opp = 1 - HUMAN;
 		const life = p => Math.max(0, state.players[p]?.life ?? 0);
@@ -4354,8 +4356,33 @@ function appendMatchSummary(el) {
 			+ row('Life remaining', life(HUMAN), life(opp))
 			+ `</table>`;
 	} else {
-		box.innerHTML = `<div style="opacity:.8;line-height:1.5">${dur} · ${ms.turns} turns<br>`
-			+ `You played ${ms.cards[HUMAN] || 0} cards and summoned ${ms.summons[HUMAN] || 0} creatures.</div>`;
+		// FFA (3–8 players): a standings table — 1st = the survivor, then the rest in
+		// REVERSE elimination order (the last player knocked out places higher)
+		const elim = ms.elim || [];
+		const order = [];
+		if (state.winner != null) order.push(state.winner);
+		for (let i = elim.length - 1; i >= 0; i--) if (!order.includes(elim[i].seat)) order.push(elim[i].seat);
+		for (let s = 0; s < pc; s++) if (!order.includes(s)) order.push(s); // safety: place anyone left (draw / missing data)
+		const ordinal = n => { const t = n % 100, o = n % 10; return n + (t >= 11 && t <= 13 ? 'th' : o === 1 ? 'st' : o === 2 ? 'nd' : o === 3 ? 'rd' : 'th'); };
+		const elimTurn = seat => { const e = elim.find(x => x.seat === seat); return e ? e.turn : null; };
+		const rows = order.map((seat, i) => {
+			const you = seat === HUMAN;
+			const t = elimTurn(seat);
+			const result = seat === state.winner ? 'Survived' : (t ? `KO’d · turn ${t}` : 'Eliminated');
+			return `<tr style="${you ? 'background:rgba(143,111,255,.15);' : ''}">`
+				+ `<td style="text-align:center;padding:5px 8px;font-weight:800;${i === 0 ? 'color:#ffd25f;' : ''}">${ordinal(i + 1)}</td>`
+				+ `<td style="text-align:left;padding:5px 8px;font-weight:700;">${you ? 'You' : esc2(nameOf(seat))}</td>`
+				+ `<td style="text-align:left;padding:5px 8px;opacity:.82;font-size:12px;">${result}</td>`
+				+ `<td style="text-align:right;padding:5px 8px;">${ms.cards[seat] || 0}</td>`
+				+ `<td style="text-align:right;padding:5px 8px;">${ms.summons[seat] || 0}</td></tr>`;
+		}).join('');
+		box.innerHTML = `<div style="opacity:.55;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px 6px">`
+			+ `Final standings · ${dur} · ${ms.turns} turns · ${pc} players</div>`
+			+ `<table style="width:100%;border-collapse:collapse;margin:0 auto;">`
+			+ `<tr style="opacity:.5;font-size:10.5px;letter-spacing:1px;text-transform:uppercase">`
+			+ `<td style="padding:2px 8px">#</td><td style="padding:2px 8px">Player</td><td style="padding:2px 8px">Result</td>`
+			+ `<td style="text-align:right;padding:2px 8px">Cards</td><td style="text-align:right;padding:2px 8px">Summ.</td></tr>`
+			+ rows + `</table>`;
 	}
 	el.appendChild(box);
 }

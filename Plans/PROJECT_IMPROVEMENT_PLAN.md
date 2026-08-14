@@ -303,10 +303,19 @@ the enemy hero (credited to the striking seat), and life remaining, with the lea
 value highlighted. Quick Match / AI matches also get next-step buttons — **Play again**
 (a fresh match or an in-place restart), **Find Match**, **Deck Builder**, and **View
 final board** (dismisses the overlay to inspect the board); duels keep **Back to your
-world**. FFA (3–4 player) games fall back to a one-line self-summary, and resumed /
-spectated games (no turn 1 to seed the tally) degrade to just the result. Verified the
-stat attribution (both seat perspectives), the FFA fallback, the button wiring, and all
-three result titles by running the real functions headless.
+world**. Resumed / spectated games (no turn 1 to seed the tally) degrade to just the
+result. Verified the stat attribution (both seat perspectives), the button wiring, and
+all three result titles by running the real functions headless.
+- **FFA standings — ✅ DONE (2026-08-14):** 3–8 player free-for-alls used to fall back to a
+  one-line self-summary; now they show a full **standings table** — placement 1st→last
+  (the survivor on top, then everyone else in REVERSE elimination order), each row with the
+  result (**Survived** / **KO'd · turn N**), cards played, and creatures summoned, the human
+  row highlighted and 1st in gold. Needed elimination-order tracking: `matchStats.elim`
+  records `{seat, turn}` on each `eliminated` event, and the host publishes it in
+  `duelStatsPayload` so a duel guest renders the same standings from its own final board.
+  Verified with an extract test of the real `appendMatchSummary` (9 — placement order,
+  per-row result/stats, human row, and that a 2-player match still uses the head-to-head
+  table) plus a rendered screenshot.
 - **Guest duel stats — ✅ DONE (2026-08-12):** in a PvP duel only the host runs the
   event stream, so the guest (who renders from relayed snapshots) had no tally. The host
   now publishes its seat-indexed stats (with the duration baked in, since the guest can't
