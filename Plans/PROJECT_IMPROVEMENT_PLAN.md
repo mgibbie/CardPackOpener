@@ -127,12 +127,16 @@ filters" note for a fresh account's ~6k missing cards).
   the art-heavy pages (battlecards index/deck/packs/viewer/start, overworld) so the TLS
   connection is warm before the first image/data request.
 - Verified the beacon/label + a headless boot (preconnect present on an art page).
+- **Direct art URL — ✅ DONE (2026-08-14):** cardart.js used to request `/battlecards/art/*`
+  (relative), which **302-redirects** to the offload project — so every card image paid a redirect
+  hop on a cold cache. On a deployed host it now requests `magepunk-cardart.pages.dev` **directly**
+  (local dev keeps the relative path for its own files), with a one-shot `onerror` fallback to the
+  redirect path so the worst case is exactly the old behavior. `index.json` gets the same
+  primary→fallback. Verified: base-URL selection (6 — prod/preview→direct, localhost/127/file:→relative),
+  the offload serves art directly with `access-control-allow-origin: *`, a real-browser check that a
+  cross-origin offload image loads AND draws to a canvas **untainted** (canvas readback works), and no
+  regression in the local render path.
 - **Follow-ups (deferred, deliberately):**
-  - **Direct art URL** — cardart.js requests `/battlecards/art/*` (relative), which 302-redirects
-    to the offload project, so every card image pays a redirect hop on a cold cache. Requesting
-    `magepunk-cardart.pages.dev` directly (with an onerror fallback to the redirect path) removes
-    it — the single biggest first-load win, but it touches the render hot path and has a
-    double-request failure mode if the offload host is ever wrong, so it wants a prod check first.
   - **Minify `cards.json`** (4.1 MB → 2.6 MB raw, −38% parse; −14% gzipped) — real, but the source
     is pretty-printed for the card-import tooling + reviewable diffs, so it needs a build step
     (this is a no-build static deploy) rather than an in-place minify that the importers revert.

@@ -183,7 +183,21 @@ function hashId(id) {
 // procedural. Images load lazily; listeners fire so live faces refresh.
 // Resolve art relative to THIS module (battlecards/art/) so faces render the
 // same whether the importer is the game or the design wiki in another folder.
-const ART_DIR = new URL('art/', import.meta.url).href;
+const ART_DIR = new URL('art/', import.meta.url).href; // relative path — 302-redirects to the offload in prod, serves local files in dev
+// Card art lives on the magepunk-cardart offload project (see /_redirects). On a
+// DEPLOYED host we request it directly to skip the 302 hop the /battlecards/art/*
+// redirect would add to every image on a cold cache; local dev keeps the relative
+// path (its own files). If the direct host ever fails, image loads fall back to
+// ART_DIR (the redirect) once — so the worst case is exactly the old behavior.
+const _artLocal = typeof location === 'undefined' || location.protocol === 'file:'
+	|| /^(localhost$|127\.|0\.0\.0\.0$|\[?::1)/.test(location.hostname);
+const ART_BASE = _artLocal ? ART_DIR : 'https://magepunk-cardart.pages.dev/';
+const artUrl = id => ART_BASE + id + '.jpg';
+function withArtFallback(img, id) {
+	if (ART_BASE === ART_DIR) return img; // already the relative fallback path
+	img.addEventListener('error', () => { img.src = ART_DIR + id + '.jpg'; }, { once: true });
+	return img;
+}
 let artIndex = null;
 const artImgs = new Map(); // id -> HTMLImageElement
 export const artListeners = new Set(); // fn(id) called when an image (or the mana font) arrives
@@ -199,8 +213,9 @@ if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
 	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
 }
 
-const artIndexReady = fetch(ART_DIR + 'index.json')
-	.then(r => (r.ok ? r.json() : []))
+const artIndexReady = fetch(ART_BASE + 'index.json')
+	.then(r => (r.ok ? r.json() : Promise.reject()))
+	.catch(() => fetch(ART_DIR + 'index.json').then(r => (r.ok ? r.json() : []))) // fall back to the redirect path
 	.then(ids => { artIndex = new Set(ids); })
 	.catch(() => { artIndex = new Set(); });
 
@@ -211,7 +226,8 @@ function artFor(id) {
 		img = new Image();
 		img.crossOrigin = 'anonymous'; // art is served cross-origin (magepunk-cardart project) — keep the canvas untainted
 		img.onload = () => { for (const fn of artListeners) fn(id); };
-		img.src = ART_DIR + id + '.jpg';
+		withArtFallback(img, id);
+		img.src = artUrl(id);
 		artImgs.set(id, img);
 	}
 	return img.complete && img.naturalWidth ? img : null;
@@ -225,7 +241,7 @@ export async function preloadArt(ids) {
 	await Promise.all([...new Set(ids)].map(id => new Promise(res => {
 		if (!artIndex.has(id)) return res();
 		let img = artImgs.get(id);
-		if (!img) { img = new Image(); img.crossOrigin = 'anonymous'; img.src = ART_DIR + id + '.jpg'; artImgs.set(id, img); }
+		if (!img) { img = new Image(); img.crossOrigin = 'anonymous'; withArtFallback(img, id); img.src = artUrl(id); artImgs.set(id, img); }
 		if (img.complete) return res();
 		img.addEventListener('load', () => { for (const fn of artListeners) fn(id); res(); }, { once: true });
 		img.addEventListener('error', () => res(), { once: true });
