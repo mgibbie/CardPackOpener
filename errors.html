@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magepunk — Errors</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<style>
+	* { box-sizing: border-box; }
+	body { margin: 0; background: #0e0b16; color: #e8e2f4; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+	h1 { font-size: 20px; letter-spacing: 1px; margin: 0 0 4px; }
+	.sub { color: #9b93b3; font-size: 13px; margin-bottom: 16px; }
+	.controls { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+	select, button { background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+	button:hover, select:hover { border-color: #8f6fff; }
+	.wrap { max-width: 980px; }
+	.day { color: #9b93b3; font-size: 12px; margin: 18px 0 8px; letter-spacing: .5px; }
+	.day b { color: #ffb4a2; }
+	table { width: 100%; border-collapse: collapse; }
+	th { text-align: left; color: #8f88a8; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; padding: 4px 8px; font-weight: 700; }
+	td { padding: 7px 8px; border-top: 1px solid #221b36; font-size: 13px; vertical-align: top; }
+	td.n { font-weight: 800; color: #ffb4a2; text-align: right; white-space: nowrap; }
+	td.msg { color: #f0e6ff; word-break: break-word; }
+	td.where { color: #9fd0ff; font-size: 12px; word-break: break-all; }
+	td.meta { color: #9b93b3; font-size: 11.5px; white-space: nowrap; }
+	#msg { color: #9b93b3; font-size: 14px; padding: 8px 0; }
+	.tot { color: #9fd8b0; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+	<h1>Magepunk — Errors</h1>
+	<div class="sub">Uncaught client crashes (message · location · browser). No accounts, cookies, or IPs. Deduped + capped per visitor.</div>
+	<div class="controls">
+		<label>Window
+			<select id="days"><option value="1">Today</option><option value="7" selected>7 days</option><option value="31">31 days</option></select>
+		</label>
+		<button id="refresh">Refresh</button>
+	</div>
+	<div id="msg">Loading…</div>
+	<div id="out"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ago = ts => { const s = Math.max(0, Math.round((Date.now() - ts) / 1000)); if (s < 60) return s + 's ago'; if (s < 3600) return Math.round(s / 60) + 'm ago'; if (s < 86400) return Math.round(s / 3600) + 'h ago'; return Math.round(s / 86400) + 'd ago'; };
+const shortUA = ua => { const m = /(Chrome|Firefox|Safari|Edg|Edge|OPR)\/[\d.]+/.exec(ua || ''); const os = /(Windows|Mac OS X|Android|iPhone|iPad|Linux)/.exec(ua || ''); return [(m && m[0].replace('Edg', 'Edge')) || (ua || '').slice(0, 24), os && os[1]].filter(Boolean).join(' · '); };
+
+async function load() {
+	const days = +$('days').value;
+	$('msg').textContent = 'Loading…'; $('out').innerHTML = '';
+	let data;
+	try { const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'errors', days }) }); data = await r.json(); }
+	catch (e) { $('msg').textContent = 'Could not load (' + (e.message || 'error') + ').'; return; }
+	const list = (data && data.days) || [];
+	if (!list.length) { $('msg').textContent = 'No errors recorded 🎉 — nothing crashed in this window.'; return; }
+	$('msg').textContent = '';
+	$('out').innerHTML = list.map(d => {
+		const rows = Object.values(d.errors || {}).sort((a, b) => b.count - a.count);
+		const total = rows.reduce((s, r) => s + r.count, 0);
+		return `<div class="day">${d.date} · <b>${total}</b> error${total === 1 ? '' : 's'} · ${rows.length} distinct</div>`
+			+ `<table><tr><th style="text-align:right">×</th><th>Message</th><th>Where</th><th>Page</th><th>Browser</th><th>Last</th></tr>`
+			+ rows.map(r => `<tr><td class="n">${r.count}</td><td class="msg">${esc(r.msg)}</td>`
+				+ `<td class="where">${esc(r.where)}</td><td class="meta">${esc(r.page)}</td>`
+				+ `<td class="meta">${esc(shortUA(r.ua))}</td><td class="meta">${ago(r.last)}</td></tr>`).join('')
+			+ `</table>`;
+	}).join('');
+}
+$('refresh').addEventListener('click', load);
+$('days').addEventListener('change', load);
+load();
+</script>
+</body>
+</html>

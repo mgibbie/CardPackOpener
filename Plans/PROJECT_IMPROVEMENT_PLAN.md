@@ -222,6 +222,17 @@ no third-party, no accounts, no IPs stored.
 - Verified: analytics logic (10 — hit rollup, sanitisation, key cap, stats window, label
   derivation across 15 URLs) + a headless boot (beacon fires with the right label; stats.html
   renders the summary + per-day).
+- **Client error beacon — ✅ DONE (2026-08-14):** uncaught errors + unhandled promise rejections
+  now surface instead of dying silently in a player's console. `site/topbar.js` installs
+  `window` `error`/`unhandledrejection` handlers that `sendBeacon` `{msg, where, page, ua}` to a
+  new **`err`** action (unauthenticated, before the token gate; **no PII** — message/location/
+  browser only), which keeps a **daily rollup deduped by a hash of msg+where** (so an error LOOP
+  can't flood) with a per-day key cap. The client also **dedups within the session and hard-caps
+  at 12 sends**. A new **`errors.html`** (noindex) lists recent crashes by count — message,
+  location, page, browser, last-seen. Verified: server rollup/dedup/cap/sanitise + client
+  dedup/throttle (11) and a headless boot (an uncaught error AND a rejection beacon through with
+  real messages; `errors.html` renders the rollup — 5). Note: same-origin app errors give full
+  messages; cross-origin (CDN) scripts still mask to "Script error." per the browser.
 
 ---
 

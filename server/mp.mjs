@@ -501,6 +501,37 @@ export default async function handler(req, env) {
 		return json({ days });
 	}
 
+	// ---------- client error beacon (uncaught crashes → a daily rollup) ----------
+	// So a crash for a real player surfaces (view at /errors.html) instead of dying
+	// silently in their console. Unauthenticated + no PII (message/location/browser
+	// only); deduped by a hash of msg+where so an error LOOP can't flood, and the
+	// per-day key cap bounds the doc.
+	if (action === 'err') {
+		const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
+		const msg = clip(body.msg, 300), where = clip(body.where, 200);
+		const page = clip(body.page, 80).replace(/[^a-z0-9:/_.-]/gi, ''), ua = clip(body.ua, 120);
+		if (msg) {
+			const key = 'err:' + new Date().toISOString().slice(0, 10);
+			const doc = (await store.get(key)) || {};
+			let h = 5381; const sig = msg + '|' + where + '|' + page; for (let i = 0; i < sig.length; i++) h = ((h << 5) + h + sig.charCodeAt(i)) | 0; // djb2 dedup
+			const id = (h >>> 0).toString(36);
+			if (doc[id]) { doc[id].count++; doc[id].last = Date.now(); }
+			else if (Object.keys(doc).length < 300) { doc[id] = { count: 1, msg, where, page, ua, first: Date.now(), last: Date.now() }; }
+			await store.setJSON(key, doc);
+		}
+		return json({ ok: true });
+	}
+	if (action === 'errors') {
+		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
+		const now = Date.now(), days = [];
+		for (let i = 0; i < n; i++) {
+			const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
+			const doc = await store.get('err:' + day);
+			if (doc) days.push({ date: day, errors: doc });
+		}
+		return json({ days });
+	}
+
 	// everything below requires a valid token
 	const username = verifyToken((req.headers.get('authorization') || '').replace(/^Bearer\s+/i, ''));
 	if (!username) return json({ error: 'not logged in' }, 401);

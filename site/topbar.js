@@ -863,6 +863,25 @@ function sendHit() {
 	} catch {}
 }
 
+// ---------- error beacon (uncaught crashes → backend; deduped, throttled, no PII) ----------
+// So a crash for a real player surfaces at /errors.html instead of dying silently
+// in their console. Deduped within the session and hard-capped so an error loop
+// can never flood; message/location/browser only — no accounts, cookies, or IPs.
+const _errSeen = new Set(); let _errSent = 0;
+function reportErr(msg, where) {
+	if (_errSent >= 12) return;
+	const k = (msg || '') + '|' + (where || '');
+	if (_errSeen.has(k)) return;
+	_errSeen.add(k); _errSent++;
+	try {
+		const body = JSON.stringify({ action: 'err', msg: String(msg == null ? '' : msg).slice(0, 300), where: String(where || '').slice(0, 200), page: location.pathname, ua: navigator.userAgent.slice(0, 120) });
+		if (navigator.sendBeacon) navigator.sendBeacon('/api/mp', new Blob([body], { type: 'application/json' }));
+		else fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+	} catch {}
+}
+addEventListener('error', e => { if (e && (e.message || e.filename)) reportErr(e.message || 'error', (e.filename || '') + (e.lineno ? ':' + e.lineno : '')); });
+addEventListener('unhandledrejection', e => { const r = e && e.reason; const w = r && r.stack ? String(r.stack).split('\n').slice(1, 2).join('').trim() : 'unhandledrejection'; reportErr((r && (r.message || r)) || 'unhandledrejection', w); });
+
 // ---------- boot ----------
 function start() {
 	buildBar();
