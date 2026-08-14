@@ -125,6 +125,14 @@
 	.cotw .cw-collect:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
 	.cotw .cw-note { color: var(--green); font-size: .8rem; margin-top: 8px; min-height: 1.1em; }
 	.cotw-empty { color: var(--muted); padding: 8px; }
+	/* view-only archive of past weeks' cards */
+	.cotw-archive:empty { display: none; }
+	.cw-past-row { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 6px; -webkit-overflow-scrolling: touch; }
+	.cw-past { flex: 0 0 104px; text-align: center; }
+	.cw-past-art { width: 104px; height: 104px; border-radius: 10px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--border); }
+	.cw-past-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.cw-past-name { font-size: .76rem; font-weight: 700; margin-top: 6px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cw-past-when { font-size: .68rem; color: var(--muted); }
 
 	@media (prefers-reduced-motion: reduce) { .tile, .primary { transition: none; } }
 	@media (max-width: 560px) { .primary { flex-direction: column; text-align: center; } .cotw { flex-direction: column; } .cotw .cw-art { flex: 0 0 auto; height: 170px; } }
@@ -171,6 +179,7 @@
 
 		<div class="section-label">Card of the Week</div>
 		<div id="cotw" class="cotw"><div class="cotw-empty">Loading this week's card…</div></div>
+		<div id="cotw-archive" class="cotw-archive"></div>
 
 		<div class="section-label">Run Modes</div>
 		<div class="grid">
@@ -435,6 +444,20 @@
 		const cached = MP.cachedState();
 		(cached && cached.featuredClaimed) ? showClaimed() : showClaimable();
 		MP.freshState().then(s => { if (s && typeof s.featuredClaimed === 'boolean') (s.featuredClaimed ? showClaimed() : showClaimable()); }).catch(() => {});
+
+		// ---- view-only archive of the previous weeks ----
+		const arc = document.getElementById('cotw-archive');
+		if (arc && pool.length > 1) {
+			const w = weekIndex(), items = [], PAST = Math.min(8, pool.length - 1);
+			for (let k = 1; k <= PAST; k++) {
+				const pc = pool[(((w - k) % pool.length) + pool.length) % pool.length];
+				const when = k === 1 ? 'Last week' : `${k} weeks ago`;
+				items.push(`<div class="cw-past" title="${esc(pc.name)}"><div class="cw-past-art"><img alt="${esc(pc.name)}" loading="lazy" data-id="${esc(pc.id)}"></div>`
+					+ `<div class="cw-past-name">${esc(pc.name)}</div><div class="cw-past-when">${when}</div></div>`);
+			}
+			arc.innerHTML = `<div class="section-label">Past weeks</div><div class="cw-past-row">${items.join('')}</div>`;
+			arc.querySelectorAll('.cw-past img').forEach(pi => { pi.addEventListener('error', () => { const a = pi.closest('.cw-past-art'); if (a) a.style.display = 'none'; }, { once: true }); pi.src = ART + pi.dataset.id + '.jpg'; });
+		}
 	})();
 	</script>
 

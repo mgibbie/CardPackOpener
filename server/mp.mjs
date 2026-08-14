@@ -1208,7 +1208,9 @@ export default async function handler(req, env) {
 	if (action === 'pack-timer') {
 		const now = Date.now();
 		if (accruePacks(user, now)) await store.setJSON(username, user);
-		return json({ packInbox: user.packInbox || 0, packCap: PACK_INBOX_CAP, packTimerMs: PACK_TIMER_MS, nextPackMs: packEtaMs(user, now), packs: user.packs || 0 });
+		const week = Math.floor(now / (7 * 86400000));
+		return json({ packInbox: user.packInbox || 0, packCap: PACK_INBOX_CAP, packTimerMs: PACK_TIMER_MS, nextPackMs: packEtaMs(user, now), packs: user.packs || 0,
+			featuredClaimed: !!(user.featuredClaims && user.featuredClaims[week]) }); // Card of the Week — collected this week? (drives the bell nudge)
 	}
 
 	// collect the free packs that have piled up in the 12-hour special inbox

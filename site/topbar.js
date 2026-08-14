@@ -226,11 +226,13 @@ function applyPackTimer(pk) {
 	state.packInbox = pk.packInbox || 0;
 	state.packCap = pk.packCap || 120;
 	state.packEtaTarget = pk.nextPackMs == null ? null : Date.now() + pk.nextPackMs;
+	if ('featuredClaimed' in pk) state.featuredClaimed = pk.featuredClaimed; // Card of the Week claim state
 }
 function claimableQuests() { return (state.quests || []).filter(q => !q.claimed && q.progress >= q.target).length; }
 function streakClaimable() { return state.streak && !state.streak.claimedToday ? 1 : 0; }
+function featuredClaimable() { return MP.hasToken() && state.featuredClaimed === false; } // this week's free card uncollected
 function badgeCount() {
-	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable();
+	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0);
 }
 async function poll() {
 	if (!MP.hasToken()) return;
@@ -354,7 +356,8 @@ function renderTabs() {
 		t.tabIndex = on ? 0 : -1;
 	});
 	const da = $('#dot-alerts'), dm = $('#dot-messages'), dp = $('#dot-packs');
-	if (da) { da.textContent = state.challenges.length; da.hidden = !state.challenges.length; }
+	const alertsN = state.challenges.length + (featuredClaimable() ? 1 : 0);
+	if (da) { da.textContent = alertsN; da.hidden = !alertsN; }
 	const unread = state.inbox.filter(m => m.ts > seenTs() && m.from !== state.me).length;
 	if (dm) { dm.textContent = unread; dm.hidden = !unread; }
 	if (dp) { dp.textContent = state.packInbox || 0; dp.hidden = !(state.packInbox > 0); }
@@ -484,7 +487,14 @@ function renderAlerts(body) {
 		w.innerHTML = `<div class="av">⏳</div><div class="meta"><div class="name">Waiting for ${esc(state.waitingOn)}…</div><div class="sub">They'll get your ${kindTxt} challenge. This launches when they accept.</div></div>`;
 		body.appendChild(w);
 	}
-	if (!state.challenges.length && !state.waitingOn) {
+	if (featuredClaimable()) {
+		const f = el('div', 'row');
+		f.innerHTML = `<div class="av">🃏</div><div class="meta"><div class="name">Free Card of the Week</div><div class="sub">A legendary is waiting — collect it on the Battlecards screen.</div></div><div class="acts"></div>`;
+		const go = el('button', 'mini primary', 'Collect'); go.addEventListener('click', () => { location.href = '/battlecards/start.html'; });
+		$('.acts', f).appendChild(go);
+		body.appendChild(f);
+	}
+	if (!state.challenges.length && !state.waitingOn && !featuredClaimable()) {
 		body.appendChild(el('div', 'ib-empty', 'No challenges right now.<br>Challenge a friend from the Friends tab.'));
 		return;
 	}

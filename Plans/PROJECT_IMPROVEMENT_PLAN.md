@@ -195,6 +195,17 @@ initial button state (logged-out → "Log in to collect", claimable → "Collect
 "Collected this week"). Verified: weekly determinism, a headless render, the server claim (11 —
 once/week, server-derived/un-spoofable, 503 on pool-load failure, prune), and the button states +
 claim flow headless (7).
+- **Return loop — ✅ DONE (2026-08-14):** turned the Card of the Week + Collect into a real
+  retention loop, alongside the daily pack/quest/streak loops. **Nudge:** `pack-timer` (already
+  polled by the top bar every 12s) now returns `featuredClaimed`; the inbox **bell badges** when
+  this week's card is uncollected, the **Alerts** tab shows a "Free Card of the Week — Collect" row
+  linking to the start screen, and it clears once collected. **View-only archive:** a **"Past weeks"**
+  strip on the start screen shows the previous 8 weeks' cards (deterministic `pool[week%len]`, art +
+  name + "Last week / N weeks ago"), no claim. Also made `gen_featured.mjs` **deterministically
+  shuffle** the pool so consecutive weeks land on varied cards (not alphabetically adjacent) — server
+  + client read the same file, so they always agree on the week's card. Verified: the badge logic
+  (8 — claimable only when logged-in + uncollected, aggregates, poll-driven) and a headless boot (7 —
+  archive renders 8 with relative labels + offload art, the bell badges, and the Alerts nudge appears).
 - Follow-up: a **featured deck of the week** — deferred because it needs hand-curated decklists
   (the mechanism/JSON pattern is in place to add them). Re-run `gen_featured.mjs` after big card
   imports to fold new legendaries into the pool (optional — rotation works on the existing pool).

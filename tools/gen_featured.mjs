@@ -46,7 +46,17 @@ while (picked.length < Math.min(CAP, pool.length)) {
 	if (!any) break;
 	idx++;
 }
-picked.sort((a, b) => a.id.localeCompare(b.id)); // final stable order
+// Deterministic shuffle of the final order so consecutive weeks (pool[week%len])
+// land on VARIED cards instead of alphabetically-adjacent ones. Same input →
+// same output, so it's stable, and the server + client read the same file so
+// they always agree on the week's card.
+function seededShuffle(arr, seed) {
+	let a = seed >>> 0;
+	const rnd = () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+	for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+	return arr;
+}
+seededShuffle(picked, 0x5AFEC0DE);
 
 const out = { generated: 'gen_featured.mjs', count: picked.length, cards: picked.map(MINI) };
 fs.writeFileSync(ROOT + 'battlecards/featured.json', JSON.stringify(out));
