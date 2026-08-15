@@ -65,9 +65,11 @@ const TOMBS_KEY = 'magepunk_tombs_v1';
 const tombsRunMode = !dungeonRunMode && !heistRunMode && new URLSearchParams(location.search).has('tombs');
 const DUELS_KEY = 'magepunk_duels_v1';
 const duelsRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && new URLSearchParams(location.search).has('duels');
+const ARENA_KEY = 'magepunk_arena_v1';
+const arenaRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && new URLSearchParams(location.search).has('arena');
 let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) playerCount = 2;
+if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) playerCount = 2;
 
 // ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
 // read-only from the snapshots they publish — no input, no AI.
@@ -104,6 +106,9 @@ const clearTombs = () => localStorage.removeItem(TOMBS_KEY);
 const loadDuels = () => safeLoad(DUELS_KEY, null);
 const saveDuels = run => safeSave(DUELS_KEY, run);
 const clearDuels = () => localStorage.removeItem(DUELS_KEY);
+const loadArena = () => safeLoad(ARENA_KEY, null);
+const saveArena = run => safeSave(ARENA_KEY, run);
+const clearArena = () => localStorage.removeItem(ARENA_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
@@ -996,7 +1001,7 @@ function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi)
 function classPowerOf(pi) {
 	const p = state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
-		|| ((heistRunMode || tombsRunMode || duelsRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
+		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
 }
 
 function activateHeroPower(card, ev) {
@@ -1780,7 +1785,7 @@ let mulliganModalOpen = false;
 let mulliganPicks = null;
 // mulligan is a Quick Match / AI / duel feature; the PvE run modes keep their
 // tuned openings (boss decks, treasures) untouched.
-const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode;
+const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode;
 function maybeOfferMulligan() {
 	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
 	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
@@ -2391,6 +2396,9 @@ function nextEvent() {
 			} else if (duelsRunMode) {
 				const run = loadDuels();
 				if (run?.active) setTimeout(() => won ? duelsVictory(run) : duelsDefeat(run), 1200);
+			} else if (arenaRunMode) {
+				const run = loadArena();
+				if (run?.active) setTimeout(() => won ? arenaVictory(run) : arenaDefeat(run), 1200);
 			} else {
 				showPostGameSummary(ev.winner); // Quick Match / AI: result + stats + next steps
 			}
@@ -3235,11 +3243,11 @@ $('restart').addEventListener('click', () => start());
 $('concede').addEventListener('click', () => {
 	if (!state || state.over) return;
 	// run modes keep their own copy (a conceded run clears the save + pays no pack)
-	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode) {
-		const run = duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
+	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) {
+		const run = arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 		el.appendChild(overlayButton('Concede the run', () => {
-			if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
+			if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 			state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
 			done.appendChild(overlayButton('New Run', () => location.reload()));
@@ -4250,6 +4258,21 @@ async function start() {
 			saveDuels(run);
 		}
 		bootDuelsEncounter(cardsById, run);
+	} else if (arenaRunMode) {
+		duelsCardsById = cardsById; // pre-state overlays reuse this stash
+		let run = loadArena();
+		if (run && run.active && !(await resumeArenaOverlay(run))) { clearArena(); run = null; }
+		if (!run || !run.active) {
+			const heroId = await pickDuelsHeroOverlay();
+			let hero = Duels.HEROES.find(h => h.id === heroId);
+			let classChoice = null;
+			if (Duels.classChoicesOf(hero)) { classChoice = await pickDuelsClassOverlay(hero); hero = { ...hero, heroClass: classChoice, classes: [classChoice] }; }
+			const powerId = await pickDuelsPowerOverlay(hero);
+			const deck = await pickDuelsDraftOverlay(Duels.classesOf(hero), 30);
+			run = { active: true, heroId, classChoice, powerId, anomaly: null, deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
+			saveArena(run);
+		}
+		bootArenaEncounter(cardsById, run);
 	} else if (dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
@@ -5399,15 +5422,15 @@ function pickDuelsPowerOverlay(hero) {
 }
 
 // 10-card arena draft: ten sequential "pick 1 of 3" from your class + Neutral
-function pickDuelsDraftOverlay(heroClass) {
+function pickDuelsDraftOverlay(heroClass, size = 10) {
 	return new Promise(resolve => {
 		const pool = Duels.draftPool(duelsCardsById, heroClass);
 		const deck = [];
 		const step = () => {
-			if (deck.length >= 10 || !pool.length) { hideDungeonOverlay(); resolve(deck); return; }
+			if (deck.length >= size || !pool.length) { hideDungeonOverlay(); resolve(deck); return; }
 			const opts = Duels.draftOptions(pool, Math.random, 3);
 			if (!opts.length) { hideDungeonOverlay(); resolve(deck); return; }
-			const el = dungeonOverlay(`DRAFT YOUR DECK - ${deck.length + 1}/10`, 'Pick a card. Ten picks build your starting deck.');
+			const el = dungeonOverlay(`DRAFT YOUR DECK - ${deck.length + 1}/${size}`, `Pick a card. ${size} picks build your deck.`);
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 			for (const d of opts) {
@@ -5563,6 +5586,90 @@ function duelsRunOver(run) {
 	clearDuels();
 	mpRunReward(el, 'loss');
 	el.appendChild(overlayButton('New Run', () => location.reload()));
+}
+
+// ---------- Arena (draft) run ----------
+// Draft a 30-card deck up front, then play it against fresh AI opponents until 3
+// losses (12 wins = a flawless run). Reuses the Duels draft pool + rival roster;
+// unlike Duels the deck is FIXED at the drafted 30 (no between-fight loot).
+function resumeArenaOverlay(run) {
+	return new Promise(resolve => {
+		const hero = duelsEffectiveHero(run);
+		const el = dungeonOverlay('ARENA RUN IN PROGRESS', `${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses with a ${run.deck.length}-card deck. Win as many as you can before 3 losses.`);
+		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon - draft a new deck', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+// a fresh rival with a fair 30-card auto-drafted deck (no passives - matches the player)
+function genArenaEnemy(cardsById, avoidId) {
+	let roster = Duels.RIVALS;
+	if (avoidId && roster.length > 1) roster = roster.filter(r => r.id !== avoidId);
+	const rival = roster[Math.floor(Math.random() * roster.length)];
+	const classes = Duels.classesOf(rival);
+	const deck = Duels.autoDraftDeck(cardsById, classes, Math.random, 30);
+	const altPowers = classes.flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
+	const powerChoices = [null, ...altPowers];
+	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
+	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck, powerId };
+}
+
+function bootArenaEncounter(cardsById, run) {
+	duelsCardsById = cardsById;
+	const hero = duelsEffectiveHero(run);
+	const enemy = run.enemy || (run.enemy = genArenaEnemy(cardsById));
+	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
+	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
+	const picks = [playerCls, enemyCls];
+	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state.classPicks = picks;
+	if (run.powerId && cardsById[run.powerId]) { const pw = E.instantiate(cardsById[run.powerId], HUMAN); pw.zone = 'heropower'; pw.usedThisTurn = false; state.players[HUMAN].heroPowers = [pw]; }
+	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
+	E.resetDeckAndHand(state, 1, [...enemy.deck]);
+	E.drawCards(state, 1, 4);
+	E.stripLoadouts(state);
+	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
+	log(`You are ${hero.name} with your drafted ${run.deck.length}-card deck.`);
+}
+
+function arenaVictory(run) { afterArenaGame(run, true); }
+function arenaDefeat(run) { afterArenaGame(run, false); }
+
+// one game resolved: bank the result, end at 12 wins / 3 losses, else next fight
+function afterArenaGame(run, won) {
+	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	saveArena(run);
+	if (run.wins >= 12) { arenaRunComplete(run); return; }
+	if (run.losses >= 3) { arenaRunOver(run); return; }
+	advanceArena(run, won);
+}
+
+function advanceArena(run, won) {
+	run.enemy = genArenaEnemy(state.cardsById, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
+	saveArena(run);
+	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${run.wins || 0} wins / ${run.losses || 0} losses - your drafted deck stands pat.`);
+	el.appendChild(overlayButton('Fight!', () => location.reload()));
+}
+
+// reward scales with wins: 100 gold + 120 per win, plus the server pack
+function arenaRunOver(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	const gold = 100 + (run.wins || 0) * 120;
+	Col.earnGold(gold);
+	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero?.name || run.heroId} finishes ${run.wins || 0}-3. +${gold} gold banked.`);
+	clearArena();
+	mpRunReward(el, (run.wins || 0) >= 7 ? 'win' : 'loss');
+	el.appendChild(overlayButton('New Arena Run', () => location.reload()));
+}
+
+function arenaRunComplete(run) {
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	Col.earnGold(1600);
+	const el = dungeonOverlay('12 WINS - FLAWLESS ARENA!', `${hero?.name || run.heroId} runs the table 12-${run.losses || 0}. +1600 gold banked.`);
+	mpRunReward(el, 'win');
+	clearArena();
+	el.appendChild(overlayButton('New Arena Run (+1600 gold)', () => location.reload()));
 }
 
 start();
