@@ -31,6 +31,7 @@ const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 pa
 const MAX_BODY_BYTES = 2_000_000;   // reject an absurd request body outright (413) — a big FFA snapshot is well under this
 const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action descriptor, not a payload
 const REPLAY_MAX_BYTES = 800_000;   // a shared replay tape (gzipped + base64url) — generous but bounded, well under MAX_BODY_BYTES
+const SPEC_WINDOW_MS = 12_000;      // a spectator seen (polled) within this long is counted as actively watching
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
 // abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
 // burst can slightly under-count), which is fine. Legit play stays far under them
@@ -62,6 +63,7 @@ const GC_TABLE = [
 	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
+	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 ];
 
 // A ready-made 40-card mage deck so a fresh account can duel without building.
@@ -278,6 +280,16 @@ async function rateLimit(store, bucket, limit, windowMs) {
 // Cloudflare sets cf-connecting-ip; fall back through x-forwarded-for to a shared
 // bucket. Only used to bucket the two unauthenticated beacons — never stored.
 const clientIp = (req) => ((req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'anon').split(',')[0].trim() || 'anon').slice(0, 45);
+
+// Count distinct friends actively watching `runner`'s broadcast. A spectator
+// heartbeats spec:<runner>:<viewer> on each cardstate poll; those seen within
+// SPEC_WINDOW_MS are live. Scanned on publish (bounded by the spectator count).
+async function countWatchers(store, runner, now) {
+	const rows = await store.list('spec:' + runner + ':');
+	let n = 0;
+	for (const r of rows) if (now - (+r.value || 0) < SPEC_WINDOW_MS) n++;
+	return n;
+}
 
 // Lazy garbage collection. Runs at most once per GC_INTERVAL_MS across all requests
 // (a `gc:last` marker gates it), sweeping each ephemeral prefix past its TTL. The
@@ -741,13 +753,16 @@ export default async function handler(req, env) {
 	// every ~1.2s; it doubles as a presence ping so friends see them "in a run"
 	if (action === 'publish-cardstate') {
 		const csMode = String(body.mode || 'battle').slice(0, 24), csLabel = String(body.label || '').slice(0, 48);
+		const now = Date.now();
+		const watchers = await countWatchers(store, username, now); // how many friends are watching right now
 		await store.setJSON('cardstate:' + username, {
 			snapshot: body.snapshot || null,
 			mode: csMode,
 			label: csLabel,
 			room: 'u:' + username, // spectators join the runner's chat room
 			seq: +body.seq || 0,
-			ts: Date.now(),
+			ts: now,
+			watchers,
 		});
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
@@ -755,7 +770,7 @@ export default async function handler(req, env) {
 			region: csLabel,
 			lastSeen: Date.now(),
 		});
-		return json({ ok: true });
+		return json({ ok: true, watchers });
 	}
 
 	// a friend reads the latest snapshot to render read-only
@@ -764,7 +779,8 @@ export default async function handler(req, env) {
 		if (!user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
 		const cs = await store.get('cardstate:' + who);
 		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null });
-		return json(cs);
+		await store.setJSON('spec:' + who + ':' + username, Date.now()); // heartbeat: I'm watching `who`
+		return json(cs); // cs.watchers reflects the count as of the runner's last publish
 	}
 
 	// ---------- in-battle chat + emotes ----------
@@ -1053,14 +1069,16 @@ export default async function handler(req, env) {
 		if (cm.host !== username) return json({ error: 'only the host publishes' }, 403);
 		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
-		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: Date.now(), stats: body.stats || null };
+		const now = Date.now();
+		const watchers = await countWatchers(store, username, now);
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, watchers };
 		await store.setJSON('cardmatchstate:' + id, payload);
 		await store.setJSON('cardstate:' + username, payload); // spectators
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
-			status: 'card:pvp', region: String(body.label || 'Card Duel'), lastSeen: Date.now(),
+			status: 'card:pvp', region: String(body.label || 'Card Duel'), lastSeen: now,
 		});
-		return json({ ok: true });
+		return json({ ok: true, watchers });
 	}
 
 	// guest/spectator reads the current board

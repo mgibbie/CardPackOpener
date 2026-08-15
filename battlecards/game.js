@@ -3478,6 +3478,23 @@ function snapshotState() {
 }
 
 let publishSeq = 0;
+// a small floating "👁 N watching" pill — shown to the runner (from the publish
+// response) and to a spectator (from the cardstate response); hidden at zero
+function updateWatcherBadge(n) {
+	n = +n || 0;
+	let el = $('watchers');
+	if (!el) {
+		el = document.createElement('div');
+		el.id = 'watchers';
+		el.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:55;'
+			+ 'background:rgba(10,7,20,.82);color:#ffcf6b;border:1px solid #4a3f6a;border-radius:999px;'
+			+ 'padding:4px 13px;font:600 13px/1.2 inherit;pointer-events:none;backdrop-filter:blur(3px);';
+		document.body.appendChild(el);
+	}
+	el.textContent = `👁 ${n} watching`;
+	el.style.display = n > 0 ? 'block' : 'none';
+}
+
 function startPublishLoop() {
 	const uname = MPX.cachedState()?.username;
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); // hear spectators
@@ -3496,9 +3513,10 @@ function startPublishLoop() {
 	};
 	const tick = async () => {
 		try {
-			await MPX.call('publish-cardstate', {
+			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
 			});
+			updateWatcherBadge(r && r.watchers);
 		} catch (e) {}
 	};
 	tick();
@@ -3543,6 +3561,7 @@ function startSpectate(cardsById) {
 		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: true });
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
+		updateWatcherBadge(data.watchers); // "N watching" (includes you)
 		renderSpectatorChoice();
 	};
 	tick();
@@ -3999,6 +4018,7 @@ function publishDuel() {
 		stats: duelStatsPayload(),
 	}).then(r => {
 		if (r?.error) throw new Error(r.error);
+		updateWatcherBadge(r && r.watchers); // duel host: how many friends are watching
 		duelDebug.pubOk++; duelDebug.lastPubAt = performance.now();
 		if (duelDebug.pubFails >= 3) log('(connection restored — your opponent can see the board again)');
 		duelDebug.pubFails = 0;

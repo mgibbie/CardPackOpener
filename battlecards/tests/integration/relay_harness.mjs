@@ -115,6 +115,20 @@ async function loadHandler() {
 			const deck = reg.state.decks[0];
 			users.push({ name, token: reg.token, party: { deck: deck.cards, classId: deck.classId, commander: deck.commander || null, companion: deck.companion || null } });
 		}
+		// ---- 1b. spectator count (real handler, no browser needed) ----
+		// two friends watch a runner's broadcast; the runner's next publish reports 2.
+		{
+			const rh = users[0]; // relayhost
+			await api('add-friend', { username: rh.name }, users[1].token);
+			await api('add-friend', { username: rh.name }, users[2].token);
+			await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 1 }, rh.token);
+			await api('cardstate', { username: rh.name }, users[1].token); // relayg1 starts watching (heartbeat)
+			await api('cardstate', { username: rh.name }, users[2].token); // relayg2 starts watching
+			const pub2 = await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 2 }, rh.token);
+			A(pub2.watchers === 2, 'the runner sees a live spectator count (2 friends watching)', JSON.stringify(pub2));
+			const specView = await api('cardstate', { username: rh.name }, users[1].token);
+			A(specView.watchers === 2, 'a spectator also sees the watcher count', JSON.stringify({ watchers: specView.watchers }));
+		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched
 		let matchId = null;
