@@ -111,6 +111,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		await sleep(250);
 		A(await page.evaluate(() => window.__game.HUMAN) === 0, 'flipping again cycles back to player 0');
 
+		// spectator cap: a "full" cardstate response shows the waiting overlay (server enforces the real cap)
+		csState = { seq: 9, watchers: 10, watcherNames: [], full: true, max: 10 };
+		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#spec-full'); return !!(el && /full/i.test(el.textContent) && /10/.test(el.textContent)); }), 5000), 'a full game shows the "spectator slots full" waiting overlay');
+
 		A(errors.filter(e => !/Failed to load resource|Script error|WebGL|GL_|texture|CORS/i.test(e)).length === 0, 'no uncaught client errors while spectating', errors.slice(0, 4).join(' | '));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { if (browser) await browser.close(); server.close(); }

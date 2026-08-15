@@ -161,6 +161,22 @@ async function loadHandler() {
 				'the public profile does NOT leak collection/decks/friends/packs/credentials', JSON.stringify(Object.keys(prof.profile || {})));
 			const noProf = await api('pubprofile', { username: 'nobody_xyz' }, users[1].token);
 			A(noProf.error && /no such/i.test(noProf.error), 'an unknown username → "no such player"', JSON.stringify(noProf));
+
+			// spectator CAP: a game holds at most 10 concurrent watchers
+			const cv = await api('register', { username: 'capvictim', password: 'harness123' });
+			await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 1 }, cv.token); // cardstate:capvictim exists
+			for (let i = 0; i < 10; i++) db._map.set('spec:capvictim:w' + i, JSON.stringify(Date.now())); // 10 watchers already
+			const cg = await api('register', { username: 'capguest', password: 'harness123' });
+			await api('add-friend', { username: 'capvictim' }, cg.token);
+			const full = await api('cardstate', { username: 'capvictim' }, cg.token);
+			A(full.full === true && full.max === 10, 'the 11th spectator is turned away — the game is full (cap 10)', JSON.stringify(full));
+			db._map.delete('spec:capvictim:w0'); // a watcher leaves → a slot frees
+			const admitted = await api('cardstate', { username: 'capvictim' }, cg.token);
+			A(!admitted.full, 'when a spot frees, the waiting spectator is admitted', JSON.stringify({ full: admitted.full }));
+			// an ALREADY-watching viewer keeps their spot even at/over the cap (re-poll must never be dropped)
+			for (let i = 0; i < 10; i++) db._map.set('spec:capvictim:w' + i, JSON.stringify(Date.now())); // 10 others + capguest = 11
+			const stillIn = await api('cardstate', { username: 'capvictim' }, cg.token);
+			A(!stillIn.full, 'an already-watching viewer is never dropped, even over the cap', JSON.stringify({ full: stillIn.full }));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

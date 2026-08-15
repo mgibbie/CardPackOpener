@@ -32,6 +32,7 @@ const MAX_BODY_BYTES = 2_000_000;   // reject an absurd request body outright (4
 const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action descriptor, not a payload
 const REPLAY_MAX_BYTES = 800_000;   // a shared replay tape (gzipped + base64url) — generous but bounded, well under MAX_BODY_BYTES
 const SPEC_WINDOW_MS = 12_000;      // a spectator seen (polled) within this long is counted as actively watching
+const SPEC_CAP = 10;                // max concurrent spectators per GAME (aggregated across a duel's participants)
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
 // abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
 // burst can slightly under-count), which is fine. Legit play stays far under them
@@ -289,7 +290,27 @@ async function listWatchers(store, runner, now) {
 	const rows = await store.list(prefix);
 	const names = [];
 	for (const r of rows) if (now - (+r.value || 0) < SPEC_WINDOW_MS) names.push(r.key.slice(prefix.length));
-	return names.slice(0, 20); // bound the payload
+	return names; // full list (the SPEC_CAP enforcement below keeps it small; display sites slice)
+}
+// aggregate watchers across a match's participants (a spectator may watch any of
+// them), excluding the participants themselves (a player isn't a watcher).
+async function aggregateWatchers(store, humans, now) {
+	const set = new Set();
+	for (const h of humans) for (const w of await listWatchers(store, h, now)) if (!humans.includes(w)) set.add(w);
+	return [...set];
+}
+// the active spectator names for `who`'s CURRENT game — duel → aggregate across
+// the match's participants; solo/run → just who's own watchers. Drives the cap.
+async function gameWatchers(store, cs, who, now) {
+	if (cs && typeof cs.room === 'string' && cs.room.startsWith('m:')) {
+		const cm = await store.get('cardmatch:' + cs.room.slice(2));
+		if (cm) {
+			const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+			const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+			return aggregateWatchers(store, humans, now);
+		}
+	}
+	return listWatchers(store, who, now);
 }
 
 // Lazy garbage collection. Runs at most once per GC_INTERVAL_MS across all requests
@@ -783,7 +804,7 @@ export default async function handler(req, env) {
 	if (action === 'publish-cardstate') {
 		const csMode = String(body.mode || 'battle').slice(0, 24), csLabel = String(body.label || '').slice(0, 48);
 		const now = Date.now();
-		const watcherNames = await listWatchers(store, username, now); // who is watching right now
+		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP); // who is watching right now
 		const watchers = watcherNames.length;
 		await store.setJSON('cardstate:' + username, {
 			snapshot: body.snapshot || null,
@@ -809,7 +830,12 @@ export default async function handler(req, env) {
 		if (!user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
 		const cs = await store.get('cardstate:' + who);
 		if (!cs || Date.now() - cs.ts > CARDSTATE_MS) return json({ snapshot: null });
-		await store.setJSON('spec:' + who + ':' + username, Date.now()); // heartbeat: I'm watching `who`
+		// cap the game at SPEC_CAP concurrent spectators — a NEW viewer is turned away
+		// when it's full; someone already watching (fresh heartbeat) always gets back in
+		const now = Date.now();
+		const watching = await gameWatchers(store, cs, who, now);
+		if (!watching.includes(username) && watching.length >= SPEC_CAP) return json({ snapshot: null, full: true, max: SPEC_CAP }, 403);
+		await store.setJSON('spec:' + who + ':' + username, now); // heartbeat: I'm watching `who`
 		return json(cs); // cs.watchers reflects the count as of the runner's last publish
 	}
 
@@ -1141,9 +1167,7 @@ export default async function handler(req, env) {
 		// a guest), so both players see everyone watching the game — not just their own
 		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
 		const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
-		const wset = new Set();
-		for (const h of humans) for (const w of await listWatchers(store, h, now)) if (!humans.includes(w)) wset.add(w); // a participant isn't a "watcher" of their own game
-		const watcherNames = [...wset].slice(0, 20);
+		const watcherNames = (await aggregateWatchers(store, humans, now)).slice(0, SPEC_CAP);
 		const watchers = watcherNames.length;
 		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, watchers, watcherNames };
 		await store.setJSON('cardmatchstate:' + id, payload);

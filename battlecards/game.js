@@ -3583,6 +3583,11 @@ function startSpectate(cardsById) {
 		let data;
 		try { data = await MPX.call('cardstate', { username: spectateName }); }
 		catch (e) { return; }
+		if (data && data.full) { // at the spectator cap — wait for a spot (a stale watcher frees one)
+			if (!$("spec-full")) { const el = dungeonOverlay("SPECTATOR SLOTS FULL", spectateName + "’s game already has the maximum " + (data.max || 10) + " spectators. Waiting for a spot…"); el.id = "spec-full"; el.appendChild(overlayButton("Back to your world", () => { location.href = "/overworld/?mp=1"; })); }
+			return;
+		}
+		if ($("spec-full")) $("spec-full").remove(); // a spot opened — drop the overlay and carry on
 		if (!data || !data.snapshot) {
 			if (spectateSeq >= 0 && !$('over-note')) {
 				const el = dungeonOverlay('GAME OVER', `${spectateName}'s game has ended.`);
