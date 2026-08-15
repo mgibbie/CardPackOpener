@@ -379,22 +379,27 @@ $('delete-deck').onclick = async () => {
 	flash('Deck deleted.');
 };
 
-// ---------- deck codes (share / import) ----------
-// Copy the deck being edited as a short shareable code; paste one to load it in.
-$('export-code').onclick = async () => {
-	if (!myClass() || !deck.length) { flash('Build a deck first, then copy its code.'); return; }
-	const code = await encodeDeck({ classId: myClass(), cards: deck, commander: curCommander, companion: curCompanion });
-	try { await navigator.clipboard.writeText(code); flash('Deck code copied — share it!'); }
-	catch { prompt('Copy this deck code:', code); } // clipboard blocked — show it to copy by hand
+// ---------- deck codes (share / import / deep-link) ----------
+// A deck is shareable three ways, all round-tripping the same code from codec.js:
+//   Copy Code — the short code, to paste into another player's Import box.
+//   Copy Link — deck.html?deck=<code>, which deep-links straight into this builder.
+//   Import    — accepts either a raw code OR a full ?deck= link.
+const shareUrlFor = code => location.origin + location.pathname + '?deck=' + code; // code is base64url + '.', all URL-safe
+// pull the code out of a pasted ?deck= link, or return the input unchanged if it's already a bare code
+const codeFromInput = raw => {
+	raw = (raw || '').trim();
+	const m = raw.match(/[?&]deck=([^&\s]+)/);
+	return m ? decodeURIComponent(m[1]) : raw;
 };
-$('import-code').onclick = async () => {
-	const raw = prompt('Paste a deck code to load it:');
-	if (!raw) return;
-	const d = await decodeDeck(raw.trim());
-	if (!d || !d.classId) { flash("That doesn't look like a valid deck code."); return; }
+const curDeckCode = () => encodeDeck({ classId: myClass(), cards: deck, commander: curCommander, companion: curCompanion });
+
+// Load a decoded deck into the editor as a NEW, unsaved deck to review + Save
+// (ownership is only checked on Save, so shared links stay viewable logged-out).
+async function loadDeckFromCode(code) {
+	const d = await decodeDeck(code);
+	if (!d || !d.classId) { flash("That doesn't look like a valid deck code."); return false; }
 	const knownClass = [...$('class-select').options].some(o => o.value === d.classId);
-	if (!knownClass) { flash(`Unknown class in that code (${d.classId}).`); return; }
-	// load it as a new, unsaved deck to review + Save (ownership is checked on save)
+	if (!knownClass) { flash(`Unknown class in that code (${d.classId}).`); return false; }
 	editingId = null;
 	curClass = d.classId;
 	deck = d.cards.filter(id => cardsById[id]); // drop any ids this build doesn't know
@@ -405,6 +410,25 @@ $('import-code').onclick = async () => {
 	renderSlots(); applyFilters(); updateCounts(); showEdit();
 	const dropped = d.cards.length - deck.length;
 	flash(dropped ? `Loaded — ${dropped} unknown card${dropped === 1 ? '' : 's'} skipped. Review & Save.` : 'Deck loaded — review & Save.');
+	return true;
+}
+
+$('export-code').onclick = async () => {
+	if (!myClass() || !deck.length) { flash('Build a deck first, then copy its code.'); return; }
+	const code = await curDeckCode();
+	try { await navigator.clipboard.writeText(code); flash('Deck code copied — share it!'); }
+	catch { prompt('Copy this deck code:', code); } // clipboard blocked — show it to copy by hand
+};
+$('copy-link').onclick = async () => {
+	if (!myClass() || !deck.length) { flash('Build a deck first, then copy its link.'); return; }
+	const url = shareUrlFor(await curDeckCode());
+	try { await navigator.clipboard.writeText(url); flash('Share link copied — anyone who opens it lands on this deck.'); }
+	catch { prompt('Copy this deck link:', url); }
+};
+$('import-code').onclick = async () => {
+	const raw = prompt('Paste a deck code or share link to load it:');
+	if (!raw) return;
+	await loadDeckFromCode(codeFromInput(raw));
 };
 
 // ---------- tabs, filters, pager, mobile toggle ----------
@@ -512,8 +536,17 @@ function maybeInit() {
 	if (!classesReady || !cardsReady) return;
 	slots = loadSlots();
 	renderSlots();
-	newDeck(); // open on the blank starting page with the first class selected
-	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, Col };
+	// A ?deck=<code> share link deep-links straight into the builder on that deck;
+	// otherwise open on the blank starting page with the first class selected.
+	const linkCode = new URLSearchParams(location.search).get('deck');
+	if (linkCode) openFromLink(linkCode); else newDeck();
+	window.__deck = { get deck() { return deck; }, get slots() { return slots; }, addCard, removeCard, editSlot, newDeck, loadDeckFromCode, Col };
+}
+async function openFromLink(code) {
+	const loaded = await loadDeckFromCode(code);
+	if (!loaded) newDeck(); // bad/stale link → fall back to a fresh blank deck
+	// tidy the URL so a refresh (or re-copying the page URL) isn't stuck on this import
+	try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ }
 }
 
 fetch('classes.json').then(r => r.json()).then(({ classes }) => {

@@ -86,6 +86,9 @@
 		#save { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #6b4fd4; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 		#save:hover { background: #7d63e6; }
 		#delete-deck { width: 100%; margin-top: 6px; padding: 9px; font-size: 13px; background: #3a2540; color: #ffa9a9; border: 1px solid #5a3550; border-radius: 8px; cursor: pointer; }
+		#code-row { display: flex; gap: 6px; margin-top: 6px; }
+		#code-row button { flex: 1; padding: 9px 4px; font-size: 12px; font-weight: 700; background: #2a2340; color: #cdbcff; border: 1px solid #40356a; border-radius: 8px; cursor: pointer; }
+		#code-row button:hover { background: #372c56; color: #e8ddff; }
 		#status { font-size: 12.5px; margin-top: 8px; min-height: 18px; color: #ffd25f; text-align: center; }
 		#panel-close { display: none; }
 
@@ -203,8 +206,11 @@
 					<div id="deck-count">0 / 40</div>
 					<button id="save">Save Deck</button>
 					<button id="delete-deck">Delete This Deck</button>
-					<button id="export-code" title="Copy this deck as a shareable code">📋 Copy Code</button>
-					<button id="import-code" title="Load a deck from a pasted code">📥 Import Code</button>
+					<div id="code-row">
+						<button id="copy-link" title="Copy a shareable link to this deck">🔗 Copy Link</button>
+						<button id="export-code" title="Copy this deck as a short code">📋 Copy Code</button>
+						<button id="import-code" title="Load a deck from a pasted code or link">📥 Import</button>
+					</div>
 					<div id="status"></div>
 				</div>
 			</div>
