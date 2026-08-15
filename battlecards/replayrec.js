@@ -11,6 +11,7 @@
 // Tapes are gzipped (snapshots are highly repetitive across frames) and kept in
 // a small localStorage ring buffer, quota-guarded via safestore.
 import * as E from './engine/index.js';
+import * as MPX from './mpmode.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { packString, unpackString } from './codec.js';
 
@@ -86,4 +87,23 @@ export async function importCode(code) {
 	if (!tape || !Array.isArray(tape.frames) || !tape.frames.length) return null;
 	tape.meta = { ...(tape.meta || {}), imported: true };
 	return save(tape); // re-packs under a new id
+}
+
+// ---- server-backed share links (the packed tape is too big for a URL) ----
+// uploadReplay pushes a local tape to the backend (login required — a logged-out
+// caller gets null so the UI falls back to copying the code) and returns a short
+// share id for the ?rshare= link. fetchSharedReplay pulls one back (public).
+export async function uploadReplay(id) {
+	if (!MPX.mpMode()) return null; // not logged in → caller copies the code instead (no 401/logout)
+	const code = exportCode(id);
+	if (!code) return null;
+	try { const r = await MPX.call('replay-put', { code }); return (r && r.id) || null; } catch { return null; }
+}
+export async function fetchSharedReplay(shareId) {
+	try {
+		const r = await MPX.call('replay-get', { id: shareId });
+		if (!r || !r.code) return null;
+		const json = await unpackString(r.code);
+		return json ? JSON.parse(json) : null;
+	} catch { return null; }
 }

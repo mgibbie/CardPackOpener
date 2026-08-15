@@ -37,12 +37,22 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const id = await Rec.finish({ winner: null, result: 'draw' });
 	const storeValue = globalThis.localStorage.getItem('magepunk_replays_v1'); // exact string the browser expects
 	const frameCount = Rec.listReplays().find(r => r.id === id).meta.frames;
+	const shareCode = Rec.exportCode(id);   // the packed tape a share link serves
+	const SHARE_ID = 'abcdef123456';         // fake server share id our /api/mp stub answers for
 	A(!!id && !!storeValue && frameCount >= 4, 'recorded a tape in node and serialized the localStorage payload', `${id} / ${frameCount} frames`);
 
 	// --- 2) boot index.html?replay=<id> in a real headless browser ---
 	const server = http.createServer((req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
-		if (u === '/api/mp') { let b = ''; req.on('data', d => b += d); req.on('end', () => { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); }); return; }
+		if (u === '/api/mp') {
+			let b = ''; req.on('data', d => b += d); req.on('end', () => {
+				let body = {}; try { body = JSON.parse(b); } catch {}
+				let out = { ok: true };
+				if (body.action === 'replay-get') out = body.id === SHARE_ID ? { code: shareCode } : { error: 'not found' };
+				res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out));
+			});
+			return;
+		}
 		const f = u === '/' ? '/index.html' : u;
 		fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
 	});
@@ -86,6 +96,13 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		A(await page.evaluate(() => window.__replay.view) !== viewBefore, 'the View button flips which side you watch from');
 
 		A(errors.filter(e => !/Failed to load resource|Script error|WebGL|GL_|texture|CORS/i.test(e)).length === 0, 'no uncaught client errors during replay', errors.slice(0, 5).join(' | '));
+
+		// --- 3b) a shared ?rshare= link fetches the tape from the server and plays it ---
+		const share = await browser.newPage();
+		await share.evaluateOnNewDocument(tok => localStorage.setItem('magepunk_mp_token_v1', tok), 'smoke-token');
+		await share.goto(`http://localhost:${PORT}/battlecards/index.html?rshare=${SHARE_ID}`, { waitUntil: 'domcontentloaded' });
+		const sharedOk = await waitFor(() => share.evaluate(t => window.__replay && window.__replay.total === t, frameCount), 30000);
+		A(sharedOk, 'a ?rshare= link fetches the tape via replay-get and boots playback', 'frames=' + frameCount);
 
 		// --- 3) recording fires during a live game (the other half of the feature) ---
 		const rec = await browser.newPage();

@@ -80,7 +80,8 @@ const spectateMode = !!spectateName;
 // ?replay=<id>: rewatch a recorded game from the local tape (replayrec.js) —
 // read-only, no AI, no network. Reuses the spectate input-gating below.
 const replayId = new URLSearchParams(location.search).get('replay');
-const replayMode = !!replayId;
+const rshareId = new URLSearchParams(location.search).get('rshare'); // a server-shared replay link
+const replayMode = !!replayId || !!rshareId;
 
 // ?cardpvp=<matchId> (MP only): a live host-authoritative card duel. The host
 // runs the real engine as player 0; the guest is player 1, renders the host's
@@ -4456,6 +4457,7 @@ function showPostGameSummary(winner) {
 	el.appendChild(overlayButton('Play again', () => { if (aiMatchId) location.href = 'index.html'; else { hideDungeonOverlay(); $('restart').style.display = 'none'; start(); } }));
 	el.appendChild(overlayButton('Find Match', () => { location.href = 'start.html'; }));
 	el.appendChild(overlayButton('Deck Builder', () => { location.href = 'deck.html'; }));
+	addReplayButtons(el); // ▶ Watch replay + 🔗 Copy replay link
 	el.appendChild(overlayButton('View final board', () => { hideDungeonOverlay(); $('restart').style.display = ''; }));
 }
 // Rematch lobby on a finished match's overlay (1v1 OR N-player FFA): tap Rematch
@@ -5688,7 +5690,7 @@ function arenaRunComplete(run) {
 // (state = fromSnapshot; updateHud; the always-running animate() loop redraws the
 // 3D board) with all input gated off by replayMode.
 let replayCards = null, replayTape = null, replayIdx = 0, replayView = 0;
-let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = null;
+let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = null, lastReplayPromise = null;
 
 function deriveReplayMeta() {
 	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
@@ -5709,14 +5711,50 @@ function finalizeReplay(winner) {
 	if (replayMode || spectateMode || !Rec.isRecording()) return;
 	maybeRecordFrame(); // capture the final board
 	const result = winner == null ? 'draw' : winner === HUMAN ? 'win' : 'loss';
-	Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; }).catch(() => {});
+	// keep the promise so the post-game buttons can await the saved id (the overlay
+	// is built synchronously in the same gameOver tick, before finish() resolves)
+	lastReplayPromise = Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; return id; }).catch(() => null);
+}
+
+// clipboard with a prompt fallback + a banner ack
+async function copyText(text, okMsg) {
+	try { await navigator.clipboard.writeText(text); banner(okMsg, 2200); }
+	catch { prompt('Copy:', text); }
+}
+// "Watch replay" + "Copy replay link" for a finished game's overlay. The tape was
+// just saved by finalizeReplay; Watch opens it locally, Copy link uploads it for a
+// shareable ?rshare= URL (falls back to copying the paste-able code when logged out).
+function addReplayButtons(el) {
+	if (replayMode || spectateMode) return; // never offer a replay-of-a-replay
+	const idOf = () => lastReplayPromise || Promise.resolve(lastReplayId);
+	el.appendChild(overlayButton('▶ Watch replay', async () => {
+		const id = await idOf();
+		if (id) location.href = 'index.html?replay=' + encodeURIComponent(id);
+		else banner('No replay was saved for this game.');
+	}));
+	el.appendChild(overlayButton('🔗 Copy replay link', async () => {
+		const id = await idOf();
+		if (!id) { banner('No replay was saved for this game.'); return; }
+		banner('Preparing share link…', 1500);
+		const shareId = await Rec.uploadReplay(id);
+		if (shareId) {
+			const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+			copyText(base + 'index.html?rshare=' + shareId, 'Replay link copied — anyone can watch it.');
+		} else {
+			const code = Rec.exportCode(id);
+			if (code) copyText(code, 'Copied a replay CODE — share it via Replays → Import. (Log in for a short link.)');
+			else banner('Could not prepare a share link.');
+		}
+	}));
 }
 
 async function startReplay(cardsById) {
 	replayCards = cardsById;
-	replayTape = await Rec.getReplay(replayId);
+	replayTape = rshareId ? await Rec.fetchSharedReplay(rshareId) : await Rec.getReplay(replayId);
 	if (!replayTape || !Array.isArray(replayTape.frames) || !replayTape.frames.length) {
-		const el = dungeonOverlay('REPLAY NOT FOUND', 'That replay is no longer saved on this device.');
+		const el = dungeonOverlay('REPLAY NOT FOUND', rshareId
+			? 'That shared replay has expired or the link is wrong.'
+			: 'That replay is no longer saved on this device.');
 		el.appendChild(overlayButton('Back to replays', () => { location.href = 'replays.html'; }));
 		return;
 	}

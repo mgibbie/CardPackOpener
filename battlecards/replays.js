@@ -49,13 +49,23 @@ function render() {
 			+ `<div class="rp-sub">${esc(sub)}</div></div>`
 			+ `<div class="rp-actions">`
 			+ `<button class="rp-watch">▶ Watch</button>`
-			+ `<button class="rp-share">🔗 Code</button>`
+			+ `<button class="rp-share">🔗 Share</button>`
 			+ `<button class="rp-del" title="Delete this replay">🗑</button></div>`;
 		row.querySelector('.rp-watch').onclick = () => { location.href = 'index.html?replay=' + encodeURIComponent(id); };
-		row.querySelector('.rp-share').onclick = async () => {
+		row.querySelector('.rp-share').onclick = async (e) => {
+			const btn = e.currentTarget; btn.disabled = true; btn.textContent = '…';
+			// prefer a one-click share LINK (upload); fall back to the paste-able code when logged out
+			const shareId = await Rec.uploadReplay(id);
+			btn.disabled = false; btn.textContent = '🔗 Share';
+			if (shareId) {
+				const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'index.html?rshare=' + shareId;
+				try { await navigator.clipboard.writeText(url); status('Share link copied — anyone can open it.'); }
+				catch { prompt('Copy this replay link:', url); }
+				return;
+			}
 			const code = Rec.exportCode(id);
 			if (!code) { status('Could not read that replay.'); return; }
-			try { await navigator.clipboard.writeText(code); status('Replay code copied — share it, others paste it via Import.'); }
+			try { await navigator.clipboard.writeText(code); status('Copied a replay CODE — others paste it via Import. (Log in for a short link.)'); }
 			catch { prompt('Copy this replay code:', code); }
 		};
 		row.querySelector('.rp-del').onclick = () => { Rec.deleteReplay(id); render(); status('Replay deleted.'); };

@@ -30,6 +30,7 @@ const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 pa
 // ---------- input-hardening limits ----------
 const MAX_BODY_BYTES = 2_000_000;   // reject an absurd request body outright (413) — a big FFA snapshot is well under this
 const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action descriptor, not a payload
+const REPLAY_MAX_BYTES = 800_000;   // a shared replay tape (gzipped + base64url) — generous but bounded, well under MAX_BODY_BYTES
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are
 // abuse BRAKES, not precise quotas: the counter read-modify-write isn't atomic (a
 // burst can slightly under-count), which is fine. Legit play stays far under them
@@ -38,9 +39,11 @@ const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action d
 const RATE_LIMITS = {
 	'card-act': [120, 10_000], 'card-publish': [120, 10_000], 'publish-cardstate': [120, 10_000],
 	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
+	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
+const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -58,6 +61,7 @@ const GC_TABLE = [
 	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
 	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
+	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 ];
 
 // A ready-made 40-card mage deck so a fresh account can duel without building.
@@ -606,6 +610,20 @@ export default async function handler(req, env) {
 		return json({ days });
 	}
 
+	// ---------- shared game replays ----------
+	// A shared replay is a packed tape (client codec: gzipped snapshots). Uploading
+	// one (replay-put) requires a token; VIEWING one (replay-get) is public so a
+	// share link opens for logged-out visitors too. Tapes GC after 30 days. Bounded
+	// by REPLAY_MAX_BYTES + a plausible-code regex so we never store arbitrary junk.
+	if (action === 'replay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!/^[a-f0-9]{8,20}$/.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('replay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code });
+	}
+
 	// everything below requires a valid token
 	const username = verifyToken((req.headers.get('authorization') || '').replace(/^Bearer\s+/i, ''));
 	if (!username) return json({ error: 'not logged in' }, 401);
@@ -624,6 +642,16 @@ export default async function handler(req, env) {
 	if (accruePacks(user, Date.now())) await store.setJSON(username, user); // drip the 12h free packs into the inbox
 
 	if (action === 'state') return json({ state: publicState(user, username) });
+
+	// upload a packed replay tape → a short id for the shareable ?rshare= link
+	if (action === 'replay-put') {
+		const code = String(body.code || '');
+		if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		let id;
+		for (let i = 0; i < 8; i++) { id = randomBytes(6).toString('hex'); if (!(await store.get('replay:' + id))) break; }
+		await store.setJSON('replay:' + id, { code, by: username, when: Date.now() });
+		return json({ id });
+	}
 
 	// ---------- friends & presence ----------
 	if (action === 'add-friend') {
