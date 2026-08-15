@@ -227,8 +227,10 @@ function renderSlots() {
 			`linear-gradient(90deg, rgba(6,4,12,0.78) 0%, rgba(6,4,12,0.28) 42%, rgba(6,4,12,0.2) 100%), `
 			+ `url('art/hero_${s.classId}.jpg') center 20% / cover, ${col}`;
 		div.innerHTML = `<span class="s-name">${s.name || s.classId || 'Deck'}</span>`
-			+ `<span class="s-count ${valid ? 'full' : 'partial'}">${(s.cards || []).length}/${SIZE}</span>`;
+			+ `<span class="s-count ${valid ? 'full' : 'partial'}">${(s.cards || []).length}/${SIZE}</span>`
+			+ `<button class="s-share" title="Copy a share link to this deck">🔗</button>`;
 		div.onclick = () => editSlot(s);
+		div.querySelector('.s-share').onclick = e => { e.stopPropagation(); shareSlot(s); }; // don't also open the editor
 		list.appendChild(div);
 	}
 	// Create-new-deck button at the BOTTOM of the deck scroll (Hearthstone-style)
@@ -430,6 +432,14 @@ $('import-code').onclick = async () => {
 	if (!raw) return;
 	await loadDeckFromCode(codeFromInput(raw));
 };
+
+// Share a SAVED deck straight from the My Decks list (no need to open it first).
+async function shareSlot(s) {
+	if (!Array.isArray(s.cards) || !s.cards.length) { flash('That deck is empty — nothing to share yet.'); return; }
+	const url = shareUrlFor(await encodeDeck({ classId: s.classId, cards: s.cards, commander: s.commander, companion: s.companion }));
+	try { await navigator.clipboard.writeText(url); flash(`Share link copied for "${s.name || s.classId || 'deck'}".`); }
+	catch { prompt('Copy this deck link:', url); }
+}
 
 // ---------- tabs, filters, pager, mobile toggle ----------
 for (const btn of document.querySelectorAll('.tab')) {

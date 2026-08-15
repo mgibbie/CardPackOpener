@@ -37,7 +37,13 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	let browser;
 	try {
 		browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });
+		// grant clipboard so the "copy link" success path (flash) runs; dismiss any prompt fallback so nothing hangs
+		try { await browser.defaultBrowserContext().overridePermissions(`http://localhost:${PORT}`, ['clipboard-read', 'clipboard-write']); } catch {}
 		const page = await browser.newPage();
+		await page.setViewport({ width: 1280, height: 900 }); // desktop layout so slot controls are hit-testable
+		// capture the prompt-fallback default (the share link) so the test works whether or not headless clipboard resolves
+		let lastDialog = null;
+		page.on('dialog', d => { lastDialog = { msg: d.message(), def: d.type() === 'prompt' ? d.defaultValue() : '' }; d.dismiss().catch(() => {}); });
 		const errors = [];
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 		page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 160)); });
@@ -72,7 +78,29 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		A(fellBack, 'a bad ?deck= link falls back to a fresh blank deck (no crash, empty working deck)');
 		A(softErrors().length === preBadErrors, 'the bad link produced no new uncaught errors', softErrors().slice(-3).join(' | '));
 
-		A(softErrors().length === 0, 'no uncaught client errors across all three loads', softErrors().slice(0, 4).join(' | '));
+		// --- 4) share a SAVED deck straight from the My Decks list (no need to open it) ---
+		const seed = JSON.stringify([{ id: 'd_share', name: 'Aggro Test', classId: realClass, cards: ['a', 'b', 'c'], commander: null, companion: null }]);
+		await page.goto(`http://localhost:${PORT}/battlecards/deck.html`, { waitUntil: 'domcontentloaded' });
+		await page.evaluate(s => localStorage.setItem('magepunk_decks_v1', s), seed); // seed a saved deck
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		// wait until deck.js has booted AND loaded the seeded slot (the element is static HTML, so it exists before boot)
+		await waitFor(() => page.evaluate(() => window.__deck?.slots?.length > 0), 15000);
+		await page.evaluate(() => document.querySelector('#back-to-decks').click()); // boot opens on the blank editor; go to the list
+		const onList = await waitFor(() => page.evaluate(() => document.querySelector('#decks-view')?.style.display !== 'none' && !!document.querySelector('#slot-list .s-share')), 10000);
+		A(onList, 'saved decks in the My Decks list show a 🔗 share button');
+		lastDialog = null;
+		await page.click('#slot-list .s-share'); // a trusted gesture; clipboard may still fall back to prompt in headless
+		await sleep(300);
+		const share = await page.evaluate(() => ({
+			stillList: document.querySelector('#decks-view')?.style.display !== 'none' && document.querySelector('#edit-view')?.style.display === 'none',
+			status: document.querySelector('#status')?.textContent || '',
+		}));
+		A(share.stillList, 'clicking a slot 🔗 does NOT open the editor (stopPropagation holds)');
+		// success either way: the flash (clipboard resolved) OR the fallback prompt whose default is a real ?deck= link
+		const shared = /share link copied/i.test(share.status) || /deck\.html\?deck=MPCK/i.test(lastDialog?.def || '');
+		A(shared, 'clicking a slot 🔗 produces its ?deck= share link', JSON.stringify({ status: share.status, dialog: lastDialog?.def?.slice(0, 60) }));
+
+		A(softErrors().length === 0, 'no uncaught client errors across all loads', softErrors().slice(0, 4).join(' | '));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { if (browser) await browser.close(); server.close(); }
 	console.log(`\n${pass} passed, ${fail} failed`);
