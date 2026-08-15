@@ -3,6 +3,7 @@
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
+import { validateGameState } from '../../engine/validate.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
@@ -55,6 +56,21 @@ for (const id of ['blacksmithing_hammer', 'felstring_harp']) ok(`${id} exists`, 
 	ok('no damage was actually taken (returned 0)', dealt === 0, dealt);
 	ok('hero was healed +2 instead', st.players[0].life === lifeBefore + 2, [lifeBefore, st.players[0].life]);
 	ok('weapon lost 1 durability (3 -> 2)', st.players[0].weapon && st.players[0].weapon.durability === 2, st.players[0].weapon?.durability);
+}
+// REGRESSION (nightly-fuzz-found crash): Felstring Harp breaking on the SAME hit it
+// heals. At 1 durability, converting damage to healing drops it to 0 and breakWeapon
+// nulls p.weapon — the code then read p.weapon.healInsteadOnOwnTurn on null and threw.
+{
+	const st = game('warlock');
+	equip(st, 'felstring_harp');
+	st.players[0].weapon.durability = 1; // one hit from breaking
+	const lifeBefore = st.players[0].life;
+	let threw = null;
+	try { E.damageHero(st, 0, 4, 1); } catch (e) { threw = e.message; }
+	ok('no crash when Felstring breaks on the same hit it heals', threw === null, threw);
+	ok('still healed +2 on the breaking hit', st.players[0].life === lifeBefore + 2, [lifeBefore, st.players[0].life]);
+	ok('the weapon broke (durability 0 -> null)', st.players[0].weapon == null, st.players[0].weapon);
+	ok('state stays valid after the break', validateGameState(st).length === 0, validateGameState(st).join(' | '));
 }
 // On the OPPONENT's turn, Felstring does NOT convert (only "on your turn")
 {

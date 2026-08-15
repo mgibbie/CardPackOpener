@@ -81,6 +81,28 @@ export function validateGameState(state) {
 			else if (pp.eliminated) errs.push('priority player is eliminated');
 		}
 	}
+
+	// elimination consistency (I20), enforced only while the game is live (end-of-game
+	// cleanup order is tolerated, like the turn/priority checks above): an eliminated
+	// seat holds no board creatures and no weapon — checkGameOver clears them and
+	// nothing re-adds (summon/reborn skip the dead), so a lingering board/weapon on a
+	// dead seat is real corruption. NOTE: an eliminated seat's HAND can legally gain
+	// dead cards from all-player draw effects (harmless — it can't act), and a live
+	// seat momentarily at <=0 life is a timing-dependent transient — neither is a hard
+	// invariant, so neither is checked here (see the module header's "soft" list).
+	if (!state.over) {
+		for (let pi = 0; pi < state.players.length; pi++) {
+			const p = state.players[pi];
+			if (p && p.eliminated && ((p.board && p.board.length) || p.weapon))
+				errs.push(`p${pi} eliminated but keeps a board/weapon (board ${p.board ? p.board.length : 0}, weapon ${p.weapon ? 1 : 0})`);
+		}
+	}
+	// a finished game names a valid, living winner (null = an FFA wipe / abandonment)
+	if (state.over && state.winner != null) {
+		const w = state.players[state.winner];
+		if (!w) errs.push(`state.winner out of range (${state.winner})`);
+		else if (w.eliminated) errs.push(`winner p${state.winner} is eliminated`);
+	}
 	// I19: no Sets/Maps in serialized state — they JSON.stringify to {} and
 	// crash or silently lose data after a duel/spectate snapshot round-trip
 	// (found live: tribesPlayedGame was a Set; guests crashed post-ingest)
