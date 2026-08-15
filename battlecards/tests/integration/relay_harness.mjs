@@ -194,6 +194,15 @@ async function loadHandler() {
 			const g1over = await g1.page.evaluate(() => { const o = document.querySelector('#duel-over'); return !!o && /concede/i.test(o.textContent); });
 			A(g1over, 'a conceded guest sees the "You conceded" screen');
 
+			// ---- 4b. duel replays: every client saved its own view of the match ----
+			// host records via the game-over event loop; the conceding guests record on
+			// snapshot ingest and finalize in their concede path. All → a local tape.
+			const hasReplay = p => p.evaluate(() => { try { const a = JSON.parse(localStorage.getItem('magepunk_replays_v1') || '[]'); return a.length > 0 && a[0].meta && a[0].meta.mode === 'multiplayer' && a[0].meta.frames >= 2; } catch { return false; } });
+			const allSaved = await waitFor(async () => (await Promise.all(users.map(u => hasReplay(u.page)))).every(Boolean), 10000);
+			A(allSaved, 'every client saved a multiplayer replay of the duel (host via game-over, guests via concede)', JSON.stringify(await Promise.all(users.map(u => hasReplay(u.page)))));
+			const hostWatch = await waitFor(() => host.page.evaluate(() => { const o = document.querySelector('#duel-over'); return !!(o && [...o.querySelectorAll('button')].some(b => /Watch replay/i.test(b.textContent))); }), 10000);
+			A(hostWatch, 'the host duel-over overlay offers a Watch-replay button');
+
 			// ---- 5. rematch ----
 			// conceders correctly don't get a UI rematch button (they left), so exercise the
 			// real rematch handler against the REAL finished match: all three opt in → mint.

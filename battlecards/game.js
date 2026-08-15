@@ -1960,7 +1960,7 @@ function openSacModal() {
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; }
+	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
 	queueBusy = true;
 	let delay = 120;
 	switch (ev.type) {
@@ -2391,6 +2391,7 @@ function nextEvent() {
 				el.id = 'duel-over';
 					appendMatchSummary(el); // same stat block as Quick Match
 					mountDuelRematch(el); // rematch lobby (1v1 or FFA)
+				addReplayButtons(el); // ▶ Watch replay + 🔗 Copy replay link (host's view)
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
@@ -3274,6 +3275,8 @@ $('concede').addEventListener('click', () => {
 			guestApply(() => E.concede(state, HUMAN), { k: 'concede' });
 			const o = dungeonOverlay('YOU CONCEDED', ffa ? "You've dropped out of the free-for-all." : 'You forfeited the match.');
 			o.id = 'duel-over';
+			finalizeReplay(null, 'loss'); // save the conceding guest's recorded view
+			addReplayButtons(o); // ▶ Watch replay + 🔗 Copy replay link
 			o.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			return;
 		}
@@ -3868,6 +3871,7 @@ function startDuelGuest(cardsById) {
 					panelsFor = state.players.length;
 				}
 				updateHud();
+				maybeRecordFrame(); // record the guest's view of each authoritative board (deduped by digest)
 				openDuelModals(); // surface any scry/loot/discover the guest must resolve
 			} catch (e) {
 				// an ingest exception used to die silently and leave "Waiting for the
@@ -3879,6 +3883,7 @@ function startDuelGuest(cardsById) {
 		}
 		if (data.over && !$('duel-over')) {
 			const won = data.winner === HUMAN;
+			finalizeReplay(data.winner); // save the guest's recorded view of the duel
 			let title, msg;
 			if (data.abandoned && data.winner == null) {
 				title = 'DUEL ENDED'; msg = 'The host disconnected — the game ended.'; // FFA: only the host runs the engine
@@ -3899,6 +3904,7 @@ function startDuelGuest(cardsById) {
 			// (life comes from the guest's own ingested final board)
 			if (data.stats) { matchStats = data.stats; appendMatchSummary(el); }
 			if (!data.abandoned) mountDuelRematch(el); // rematch lobby (1v1 or FFA)
+			addReplayButtons(el); // ▶ Watch replay + 🔗 Copy replay link (guest's view)
 			el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 		}
 	};
@@ -5708,10 +5714,11 @@ function maybeRecordFrame() {
 	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
 	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim());
 }
-function finalizeReplay(winner) {
+function finalizeReplay(winner, resultOverride) {
 	if (replayMode || spectateMode || !Rec.isRecording()) return;
 	maybeRecordFrame(); // capture the final board
-	const result = winner == null ? 'draw' : winner === HUMAN ? 'win' : 'loss';
+	// resultOverride lets a conceder record a 'loss' before the eventual winner is known
+	const result = resultOverride || (winner == null ? 'draw' : winner === HUMAN ? 'win' : 'loss');
 	// keep the promise so the post-game buttons can await the saved id (the overlay
 	// is built synchronously in the same gameOver tick, before finish() resolves)
 	lastReplayPromise = Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; return id; }).catch(() => null);
