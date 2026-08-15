@@ -69,6 +69,7 @@ ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.t
 ok('a duel publish AGGREGATES watchers across ALL participants (host + guests)', /for \(const h of humans\) for \(const w of await listWatchers\(store, h, now\)\)/.test(src));
 ok('card-publish returns the aggregated watcher names', /return json\(\{ ok: true, watchers, watcherNames \}\)/.test(src));
 ok('spectator heartbeats are GC-swept (spec: in GC_TABLE)', /\['spec:'/.test(src));
+ok('spectator + duel-guest polls are rate-limited (cardstate + card-poll in RATE_LIMITS)', /'cardstate': \[\d+,/.test(src) && /'card-poll': \[\d+,/.test(src));
 
 // --- read-only spectators: canPost gates posting, canChat still allows reading ---
 const postBlock = src.slice(src.indexOf("action === 'chat-post'"), src.indexOf("action === 'chat-get'"));

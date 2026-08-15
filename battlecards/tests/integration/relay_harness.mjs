@@ -184,6 +184,12 @@ async function loadHandler() {
 			for (let i = 0; i < 10; i++) db._map.set('spec:capvictim:w' + i, JSON.stringify(Date.now())); // 10 others + capguest = 11
 			const stillIn = await api('cardstate', { username: 'capvictim' }, cg.token);
 			A(!stillIn.full, 'an already-watching viewer is never dropped, even over the cap', JSON.stringify({ full: stillIn.full }));
+
+			// rate limit: hammering the spectate poll trips the per-user ceiling (cardstate 40/10s).
+			// capguest is a fresh user, so its cardstate counter starts near zero.
+			let rateLimited = false;
+			for (let i = 0; i < 50 && !rateLimited; i++) { const r = await api('cardstate', { username: 'capvictim' }, cg.token); if (r.error && /slow down/i.test(r.error)) rateLimited = true; }
+			A(rateLimited, 'hammering cardstate trips the per-user rate limit (429 slow down)');
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

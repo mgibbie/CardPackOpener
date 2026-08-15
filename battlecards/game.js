@@ -3579,16 +3579,18 @@ function startSpectate(cardsById) {
 	$('class-select').style.display = 'none';
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
+	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
 	const tick = async () => {
 		let data;
 		try { data = await MPX.call('cardstate', { username: spectateName, seq: spectateSeq }); } // send our seq so the server can skip an unchanged snapshot
 		catch (e) { return; }
+		if (data && data.error) return; // rate-limited or transient — skip this poll, keep going
 		if (data && data.full) { // at the spectator cap — wait for a spot (a stale watcher frees one)
 			if (!$("spec-full")) { const el = dungeonOverlay("SPECTATOR SLOTS FULL", spectateName + "’s game already has the maximum " + (data.max || 10) + " spectators. Waiting for a spot…"); el.id = "spec-full"; el.appendChild(overlayButton("Back to your world", () => { location.href = "/overworld/?mp=1"; })); }
 			return;
 		}
 		if ($("spec-full")) $("spec-full").remove(); // a spot opened — drop the overlay and carry on
-		if (data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); return; } // board is the same — just refresh the watcher badge
+		if (data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); specIdle++; return; } // board is the same — just refresh the watcher badge
 		if (!data || !data.snapshot) {
 			if (spectateSeq >= 0 && !$('over-note')) {
 				const el = dungeonOverlay('GAME OVER', `${spectateName}'s game has ended.`);
@@ -3599,6 +3601,7 @@ function startSpectate(cardsById) {
 		}
 		if (data.seq === spectateSeq) return; // nothing new
 		spectateSeq = data.seq;
+		specIdle = 0; // active again → poll fast
 		const snap = data.snapshot;
 		// migrate (v0 publishers still supported) + re-attach card DB/rng; unlike
 		// the old spread-rebuild, this keeps every engine field the host sent
@@ -3619,8 +3622,8 @@ function startSpectate(cardsById) {
 		updateSpectateViewButton();
 		renderSpectatorChoice();
 	};
-	tick();
-	setInterval(tick, 1000);
+	const schedule = () => { if ($('over-note')) return; setTimeout(() => tick().finally(schedule), specIdle >= 3 ? 2500 : 1000); }; // relax to 2.5s after idle; stop at game over
+	tick().finally(schedule);
 }
 
 // read-only overlay: show a pending Discover/scry/loot decision so the watcher

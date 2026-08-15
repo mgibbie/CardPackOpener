@@ -42,6 +42,10 @@ const RATE_LIMITS = {
 	'card-act': [120, 10_000], 'card-publish': [120, 10_000], 'publish-cardstate': [120, 10_000],
 	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
 	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
+	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
+	// (card-poll, fast during a turn); these ceilings are generous headroom that only
+	// trips a runaway/hammering client (the delta already made each poll cheap).
+	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
