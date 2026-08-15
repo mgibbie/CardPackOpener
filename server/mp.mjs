@@ -1210,6 +1210,11 @@ export default async function handler(req, env) {
 		const cs = await store.get('cardmatchstate:' + id);
 		const tail = { over: cm.over, winner: cm.winner, abandoned: !!cm.abandoned, seat: mySeat ? mySeat.seat : null };
 		if (!cs || now - cs.ts > CARDSTATE_MS) return json({ snapshot: null, ...tail });
+		// DELTA: if the caller already has this seq, skip re-sending the snapshot — but
+		// ALWAYS include the tail (over/winner/abandoned) so abandonment is still detected
+		if (body.seq != null && +body.seq === (cs.seq | 0)) {
+			return json({ unchanged: true, seq: cs.seq, watchers: cs.watchers, watcherNames: cs.watcherNames, ...tail });
+		}
 		return json({ ...cs, ...tail });
 	}
 

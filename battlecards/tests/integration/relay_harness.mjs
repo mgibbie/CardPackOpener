@@ -205,6 +205,15 @@ async function loadHandler() {
 			const dpub = await api('card-publish', { id: matchId, snapshot: null, seq: 1, label: 'Duel' }, host0.token);
 			A((dpub.watcherNames || []).includes('relayspec'), 'a duel publish aggregates watchers so both players see who is watching', JSON.stringify(dpub.watcherNames));
 			A(!(dpub.watcherNames || []).includes('relayg1') && !(dpub.watcherNames || []).includes('relayg2'), 'the duel players are NOT listed as watchers of their own game', JSON.stringify(dpub.watcherNames));
+
+			// DELTA on card-poll (duel guests): the host just published seq 1, so a guest
+			// polling with seq 1 gets an unchanged ack (no snapshot) but STILL the over tail
+			const g1 = users.find(u => u.seat === 1);
+			const pollSame = await api('card-poll', { id: matchId, seq: 1 }, g1.token);
+			A(pollSame.unchanged === true && pollSame.snapshot === undefined && typeof pollSame.over === 'boolean',
+				'card-poll same seq → unchanged (no snapshot), over/winner tail still present', JSON.stringify({ unchanged: pollSame.unchanged, hasSnap: pollSame.snapshot !== undefined, over: pollSame.over }));
+			const pollStale = await api('card-poll', { id: matchId, seq: 0 }, g1.token);
+			A(!pollStale.unchanged && 'snapshot' in pollStale, 'card-poll stale seq → the full snapshot', JSON.stringify({ unchanged: pollStale.unchanged, hasSnap: 'snapshot' in pollStale }));
 		}
 
 		// ---- 2. launch clients into the duel (host first so it deals + publishes) ----
