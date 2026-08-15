@@ -67,7 +67,13 @@ const getBlock = src.slice(src.indexOf("action === 'chat-get'"), src.indexOf("ac
 ok('a stricter canPost() exists (participants only)', /const canPost = async/.test(src));
 ok('canPost lets ONLY the runner post in their own u: room', /room\.slice\(2\) === username/.test(src));
 ok('chat-post enforces canPost (not the looser canChat)', /await canPost\(room\)/.test(postBlock) && /read-only/.test(postBlock));
-ok('chat-get still uses canChat so spectators can READ', /await canChat\(room\)/.test(getBlock));
+ok('chat-get still uses canChat so spectators can READ the players\' chat', /await canChat\(room\)/.test(getBlock));
+
+// --- spectator-only room + private emotes ---
+ok('an isSpectatorOf() helper gates spec: rooms', /const isSpectatorOf = async/.test(src));
+ok('a spectator = friend of X, not X, not a co-participant', /X === username \|\| !user\.friends\.includes\(X\)/.test(src) && /humans\.includes\(username\)\) return false/.test(src));
+ok('BOTH canChat + canPost route spec: rooms through isSpectatorOf', (src.match(/isSpectatorOf\(room\.slice\(5\)\)/g) || []).length >= 2);
+ok('spectator emotes are rejected server-side (kept private/local)', /room\.startsWith\('spec:'\) && body\.emote/.test(postBlock) && /private/.test(postBlock));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

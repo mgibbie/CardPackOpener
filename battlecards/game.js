@@ -3585,7 +3585,7 @@ function startSpectate(cardsById) {
 			buildSlotMarkers();
 			spectatePanelsFor = snap.playerCount;
 		}
-		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: false });
+		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: false, specRoom: 'spec:' + spectateName });
 		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();

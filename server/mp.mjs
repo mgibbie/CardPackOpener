@@ -788,9 +788,26 @@ export default async function handler(req, env) {
 	// or 'u:<username>' (a solo run being spectated: the runner + their friends).
 	const EMOTES = new Set(['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'gg', 'wow2', 'oops2']);
 	const CHAT_CAP = 40;
-	// can this user read/post in the room?
+	// a 'spec:<X>' room is the SPECTATOR-ONLY chat for whoever is watching X's game.
+	// A spectator = a friend of X who is NOT X and NOT a co-participant in X's live
+	// game (so a friend who happens to be X's duel opponent can't read it either).
+	const isSpectatorOf = async (X) => {
+		if (!X || X === username || !user.friends.includes(X)) return false;
+		const cs = await store.get('cardstate:' + X);
+		if (cs && typeof cs.room === 'string' && cs.room.startsWith('m:')) {
+			const cm = await store.get('cardmatch:' + cs.room.slice(2));
+			if (cm) {
+				const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+				const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+				if (humans.includes(username)) return false; // a participant, not a spectator
+			}
+		}
+		return true;
+	};
+	// can this user READ the room?
 	const canChat = async (room) => {
 		if (typeof room !== 'string') return false;
+		if (room.startsWith('spec:')) return await isSpectatorOf(room.slice(5)); // spectator-only chat
 		if (room.startsWith('u:')) {
 			const who = room.slice(2);
 			return who === username || user.friends.includes(who);
@@ -810,6 +827,7 @@ export default async function handler(req, env) {
 	// read-only (they can watch the chat but not talk or emote).
 	const canPost = async (room) => {
 		if (typeof room !== 'string') return false;
+		if (room.startsWith('spec:')) return await isSpectatorOf(room.slice(5)); // spectators post to their own room
 		if (room.startsWith('u:')) return room.slice(2) === username; // only the runner posts in their own room
 		if (room.startsWith('m:')) {
 			const id = room.slice(2);
@@ -828,6 +846,7 @@ export default async function handler(req, env) {
 	if (action === 'chat-post') {
 		const room = String(body.room || '');
 		if (!(await canPost(room))) return json({ error: 'spectators are read-only' }, 403);
+		if (room.startsWith('spec:') && body.emote) return json({ error: 'emotes are private' }, 400); // spectator emotes stay local-only
 		const emote = body.emote && EMOTES.has(String(body.emote)) ? String(body.emote) : null;
 		const text = emote ? '' : String(body.text || '').slice(0, 140).replace(/[\u0000-\u001f]/g, ' ').trim();
 		if (!emote && !text) return json({ error: 'empty message' }, 400);

@@ -22,7 +22,7 @@ export const EMOTES = {
 const BAR = ['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'gg'];
 const FADE_AFTER = 8000, FADE_DUR = 800; // a message lingers 8s, then fades over 0.8s
 
-let el = null, timer = null, room = null, me = null, seen = new Set(), lastTs = 0, poll = 1500;
+let el = null, timer = null, room = null, specRoom = null, me = null, seen = new Set(), lastTs = 0, lastSpecTs = 0, poll = 1500;
 // when false, the next poll's messages are absorbed silently (marked seen) instead
 // of shown — so a fresh mount or a new game starts with an empty log, no backlog
 let primed = true;
@@ -38,6 +38,8 @@ const STYLE = `
  word-break:break-word;transition:opacity .8s ease;}
 #mp-chat .mc-row.mc-fade{opacity:0;}
 #mp-chat .mc-row.mine{background:rgba(40,52,80,0.78);}
+#mp-chat .mc-row.spec{background:rgba(30,24,52,0.72);border-color:rgba(150,120,220,0.55);}
+#mp-chat .mc-eye{margin-right:4px;opacity:.85;}
 #mp-chat .mc-row.emote{font-size:15px;}
 #mp-chat .mc-who{color:#9fd0ff;font-weight:bold;margin-right:5px;}
 #mp-chat .mc-row.mine .mc-who{color:#ffd27a;}
@@ -79,14 +81,16 @@ function render(messages) {
 	const log = el.querySelector('.mc-log');
 	let added = false;
 	for (const m of messages) {
-		const key = m.ts + ':' + m.from;
-		if (seen.has(key)) continue;
-		seen.add(key);
-		lastTs = Math.max(lastTs, m.ts);
+		if (!m._local) { // local (private spectator) emotes always render; server messages dedup per-room
+			const key = (m._spec ? 's:' : 'p:') + m.ts + ':' + m.from;
+			if (seen.has(key)) continue;
+			seen.add(key);
+			if (m._spec) lastSpecTs = Math.max(lastSpecTs, m.ts); else lastTs = Math.max(lastTs, m.ts);
+		}
 		added = true;
 		const row = document.createElement('div');
-		row.className = 'mc-row' + (m.from === me ? ' mine' : '') + (m.emote ? ' emote' : '');
-		const who = `<span class="mc-who">${esc(m.from)}</span>`;
+		row.className = 'mc-row' + (m.from === me ? ' mine' : '') + (m.emote ? ' emote' : '') + (m._spec ? ' spec' : '');
+		const who = `${m._spec ? '<span class="mc-eye" title="spectators only">👁</span>' : ''}<span class="mc-who">${esc(m.from)}</span>`;
 		if (m.emote) {
 			const e = EMOTES[m.emote] || { icon: '💬', label: m.emote };
 			row.innerHTML = `${who}<span class="mc-emoji">${e.icon}</span>${esc(e.label)}`;
@@ -103,24 +107,37 @@ function render(messages) {
 function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
 export function send(text, emote) {
-	if (!room) return;
-	MP.call('chat-post', { room, text, emote }).catch(() => {});
+	const target = specRoom || room; // spectators post text to their OWN room (players never see it)
+	if (!target) return;
+	MP.call('chat-post', { room: target, text, emote }).catch(() => {});
+}
+// a spectator's emote is PRIVATE — rendered locally, never sent to any room
+function reactLocal(emote) {
+	render([{ from: me, emote, ts: Date.now(), _local: true, _spec: true }]);
 }
 
-// absorb a batch without showing it: mark every message seen + advance lastTs
-function absorb(messages) {
-	for (const m of messages) { seen.add(m.ts + ':' + m.from); lastTs = Math.max(lastTs, m.ts); }
+// absorb a batch without showing it: mark every message seen + advance the room's cursor
+function absorb(messages, isSpec) {
+	for (const m of messages) {
+		seen.add((isSpec ? 's:' : 'p:') + m.ts + ':' + m.from);
+		if (isSpec) lastSpecTs = Math.max(lastSpecTs, m.ts); else lastTs = Math.max(lastTs, m.ts);
+	}
 }
 
 async function tick() {
 	if (!room) return;
+	const first = !primed; // swallow each room's pre-game backlog on the first poll
 	try {
-		const data = await MP.call('chat-get', { room, since: lastTs });
-		if (data && data.messages) {
-			if (primed) render(data.messages);
-			else { absorb(data.messages); primed = true; } // swallow the pre-game backlog once
-		}
+		const d = await MP.call('chat-get', { room, since: lastTs });
+		if (d && d.messages) first ? absorb(d.messages, false) : render(d.messages);
 	} catch (e) {}
+	if (specRoom) { // a spectator also reads/writes the spectator-only room
+		try {
+			const d = await MP.call('chat-get', { room: specRoom, since: lastSpecTs });
+			if (d && d.messages) { const m = d.messages.map(x => ({ ...x, _spec: true })); first ? absorb(m, true) : render(m); }
+		} catch (e) {}
+	}
+	primed = true;
 }
 
 function setMin(min) {
@@ -131,26 +148,33 @@ function setMin(min) {
 	if (!min) b.classList.remove('flash');
 }
 
-// mount the overlay for a room. canPost=false gives a read-only log.
-export function mount({ room: r, canPost = true } = {}) {
+// mount the overlay. canPost=false gives a read-only log (players' chat). Pass
+// specRoom to run in SPECTATOR mode: emotes render locally-only (private), text
+// posts to the spectator-only room, and both the players' room (read) and the
+// spectator room (read/write) are shown, spectator messages tagged with 👁.
+export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	if (el) unmount();
 	ensureStyle();
 	room = r;
+	specRoom = sr;
 	me = MP.cachedState()?.username || null;
-	seen = new Set(); lastTs = 0; primed = false; // hide whatever history already exists
+	seen = new Set(); lastTs = 0; lastSpecTs = 0; primed = false; // hide whatever history already exists
 	el = document.createElement('div');
 	el.id = 'mp-chat';
 	el.innerHTML = `<div class="mc-log"></div><div class="mc-bar"><button class="mc-min" title="minimise chat">▾</button></div>`;
 	const bar = el.querySelector('.mc-bar');
-	if (canPost) {
+	const spectator = !!specRoom;
+	if (canPost || spectator) {
 		for (const id of BAR) {
 			const b = document.createElement('button');
-			b.className = 'mc-em'; b.textContent = EMOTES[id].icon; b.title = EMOTES[id].label;
-			b.addEventListener('click', () => send('', id));
+			b.className = 'mc-em'; b.textContent = EMOTES[id].icon;
+			b.title = spectator ? EMOTES[id].label + ' (only you see this)' : EMOTES[id].label;
+			b.addEventListener('click', () => spectator ? reactLocal(id) : send('', id));
 			bar.appendChild(b);
 		}
 		const input = document.createElement('input');
-		input.className = 'mc-input'; input.maxLength = 140; input.placeholder = 'Say something…';
+		input.className = 'mc-input'; input.maxLength = 140;
+		input.placeholder = spectator ? 'Chat with other spectators…' : 'Say something…';
 		input.addEventListener('keydown', ev => {
 			ev.stopPropagation(); // don't let the game read battle keys while typing
 			if (ev.key === 'Enter' && input.value.trim()) { send(input.value.trim()); input.value = ''; }
@@ -167,7 +191,7 @@ export function unmount() {
 	if (timer) clearInterval(timer);
 	timer = null;
 	if (el && el.parentNode) el.parentNode.removeChild(el);
-	el = null; room = null; seen = new Set(); lastTs = 0;
+	el = null; room = null; specRoom = null; seen = new Set(); lastTs = 0; lastSpecTs = 0;
 }
 
 // wipe the visible log (e.g. when a new game starts). Re-arms priming so the next

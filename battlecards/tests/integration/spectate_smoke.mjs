@@ -31,6 +31,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const gs = E.createGame(cardsById, E.seededRng(31337), null, 2, null);
 	const snapshot = JSON.parse(JSON.stringify(E.toSnapshot(gs)));
 	const csPayload = { snapshot, mode: 'dungeon', label: 'Fight 1/8', room: 'u:friendx', seq: 1, ts: Date.now(), watchers: 1 };
+	const chatPosts = []; // every chat-post the client makes (to check emotes stay local + text goes to the spec room)
 
 	const server = http.createServer((req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
@@ -40,6 +41,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 				let out = { ok: true };
 				if (body.action === 'cardstate') out = { ...csPayload, ts: Date.now() };
 				else if (body.action === 'chat-get') out = { messages: [], now: Date.now() };
+				else if (body.action === 'chat-post') { chatPosts.push(body); out = { ok: true }; }
 				else if (body.action === 'state') out = { state: { username: 'me', decks: [], collection: {} } };
 				res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out));
 			});
@@ -62,11 +64,22 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const rendered = await waitFor(() => page.evaluate(() => !!(window.__game && window.__game.state && window.__game.state.players && window.__game.state.players.length === 2)), 30000);
 		A(rendered, 'the spectator boots and renders the friend\'s 2-player board');
 
-		// read-only chat: the panel exists but has NO input and NO emote buttons
+		// spectator chat: interactive (input + emote buttons), but emotes are PRIVATE and text goes to the spec room
 		const chat = await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat')), 8000);
 		A(chat, 'the chat panel mounted for the spectator');
 		const chatControls = await page.evaluate(() => ({ input: !!document.querySelector('#mp-chat .mc-input'), emotes: document.querySelectorAll('#mp-chat .mc-em').length }));
-		A(chatControls.input === false && chatControls.emotes === 0, 'the spectator chat is READ-ONLY (no input box, no emote buttons)', JSON.stringify(chatControls));
+		A(chatControls.input && chatControls.emotes > 0, 'the spectator chat has an input + emote buttons', JSON.stringify(chatControls));
+		// an emote is a PRIVATE local reaction: a spec-tagged row appears, and NOTHING is sent to the server
+		await page.click('#mp-chat .mc-em');
+		await sleep(200);
+		A(await page.evaluate(() => document.querySelectorAll('#mp-chat .mc-row.spec').length) >= 1, 'clicking an emote shows a private local reaction (spec-tagged row)');
+		A(!chatPosts.some(p => p.emote), 'the emote was NOT sent to the server (stays private/local)', JSON.stringify(chatPosts));
+		// typing posts to the SPECTATOR-only room (spec:friendx), never the players' room
+		await page.type('#mp-chat .mc-input', 'hi other watchers');
+		await page.keyboard.press('Enter');
+		await sleep(250);
+		A(chatPosts.some(p => p.action === 'chat-post' && p.room === 'spec:friendx' && p.text === 'hi other watchers'), 'spectator text posts to the spectator-only room', JSON.stringify(chatPosts));
+		A(!chatPosts.some(p => p.room === 'u:friendx'), 'spectator text NEVER posts to the players\' room', JSON.stringify(chatPosts));
 
 		// view switch: the button flips which player HUMAN sits at the bottom
 		const hasBtn = await page.evaluate(() => !!document.querySelector('#spec-view'));
