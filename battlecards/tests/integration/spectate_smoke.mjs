@@ -36,6 +36,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const chatPosts = []; // every chat-post the client makes
 	const chatRooms = {}; // room -> [messages], so posts echo back on chat-get and render
 	let sentUnchanged = false; // did the client ever get a delta "unchanged" ack (having sent its seq)?
+	let ended = false; // when true, cardstate returns no board (the watched game ended)
 
 	const server = http.createServer((req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
@@ -43,7 +44,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			let b = ''; req.on('data', d => b += d); req.on('end', () => {
 				let body = {}; try { body = JSON.parse(b); } catch {}
 				let out = { ok: true };
-				if (body.action === 'cardstate') {
+				if (body.action === 'cardstate' && ended) out = { snapshot: null };
+				else if (body.action === 'cardstate') {
 					if (body.seq != null && body.seq === csState.seq && !csState.full) { sentUnchanged = true; out = { unchanged: true, seq: csState.seq, watchers: csState.watchers, watcherNames: csState.watcherNames }; }
 					else out = { ...csPayload, ...csState, ts: Date.now() }; // full snapshot (or the {full:true} case)
 				}
@@ -108,11 +110,14 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		// view switch: the button flips which player HUMAN sits at the bottom
 		const hasBtn = await page.evaluate(() => !!document.querySelector('#spec-view'));
 		A(hasBtn, 'the "Flip view" button is present');
-		const before = await page.evaluate(() => window.__game.HUMAN);
+		const before = await page.evaluate(() => ({ h: window.__game.HUMAN, foes: window.__game.foePanels }));
 		await page.click('#spec-view');
 		await sleep(250);
-		const after = await page.evaluate(() => window.__game.HUMAN);
-		A(before === 0 && after === 1, 'clicking Flip view switches the watched player (HUMAN 0 → 1)', `${before} → ${after}`);
+		const after = await page.evaluate(() => ({ h: window.__game.HUMAN, foes: window.__game.foePanels }));
+		A(before.h === 0 && after.h === 1, 'clicking Flip view switches the watched player (HUMAN 0 → 1)', `${before.h} → ${after.h}`);
+		// Finding 2 regression: the flip must REBUILD the foe-panel set to exclude the new HUMAN
+		A(JSON.stringify(before.foes) === '[1]' && JSON.stringify(after.foes) === '[0]',
+			'the flip rebuilds panels so the foe set excludes the watched player', `before ${JSON.stringify(before.foes)} → after ${JSON.stringify(after.foes)}`);
 		await page.click('#spec-view');
 		await sleep(250);
 		A(await page.evaluate(() => window.__game.HUMAN) === 0, 'flipping again cycles back to player 0');
@@ -120,6 +125,12 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		// spectator cap: a "full" cardstate response shows the waiting overlay (server enforces the real cap)
 		csState = { seq: 9, watchers: 10, watcherNames: [], full: true, max: 10 };
 		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#spec-full'); return !!(el && /full/i.test(el.textContent) && /10/.test(el.textContent)); }), 5000), 'a full game shows the "spectator slots full" waiting overlay');
+
+		// Finding 1 regression: when the watched game ends (no board), the spectator (who
+		// already saw a board) raises the GAME OVER overlay — the tick doesn't throw on it
+		csState = { seq: 3, watchers: 1, watcherNames: [], full: false };
+		ended = true;
+		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#over-note'); return !!(el && /ended|over/i.test(el.textContent)); }), 6000), 'when the watched game ends, the spectator sees a GAME OVER overlay');
 
 		A(errors.filter(e => !/Failed to load resource|Script error|WebGL|GL_|texture|CORS/i.test(e)).length === 0, 'no uncaught client errors while spectating', errors.slice(0, 4).join(' | '));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }

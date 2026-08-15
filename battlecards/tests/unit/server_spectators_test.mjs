@@ -63,7 +63,7 @@ ok('a SPEC_CAP constant caps concurrent spectators per game', /const SPEC_CAP = 
 ok('a gameWatchers() helper aggregates a game\'s spectators (for the cap)', /async function gameWatchers/.test(src));
 ok('cardstate turns away a NEW viewer at the cap (full:true, 403)', /!watching\.includes\(username\) && watching\.length >= SPEC_CAP/.test(csBlock) && /full: true/.test(csBlock));
 ok('cardstate does a DELTA — skips the snapshot when the spectator already has the seq', /body\.seq != null && \+body\.seq === \(cs\.seq \| 0\)/.test(csBlock) && /unchanged: true/.test(csBlock));
-const pollBlock = src.slice(src.indexOf("action === 'card-poll'"), src.indexOf("action === 'card-poll'") + 1800);
+const pollBlock = src.slice(src.indexOf("action === 'card-poll'"), src.indexOf("action === 'card-poll'") + 2200);
 ok('card-poll (duel guests) also does a DELTA, but ALWAYS keeps the over/winner tail', /body\.seq != null && \+body\.seq === \(cs\.seq \| 0\)/.test(pollBlock) && /unchanged: true/.test(pollBlock) && /\.\.\.tail/.test(pollBlock));
 ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames \}\)/.test(pubBlock));
 ok('a duel publish AGGREGATES watchers across ALL participants (host + guests)', /for \(const h of humans\) for \(const w of await listWatchers\(store, h, now\)\)/.test(src));
@@ -75,6 +75,11 @@ const lfBlock = src.slice(src.indexOf("action === 'live-friends'"), src.indexOf(
 ok('a live-friends action lists watchable friends', /action === 'live-friends'/.test(src));
 ok('live-friends is READ-ONLY — never heartbeats spec:, so browsing the hub does not count you as watching', !/setJSON\('spec:/.test(lfBlock));
 
+// audit fixes: card-poll authz + co-participant exclusion in isSpectatorOf
+ok('card-poll gates the board on participant-OR-friend-of-participant (id is not a capability)', /!mySeat && !pollHumans\.some\(h => user\.friends\.includes\(h\)\)/.test(pollBlock) && /not allowed to watch/.test(pollBlock));
+const specHelper = src.slice(src.indexOf('const isSpectatorOf'), src.indexOf('const isSpectatorOf') + 900);
+ok('isSpectatorOf excludes a co-participant via the caller\'s own curmatch (robust for the duel guest)', /curmatch:' \+ username/.test(specHelper) && /humans\.includes\(X\)\) return false/.test(specHelper));
+
 // --- read-only spectators: canPost gates posting, canChat still allows reading ---
 const postBlock = src.slice(src.indexOf("action === 'chat-post'"), src.indexOf("action === 'chat-get'"));
 const getBlock = src.slice(src.indexOf("action === 'chat-get'"), src.indexOf("action === 'chat-get'") + 300);
@@ -85,7 +90,7 @@ ok('chat-get still uses canChat so spectators can READ the players\' chat', /awa
 
 // --- spectator-only room + private emotes ---
 ok('an isSpectatorOf() helper gates spec: rooms', /const isSpectatorOf = async/.test(src));
-ok('a spectator = friend of X, not X, not a co-participant', /X === username \|\| !user\.friends\.includes\(X\)/.test(src) && /humans\.includes\(username\)\) return false/.test(src));
+ok('a spectator = friend of X, not X, not a co-participant', /X === username \|\| !user\.friends\.includes\(X\)/.test(src) && /humans\.includes\(X\)\) return false/.test(src));
 ok('BOTH canChat + canPost route spec: rooms through isSpectatorOf', (src.match(/isSpectatorOf\(room\.slice\(5\)\)/g) || []).length >= 2);
 ok('spectator emotes are NO LONGER rejected (shared among spectators)', !/room\.startsWith\('spec:'\) && body\.emote/.test(postBlock));
 

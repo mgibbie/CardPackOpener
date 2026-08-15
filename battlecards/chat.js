@@ -83,8 +83,11 @@ function render(messages) {
 	const log = el.querySelector('.mc-log');
 	let added = false;
 	for (const m of messages) {
-		const key = (m._spec ? 's:' : 'p:') + m.ts + ':' + m.from; // dedup per-room (spectator vs players)
+		// dedup per-room (spectator vs players); include the body so two distinct
+		// messages from one user on the same ms don't collide (one silently dropped)
+		const key = (m._spec ? 's:' : 'p:') + m.ts + ':' + m.from + ':' + (m.emote || m.text || '');
 		if (seen.has(key)) continue;
+		if (seen.size > 400) seen.clear(); // the lastTs/lastSpecTs cursors already prevent re-fetch, so this can't re-show
 		seen.add(key);
 		if (m._spec) lastSpecTs = Math.max(lastSpecTs, m.ts); else lastTs = Math.max(lastTs, m.ts);
 		added = true;
@@ -104,7 +107,9 @@ function render(messages) {
 	if (added && el.classList.contains('min')) el.querySelector('.mc-min')?.classList.add('flash');
 }
 
-function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+// textContent→innerHTML escapes & < > but NOT quotes; escape those too so a value
+// is safe in a double-quoted attribute context (e.g. data-user="…"), not just element text
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
 export function send(text, emote) {
 	const target = specRoom || room; // spectators post to their OWN room — the players never see it, other spectators do
@@ -145,9 +150,10 @@ function setMin(min) {
 }
 
 // mount the overlay. canPost=false gives a read-only log (players' chat). Pass
-// specRoom to run in SPECTATOR mode: emotes render locally-only (private), text
-// posts to the spectator-only room, and both the players' room (read) and the
-// spectator room (read/write) are shown, spectator messages tagged with 👁.
+// specRoom to run in SPECTATOR mode: both text AND emotes post to the
+// spectator-only room (visible to other spectators, never the players); the
+// players' room (read-only) and the spectator room (read/write) are both shown,
+// with spectator messages tagged 👁.
 export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	if (el) unmount();
 	ensureStyle();

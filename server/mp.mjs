@@ -882,13 +882,17 @@ export default async function handler(req, env) {
 	// game (so a friend who happens to be X's duel opponent can't read it either).
 	const isSpectatorOf = async (X) => {
 		if (!X || X === username || !user.friends.includes(X)) return false;
-		const cs = await store.get('cardstate:' + X);
-		if (cs && typeof cs.room === 'string' && cs.room.startsWith('m:')) {
-			const cm = await store.get('cardmatch:' + cs.room.slice(2));
-			if (cm) {
+		// Exclude a CO-PARTICIPANT: if the caller is in a live card match that X also
+		// plays in, they're a player of X's game, not a spectator. Keyed off the
+		// CALLER's own curmatch (set for every human at match start) — robust even when
+		// X is the duel guest, who never publishes an `m:` cardstate row to derive from.
+		const cur = await store.get('curmatch:' + username);
+		if (cur && cur.type === 'card' && cur.id) {
+			const cm = await store.get('cardmatch:' + cur.id);
+			if (cm && !cm.over) {
 				const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
 				const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
-				if (humans.includes(username)) return false; // a participant, not a spectator
+				if (humans.includes(X)) return false; // caller and X are in the same live match
 			}
 		}
 		return true;
@@ -1220,6 +1224,10 @@ export default async function handler(req, env) {
 		const now = Date.now();
 		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
 		const mySeat = seats.find(s => s.name === username);
+		// authz (same gate as card-match): only a PARTICIPANT or a friend of one may read
+		// the board — the match id is not a capability, so a stranger who learns it must not.
+		const pollHumans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+		if (!mySeat && !pollHumans.some(h => user.friends.includes(h))) return json({ error: 'not allowed to watch' }, 403);
 		// a non-host human polling proves its seat is here; only the host runs the
 		// engine, so if the host stopped publishing the match is over (1v1: the lone
 		// remaining human wins by abandonment; FFA: no winner — nobody can continue)

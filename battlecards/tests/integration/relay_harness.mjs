@@ -148,6 +148,29 @@ async function loadHandler() {
 			A(rhLive && rhLive.kind === 'card' && rhLive.mode === 'dungeon' && typeof rhLive.watchers === 'number',
 				'live-friends lists a friend in a watchable game (mode + live watcher count)', JSON.stringify(rhLive));
 
+			// SECURITY (audit finding 1): card-poll must NOT return the board to a stranger.
+			// The match id is not a capability — only a participant or a friend of one may read.
+			db._map.set('cardmatch:secmatch', JSON.stringify({ host: 'relayhost', guest: 'relayg1', humans: ['relayhost', 'relayg1'], seats: [{ seat: 0, name: 'relayhost' }, { seat: 1, name: 'relayg1' }] }));
+			db._map.set('cardmatchstate:secmatch', JSON.stringify({ snapshot: { secret: 'board' }, seq: 1, ts: Date.now(), watchers: 0, watcherNames: [] }));
+			const stranger = await api('register', { username: 'secstranger', password: 'harness123' });
+			const strangerPoll = await api('card-poll', { id: 'secmatch' }, stranger.token);
+			A(strangerPoll.error && /not allowed/i.test(strangerPoll.error) && strangerPoll.snapshot === undefined,
+				'card-poll rejects a stranger who knows the match id (not a participant or friend)', JSON.stringify(strangerPoll));
+
+			// SECURITY (audit finding 2): a duel opponent (co-participant) who is ALSO a
+			// friend must NOT be able to read the opponent's spectator-only chat.
+			const fa = await api('register', { username: 'duelfa', password: 'harness123' });
+			const fb = await api('register', { username: 'duelfb', password: 'harness123' });
+			const fc = await api('register', { username: 'duelfc', password: 'harness123' });
+			await api('add-friend', { username: 'duelfb' }, fa.token); // fa <-> fb friends
+			await api('add-friend', { username: 'duelfa' }, fc.token); // fc <-> fa friends
+			db._map.set('cardmatch:duelm', JSON.stringify({ host: 'duelfa', guest: 'duelfb', humans: ['duelfa', 'duelfb'] }));
+			db._map.set('curmatch:duelfb', JSON.stringify({ id: 'duelm', type: 'card' })); // fb is playing against fa
+			const oppRead = await api('chat-get', { room: 'spec:duelfa' }, fb.token);
+			A(oppRead.error && /not in this room/i.test(oppRead.error), "a duel opponent can't read the opponent's spectator chat (even as a friend)", JSON.stringify(oppRead));
+			const nonPlayerRead = await api('chat-get', { room: 'spec:duelfa' }, fc.token);
+			A(!nonPlayerRead.error, 'a non-participant friend CAN still read the spectator chat', JSON.stringify(nonPlayerRead));
+
 			// spectators can't post in the PLAYERS' room, but the runner can, and spectators still read it
 			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);
 			A(specPost.error && /read-only/i.test(specPost.error), "a spectator CANNOT post in the players' chat", JSON.stringify(specPost));

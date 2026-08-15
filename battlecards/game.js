@@ -3409,6 +3409,7 @@ animate();
 window.__game = {
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
+	get foePanels() { return [...foePanelEls.keys()]; }, // spectate smoke: the foe-panel set must exclude HUMAN after a flip
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
@@ -3558,6 +3559,10 @@ function mountSpectateViewButton() {
 		const n = state?.players?.length || playerCount;
 		spectateView = (spectateView + 1) % Math.max(1, n);
 		HUMAN = Math.min(spectateView, n - 1);
+		// the foe-panel set + 3D slot geometry are built RELATIVE to HUMAN (buildPanels
+		// skips HUMAN, angleOf is HUMAN-relative), so a flip must rebuild them — not just
+		// re-run updateHud, which would leave the old seat's panels/portraits in place
+		frameCamera(); buildPanels(); buildSlotMarkers();
 		updateHud();
 		updateSpectateViewButton();
 	});
@@ -3580,6 +3585,7 @@ function startSpectate(cardsById) {
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
+	let specNull = 0; // consecutive no-board polls → detect a game that's already over on join
 	const tick = async () => {
 		let data;
 		try { data = await MPX.call('cardstate', { username: spectateName, seq: spectateSeq }); } // send our seq so the server can skip an unchanged snapshot
@@ -3590,15 +3596,20 @@ function startSpectate(cardsById) {
 			return;
 		}
 		if ($("spec-full")) $("spec-full").remove(); // a spot opened — drop the overlay and carry on
-		if (data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); specIdle++; return; } // board is the same — just refresh the watcher badge
+		if (data && data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); specIdle++; return; } // board is the same — just refresh the watcher badge
 		if (!data || !data.snapshot) {
-			if (spectateSeq >= 0 && !$('over-note')) {
-				const el = dungeonOverlay('GAME OVER', `${spectateName}'s game has ended.`);
+			// no board: either the game we were watching ENDED (we'd seen a board: spectateSeq>=0),
+			// or we joined a game that's already gone / not started yet. For the latter, wait a few
+			// polls before declaring it over so a just-starting game isn't false-flagged.
+			specNull++;
+			if (!$('over-note') && (spectateSeq >= 0 || specNull >= 4)) {
+				const el = dungeonOverlay('GAME OVER', spectateSeq >= 0 ? `${spectateName}'s game has ended.` : `${spectateName} isn't in a live game right now.`);
 				el.id = 'over-note';
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			}
 			return;
 		}
+		specNull = 0; // a live board arrived
 		if (data.seq === spectateSeq) return; // nothing new
 		spectateSeq = data.seq;
 		specIdle = 0; // active again → poll fast
