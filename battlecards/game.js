@@ -44,6 +44,7 @@ MPX.requireLogin();
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
 import * as Rec from './replayrec.js';
+import { openProfile } from './profile.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -3495,12 +3496,22 @@ function updateWatcherBadge(n, names) {
 			+ 'padding:4px 13px;font:600 13px/1.2 inherit;backdrop-filter:blur(3px);';
 		document.body.appendChild(el);
 	}
-	let label = `👁 ${n} watching`;
+	const me = MPX.cachedState()?.username || '';
+	el.textContent = `👁 ${n} watching`;
 	if (names.length) {
-		const extra = names.length - Math.min(3, names.length);
-		label += ': ' + names.slice(0, 3).join(', ') + (extra > 0 ? ` +${extra}` : '');
+		el.append(names.length ? ': ' : '');
+		const show = names.slice(0, 3);
+		show.forEach((name, i) => {
+			const span = document.createElement('span');
+			span.className = 'mpp-link';
+			span.textContent = name === me ? 'you' : name; // show self as "you", but click opens the real profile
+			span.addEventListener('click', () => openProfile(name));
+			el.append(span);
+			if (i < show.length - 1) el.append(', ');
+		});
+		const extra = names.length - show.length;
+		if (extra > 0) el.append(` +${extra}`);
 	}
-	el.textContent = label;
 	el.title = names.join(', '); // full list on hover
 	el.style.display = n > 0 ? 'block' : 'none';
 }
@@ -3598,9 +3609,7 @@ function startSpectate(cardsById) {
 		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
-		const meName = MPX.cachedState()?.username || '';
-		const watchNames = (data.watcherNames || []).map(x => x === meName ? 'you' : x);
-		updateWatcherBadge(Math.max(1, +data.watchers || 0), watchNames); // a spectator always counts themselves (>=1)
+		updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); // spectator counts self (>=1); badge shows self as "you" + clickable profiles
 		updateSpectateViewButton();
 		renderSpectatorChoice();
 	};

@@ -7,6 +7,7 @@
 // click-through (the game is playable behind it), and the whole thing collapses
 // to a small pill you can toggle.
 import * as MP from './mpmode.js';
+import { openProfile } from './profile.js';
 
 // Hearthstone-style quick emotes; id must be in the server's EMOTES set
 export const EMOTES = {
@@ -41,7 +42,8 @@ const STYLE = `
 #mp-chat .mc-row.spec{background:rgba(30,24,52,0.72);border-color:rgba(150,120,220,0.55);}
 #mp-chat .mc-eye{margin-right:4px;opacity:.85;}
 #mp-chat .mc-row.emote{font-size:15px;}
-#mp-chat .mc-who{color:#9fd0ff;font-weight:bold;margin-right:5px;}
+#mp-chat .mc-who{color:#9fd0ff;font-weight:bold;margin-right:5px;pointer-events:auto;cursor:pointer;}
+#mp-chat .mc-who:hover{text-decoration:underline;}
 #mp-chat .mc-row.mine .mc-who{color:#ffd27a;}
 #mp-chat .mc-emoji{font-size:19px;margin-right:5px;vertical-align:-2px;}
 #mp-chat .mc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;pointer-events:auto;}
@@ -88,7 +90,7 @@ function render(messages) {
 		added = true;
 		const row = document.createElement('div');
 		row.className = 'mc-row' + (m.from === me ? ' mine' : '') + (m.emote ? ' emote' : '') + (m._spec ? ' spec' : '');
-		const who = `${m._spec ? '<span class="mc-eye" title="spectators only">👁</span>' : ''}<span class="mc-who">${esc(m.from)}</span>`;
+		const who = `${m._spec ? '<span class="mc-eye" title="spectators only">👁</span>' : ''}<span class="mc-who" data-user="${esc(m.from)}" title="View ${esc(m.from)}'s profile">${esc(m.from)}</span>`;
 		if (m.emote) {
 			const e = EMOTES[m.emote] || { icon: '💬', label: m.emote };
 			row.innerHTML = `${who}<span class="mc-emoji">${e.icon}</span>${esc(e.label)}`;
@@ -176,6 +178,8 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 		bar.appendChild(input);
 	}
 	el.querySelector('.mc-min').addEventListener('click', () => setMin(!el.classList.contains('min')));
+	// click a chat author's name → their profile popup
+	el.addEventListener('click', e => { const w = e.target.closest('.mc-who[data-user]'); if (w && w.dataset.user) openProfile(w.dataset.user); });
 	document.body.appendChild(el);
 	tick();
 	timer = setInterval(tick, poll);

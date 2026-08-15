@@ -656,6 +656,34 @@ export default async function handler(req, env) {
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 
+	// a SAFE public profile of ANY player (clicked from the watcher list / chat).
+	// Public-safe subset only — never the collection contents, decks, packs, or
+	// friends list (those stay in the owner's publicState).
+	if (action === 'pubprofile') {
+		const who = String(body.username || '').trim().toLowerCase();
+		const u = who && await store.get(who);
+		if (!u) return json({ error: 'no such player' }, 404);
+		const p = await store.get('presence:' + who);
+		const online = !!(p && Date.now() - p.lastSeen < ONLINE_MS);
+		const coll = effectiveCollection(u) || {};
+		return json({
+			profile: {
+				username: who,
+				online,
+				status: online ? (p.status || 'online') : 'offline',
+				region: online ? (p.region || '') : '',
+				created: u.created || null,
+				wins: (u.stats && u.stats.wins) || 0,
+				runs: (u.stats && u.stats.runs) || 0,
+				packsOpened: (u.stats && u.stats.packsOpened) || 0,
+				uniqueCards: Object.values(coll).filter(nn => nn > 0).length,
+				deckCount: Array.isArray(u.decks) ? u.decks.length : 0,
+				isFriend: user.friends.includes(who),
+				isYou: who === username,
+			},
+		});
+	}
+
 	// upload a packed replay tape → a short id for the shareable ?rshare= link
 	if (action === 'replay-put') {
 		const code = String(body.code || '');

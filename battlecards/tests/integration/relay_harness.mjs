@@ -148,6 +148,15 @@ async function loadHandler() {
 				'another spectator SEES both the spectator text AND emote', JSON.stringify(otherSpec.messages));
 			const runnerSpec = await api('chat-get', { room: 'spec:' + rh.name }, rh.token);
 			A(runnerSpec.error && /not in this room/i.test(runnerSpec.error), 'the PLAYER cannot read the spectator chat/emotes', JSON.stringify(runnerSpec));
+
+			// clicking a name → a SAFE public profile (no private collection/deck/friends/packs)
+			const prof = await api('pubprofile', { username: rh.name }, users[1].token);
+			A(prof.profile && prof.profile.username === rh.name && typeof prof.profile.wins === 'number' && typeof prof.profile.uniqueCards === 'number' && prof.profile.isFriend === true,
+				'a public profile returns safe stats + isFriend', JSON.stringify(prof.profile));
+			A(prof.profile && ['collection', 'decks', 'friends', 'packs', 'hash', 'salt'].every(k => prof.profile[k] === undefined),
+				'the public profile does NOT leak collection/decks/friends/packs/credentials', JSON.stringify(Object.keys(prof.profile || {})));
+			const noProf = await api('pubprofile', { username: 'nobody_xyz' }, users[1].token);
+			A(noProf.error && /no such/i.test(noProf.error), 'an unknown username → "no such player"', JSON.stringify(noProf));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

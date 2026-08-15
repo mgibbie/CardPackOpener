@@ -45,6 +45,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 				if (body.action === 'cardstate') out = { ...csPayload, ...csState, ts: Date.now() };
 				else if (body.action === 'chat-get') out = { messages: (chatRooms[body.room] || []).filter(m => m.ts > (body.since || 0)), now: Date.now() };
 				else if (body.action === 'chat-post') { chatPosts.push(body); (chatRooms[body.room] = chatRooms[body.room] || []).push({ from: 'watcher', text: body.text || '', emote: body.emote || null, ts: Date.now() }); out = { ok: true }; }
+				else if (body.action === 'pubprofile') out = { profile: { username: body.username, online: true, status: 'card:dungeon', region: 'Fight 2/8', created: 1700000000000, wins: 12, runs: 5, packsOpened: 30, uniqueCards: 88, deckCount: 3, isFriend: false, isYou: false } };
 				else if (body.action === 'state') out = { state: { username: 'me', decks: [], collection: {} } };
 				res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out));
 			});
@@ -74,6 +75,11 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		csState = { seq: 2, watchers: 2, watcherNames: ['coolfriend', 'me'] };
 		const seesNames = await waitFor(() => page.evaluate(() => { const t = document.querySelector('#watchers')?.textContent || ''; return /2 watching/.test(t) && /coolfriend/.test(t) && /you/.test(t); }), 8000);
 		A(seesNames, 'the spectator sees WHO is watching by name (self shown as "you")', await page.evaluate(() => document.querySelector('#watchers')?.textContent));
+		// (c) clicking a watcher name opens their profile popup
+		await page.click('#watchers .mpp-link'); // the first name (coolfriend)
+		const profileShown = await waitFor(() => page.evaluate(() => { const el = document.querySelector('#mp-profile'); return !!(el && /coolfriend/i.test(el.textContent) && /wins/i.test(el.textContent) && el.querySelector('.mpp-add')); }), 5000);
+		A(profileShown, 'clicking a watcher name opens their profile popup (name + stats + Add friend)');
+		await page.evaluate(() => document.querySelector('#mp-profile')?.remove()); // close so it doesn't block later clicks
 
 		// spectator chat: interactive (input + emote buttons), but emotes are PRIVATE and text goes to the spec room
 		const chat = await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat')), 8000);
@@ -90,6 +96,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		await sleep(300);
 		A(chatPosts.some(p => p.room === 'spec:friendx' && p.text === 'hi other watchers'), 'spectator text posts to the spectator-only room', JSON.stringify(chatPosts));
 		A(!chatPosts.some(p => p.room === 'u:friendx'), 'nothing the spectator sends goes to the players\' room', JSON.stringify(chatPosts));
+		// chat author names are clickable → profile (the "players' name" path)
+		A(await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat .mc-who[data-user]')), 4000), 'chat author names are clickable (data-user → profile)');
 
 		// view switch: the button flips which player HUMAN sits at the bottom
 		const hasBtn = await page.evaluate(() => !!document.querySelector('#spec-view'));
