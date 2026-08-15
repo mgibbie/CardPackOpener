@@ -545,11 +545,17 @@ async function addFriend(raw) {
 // Overworld heartbeat / the card client's publish-cardstate):
 //   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
-const CARD_MODE_LABEL = { dungeon: 'a dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run' };
+const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run' };
 function friendActivity(f) {
 	const st = f.status || '';
 	if (st.startsWith('battling:')) return { live: true, kind: 'pokemon', matchId: st.slice('battling:'.length), label: 'in a Pokémon battle' };
-	if (st.startsWith('card:')) { const m = st.slice('card:'.length); return { live: true, kind: 'card', label: 'in ' + (CARD_MODE_LABEL[m] || 'a card game') }; }
+	if (st.startsWith('card:')) {
+		const m = st.slice('card:'.length);
+		const base = 'in ' + (CARD_MODE_LABEL[m] || 'a card game');
+		// the publisher's region carries run progress ("Fight 3/8", "5W / 2L", boss · Lv N); skip the generic ones
+		const detail = f.region && !/^card (battle|duel)$/i.test(f.region) ? ' · ' + f.region : '';
+		return { live: true, kind: 'card', label: base + detail };
+	}
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }

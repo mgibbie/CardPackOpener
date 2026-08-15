@@ -156,6 +156,16 @@ async function loadHandler() {
 			const conv0 = await waitFor(async () => same(await allSnaps()), 12000);
 			A(conv0, 'clients converge on the host\'s authoritative board (initial)', JSON.stringify(await allSnaps()));
 
+			// ---- 3b. spectation: each guest also broadcasts a card:pvp board ----
+			// so a friend of the GUEST (not just the host) can Watch the live duel.
+			const stored = key => { const v = db._map.get(key); try { return v ? JSON.parse(v) : null; } catch { return null; } };
+			const guests = users.filter(u => u.seat !== 0);
+			const specOk = await waitFor(() => guests.every(g => {
+				const p = stored('presence:' + g.name), c = stored('cardstate:' + g.name);
+				return p && p.status === 'card:pvp' && c && c.mode === 'pvp';
+			}), 8000);
+			A(specOk, 'each duel guest broadcasts a spectatable card:pvp board (a friend of the guest can Watch)', JSON.stringify(guests.map(g => stored('presence:' + g.name)?.status)));
+
 			// dismiss the opening mulligan on a client if it's showing
 			const keepHand = p => p.evaluate(() => { const m = document.querySelector('#scry-modal'); if (m && getComputedStyle(m).display !== 'none' && /mulligan|tap cards to swap/i.test(m.textContent)) { const b = m.querySelector('.mull-actions button'); if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; } } return false; });
 

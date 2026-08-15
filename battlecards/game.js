@@ -3481,10 +3481,19 @@ let publishSeq = 0;
 function startPublishLoop() {
 	const uname = MPX.cachedState()?.username;
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); // hear spectators
-	const mode = dungeonRunMode ? 'dungeon' : 'battle';
-	const label = () => dungeonBossId
-		? `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`
-		: 'Card Battle';
+	// the mode drives the friends-list "in a … run" label + the Watch button
+	const mode = duel.on ? 'pvp'
+		: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
+			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : 'battle';
+	const label = () => {
+		if (duel.on) return 'Card Duel';
+		if (dungeonBossId) return `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
+		if (heistRunMode) { const r = loadHeist(); return r ? `Fight ${r.level}/8` : 'Heist'; }
+		if (tombsRunMode) { const r = loadTombs(); return r ? `Fight ${r.level}/8` : 'Tombs'; }
+		if (duelsRunMode) { const r = loadDuels(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Duels'; }
+		if (arenaRunMode) { const r = loadArena(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Arena'; }
+		return 'Card Battle';
+	};
 	const tick = async () => {
 		try {
 			await MPX.call('publish-cardstate', {
@@ -3824,6 +3833,9 @@ function startDuelGuest(cardsById) {
 	log(ffa ? `Live free-for-all: ${duel.size} players, last hero standing wins. Waiting for the board…`
 		: `Live duel: you vs ${cm.host}. Waiting for the board…`);
 	Chat.mount({ room: 'm:' + duel.id, canPost: true });
+	// also broadcast the guest's view to cardstate so a friend of the GUEST (not just
+	// the host) can spectate the duel — the host already mirrors via card-publish
+	if (MP_ON && !publishStarted) { publishStarted = true; startPublishLoop(); }
 	let panelsFor = 0;
 	const t0 = performance.now();
 	let lastPollNote = '';
