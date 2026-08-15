@@ -10,3 +10,6 @@ tools/data/hs_cards_full.json
 battlecards/art/
 overworld/data/
 server/__mp_harness_tmp.mjs
+
+# D1 database dumps — contain password hashes + user data; never commit
+backups/
