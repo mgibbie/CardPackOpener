@@ -6,6 +6,7 @@ import { keywordsFor, richHtml } from './keywords.js';
 import * as Col from './collection.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as MPX from './mpmode.js';
+import { encodeDeck, decodeDeck } from './codec.js';
 
 const MP_ON = MPX.mpMode();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
@@ -376,6 +377,34 @@ $('delete-deck').onclick = async () => {
 	$('deck-name').value = ''; $('class-select').value = firstClass;
 	renderSlots(); applyFilters(); updateCounts(); showList();
 	flash('Deck deleted.');
+};
+
+// ---------- deck codes (share / import) ----------
+// Copy the deck being edited as a short shareable code; paste one to load it in.
+$('export-code').onclick = async () => {
+	if (!myClass() || !deck.length) { flash('Build a deck first, then copy its code.'); return; }
+	const code = await encodeDeck({ classId: myClass(), cards: deck, commander: curCommander, companion: curCompanion });
+	try { await navigator.clipboard.writeText(code); flash('Deck code copied — share it!'); }
+	catch { prompt('Copy this deck code:', code); } // clipboard blocked — show it to copy by hand
+};
+$('import-code').onclick = async () => {
+	const raw = prompt('Paste a deck code to load it:');
+	if (!raw) return;
+	const d = await decodeDeck(raw.trim());
+	if (!d || !d.classId) { flash("That doesn't look like a valid deck code."); return; }
+	const knownClass = [...$('class-select').options].some(o => o.value === d.classId);
+	if (!knownClass) { flash(`Unknown class in that code (${d.classId}).`); return; }
+	// load it as a new, unsaved deck to review + Save (ownership is checked on save)
+	editingId = null;
+	curClass = d.classId;
+	deck = d.cards.filter(id => cardsById[id]); // drop any ids this build doesn't know
+	curCommander = cardsById[d.commander] ? d.commander : null;
+	curCompanion = cardsById[d.companion] ? d.companion : null;
+	$('deck-name').value = 'Imported deck';
+	$('class-select').value = curClass;
+	renderSlots(); applyFilters(); updateCounts(); showEdit();
+	const dropped = d.cards.length - deck.length;
+	flash(dropped ? `Loaded — ${dropped} unknown card${dropped === 1 ? '' : 's'} skipped. Review & Save.` : 'Deck loaded — review & Save.');
 };
 
 // ---------- tabs, filters, pager, mobile toggle ----------
