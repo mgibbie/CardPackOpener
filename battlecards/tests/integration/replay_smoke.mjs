@@ -110,6 +110,9 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		await rec.goto(`http://localhost:${PORT}/battlecards/index.html?players=2`, { waitUntil: 'domcontentloaded' });
 		const recording = await waitFor(() => rec.evaluate(() => !!(window.__game && window.__game.state && window.__game.recording)), 30000);
 		A(recording, 'a live game boots and the recorder starts capturing frames (window.__game.recording)');
+		// the Watch/Copy buttons render into an overlay (same addReplayButtons used by post-game AND every run overlay)
+		const labels = await rec.evaluate(() => window.__game._replayButtonLabels());
+		A(Array.isArray(labels) && labels.some(l => /Watch replay/i.test(l)) && labels.some(l => /Copy replay link/i.test(l)), 'the Watch + Copy-link buttons render into a result overlay', JSON.stringify(labels));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { if (browser) await browser.close(); server.close(); }
 	console.log(`\n${pass} passed, ${fail} failed`);

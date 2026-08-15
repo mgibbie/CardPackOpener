@@ -2394,19 +2394,19 @@ function nextEvent() {
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
-				if (run?.active) setTimeout(() => won ? dungeonVictory(run) : dungeonDefeat(run), 1200);
+				if (run?.active) setTimeout(() => { (won ? dungeonVictory : dungeonDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (heistRunMode) {
 				const run = loadHeist();
-				if (run?.active) setTimeout(() => won ? heistVictory(run) : heistDefeat(run), 1200);
+				if (run?.active) setTimeout(() => { (won ? heistVictory : heistDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (tombsRunMode) {
 				const run = loadTombs();
-				if (run?.active) setTimeout(() => won ? tombsVictory(run) : tombsDefeat(run), 1200);
+				if (run?.active) setTimeout(() => { (won ? tombsVictory : tombsDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (duelsRunMode) {
 				const run = loadDuels();
-				if (run?.active) setTimeout(() => won ? duelsVictory(run) : duelsDefeat(run), 1200);
+				if (run?.active) setTimeout(() => { (won ? duelsVictory : duelsDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (arenaRunMode) {
 				const run = loadArena();
-				if (run?.active) setTimeout(() => won ? arenaVictory(run) : arenaDefeat(run), 1200);
+				if (run?.active) setTimeout(() => { (won ? arenaVictory : arenaDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else {
 				showPostGameSummary(ev.winner); // Quick Match / AI: result + stats + next steps
 			}
@@ -3405,6 +3405,7 @@ animate();
 window.__game = {
 	get state() { return state; },
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
+	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
 	get duel() { return duel; },           // seat/size/aiSeats — the relay-fuzz harness reads these
 	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
@@ -5725,12 +5726,16 @@ async function copyText(text, okMsg) {
 // just saved by finalizeReplay; Watch opens it locally, Copy link uploads it for a
 // shareable ?rshare= URL (falls back to copying the paste-able code when logged out).
 function addReplayButtons(el) {
-	if (replayMode || spectateMode) return; // never offer a replay-of-a-replay
+	if (!el || replayMode || spectateMode) return; // never offer a replay-of-a-replay
 	const idOf = () => lastReplayPromise || Promise.resolve(lastReplayId);
-	el.appendChild(overlayButton('▶ Watch replay', async () => {
-		const id = await idOf();
-		if (id) location.href = 'index.html?replay=' + encodeURIComponent(id);
-		else banner('No replay was saved for this game.');
+	el.appendChild(overlayButton('▶ Watch replay', () => {
+		// open in a NEW TAB (sync window.open keeps the click gesture) so watching a
+		// replay never abandons a run's loot/progress screen; navigate it once the id resolves
+		const w = window.open('', '_blank');
+		idOf().then(id => {
+			if (id) { const url = 'index.html?replay=' + encodeURIComponent(id); if (w) w.location = url; else location.href = url; }
+			else { if (w) w.close(); banner('No replay was saved for this game.'); }
+		});
 	}));
 	el.appendChild(overlayButton('🔗 Copy replay link', async () => {
 		const id = await idOf();
