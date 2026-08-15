@@ -76,3 +76,23 @@ export async function decodeDeck(code) {
 		return null;
 	} catch { return null; }
 }
+
+// Generic gzip pack for larger JSON blobs (replay tapes, and later server-shared
+// links): string → gzip when CompressionStream is available → base64url, with a
+// raw fallback. 'G1.'/'R1.' prefixes mirror the deck codecs. unpackString returns
+// null on anything malformed rather than throwing.
+export async function packString(str) {
+	const bytes = new TextEncoder().encode(str);
+	if (typeof CompressionStream !== 'undefined') {
+		try { return 'G1.' + b64urlFromBytes(await stream(bytes, 'gzip')); } catch { /* fall through */ }
+	}
+	return 'R1.' + b64urlFromBytes(bytes);
+}
+export async function unpackString(code) {
+	try {
+		code = (code || '').trim();
+		if (code.startsWith('G1.')) return new TextDecoder().decode(await stream(bytesFromB64url(code.slice(3)), 'gunzip'));
+		if (code.startsWith('R1.')) return new TextDecoder().decode(bytesFromB64url(code.slice(3)));
+		return null;
+	} catch { return null; }
+}

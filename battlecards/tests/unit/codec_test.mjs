@@ -1,7 +1,7 @@
 // codec_test.mjs — deck-code encode/decode round-trip (battlecards/codec.js).
 // Node 18+ has CompressionStream/TextEncoder/btoa, so both the gzip and raw paths
 // run here exactly as in the browser.
-import { encodeDeck, decodeDeck } from '../../codec.js';
+import { encodeDeck, decodeDeck, packString, unpackString } from '../../codec.js';
 
 let pass = 0, fail = 0;
 const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:', l, extra ?? ''); } };
@@ -43,6 +43,15 @@ ok('a truncated code decodes to null (or is caught)', (await decodeDeck('MPCKG1.
 // --- commander + companion both present ---
 const both = await decodeDeck(await encodeDeck({ classId: 'hunter', cards: ['bearshark', 'bearshark'], commander: 'cmd_x', companion: 'cmp_y' }));
 ok('both loadout slots round-trip', both && both.commander === 'cmd_x' && both.companion === 'cmp_y');
+
+// --- generic packString/unpackString (used for replay tapes) ---
+const blob = JSON.stringify({ frames: Array.from({ length: 40 }, (_, i) => ({ turn: i, board: ['x', 'y', 'z'], life: 30 - i })) });
+const packed = await packString(blob);
+ok('packString gzips a repetitive blob (G1. prefix)', packed.startsWith('G1.'), packed.slice(0, 6));
+ok('packString shrinks a repetitive blob well', packed.length < blob.length, `${packed.length} vs ${blob.length}`);
+ok('unpackString round-trips the exact string', (await unpackString(packed)) === blob);
+ok('unpackString on garbage returns null', (await unpackString('nope')) === null);
+ok('unpackString on empty returns null', (await unpackString('')) === null);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

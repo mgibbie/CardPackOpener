@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Replays — Battlecards</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%AC</text></svg>">
+	<meta name="description" content="Rewatch your recent Battlecards games frame by frame, from either side.">
+	<style>
+	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --red:#ff8a8a; --shadow:0 10px 30px rgba(0,0,0,.35); }
+	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --red:#c0392b; --shadow:0 8px 24px rgba(40,50,90,.12); }
+	@media (prefers-color-scheme: light) { :root:not([data-theme]) { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --red:#c0392b; --shadow:0 8px 24px rgba(40,50,90,.12); } }
+	* { margin:0; padding:0; box-sizing:border-box; }
+	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
+	a { color:inherit; text-decoration:none; }
+	.wrap { max-width:880px; margin:0 auto; padding:18px 20px 64px; }
+	.back { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; font-size:.92rem; padding:6px 10px; border-radius:8px; }
+	.back:hover { color:var(--text); background:var(--panel); }
+	.hero { text-align:center; padding:24px 12px 6px; }
+	.hero .glyph { font-size:2.6rem; }
+	.hero h1 { font-size:clamp(2rem,6vw,3rem); font-weight:900; letter-spacing:-1px; margin-top:4px; background:linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+	.hero .tag { margin-top:8px; color:var(--muted); }
+	.tools { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:14px 0 22px; }
+	.tools button { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:8px 14px; font:inherit; font-weight:700; cursor:pointer; }
+	.tools button:hover { border-color:var(--violet); background:var(--panel-2); }
+	#list { display:flex; flex-direction:column; gap:11px; }
+	.rep { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:13px; background:var(--panel); border:1px solid var(--border); box-shadow:var(--shadow); }
+	.rep .rp-icon { font-size:1.7rem; width:44px; height:44px; display:grid; place-items:center; border-radius:11px; background:var(--panel-2); border:1px solid var(--border); flex-shrink:0; }
+	.rep .rp-main { flex:1; min-width:0; }
+	.rep .rp-title { font-weight:700; font-size:1.03rem; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+	.rep .rp-sub { color:var(--muted); font-size:.83rem; margin-top:3px; }
+	.badge { font-size:.64rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; border-radius:999px; padding:3px 9px; border:1px solid; }
+	.badge.win { color:var(--green); border-color:color-mix(in srgb, var(--green) 55%, var(--border)); }
+	.badge.loss { color:var(--red); border-color:color-mix(in srgb, var(--red) 55%, var(--border)); }
+	.badge.draw { color:var(--muted); border-color:var(--border); }
+	.rep .rp-actions { display:flex; gap:7px; flex-shrink:0; }
+	.rep .rp-actions button { background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font:inherit; font-weight:700; font-size:.85rem; cursor:pointer; }
+	.rep .rp-watch { color:#0c1122 !important; background:linear-gradient(180deg, var(--gold), #d9a94a) !important; border-color:transparent !important; }
+	.rep .rp-actions button:hover { filter:brightness(1.07); border-color:var(--violet); }
+	.empty { text-align:center; color:var(--muted); padding:40px 20px; line-height:1.6; }
+	.empty a { color:var(--blue); font-weight:700; }
+	#status { text-align:center; color:var(--gold); min-height:20px; margin-top:14px; font-size:.9rem; }
+	footer { margin-top:36px; text-align:center; color:var(--muted); font-size:.84rem; }
+	@media (max-width:560px) { .rep { flex-wrap:wrap; } .rep .rp-actions { width:100%; } .rep .rp-actions button { flex:1; } }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<a class="back" href="start.html">← Battlecards</a>
+		<header class="hero">
+			<div class="glyph">🎬</div>
+			<h1>Replays</h1>
+			<p class="tag">Every game you finish is saved here. Rewatch it frame by frame, from either side.</p>
+		</header>
+		<div class="tools">
+			<button id="import-btn" title="Paste a replay code someone shared">📥 Import a replay code</button>
+			<button id="clear-btn" title="Delete all saved replays">🗑 Clear all</button>
+		</div>
+		<div id="list"></div>
+		<div id="status"></div>
+		<footer>Replays are stored on this device only — up to the 10 most recent games.</footer>
+	</div>
+	<script type="module" src="./replays.js"></script>
+	<script>
+	(function () { const KEY='mp-theme', s=localStorage.getItem(KEY); if (s) document.documentElement.setAttribute('data-theme', s); })();
+	</script>
+</body>
+</html>

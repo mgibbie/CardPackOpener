@@ -43,6 +43,7 @@ function modifierLinesHtml(card) {
 MPX.requireLogin();
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
+import * as Rec from './replayrec.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -75,6 +76,11 @@ if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunM
 // read-only from the snapshots they publish — no input, no AI.
 const spectateName = MP_ON ? new URLSearchParams(location.search).get('spectate') : null;
 const spectateMode = !!spectateName;
+
+// ?replay=<id>: rewatch a recorded game from the local tape (replayrec.js) —
+// read-only, no AI, no network. Reuses the spectate input-gating below.
+const replayId = new URLSearchParams(location.search).get('replay');
+const replayMode = !!replayId;
 
 // ?cardpvp=<matchId> (MP only): a live host-authoritative card duel. The host
 // runs the real engine as player 0; the guest is player 1, renders the host's
@@ -1247,7 +1253,7 @@ function updateManaHud(me) {
 
 function updateHud() {
 	if (!state) return;
-	if (spectateMode) { updateHudSpectate(); return; }
+	if (spectateMode || replayMode) { updateHudSpectate(); return; }
 	// the pinned inspect closes itself once its card leaves play entirely
 	if (inspectUid != null && typeof inspectUid !== 'string' && !cardOf(inspectUid)) hideInspect(); // string uids = generated-card previews, not board cards
 	const me = state.players[HUMAN];
@@ -1953,7 +1959,7 @@ function openSacModal() {
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; }
+	if (!ev) { queueBusy = false; updateHud(); maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; }
 	queueBusy = true;
 	let delay = 120;
 	switch (ev.type) {
@@ -2376,6 +2382,7 @@ function nextEvent() {
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
 			log(`+${reward} gold (${Col.getGold()} total)`);
+			finalizeReplay(ev.winner); // save the recorded tape for rewatching
 			if (duel.on) {
 				publishDuel(); // push the final board (over + winner) to the guest/spectators
 				const el = dungeonOverlay(won ? 'YOU WIN!' : ev.winner == null ? 'DRAW' : 'DEFEAT',
@@ -2811,7 +2818,7 @@ addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
-	if (spectateMode || duel.busy) return;
+	if (spectateMode || replayMode || duel.busy) return;
 	if (ev.button !== 0 || !state || state.over) return;
 	const uid = pick(ev);
 	const card = cardOf(uid);
@@ -3142,7 +3149,7 @@ function tryCommitTargetAt(ev) {
 
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
-	if (spectateMode || duel.busy) return;
+	if (spectateMode || replayMode || duel.busy) return;
 	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
 	if (heroPress) {
 		const power = heroPress.power;
@@ -3396,6 +3403,7 @@ animate();
 // headless test hook
 window.__game = {
 	get state() { return state; },
+	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
 	get duel() { return duel; },           // seat/size/aiSeats — the relay-fuzz harness reads these
 	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
@@ -4146,6 +4154,8 @@ async function start() {
 	const data = await (await fetch('cards.json')).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
+	Rec.cancel(); // a new game (or restart) discards any half-recorded tape
+	if (replayMode) { await startReplay(cardsById); return; }
 	if (spectateMode) { startSpectate(cardsById); return; }
 	if (!classRegistry.length) {
 		try {
@@ -5670,6 +5680,145 @@ function arenaRunComplete(run) {
 	mpRunReward(el, 'win');
 	clearArena();
 	el.appendChild(overlayButton('New Arena Run (+1600 gold)', () => location.reload()));
+}
+
+// ================= replays: record live games, rewatch recorded tapes =========
+// Recording piggybacks on the settled-render tail (nextEvent's empty-queue branch)
+// and the gameOver event; playback reuses the spectate ingest pattern
+// (state = fromSnapshot; updateHud; the always-running animate() loop redraws the
+// 3D board) with all input gated off by replayMode.
+let replayCards = null, replayTape = null, replayIdx = 0, replayView = 0;
+let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = null;
+
+function deriveReplayMeta() {
+	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
+		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
+	const heroes = (state && state.players || []).map((p, i) => ({
+		classId: (state.classPicks && state.classPicks[i] && state.classPicks[i].id) || p.heroClass || null,
+		name: nameOf(i),
+	}));
+	return { mode, players: (state && state.players || []).length, heroes };
+}
+// called from the settled-render tail — captures one frame per stable board state
+function maybeRecordFrame() {
+	if (replayMode || spectateMode || !state || !Array.isArray(state.players)) return;
+	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
+	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim());
+}
+function finalizeReplay(winner) {
+	if (replayMode || spectateMode || !Rec.isRecording()) return;
+	maybeRecordFrame(); // capture the final board
+	const result = winner == null ? 'draw' : winner === HUMAN ? 'win' : 'loss';
+	Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; }).catch(() => {});
+}
+
+async function startReplay(cardsById) {
+	replayCards = cardsById;
+	replayTape = await Rec.getReplay(replayId);
+	if (!replayTape || !Array.isArray(replayTape.frames) || !replayTape.frames.length) {
+		const el = dungeonOverlay('REPLAY NOT FOUND', 'That replay is no longer saved on this device.');
+		el.appendChild(overlayButton('Back to replays', () => { location.href = 'replays.html'; }));
+		return;
+	}
+	replayView = 0; replayPanelsFor = 0;
+	injectReplayStyles();
+	renderReplayFrame(0);
+	buildReplayBar();
+}
+function renderReplayFrame(i) {
+	if (!replayTape) return;
+	const frames = replayTape.frames;
+	replayIdx = Math.max(0, Math.min(frames.length - 1, i));
+	const f = frames[replayIdx];
+	HUMAN = Math.min(replayView, ((f.snap.players && f.snap.players.length) || 1) - 1);
+	state = E.fromSnapshot(f.snap, replayCards);
+	E.ensureUidsAbove(E.maxSnapshotUid(f.snap)); // process-global uid safety
+	if (state.players.length !== replayPanelsFor) {
+		playerCount = state.players.length;
+		frameCamera(); buildPanels(); buildSlotMarkers();
+		replayPanelsFor = state.players.length;
+	}
+	updateHud();
+	updateReplayBar();
+}
+function replayGoto(i) { replayPause(); renderReplayFrame(i); }
+function replayStep(d) { replayPause(); renderReplayFrame(replayIdx + d); }
+function replayPause() { if (replayTimer) { clearInterval(replayTimer); replayTimer = null; } updateReplayBar(); }
+function replayPlay() {
+	if (replayTimer || !replayTape) return;
+	if (replayIdx >= replayTape.frames.length - 1) renderReplayFrame(0); // restart from the top if at the end
+	replayTimer = setInterval(() => {
+		if (replayIdx >= replayTape.frames.length - 1) { replayPause(); return; }
+		renderReplayFrame(replayIdx + 1);
+	}, Math.max(160, Math.round(900 / replaySpeed)));
+	updateReplayBar();
+}
+function replayToggle() { replayTimer ? replayPause() : replayPlay(); }
+function replayFlip() {
+	const n = (replayTape.frames[replayIdx].snap.players && replayTape.frames[replayIdx].snap.players.length) || 2;
+	replayView = (replayView + 1) % n;
+	renderReplayFrame(replayIdx);
+}
+function replaySetSpeed(s) { replaySpeed = s; if (replayTimer) { replayPause(); replayPlay(); } updateReplayBar(); }
+
+function injectReplayStyles() {
+	if ($('replay-style')) return;
+	const st = document.createElement('style');
+	st.id = 'replay-style';
+	st.textContent = `
+#replay-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(10,7,20,.92);border-top:1px solid #3a2f56;padding:8px 12px;color:#e8e2f4;backdrop-filter:blur(4px)}
+#rb-cap{font-size:13px;color:#cdbcff;text-align:center;min-height:16px;margin-bottom:6px;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rb-controls{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+#rb-controls button{background:#2a2340;color:#cdbcff;border:1px solid #40356a;border-radius:7px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
+#rb-controls button:hover{background:#372c56;color:#fff}
+#rb-scrub{flex:1;min-width:140px;max-width:420px;accent-color:#6b4fd4}
+#rb-count{font-size:12px;color:#9a8fbf;min-width:64px;text-align:center}`;
+	document.head.appendChild(st);
+}
+function buildReplayBar() {
+	if ($('replay-bar')) return;
+	const bar = document.createElement('div');
+	bar.id = 'replay-bar';
+	bar.innerHTML = '<div id="rb-cap"></div><div id="rb-controls">'
+		+ '<button id="rb-first" title="First frame">⏮</button>'
+		+ '<button id="rb-prev" title="Previous">◀</button>'
+		+ '<button id="rb-play" title="Play / pause (space)">▶</button>'
+		+ '<button id="rb-next" title="Next">▶▶</button>'
+		+ '<button id="rb-last" title="Last frame">⏭</button>'
+		+ `<input id="rb-scrub" type="range" min="0" max="${replayTape.frames.length - 1}" value="0">`
+		+ '<span id="rb-count"></span>'
+		+ '<button id="rb-speed" title="Playback speed">1×</button>'
+		+ '<button id="rb-flip" title="Flip which side you watch from">⇅ View</button>'
+		+ '<button id="rb-exit" title="Back to replays">✕</button></div>';
+	document.body.appendChild(bar);
+	$('rb-first').onclick = () => replayGoto(0);
+	$('rb-prev').onclick = () => replayStep(-1);
+	$('rb-next').onclick = () => replayStep(1);
+	$('rb-last').onclick = () => replayGoto(replayTape.frames.length - 1);
+	$('rb-play').onclick = () => replayToggle();
+	$('rb-scrub').oninput = e => replayGoto(+e.target.value);
+	$('rb-flip').onclick = () => replayFlip();
+	$('rb-exit').onclick = () => { location.href = 'replays.html'; };
+	const speeds = [1, 2, 4, 0.5];
+	$('rb-speed').onclick = () => replaySetSpeed(speeds[(speeds.indexOf(replaySpeed) + 1) % speeds.length]);
+	addEventListener('keydown', e => {
+		if (!replayMode) return;
+		if (e.key === 'ArrowRight') { e.preventDefault(); replayStep(1); }
+		else if (e.key === 'ArrowLeft') { e.preventDefault(); replayStep(-1); }
+		else if (e.key === ' ') { e.preventDefault(); replayToggle(); }
+	});
+	updateReplayBar();
+}
+function updateReplayBar() {
+	if (!$('replay-bar') || !replayTape) return;
+	const f = replayTape.frames[replayIdx];
+	$('rb-cap').textContent = f.cap || `Turn ${f.turn || '?'}`;
+	$('rb-count').textContent = `${replayIdx + 1} / ${replayTape.frames.length}`;
+	$('rb-play').textContent = replayTimer ? '❚❚' : '▶';
+	$('rb-speed').textContent = replaySpeed + '×';
+	$('rb-scrub').value = String(replayIdx);
+	// expose for the headless replay smoke test
+	window.__replay = { idx: replayIdx, total: replayTape.frames.length, view: replayView, playing: !!replayTimer };
 }
 
 start();
