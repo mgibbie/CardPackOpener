@@ -836,7 +836,15 @@ export default async function handler(req, env) {
 		const watching = await gameWatchers(store, cs, who, now);
 		if (!watching.includes(username) && watching.length >= SPEC_CAP) return json({ snapshot: null, full: true, max: SPEC_CAP }, 403);
 		await store.setJSON('spec:' + who + ':' + username, now); // heartbeat: I'm watching `who`
-		return json(cs); // cs.watchers reflects the count as of the runner's last publish
+		// live watcher count is free here (already scanned for the cap), fresher than the stored one
+		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
+		// DELTA: if the spectator already has this seq, skip re-sending the (up-to-2MB)
+		// snapshot — just ack + the fresh watcher list. Spectators poll every 1s but the
+		// board changes far less often, so this eliminates most of the bandwidth.
+		if (body.seq != null && +body.seq === (cs.seq | 0)) {
+			return json({ unchanged: true, seq: cs.seq, room: cs.room, mode: cs.mode, label: cs.label, watchers, watcherNames });
+		}
+		return json({ ...cs, watchers, watcherNames });
 	}
 
 	// ---------- in-battle chat + emotes ----------

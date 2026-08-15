@@ -35,6 +35,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	let csState = { seq: 1, watchers: 0, watcherNames: [] };
 	const chatPosts = []; // every chat-post the client makes
 	const chatRooms = {}; // room -> [messages], so posts echo back on chat-get and render
+	let sentUnchanged = false; // did the client ever get a delta "unchanged" ack (having sent its seq)?
 
 	const server = http.createServer((req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
@@ -42,7 +43,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			let b = ''; req.on('data', d => b += d); req.on('end', () => {
 				let body = {}; try { body = JSON.parse(b); } catch {}
 				let out = { ok: true };
-				if (body.action === 'cardstate') out = { ...csPayload, ...csState, ts: Date.now() };
+				if (body.action === 'cardstate') {
+					if (body.seq != null && body.seq === csState.seq && !csState.full) { sentUnchanged = true; out = { unchanged: true, seq: csState.seq, watchers: csState.watchers, watcherNames: csState.watcherNames }; }
+					else out = { ...csPayload, ...csState, ts: Date.now() }; // full snapshot (or the {full:true} case)
+				}
 				else if (body.action === 'chat-get') out = { messages: (chatRooms[body.room] || []).filter(m => m.ts > (body.since || 0)), now: Date.now() };
 				else if (body.action === 'chat-post') { chatPosts.push(body); (chatRooms[body.room] = chatRooms[body.room] || []).push({ from: 'watcher', text: body.text || '', emote: body.emote || null, ts: Date.now() }); out = { ok: true }; }
 				else if (body.action === 'pubprofile') out = { profile: { username: body.username, online: true, status: 'card:dungeon', region: 'Fight 2/8', created: 1700000000000, wins: 12, runs: 5, packsOpened: 30, uniqueCards: 88, deckCount: 3, isFriend: false, isYou: false } };
@@ -80,6 +84,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const profileShown = await waitFor(() => page.evaluate(() => { const el = document.querySelector('#mp-profile'); return !!(el && /coolfriend/i.test(el.textContent) && /wins/i.test(el.textContent) && el.querySelector('.mpp-add')); }), 5000);
 		A(profileShown, 'clicking a watcher name opens their profile popup (name + stats + Add friend)');
 		await page.evaluate(() => document.querySelector('#mp-profile')?.remove()); // close so it doesn't block later clicks
+		// (d) delta: once it has a seq, the client sends it and the server skips the unchanged snapshot
+		A(await waitFor(() => sentUnchanged, 5000), 'the spectator polls with its seq and gets an "unchanged" delta ack (no snapshot re-sent)');
 
 		// spectator chat: interactive (input + emote buttons), but emotes are PRIVATE and text goes to the spec room
 		const chat = await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat')), 8000);

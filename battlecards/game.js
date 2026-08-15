@@ -3581,13 +3581,14 @@ function startSpectate(cardsById) {
 	log(`Watching ${spectateName}'s game…`);
 	const tick = async () => {
 		let data;
-		try { data = await MPX.call('cardstate', { username: spectateName }); }
+		try { data = await MPX.call('cardstate', { username: spectateName, seq: spectateSeq }); } // send our seq so the server can skip an unchanged snapshot
 		catch (e) { return; }
 		if (data && data.full) { // at the spectator cap — wait for a spot (a stale watcher frees one)
 			if (!$("spec-full")) { const el = dungeonOverlay("SPECTATOR SLOTS FULL", spectateName + "’s game already has the maximum " + (data.max || 10) + " spectators. Waiting for a spot…"); el.id = "spec-full"; el.appendChild(overlayButton("Back to your world", () => { location.href = "/overworld/?mp=1"; })); }
 			return;
 		}
 		if ($("spec-full")) $("spec-full").remove(); // a spot opened — drop the overlay and carry on
+		if (data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); return; } // board is the same — just refresh the watcher badge
 		if (!data || !data.snapshot) {
 			if (spectateSeq >= 0 && !$('over-note')) {
 				const el = dungeonOverlay('GAME OVER', `${spectateName}'s game has ended.`);

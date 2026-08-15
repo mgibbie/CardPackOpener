@@ -135,6 +135,13 @@ async function loadHandler() {
 			A(specView.watchers === 3 && (specView.watcherNames || []).includes(users[2].name),
 				'a spectator also sees the watcher list (the others by name)', JSON.stringify({ watchers: specView.watchers, names: specView.watcherNames }));
 
+			// DELTA: a spectator that already has the current seq (2) gets a tiny "unchanged"
+			// ack — the big snapshot is NOT re-sent; a stale seq still gets the full board
+			const sameSeq = await api('cardstate', { username: rh.name, seq: 2 }, users[1].token);
+			A(sameSeq.unchanged === true && sameSeq.snapshot === undefined, 'same seq → unchanged ack, snapshot NOT re-sent', JSON.stringify({ unchanged: sameSeq.unchanged, hasSnap: sameSeq.snapshot !== undefined }));
+			const staleSeq = await api('cardstate', { username: rh.name, seq: 1 }, users[1].token);
+			A(!staleSeq.unchanged && 'snapshot' in staleSeq, 'a stale seq → the full snapshot is sent', JSON.stringify({ unchanged: staleSeq.unchanged, hasSnap: 'snapshot' in staleSeq }));
+
 			// spectators can't post in the PLAYERS' room, but the runner can, and spectators still read it
 			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);
 			A(specPost.error && /read-only/i.test(specPost.error), "a spectator CANNOT post in the players' chat", JSON.stringify(specPost));
