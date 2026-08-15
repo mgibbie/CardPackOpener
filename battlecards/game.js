@@ -3537,7 +3537,7 @@ function startPublishLoop() {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
 			});
-			updateWatcherBadge(r && r.watchers, r && r.watcherNames);
+			if (!duel.on) updateWatcherBadge(r && r.watchers, r && r.watcherNames); // in a duel the badge comes from publishDuel (host) / card-poll (guest)
 		} catch (e) {}
 	};
 	tick();
@@ -3912,6 +3912,7 @@ function startDuelGuest(cardsById) {
 		try { data = await MPX.call('card-poll', { id: duel.id }); }
 		catch (e) { duelDebug.pollErrors++; duelDebug.lastError = 'poll: ' + e.message; lastPollNote = 'network error'; return; }
 		if (!data) return;
+		if (typeof data.watchers === 'number') updateWatcherBadge(data.watchers, data.watcherNames); // guest sees who's watching the game (host's aggregated list)
 		lastPollNote = data.error ? data.error : data.snapshot ? 'snapshot ok' : 'no board yet';
 		duelDebug.lastPollAt = performance.now();
 		// still waiting for the first board? tell the tester what's happening

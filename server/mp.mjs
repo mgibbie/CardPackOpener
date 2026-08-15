@@ -1137,7 +1137,13 @@ export default async function handler(req, env) {
 		await store.setJSON('alive:' + id + ':host', Date.now()); // publishing proves the host is here
 		if (body.over) { cm.over = true; cm.winner = body.winner ?? null; await store.setJSON('cardmatch:' + id, cm); }
 		const now = Date.now();
-		const watcherNames = await listWatchers(store, username, now);
+		// aggregate watchers across EVERY participant (spectators may watch the host OR
+		// a guest), so both players see everyone watching the game — not just their own
+		const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+		const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+		const wset = new Set();
+		for (const h of humans) for (const w of await listWatchers(store, h, now)) if (!humans.includes(w)) wset.add(w); // a participant isn't a "watcher" of their own game
+		const watcherNames = [...wset].slice(0, 20);
 		const watchers = watcherNames.length;
 		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, watchers, watcherNames };
 		await store.setJSON('cardmatchstate:' + id, payload);

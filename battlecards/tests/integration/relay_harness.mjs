@@ -121,15 +121,19 @@ async function loadHandler() {
 			const rh = users[0]; // relayhost
 			await api('add-friend', { username: rh.name }, users[1].token);
 			await api('add-friend', { username: rh.name }, users[2].token);
+			// a NON-participant spectator too (for the duel-aggregation check below)
+			const specReg = await api('register', { username: 'relayspec', password: 'harness123' });
+			await api('add-friend', { username: rh.name }, specReg.token);
 			await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 1 }, rh.token);
 			await api('cardstate', { username: rh.name }, users[1].token); // relayg1 starts watching (heartbeat)
 			await api('cardstate', { username: rh.name }, users[2].token); // relayg2 starts watching
+			await api('cardstate', { username: rh.name }, specReg.token); // relayspec starts watching
 			const pub2 = await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 2 }, rh.token);
-			A(pub2.watchers === 2 && [users[1].name, users[2].name].every(n => (pub2.watcherNames || []).includes(n)),
-				'the runner sees WHO is watching (count + both spectator names)', JSON.stringify(pub2));
+			A(pub2.watchers === 3 && [users[1].name, users[2].name, 'relayspec'].every(n => (pub2.watcherNames || []).includes(n)),
+				'the runner sees WHO is watching (count + all spectator names)', JSON.stringify(pub2));
 			const specView = await api('cardstate', { username: rh.name }, users[1].token);
-			A(specView.watchers === 2 && (specView.watcherNames || []).includes(users[2].name),
-				'a spectator also sees the watcher list (the other spectator by name)', JSON.stringify({ watchers: specView.watchers, names: specView.watcherNames }));
+			A(specView.watchers === 3 && (specView.watcherNames || []).includes(users[2].name),
+				'a spectator also sees the watcher list (the others by name)', JSON.stringify({ watchers: specView.watchers, names: specView.watcherNames }));
 
 			// spectators can't post in the PLAYERS' room, but the runner can, and spectators still read it
 			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);
@@ -169,6 +173,16 @@ async function loadHandler() {
 		A(matchId && users.every(u => u.seat != null), 'matchmaking paired 3 players into one size-3 match');
 		A(users.filter(u => u.seat === 0).length === 1 && users.some(u => u.role === 'host'), 'exactly one host (seat 0) assigned');
 		users.sort((a, b) => a.seat - b.seat);
+
+		// a duel publish AGGREGATES watchers across participants (relayspec heartbeated
+		// spec:<relayhost> above, still fresh) so BOTH players see who's watching — and
+		// EXCLUDES participants (relayg1/relayg2 also heartbeated but they're players now)
+		{
+			const host0 = users.find(u => u.seat === 0);
+			const dpub = await api('card-publish', { id: matchId, snapshot: null, seq: 1, label: 'Duel' }, host0.token);
+			A((dpub.watcherNames || []).includes('relayspec'), 'a duel publish aggregates watchers so both players see who is watching', JSON.stringify(dpub.watcherNames));
+			A(!(dpub.watcherNames || []).includes('relayg1') && !(dpub.watcherNames || []).includes('relayg2'), 'the duel players are NOT listed as watchers of their own game', JSON.stringify(dpub.watcherNames));
+		}
 
 		// ---- 2. launch clients into the duel (host first so it deals + publishes) ----
 		browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });

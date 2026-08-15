@@ -59,7 +59,8 @@ const pubBlock = src.slice(src.indexOf("action === 'publish-cardstate'"), src.in
 const csBlock = src.slice(src.indexOf("action === 'cardstate'"), src.indexOf("action === 'cardstate'") + 500);
 ok('a cardstate poll heartbeats spec:<who>:<viewer>', /setJSON\('spec:' \+ who \+ ':' \+ username/.test(csBlock));
 ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames \}\)/.test(pubBlock));
-ok('card-publish (duel host) also lists + returns watcher names', (src.match(/listWatchers\(store, username/g) || []).length >= 2);
+ok('a duel publish AGGREGATES watchers across ALL participants (host + guests)', /for \(const h of humans\) for \(const w of await listWatchers\(store, h, now\)\)/.test(src));
+ok('card-publish returns the aggregated watcher names', /return json\(\{ ok: true, watchers, watcherNames \}\)/.test(src));
 ok('spectator heartbeats are GC-swept (spec: in GC_TABLE)', /\['spec:'/.test(src));
 
 // --- read-only spectators: canPost gates posting, canChat still allows reading ---
