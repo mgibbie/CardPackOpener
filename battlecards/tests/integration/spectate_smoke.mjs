@@ -30,7 +30,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const cardsById = {}; for (const c of cardsData.cards) cardsById[c.id] = c;
 	const gs = E.createGame(cardsById, E.seededRng(31337), null, 2, null);
 	const snapshot = JSON.parse(JSON.stringify(E.toSnapshot(gs)));
-	const csPayload = { snapshot, mode: 'dungeon', label: 'Fight 1/8', room: 'u:friendx', seq: 1, ts: Date.now(), watchers: 1 };
+	// watchers:0 on purpose — the runner hasn't counted this fresh spectator yet; they should STILL see "1 watching" (themselves)
+	const csPayload = { snapshot, mode: 'dungeon', label: 'Fight 1/8', room: 'u:friendx', seq: 1, ts: Date.now(), watchers: 0 };
 	const chatPosts = []; // every chat-post the client makes
 	const chatRooms = {}; // room -> [messages], so posts echo back on chat-get and render
 
@@ -64,6 +65,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 		const rendered = await waitFor(() => page.evaluate(() => !!(window.__game && window.__game.state && window.__game.state.players && window.__game.state.players.length === 2)), 30000);
 		A(rendered, 'the spectator boots and renders the friend\'s 2-player board');
+
+		// the spectator sees the live watcher count too — at least themselves, even though the server sent watchers:0
+		const watcherBadge = await waitFor(() => page.evaluate(() => { const w = document.querySelector('#watchers'); return !!(w && w.style.display !== 'none' && /1 watching/.test(w.textContent)); }), 8000);
+		A(watcherBadge, 'the spectator sees the watcher count (≥1, themselves) even before the runner counts them', await page.evaluate(() => { const w = document.querySelector('#watchers'); return w ? `text=${w.textContent} display=${w.style.display}` : 'no #watchers'; }));
 
 		// spectator chat: interactive (input + emote buttons), but emotes are PRIVATE and text goes to the spec room
 		const chat = await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat')), 8000);

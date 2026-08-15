@@ -3589,7 +3589,7 @@ function startSpectate(cardsById) {
 		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
-		updateWatcherBadge(data.watchers); // "N watching" (includes you)
+		updateWatcherBadge(Math.max(1, +data.watchers || 0)); // a watching spectator counts themselves (≥1), even before the runner's next publish counts them
 		updateSpectateViewButton();
 		renderSpectatorChoice();
 	};
