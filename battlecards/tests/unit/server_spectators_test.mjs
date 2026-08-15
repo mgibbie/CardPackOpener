@@ -73,7 +73,7 @@ ok('chat-get still uses canChat so spectators can READ the players\' chat', /awa
 ok('an isSpectatorOf() helper gates spec: rooms', /const isSpectatorOf = async/.test(src));
 ok('a spectator = friend of X, not X, not a co-participant', /X === username \|\| !user\.friends\.includes\(X\)/.test(src) && /humans\.includes\(username\)\) return false/.test(src));
 ok('BOTH canChat + canPost route spec: rooms through isSpectatorOf', (src.match(/isSpectatorOf\(room\.slice\(5\)\)/g) || []).length >= 2);
-ok('spectator emotes are rejected server-side (kept private/local)', /room\.startsWith\('spec:'\) && body\.emote/.test(postBlock) && /private/.test(postBlock));
+ok('spectator emotes are NO LONGER rejected (shared among spectators)', !/room\.startsWith\('spec:'\) && body\.emote/.test(postBlock));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

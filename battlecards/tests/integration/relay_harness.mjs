@@ -140,11 +140,12 @@ async function loadHandler() {
 			const sp = await api('chat-post', { room: 'spec:' + rh.name, text: 'anyone else watching?' }, users[1].token);
 			A(sp.ok === true, 'a spectator CAN post text to the spectator-only room', JSON.stringify(sp));
 			const spEmote = await api('chat-post', { room: 'spec:' + rh.name, emote: 'gg' }, users[1].token);
-			A(spEmote.error && /private/i.test(spEmote.error), 'a spectator emote is rejected server-side (kept private/local)', JSON.stringify(spEmote));
+			A(spEmote.ok === true, 'a spectator CAN emote in the spectator-only room', JSON.stringify(spEmote));
 			const otherSpec = await api('chat-get', { room: 'spec:' + rh.name }, users[2].token);
-			A(otherSpec.messages?.some(m => m.text === 'anyone else watching?'), 'another spectator SEES the spectator-only chat', JSON.stringify(otherSpec.messages));
+			A(otherSpec.messages?.some(m => m.text === 'anyone else watching?') && otherSpec.messages?.some(m => m.emote === 'gg'),
+				'another spectator SEES both the spectator text AND emote', JSON.stringify(otherSpec.messages));
 			const runnerSpec = await api('chat-get', { room: 'spec:' + rh.name }, rh.token);
-			A(runnerSpec.error && /not in this room/i.test(runnerSpec.error), 'the PLAYER cannot read the spectator-only chat', JSON.stringify(runnerSpec));
+			A(runnerSpec.error && /not in this room/i.test(runnerSpec.error), 'the PLAYER cannot read the spectator chat/emotes', JSON.stringify(runnerSpec));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

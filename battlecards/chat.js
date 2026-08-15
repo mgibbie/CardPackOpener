@@ -81,12 +81,10 @@ function render(messages) {
 	const log = el.querySelector('.mc-log');
 	let added = false;
 	for (const m of messages) {
-		if (!m._local) { // local (private spectator) emotes always render; server messages dedup per-room
-			const key = (m._spec ? 's:' : 'p:') + m.ts + ':' + m.from;
-			if (seen.has(key)) continue;
-			seen.add(key);
-			if (m._spec) lastSpecTs = Math.max(lastSpecTs, m.ts); else lastTs = Math.max(lastTs, m.ts);
-		}
+		const key = (m._spec ? 's:' : 'p:') + m.ts + ':' + m.from; // dedup per-room (spectator vs players)
+		if (seen.has(key)) continue;
+		seen.add(key);
+		if (m._spec) lastSpecTs = Math.max(lastSpecTs, m.ts); else lastTs = Math.max(lastTs, m.ts);
 		added = true;
 		const row = document.createElement('div');
 		row.className = 'mc-row' + (m.from === me ? ' mine' : '') + (m.emote ? ' emote' : '') + (m._spec ? ' spec' : '');
@@ -107,13 +105,9 @@ function render(messages) {
 function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
 export function send(text, emote) {
-	const target = specRoom || room; // spectators post text to their OWN room (players never see it)
+	const target = specRoom || room; // spectators post to their OWN room — the players never see it, other spectators do
 	if (!target) return;
 	MP.call('chat-post', { room: target, text, emote }).catch(() => {});
-}
-// a spectator's emote is PRIVATE — rendered locally, never sent to any room
-function reactLocal(emote) {
-	render([{ from: me, emote, ts: Date.now(), _local: true, _spec: true }]);
 }
 
 // absorb a batch without showing it: mark every message seen + advance the room's cursor
@@ -168,8 +162,8 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 		for (const id of BAR) {
 			const b = document.createElement('button');
 			b.className = 'mc-em'; b.textContent = EMOTES[id].icon;
-			b.title = spectator ? EMOTES[id].label + ' (only you see this)' : EMOTES[id].label;
-			b.addEventListener('click', () => spectator ? reactLocal(id) : send('', id));
+			b.title = spectator ? EMOTES[id].label + ' (spectators only)' : EMOTES[id].label;
+			b.addEventListener('click', () => send('', id));
 			bar.appendChild(b);
 		}
 		const input = document.createElement('input');

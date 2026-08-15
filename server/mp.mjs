@@ -846,7 +846,6 @@ export default async function handler(req, env) {
 	if (action === 'chat-post') {
 		const room = String(body.room || '');
 		if (!(await canPost(room))) return json({ error: 'spectators are read-only' }, 403);
-		if (room.startsWith('spec:') && body.emote) return json({ error: 'emotes are private' }, 400); // spectator emotes stay local-only
 		const emote = body.emote && EMOTES.has(String(body.emote)) ? String(body.emote) : null;
 		const text = emote ? '' : String(body.text || '').slice(0, 140).replace(/[\u0000-\u001f]/g, ' ').trim();
 		if (!emote && !text) return json({ error: 'empty message' }, 400);
