@@ -30,8 +30,9 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const cardsById = {}; for (const c of cardsData.cards) cardsById[c.id] = c;
 	const gs = E.createGame(cardsById, E.seededRng(31337), null, 2, null);
 	const snapshot = JSON.parse(JSON.stringify(E.toSnapshot(gs)));
-	// watchers:0 on purpose — the runner hasn't counted this fresh spectator yet; they should STILL see "1 watching" (themselves)
-	const csPayload = { snapshot, mode: 'dungeon', label: 'Fight 1/8', room: 'u:friendx', seq: 1, ts: Date.now(), watchers: 0 };
+	const csPayload = { snapshot, mode: 'dungeon', label: 'Fight 1/8', room: 'u:friendx' };
+	// mutable: starts with watchers:0 (this fresh spectator not counted yet), then gains named watchers on a new seq
+	let csState = { seq: 1, watchers: 0, watcherNames: [] };
 	const chatPosts = []; // every chat-post the client makes
 	const chatRooms = {}; // room -> [messages], so posts echo back on chat-get and render
 
@@ -41,7 +42,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			let b = ''; req.on('data', d => b += d); req.on('end', () => {
 				let body = {}; try { body = JSON.parse(b); } catch {}
 				let out = { ok: true };
-				if (body.action === 'cardstate') out = { ...csPayload, ts: Date.now() };
+				if (body.action === 'cardstate') out = { ...csPayload, ...csState, ts: Date.now() };
 				else if (body.action === 'chat-get') out = { messages: (chatRooms[body.room] || []).filter(m => m.ts > (body.since || 0)), now: Date.now() };
 				else if (body.action === 'chat-post') { chatPosts.push(body); (chatRooms[body.room] = chatRooms[body.room] || []).push({ from: 'watcher', text: body.text || '', emote: body.emote || null, ts: Date.now() }); out = { ok: true }; }
 				else if (body.action === 'state') out = { state: { username: 'me', decks: [], collection: {} } };
@@ -60,15 +61,19 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const errors = [];
 		page.on('pageerror', e => errors.push('pageerr: ' + e.message));
 		page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
-		await page.evaluateOnNewDocument(tok => localStorage.setItem('magepunk_mp_token_v1', tok), 'spectate-token');
+		await page.evaluateOnNewDocument(tok => { localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: 'me' })); }, 'spectate-token');
 		await page.goto(`http://localhost:${PORT}/battlecards/index.html?spectate=friendx&mp=1`, { waitUntil: 'domcontentloaded' });
 
 		const rendered = await waitFor(() => page.evaluate(() => !!(window.__game && window.__game.state && window.__game.state.players && window.__game.state.players.length === 2)), 30000);
 		A(rendered, 'the spectator boots and renders the friend\'s 2-player board');
 
-		// the spectator sees the live watcher count too — at least themselves, even though the server sent watchers:0
+		// (a) even before the runner counts this fresh spectator (watchers:0), they see "1 watching" (themselves)
 		const watcherBadge = await waitFor(() => page.evaluate(() => { const w = document.querySelector('#watchers'); return !!(w && w.style.display !== 'none' && /1 watching/.test(w.textContent)); }), 8000);
-		A(watcherBadge, 'the spectator sees the watcher count (≥1, themselves) even before the runner counts them', await page.evaluate(() => { const w = document.querySelector('#watchers'); return w ? `text=${w.textContent} display=${w.style.display}` : 'no #watchers'; }));
+		A(watcherBadge, 'the spectator sees the watcher count (≥1, themselves) even before the runner counts them', await page.evaluate(() => { const w = document.querySelector('#watchers'); return w ? `text=${w.textContent}` : 'no #watchers'; }));
+		// (b) once the runner publishes named watchers, the spectator sees WHO is watching ('me' shown as "you")
+		csState = { seq: 2, watchers: 2, watcherNames: ['coolfriend', 'me'] };
+		const seesNames = await waitFor(() => page.evaluate(() => { const t = document.querySelector('#watchers')?.textContent || ''; return /2 watching/.test(t) && /coolfriend/.test(t) && /you/.test(t); }), 8000);
+		A(seesNames, 'the spectator sees WHO is watching by name (self shown as "you")', await page.evaluate(() => document.querySelector('#watchers')?.textContent));
 
 		// spectator chat: interactive (input + emote buttons), but emotes are PRIVATE and text goes to the spec room
 		const chat = await waitFor(() => page.evaluate(() => !!document.querySelector('#mp-chat')), 8000);

@@ -22,7 +22,7 @@ function extractFn(name) {
 const winM = src.match(/SPEC_WINDOW_MS = ([\d_]+)/);
 const SPEC_WINDOW_MS = +winM[1].replace(/_/g, '');
 ok('SPEC_WINDOW_MS is a sane window', SPEC_WINDOW_MS >= 5000 && SPEC_WINDOW_MS <= 60000, SPEC_WINDOW_MS);
-const countWatchers = new Function('SPEC_WINDOW_MS', extractFn('countWatchers') + '; return countWatchers;')(SPEC_WINDOW_MS);
+const listWatchers = new Function('SPEC_WINDOW_MS', extractFn('listWatchers') + '; return listWatchers;')(SPEC_WINDOW_MS);
 
 // Map-backed store with the setJSON + prefix-list the handler uses (values parsed)
 const makeStore = () => { const m = new Map(); return {
@@ -31,34 +31,35 @@ const makeStore = () => { const m = new Map(); return {
 	_m: m,
 }; };
 
-// --- counting behaviour ---
+// --- watcher-listing behaviour (names, not just count) ---
+const sorted = a => [...a].sort();
 {
 	const store = makeStore();
 	const NOW = 1_000_000;
-	ok('no spectators → 0', (await countWatchers(store, 'alice', NOW)) === 0);
+	ok('no spectators → []', (await listWatchers(store, 'alice', NOW)).length === 0);
 
 	await store.setJSON('spec:alice:bob', NOW - 1000);      // fresh
 	await store.setJSON('spec:alice:carol', NOW - 3000);    // fresh
-	ok('two fresh heartbeats → 2', (await countWatchers(store, 'alice', NOW)) === 2);
+	ok('two fresh heartbeats → both viewer names', JSON.stringify(sorted(await listWatchers(store, 'alice', NOW))) === JSON.stringify(['bob', 'carol']));
 
 	await store.setJSON('spec:alice:dave', NOW - (SPEC_WINDOW_MS + 5000)); // stale (stopped watching)
-	ok('a stale heartbeat is not counted', (await countWatchers(store, 'alice', NOW)) === 2);
+	ok('a stale watcher is dropped from the list', !(await listWatchers(store, 'alice', NOW)).includes('dave'));
 
 	await store.setJSON('spec:bob:eve', NOW - 500);         // a DIFFERENT runner's spectator
-	ok("another runner's spectators don't leak into the count", (await countWatchers(store, 'alice', NOW)) === 2);
-	ok('each runner counts only its own watchers', (await countWatchers(store, 'bob', NOW)) === 1);
+	ok("another runner's spectators don't leak in", !(await listWatchers(store, 'alice', NOW)).includes('eve'));
+	ok('each runner lists only its own watchers', JSON.stringify(await listWatchers(store, 'bob', NOW)) === JSON.stringify(['eve']));
 
 	// a viewer re-heartbeating (same key) stays one distinct spectator
 	await store.setJSON('spec:alice:bob', NOW - 100);
-	ok('a re-polling viewer is still counted once', (await countWatchers(store, 'alice', NOW)) === 2);
+	ok('a re-polling viewer appears once', (await listWatchers(store, 'alice', NOW)).filter(x => x === 'bob').length === 1);
 }
 
 // --- source guards: the wiring must stay in place ---
 const pubBlock = src.slice(src.indexOf("action === 'publish-cardstate'"), src.indexOf("action === 'cardstate'"));
 const csBlock = src.slice(src.indexOf("action === 'cardstate'"), src.indexOf("action === 'cardstate'") + 500);
 ok('a cardstate poll heartbeats spec:<who>:<viewer>', /setJSON\('spec:' \+ who \+ ':' \+ username/.test(csBlock));
-ok('publish-cardstate computes + stores + returns the watcher count', /countWatchers/.test(pubBlock) && /watchers/.test(pubBlock) && /json\(\{ ok: true, watchers \}\)/.test(pubBlock));
-ok('card-publish (duel host) also counts + returns watchers', (src.match(/countWatchers\(store, username/g) || []).length >= 2);
+ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames \}\)/.test(pubBlock));
+ok('card-publish (duel host) also lists + returns watcher names', (src.match(/listWatchers\(store, username/g) || []).length >= 2);
 ok('spectator heartbeats are GC-swept (spec: in GC_TABLE)', /\['spec:'/.test(src));
 
 // --- read-only spectators: canPost gates posting, canChat still allows reading ---

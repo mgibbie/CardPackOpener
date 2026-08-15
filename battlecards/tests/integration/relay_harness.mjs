@@ -125,9 +125,11 @@ async function loadHandler() {
 			await api('cardstate', { username: rh.name }, users[1].token); // relayg1 starts watching (heartbeat)
 			await api('cardstate', { username: rh.name }, users[2].token); // relayg2 starts watching
 			const pub2 = await api('publish-cardstate', { snapshot: null, mode: 'dungeon', label: 'Fight 1/8', seq: 2 }, rh.token);
-			A(pub2.watchers === 2, 'the runner sees a live spectator count (2 friends watching)', JSON.stringify(pub2));
+			A(pub2.watchers === 2 && [users[1].name, users[2].name].every(n => (pub2.watcherNames || []).includes(n)),
+				'the runner sees WHO is watching (count + both spectator names)', JSON.stringify(pub2));
 			const specView = await api('cardstate', { username: rh.name }, users[1].token);
-			A(specView.watchers === 2, 'a spectator also sees the watcher count', JSON.stringify({ watchers: specView.watchers }));
+			A(specView.watchers === 2 && (specView.watcherNames || []).includes(users[2].name),
+				'a spectator also sees the watcher list (the other spectator by name)', JSON.stringify({ watchers: specView.watchers, names: specView.watcherNames }));
 
 			// spectators can't post in the PLAYERS' room, but the runner can, and spectators still read it
 			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);

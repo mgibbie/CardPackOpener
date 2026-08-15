@@ -3479,20 +3479,29 @@ function snapshotState() {
 }
 
 let publishSeq = 0;
-// a small floating "👁 N watching" pill — shown to the runner (from the publish
-// response) and to a spectator (from the cardstate response); hidden at zero
-function updateWatcherBadge(n) {
+// a small floating "👁 N watching: name, name" pill — shown to the runner (from
+// the publish response) and to a spectator (from the cardstate response). Lists up
+// to 3 names inline (+K for the rest, full list on hover); hidden at zero.
+function updateWatcherBadge(n, names) {
 	n = +n || 0;
+	names = (Array.isArray(names) ? names : []).filter(Boolean);
 	let el = $('watchers');
 	if (!el) {
 		el = document.createElement('div');
 		el.id = 'watchers';
 		el.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:55;'
+			+ 'max-width:min(80vw,520px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
 			+ 'background:rgba(10,7,20,.82);color:#ffcf6b;border:1px solid #4a3f6a;border-radius:999px;'
-			+ 'padding:4px 13px;font:600 13px/1.2 inherit;pointer-events:none;backdrop-filter:blur(3px);';
+			+ 'padding:4px 13px;font:600 13px/1.2 inherit;backdrop-filter:blur(3px);';
 		document.body.appendChild(el);
 	}
-	el.textContent = `👁 ${n} watching`;
+	let label = `👁 ${n} watching`;
+	if (names.length) {
+		const extra = names.length - Math.min(3, names.length);
+		label += ': ' + names.slice(0, 3).join(', ') + (extra > 0 ? ` +${extra}` : '');
+	}
+	el.textContent = label;
+	el.title = names.join(', '); // full list on hover
 	el.style.display = n > 0 ? 'block' : 'none';
 }
 
@@ -3517,7 +3526,7 @@ function startPublishLoop() {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
 			});
-			updateWatcherBadge(r && r.watchers);
+			updateWatcherBadge(r && r.watchers, r && r.watcherNames);
 		} catch (e) {}
 	};
 	tick();
@@ -3589,7 +3598,9 @@ function startSpectate(cardsById) {
 		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
-		updateWatcherBadge(Math.max(1, +data.watchers || 0)); // a watching spectator counts themselves (≥1), even before the runner's next publish counts them
+		const meName = MPX.cachedState()?.username || '';
+		const watchNames = (data.watcherNames || []).map(x => x === meName ? 'you' : x);
+		updateWatcherBadge(Math.max(1, +data.watchers || 0), watchNames); // a spectator always counts themselves (>=1)
 		updateSpectateViewButton();
 		renderSpectatorChoice();
 	};
@@ -4047,7 +4058,7 @@ function publishDuel() {
 		stats: duelStatsPayload(),
 	}).then(r => {
 		if (r?.error) throw new Error(r.error);
-		updateWatcherBadge(r && r.watchers); // duel host: how many friends are watching
+		updateWatcherBadge(r && r.watchers, r && r.watcherNames); // duel host: who's watching
 		duelDebug.pubOk++; duelDebug.lastPubAt = performance.now();
 		if (duelDebug.pubFails >= 3) log('(connection restored — your opponent can see the board again)');
 		duelDebug.pubFails = 0;
