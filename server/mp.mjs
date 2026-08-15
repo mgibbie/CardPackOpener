@@ -806,9 +806,28 @@ export default async function handler(req, env) {
 		return false;
 	};
 
+	// stricter than canChat: only room PARTICIPANTS may post — friend-SPECTATORS are
+	// read-only (they can watch the chat but not talk or emote).
+	const canPost = async (room) => {
+		if (typeof room !== 'string') return false;
+		if (room.startsWith('u:')) return room.slice(2) === username; // only the runner posts in their own room
+		if (room.startsWith('m:')) {
+			const id = room.slice(2);
+			const cm = await store.get('cardmatch:' + id);
+			if (cm) {
+				const seats = cm.seats || [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])];
+				const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
+				return humans.includes(username);
+			}
+			const m = await store.get('match:' + id);
+			if (m) return sideOf(m, username) >= 0;
+		}
+		return false;
+	};
+
 	if (action === 'chat-post') {
 		const room = String(body.room || '');
-		if (!(await canChat(room))) return json({ error: 'not in this room' }, 403);
+		if (!(await canPost(room))) return json({ error: 'spectators are read-only' }, 403);
 		const emote = body.emote && EMOTES.has(String(body.emote)) ? String(body.emote) : null;
 		const text = emote ? '' : String(body.text || '').slice(0, 140).replace(/[\u0000-\u001f]/g, ' ').trim();
 		if (!emote && !text) return json({ error: 'empty message' }, 400);

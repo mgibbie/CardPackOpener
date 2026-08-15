@@ -128,6 +128,16 @@ async function loadHandler() {
 			A(pub2.watchers === 2, 'the runner sees a live spectator count (2 friends watching)', JSON.stringify(pub2));
 			const specView = await api('cardstate', { username: rh.name }, users[1].token);
 			A(specView.watchers === 2, 'a spectator also sees the watcher count', JSON.stringify({ watchers: specView.watchers }));
+
+			// spectators are READ-ONLY in chat: they can't post/emote, but the runner can, and they can still read
+			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);
+			A(specPost.error && /read-only/i.test(specPost.error), 'a spectator CANNOT post in chat (403 read-only)', JSON.stringify(specPost));
+			const specEmote = await api('chat-post', { room: 'u:' + rh.name, emote: 'gg' }, users[1].token);
+			A(specEmote.error && /read-only/i.test(specEmote.error), 'a spectator CANNOT send an emote either', JSON.stringify(specEmote));
+			const runnerPost = await api('chat-post', { room: 'u:' + rh.name, text: 'hi watchers' }, rh.token);
+			A(runnerPost.ok === true, 'the runner CAN post in their own room', JSON.stringify(runnerPost));
+			const specRead = await api('chat-get', { room: 'u:' + rh.name }, users[1].token);
+			A(specRead.messages?.some(m => m.text === 'hi watchers'), 'a spectator can still READ the chat', JSON.stringify(specRead.messages));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

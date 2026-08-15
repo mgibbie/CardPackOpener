@@ -61,5 +61,13 @@ ok('publish-cardstate computes + stores + returns the watcher count', /countWatc
 ok('card-publish (duel host) also counts + returns watchers', (src.match(/countWatchers\(store, username/g) || []).length >= 2);
 ok('spectator heartbeats are GC-swept (spec: in GC_TABLE)', /\['spec:'/.test(src));
 
+// --- read-only spectators: canPost gates posting, canChat still allows reading ---
+const postBlock = src.slice(src.indexOf("action === 'chat-post'"), src.indexOf("action === 'chat-get'"));
+const getBlock = src.slice(src.indexOf("action === 'chat-get'"), src.indexOf("action === 'chat-get'") + 300);
+ok('a stricter canPost() exists (participants only)', /const canPost = async/.test(src));
+ok('canPost lets ONLY the runner post in their own u: room', /room\.slice\(2\) === username/.test(src));
+ok('chat-post enforces canPost (not the looser canChat)', /await canPost\(room\)/.test(postBlock) && /read-only/.test(postBlock));
+ok('chat-get still uses canChat so spectators can READ', /await canChat\(room\)/.test(getBlock));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

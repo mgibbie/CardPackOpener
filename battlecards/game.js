@@ -3407,6 +3407,7 @@ animate();
 // headless test hook
 window.__game = {
 	get state() { return state; },
+	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
@@ -3523,7 +3524,32 @@ function startPublishLoop() {
 	setInterval(tick, 1200);
 }
 
-let spectateSeq = -1, spectatePanelsFor = 0;
+let spectateSeq = -1, spectatePanelsFor = 0, spectateView = 0;
+// a floating button that flips which player the spectator watches from (their
+// slice sits at the camera-bottom, so you see that player's hand up close)
+function mountSpectateViewButton() {
+	if ($('spec-view')) return;
+	const b = document.createElement('button');
+	b.id = 'spec-view';
+	b.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:56;'
+		+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:999px;'
+		+ 'padding:8px 16px;font:600 13px/1 inherit;cursor:pointer;';
+	b.addEventListener('click', () => {
+		const n = state?.players?.length || playerCount;
+		spectateView = (spectateView + 1) % Math.max(1, n);
+		HUMAN = Math.min(spectateView, n - 1);
+		updateHud();
+		updateSpectateViewButton();
+	});
+	document.body.appendChild(b);
+	updateSpectateViewButton();
+}
+function updateSpectateViewButton() {
+	const b = $('spec-view'); if (!b) return;
+	const n = state?.players?.length || playerCount;
+	b.style.display = n > 1 ? 'block' : 'none';
+	b.textContent = n > 2 ? `🔄 Viewing player ${HUMAN + 1} of ${n}` : '🔄 Flip view';
+}
 function startSpectate(cardsById) {
 	banner(`Spectating ${spectateName}`);
 	$('end-turn').style.display = 'none';
@@ -3531,6 +3557,7 @@ function startSpectate(cardsById) {
 	$('coin-btn').style.display = 'none';
 	$('player-count').style.display = 'none';
 	$('class-select').style.display = 'none';
+	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
 	const tick = async () => {
 		let data;
@@ -3558,10 +3585,12 @@ function startSpectate(cardsById) {
 			buildSlotMarkers();
 			spectatePanelsFor = snap.playerCount;
 		}
-		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: true });
+		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: false });
+		HUMAN = Math.min(spectateView, state.players.length - 1); // keep the chosen view across updates
 		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
 		updateHud();
 		updateWatcherBadge(data.watchers); // "N watching" (includes you)
+		updateSpectateViewButton();
 		renderSpectatorChoice();
 	};
 	tick();
