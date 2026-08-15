@@ -142,6 +142,12 @@ async function loadHandler() {
 			const staleSeq = await api('cardstate', { username: rh.name, seq: 1 }, users[1].token);
 			A(!staleSeq.unchanged && 'snapshot' in staleSeq, 'a stale seq → the full snapshot is sent', JSON.stringify({ unchanged: staleSeq.unchanged, hasSnap: 'snapshot' in staleSeq }));
 
+			// "Live now" hub: a friend's live-friends lists relayhost (in a dungeon run) with its watcher count
+			const lf = await api('live-friends', {}, users[1].token);
+			const rhLive = (lf.live || []).find(x => x.username === rh.name);
+			A(rhLive && rhLive.kind === 'card' && rhLive.mode === 'dungeon' && typeof rhLive.watchers === 'number',
+				'live-friends lists a friend in a watchable game (mode + live watcher count)', JSON.stringify(rhLive));
+
 			// spectators can't post in the PLAYERS' room, but the runner can, and spectators still read it
 			const specPost = await api('chat-post', { room: 'u:' + rh.name, text: 'let me talk' }, users[1].token);
 			A(specPost.error && /read-only/i.test(specPost.error), "a spectator CANNOT post in the players' chat", JSON.stringify(specPost));

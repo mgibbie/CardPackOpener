@@ -851,6 +851,27 @@ export default async function handler(req, env) {
 		return json({ ...cs, watchers, watcherNames });
 	}
 
+	// "Live now" hub: which friends are in a watchable game right now, with the mode
+	// + live watcher count. Read-only — reading cardstate:<f> here does NOT write a
+	// heartbeat, so browsing the hub never counts you as watching anyone.
+	if (action === 'live-friends') {
+		const now = Date.now();
+		const live = [];
+		for (const f of user.friends) {
+			const p = await store.get('presence:' + f);
+			if (!p || now - p.lastSeen >= ONLINE_MS) continue;
+			const st = p.status || '';
+			if (st.startsWith('card:')) {
+				const cs = await store.get('cardstate:' + f);
+				if (!cs || now - cs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
+				live.push({ username: f, kind: 'card', mode: st.slice(5), label: p.region || '', watchers: cs.watchers || 0, full: (cs.watchers || 0) >= SPEC_CAP });
+			} else if (st.startsWith('battling:')) {
+				live.push({ username: f, kind: 'pokemon', matchId: st.slice('battling:'.length), mode: 'pokemon', label: 'Pokémon battle' });
+			}
+		}
+		return json({ live });
+	}
+
 	// ---------- in-battle chat + emotes ----------
 	// Rooms: 'm:<matchId>' (card or pokemon match, participants + friend-spectators)
 	// or 'u:<username>' (a solo run being spectated: the runner + their friends).

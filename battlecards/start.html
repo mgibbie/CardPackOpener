@@ -99,6 +99,17 @@
 	.tile[data-inprogress="1"] h3 { padding-right: 78px; }
 	.tile[data-inprogress="1"] h3 .arrow { display: none; }
 
+	/* Live Now watch cards */
+	.live-tile { align-items: center; }
+	.live-tile .live-meta { flex: 1; min-width: 0; }
+	.live-tile .live-name { font-size: 1.02rem; font-weight: 700; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.live-tile .live-name:hover { text-decoration: underline; color: var(--gold); }
+	.live-tile p { color: var(--muted); font-size: .84rem; margin-top: 3px; }
+	.live-tile .live-live { color: var(--green); font-weight: 800; font-size: .62rem; letter-spacing: .5px; text-transform: uppercase; margin-left: 6px; }
+	.live-watch { flex: 0 0 auto; padding: 9px 16px; border: none; border-radius: 9px; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); color: #0c1122; font: inherit; font-weight: 800; cursor: pointer; }
+	.live-watch:hover:not(:disabled) { filter: brightness(1.08); }
+	.live-watch:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
+
 	footer { margin-top: 42px; text-align: center; color: var(--muted); font-size: .84rem; }
 	footer a { color: var(--blue); font-weight: 600; }
 	footer a:hover { text-decoration: underline; }
@@ -176,6 +187,12 @@
 			</div>
 			<div class="go">▶</div>
 		</a>
+
+		<!-- Live Now: friends currently in a watchable game (populated when logged in) -->
+		<div id="live-now" hidden>
+			<div class="section-label">Live now — watch a friend</div>
+			<div class="grid" id="live-list"></div>
+		</div>
 
 		<div class="section-label">Card of the Week</div>
 		<div id="cotw" class="cotw"><div class="cotw-empty">Loading this week's card…</div></div>
@@ -468,6 +485,49 @@
 			arc.querySelectorAll('.cw-past img').forEach(pi => { pi.addEventListener('error', () => { const a = pi.closest('.cw-past-art'); if (a) a.style.display = 'none'; }, { once: true }); pi.src = ART + pi.dataset.id + '.jpg'; });
 		}
 	})();
+	</script>
+
+	<!-- Live Now: a discovery hub for friends currently in a watchable game -->
+	<script type="module">
+	import * as MP from './mpmode.js';
+	import { openProfile } from './profile.js';
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
+	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+	async function refreshLive() {
+		if (!MP.hasToken()) return;
+		let data; try { data = await MP.call('live-friends'); } catch { return; }
+		const live = (data && data.live) || [];
+		const sec = document.getElementById('live-now'), list = document.getElementById('live-list');
+		if (!sec || !list) return;
+		if (!live.length) { sec.hidden = true; list.innerHTML = ''; return; }
+		list.innerHTML = '';
+		for (const f of live) {
+			const modeLabel = CARD_MODE[f.mode] || 'a game';
+			const bits = ['in ' + modeLabel];
+			if (f.label && f.label !== 'Pokémon battle') bits.push(esc(f.label)); // run progress e.g. "Fight 3/8"
+			if (f.kind === 'card') bits.push(`👁 ${f.watchers || 0}${f.full ? '/10 full' : ''} watching`);
+			const tile = document.createElement('div');
+			tile.className = 'tile live-tile';
+			tile.innerHTML = `<div class="glyph">${MODE_ICON[f.mode] || '🔴'}</div>`
+				+ `<div class="live-meta"><div class="live-name" data-user="${esc(f.username)}">${esc(f.username)}<span class="live-live">● live</span></div>`
+				+ `<p>${bits.join(' · ')}</p></div>`;
+			const watch = document.createElement('button');
+			watch.className = 'live-watch';
+			watch.textContent = f.full ? 'Full' : '👁 Watch';
+			if (f.full) watch.disabled = true;
+			watch.addEventListener('click', () => {
+				if (f.kind === 'pokemon') { if (f.matchId) location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(f.matchId); }
+				else location.href = 'index.html?spectate=' + encodeURIComponent(f.username) + '&mp=1';
+			});
+			tile.querySelector('.live-name').addEventListener('click', () => openProfile(f.username));
+			tile.appendChild(watch);
+			list.appendChild(tile);
+		}
+		sec.hidden = false;
+	}
+	refreshLive();
+	setInterval(refreshLive, 12000); // friends going live / offline
 	</script>
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
