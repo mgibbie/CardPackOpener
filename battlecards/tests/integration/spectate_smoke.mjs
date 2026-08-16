@@ -46,7 +46,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 				let out = { ok: true };
 				if (body.action === 'cardstate' && ended) out = { snapshot: null };
 				else if (body.action === 'cardstate') {
-					if (body.seq != null && body.seq === csState.seq && !csState.full) { sentUnchanged = true; out = { unchanged: true, seq: csState.seq, watchers: csState.watchers, watcherNames: csState.watcherNames }; }
+					if (body.seq != null && body.seq === csState.seq && !csState.full) { sentUnchanged = true; out = { unchanged: true, seq: csState.seq, over: !!csState.over, winner: csState.winner ?? null, watchers: csState.watchers, watcherNames: csState.watcherNames }; }
 					else out = { ...csPayload, ...csState, ts: Date.now() }; // full snapshot (or the {full:true} case)
 				}
 				else if (body.action === 'chat-get') out = { messages: (chatRooms[body.room] || []).filter(m => m.ts > (body.since || 0)), now: Date.now() };
@@ -126,11 +126,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		csState = { seq: 9, watchers: 10, watcherNames: [], full: true, max: 10 };
 		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#spec-full'); return !!(el && /full/i.test(el.textContent) && /10/.test(el.textContent)); }), 5000), 'a full game shows the "spectator slots full" waiting overlay');
 
-		// Finding 1 regression: when the watched game ends (no board), the spectator (who
-		// already saw a board) raises the GAME OVER overlay — the tick doesn't throw on it
-		csState = { seq: 3, watchers: 1, watcherNames: [], full: false };
-		ended = true;
-		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#over-note'); return !!(el && /ended|over/i.test(el.textContent)); }), 6000), 'when the watched game ends, the spectator sees a GAME OVER overlay');
+		// INSTANT game-over: the publisher stamps over/winner on the final board, so the
+		// spectator sees the result the moment it happens (not ~20s via cardstate staleness).
+		csState = { seq: 5, watchers: 1, watcherNames: [], full: false, over: true, winner: 1 };
+		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#over-note'); return !!(el && /over/i.test(el.textContent) && /win|draw/i.test(el.textContent)); }), 6000), 'the spectator sees GAME OVER instantly with the winner (over flag, not staleness)');
 		// audit item #2: the chat poll loop is stopped (unmounted) when the watched game ends
 		A(await waitFor(() => page.evaluate(() => !document.querySelector('#mp-chat')), 3000), 'the chat is unmounted on game-over (its poll loop stops)');
 

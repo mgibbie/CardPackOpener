@@ -56,7 +56,7 @@ const sorted = a => [...a].sort();
 
 // --- source guards: the wiring must stay in place ---
 const pubBlock = src.slice(src.indexOf("action === 'publish-cardstate'"), src.indexOf("action === 'cardstate'"));
-const csBlock = src.slice(src.indexOf("action === 'cardstate'"), src.indexOf("action === 'cardstate'") + 1400);
+const csBlock = src.slice(src.indexOf("action === 'cardstate'"), src.indexOf("action === 'cardstate'") + 1700);
 ok('a cardstate poll heartbeats spec:<who>:<viewer>', /setJSON\('spec:' \+ who \+ ':' \+ username/.test(csBlock));
 // spectator cap
 ok('a SPEC_CAP constant caps concurrent spectators per game', /const SPEC_CAP = \d+/.test(src));
@@ -65,6 +65,11 @@ ok('cardstate turns away a NEW viewer at the cap (full:true, 403)', /!watching\.
 ok('cardstate does a DELTA — skips the snapshot when the spectator already has the seq', /body\.seq != null && \+body\.seq === \(cs\.seq \| 0\)/.test(csBlock) && /unchanged: true/.test(csBlock));
 const pollBlock = src.slice(src.indexOf("action === 'card-poll'"), src.indexOf("action === 'card-poll'") + 2200);
 ok('card-poll (duel guests) also does a DELTA, but ALWAYS keeps the over/winner tail', /body\.seq != null && \+body\.seq === \(cs\.seq \| 0\)/.test(pollBlock) && /unchanged: true/.test(pollBlock) && /\.\.\.tail/.test(pollBlock));
+
+// instant game-over for spectators: over/winner is stamped on cardstate + card-publish
+ok('publish-cardstate stores over/winner (spectators see game-over instantly)', /over: !!body\.over, winner: body\.winner \?\? null/.test(pubBlock));
+ok('card-publish mirrors over/winner into the cardstate payload', /over: !!cm\.over, winner: cm\.winner \?\? null/.test(src));
+ok('the cardstate delta (unchanged) still carries over/winner so game-over is not missed', /unchanged: true[^]*over: !!cs\.over, winner: cs\.winner \?\? null/.test(csBlock));
 ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames \}\)/.test(pubBlock));
 ok('a duel publish AGGREGATES watchers across ALL participants (host + guests)', /for \(const h of humans\) for \(const w of await listWatchers\(store, h, now\)\)/.test(src));
 ok('card-publish returns the aggregated watcher names', /return json\(\{ ok: true, watchers, watcherNames \}\)/.test(src));

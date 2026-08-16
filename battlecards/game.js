@@ -3543,6 +3543,7 @@ function startPublishLoop() {
 		try {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
+				over: !!(state && state.over), winner: (state && state.winner) ?? null, // spectators see the result instantly
 			});
 			if (!duel.on) updateWatcherBadge(r && r.watchers, r && r.watcherNames); // in a duel the badge comes from publishDuel (host) / card-poll (guest)
 		} catch (e) {}
@@ -3592,6 +3593,23 @@ function startSpectate(cardsById) {
 	log(`Watching ${spectateName}'s game…`);
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
 	let specNull = 0; // consecutive no-board polls → detect a game that's already over on join
+	// the publisher stamps over/winner on the final board, so a spectator sees the
+	// result the instant it happens (not ~20s later via cardstate staleness)
+	const showSpectateOver = (winner) => {
+		if ($('over-note')) return;
+		let msg;
+		if (winner == null) msg = `${spectateName}'s game ended in a draw.`;
+		else {
+			const p = state && state.players && state.players[winner];
+			const who = (state && state.classPicks && state.classPicks[winner] && state.classPicks[winner].name)
+				|| (p && p.heroClass ? classNameOf(p.heroClass) : null) || `Player ${winner + 1}`;
+			msg = `${spectateName}'s game is over — ${who} wins.`;
+		}
+		const el = dungeonOverlay('GAME OVER', msg);
+		el.id = 'over-note';
+		el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+		if (Chat.active()) Chat.unmount();
+	};
 	const tick = async () => {
 		let data;
 		try { data = await MPX.call('cardstate', { username: spectateName, seq: spectateSeq }); } // send our seq so the server can skip an unchanged snapshot
@@ -3602,7 +3620,7 @@ function startSpectate(cardsById) {
 			return;
 		}
 		if ($("spec-full")) $("spec-full").remove(); // a spot opened — drop the overlay and carry on
-		if (data && data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); specIdle++; return; } // board is the same — just refresh the watcher badge
+		if (data && data.unchanged) { updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); specIdle++; if (data.over) showSpectateOver(data.winner); return; } // board is the same — just refresh the watcher badge (+ instant game-over)
 		if (!data || !data.snapshot) {
 			// no board: either the game we were watching ENDED (we'd seen a board: spectateSeq>=0),
 			// or we joined a game that's already gone / not started yet. For the latter, wait a few
@@ -3639,6 +3657,7 @@ function startSpectate(cardsById) {
 		updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); // spectator counts self (>=1); badge shows self as "you" + clickable profiles
 		updateSpectateViewButton();
 		renderSpectatorChoice();
+		if (data.over) showSpectateOver(data.winner); // final board rendered → show the result immediately
 	};
 	const schedule = () => { if ($('over-note')) return; setTimeout(() => tick().finally(schedule), specIdle >= 3 ? 2500 : 1000); }; // relax to 2.5s after idle; stop at game over
 	tick().finally(schedule);

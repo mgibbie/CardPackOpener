@@ -817,6 +817,7 @@ export default async function handler(req, env) {
 			room: 'u:' + username, // spectators join the runner's chat room
 			seq: +body.seq || 0,
 			ts: now,
+			over: !!body.over, winner: body.winner ?? null, // so spectators see GAME OVER instantly, not via staleness
 			watchers, watcherNames,
 		});
 		await store.setJSON('presence:' + username, {
@@ -846,7 +847,8 @@ export default async function handler(req, env) {
 		// snapshot — just ack + the fresh watcher list. Spectators poll every 1s but the
 		// board changes far less often, so this eliminates most of the bandwidth.
 		if (body.seq != null && +body.seq === (cs.seq | 0)) {
-			return json({ unchanged: true, seq: cs.seq, room: cs.room, mode: cs.mode, label: cs.label, watchers, watcherNames });
+			// carry over/winner even on an unchanged poll so game-over isn't missed
+			return json({ unchanged: true, seq: cs.seq, room: cs.room, mode: cs.mode, label: cs.label, over: !!cs.over, winner: cs.winner ?? null, watchers, watcherNames });
 		}
 		return json({ ...cs, watchers, watcherNames });
 	}
@@ -1206,7 +1208,7 @@ export default async function handler(req, env) {
 		const humans = cm.humans || seats.filter(s => s.name).map(s => s.name);
 		const watcherNames = (await aggregateWatchers(store, humans, now)).slice(0, SPEC_CAP);
 		const watchers = watcherNames.length;
-		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, watchers, watcherNames };
+		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, over: !!cm.over, winner: cm.winner ?? null, watchers, watcherNames };
 		await store.setJSON('cardmatchstate:' + id, payload);
 		await store.setJSON('cardstate:' + username, payload); // spectators
 		await store.setJSON('presence:' + username, {
