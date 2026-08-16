@@ -5,6 +5,9 @@
 	<meta charset="UTF-8">
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
 	<link rel="dns-prefetch" href="https://magepunk-cardart.pages.dev">
+	<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+	<!-- cardart.js imports three (to render the Card of the Week face like the game/gallery) -->
+	<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }</script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
 	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
@@ -118,16 +121,12 @@
 	.theme-toggle:hover { color: var(--text); border-color: var(--violet); }
 
 	/* Card of the Week */
-	.cotw { display: flex; gap: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); align-items: stretch; }
-	.cotw .cw-art { flex: 0 0 200px; border-radius: 12px; overflow: hidden; background: var(--panel-2); min-height: 150px; }
-	.cotw .cw-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-	.cotw .cw-info { flex: 1; min-width: 0; position: relative; }
-	.cotw .cw-cost { position: absolute; top: 0; right: 0; width: 34px; height: 34px; border-radius: 50%; background: #2f7fe0; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #6fb0ff inset; }
-	.cotw .cw-name { font-size: 1.3rem; font-weight: 800; padding-right: 44px; color: var(--text); }
-	.cotw .cw-meta { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .8px; margin: 4px 0 11px; }
-	.cotw .cw-desc { font-size: .92rem; line-height: 1.55; color: var(--text); }
-	.cotw .cw-kw { font-size: .8rem; color: var(--muted); margin-top: 7px; }
-	.cotw .cw-kw b { color: var(--blue); }
+	.cotw { display: flex; gap: 22px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); align-items: center; }
+	.cotw .cw-face { flex: 0 0 auto; }
+	.cotw .cw-face canvas { display: block; width: 220px; max-width: 46vw; height: auto; border-radius: 12px; filter: drop-shadow(0 10px 24px rgba(0,0,0,.35)); }
+	.cotw .cw-side { flex: 1; min-width: 0; }
+	.cotw .cw-title { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+	.cotw .cw-sub { color: var(--muted); font-size: .9rem; line-height: 1.5; margin-top: 6px; }
 	.cotw .cw-cta { display: inline-block; margin-top: 13px; color: var(--gold); font-weight: 700; font-size: .84rem; text-decoration: none; }
 	.cotw .cw-cta:hover { text-decoration: underline; }
 	.cotw .cw-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
@@ -147,7 +146,7 @@
 	.cw-past-when { font-size: .68rem; color: var(--muted); }
 
 	@media (prefers-reduced-motion: reduce) { .tile, .primary { transition: none; } }
-	@media (max-width: 560px) { .primary { flex-direction: column; text-align: center; } .cotw { flex-direction: column; } .cotw .cw-art { flex: 0 0 auto; height: 170px; } }
+	@media (max-width: 560px) { .primary { flex-direction: column; text-align: center; } .cotw { flex-direction: column; text-align: center; } .cotw .cw-side { text-align: center; } .cotw .cw-actions { justify-content: center; } }
 	</style>
 	<meta name="description" content="A deep collectible card game — thousands of cards, a full deck builder, run modes, and PvP. Play free in your browser.">
 	<meta property="og:type" content="website">
@@ -422,9 +421,9 @@
 	     week (no cron/backend). featured.json is tiny, so the start screen never
 	     loads the full 4MB cards.json or THREE just to show one card. -->
 	<script type="module">
-	import { keywordsFor, richHtml } from './keywords.js';
+	import { drawCardFace, preloadArt, artListeners } from './cardart.js';
 	import * as MP from './mpmode.js';
-	const ART = 'https://magepunk-cardart.pages.dev/'; // direct offload (skips the /battlecards/art 302)
+	const ART = 'https://magepunk-cardart.pages.dev/'; // art-crop offload (the small past-weeks thumbnails)
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	const weekIndex = () => Math.floor(Date.now() / (7 * 86400000)); // UTC weeks since epoch — stable all week
 	(async function cardOfWeek() {
@@ -433,25 +432,21 @@
 		try { pool = (await (await fetch('featured.json')).json()).cards; } catch { el.remove(); document.querySelectorAll('.section-label')[0]?.remove(); return; }
 		if (!pool || !pool.length) { el.remove(); return; }
 		const c = pool[weekIndex() % pool.length];
-		const stats = c.type === 'creature' ? `${c.attack}/${c.health}`
-			: c.type === 'weapon' ? `${c.attack}/${c.durability}`
-			: c.type === 'location' ? `${c.durability} uses` : '';
-		const cls = esc((c.cardClass || 'neutral').replace(/__/g, ' / ').replace(/_/g, ' '));
-		const kws = keywordsFor(c).map(k => `<div class="cw-kw"><b>${esc(k.label)}</b> — ${esc(k.text)}</div>`).join('');
-		el.innerHTML = `<div class="cw-art"><img alt="${esc(c.name)}" loading="lazy"></div>`
-			+ `<div class="cw-info">`
-			+ `<div class="cw-cost" title="Mana cost">${c.cost}</div>`
-			+ `<div class="cw-name">${esc(c.name)}</div>`
-			+ `<div class="cw-meta">${cls} · ${c.tribe ? esc(c.tribe) + ' ' : ''}${esc(c.type)} · Legendary${stats ? ' · ' + stats : ''}</div>`
-			+ `<div class="cw-desc">${c.description ? richHtml(c.description) : '<i>No rules text.</i>'}</div>`
-			+ kws
+		el.innerHTML = `<div class="cw-face" id="cw-face"></div>`
+			+ `<div class="cw-side">`
+			+ `<div class="cw-title">${esc(c.name)}</div>`
+			+ `<div class="cw-sub">This week's free ${esc(c.rarity || 'legendary')} card — collect one copy for your collection.</div>`
 			+ `<div class="cw-actions"><button class="cw-collect" disabled>…</button>`
 			+ `<a class="cw-cta" href="viewer.html">See it in the Card Gallery →</a></div>`
 			+ `<div class="cw-note" role="status"></div>`
 			+ `</div>`;
-		const art = el.querySelector('.cw-art'), img = art.querySelector('img');
-		img.addEventListener('error', () => { art.style.display = 'none'; }, { once: true });
-		img.src = ART + c.id + '.jpg';
+		// render the FULL card face (art + frame + stats + text), same as the game/gallery;
+		// repaint as the real art + mana font stream in
+		const faceHost = el.querySelector('#cw-face');
+		const paint = () => { faceHost.innerHTML = ''; faceHost.appendChild(drawCardFace(c)); };
+		paint();
+		preloadArt([c.id]).then(paint).catch(() => {});
+		artListeners.add(id => { if (id === '*' || id === c.id) paint(); });
 
 		// ---- Collect: one free copy of this week's card, added to your collection ----
 		const btn = el.querySelector('.cw-collect'), note = el.querySelector('.cw-note');

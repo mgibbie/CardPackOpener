@@ -231,6 +231,33 @@ function applyPackTimer(pk) {
 function claimableQuests() { return (state.quests || []).filter(q => !q.claimed && q.progress >= q.target).length; }
 function streakClaimable() { return state.streak && !state.streak.claimedToday ? 1 : 0; }
 function featuredClaimable() { return MP.hasToken() && state.featuredClaimed === false; } // this week's free card uncollected
+// the current Card of the Week (from the deployed featured.json, same pick as the
+// server) — so the notification can name it. Cached; null on failure.
+let _featuredCard;
+async function featuredCard() {
+	if (_featuredCard !== undefined) return _featuredCard;
+	try {
+		const pool = (await (await fetch('/battlecards/featured.json')).json()).cards;
+		const wk = Math.floor(Date.now() / (7 * 86400000));
+		_featuredCard = (pool && pool.length) ? pool[wk % pool.length] : null;
+	} catch { _featuredCard = null; }
+	return _featuredCard;
+}
+// collect the free Card of the Week IN THE INBOX (claim-featured adds it + returns
+// the name) — no bouncing to the Battlecards screen
+async function collectFeatured(btn) {
+	btn.disabled = true; btn.textContent = 'Collecting…';
+	let r; try { r = await MP.call('claim-featured', {}); } catch { r = null; }
+	if (r && (r.ok || r.already)) {
+		state.featuredClaimed = true;
+		toast(r.already ? 'Already collected this week.' : `✓ Collected ${r.name || "this week's card"}!`);
+		setBadge(badgeCount()); renderTabs();
+		if (state.view === 'alerts' && $('#ib-body')) renderAlerts($('#ib-body'));
+	} else {
+		btn.disabled = false; btn.textContent = 'Collect';
+		toast((r && r.error) || 'Could not collect — try again.');
+	}
+}
 function badgeCount() {
 	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0);
 }
@@ -489,10 +516,12 @@ function renderAlerts(body) {
 	}
 	if (featuredClaimable()) {
 		const f = el('div', 'row');
-		f.innerHTML = `<div class="av">🃏</div><div class="meta"><div class="name">Free Card of the Week</div><div class="sub">A legendary is waiting — collect it on the Battlecards screen.</div></div><div class="acts"></div>`;
-		const go = el('button', 'mini primary', 'Collect'); go.addEventListener('click', () => { location.href = '/battlecards/start.html'; });
+		f.innerHTML = `<div class="av">🃏</div><div class="meta"><div class="name">Free Card of the Week</div><div class="sub">A free legendary is waiting — collect it here.</div></div><div class="acts"></div>`;
+		const go = el('button', 'mini primary', 'Collect'); go.addEventListener('click', () => collectFeatured(go));
 		$('.acts', f).appendChild(go);
 		body.appendChild(f);
+		// name the actual card (async) so you know what you're collecting
+		featuredCard().then(c => { const sub = $('.sub', f); if (c && sub) sub.innerHTML = `<b>${esc(c.name)}</b> — a free ${esc((c.rarity || 'legendary'))} ${esc(c.cardClass || 'neutral')} card. Collect it here.`; });
 	}
 	if (!state.challenges.length && !state.waitingOn && !featuredClaimable()) {
 		body.appendChild(el('div', 'ib-empty', 'No challenges right now.<br>Challenge a friend from the Friends tab.'));

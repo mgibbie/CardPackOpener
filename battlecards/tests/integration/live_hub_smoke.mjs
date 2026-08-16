@@ -55,6 +55,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		A(tile && /coolfriend/.test(tile.text) && /Dungeon run/i.test(tile.text) && /2.*watching/.test(tile.text), 'the tile shows the friend, game type, and live watcher count', JSON.stringify(tile));
 		A(tile && tile.hasWatch && tile.hasName, 'the tile has a Watch button + a clickable name');
 
+		// the Card of the Week renders as a real card FACE (drawCardFace canvas), not split art/stats
+		const faceShown = await waitFor(() => page.evaluate(() => !!document.querySelector('#cw-face canvas')), 15000);
+		A(faceShown, 'the Card of the Week renders as a full card face (drawCardFace canvas)');
+
 		// clicking Watch deep-links into the spectator view
 		await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }).catch(() => {}), page.click('#live-list .live-watch')]);
 		A(/[?&]spectate=coolfriend/.test(page.url()), 'clicking Watch deep-links to index.html?spectate=<friend>', page.url());
