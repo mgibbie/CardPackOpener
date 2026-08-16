@@ -131,6 +131,8 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		csState = { seq: 3, watchers: 1, watcherNames: [], full: false };
 		ended = true;
 		A(await waitFor(() => page.evaluate(() => { const el = document.querySelector('#over-note'); return !!(el && /ended|over/i.test(el.textContent)); }), 6000), 'when the watched game ends, the spectator sees a GAME OVER overlay');
+		// audit item #2: the chat poll loop is stopped (unmounted) when the watched game ends
+		A(await waitFor(() => page.evaluate(() => !document.querySelector('#mp-chat')), 3000), 'the chat is unmounted on game-over (its poll loop stops)');
 
 		A(errors.filter(e => !/Failed to load resource|Script error|WebGL|GL_|texture|CORS/i.test(e)).length === 0, 'no uncaught client errors while spectating', errors.slice(0, 4).join(' | '));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }

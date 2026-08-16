@@ -42,6 +42,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	A(!!id && !!storeValue && frameCount >= 4, 'recorded a tape in node and serialized the localStorage payload', `${id} / ${frameCount} frames`);
 
 	// --- 2) boot index.html?replay=<id> in a real headless browser ---
+	let publishCalls = 0; // count publish-cardstate calls from the live-game page (audit item #1)
 	const server = http.createServer((req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
 		if (u === '/api/mp') {
@@ -49,6 +50,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 				let body = {}; try { body = JSON.parse(b); } catch {}
 				let out = { ok: true };
 				if (body.action === 'replay-get') out = body.id === SHARE_ID ? { code: shareCode } : { error: 'not found' };
+				else if (body.action === 'publish-cardstate') publishCalls++;
 				res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out));
 			});
 			return;
@@ -113,6 +115,15 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		// the Watch/Copy buttons render into an overlay (same addReplayButtons used by post-game AND every run overlay)
 		const labels = await rec.evaluate(() => window.__game._replayButtonLabels());
 		A(Array.isArray(labels) && labels.some(l => /Watch replay/i.test(l)) && labels.some(l => /Copy replay link/i.test(l)), 'the Watch + Copy-link buttons render into a result overlay', JSON.stringify(labels));
+
+		// audit item #1: after game-over the publisher goes QUIET (one final board, then stops
+		// republishing so cardstate goes stale → spectators get GAME OVER), interval kept alive.
+		await waitFor(() => publishCalls > 0, 8000); // it's publishing while the game is live
+		await rec.evaluate(() => { window.__game.state.over = true; }); // force game-over
+		await sleep(3000); // let it push the final board + settle
+		const c1 = publishCalls;
+		await sleep(3000); // a second window — a still-running publisher would add ~2 more
+		A(publishCalls === c1, 'the publisher goes quiet after game-over (no endless republishing)', `2nd-window calls: ${publishCalls - c1}`);
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { if (browser) await browser.close(); server.close(); }
 	console.log(`\n${pass} passed, ${fail} failed`);

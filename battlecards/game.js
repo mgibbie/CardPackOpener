@@ -3533,7 +3533,13 @@ function startPublishLoop() {
 		if (arenaRunMode) { const r = loadArena(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Arena'; }
 		return 'Card Battle';
 	};
+	let publishedOver = false; // pushed the final (over) board once, then go quiet
 	const tick = async () => {
+		// once the game is over: publish the final board ONCE, then stop republishing so
+		// cardstate goes stale (~20s) and spectators get their GAME OVER overlay. Keep the
+		// interval alive (don't clearInterval) so a restart/rematch resumes broadcasting.
+		if (state && state.over) { if (publishedOver) return; publishedOver = true; }
+		else publishedOver = false;
 		try {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
@@ -3606,6 +3612,7 @@ function startSpectate(cardsById) {
 				const el = dungeonOverlay('GAME OVER', spectateSeq >= 0 ? `${spectateName}'s game has ended.` : `${spectateName} isn't in a live game right now.`);
 				el.id = 'over-note';
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
+				if (Chat.active()) Chat.unmount(); // the watched game ended → stop the chat poll loop
 			}
 			return;
 		}
