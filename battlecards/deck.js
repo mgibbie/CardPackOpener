@@ -274,10 +274,47 @@ function renderLoadout() {
 		el.innerHTML = `<span class="lo-k">${kind === 'commander' ? '⚔ COMMANDER' : '🐾 COMPANION'}</span><span class="lo-v">${name}</span>`;
 	}
 }
+// live deck analytics: mana-curve histogram + avg cost + type/rarity breakdown
+function renderDeckStats() {
+	const host = $('deck-stats'); if (!host) return;
+	if (!deck.length) { host.style.display = 'none'; return; }
+	host.style.display = 'block';
+	const buckets = [0, 0, 0, 0, 0, 0, 0, 0]; // costs 0..7+
+	const types = {}, rar = {}; let sumCost = 0;
+	for (const id of deck) {
+		const d = cardsById[id]; if (!d) continue;
+		const cost = Math.max(0, d.cost ?? 0);
+		buckets[Math.min(7, cost)]++;
+		sumCost += cost;
+		types[d.type] = (types[d.type] || 0) + 1;
+		rar[d.rarity || 'common'] = (rar[d.rarity || 'common'] || 0) + 1;
+	}
+	const max = Math.max(1, ...buckets);
+	const curve = $('ds-curve'); curve.innerHTML = '';
+	buckets.forEach((n, i) => {
+		const bar = document.createElement('div');
+		bar.className = 'ds-bar';
+		bar.title = `${n} card${n === 1 ? '' : 's'} at cost ${i === 7 ? '7+' : i}`;
+		bar.innerHTML = `<span class="ds-n">${n || ''}</span><span class="ds-fill" style="height:${Math.round((n / max) * 100)}%"></span><span class="ds-cost">${i === 7 ? '7+' : i}</span>`;
+		curve.appendChild(bar);
+	});
+	const avg = (sumCost / deck.length).toFixed(1);
+	const spells = (types.sorcery || 0) + (types.secret || 0) + (types.trap || 0) + (types.quest || 0) + (types.enchantment || 0);
+	const tparts = [`⌀ ${avg} avg`];
+	if (types.creature) tparts.push(`${types.creature} creature${types.creature === 1 ? '' : 's'}`);
+	if (spells) tparts.push(`${spells} spell${spells === 1 ? '' : 's'}`);
+	if (types.weapon) tparts.push(`${types.weapon} weapon${types.weapon === 1 ? '' : 's'}`);
+	$('ds-types').textContent = tparts.join(' · ');
+	const rparts = [];
+	for (const [k, label] of [['legendary', 'Leg'], ['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Unc'], ['common', 'Com']]) if (rar[k]) rparts.push(`${rar[k]} ${label}`);
+	$('ds-rarity').textContent = rparts.join(' · ');
+}
+
 function updateCounts() {
 	for (const id of tileById.keys()) refreshTile(id);
 	renderDeckList();
 	renderLoadout();
+	renderDeckStats();
 	const full = deck.length === SIZE;
 	const extras = (curCommander ? 1 : 0) + (curCompanion ? 1 : 0);
 	$('deck-count').textContent = extras ? `${deck.length} / ${SIZE}  (+${extras} = ${SIZE + extras})` : `${deck.length} / ${SIZE}`;

@@ -109,6 +109,14 @@
 		.deck-row .dn { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 		.deck-row .dx { color: #cdbcff; font-weight: 800; }
 		#deck-footer { padding: 12px; border-top: 1px solid #2a2340; }
+		#deck-stats { margin-bottom: 10px; }
+		.ds-curve { display: flex; align-items: flex-end; gap: 3px; height: 48px; }
+		.ds-bar { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+		.ds-bar .ds-n { font-size: 9px; line-height: 11px; height: 11px; color: #cdbcff; }
+		.ds-bar .ds-fill { width: 100%; min-height: 2px; background: linear-gradient(180deg, #8f6fff, #6b4fd4); border-radius: 3px 3px 0 0; }
+		.ds-bar .ds-cost { font-size: 9px; line-height: 12px; color: #7d719e; }
+		.ds-line { font-size: 11px; color: #9d8fd4; text-align: center; margin-top: 5px; line-height: 1.4; }
+		.ds-rar { color: #7d719e; margin-top: 2px; }
 		#deck-count { font-weight: 800; text-align: center; margin-bottom: 8px; font-size: 15px; }
 		#save { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #6b4fd4; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 		#save:hover { background: #7d63e6; }
@@ -236,6 +244,11 @@
 				</div>
 				<div id="deck-list"></div>
 				<div id="deck-footer">
+					<div id="deck-stats" style="display:none">
+						<div class="ds-curve" id="ds-curve"></div>
+						<div class="ds-line" id="ds-types"></div>
+						<div class="ds-line ds-rar" id="ds-rarity"></div>
+					</div>
 					<div id="deck-count">0 / 40</div>
 					<button id="save">Save Deck</button>
 					<button id="delete-deck">Delete This Deck</button>

@@ -83,6 +83,16 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const loaded = await page.evaluate(() => ({ editing: document.querySelector('#edit-view')?.style.display === 'flex', n: window.__deck?.deck?.length }));
 		A(loaded.editing && loaded.n === 40, 'clicking a starter loads a full 40-card deck into the editor', JSON.stringify(loaded));
 
+		// --- 1d) deck analytics: the loaded 40-card deck shows a mana curve + breakdown ---
+		const stats = await page.evaluate(() => {
+			const s = document.querySelector('#deck-stats');
+			const bars = document.querySelectorAll('#ds-curve .ds-bar');
+			let sum = 0; bars.forEach(b => { sum += +(b.querySelector('.ds-n')?.textContent || 0); });
+			return { shown: !!(s && s.style.display !== 'none'), bars: bars.length, barSum: sum, types: document.querySelector('#ds-types')?.textContent || '', rarity: document.querySelector('#ds-rarity')?.textContent || '' };
+		});
+		A(stats.shown && stats.bars === 8 && stats.barSum === 40, 'the deck analytics panel shows an 8-bucket mana curve summing to 40 cards', JSON.stringify({ shown: stats.shown, bars: stats.bars, barSum: stats.barSum }));
+		A(/avg/i.test(stats.types) && /creature|spell/i.test(stats.types) && stats.rarity.length > 0, 'it shows avg cost + a type + rarity breakdown', JSON.stringify({ types: stats.types, rarity: stats.rarity }));
+
 		// --- 2) a ?deck=<code> share link deep-links straight into the builder ---
 		await page.goto(`http://localhost:${PORT}/battlecards/deck.html?deck=${shareCode}`, { waitUntil: 'domcontentloaded' });
 		const deepLoaded = await waitFor(() => page.evaluate(cls =>
