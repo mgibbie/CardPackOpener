@@ -74,6 +74,15 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		A(await waitFor(() => page.evaluate(() => document.querySelector('#zoom')?.classList.contains('open')), 4000), 'pressing Enter on a focused tile opens the card detail (keyboard path to Add)');
 		await page.evaluate(() => document.querySelector('#zoom')?.classList.remove('open')); // close for later steps
 
+		// --- 1c) starter deck templates: the section renders + clicking one loads a 40-card deck ---
+		await page.evaluate(() => { const b = document.querySelector('#back-to-decks'); if (b) b.click(); }); // to the My Decks view
+		const haveStarters = await waitFor(() => page.evaluate(() => { const s = document.querySelector('#starter-section'); return !!(s && s.style.display !== 'none' && document.querySelectorAll('#starter-list .starter-row').length >= 5); }), 10000);
+		A(haveStarters, 'the "Start from a template" section lists starter decks (one per class)');
+		await page.evaluate(() => document.querySelector('#starter-list .starter-row')?.click());
+		await sleep(300);
+		const loaded = await page.evaluate(() => ({ editing: document.querySelector('#edit-view')?.style.display === 'flex', n: window.__deck?.deck?.length }));
+		A(loaded.editing && loaded.n === 40, 'clicking a starter loads a full 40-card deck into the editor', JSON.stringify(loaded));
+
 		// --- 2) a ?deck=<code> share link deep-links straight into the builder ---
 		await page.goto(`http://localhost:${PORT}/battlecards/deck.html?deck=${shareCode}`, { waitUntil: 'domcontentloaded' });
 		const deepLoaded = await waitFor(() => page.evaluate(cls =>
@@ -101,16 +110,14 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		const onList = await waitFor(() => page.evaluate(() => document.querySelector('#decks-view')?.style.display !== 'none' && !!document.querySelector('#slot-list .s-share')), 10000);
 		A(onList, 'saved decks in the My Decks list show a 🔗 share button');
 		lastDialog = null;
-		await page.click('#slot-list .s-share'); // a trusted gesture; clipboard may still fall back to prompt in headless
-		await sleep(300);
-		const share = await page.evaluate(() => ({
-			stillList: document.querySelector('#decks-view')?.style.display !== 'none' && document.querySelector('#edit-view')?.style.display === 'none',
-			status: document.querySelector('#status')?.textContent || '',
-		}));
-		A(share.stillList, 'clicking a slot 🔗 does NOT open the editor (stopPropagation holds)');
-		// success either way: the flash (clipboard resolved) OR the fallback prompt whose default is a real ?deck= link
-		const shared = /share link copied/i.test(share.status) || /deck\.html\?deck=MPCK/i.test(lastDialog?.def || '');
-		A(shared, 'clicking a slot 🔗 produces its ?deck= share link', JSON.stringify({ status: share.status, dialog: lastDialog?.def?.slice(0, 60) }));
+		// fire the handler in-page (reliably hits the element) — an untrusted click means
+		// clipboard.writeText rejects (no user gesture), so shareSlot deterministically
+		// falls back to prompt() whose default value is the ?deck= share link
+		await page.evaluate(() => document.querySelector('#slot-list .s-share')?.click());
+		await waitFor(() => !!lastDialog, 3000).catch(() => {});
+		const stillList = await page.evaluate(() => document.querySelector('#decks-view')?.style.display !== 'none' && document.querySelector('#edit-view')?.style.display === 'none');
+		A(stillList, 'clicking a slot 🔗 does NOT open the editor (stopPropagation holds)');
+		A(/deck\.html\?deck=MPCK/i.test(lastDialog?.def || ''), 'clicking a slot 🔗 produces its ?deck= share link', JSON.stringify({ dialog: lastDialog?.def?.slice(0, 60) }));
 
 		A(softErrors().length === 0, 'no uncaught client errors across all loads', softErrors().slice(0, 4).join(' | '));
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }

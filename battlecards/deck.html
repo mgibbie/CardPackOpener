@@ -89,6 +89,15 @@
 			background: #1a1330; color: #c9b8ff; border: 2px dashed #4a3f6b; font-size: 14px; font-weight: 700; cursor: pointer; }
 		#new-deck:hover { border-color: #8f6fff; color: #fff; }
 		#decks-empty { padding: 8px 4px 14px; color: #9b93b3; font-size: 13px; line-height: 1.5; }
+		#starter-section { padding: 4px 12px 16px; border-top: 1px solid #2a2340; margin-top: 10px; }
+		.starter-h { margin: 12px 0 2px; }
+		.starter-note { font-size: 12px; color: #9d8fd4; margin: 0 0 10px; line-height: 1.4; }
+		#starter-list { display: flex; flex-direction: column; gap: 6px; }
+		.starter-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px; background: #201a33; border: 1px solid #3a3055; cursor: pointer; color: #e8e2f4; font: inherit; text-align: left; width: 100%; }
+		.starter-row:hover { border-color: #8f6fff; background: #271f40; }
+		.starter-row:focus-visible { outline: 2px solid #a688ff; outline-offset: 2px; }
+		.starter-row .st-name { flex: 1; font-weight: 600; font-size: 13.5px; }
+		.starter-row .st-go { color: #a688ff; font-weight: 800; }
 
 		#edit-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 4px; }
 		#back-to-decks { background: #241b38; color: #cdbcff; border: 1px solid #4a3f6b; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -209,6 +218,11 @@
 			<div id="decks-view">
 				<h3>MY DECKS <span id="slot-count"></span></h3>
 				<div id="slot-list"></div>
+				<div id="starter-section" style="display:none">
+					<h3 class="starter-h">START FROM A TEMPLATE</h3>
+					<p class="starter-note">Ready-to-play decks — one per class, all cards a new account already owns. Load one, then Save it.</p>
+					<div id="starter-list"></div>
+				</div>
 			</div>
 			<!-- Deck editor -->
 			<div id="edit-view" style="display:none">

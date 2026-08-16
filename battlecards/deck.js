@@ -551,6 +551,36 @@ for (let i = 0; i <= 7; i++) {
 	$('mana-row').appendChild(b);
 }
 
+// ---------- starter deck templates (one per class, all new-account-owned) ----------
+let starterDecks = [];
+fetch('starter-decks.json').then(r => r.json()).then(({ decks }) => { starterDecks = decks || []; renderStarters(); }).catch(() => {});
+function renderStarters() {
+	const host = $('starter-list'); if (!host || !starterDecks.length) return;
+	host.innerHTML = '';
+	for (const s of [...starterDecks].sort((a, b) => a.name.localeCompare(b.name))) {
+		const row = document.createElement('button');
+		row.className = 'starter-row';
+		row.innerHTML = `<span class="st-name">${s.name}</span><span class="st-go">Load ›</span>`;
+		row.addEventListener('click', () => loadStarterDeck(s));
+		host.appendChild(row);
+	}
+	$('starter-section').style.display = 'block';
+}
+// load a template into the editor as a NEW, unsaved deck to review + Save (mirrors
+// loadDeckFromCode). The starter is legal + fully owned, so Save works immediately.
+function loadStarterDeck(s) {
+	if (!cardsReady) { flash('Still loading cards — try again in a moment.'); return; }
+	editingId = null;
+	curClass = s.classId;
+	deck = (s.cards || []).filter(id => cardsById[id]);
+	curCommander = curCompanion = null;
+	$('deck-name').value = s.name;
+	$('class-select').value = curClass;
+	renderSlots(); applyFilters(); updateCounts(); showEdit();
+	const dropped = (s.cards || []).length - deck.length;
+	flash(dropped ? `Loaded ${s.name} — ${dropped} card${dropped === 1 ? '' : 's'} unavailable. Review & Save.` : `Loaded ${s.name} — review, then Save!`);
+}
+
 // ---------- class picker (sorted A→Z; first one is the default) + boot ----------
 let classesReady = false, cardsReady = false;
 function maybeInit() {
