@@ -180,6 +180,11 @@ function onTrainerDefeated(script, opts) {
 }
 evolution.onDone = () => saveParty(party);
 let loading = true;
+// safety-net watchdogs (see tick): a map load that hangs/throws must never strand
+// loading=true (the whole game loop bails on it), and a plot cutscene must never
+// block forever with no player-facing UI. Both self-recover after a grace period.
+let loadWatchStart = null;    // rAF timestamp when `loading` first went true
+let cutsceneWatchStart = null; // rAF timestamp a cutscene first looked stuck
 
 // ---------- input ----------
 const KEYMAP = {
@@ -1248,12 +1253,14 @@ async function refreshMapContent(label) {
 	loading = false;
 	refreshFollower();
 	// run this map's ON_TRANSITION script (story vars, scene setup), then check
-	// for an ON_FRAME auto-cutscene now that the map is set up
-	runMapTransition();
-	checkOnFrame();
+	// for an ON_FRAME auto-cutscene now that the map is set up. Guard the ported
+	// plot triggers: a throwing story script must not break map entry itself
+	// (the map is already loaded + loading cleared above).
+	try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
+	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
-	checkIntroTrigger();
+	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
 }
 
 // visited Fly points (magepunk_flypoints); a town unlocks when you first stand on it
@@ -1288,14 +1295,27 @@ function findLanding(px, py) {
 }
 
 // direct travel (region select, ferries): land near the map's center
+// load-guard: on any load failure world.load leaves world.current on the old
+// (valid) map — this.current is only reassigned after a full successful render —
+// so the player just stays put. Clear loading + kill any wedged cutscene so the
+// game never freezes on a bad warp/connection.
+function afterLoadError(where, err) {
+	console.warn(`[load-guard] ${where} failed`, err);
+	loading = false;
+	if (cutscene.blocking) cutscene.stop();
+	hud.textContent = "That area couldn't be loaded.";
+}
+
 async function moveToMap(file, px, py) {
 	loading = true;
-	await world.load(file);
-	const cx = px ?? Math.floor(world.current.layout.width / 2);
-	const cy = py ?? Math.floor(world.current.layout.height / 2);
-	player.setTile(...findLanding(cx, cy));
-	player.surfing = false;
-	await refreshMapContent(file);
+	try {
+		await world.load(file);
+		const cx = px ?? Math.floor(world.current.layout.width / 2);
+		const cy = py ?? Math.floor(world.current.layout.height / 2);
+		player.setTile(...findLanding(cx, cy));
+		player.surfing = false;
+		await refreshMapContent(file);
+	} catch (e) { afterLoadError('moveToMap ' + file, e); }
 }
 
 async function warpTo(mapId, destWarpId) {
@@ -1303,14 +1323,16 @@ async function warpTo(mapId, destWarpId) {
 	if (!file) { console.warn('unknown warp dest', mapId); return; }
 	loading = true;
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
-	await world.load(file);
-	let idx = parseInt(destWarpId, 10);
-	if (isNaN(idx) || idx < 0) idx = 0;
-	const w = world.warps[idx] || world.warps[0];
-	if (w) player.setTile(w.x, w.y);
-	else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
-	world.lastWarpSource = source;
-	await refreshMapContent(file);
+	try {
+		await world.load(file);
+		let idx = parseInt(destWarpId, 10);
+		if (isNaN(idx) || idx < 0) idx = 0;
+		const w = world.warps[idx] || world.warps[0];
+		if (w) player.setTile(w.x, w.y);
+		else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
+		world.lastWarpSource = source;
+		await refreshMapContent(file);
+	} catch (e) { afterLoadError('warpTo ' + mapId, e); }
 }
 
 // Fly: warp straight to a town's landing tile (no warp-index lookup)
@@ -1319,21 +1341,25 @@ async function flyTo(mapId, tx, ty) {
 	if (!file) { console.warn('unknown fly dest', mapId); return; }
 	loading = true;
 	player.surfing = false;
-	await world.load(file);
-	const lay = world.current.layout;
-	const cx = Math.min(Math.max(0, tx), lay.width - 1);
-	const cy = Math.min(Math.max(0, ty), lay.height - 1);
-	player.setTile(...findLanding(cx, cy));
-	await refreshMapContent(file);
+	try {
+		await world.load(file);
+		const lay = world.current.layout;
+		const cx = Math.min(Math.max(0, tx), lay.width - 1);
+		const cy = Math.min(Math.max(0, ty), lay.height - 1);
+		player.setTile(...findLanding(cx, cy));
+		await refreshMapContent(file);
+	} catch (e) { afterLoadError('flyTo ' + mapId, e); }
 }
 
 async function backWarp() {
 	const src = world.lastWarpSource;
 	if (!src) return;
 	loading = true;
-	await world.load(src.name);
-	player.setTile(src.tx, src.ty);
-	await refreshMapContent(src.name);
+	try {
+		await world.load(src.name);
+		player.setTile(src.tx, src.ty);
+		await refreshMapContent(src.name);
+	} catch (e) { afterLoadError('backWarp ' + src.name, e); }
 }
 
 // ---------- Mach Bike ----------
@@ -1357,13 +1383,15 @@ async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 	if (!file) return false;
 	loading = true;
 	const src = { name: world.current.name, tx: player.tx, ty: player.ty };
-	await world.load(file);
-	const lay = world.current.layout;
-	player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
-	player.surfing = kind === 'emerge'; // surface -> back on the waves; dive -> walk the seabed
-	player.biking = false;
-	world.lastWarpSource = src;
-	await refreshMapContent(file);
+	try {
+		await world.load(file);
+		const lay = world.current.layout;
+		player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
+		player.surfing = kind === 'emerge'; // surface -> back on the waves; dive -> walk the seabed
+		player.biking = false;
+		world.lastWarpSource = src;
+		await refreshMapContent(file);
+	} catch (e) { afterLoadError('diveTo ' + file, e); return false; }
 	return true;
 }
 // ---------- HM field moves ----------
@@ -1470,9 +1498,11 @@ function openPartyAction(idx) {
 async function crossConnection(hit) {
 	loading = true;
 	const { conn, lx, ly } = hit;
-	await world.load(conn.name);
-	player.setTile(lx, ly);
-	await refreshMapContent(conn.name);
+	try {
+		await world.load(conn.name);
+		player.setTile(lx, ly);
+		await refreshMapContent(conn.name);
+	} catch (e) { afterLoadError('crossConnection ' + conn.name, e); }
 }
 
 // nudge the player toward the bike when a cracked floor stops them
@@ -1506,9 +1536,12 @@ player.onArrive = () => {
 			crossConnection(hit); return;
 		}
 	}
-	// a coord_event trigger on this tile (var-gated) runs its ported script
-	if (!cutscene.blocking && checkCoordTrigger()) return;
-	if (!cutscene.blocking) checkOnFrame();
+	// a coord_event trigger on this tile (var-gated) runs its ported story script.
+	// Guard it: a throwing plot script must not break stepping onto the tile.
+	try {
+		if (!cutscene.blocking && checkCoordTrigger()) return;
+		if (!cutscene.blocking) checkOnFrame();
+	} catch (e) { console.warn('[plot] coord/onFrame trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a static legendary sitting on this tile
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
@@ -1808,12 +1841,40 @@ function checkOnFrame() {
 }
 // coord_event trigger: stepping on a tile whose gating var matches its value
 // fires the tile's ported script (Oak stopping you at the town edge, etc.)
+// Some enabled plot coord-scenes don't advance their own scene var in this data,
+// so they'd replay every time you re-step their trigger tile (a farmable rival
+// rematch, a repeated greeting). Map each such trigger label to a shared scene
+// key; once fired, the whole group is suppressed. (Scenes that DO self-advance —
+// all the Hoenn set-pieces, and the self-EVENT-guarded Rocket cameras — aren't
+// listed; they one-shot themselves.)
+const PLOT_ONESHOT = {
+	MeetMomLeftScript: 'jo_mom', MeetMomRightScript: 'jo_mom',
+	FirstStepIntoKantoLeftScene: 'jo_route27', FirstStepIntoKantoRightScene: 'jo_route27',
+	ReleaseTheBeasts: 'jo_burnedtower',
+	LanceHealsScript1: 'jo_lance_heal', LanceHealsScript2: 'jo_lance_heal',
+	UndergroundRivalScene1: 'jo_goldenrod_rival', UndergroundRivalScene2: 'jo_goldenrod_rival',
+	VictoryRoadRivalLeft: 'jo_victoryroad_rival', VictoryRoadRivalRight: 'jo_victoryroad_rival',
+};
+let firedPlot = null;
+function loadFiredPlot() {
+	if (!firedPlot) { const f = safeLoad('magepunk_plot_fired', []); firedPlot = new Set(Array.isArray(f) ? f : []); }
+	return firedPlot;
+}
+function markPlotFired(key) { const s = loadFiredPlot(); if (!s.has(key)) { s.add(key); safeSave('magepunk_plot_fired', [...s]); } }
+
 function checkCoordTrigger() {
 	const evs = world.current.map.coord_events || [];
 	for (const e of evs) {
 		if (+e.x !== player.tx || +e.y !== player.ty) continue;
 		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
-		if (e.script && mapScripts[e.script]) return runScriptLabel(e.script);
+		if (e.script && mapScripts[e.script]) {
+			const once = PLOT_ONESHOT[e.script];
+			if (once) {
+				if (loadFiredPlot().has(once)) continue; // this plot beat already played
+				markPlotFired(once);                     // mark at fire-start (both trigger tiles share the key)
+			}
+			return runScriptLabel(e.script);
+		}
 	}
 	return false;
 }
@@ -1846,66 +1907,66 @@ const STORY_SEED = {
 			// (coord triggers gate on 0/1/3), so a starter-holder can explore
 			VAR_LITTLEROOT_INTRO_STATE: 4,
 			VAR_LITTLEROOT_TOWN_STATE: 4,
-			// Emerald gates forced story cutscenes on per-map/route state vars that
-			// vanilla starts at 0. A region-picker never runs the linear plot, so
-			// those scene-0 coord triggers would cold-fire cutscenes that assume
-			// absent NPCs/state (Oldale researcher shoving you back, Petalburg gym
-			// tour + Scott, Team Aqua/Magma set-pieces, rival ambushes, the
-			// legendary awakenings). Rest each at 1 — the "you've passed this beat"
-			// value — which clears the trigger without enabling a later one (each
-			// var's coord/onFrame gates were checked to exclude 1). The functional,
-			// self-resolving events (New Mauville locked door, museum entry fee,
-			// Trick House flavor) are intentionally left to fire. Skipping the
-			// legendary AWAKENING plot scenes here does not lose the legendaries:
-			// the catch itself is provided by LEGENDARY_ENCOUNTERS (a real
-			// catchable battle on Rayquaza/Kyogre/Groudon's tile).
+			// Emerald gates story cutscenes on per-map/route state vars (vanilla start
+			// 0). The DEEPER PLOT is now selectively ON: the seven SAFE set-pieces below
+			// are NO LONGER rested, so they cold-fire as authentic one-shots — each
+			// self-advances its own state var at the end, so it plays once and never
+			// repeats, touches only its own NPCs (showobj/hideobj), and never warps or
+			// edits tiles: the Route 110 & 119 rival ambushes, the Petalburg Woods Aqua
+			// grunt (VAR_PETALBURG_WOODS_STATE), Scott's cameo, Steven on Route 118, the
+			// Route 121 Aqua move-out, and Wally's Victory Road battle.
+			//   [ENABLED: VAR_SCOTT_PETALBURG_ENCOUNTER, VAR_PETALBURG_WOODS_STATE,
+			//    VAR_ROUTE110_STATE, VAR_ROUTE118_STATE, VAR_ROUTE119_STATE,
+			//    VAR_ROUTE121_STATE, VAR_VICTORY_ROAD_1F_STATE]
+			// These six stay rested — each would strand or corrupt a free-roam save:
+			// OLDALE re-fires a permanent west-exit block; PETALBURG re-fires a control-
+			// seizing gym escort; METEOR_FALLS & MT_PYRE flip cross-map hide-flags
+			// (deleting content elsewhere) + MT_PYRE gives a key item; SEAFLOOR_CAVERN
+			// WARPS the player to Route 128; SKY_PILLAR hides the Rayquaza object the
+			// player came to catch. The legendaries are still catchable via
+			// LEGENDARY_ENCOUNTERS (a real battle on their tile), decoupled from these
+			// awakening scenes.
 			VAR_OLDALE_TOWN_STATE: 1,
 			VAR_PETALBURG_CITY_STATE: 1,
-			VAR_SCOTT_PETALBURG_ENCOUNTER: 1,
-			VAR_PETALBURG_WOODS_STATE: 1,
-			VAR_ROUTE110_STATE: 1,
-			VAR_ROUTE118_STATE: 1,
-			VAR_ROUTE119_STATE: 1,
-			VAR_ROUTE121_STATE: 1,
 			VAR_METEOR_FALLS_STATE: 1,
 			VAR_MT_PYRE_STATE: 1,
 			VAR_SEAFLOOR_CAVERN_STATE: 1,
-			VAR_VICTORY_ROAD_1F_STATE: 1,
 			VAR_SKY_PILLAR_RAYQUAZA_CRY_DONE: 1,
 		},
 		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
 	},
 	JOHTO: {
-		// Crystal gates its intro/story coord_events on a per-map scene var
-		// (VAR_SCENE_<Map>) that vanilla starts at 0 and advances as the linear
-		// story runs. A region-picker who already has a starter is "post-intro"
-		// everywhere, so rest each map that has a scene-0 coord_event at its NOOP
-		// scene — otherwise walking onto the trigger tile fires a forced cutscene
-		// (the New Bark teacher dragging you home, Mom's greeting, story blocks)
-		// that assumes intro state. Derived from the decomp scene tables
-		// (tools/crystal_inject_coord_events.py ships the coord_events themselves).
+		// Crystal gates its story coord_events on a per-map scene var VAR_SCENE_<Map>
+		// (vanilla start 0). The DEEPER PLOT is now selectively ON: the maps NOT listed
+		// below are no longer rested, so their scene-0 coord_events cold-fire. Enabled
+		// (all safe — dialogue/battle/flavor, no player-warp, no tile edits):
+		//   Mom's greeting (PlayersHouse1F), the Route 27 fisher, the Burned Tower
+		//   legendary-beasts awakening, the Team Rocket HQ security cameras + floor
+		//   traps → grunt battles (B1F, each self-guarded by its own EVENT flag), the
+		//   B2F Lance heal (its boss/lock coord_events sit at value 1/2 and stay
+		//   dormant while the var rests at 0), the Goldenrod Underground + Victory Road
+		//   RIVAL ambushes, and the Indigo Plateau rival (self-guards / no-ops for a
+		//   fresh save). The scenes lacking a self-advance are made one-shot via
+		//   PLOT_ONESHOT below so they don't re-fire on tile re-entry.
+		// These stay rested — each strands or corrupts a free-roam save: NewBarkTown
+		// (no-starter block), Route32 & MahoganyTown & Olivine & SproutTower3F &
+		// WiseTriosRoom & MagnetTrain (force-move the player / linear gates),
+		// Olivine/Vermilion PORTS & FastShip (warp the player onto the S.S. Aqua),
+		// RadioTower5F (hands a key item), Ecruteak TinTower entrance (a sage NPC that
+		// slides over to block the stairs — would gate Ho-Oh in free-roam).
 		vars: {
 			VAR_SCENE_NewBarkTown: 1,
-			VAR_SCENE_PlayersHouse1F: 1,
-			VAR_SCENE_Route27: 1,
 			VAR_SCENE_Route32: 2,
 			VAR_SCENE_MahoganyTown: 1,
 			VAR_SCENE_OlivineCity: 1,
 			VAR_SCENE_OlivinePort: 1,
 			VAR_SCENE_VermilionPort: 1,
 			VAR_SCENE_FastShipB1F: 1,
-			VAR_SCENE_MountMoonSquare: 1,
-			VAR_SCENE_BurnedTowerB1F: 1,
 			VAR_SCENE_SproutTower3F: 1,
 			VAR_SCENE_EcruteakTinTowerEntrance: 1,
 			VAR_SCENE_WiseTriosRoom: 1,
-			VAR_SCENE_TeamRocketBaseB1F: 1,
-			VAR_SCENE_TeamRocketBaseB2F: 3,
 			VAR_SCENE_RadioTower5F: 2,
 			VAR_SCENE_GoldenrodMagnetTrainStation: 1,
-			VAR_SCENE_GoldenrodUndergroundSwitchRoomEntrances: 1,
-			VAR_SCENE_IndigoPlateauPokecenter1F: 1,
-			VAR_SCENE_VictoryRoad: 1,
 		},
 		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
 	},
@@ -2171,7 +2232,20 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
+	// If a map load hangs (never resolves) or a handler after it wedged, recover.
+	if (loading) {
+		if (loadWatchStart == null) loadWatchStart = now;
+		else if (now - loadWatchStart > 12000) { loadWatchStart = null; loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
+	} else loadWatchStart = null;
 	if (loading || !world.current) return;
+	// WATCHDOG 2 — a plot cutscene that blocks with NO player-facing UI (no dialog,
+	// battle, evolution, or menu) for a long stretch is genuinely wedged, not just
+	// waiting on the player — force-stop it rather than freeze the map.
+	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking && !starterMenu.open) {
+		if (cutsceneWatchStart == null) cutsceneWatchStart = now;
+		else if (now - cutsceneWatchStart > 30000) { cutsceneWatchStart = null; cutscene.stop(); hud.textContent = 'A scene timed out.'; }
+	} else cutsceneWatchStart = null;
 
 	// accumulate playtime (whole seconds, throttled writes) for the Trainer Card
 	playAccum += dt;
@@ -3560,6 +3634,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
+		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
 })();
