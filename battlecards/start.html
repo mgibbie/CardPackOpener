@@ -7,6 +7,7 @@
 	<link rel="dns-prefetch" href="https://magepunk-cardart.pages.dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
+	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 	<style>
 	:root {
 		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
@@ -154,6 +155,7 @@
 	<meta property="og:title" content="Magepunk Battlecards">
 	<meta property="og:description" content="A deep collectible card game — thousands of cards, a full deck builder, run modes, and PvP. Play free in your browser.">
 	<meta property="og:url" content="https://www.michaelgibalerio.com/battlecards/start.html">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/battlecards/start.html">
 	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
 	<meta property="og:image:width" content="1200">
 	<meta property="og:image:height" content="630">
@@ -510,7 +512,7 @@
 			const tile = document.createElement('div');
 			tile.className = 'tile live-tile';
 			tile.innerHTML = `<div class="glyph">${MODE_ICON[f.mode] || '🔴'}</div>`
-				+ `<div class="live-meta"><div class="live-name" data-user="${esc(f.username)}">${esc(f.username)}<span class="live-live">● live</span></div>`
+				+ `<div class="live-meta"><div class="live-name" role="button" tabindex="0" title="View ${esc(f.username)}'s profile" data-user="${esc(f.username)}">${esc(f.username)}<span class="live-live">● live</span></div>`
 				+ `<p>${bits.join(' · ')}</p></div>`;
 			const watch = document.createElement('button');
 			watch.className = 'live-watch';
@@ -520,7 +522,9 @@
 				if (f.kind === 'pokemon') { if (f.matchId) location.href = '/overworld/?mp=1&watch=' + encodeURIComponent(f.matchId); }
 				else location.href = 'index.html?spectate=' + encodeURIComponent(f.username) + '&mp=1';
 			});
-			tile.querySelector('.live-name').addEventListener('click', () => openProfile(f.username));
+			const nameEl = tile.querySelector('.live-name');
+				nameEl.addEventListener('click', () => openProfile(f.username));
+				nameEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile(f.username); } });
 			tile.appendChild(watch);
 			list.appendChild(tile);
 		}

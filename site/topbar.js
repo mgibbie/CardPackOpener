@@ -648,10 +648,14 @@ function renderMessages(body) {
 		const unread = msgs.some(m => m.ts > seenTs() && m.from !== state.me);
 		const row = el('div', 'row');
 		row.style.cursor = 'pointer';
+		row.setAttribute('role', 'button');
+		row.tabIndex = 0;
+		row.setAttribute('aria-label', 'Open conversation with ' + other);
 		row.innerHTML = `<div class="av">👤</div>
 			<div class="meta"><div class="name">${esc(other)}${unread ? ' <span style="color:var(--green)">•</span>' : ''}</div>
 			<div class="sub">${last ? esc((last.from === state.me ? 'You: ' : '') + (last.text || last.emote || '')).slice(0, 46) : 'No messages yet'}</div></div>`;
 		row.addEventListener('click', () => openThread(other));
+		row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openThread(other); } });
 		body.appendChild(row);
 	}
 }
