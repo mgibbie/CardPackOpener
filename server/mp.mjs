@@ -13,6 +13,7 @@
 import { scrypt as scryptCb, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { STARTER_DECKS } from '../battlecards/dungeon.js';
 import { STARTING_COLLECTION } from '../battlecards/starter-collection.js';
+import { STARTER_DECKS_LIST } from '../battlecards/starter-decks.js';
 import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
@@ -85,7 +86,9 @@ const STARTER_SLOT_DEFS = [
 	{ name: 'Warrior Starter', classId: 'warrior', cards: WARRIOR_STARTER },
 	{ name: 'Hunter Starter', classId: 'hunter', cards: HUNTER_STARTER },
 ];
-const starterSlots = () => STARTER_SLOT_DEFS.map(d => ({ id: newDeckId(), name: d.name, classId: d.classId, cards: [...d.cards] }));
+// a fresh account is pre-handed all 18 per-class starter-deck templates as saved
+// slots (STARTER_DECKS_LIST); every card is in STARTING_COLLECTION, so all are legal.
+const starterSlots = () => STARTER_DECKS_LIST.map(d => ({ id: newDeckId(), name: d.name, classId: d.classId, cards: [...d.cards] }));
 const grantCards = (collection, ids) => {
 	const counts = {};
 	for (const id of ids) counts[id] = (counts[id] || 0) + 1;
@@ -407,6 +410,22 @@ async function grantStarterBaseline(store, username, user) {
 		user.startersV4 = true;
 		changed = true;
 	}
+	// V5: pre-save all 18 per-class starter-deck templates as slots (V4 already
+	// granted their cards). Dedup by name|classId so an existing account's legacy
+	// starter decks aren't duplicated; stop at the slot cap.
+	if (!user.startersV5) {
+		if (!Array.isArray(user.decks)) user.decks = [];
+		const have = new Set(user.decks.map(d => (d.name || '') + '|' + (d.classId || '')));
+		for (const d of STARTER_DECKS_LIST) {
+			const key = d.name + '|' + d.classId;
+			if (!have.has(key) && user.decks.length < MAX_DECK_SLOTS) {
+				user.decks.push({ id: newDeckId(), name: d.name, classId: d.classId, cards: [...d.cards] });
+				have.add(key);
+			}
+		}
+		user.startersV5 = true;
+		changed = true;
+	}
 	if (changed) await store.setJSON(username, user);
 }
 
@@ -567,11 +586,11 @@ export default async function handler(req, env) {
 			if (!(await store.get('code:' + code))) break;
 		}
 		const collection = startingCollection();
-		const decks = starterSlots(); // ready 40-card Mage / Warrior / Hunter decks
+		const decks = starterSlots(); // all 18 per-class starter-deck templates, pre-saved
 		const user = {
 			salt, hash, created: Date.now(),
 			collection,
-			decks,                  // three ready starter decks; up to 40 slots
+			decks,                  // 18 ready starter decks (one per class); up to 40 slots
 			decksMigrated: true,
 			packs: STARTER_PACKS, // a stack of welcome packs to build a collection from
 			packInbox: 0,
@@ -579,6 +598,7 @@ export default async function handler(req, env) {
 			starterBaselineV2: true,
 			startersV3: true,
 			startersV4: true,
+			startersV5: true,
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
 			friendCode: code,
 			friends: [],

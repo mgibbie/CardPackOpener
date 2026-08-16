@@ -112,6 +112,11 @@ async function loadHandler() {
 		for (const name of ['relayhost', 'relayg1', 'relayg2']) {
 			const reg = await api('register', { username: name, password: 'harness123' });
 			if (reg.error) throw new Error('register ' + name + ': ' + reg.error);
+			if (name === 'relayhost') {
+				const decks = reg.state.decks || [];
+				A(decks.length === 18 && new Set(decks.map(d => d.classId)).size === 18 && decks.every(d => d.cards.length === 40),
+					'a new account is pre-handed all 18 per-class starter decks (40 cards each)', `${decks.length} decks, ${new Set(decks.map(d => d.classId)).size} classes`);
+			}
 			const deck = reg.state.decks[0];
 			users.push({ name, token: reg.token, party: { deck: deck.cards, classId: deck.classId, commander: deck.commander || null, companion: deck.companion || null } });
 		}
