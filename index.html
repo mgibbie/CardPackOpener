@@ -186,6 +186,10 @@
 				<div class="glyph">📚</div>
 				<div><h3>Your Collection <span class="arrow">→</span></h3><p>Browse every card you've opened, gallery-style.</p></div>
 			</a>
+			<a class="tile" id="tile-monsters" href="monsters/" hidden>
+				<div class="glyph">🐾</div>
+				<div><h3>Your Monsters <span class="arrow">→</span></h3><p>See the Pokémon in your party and PC boxes from the Overworld.</p></div>
+			</a>
 			<a class="tile" href="learnmagepunk/">
 				<div class="glyph">🎓</div>
 				<div><h3>Learn Magepunk <span class="arrow">→</span></h3><p>How to play Battlecards — turns, combat, lands, classes, and every keyword.</p></div>
@@ -209,10 +213,14 @@
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
-	<!-- the Collection tile is logged-in only -->
+	<!-- the Collection tile is logged-in only; Monsters shows once you have a party -->
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
+	try {
+		const p = localStorage.getItem('magepunk_party_v1');
+		if (p && p !== '[]' && p !== 'null') { const m = document.getElementById('tile-monsters'); if (m) m.hidden = false; }
+	} catch (e) {}
 	</script>
 	<script>
 	// theme toggle: remember the choice; default follows the OS

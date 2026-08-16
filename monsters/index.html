@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Your Monsters — Magepunk</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%90%BE</text></svg>">
+	<meta name="description" content="The Pokémon in your party and PC boxes from the Magepunk Overworld.">
+	<meta name="robots" content="noindex">
+	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<style>
+	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --shadow:0 10px 30px rgba(0,0,0,.35); }
+	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --shadow:0 8px 24px rgba(40,50,90,.12); }
+	@media (prefers-color-scheme: light) { :root:not([data-theme]) { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --shadow:0 8px 24px rgba(40,50,90,.12); } }
+	* { margin:0; padding:0; box-sizing:border-box; }
+	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(110,168,255,.14), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
+	a { color:inherit; text-decoration:none; }
+	.wrap { max-width:1040px; margin:0 auto; padding:18px 20px 64px; }
+	.back { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; font-size:.92rem; padding:6px 10px; border-radius:8px; }
+	.back:hover { color:var(--text); background:var(--panel); }
+	.hero { text-align:center; padding:22px 12px 4px; }
+	.hero .glyph { font-size:2.6rem; }
+	.hero h1 { font-size:clamp(2rem,6vw,3rem); font-weight:900; letter-spacing:-1px; margin-top:4px; background:linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+	.hero .tag { margin-top:8px; color:var(--muted); }
+	.section-label { display:flex; align-items:center; gap:12px; margin:30px 4px 14px; color:var(--muted); font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:2px; }
+	.section-label::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--border), transparent); }
+	.section-label .count { letter-spacing:0; color:var(--gold); }
+	.mon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px; }
+	.mon { display:flex; gap:12px; align-items:center; padding:14px; border-radius:14px; background:var(--panel); border:1px solid var(--border); box-shadow:var(--shadow); }
+	.mon.fainted { opacity:.6; }
+	.mon .sprite { flex:0 0 64px; width:64px; height:64px; display:grid; place-items:center; background:var(--panel-2); border-radius:12px; }
+	.mon .sprite img { max-width:60px; max-height:60px; image-rendering:pixelated; }
+	.mon .info { flex:1; min-width:0; }
+	.mon .nm { font-weight:800; font-size:1rem; display:flex; align-items:center; gap:6px; }
+	.mon .nm .lv { color:var(--muted); font-weight:700; font-size:.82rem; }
+	.mon .nm .g { font-size:.9rem; }
+	.mon .g.m { color:var(--blue); } .mon .g.f { color:#ff8ab4; }
+	.mon .types { display:flex; gap:5px; margin:6px 0; }
+	.mon .t { font-size:.6rem; font-weight:800; letter-spacing:.4px; color:#fff; padding:2px 7px; border-radius:999px; text-shadow:0 1px 1px rgba(0,0,0,.35); }
+	.mon .hp { height:8px; border-radius:999px; background:var(--panel-2); overflow:hidden; }
+	.mon .hp > span { display:block; height:100%; border-radius:999px; background:var(--green); }
+	.mon .hpn { font-size:.7rem; color:var(--muted); margin-top:3px; }
+	.mon .ab { font-size:.72rem; color:var(--muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+	.mon .dex { font-size:.66rem; color:var(--muted); }
+	.empty { text-align:center; color:var(--muted); padding:44px 20px; line-height:1.7; }
+	.empty a { color:var(--blue); font-weight:700; }
+	footer { margin-top:40px; text-align:center; color:var(--muted); font-size:.84rem; }
+	footer a { color:var(--blue); font-weight:600; }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<a class="back" href="/">← Magepunk</a>
+		<header class="hero">
+			<div class="glyph">🐾</div>
+			<h1>Your Monsters</h1>
+			<p class="tag">The Pokémon in your party and PC boxes from the Overworld.</p>
+		</header>
+		<div id="content"></div>
+		<footer>Roaming in the <a href="/overworld/">Overworld</a>. Your team lives on this device.</footer>
+	</div>
+	<script type="module" src="./monsters.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
+</body>
+</html>
