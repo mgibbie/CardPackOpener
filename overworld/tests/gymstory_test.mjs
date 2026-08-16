@@ -78,6 +78,22 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		// 1) Brock's authentic script body is loaded for this map
 		A(await page.evaluate((k) => Array.isArray(window.__ow.mapScripts[k]), BROCK), 'Brock’s ported EventScript is loaded', BROCK);
 
+		// 1b) an ORDINARY trainer (Liam, the gym's junior) also plays his script, but
+		//     awards NO badge (only Gym Leaders do) — regression guard on the broadened routing
+		const liam = await page.evaluate(() => {
+			const k = 'PewterCity_Gym_EventScript_Liam';
+			const isLoaded = Array.isArray(window.__ow.mapScripts[k]);
+			const role = window.__ow.Badges.scriptInfo(k); // null = ordinary trainer
+			const started = isLoaded ? window.__ow.runScriptLabel(k, { ev: { script: k } }) : false;
+			const text = window._dtext();
+			window.__ow.cutscene.stop && window.__ow.cutscene.stop(); // abort before it battles
+			window._close();
+			return { isLoaded, role, started, text };
+		});
+		A(liam.isLoaded && liam.started === true, 'an ordinary trainer (Liam) also routes to his ported script');
+		A(liam.role === null, 'an ordinary trainer awards no badge (scriptInfo null)');
+		A(liam.text && !/[{}]/.test(liam.text), 'the ordinary trainer’s line renders clean', JSON.stringify(liam.text));
+
 		// 2) engaging Brock routes through the script (leader speech), NOT a bare battle
 		const intro = await page.evaluate((k) => {
 			// prefer the real Trainer object; fall back to a minimal talker

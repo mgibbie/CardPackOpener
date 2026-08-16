@@ -104,11 +104,16 @@ trainers.onEngage = t => {
 	// the Elite Four / Champion won't battle until you hold all 8 region badges
 	const gate = leagueGateMessage(script);
 	if (gate) { dialog.open(gate); return; }
-	// Gym Leaders play their authentic ported script — leader speech, the battle,
-	// then the badge/TM ceremony + NPC state changes. The badge is recorded
-	// (silently) by the scripted-battle victory hook; the speech announces it. If
-	// the script body isn't loaded, fall through to the plain battle + badge toast.
-	if (Badges.scriptInfo(script)?.kind === 'gym' && mapScripts[script] && runScriptLabel(script, t)) return;
+	// Play the authentic ported script for any ordinary trainer or Gym Leader —
+	// the taunt / leader speech, the battle, and the post-battle lines (a Leader
+	// also does the badge/TM ceremony + NPC state changes). A Gym Leader's badge
+	// is recorded silently by the scripted-battle victory hook (the speech
+	// announces it). The Elite Four + Champion stay on the plain gated path — their
+	// decomp scripts warp room-to-room and roll credits (a later pass). If a script
+	// body isn't loaded, fall through to the plain battle (+ badge toast for gyms).
+	const role = Badges.scriptInfo(script);
+	const isLeague = role && (role.kind === 'elite' || role.kind === 'champion');
+	if (!isLeague && mapScripts[script] && runScriptLabel(script, t)) return;
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	const begin = () => startTrainerBattle(t, foeParty, info);
 	if (info.introQuote) dialog.open(info.introQuote, begin);
