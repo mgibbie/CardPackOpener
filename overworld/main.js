@@ -100,9 +100,15 @@ player.pushBoulder = (bx, by, dx, dy) => {
 };
 
 trainers.onEngage = t => {
+	const script = t.ev.script;
 	// the Elite Four / Champion won't battle until you hold all 8 region badges
-	const gate = leagueGateMessage(t.ev.script);
+	const gate = leagueGateMessage(script);
 	if (gate) { dialog.open(gate); return; }
+	// Gym Leaders play their authentic ported script — leader speech, the battle,
+	// then the badge/TM ceremony + NPC state changes. The badge is recorded
+	// (silently) by the scripted-battle victory hook; the speech announces it. If
+	// the script body isn't loaded, fall through to the plain battle + badge toast.
+	if (Badges.scriptInfo(script)?.kind === 'gym' && mapScripts[script] && runScriptLabel(script, t)) return;
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	const begin = () => startTrainerBattle(t, foeParty, info);
 	if (info.introQuote) dialog.open(info.introQuote, begin);
@@ -142,21 +148,27 @@ function leagueGateMessage(script) {
 
 // Called on any trainer victory. Gym Leaders award their badge; the Champion
 // crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
-function onTrainerDefeated(script) {
+function onTrainerDefeated(script, opts) {
 	const info = Badges.scriptInfo(script);
 	if (!info) return;
+	// a scripted battle plays the leader's own authentic speech (which already
+	// announces the badge), so record it silently and skip the synthetic toast
+	const silent = !!(opts && opts.silent);
 	if (info.kind === 'gym') {
-		if (Badges.earn(info.region, info.id)) {
+		const earned = Badges.earn(info.region, info.id);
+		if (earned && !silent) {
 			const n = Badges.count(info.region);
 			dialog.open(`You earned the ${info.name}!\n\nBadges: ${n}/8`
 				+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''));
 		}
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
-		const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
-		dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
-			() => dialog.open('*  HALL OF FAME  *\n\nYour team is recorded for all time.'
-				+ (fresh ? '' : '\n\n(You have cleared this League before.)')));
+		if (!silent) {
+			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
+			dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
+				() => dialog.open('*  HALL OF FAME  *\n\nYour team is recorded for all time.'
+					+ (fresh ? '' : '\n\n(You have cleared this League before.)')));
+		}
 	}
 }
 evolution.onDone = () => saveParty(party);
@@ -1734,7 +1746,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 			Story.setVar('VAR_RESULT', 1);
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
 			saveParty(party);
-			onTrainerDefeated(talker?.ev?.script); // badge/crown if this was a Leader/Champion
+			onTrainerDefeated(talker?.ev?.script, { silent: true }); // badge/crown; the script's own speech announces it
 			cutscene.resume(); // continue the script (defeat text, post-battle)
 		} else {
 			// blacked out / fled: heal and abandon the rest of the script

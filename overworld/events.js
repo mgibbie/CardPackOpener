@@ -242,7 +242,10 @@ function resolveText(ctx, ref) {
 	if (typeof s !== 'string') return '...';
 	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
 		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
-		.replace(/\{[A-Z_0-9]+\}/g, ''); // drop other control tokens
+		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
+		.replace(/é/g, 'e').replace(/É/g, 'E') // POKéMON -> POKeMON, to match the game's font/convention
+		.replace(/[ \t]+\n/g, '\n')          // trailing spaces left by a stripped inline code
+		.replace(/\n{3,}/g, '\n\n');         // collapse gaps left where a code stood alone on a line
 	return s.trim() || '...';
 }
 
