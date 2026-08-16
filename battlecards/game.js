@@ -4804,9 +4804,12 @@ async function dungeonStarterDeck(clsId) {
 }
 
 // a finished run pays out one pack, win or lose
+// which run mode is this? (drives the per-mode achievement counters server-side)
+const runModeName = () => arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
+	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
 async function mpRunReward(el, result) {
 	if (!MP_ON) return;
-	const data = await MPX.call('run-reward', { result });
+	const data = await MPX.call('run-reward', { result, mode: runModeName() });
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
 	note.textContent = data.error ? data.error

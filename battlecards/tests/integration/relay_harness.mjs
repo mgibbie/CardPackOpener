@@ -237,6 +237,23 @@ async function loadHandler() {
 			const names = (lb.top || []).map(e => e.name);
 			A(names.indexOf('arenab') >= 0 && names.indexOf('arenab') < names.indexOf('arenaa'), '12-0 is ordered above 8-2 on the board', JSON.stringify(names.slice(0, 4)));
 			A(lb.you && lb.you.wins === 8 && lb.you.rank >= 1, 'the leaderboard reports your own best + rank', JSON.stringify(lb.you));
+
+			// ---- per-mode run counters (drive the per-mode achievements) ----
+			const rm = await api('register', { username: 'runmodes', password: 'harness123' });
+			const submitRun = async (mode, result) => {
+				const r = await api('run-reward', { mode, result }, rm.token);
+				try { const u = JSON.parse(db._map.get('runmodes')); u.stats.lastReward = 0; db._map.set('runmodes', JSON.stringify(u)); } catch {} // clear the 1/min pack cooldown
+				return r;
+			};
+			await submitRun('dungeon', 'win');
+			await submitRun('heist', 'win');
+			await submitRun('arena', 'loss');
+			await submitRun('arena', 'win');
+			const rmState = (await api('state', {}, rm.token)).state;
+			const modes = (rmState.stats && rmState.stats.modes) || {};
+			A(modes.dungeon?.wins === 1 && modes.heist?.wins === 1 && modes.arena?.runs === 2 && modes.arena?.wins === 1,
+				'run-reward tracks per-mode run/win counters (for achievements)', JSON.stringify(modes));
+			A('arenaBest' in rmState, 'publicState surfaces arenaBest (for the profile achievements)', JSON.stringify({ arenaBest: rmState.arenaBest }));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched

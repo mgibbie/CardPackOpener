@@ -78,6 +78,20 @@ const ACH = (m) => [
 		{ ico: '⚖️', nm: 'Halfway There', ds: 'Collect 50% of all cards.', have: m.distinct, need: Math.ceil(m.poolSize * 0.50) },
 		{ ico: '💎', nm: 'Completionist', ds: 'Collect every card.', have: m.distinct, need: m.poolSize },
 	] : []),
+	// ---- per-mode run achievements ----
+	{ ico: '🗝️', nm: 'Treasure Hunter', ds: 'Clear a Dungeon run.', have: m.dungeon.wins, need: 1 },
+	{ ico: '🏆', nm: 'Dungeon Conqueror', ds: 'Clear 5 Dungeon runs.', have: m.dungeon.wins, need: 5 },
+	{ ico: '💼', nm: 'Cracked the Vault', ds: 'Complete a Heist run.', have: m.heist.runs, need: 1 },
+	{ ico: '🕴️', nm: 'Master Thief', ds: 'Clear a Heist.', have: m.heist.wins, need: 1 },
+	{ ico: '🎩', nm: 'Kingpin', ds: 'Clear 5 Heists.', have: m.heist.wins, need: 5 },
+	{ ico: '⚱️', nm: 'Tomb Raider', ds: 'Complete a Tombs run.', have: m.tombs.runs, need: 1 },
+	{ ico: '🧟', nm: 'Plague Ender', ds: 'Clear a Tombs chapter.', have: m.tombs.wins, need: 1 },
+	{ ico: '🎲', nm: 'Duelist', ds: 'Complete a Duels run.', have: m.duels.runs, need: 1 },
+	{ ico: '🏅', nm: 'Duels Champion', ds: 'Win a Duels run (12 wins).', have: m.duels.wins, need: 1 },
+	{ ico: '🎨', nm: 'Arena Drafter', ds: 'Complete an Arena run.', have: m.arena.runs, need: 1 },
+	{ ico: '🎯', nm: 'Arena Regular', ds: 'Complete 10 Arena runs.', have: m.arena.runs, need: 10 },
+	{ ico: '🥇', nm: 'Arena Ace', ds: 'Win 7+ games in a single Arena run.', have: m.arenaBestWins, need: 7 },
+	{ ico: '✨', nm: 'Flawless Arena', ds: 'Go 12-0 in an Arena run.', have: m.arenaBestWins, need: 12 },
 	{ ico: '🛠️', nm: 'Deck Builder', ds: 'Save a deck.', have: m.decks, need: 1 },
 	{ ico: '🧠', nm: 'Strategist', ds: 'Save 5 decks.', have: m.decks, need: 5 },
 	{ ico: '🗃️', nm: 'Arsenal', ds: 'Save 20 decks.', have: m.decks, need: 20 },
@@ -99,9 +113,13 @@ const ACH = (m) => [
 	const distinct = Object.values(col).filter(n => n > 0).length;
 	const copies = Object.values(col).reduce((a, b) => a + (b || 0), 0);
 	const st = s.stats || {};
+	const md = st.modes || {}; // per-mode run/win counters
+	const mode = k => md[k] || { runs: 0, wins: 0 };
 	const m = {
 		runs: st.runs || 0, wins: st.wins || 0, packsOpened: st.packsOpened || 0,
 		distinct, decks: (s.decks || []).length, friends: (s.friends || []).length, poolSize,
+		dungeon: mode('dungeon'), heist: mode('heist'), tombs: mode('tombs'), duels: mode('duels'), arena: mode('arena'),
+		arenaBestWins: (s.arenaBest && s.arenaBest.wins) || 0,
 	};
 	const achievements = ACH(m);
 	const unlocked = achievements.filter(a => a.have >= a.need).length;

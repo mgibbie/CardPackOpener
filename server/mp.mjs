@@ -530,6 +530,7 @@ const publicState = (u, username) => ({
 	packTimerMs: PACK_TIMER_MS,
 	nextPackMs: packEtaMs(u, Date.now()),
 	stats: u.stats,
+	arenaBest: u.arenaBest || null,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
 	featuredClaimed: !!(u.featuredClaims && u.featuredClaims[Math.floor(Date.now() / (7 * 86400000))]), // Card of the Week already collected this week?
@@ -1665,6 +1666,14 @@ export default async function handler(req, env) {
 		user.packs += 1;
 		user.stats.runs += 1;
 		if (body.result === 'win') user.stats.wins += 1;
+		// per-mode counters (for achievements): dungeon/heist/tombs/duels/arena
+		const mode = String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12);
+		if (['dungeon', 'heist', 'tombs', 'duels', 'arena'].includes(mode)) {
+			user.stats.modes = user.stats.modes || {};
+			const ms = user.stats.modes[mode] = user.stats.modes[mode] || { runs: 0, wins: 0 };
+			ms.runs += 1;
+			if (body.result === 'win') ms.wins += 1;
+		}
 		user.stats.lastReward = Date.now();
 		await store.setJSON(username, user);
 		return json({ state: publicState(user, username) });
