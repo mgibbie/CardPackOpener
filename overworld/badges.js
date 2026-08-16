@@ -1,0 +1,208 @@
+// badges.js — the progression spine: gym badges, the Elite Four gate, and the
+// champion win condition. Region-agnostic. A defeated Gym Leader awards that
+// region's badge (looked up by the leader's battle-script name from
+// trainers.json); the Elite Four + Champion are gated behind all 8 of that
+// region's badges; beating the Champion crowns you and ends the climb. HM field
+// moves are gated by badge count per canonical order.
+//
+// Badges/champion status live on this device (localStorage via safestore) — the
+// same slice as party/box/money; no login or network is needed.
+import { safeLoad, safeSave } from './safestore.js';
+
+// ordered badge list per region (index 0..7 = badges 1..8)
+export const BADGES = {
+	KANTO: [
+		{ id: 'boulder', name: 'Boulder Badge', leader: 'Brock' },
+		{ id: 'cascade', name: 'Cascade Badge', leader: 'Misty' },
+		{ id: 'thunder', name: 'Thunder Badge', leader: 'Lt. Surge' },
+		{ id: 'rainbow', name: 'Rainbow Badge', leader: 'Erika' },
+		{ id: 'soul', name: 'Soul Badge', leader: 'Koga' },
+		{ id: 'marsh', name: 'Marsh Badge', leader: 'Sabrina' },
+		{ id: 'volcano', name: 'Volcano Badge', leader: 'Blaine' },
+		{ id: 'earth', name: 'Earth Badge', leader: 'Giovanni' },
+	],
+	JOHTO: [
+		{ id: 'zephyr', name: 'Zephyr Badge', leader: 'Falkner' },
+		{ id: 'hive', name: 'Hive Badge', leader: 'Bugsy' },
+		{ id: 'plain', name: 'Plain Badge', leader: 'Whitney' },
+		{ id: 'fog', name: 'Fog Badge', leader: 'Morty' },
+		{ id: 'storm', name: 'Storm Badge', leader: 'Chuck' },
+		{ id: 'mineral', name: 'Mineral Badge', leader: 'Jasmine' },
+		{ id: 'glacier', name: 'Glacier Badge', leader: 'Pryce' },
+		{ id: 'rising', name: 'Rising Badge', leader: 'Clair' },
+	],
+	HOENN: [
+		{ id: 'stone', name: 'Stone Badge', leader: 'Roxanne' },
+		{ id: 'knuckle', name: 'Knuckle Badge', leader: 'Brawly' },
+		{ id: 'dynamo', name: 'Dynamo Badge', leader: 'Wattson' },
+		{ id: 'heat', name: 'Heat Badge', leader: 'Flannery' },
+		{ id: 'balance', name: 'Balance Badge', leader: 'Norman' },
+		{ id: 'feather', name: 'Feather Badge', leader: 'Winona' },
+		{ id: 'mind', name: 'Mind Badge', leader: 'Tate & Liza' },
+		{ id: 'rain', name: 'Rain Badge', leader: 'Juan' },
+	],
+};
+
+// Gym-leader battle script -> [region, badgeId]. Keys are the roster script names
+// in trainers.json: FireRed/Emerald `<Place>_Gym_EventScript_<Leader>` and
+// pokecrystal `<Place>Gym<Leader>Script`. Both the Emerald and RS variants of a
+// leader (and the JohKanto crystal Kanto gyms) point at the same badge.
+export const GYM_SCRIPT = {
+	// --- Kanto (FireRed) ---
+	'PewterCity_Gym_EventScript_Brock': ['KANTO', 'boulder'],
+	'CeruleanCity_Gym_EventScript_Misty': ['KANTO', 'cascade'],
+	'VermilionCity_Gym_EventScript_LtSurge': ['KANTO', 'thunder'],
+	'CeladonCity_Gym_EventScript_Erika': ['KANTO', 'rainbow'],
+	'FuchsiaCity_Gym_EventScript_Koga': ['KANTO', 'soul'],
+	'SaffronCity_Gym_EventScript_Sabrina': ['KANTO', 'marsh'],
+	'CinnabarIsland_Gym_EventScript_Blaine': ['KANTO', 'volcano'],
+	'ViridianCity_Gym_EventScript_Giovanni': ['KANTO', 'earth'],
+	// --- Kanto (pokecrystal / JohKanto rematch gyms) ---
+	'PewterGymBrockScript': ['KANTO', 'boulder'],
+	'CeruleanGymMistyScript': ['KANTO', 'cascade'],
+	'VermilionGymSurgeScript': ['KANTO', 'thunder'],
+	'CeladonGymErikaScript': ['KANTO', 'rainbow'],
+	'FuchsiaGymJanineScript': ['KANTO', 'soul'],
+	'SaffronGymSabrinaScript': ['KANTO', 'marsh'],
+	'SeafoamGymBlaineScript': ['KANTO', 'volcano'],
+	'ViridianGymBlueScript': ['KANTO', 'earth'],
+	// --- Johto (pokecrystal) ---
+	'VioletGymFalknerScript': ['JOHTO', 'zephyr'],
+	'AzaleaGymBugsyScript': ['JOHTO', 'hive'],
+	'GoldenrodGymWhitneyScript': ['JOHTO', 'plain'],
+	'EcruteakGymMortyScript': ['JOHTO', 'fog'],
+	'CianwoodGymChuckScript': ['JOHTO', 'storm'],
+	'OlivineGymJasmineScript': ['JOHTO', 'mineral'],
+	'MahoganyGymPryceScript': ['JOHTO', 'glacier'],
+	'BlackthornGymClairScript': ['JOHTO', 'rising'],
+	// --- Hoenn (Emerald; RS variants included) ---
+	'RustboroCity_Gym_EventScript_Roxanne': ['HOENN', 'stone'],
+	'DewfordTown_Gym_EventScript_Brawly': ['HOENN', 'knuckle'],
+	'MauvilleCity_Gym_EventScript_Wattson': ['HOENN', 'dynamo'],
+	'LavaridgeTown_Gym_1F_EventScript_Flannery': ['HOENN', 'heat'],
+	'LavaridgeTown_Gym_EventScript_Flannery': ['HOENN', 'heat'],
+	'PetalburgCity_Gym_EventScript_NormanBattle': ['HOENN', 'balance'],
+	'PetalburgCity_Gym_EventScript_Norman': ['HOENN', 'balance'],
+	'FortreeCity_Gym_EventScript_Winona': ['HOENN', 'feather'],
+	'MossdeepCity_Gym_EventScript_TateAndLiza': ['HOENN', 'mind'],
+	'MossdeepCity_Gym_EventScript_TateLiza': ['HOENN', 'mind'],
+	'SootopolisCity_Gym_1F_EventScript_Juan': ['HOENN', 'rain'],
+	'SootopolisCity_Gym_EventScript_Wallace': ['HOENN', 'rain'],
+};
+
+// Elite Four / Champion battle script -> [region, role]. role: 'elite' (a League
+// member — gated but awards nothing on its own) or 'champion' (beating them wins
+// the region). All entries are gated behind that region's 8 badges.
+export const LEAGUE_SCRIPT = {
+	// --- Kanto (Indigo Plateau / PokemonLeague) ---
+	'PokemonLeague_LoreleisRoom_EventScript_Battle': ['KANTO', 'elite'],
+	'PokemonLeague_BrunosRoom_EventScript_Battle': ['KANTO', 'elite'],
+	'PokemonLeague_AgathasRoom_EventScript_Battle': ['KANTO', 'elite'],
+	'PokemonLeague_LancesRoom_EventScript_Battle': ['KANTO', 'elite'],
+	'PokemonLeague_ChampionsRoom_EventScript_BattleBulbasaur': ['KANTO', 'champion'],
+	'PokemonLeague_ChampionsRoom_EventScript_BattleCharmander': ['KANTO', 'champion'],
+	'PokemonLeague_ChampionsRoom_EventScript_BattleSquirtle': ['KANTO', 'champion'],
+	// --- Johto (Indigo Plateau, crystal) ---
+	'WillScript_Battle': ['JOHTO', 'elite'],
+	'KogaScript_Battle': ['JOHTO', 'elite'],
+	'BrunoScript_Battle': ['JOHTO', 'elite'],
+	'KarenScript_Battle': ['JOHTO', 'elite'],
+	'LancesRoomLanceScript': ['JOHTO', 'champion'],
+	// --- Hoenn (Ever Grande City) ---
+	'EverGrandeCity_SidneysRoom_EventScript_Sidney': ['HOENN', 'elite'],
+	'EverGrandeCity_PhoebesRoom_EventScript_Phoebe': ['HOENN', 'elite'],
+	'EverGrandeCity_GlaciasRoom_EventScript_Glacia': ['HOENN', 'elite'],
+	'EverGrandeCity_DrakesRoom_EventScript_Drake': ['HOENN', 'elite'],
+	'EverGrandeCity_ChampionsRoom_EventScript_Wallace': ['HOENN', 'champion'],
+};
+
+// HM field-move -> number of that region's badges required to use it out of
+// battle. Canonical badge order: FRLG (flash/cut/fly/strength/surf gated 1..5),
+// RSE (cut/flash/rocksmash/strength/surf/fly/dive/waterfall gated 1..8),
+// GSC (flash/cut/strength/surf/fly gated 1..5, waterfall 8). 0 = no gate.
+export const HM_GATE = {
+	KANTO: { flash: 1, cut: 2, fly: 3, strength: 4, surf: 5, rocksmash: 0, waterfall: 0, dive: 0 },
+	JOHTO: { flash: 1, cut: 2, strength: 3, surf: 4, fly: 5, rocksmash: 0, waterfall: 8, dive: 0 },
+	HOENN: { cut: 1, flash: 2, rocksmash: 3, strength: 4, surf: 5, fly: 6, dive: 7, waterfall: 8 },
+};
+
+const KEY = 'magepunk_badges_v1';
+const REGIONS = ['KANTO', 'JOHTO', 'HOENN'];
+
+export function regionKey(r) {
+	const u = String(r || '').toUpperCase();
+	return REGIONS.includes(u) ? u : 'KANTO';
+}
+
+// { badges: { KANTO:{boulder:true,...}, ... }, champion: { KANTO:true, ... } }
+let _state = null;
+function state() {
+	if (_state) return _state;
+	const raw = safeLoad(KEY, null);
+	_state = (raw && typeof raw === 'object') ? raw : {};
+	if (!_state.badges || typeof _state.badges !== 'object') _state.badges = {};
+	if (!_state.champion || typeof _state.champion !== 'object') _state.champion = {};
+	return _state;
+}
+function persist() { safeSave(KEY, state()); }
+
+// reset the in-memory cache (tests / a fresh account after a wipe)
+export function _reset() { _state = null; }
+
+export function has(region, id) {
+	return !!state().badges[regionKey(region)]?.[id];
+}
+
+// award a badge; returns true only if it was newly earned (for the toast/dialog)
+export function earn(region, id) {
+	const rk = regionKey(region);
+	const b = state().badges;
+	if (!b[rk]) b[rk] = {};
+	if (b[rk][id]) return false;
+	b[rk][id] = true;
+	persist();
+	return true;
+}
+
+export function count(region) {
+	const owned = state().badges[regionKey(region)] || {};
+	return BADGES[regionKey(region)].reduce((n, b) => n + (owned[b.id] ? 1 : 0), 0);
+}
+
+// ordered [{ id, name, leader, earned }] for the trainer card
+export function list(region) {
+	const rk = regionKey(region);
+	const owned = state().badges[rk] || {};
+	return BADGES[rk].map(b => ({ ...b, earned: !!owned[b.id] }));
+}
+
+// what a battle script means for progression, or null if it's an ordinary trainer
+export function scriptInfo(script) {
+	if (!script) return null;
+	const g = GYM_SCRIPT[script];
+	if (g) return { kind: 'gym', region: g[0], id: g[1], name: badgeName(g[0], g[1]) };
+	const l = LEAGUE_SCRIPT[script];
+	if (l) return { kind: l[1], region: l[0] };
+	return null;
+}
+
+export function badgeName(region, id) {
+	return (BADGES[regionKey(region)].find(b => b.id === id) || {}).name || 'Badge';
+}
+
+// badges required to use an HM field move in this region (0 = always allowed)
+export function hmReq(region, hmId) {
+	return HM_GATE[regionKey(region)]?.[hmId] || 0;
+}
+
+export function isChampion(region) { return !!state().champion[regionKey(region)]; }
+export function crown(region) {
+	const rk = regionKey(region);
+	if (state().champion[rk]) return false;
+	state().champion[rk] = true;
+	persist();
+	return true;
+}
+
+// how many badges are still needed before the League opens (0 = ready)
+export function badgesUntilLeague(region) { return Math.max(0, 8 - count(region)); }

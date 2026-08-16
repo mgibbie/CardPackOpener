@@ -17,6 +17,7 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
+import * as Badges from './badges.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
@@ -99,6 +100,9 @@ player.pushBoulder = (bx, by, dx, dy) => {
 };
 
 trainers.onEngage = t => {
+	// the Elite Four / Champion won't battle until you hold all 8 region badges
+	const gate = leagueGateMessage(t.ev.script);
+	if (gate) { dialog.open(gate); return; }
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	const begin = () => startTrainerBattle(t, foeParty, info);
 	if (info.introQuote) dialog.open(info.introQuote, begin);
@@ -112,12 +116,48 @@ function startTrainerBattle(t, foeParty, info) {
 			trainers.markDefeated(t);
 			safeSaveStr('magepunk_money', (parseInt(localStorage.getItem('magepunk_money'), 10) || 0) + info.money);
 			saveParty(party);
+			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
 			healParty(party);
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
 		}
 	});
+}
+
+// ---------- progression: badges, the Elite Four gate, the champion crown ----------
+// HMs and the League gate by the player's chosen region; a badge is awarded for
+// the region the beaten Gym Leader belongs to (from the battle-script name).
+function playerRegion() { return Badges.regionKey(localStorage.getItem('magepunk_region')); }
+
+// If `script` is an Elite Four/Champion battle and the player is short of that
+// region's 8 badges, returns the block message; otherwise null (battle proceeds).
+function leagueGateMessage(script) {
+	const info = Badges.scriptInfo(script);
+	if (!info || (info.kind !== 'elite' && info.kind !== 'champion')) return null;
+	const need = Badges.badgesUntilLeague(info.region);
+	if (need <= 0) return null;
+	return `The POKeMON LEAGUE is only open to trainers who\nhave earned all 8 badges.\n\nYou still need ${need} more.`;
+}
+
+// Called on any trainer victory. Gym Leaders award their badge; the Champion
+// crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
+function onTrainerDefeated(script) {
+	const info = Badges.scriptInfo(script);
+	if (!info) return;
+	if (info.kind === 'gym') {
+		if (Badges.earn(info.region, info.id)) {
+			const n = Badges.count(info.region);
+			dialog.open(`You earned the ${info.name}!\n\nBadges: ${n}/8`
+				+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''));
+		}
+	} else if (info.kind === 'champion') {
+		const fresh = Badges.crown(info.region);
+		const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
+		dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
+			() => dialog.open('*  HALL OF FAME  *\n\nYour team is recorded for all time.'
+				+ (fresh ? '' : '\n\n(You have cleared this League before.)')));
+	}
 }
 evolution.onDone = () => saveParty(party);
 let loading = true;
@@ -1377,6 +1417,15 @@ const HM_FIELD = {
 function fieldMovesOf(mon) { return (mon?.moves || []).filter(mv => HM_FIELD[mv.id]); }
 function useFieldMove(hmId, mon) {
 	partyMenu.open = false; partyMenu.action = null; partyMenu.summary = false;
+	// badge gate: an HM can't be used outside battle until you've earned enough of
+	// your region's badges (canonical order). The move is still usable in battle.
+	const region = playerRegion();
+	const req = Badges.hmReq(region, hmId);
+	if (req > Badges.count(region)) {
+		const gb = Badges.list(region)[req - 1];
+		dialog.open(`Sorry! A new POKeMON LEAGUE rule\nprevents using ${HM_FIELD[hmId]?.name || hmId.toUpperCase()} outside of battle\nuntil you have the ${gb ? gb.name : 'right badge'}.`);
+		return;
+	}
 	HM_FIELD[hmId]?.use(mon);
 }
 // build the little action menu shown when you pick a party member
@@ -1685,6 +1734,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 			Story.setVar('VAR_RESULT', 1);
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
 			saveParty(party);
+			onTrainerDefeated(talker?.ev?.script); // badge/crown if this was a Leader/Champion
 			cutscene.resume(); // continue the script (defeat text, post-battle)
 		} else {
 			// blacked out / fled: heal and abandon the rest of the script
@@ -2372,9 +2422,12 @@ function drawTrainerCard(W, H) {
 	BUI.rr(sctx, cardX, cardY, cardW, cardH, 16 * u); sctx.fill();
 	sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
 	BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
+	const rk = Badges.regionKey(region);
+	const badgeN = Badges.count(rk);
 	const lines = [
 		['NAME', name],
 		['REGION', region],
+		['BADGES', Badges.isChampion(rk) ? `${badgeN}/8  * CHAMPION` : `${badgeN}/8`],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
 		['POKeDEX SEEN', String(c.seen)],
@@ -2384,13 +2437,25 @@ function drawTrainerCard(W, H) {
 	];
 	sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
 	lines.forEach(([k, v], i) => {
-		const y = cardY + (44 + i * 40) * u;
+		const y = cardY + (40 + i * 34) * u;
 		sctx.fillStyle = BUI.C.dim;
 		sctx.fillText(k, cardX + 32 * u, y);
-		sctx.fillStyle = BUI.C.text;
+		sctx.fillStyle = k === 'BADGES' && badgeN > 0 ? BUI.C.accent : BUI.C.text;
 		sctx.textAlign = 'right';
 		sctx.fillText(v, cardX + cardW - 32 * u, y);
 		sctx.textAlign = 'left';
+	});
+	// a row of 8 pips (filled = earned) so the badge case reads at a glance
+	const badges = Badges.list(rk);
+	const pipY = cardY + (40 + lines.length * 34 + 10) * u, pipR = 11 * u;
+	const gap = (cardW - 64 * u) / 8;
+	badges.forEach((b, i) => {
+		const px = cardX + 32 * u + gap * i + gap / 2;
+		sctx.beginPath();
+		sctx.arc(px, pipY, pipR, 0, Math.PI * 2);
+		sctx.fillStyle = b.earned ? BUI.C.accent : 'rgba(255,255,255,0.12)';
+		sctx.fill();
+		if (b.earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1.5; sctx.stroke(); }
 	});
 }
 
@@ -3290,6 +3355,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
+		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
 })();
