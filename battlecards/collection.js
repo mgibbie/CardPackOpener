@@ -1,5 +1,6 @@
 // collection.js — card collection, gold, deck persistence, and pack rolls.
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
+import { STARTING_COLLECTION } from './starter-collection.js';
 const GOLD_KEY = 'magepunk_cardgold_v1';
 const COLLECTION_KEY = 'magepunk_cards_v1';
 const DECK_KEY = 'magepunk_deck_v1';
@@ -29,11 +30,12 @@ export function spendGold(n) {
 	return true;
 }
 
-// collection: {cardId: count}; new players get 2x each common + 1x each uncommon.
-// When new sets are added, existing collections are topped up with the new
-// starter commons/uncommons they don't own yet (never overwriting counts).
-// lands are bought in-game and colored cards are conjured by lands — neither
-// is collectible, packable, or deck-legal
+// collection: {cardId: count}. A new player starts with exactly the STARTING_COLLECTION
+// (starter-collection.js): every card in the per-class starter decks + the
+// dungeon/heist/tombs run starter decks — NOT the whole common/uncommon pool. When
+// the starter set grows, existing collections are topped up with the new starter
+// cards they don't own yet (never overwriting counts). lands are bought in-game and
+// colored cards are conjured by lands — neither is collectible, packable, or deck-legal.
 export function collectible(def) {
 	return def.type !== 'land' && !(def.colors && def.colors.length) && !def.companion && !def.commander && !def.token;
 }
@@ -42,10 +44,9 @@ export function getCollection(cards) {
 	let c = safeLoad(COLLECTION_KEY, {});
 	if (!c || typeof c !== 'object' || Array.isArray(c)) c = {}; // a valid-JSON-but-wrong-shape blob is unusable
 	let changed = false;
-	for (const def of cards) {
-		if (def.id in c || !collectible(def)) continue;
-		if (def.rarity === 'common' || !def.rarity) { c[def.id] = 2; changed = true; }
-		else if (def.rarity === 'uncommon') { c[def.id] = 1; changed = true; }
+	for (const [id, n] of Object.entries(STARTING_COLLECTION)) {
+		if (id in c) continue; // never overwrite an existing count
+		c[id] = n; changed = true;
 	}
 	if (changed) safeSave(COLLECTION_KEY, c);
 	return c;

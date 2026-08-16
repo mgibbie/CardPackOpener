@@ -12,6 +12,7 @@
 // tokens are forgeable until MP_SECRET is set.
 import { scrypt as scryptCb, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { STARTER_DECKS } from '../battlecards/dungeon.js';
+import { STARTING_COLLECTION } from '../battlecards/starter-collection.js';
 import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
@@ -355,15 +356,11 @@ function verifyToken(token) {
 // Everything beyond that is opened from packs.
 const STARTER_PACKS = 40;
 function startingCollection() {
-	const col = {};
-	for (const deck of Object.values(STARTER_DECKS)) {
-		for (const id of deck) {
-			const rarity = POOL[id]?.[0];
-			col[id] = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
-		}
-	}
-	// plus every card the ready-made 40-card PvP starters use, so the decks we
-	// hand out are always legal to play
+	// the curated starter set (generated: per-class starter decks + dungeon/heist/
+	// tombs run starter decks) — NOT the whole common/uncommon pool
+	const col = { ...STARTING_COLLECTION };
+	// plus every card the ready-made 40-card PvP starter SLOTS use, so the decks we
+	// pre-save into a new account are always legal to play
 	for (const def of STARTER_SLOT_DEFS) grantCards(col, def.cards);
 	return col;
 }
@@ -398,6 +395,16 @@ async function grantStarterBaseline(store, username, user) {
 			}
 		}
 		user.startersV3 = true;
+		changed = true;
+	}
+	// V4: the curated starter set (per-class starter-deck templates + run-mode decks,
+	// via STARTING_COLLECTION). Grant its cards so an existing account can load a
+	// starter template and Save/play it.
+	if (!user.startersV4) {
+		for (const [id, n] of Object.entries(STARTING_COLLECTION)) {
+			user.collection[id] = Math.max(user.collection[id] || 0, n);
+		}
+		user.startersV4 = true;
 		changed = true;
 	}
 	if (changed) await store.setJSON(username, user);
@@ -571,6 +578,7 @@ export default async function handler(req, env) {
 			packTimerBase: Date.now(), // the 12-hour free-pack timer starts now
 			starterBaselineV2: true,
 			startersV3: true,
+			startersV4: true,
 			stats: { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 },
 			friendCode: code,
 			friends: [],
