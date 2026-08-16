@@ -73,7 +73,9 @@ const STARTERS = [
 	{ region: 'JOHTO', ids: ['chikorita', 'cyndaquil', 'totodile'] },
 	{ region: 'HOENN', ids: ['treecko', 'torchic', 'mudkip'] },
 ];
-const starterMenu = { open: false, row: 0, col: 0, sprites: {} };
+// fresh-save picker: 'region' phase (choose Kanto/Johto/Hoenn, NO starter yet),
+// then 'pick' phase (choose the starter on-screen inside the region's lab).
+const starterMenu = { open: false, row: 0, col: 0, sprites: {}, phase: 'region', region: null };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || items.occupied(tx, ty);
 
@@ -1059,22 +1061,27 @@ function pcKey(k) {
 }
 
 function starterKey(k) {
+	if (starterMenu.phase === 'pick') {
+		// locked to the chosen region's trio; ←/→ pick among its 3 starters
+		if (k === 'ArrowLeft') starterMenu.col = (starterMenu.col + 2) % 3;
+		if (k === 'ArrowRight') starterMenu.col = (starterMenu.col + 1) % 3;
+		if (k === 'z' || k === 'Enter') {
+			const region = starterMenu.region, col = starterMenu.col;
+			starterMenu.open = false;
+			finishStarterPick(region, col);
+		}
+		return;
+	}
+	// phase 'region': ↑/↓ choose the region you'll begin in (no starter yet — you
+	// pick that on-screen once the intro walks you into the professor's lab)
 	if (k === 'ArrowUp') starterMenu.row = (starterMenu.row + 2) % 3;
 	if (k === 'ArrowDown') starterMenu.row = (starterMenu.row + 1) % 3;
 	if (k === 'ArrowLeft') starterMenu.col = (starterMenu.col + 2) % 3;
 	if (k === 'ArrowRight') starterMenu.col = (starterMenu.col + 1) % 3;
 	if (k === 'z' || k === 'Enter') {
-		const row = STARTERS[starterMenu.row];
-		const id = row.ids[starterMenu.col];
-		party = createStarter(id, battle.data);
-		Dex.seedFrom(party);
-		seedStoryState(row.region);
-		safeSaveStr('magepunk_region', row.region);
+		const region = STARTERS[starterMenu.row].region;
 		starterMenu.open = false;
-		// the row you picked from is the region you begin in
-		const home = { KANTO: 'PalletTown', JOHTO: 'NewBarkTown', HOENN: 'LittlerootTown' }[row.region];
-		const go = !urlPinnedMap && home && world.current.name !== home ? moveToMap(home) : Promise.resolve();
-		go.then(() => dialog.open(`You chose ${party[0].name}!\n\nYour journey begins in ${row.region}.`, () => maybeIntroCutscene()));
+		beginNewGame(region);
 	}
 }
 
@@ -1244,6 +1251,9 @@ async function refreshMapContent(label) {
 	// for an ON_FRAME auto-cutscene now that the map is set up
 	runMapTransition();
 	checkOnFrame();
+	// a partyless new-game player who has reached the region's lab: run the
+	// professor greeting + on-screen starter pick (Fork B authentic open)
+	checkIntroTrigger();
 }
 
 // visited Fly points (magepunk_flypoints); a town unlocks when you first stand on it
@@ -1485,7 +1495,16 @@ player.onArrive = () => {
 	const outside = player.tx < 0 || player.tx >= lay.width || player.ty < 0 || player.ty >= lay.height;
 	if (outside) {
 		const hit = world.connectionAt(player.tx, player.ty);
-		if (hit) { crossConnection(hit); return; }
+		if (hit) {
+			// no POKeMON yet (new-game intro): don't wander onto wild routes — bounce
+			// back into town and point the player at the lab
+			if (!party) {
+				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
+				dialog.open("It's not safe to go out without a POKeMON!\n\nVisit the POKeMON LAB and get your first partner.");
+				return;
+			}
+			crossConnection(hit); return;
+		}
 	}
 	// a coord_event trigger on this tile (var-gated) runs its ported script
 	if (!cutscene.blocking && checkCoordTrigger()) return;
@@ -1678,7 +1697,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
 		hideObj: who => { const n = npcById(who); if (n) n.hidden = true; },
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
-		setMetatile: () => {}, // tile edits: not yet applied to the web layout
+		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
 		special: (name, store) => runSpecial(name, store), // handlers write `store`; unknown -> 0
 		hud: msg => { hud.textContent = msg; },
@@ -1947,18 +1966,160 @@ function runSpecial(name, store) {
 	}
 }
 
-// the one-time new-game welcome: a short scripted intro that hands over a
-// starter kit and marks the intro flag so it never repeats
-function maybeIntroCutscene() {
-	if (Story.getFlag('intro_done') || !party) return;
+// ---------- Fork B: the authentic campaign open ----------
+// A brand-new game no longer hands you a starter up front. You choose a REGION,
+// begin with NO POKeMON, hear the professor's welcome, then walk to the lab and
+// pick your first partner ON-SCREEN, battle your rival, and receive the POKeDEX.
+// The ported plot cutscenes stay seeded off (STORY_SEED) — this hand-authored
+// intro is code-driven (a lab-entry trigger + a custom picker), so it never
+// depends on the fragile decomp NPC-walk choreography, and it grants the starter
+// itself (the transpiled scripts can't: Johto's givepoke was dropped and Hoenn's
+// is buried in a native ChooseStarter special).
+const NEW_GAME_INTRO = {
+	KANTO: {
+		home: 'PalletTown', lab: 'PalletTown_ProfessorOaksLab', prof: 'PROF. OAK', rival: 'GARY',
+		intro: [
+			'PROF. OAK: Hello there!\nWelcome to the world of POKeMON!',
+			'PROF. OAK: My name is OAK.\nPeople call me the POKeMON PROF.',
+			'PROF. OAK: This world is inhabited by creatures called POKeMON.\nFor some people, POKeMON are pets. Others use them for battle.',
+			"PROF. OAK: I run a LAB right here in PALLET TOWN.\nCome and see me — I have a POKeMON for you!",
+		],
+		labGreeting: [
+			'PROF. OAK: Ah, there you are!\nA young trainer needs a POKeMON of their own.',
+			'PROF. OAK: Here — three POKeMON are waiting.\nGo on, choose the one you like best!',
+		],
+		sendoff: 'PROF. OAK: Now, go! Your very own POKeMON legend is about to unfold!\nA world of dreams and adventures awaits!',
+	},
+	JOHTO: {
+		home: 'NewBarkTown', lab: 'ElmsLab', prof: 'ELM', rival: 'SILVER',
+		intro: [
+			"MOM: Oh, you're up!\nPROF. ELM next door was looking for you.",
+			"MOM: He said something about a POKeMON for you.\nWhy don't you go see him at his LAB?",
+			'ELM is the POKeMON PROF. here in NEW BARK TOWN.\nHead to his LAB to get your first partner!',
+		],
+		labGreeting: [
+			"PROF. ELM: Oh good, you're here!\nI've been waiting for you.",
+			"PROF. ELM: I have three POKeMON here for my research.\nYou can have one — go ahead and choose!",
+		],
+		sendoff: 'PROF. ELM: Take good care of it!\nAnd come back soon — I have an errand to ask of you.',
+	},
+	HOENN: {
+		home: 'LittlerootTown', lab: 'LittlerootTown_ProfessorBirchsLab', prof: 'PROF. BIRCH', rival: 'BRENDAN',
+		intro: [
+			'PROF. BIRCH lives right next door, and studies POKeMON in the wild.',
+			"He left word that he's expecting you at his LAB.",
+			'Head to the POKeMON LAB in LITTLEROOT TOWN\nto receive your very first POKeMON!',
+		],
+		labGreeting: [
+			'PROF. BIRCH: Welcome, welcome!\nSo you want to be a POKeMON trainer?',
+			'PROF. BIRCH: Then take a look — three POKeMON, right here.\nChoose whichever one you like!',
+		],
+		sendoff: "PROF. BIRCH: Splendid!\nThe wild world of POKeMON is yours to explore now. Off you go!",
+	},
+};
+
+// Confirm the region, seed the plot-suppression state (+ the reusable HM kit), set
+// the rival's name, drop the partyless player into the home town, and roll the
+// professor's welcome. The starter is granted later, on-screen, inside the lab.
+function beginNewGame(region) {
+	party = null;
+	seedStoryState(region);                       // full plot-suppression seed + HM kit (no starter yet)
+	safeSaveStr('magepunk_region', region);
+	const cfg = NEW_GAME_INTRO[region];
+	if (!cfg) { openStarterPick(region); return; } // safety net: region without an authored intro
+	if (!localStorage.getItem('magepunk_rival')) safeSaveStr('magepunk_rival', cfg.rival);
+	const go = !urlPinnedMap && world.current.name !== cfg.home ? moveToMap(cfg.home) : Promise.resolve();
+	go.then(() => startIntroNarration(region));
+}
+
+function startIntroNarration(region) {
+	const cfg = NEW_GAME_INTRO[region];
+	if (!cfg) return;
+	startCutscene(cfg.intro.map(text => ({ op: 'say', text })).concat([{ op: 'setflag', flag: 'intro_started' }]));
+}
+
+// fired from refreshMapContent after every map load: a partyless player who has
+// walked into the region's lab gets the professor greeting + the starter picker.
+function checkIntroTrigger() {
+	if (party || Story.getFlag('intro_done') || cutscene.blocking || starterMenu.open) return;
+	const cfg = NEW_GAME_INTRO[playerRegion()];
+	if (cfg && world.current.name === cfg.lab) {
+		startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
+	}
+}
+
+// open the on-screen starter picker locked to one region's trio
+function openStarterPick(region) {
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	starterMenu.phase = 'pick';
+	starterMenu.region = region;
+	starterMenu.row = idx;
+	starterMenu.col = 0;
+	starterMenu.open = true;
+	for (const id of STARTERS[idx].ids) {
+		if (starterMenu.sprites[id]) continue;
+		const sp = battle.data.species[id];
+		if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => { starterMenu.sprites[id] = img; }).catch(() => {});
+	}
+}
+
+// the player chose starter `col` of `region`: create it, seed the Dex, then run
+// the rival challenge → rival battle → Pokedex handoff.
+function finishStarterPick(region, col) {
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	const id = STARTERS[idx].ids[col];
+	party = createStarter(id, battle.data);
+	Dex.markCaught(id);
+	Dex.seedFrom(party);
+	refreshFollower();
+	const cfg = NEW_GAME_INTRO[region];
+	const name = (party[0].nickname || party[0].name || id).toUpperCase();
+	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); dialog.open(`You chose ${name}!`); return; }
+	dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col));
+}
+
+function rivalScene(region, playerCol) {
+	const cfg = NEW_GAME_INTRO[region];
+	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
+	const rivalCol = (playerCol + 1) % 3;         // the starter with the type edge on yours
+	const rivalId = STARTERS[idx].ids[rivalCol];
+	const rivalName = localStorage.getItem('magepunk_rival') || cfg.rival;
 	startCutscene([
-		{ op: 'say', text: 'Welcome to the world of POKeMON!\n\nYour adventure starts here.' },
-		{ op: 'say', text: 'Take these to get you going.' },
-		{ op: 'give', item: 'pokeball', count: 5 },
-		{ op: 'give', item: 'potion', count: 3 },
-		{ op: 'hud', text: 'Received a starter kit!' },
-		{ op: 'setflag', flag: 'intro_done' },
+		{ op: 'say', text: `${rivalName}: Then I'll take this one!` },
+		{ op: 'say', text: `${rivalName}: My POKeMON beats yours. Let's settle it — right here, right now!` },
+	], () => startRivalBattle(region, rivalId, rivalName));
+}
+
+function startRivalBattle(region, rivalId, rivalName) {
+	const foe = [battleBuildMon(rivalId, 5, battle.data)].filter(Boolean);
+	if (!foe.length || !party || !leadMon(party)) { afterRival(region); return; }
+	Dex.markSeen(rivalId);
+	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40 };
+	battle.startTrainer(party, foe, info, result => {
+		if (result !== 'victory') healParty(party);   // the plot continues win or lose
+		saveParty(party);
+		afterRival(region);
+	});
+}
+
+function afterRival(region) {
+	const cfg = NEW_GAME_INTRO[region];
+	Story.setFlag('intro_done');
+	Story.setFlag('FLAG_GOT_FIRST_POKEMON');
+	Story.setFlag('FLAG_SYS_POKEDEX_GET');
+	const prof = cfg ? cfg.prof : 'PROF. OAK';
+	const sendoff = cfg ? cfg.sendoff : 'Your adventure begins now!';
+	startCutscene([
+		{ op: 'say', text: `${prof}: Wait — take this with you.\nIt's the POKeDEX! It records every POKeMON you meet.` },
+		{ op: 'hud', text: 'Received the POKeDEX!' },
+		{ op: 'say', text: sendoff },
 	]);
+}
+
+// kept for the debug hook / older callers: nudge a partyless save into the intro
+function maybeIntroCutscene() {
+	if (Story.getFlag('intro_done') || party) return;
+	startIntroNarration(playerRegion());
 }
 
 // ---------- camera ----------
@@ -2575,43 +2736,63 @@ function drawMoveShop(W, H) {
 	}
 }
 
+// draw one starter tile (sprite + name in a rounded, type-tinted frame)
+function drawStarterCell(id, x, y, cw, ch, sel, bid, u) {
+	const sp = battle.data.species[id];
+	const tc = BUI.TYPE_COLORS[sp?.types?.[0]] || '#888';
+	sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+	BUI.rr(sctx, x, y, cw, ch, 10 * u); sctx.fill();
+	sctx.strokeStyle = sel || menuHover === bid ? tc : BUI.C.panelBorder;
+	sctx.lineWidth = sel ? 4 : 2;
+	BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 2, 10 * u); sctx.stroke();
+	const img = starterMenu.sprites[id];
+	if (img) {
+		sctx.imageSmoothingEnabled = false;
+		const s = Math.min((cw - 30 * u) / img.width, (ch - 44 * u) / img.height);
+		sctx.drawImage(img, x + (cw - img.width * s) / 2, y + 6 * u, img.width * s, img.height * s);
+	}
+	sctx.fillStyle = sel ? tc : BUI.C.text;
+	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+	sctx.textAlign = 'center';
+	sctx.fillText((sp?.name || id).toUpperCase(), x + cw / 2, y + ch - 10 * u);
+	sctx.textAlign = 'left';
+}
 function drawStarterMenu(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', 'Tap one to begin your journey.', false);
+	if (starterMenu.phase === 'pick') {
+		const region = starterMenu.region || STARTERS[starterMenu.row]?.region || 'KANTO';
+		const row = STARTERS.find(r => r.region === region) || STARTERS[0];
+		menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', `${region} — use ◄ ► then A to choose your partner.`, false);
+		const cw = 150 * u, ch = 150 * u, y = 150 * u;
+		row.ids.forEach((id, c) => {
+			const x = (70 + c * 165) * u;
+			const bid = `starterpick:${c}`;
+			menuUi.push({ id: bid, x, y, w: cw, h: ch });
+			drawStarterCell(id, x, y, cw, ch, starterMenu.col === c, bid, u);
+		});
+		return;
+	}
+	// phase 'region': choose where the journey begins — each card previews the trio
+	menuChrome(W, H, u, 'CHOOSE YOUR REGION', 'Pick where your journey begins. You will choose a starter in the lab.', false);
 	const cw = 150 * u, ch = 118 * u;
 	STARTERS.forEach((row, r) => {
 		const y = (78 + r * 130) * u;
+		const rowSel = starterMenu.row === r;
+		const bid = `region:${r}`;
+		// a full-row hit target so a tap anywhere on the card selects that region
+		menuUi.push({ id: bid, x: 30 * u, y, w: W - 60 * u, h: ch });
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 		sctx.save();
 		sctx.translate(38 * u, y + ch / 2);
 		sctx.rotate(-Math.PI / 2);
 		sctx.textAlign = 'center';
+		sctx.fillStyle = rowSel ? BUI.C.accent : BUI.C.dim;
 		sctx.fillText(row.region, 0, 0);
 		sctx.restore();
 		row.ids.forEach((id, c) => {
 			const x = (70 + c * 165) * u;
-			const sel = starterMenu.row === r && starterMenu.col === c;
-			const bid = `starter:${r}:${c}`;
-			menuUi.push({ id: bid, x, y, w: cw, h: ch });
-			const sp = battle.data.species[id];
-			const tc = BUI.TYPE_COLORS[sp?.types?.[0]] || '#888';
-			sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
-			BUI.rr(sctx, x, y, cw, ch, 10 * u); sctx.fill();
-			sctx.strokeStyle = sel || menuHover === bid ? tc : BUI.C.panelBorder;
-			sctx.lineWidth = sel ? 4 : 2;
-			BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 2, 10 * u); sctx.stroke();
-			const img = starterMenu.sprites[id];
-			if (img) {
-				sctx.imageSmoothingEnabled = false;
-				const s = Math.min((cw - 30 * u) / img.width, (ch - 44 * u) / img.height);
-				sctx.drawImage(img, x + (cw - img.width * s) / 2, y + 6 * u, img.width * s, img.height * s);
-			}
-			sctx.fillStyle = sel ? tc : BUI.C.text;
-			sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
-			sctx.textAlign = 'center';
-			sctx.fillText((sp?.name || id).toUpperCase(), x + cw / 2, y + ch - 10 * u);
-			sctx.textAlign = 'left';
+			drawStarterCell(id, x, y, cw, ch, rowSel, bid, u);
 		});
 	});
 }
@@ -2799,7 +2980,8 @@ function menuTap(id) {
 		}
 		return;
 	}
-	if (kind === 'starter') { starterMenu.row = +a; starterMenu.col = +b2; pressKey('z'); return; }
+	if (kind === 'region') { starterMenu.row = +a; pressKey('z'); return; }
+	if (kind === 'starterpick') { starterMenu.col = +a; pressKey('z'); return; }
 	if (kind === 'buy' || kind === 'sell') { shopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; } return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
@@ -3287,7 +3469,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 	party = loadParty(battle.data);
 	if (party) Dex.seedFrom([...party, ...getBox()]);
 	if (!party) {
+		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
+		starterMenu.phase = 'region';
+		starterMenu.row = 0; starterMenu.col = 0; starterMenu.region = null;
 		for (const row of STARTERS) {
 			for (const id of row.ids) {
 				const sp = battle.data.species[id];
@@ -3373,6 +3558,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
+		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
+		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
 })();

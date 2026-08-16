@@ -258,6 +258,33 @@ export class World {
 		return (v & COLLISION_MASK) === 0;
 	}
 
+	// live tile edit (the decomp `setmetatile` op): swap the metatile at (tx,ty) on
+	// the CURRENT section and repaint just that cell into the cached bottom/top
+	// canvases so plot scenes can open a passage / drop an object mid-cutscene.
+	// impassable toggles the collision bits; pass null to keep the tile's current
+	// passability. Returns true if a tile was changed.
+	setMetatile(tx, ty, tile, impassable) {
+		const cur = this.current;
+		const lay = cur?.layout;
+		if (!lay || tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) return false;
+		if (!lay.map[ty]) return false;
+		const prev = lay.map[ty][tx] ?? 0;
+		let v = tile & METATILE_MASK;
+		if (impassable == null) v |= (prev & COLLISION_MASK); // keep existing collision
+		else if (impassable) v |= COLLISION_MASK;
+		lay.map[ty][tx] = v;
+		// repaint the single cell: clear the old pixels, redraw the new metatile
+		const cb = cur.canvases?.bottom?.getContext('2d');
+		const ct = cur.canvases?.top?.getContext('2d');
+		if (cb && ct) {
+			const dx = tx * META, dy = ty * META;
+			cb.clearRect(dx, dy, META, META);
+			ct.clearRect(dx, dy, META, META);
+			drawMetatileTo(cb, ct, cur.ts, v & METATILE_MASK, dx, dy);
+		}
+		return true;
+	}
+
 	behaviorAt(tx, ty) {
 		const v = this.gridAt(tx, ty);
 		if (v === 0) return 0;
