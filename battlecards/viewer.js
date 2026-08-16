@@ -144,6 +144,10 @@ function tileFor(card) {
 	const tile = document.createElement('div');
 	const owned = collection[card.id] || 0;
 	tile.className = 'tile' + (owned ? '' : ' unowned');
+	// keyboard-operable: a card tile acts as a button that opens the card detail
+	tile.setAttribute('role', 'button');
+	tile.tabIndex = 0;
+	tile.setAttribute('aria-label', card.name + ' — view card');
 	// the owned-copies count is drawn top-left on the card face itself
 	const face = drawCardFace(card, { count: owned });
 	face.style.width = '100%';
@@ -159,6 +163,7 @@ function tileFor(card) {
 		tile.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
 	}
 	tile.addEventListener('click', () => openZoom(card));
+	tile.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openZoom(card); } });
 	return tile;
 }
 

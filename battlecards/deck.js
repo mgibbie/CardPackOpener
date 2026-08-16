@@ -118,6 +118,12 @@ function buildFilterOptions() {
 function tileFor(card) {
 	const tile = document.createElement('div');
 	tile.className = 'tile';
+	// keyboard-operable: Enter/Space opens the card page (which has an Add button),
+	// mirroring the mouse click — drag-to-add stays for pointer users
+	tile.setAttribute('role', 'button');
+	tile.tabIndex = 0;
+	tile.setAttribute('aria-label', card.name + ' — view card');
+	tile.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(card); } });
 	const face = drawCardFace(card);
 	face.style.width = '100%';
 	tile.appendChild(face);
@@ -299,8 +305,13 @@ function openLoadoutPicker(kind) {
 			for (const c of pool) {
 				const tile = document.createElement('div');
 				tile.className = 'tile' + (c.id === chosen ? ' chosen' : '');
+				tile.setAttribute('role', 'button');
+				tile.tabIndex = 0;
+				tile.setAttribute('aria-label', `Choose ${c.name} as ${kind}`);
 				const face = drawCardFace(c); face.style.width = '100%'; tile.appendChild(face);
-				tile.addEventListener('click', () => { setLoadout(kind, c.id); closeLoadoutPicker(); });
+				const pick = () => { setLoadout(kind, c.id); closeLoadoutPicker(); };
+				tile.addEventListener('click', pick);
+				tile.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
 				grid.appendChild(tile);
 			}
 		});

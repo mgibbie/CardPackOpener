@@ -62,6 +62,18 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		await sleep(200);
 		A(await page.evaluate(() => /build a deck first/i.test(document.querySelector('#status')?.textContent || '')), 'export with an empty deck shows the guard flash (handler wired + runs)');
 
+		// --- 1b) card-grid keyboard accessibility: tiles are focusable buttons, Enter opens the card ---
+		await page.evaluate(() => document.querySelector('#owned-toggle')?.click()); // "All" so tiles render even with no collection
+		const haveTile = await waitFor(() => page.evaluate(() => !!document.querySelector('#grid .tile')), 10000);
+		A(haveTile, 'the collection grid renders card tiles (All view)');
+		const tileA11y = await page.evaluate(() => { const t = document.querySelector('#grid .tile'); return t ? { role: t.getAttribute('role'), tabindex: t.getAttribute('tabindex'), label: !!t.getAttribute('aria-label') } : null; });
+		A(tileA11y && tileA11y.role === 'button' && tileA11y.tabindex === '0' && tileA11y.label, 'a card tile is a keyboard-operable button (role/tabindex/aria-label)', JSON.stringify(tileA11y));
+		// Enter on a focused tile opens the card detail (query+focus+dispatch atomically to avoid a re-render race)
+		await sleep(400); // let any in-flight grid re-render settle
+		await page.evaluate(() => { const t = document.querySelector('#grid .tile'); t.focus(); t.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
+		A(await waitFor(() => page.evaluate(() => document.querySelector('#zoom')?.classList.contains('open')), 4000), 'pressing Enter on a focused tile opens the card detail (keyboard path to Add)');
+		await page.evaluate(() => document.querySelector('#zoom')?.classList.remove('open')); // close for later steps
+
 		// --- 2) a ?deck=<code> share link deep-links straight into the builder ---
 		await page.goto(`http://localhost:${PORT}/battlecards/deck.html?deck=${shareCode}`, { waitUntil: 'domcontentloaded' });
 		const deepLoaded = await waitFor(() => page.evaluate(cls =>
