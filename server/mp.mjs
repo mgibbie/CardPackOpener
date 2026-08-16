@@ -44,6 +44,7 @@ const RATE_LIMITS = {
 	'card-act': [120, 10_000], 'card-publish': [120, 10_000], 'publish-cardstate': [120, 10_000],
 	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
 	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
+	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
 	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
@@ -731,10 +732,38 @@ export default async function handler(req, env) {
 				packsOpened: (u.stats && u.stats.packsOpened) || 0,
 				uniqueCards: Object.values(coll).filter(nn => nn > 0).length,
 				deckCount: Array.isArray(u.decks) ? u.decks.length : 0,
+				arenaBest: u.arenaBest || null,
 				isFriend: user.friends.includes(who),
 				isYou: who === username,
 			},
 		});
+	}
+
+	// ---------- Arena leaderboard ----------
+	// A player's BEST Arena run (most wins, fewest losses) is kept on their record
+	// and mirrored into a single capped global board doc.
+	const arenaBetter = (a, prev) => !prev || a.wins > prev.wins || (a.wins === prev.wins && a.losses < prev.losses);
+	if (action === 'arena-score') {
+		const wins = Math.max(0, Math.min(12, parseInt(body.wins, 10) || 0));
+		const losses = Math.max(0, Math.min(3, parseInt(body.losses, 10) || 0));
+		const hero = String(body.hero || '').replace(/[ -]/g, '').slice(0, 32).trim();
+		const run = { wins, losses, hero };
+		const better = arenaBetter(run, user.arenaBest);
+		if (better) { user.arenaBest = { wins, losses, hero, when: Date.now() }; await store.setJSON(username, user); }
+		const best = user.arenaBest || null;
+		// rebuild this player's line in the global board, re-sort, cap to 100
+		const board = ((await store.get('arena:board')) || []).filter(e => e.name !== username);
+		if (best) board.push({ name: username, wins: best.wins, losses: best.losses, hero: best.hero, when: best.when });
+		board.sort((a, b) => b.wins - a.wins || a.losses - b.losses || a.when - b.when);
+		const capped = board.slice(0, 100);
+		if (better) await store.setJSON('arena:board', capped);
+		const rank = capped.findIndex(e => e.name === username) + 1;
+		return json({ ok: true, better, best, rank: rank || null });
+	}
+	if (action === 'arena-leaderboard') {
+		const board = (await store.get('arena:board')) || [];
+		const rank = board.findIndex(e => e.name === username) + 1;
+		return json({ top: board.slice(0, 50), you: user.arenaBest ? { ...user.arenaBest, rank: rank || null } : null });
 	}
 
 	// upload a packed replay tape → a short id for the shareable ?rshare= link

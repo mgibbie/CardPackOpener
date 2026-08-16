@@ -33,7 +33,16 @@ async function waitFor(fn, ms) {
 (async () => {
 	const server = http.createServer(async (req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
-		if (u === '/api/mp') { for await (const _ of req) { /* drain */ } res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, state: STATE, friends: [], challenges: [], match: null })); return; }
+		if (u === '/api/mp') {
+			let b = ''; for await (const ch of req) b += ch;
+			let body = {}; try { body = JSON.parse(b); } catch {}
+			let out = { ok: true, state: STATE, friends: [], challenges: [], match: null };
+			if (body.action === 'arena-leaderboard') out = {
+				top: [{ name: 'topdog', wins: 12, losses: 0, hero: 'Anduin' }, { name: 'arena', wins: 9, losses: 2, hero: 'Jaina' }, { name: 'runner', wins: 7, losses: 3, hero: 'Thrall' }],
+				you: { wins: 9, losses: 2, hero: 'Jaina', rank: 2 },
+			};
+			res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(out)); return;
+		}
 		const f = u === '/' ? '/index.html' : u;
 		fs.readFile(path.join(ROOT, f), (e, d) => {
 			if (e) { res.writeHead(404); res.end('nf'); return; }
@@ -101,6 +110,16 @@ async function waitFor(fn, ms) {
 			A(run && run.active === true && Array.isArray(run.deck) && run.deck.length === 30 && run.wins === 0 && run.losses === 0,
 				'the arena run persisted (active, 30-card deck, 0/0)', JSON.stringify(run && { active: run.active, deck: run.deck?.length, wins: run.wins, losses: run.losses }));
 		}
+
+		// the Arena leaderboard overlay renders the top runs + your rank
+		await page.evaluate(() => window.__game.showArenaLeaderboard());
+		const lbShown = await waitFor(() => page.evaluate(() => { const el = document.querySelector('#arena-lb'); return !!(el && /topdog/.test(el.textContent) && /12–0/.test(el.textContent)); }), 6000);
+		A(lbShown, 'the Arena leaderboard overlay renders the top runs');
+		const lbInfo = await page.evaluate(() => {
+			const el = document.querySelector('#arena-lb');
+			return { rows: el ? el.querySelectorAll('tbody tr').length : 0, me: !!el?.querySelector('tr.lb-me'), you: /Your best/.test(el?.textContent || '') && /rank/i.test(el?.textContent || '') };
+		});
+		A(lbInfo.rows === 3 && lbInfo.me && lbInfo.you, 'it highlights YOU + shows your best & rank', JSON.stringify(lbInfo));
 
 		A(errors.filter(e => !/Failed to load resource/i.test(e)).length === 0, 'no uncaught client errors during the draft + boot', errors.slice(0, 4).join(' | '));
 	} catch (e) {

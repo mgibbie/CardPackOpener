@@ -3409,6 +3409,7 @@ animate();
 window.__game = {
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
+	showArenaLeaderboard, // arena smoke: open the leaderboard overlay
 	get foePanels() { return [...foePanelEls.keys()]; }, // spectate smoke: the foe-panel set must exclude HUMAN after a flip
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
@@ -5745,6 +5746,7 @@ function resumeArenaOverlay(run) {
 		const el = dungeonOverlay('ARENA RUN IN PROGRESS', `${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses with a ${run.deck.length}-card deck. Win as many as you can before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - draft a new deck', () => { hideDungeonOverlay(); resolve(false); }));
+		el.appendChild(overlayButton('🏆 Leaderboard', () => showArenaLeaderboard()));
 	});
 }
 
@@ -5805,8 +5807,10 @@ function arenaRunOver(run) {
 	const gold = 100 + (run.wins || 0) * 120;
 	Col.earnGold(gold);
 	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero?.name || run.heroId} finishes ${run.wins || 0}-3. +${gold} gold banked.`);
+	const sub = submitArenaScore(run);
 	clearArena();
 	mpRunReward(el, (run.wins || 0) >= 7 ? 'win' : 'loss');
+	el.appendChild(overlayButton('🏆 Leaderboard', () => (sub || Promise.resolve()).finally(showArenaLeaderboard)));
 	el.appendChild(overlayButton('New Arena Run', () => location.reload()));
 }
 
@@ -5814,9 +5818,62 @@ function arenaRunComplete(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	Col.earnGold(1600);
 	const el = dungeonOverlay('12 WINS - FLAWLESS ARENA!', `${hero?.name || run.heroId} runs the table 12-${run.losses || 0}. +1600 gold banked.`);
+	const sub = submitArenaScore(run);
 	mpRunReward(el, 'win');
 	clearArena();
+	el.appendChild(overlayButton('🏆 Leaderboard', () => (sub || Promise.resolve()).finally(showArenaLeaderboard)));
 	el.appendChild(overlayButton('New Arena Run (+1600 gold)', () => location.reload()));
+}
+
+// submit a finished Arena run to the leaderboard (server keeps your BEST). Returns
+// the call promise (or null when logged out) so the Leaderboard button can wait for it.
+function submitArenaScore(run) {
+	if (!MP_ON || !run) return null;
+	const hero = Duels.HEROES.find(h => h.id === run.heroId);
+	return MPX.call('arena-score', { wins: run.wins || 0, losses: run.losses || 0, hero: hero?.name || run.heroId || 'Hero' }).catch(() => null);
+}
+
+// a standalone overlay showing the top Arena runs + your rank
+function injectArenaLbStyles() {
+	if ($('arena-lb-style')) return;
+	const st = document.createElement('style'); st.id = 'arena-lb-style';
+	st.textContent = `
+#arena-lb{position:fixed;inset:0;z-index:70;background:rgba(6,4,12,.9);display:flex;align-items:center;justify-content:center;padding:18px;font-family:inherit;}
+#arena-lb .lb-card{width:min(460px,94vw);max-height:86vh;overflow:auto;background:#171126;color:#e8e0d0;border:1px solid #4a3f6a;border-radius:14px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.6);}
+#arena-lb h2{margin:0 0 12px;font-size:20px;letter-spacing:1px;text-align:center;}
+#arena-lb table{width:100%;border-collapse:collapse;font-size:14px;}
+#arena-lb th,#arena-lb td{padding:6px 8px;text-align:left;border-bottom:1px solid #2c2440;}
+#arena-lb th{color:#9a8fbf;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+#arena-lb td:first-child,#arena-lb th:first-child{width:34px;color:#ffcf6b;font-weight:800;}
+#arena-lb tr.lb-me td{background:rgba(166,136,255,.14);color:#fff;font-weight:700;}
+#arena-lb .lb-empty{text-align:center;color:#9a8fbf;padding:16px;}
+#arena-lb .lb-you{margin-top:12px;text-align:center;color:#c9b8ff;font-size:14px;}
+#arena-lb .lb-close{display:block;margin:16px auto 0;padding:9px 22px;background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:8px;font:inherit;cursor:pointer;}
+#arena-lb .lb-close:hover{background:#372c56;}`;
+	document.head.appendChild(st);
+}
+async function showArenaLeaderboard() {
+	injectArenaLbStyles();
+	$('arena-lb')?.remove();
+	const ov = document.createElement('div'); ov.id = 'arena-lb';
+	ov.innerHTML = '<div class="lb-card">Loading the leaderboard…</div>';
+	ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+	document.body.appendChild(ov);
+	let data; try { data = await MPX.call('arena-leaderboard'); } catch { data = null; }
+	if (!document.body.contains(ov)) return; // closed while loading
+	const top = (data && data.top) || [], you = data && data.you;
+	const me = MPX.cachedState()?.username;
+	const rows = top.map((e, i) => `<tr class="${e.name === me ? 'lb-me' : ''}"><td>${i + 1}</td><td>${esc2(e.name)}</td><td>${e.wins}–${e.losses}</td><td>${esc2(e.hero || '')}</td></tr>`).join('');
+	const card = document.createElement('div'); card.className = 'lb-card';
+	card.innerHTML = `<h2>🏆 Arena Leaderboard</h2>`
+		+ `<table><thead><tr><th>#</th><th>Player</th><th>Best</th><th>Hero</th></tr></thead>`
+		+ `<tbody>${rows || '<tr><td colspan="4" class="lb-empty">No runs recorded yet — be the first!</td></tr>'}</tbody></table>`
+		+ (you ? `<div class="lb-you">Your best: <b>${you.wins}–${you.losses}</b>${you.rank ? ` · rank <b>#${you.rank}</b>` : ''}</div>`
+			: `<div class="lb-you">Finish an Arena run to get on the board.</div>`);
+	const close = document.createElement('button'); close.className = 'lb-close'; close.textContent = 'Close'; close.onclick = () => ov.remove();
+	card.appendChild(close);
+	ov.innerHTML = ''; ov.appendChild(card);
+	window.__arenaLb = { count: top.length, youRank: you?.rank || null }; // test hook
 }
 
 // ================= replays: record live games, rewatch recorded tapes =========

@@ -224,6 +224,19 @@ async function loadHandler() {
 			let rateLimited = false;
 			for (let i = 0; i < 50 && !rateLimited; i++) { const r = await api('cardstate', { username: 'capvictim' }, cg.token); if (r.error && /slow down/i.test(r.error)) rateLimited = true; }
 			A(rateLimited, 'hammering cardstate trips the per-user rate limit (429 slow down)');
+
+			// ---- Arena leaderboard: best-record tracking + ordering + rank ----
+			const aa = await api('register', { username: 'arenaa', password: 'harness123' });
+			const ab = await api('register', { username: 'arenab', password: 'harness123' });
+			await api('arena-score', { wins: 8, losses: 2, hero: 'Jaina' }, aa.token);
+			const worse = await api('arena-score', { wins: 5, losses: 3, hero: 'Jaina' }, aa.token);
+			A(worse.better === false && worse.best && worse.best.wins === 8, 'a worse Arena run does NOT replace your best (8-2 kept)', JSON.stringify(worse.best));
+			const flaw = await api('arena-score', { wins: 12, losses: 0, hero: 'Anduin' }, ab.token);
+			A(flaw.better === true && flaw.rank === 1, 'a flawless 12-0 ranks #1', JSON.stringify({ better: flaw.better, rank: flaw.rank }));
+			const lb = await api('arena-leaderboard', {}, aa.token);
+			const names = (lb.top || []).map(e => e.name);
+			A(names.indexOf('arenab') >= 0 && names.indexOf('arenab') < names.indexOf('arenaa'), '12-0 is ordered above 8-2 on the board', JSON.stringify(names.slice(0, 4)));
+			A(lb.you && lb.you.wins === 8 && lb.you.rank >= 1, 'the leaderboard reports your own best + rank', JSON.stringify(lb.you));
 		}
 		for (const u of users) { const j = await api('matchmake-join', { party: u.party, size: 3 }, u.token); if (j.error) throw new Error('join ' + u.name + ': ' + j.error); await sleep(15); }
 		// poll: the oldest waiter (relayhost) mints the match as host/seat 0; the others get matched
