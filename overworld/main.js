@@ -24,6 +24,7 @@ import { EXTRA_DIVE } from './divelinks.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
+import * as Frontier from './frontier.js';
 import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
@@ -234,6 +235,38 @@ function onTrainerDefeated(script, opts) {
 	}
 	refreshObjective(); // the quest stage just advanced
 }
+// ---------- BATTLE FRONTIER (Battle Tower) ----------
+// A champion-gated post-game facility: consecutive singles battles vs generated
+// teams; each win extends the streak and earns 1 BP; a loss ends the run.
+const frontier = { active: false, streak: 0 };
+function frontierLevel() { return Math.min(100, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50)))); }
+function startFrontierChallenge() {
+	if (!party || !leadMon(party) || frontier.active || battle.blocking) return;
+	frontier.active = true; frontier.streak = 0;
+	dialog.open('The BATTLE TOWER challenge begins!\n\nBattle on — and don’t lose!', frontierNextBattle);
+}
+function frontierNextBattle() {
+	if (!frontier.active) return;
+	healParty(party); // Tower rule: full heal before each bout
+	const foe = Frontier.genTeam(battle.data, frontierLevel(), 3);
+	if (!foe.length) { endFrontier(); return; }
+	for (const m of foe) Dex.markSeen(m.speciesId);
+	battle.startTrainer(party, foe, { displayName: 'FRONTIER TRAINER', defeatText: '', money: 0 }, result => {
+		if (result === 'victory') {
+			frontier.streak++; Frontier.addBP(1); Frontier.recordStreak(frontier.streak); saveParty(party);
+			dialog.open(`Win streak: ${frontier.streak}!  (+1 BP)\n\nBattle on?  Z = Continue   X = Rest`, declined => {
+				if (declined === 'x') endFrontier(); else frontierNextBattle();
+			});
+		} else endFrontier();
+	});
+}
+function endFrontier() {
+	const s = frontier.streak;
+	frontier.active = false; frontier.streak = 0;
+	healParty(party); saveParty(party);
+	dialog.open(`Your BATTLE TOWER challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
+}
+
 // snapshot the winning team into the Hall of Fame log (magepunk_hof)
 function recordHallOfFame(region, roster) {
 	try {
@@ -327,6 +360,13 @@ function interact() {
 	if (arc === 'pears') {
 		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
 			if (k !== 'x') { saveParty(party); savePos(); location.href = '/pairofpears/?direct=1'; }
+		});
+		return;
+	}
+	// BATTLE TOWER reception counter — start a Frontier challenge
+	if (world.current.map.id === 'MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY' && fy === 5 && [6, 10, 14, 18].includes(fx) && !frontier.active) {
+		dialog.open(`Welcome to the BATTLE TOWER!\n\nBattle trainers back-to-back for BP.\nEarned so far: ${Frontier.getBP()} BP.\n\nTake the challenge?   Z = Yes   X = No`, declined => {
+			if (declined !== 'x') startFrontierChallenge();
 		});
 		return;
 	}
@@ -898,6 +938,7 @@ const FERRY_DESTS = [
 	{ label: 'Southern Island (Eon)', file: 'SouthernIsland_Exterior', requires: () => Badges.isChampion('HOENN') },
 	{ label: 'Birth Island', file: 'BirthIsland_Exterior', requires: () => Badges.isChampion('HOENN') },
 	{ label: 'Faraway Island', file: 'FarawayIsland_Entrance', requires: () => Badges.isChampion('HOENN') },
+	{ label: 'Battle Frontier', file: 'BattleFrontier_OutsideWest', requires: () => Badges.isChampion('HOENN') },
 ];
 function ferryKey(k) {
 	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
@@ -3953,6 +3994,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
+	Frontier, get frontier() { return frontier; }, startFrontierChallenge, frontierLevel,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
