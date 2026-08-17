@@ -98,7 +98,8 @@ export const GATED_MAPS = {
 export const VILLAIN_BEATS = {
 	KANTO: [
 		{
-			id: 'rocket_hideout', afterBadges: 3, at: 'RocketHideout_B1F', boss: 'GIOVANNI',
+			id: 'rocket_hideout', afterBadges: 3, at: 'RocketHideout_B4F',
+			maps: ['RocketHideout_B1F', 'RocketHideout_B2F', 'RocketHideout_B3F'], boss: 'GIOVANNI',
 			team: [{ s: 'onix', l: 25 }, { s: 'rhyhorn', l: 24 }, { s: 'kangaskhan', l: 29 }],
 			doneFlag: 'villain_kanto_hideout',
 			objective: 'TEAM ROCKET has taken over the CELADON GAME CORNER — storm their HIDEOUT.',
@@ -106,7 +107,8 @@ export const VILLAIN_BEATS = {
 			outro: ['GIOVANNI: ...Impressive. But TEAM ROCKET will rise again!', '(TEAM ROCKET flees the CELADON hideout.)'],
 		},
 		{
-			id: 'silph', afterBadges: 5, at: 'SilphCo_1F', boss: 'GIOVANNI', gate: 'SaffronCity_Gym',
+			id: 'silph', afterBadges: 5, at: 'SilphCo_11F', boss: 'GIOVANNI', gate: 'SaffronCity_Gym',
+			maps: ['SilphCo_2F', 'SilphCo_3F', 'SilphCo_4F', 'SilphCo_5F', 'SilphCo_6F', 'SilphCo_7F', 'SilphCo_8F', 'SilphCo_9F', 'SilphCo_10F'],
 			team: [{ s: 'nidorino', l: 37 }, { s: 'kangaskhan', l: 35 }, { s: 'rhyhorn', l: 37 }, { s: 'nidoqueen', l: 41 }],
 			doneFlag: 'villain_kanto_silph',
 			objective: 'TEAM ROCKET has seized SILPH CO. in SAFFRON — drive them out.',
@@ -116,7 +118,7 @@ export const VILLAIN_BEATS = {
 	],
 	JOHTO: [
 		{
-			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB1F', boss: 'PROTON', gate: 'AzaleaGym',
+			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB2F', maps: ['SlowpokeWellB1F'], boss: 'PROTON', gate: 'AzaleaGym',
 			team: [{ s: 'zubat', l: 14 }, { s: 'rattata', l: 14 }, { s: 'koffing', l: 16 }],
 			doneFlag: 'villain_johto_slowpoke',
 			objective: 'TEAM ROCKET is cutting SLOWPOKE tails in the SLOWPOKE WELL by AZALEA — stop them.',
@@ -124,7 +126,8 @@ export const VILLAIN_BEATS = {
 			outro: ["PROTON: Tch... you'll pay for this.", "(TEAM ROCKET flees — AZALEA's GYM is clear.)"],
 		},
 		{
-			id: 'rocket_hq', afterBadges: 6, at: 'TeamRocketBaseB1F', boss: 'ARIANA', gate: 'MahoganyGym',
+			id: 'rocket_hq', afterBadges: 6, at: 'TeamRocketBaseB3F',
+			maps: ['TeamRocketBaseB1F', 'TeamRocketBaseB2F'], boss: 'ARIANA', gate: 'MahoganyGym',
 			team: [{ s: 'gloom', l: 32 }, { s: 'murkrow', l: 32 }, { s: 'arbok', l: 34 }, { s: 'vileplume', l: 36 }],
 			doneFlag: 'villain_johto_hq',
 			objective: "TEAM ROCKET's secret base hides beneath MAHOGANY TOWN — shut it down.",
@@ -134,7 +137,8 @@ export const VILLAIN_BEATS = {
 	],
 	HOENN: [
 		{
-			id: 'aqua_hideout', afterBadges: 5, at: 'AquaHideout_1F', boss: 'MATT',
+			id: 'aqua_hideout', afterBadges: 5, at: 'AquaHideout_B2F',
+			maps: ['AquaHideout_1F', 'AquaHideout_B1F'], boss: 'MATT',
 			team: [{ s: 'mightyena', l: 34 }, { s: 'golbat', l: 34 }, { s: 'carvanha', l: 32 }],
 			doneFlag: 'villain_hoenn_hideout',
 			objective: 'TEAM AQUA is scheming in their LILYCOVE HIDEOUT — foil their plan.',
@@ -163,6 +167,18 @@ export function beatAt(region, map) {
 		if (b.at === map && n >= b.afterBadges && !Story.getFlag(b.doneFlag)) return b;
 	}
 	return null;
+}
+// true when `map` is a grunt-spawn floor of an active, undone beat — the hook that
+// un-hides the villain grunts for the crawl (main.js sets trainers.spawnFlagged to it)
+export function isDungeonFloor(region, map) {
+	const rk = regionKey(region);
+	if (!Story.getFlag('intro_done')) return false;
+	const n = Badges.count(rk);
+	for (const b of VILLAIN_BEATS[rk] || []) {
+		if (!b.maps) continue;
+		if (n >= b.afterBadges && !Story.getFlag(b.doneFlag) && b.maps.includes(map)) return true;
+	}
+	return false;
 }
 // the (required) beat that gates `destMap` and is not yet done, else null
 function gateBeat(region, destMap) {

@@ -130,6 +130,10 @@ trainers.onEngage = t => {
 	else begin();
 };
 
+// un-hide villain grunts while their beat is active + the current map is one of the
+// beat's dungeon floors (they then route through the normal sight/battle pipeline)
+trainers.spawnFlagged = () => Quest.isDungeonFloor(playerRegion(), world.current.name);
+
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
 	battle.startTrainer(party, foeParty, info, result => {
@@ -1883,6 +1887,10 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 // It is setup only, so run the instant ops and bail at any waiting op — it must
 // never block the game or pop dialogue.
 function runMapTransition() {
+	// SilphCo floors' OnLoad only erects the Card-Key door barriers (via setMetatile);
+	// that puzzle is broken/unfun in this port and would wall the Giovanni crawl, so
+	// skip it — the floors stay freely walkable.
+	if (/^SilphCo_\d/.test(world.current.name)) return;
 	const meta = mapScripts.__map__;
 	if (!meta || !meta.onTransition || !mapScripts[meta.onTransition]) return;
 	if (cutscene.blocking) return;
@@ -2202,6 +2210,8 @@ function completeVillainBeat(region, beat) {
 	Story.setFlag(beat.doneFlag);
 	saveParty(party);
 	refreshObjective();
+	// the beat is done -> isDungeonFloor now false -> despawn the grunts on this map
+	trainers.loadForMap().then(() => { npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev)); }).catch(() => {});
 	startCutscene(beat.outro.map(text => ({ op: 'say', text })));
 }
 

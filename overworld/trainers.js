@@ -68,6 +68,7 @@ export class Trainers {
 		this.gfx = null;
 		this.engagement = null; // { trainer, phase: 'exclaim'|'walk', t }
 		this.onEngage = null;   // set by main.js
+		this.spawnFlagged = null; // set by main.js: predicate to un-hide villain-grunt events during a beat
 		{ const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []); }
 	}
 
@@ -102,17 +103,22 @@ export class Trainers {
 		const evs = this.world.current.map.object_events || [];
 		await Promise.all(evs.map(async ev => {
 			if (!this.claims(ev)) return;
-			if (ev.flag && ev.flag !== '0') return;
+			// hidden story trainers are skipped — EXCEPT villain grunts that the active
+			// quest beat wants populating the dungeon (main.js sets spawnFlagged)
+			const flagged = ev.flag && ev.flag !== '0';
+			if (flagged && !(this.spawnFlagged && this.spawnFlagged(ev))) return;
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			const img = await getImage(`data/people/${file}`).catch(() => null);
-			if (img) this.list.push(new Trainer(ev, img));
+			if (img) { const t = new Trainer(ev, img); if (flagged) t.villain = true; this.list.push(t); }
 		}));
 	}
 
 	occupied(tx, ty) {
-		return this.list.some(t => t.tx === tx && t.ty === ty);
+		// a defeated trainer no longer blocks its tile — so a beaten grunt can't wall
+		// a dungeon corridor (checkSight already skips defeated, so no re-battle)
+		return this.list.some(t => t.tx === tx && t.ty === ty && !this.isDefeated(t));
 	}
 
 	get engaging() { return this.engagement != null; }

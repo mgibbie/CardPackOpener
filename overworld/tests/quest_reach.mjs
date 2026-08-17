@@ -5,7 +5,7 @@
 // areas — never strands); (SOFT/report) how strictly each next town is locked.
 // Run: node overworld/tests/quest_reach.mjs
 import { buildGraph, reachable } from './quest_graph.mjs';
-import { GYMS, GATED_MAPS, START } from '../quest.js';
+import { GYMS, GATED_MAPS, START, VILLAIN_BEATS } from '../quest.js';
 
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
@@ -41,6 +41,16 @@ for (const region of ['KANTO', 'JOHTO', 'HOENN']) {
 		if (k > 0 && reach[k - 1].has(g.townMap)) leaks.push(`${g.townMap}@${k - 1}`);
 	});
 	console.log(`[${region}] reachable@0=${reach[0].size} @8=${reach[8].size}; early-open gym towns: ${leaks.length ? leaks.join(', ') : 'none'}`);
+
+	// villain crawl: each beat's BOSS floor must be reachable (via warps) at its
+	// afterBadges — else the moved boss (and the required gate it opens) strands. The
+	// warp graph ignores metatile doors (the SilphCo door-fix opens them in-game), so
+	// this is the topological guard.
+	for (const b of VILLAIN_BEATS[region] || []) {
+		const need = Math.min(8, b.afterBadges);
+		A(reach[need].has(b.at), `[${region}] villain boss floor ${b.at} reachable at ${need} badges`, `(beat ${b.id})`);
+		for (const m of b.maps || []) A(reach[need].has(m), `[${region}] villain grunt floor ${m} reachable at ${need} badges`, `(beat ${b.id})`);
+	}
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

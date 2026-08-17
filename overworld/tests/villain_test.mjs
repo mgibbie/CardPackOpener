@@ -68,14 +68,21 @@ for (const c of cases) {
 // beatAt: the encounter fires only at the right location, badge level, and once
 {
 	reset(); Story.setFlag('intro_done'); earnN('KANTO', 5);
-	A(Quest.beatAt('KANTO', 'SilphCo_1F')?.id === 'silph', 'beatAt returns the Silph beat at SilphCo_1F with 5 badges');
+	A(Quest.beatAt('KANTO', 'SilphCo_11F')?.id === 'silph', 'beatAt returns the Silph beat at its boss floor (11F) with 5 badges');
 	A(Quest.beatAt('KANTO', 'PewterCity') === null, 'beatAt is null on an unrelated map');
 	Story.setFlag('villain_kanto_silph');
-	A(Quest.beatAt('KANTO', 'SilphCo_1F') === null, 'beatAt is null once the beat is done (one-shot)');
+	A(Quest.beatAt('KANTO', 'SilphCo_11F') === null, 'beatAt is null once the beat is done (one-shot)');
 	reset(); Story.setFlag('intro_done'); earnN('KANTO', 4);
-	A(Quest.beatAt('KANTO', 'SilphCo_1F') === null, 'beatAt is null before the beat’s afterBadges');
-	// the flavor (ungated) beat still fires by location
-	A(Quest.beatAt('KANTO', 'RocketHideout_B1F')?.id === 'rocket_hideout', 'the optional Rocket Hideout beat fires at its location');
+	A(Quest.beatAt('KANTO', 'SilphCo_11F') === null, 'beatAt is null before the beat’s afterBadges');
+	// the flavor (ungated) beat fires at its deep boss floor
+	A(Quest.beatAt('KANTO', 'RocketHideout_B4F')?.id === 'rocket_hideout', 'the optional Rocket Hideout beat fires at its boss floor');
+	// grunts populate the intermediate floors while the beat is active
+	reset(); Story.setFlag('intro_done'); earnN('KANTO', 5);
+	A(Quest.isDungeonFloor('KANTO', 'SilphCo_5F') === true, 'isDungeonFloor: SilphCo_5F is a grunt floor while the Silph beat is active');
+	A(Quest.isDungeonFloor('KANTO', 'SilphCo_11F') === false, 'isDungeonFloor: the boss floor is NOT a grunt floor');
+	A(Quest.isDungeonFloor('KANTO', 'PewterCity') === false, 'isDungeonFloor: a normal town is not a grunt floor');
+	Story.setFlag('villain_kanto_silph');
+	A(Quest.isDungeonFloor('KANTO', 'SilphCo_5F') === false, 'isDungeonFloor: grunt floors go quiet once the beat is done');
 }
 reset();
 
@@ -132,6 +139,35 @@ try {
 	});
 	A(done.blocked === null, 'live: the League opens once the climax is done');
 	A(/LEAGUE/.test(done.obj), 'live: the objective becomes the League after the climax', done.obj);
+
+	// dungeon population: switch to Kanto, activate the Rocket Hideout beat, and walk
+	// into a crawl floor — the previously-hidden grunts now spawn as real trainers
+	const grunts = await page.evaluate(async () => {
+		localStorage.setItem('magepunk_region', 'KANTO');
+		const B = window.__ow.Badges; B._reset && B._reset();
+		for (let i = 0; i < 3; i++) B.earn('KANTO', B.list('KANTO')[i].id); // Rocket Hideout beat -> afterBadges 3
+		window.__ow.Story.setFlag('intro_done');
+		await window.__ow.moveToMap('RocketHideout_B1F');
+		const list = window.__ow.trainers.list;
+		const villains = list.filter(t => t.villain);
+		// a beaten grunt must not block its tile (crawl-passability)
+		let unblocked = null;
+		if (villains[0]) { const g = villains[0]; window.__ow.trainers.markDefeated(g); unblocked = window.__ow.trainers.occupied(g.tx, g.ty); }
+		return { map: window.__ow.world.current.name, total: list.length, villains: villains.length, teamOk: !!(villains[0] && window.__ow.trainers.buildBattle(villains[0], window.__ow.battle.data).party.length), unblocked };
+	});
+	A(grunts.map === 'RocketHideout_B1F', 'walked into the Rocket Hideout B1F crawl floor', grunts.map);
+	A(grunts.villains >= 1, 'villain grunts now POPULATE the crawl floor (were hidden before)', JSON.stringify(grunts));
+	A(grunts.teamOk === true, 'a spawned grunt resolves a real battle team');
+	A(grunts.unblocked === false, 'a defeated grunt no longer blocks its tile (crawl stays passable)', JSON.stringify(grunts.unblocked));
+
+	// the Silph door-fix: a SilphCo floor loads freely-walkable (OnLoad door barriers skipped)
+	const silph = await page.evaluate(async () => {
+		const B = window.__ow.Badges; for (let i = 3; i < 5; i++) B.earn('KANTO', B.list('KANTO')[i].id); // -> 5 badges, Silph beat active
+		await window.__ow.moveToMap('SilphCo_5F');
+		return { map: window.__ow.world.current.name, grunts: window.__ow.trainers.list.filter(t => t.villain).length };
+	});
+	A(silph.map === 'SilphCo_5F', 'SilphCo_5F loads (door-fix: no OnLoad barrier crash)', silph.map);
+	A(silph.grunts >= 1, 'grunts populate a Silph crawl floor too', JSON.stringify(silph));
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));
