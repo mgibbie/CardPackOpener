@@ -188,6 +188,7 @@ function onTrainerDefeated(script, opts) {
 	if (script === 'Red') {
 		const fresh = !Story.getFlag('beat_red');
 		Story.setFlag('beat_red');
+		if (fresh) syncOverworldAchievements();
 		if (fresh && !(opts && opts.silent)) dialog.open('. . . . . . . . .\n\nRED says nothing, and turns back to the mountain.\n\nYou have bested the strongest trainer of all.');
 		return;
 	}
@@ -227,6 +228,7 @@ function onTrainerDefeated(script, opts) {
 			const home = Quest.START[info.region];
 			if (home) moveToMap(home);
 			refreshObjective();
+			syncOverworldAchievements(); // a Championship (and maybe the Grand Champion tile) just unlocked
 		};
 		if (!silent) {
 			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
@@ -237,6 +239,7 @@ function onTrainerDefeated(script, opts) {
 		return; // finish() calls refreshObjective when the Hall of Fame closes
 	}
 	refreshObjective(); // the quest stage just advanced
+	syncOverworldAchievements(); // a gym badge (and maybe a full 8/16-badge circuit) may have unlocked
 }
 // ---------- BATTLE FRONTIER (7 facilities) ----------
 // Each facility is a variation on a shared streak/BP core (see FACILITIES in
@@ -367,6 +370,7 @@ function runFrontierBattle(foe, info, tier, brain) {
 		};
 		if (brain) {
 			Frontier.addBP(10); Frontier.earnSymbol(frontier.id, tier);
+			syncOverworldAchievements(); // a Frontier Brain fell — a new symbol to surface
 			dialog.open(`Incredible — you defeated ${brain.name}!\n\nYou earned the ${tier.toUpperCase()} SYMBOL!   (+10 BP)`, cont);
 		} else cont();
 	});
@@ -2141,6 +2145,7 @@ function startLegendaryBattle(e) {
 				const where = addCaught(party, battle.lastCaught);
 				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 				Story.setFlag(e.flag);
+				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
 				evolution.check(party, battle.data);
@@ -2626,9 +2631,47 @@ function completeVillainBeat(region, beat) {
 	Story.setFlag(beat.doneFlag);
 	saveParty(party);
 	refreshObjective();
+	syncOverworldAchievements(); // a villain arc just closed — surface it on the profile
 	// the beat is done -> isDungeonFloor now false -> despawn the grunts on this map
 	trainers.loadForMap().then(() => { npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev)); }).catch(() => {});
 	startCutscene(beat.outro.map(text => ({ op: 'say', text })));
+}
+
+// ---------- overworld achievements sync ----------
+// The Profile achievements page derives its tiles from the account state (server), but
+// overworld progress (badges / championships / Frontier symbols / caught legendaries /
+// villain arcs / Pokedex) lives only in localStorage. This bridges the two: a compact
+// summary is pushed to the account on boot (backfilling existing progress) and after
+// each milestone, so those accomplishments unlock achievement tiles. localStorage stays
+// the source of truth; the account copy is derived. No-op when logged out.
+function overworldSummary() {
+	const REGS = ['KANTO', 'JOHTO', 'HOENN'];
+	const badges = { JOHKANTO: Badges.count('JOHKANTO') };
+	const champ = {};
+	for (const r of REGS) { badges[r] = Badges.count(r); champ[r] = Badges.isChampion(r); }
+	// caught legendaries: species the Dex records as CAUGHT — not the legend_caught_*
+	// flag, which is also set when a legendary is defeated (main.js: catch vs victory)
+	const roster = new Set();
+	for (const v of Object.values(LEGENDARY_ENCOUNTERS))
+		for (const e of (Array.isArray(v) ? v : [v])) roster.add(e.species);
+	const legends = [...roster].filter(s => Dex.isCaught(s));
+	const villains = ['villain_kanto_hideout', 'villain_kanto_silph', 'villain_johto_slowpoke',
+		'villain_johto_hq', 'villain_hoenn_hideout', 'villain_hoenn_climax'].filter(f => Story.getFlag(f));
+	return {
+		badges, champ,
+		symbols: Frontier.getSymbols(),
+		legends,
+		villains,
+		beatRed: !!Story.getFlag('beat_red'),
+		awakening: awState() >= 6, // the Hoenn weather crisis was resolved (RAYQUAZA calmed the trio)
+		dexCaught: Dex.counts().caught,
+		bp: Frontier.getBP(),
+		bestStreak: Frontier.bestStreak(),
+	};
+}
+function syncOverworldAchievements() {
+	if (!MP_ON) return;
+	try { MP.call('overworld-sync', { ow: overworldSummary() }).catch(() => {}); } catch (e) {}
 }
 
 // open the on-screen starter picker locked to one region's trio
@@ -4178,6 +4221,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beatLoop();
 		presLoop();
 		setInterval(pollChallenges, 2000);
+		syncOverworldAchievements(); // backfill existing progress into the account for the achievements page
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)
@@ -4209,6 +4253,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
 	factorySnapshot, get factorySpec() { return factorySpec; }, get frontierWatchers() { return frontierWatchers; },
+		overworldSummary, syncOverworldAchievements,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,

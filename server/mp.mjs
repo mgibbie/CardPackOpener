@@ -1748,5 +1748,31 @@ export default async function handler(req, env) {
 		return json({ state: publicState(user, username) });
 	}
 
+	// the Pokemon overworld pushes a small progression summary here so the profile
+	// achievements page (which reads the account state) can surface gym/champion/
+	// Frontier/legendary milestones. Validated + clamped; stored on user.stats.overworld.
+	if (action === 'overworld-sync') {
+		const ow = body.ow && typeof body.ow === 'object' ? body.ow : {};
+		const numMap = (o, max) => { const r = {}; if (o && typeof o === 'object') for (const k of Object.keys(o).slice(0, 8)) r[String(k).slice(0, 16)] = Math.max(0, Math.min(max, o[k] | 0)); return r; };
+		const boolMap = (o) => { const r = {}; if (o && typeof o === 'object') for (const k of Object.keys(o).slice(0, 8)) r[String(k).slice(0, 16)] = !!o[k]; return r; };
+		const strMap = (o) => { const r = {}; if (o && typeof o === 'object') for (const k of Object.keys(o).slice(0, 8)) r[String(k).slice(0, 16)] = String(o[k]).slice(0, 8); return r; };
+		const strArr = (a, n, len) => Array.isArray(a) ? a.slice(0, n).map(s => String(s).slice(0, len)) : [];
+		if (!user.stats || typeof user.stats !== 'object') user.stats = {};
+		user.stats.overworld = {
+			badges: numMap(ow.badges, 8),
+			champ: boolMap(ow.champ),
+			symbols: strMap(ow.symbols),
+			legends: strArr(ow.legends, 40, 20),
+			villains: strArr(ow.villains, 20, 32),
+			beatRed: !!ow.beatRed,
+			awakening: !!ow.awakening,
+			dexCaught: Math.max(0, Math.min(3000, ow.dexCaught | 0)),
+			bp: Math.max(0, Math.min(999999, ow.bp | 0)),
+			bestStreak: Math.max(0, Math.min(9999, ow.bestStreak | 0)),
+		};
+		await store.setJSON(username, user);
+		return json({ ok: true });
+	}
+
 	return json({ error: 'unknown action' }, 400);
 }

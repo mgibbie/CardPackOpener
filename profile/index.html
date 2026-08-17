@@ -97,6 +97,37 @@ const ACH = (m) => [
 	{ ico: '🗃️', nm: 'Arsenal', ds: 'Save 20 decks.', have: m.decks, need: 20 },
 	{ ico: '🤝', nm: 'Well Met', ds: 'Add a friend.', have: m.friends, need: 1 },
 	{ ico: '🎉', nm: 'Popular', ds: 'Have 5 friends.', have: m.friends, need: 5 },
+	// ---- overworld (Pokémon RPG) achievements — only shown once the game has been played ----
+	...(m.ow.has ? [
+		// gyms & champions
+		{ ico: '🥇', nm: 'Kanto Gym Circuit', ds: 'Earn all 8 Kanto Gym Badges.', have: m.ow.kanto, need: 8 },
+		{ ico: '🥈', nm: 'Johto Gym Circuit', ds: 'Earn all 8 Johto Gym Badges.', have: m.ow.johto, need: 8 },
+		{ ico: '🥉', nm: 'Hoenn Gym Circuit', ds: 'Earn all 8 Hoenn Gym Badges.', have: m.ow.hoenn, need: 8 },
+		{ ico: '👑', nm: 'Kanto Champion', ds: 'Become the Kanto Champion.', have: m.ow.champK, need: 1 },
+		{ ico: '👑', nm: 'Johto Champion', ds: 'Become the Johto Champion.', have: m.ow.champJ, need: 1 },
+		{ ico: '👑', nm: 'Hoenn Champion', ds: 'Become the Hoenn Champion.', have: m.ow.champH, need: 1 },
+		{ ico: '🏆', nm: 'Grand Champion', ds: 'Be Champion of all three regions.', have: m.ow.champs, need: 3 },
+		{ ico: '🔟', nm: 'Indigo Conqueror', ds: 'Earn all 16 badges on the Johto → Kanto journey.', have: m.ow.indigo, need: 16 },
+		{ ico: '🗻', nm: 'Rival at the Summit', ds: 'Defeat RED atop Mt. Silver.', have: m.ow.beatRed, need: 1 },
+		// Battle Frontier
+		{ ico: '🎖️', nm: 'Frontier Challenger', ds: 'Defeat a Frontier Brain.', have: m.ow.symbols, need: 1 },
+		{ ico: '🏛️', nm: 'Frontier Conqueror', ds: 'Defeat all 7 Frontier Brains.', have: m.ow.symbols, need: 7 },
+		{ ico: '✨', nm: 'Gold Standard', ds: 'Earn all 7 Gold Symbols.', have: m.ow.golds, need: 7 },
+		// legendaries (only catches count — defeating one doesn't)
+		{ ico: '🌩️', nm: 'Weather Trio', ds: 'Catch Rayquaza, Kyogre, and Groudon.', have: m.ow.weatherTrio, need: 3 },
+		{ ico: '🐦', nm: 'Legendary Birds', ds: 'Catch Articuno, Zapdos, and Moltres.', have: m.ow.birds, need: 3 },
+		{ ico: '🐾', nm: 'Legendary Beasts', ds: 'Catch Raikou, Entei, and Suicune.', have: m.ow.beasts, need: 3 },
+		{ ico: '🌈', nm: 'Tower Duo', ds: 'Catch Ho-Oh and Lugia.', have: m.ow.towerDuo, need: 2 },
+		{ ico: '🗿', nm: 'Regi Trio', ds: 'Catch Regirock, Regice, and Registeel.', have: m.ow.regis, need: 3 },
+		{ ico: '🌟', nm: 'Legendary Master', ds: 'Catch every legendary Pokémon.', have: m.ow.legends, need: 18 },
+		// story / villains / Pokédex
+		{ ico: '🚫', nm: 'Rocket Buster (Kanto)', ds: 'Foil Team Rocket in Kanto.', have: m.ow.villainK, need: 2 },
+		{ ico: '💥', nm: 'Rocket Buster (Johto)', ds: 'Foil Team Rocket in Johto.', have: m.ow.villainJ, need: 2 },
+		{ ico: '🌀', nm: 'Aqua Foiled', ds: 'Stop Team Aqua in Hoenn.', have: m.ow.aquaFoiled, need: 1 },
+		{ ico: '🌦️', nm: 'Weather Crisis Averted', ds: 'Calm the raging weather trio.', have: m.ow.awakening, need: 1 },
+		{ ico: '📕', nm: 'Poké Collector', ds: 'Catch 50 different species.', have: m.ow.dexCaught, need: 50 },
+		{ ico: '📗', nm: 'Seasoned Trainer', ds: 'Catch 150 different species.', have: m.ow.dexCaught, need: 150 },
+	] : []),
 ];
 
 (async () => {
@@ -115,11 +146,39 @@ const ACH = (m) => [
 	const st = s.stats || {};
 	const md = st.modes || {}; // per-mode run/win counters
 	const mode = k => md[k] || { runs: 0, wins: 0 };
+	// overworld (Pokemon RPG) progression, synced from the game's localStorage → account
+	const ow = st.overworld || {};
+	const owB = ow.badges || {}, owC = ow.champ || {}, owS = ow.symbols || {};
+	const owLeg = new Set(Array.isArray(ow.legends) ? ow.legends : []);
+	const owVil = new Set(Array.isArray(ow.villains) ? ow.villains : []);
+	const legCount = ids => ids.filter(id => owLeg.has(id)).length;
+	const owStats = {
+		has: !!st.overworld, // only surface the RPG tiles once the player has booted the game logged-in
+		kanto: owB.KANTO | 0, johto: owB.JOHTO | 0, hoenn: owB.HOENN | 0,
+		champK: owC.KANTO ? 1 : 0, champJ: owC.JOHTO ? 1 : 0, champH: owC.HOENN ? 1 : 0,
+		champs: (owC.KANTO ? 1 : 0) + (owC.JOHTO ? 1 : 0) + (owC.HOENN ? 1 : 0),
+		indigo: (owB.JOHTO | 0) + (owB.JOHKANTO | 0), // the 16-badge Johto→Kanto journey
+		beatRed: ow.beatRed ? 1 : 0,
+		symbols: Object.keys(owS).length,
+		golds: Object.values(owS).filter(v => v === 'gold').length,
+		weatherTrio: legCount(['rayquaza', 'kyogre', 'groudon']),
+		birds: legCount(['articuno', 'zapdos', 'moltres']),
+		beasts: legCount(['raikou', 'entei', 'suicune']),
+		towerDuo: legCount(['hooh', 'lugia']),
+		regis: legCount(['regirock', 'regice', 'registeel']),
+		legends: owLeg.size,
+		villainK: (owVil.has('villain_kanto_hideout') ? 1 : 0) + (owVil.has('villain_kanto_silph') ? 1 : 0),
+		villainJ: (owVil.has('villain_johto_slowpoke') ? 1 : 0) + (owVil.has('villain_johto_hq') ? 1 : 0),
+		aquaFoiled: owVil.has('villain_hoenn_climax') ? 1 : 0,
+		awakening: ow.awakening ? 1 : 0,
+		dexCaught: ow.dexCaught | 0,
+	};
 	const m = {
 		runs: st.runs || 0, wins: st.wins || 0, packsOpened: st.packsOpened || 0,
 		distinct, decks: (s.decks || []).length, friends: (s.friends || []).length, poolSize,
 		dungeon: mode('dungeon'), heist: mode('heist'), tombs: mode('tombs'), duels: mode('duels'), arena: mode('arena'),
 		arenaBestWins: (s.arenaBest && s.arenaBest.wins) || 0,
+		ow: owStats,
 	};
 	const achievements = ACH(m);
 	const unlocked = achievements.filter(a => a.have >= a.need).length;
@@ -153,7 +212,7 @@ const ACH = (m) => [
 			${statTile(m.friends.toLocaleString(), 'friends')}
 		</div>
 		<h2>Achievements <span class="num">${unlocked} / ${achievements.length}</span></h2>
-		<p class="ach-summary">Earned by playing — runs, wins, packs, collecting, deckbuilding, and friends.</p>
+		<p class="ach-summary">Earned by playing — runs, wins, packs, collecting, deckbuilding, friends, and your Pokémon journey.</p>
 		<div class="ach-grid">${achievements.map(achTile).join('')}</div>
 		<h2>Collection</h2>
 		<p>Browse every card you own in the <a href="/collection/">Collection gallery</a>.</p>
