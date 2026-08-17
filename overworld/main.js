@@ -239,14 +239,16 @@ function onTrainerDefeated(script, opts) {
 // Each facility is a variation on a shared streak/BP core (see FACILITIES in
 // frontier.js): heal-or-endurance, endless-or-fixed-rounds, your-team-or-rentals.
 // Lobby reception counters (attendant tiles) that start each facility's challenge:
+// `tiles` = the reception counter that starts the challenge; `bp` = a side attendant
+// (a real lobby NPC's tile) who runs the BP EXCHANGE.
 const FACILITY_LOBBIES = {
-	MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY:   { facility: 'tower',   tiles: [[6, 5], [10, 5], [14, 5], [18, 5]] },
-	MAP_BATTLE_FRONTIER_BATTLE_DOME_LOBBY:    { facility: 'dome',    tiles: [[5, 10], [17, 10]] },
-	MAP_BATTLE_FRONTIER_BATTLE_FACTORY_LOBBY: { facility: 'factory', tiles: [[4, 7], [14, 7]] },
-	MAP_BATTLE_FRONTIER_BATTLE_PALACE_LOBBY:  { facility: 'palace',  tiles: [[5, 6], [19, 6]] },
-	MAP_BATTLE_FRONTIER_BATTLE_ARENA_LOBBY:   { facility: 'arena',   tiles: [[7, 7]] },
-	MAP_BATTLE_FRONTIER_BATTLE_PIKE_LOBBY:    { facility: 'pike',    tiles: [[5, 5]] },
-	MAP_BATTLE_FRONTIER_BATTLE_PYRAMID_LOBBY: { facility: 'pyramid', tiles: [[7, 12]] },
+	MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY:   { facility: 'tower',   tiles: [[6, 5], [10, 5], [14, 5], [18, 5]], bp: [[23, 5]] },
+	MAP_BATTLE_FRONTIER_BATTLE_DOME_LOBBY:    { facility: 'dome',    tiles: [[5, 10], [17, 10]], bp: [[1, 11]] },
+	MAP_BATTLE_FRONTIER_BATTLE_FACTORY_LOBBY: { facility: 'factory', tiles: [[4, 7], [14, 7]], bp: [[3, 11]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PALACE_LOBBY:  { facility: 'palace',  tiles: [[5, 6], [19, 6]], bp: [[18, 10]] },
+	MAP_BATTLE_FRONTIER_BATTLE_ARENA_LOBBY:   { facility: 'arena',   tiles: [[7, 7]], bp: [[2, 10]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PIKE_LOBBY:    { facility: 'pike',    tiles: [[5, 5]], bp: [[10, 9]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PYRAMID_LOBBY: { facility: 'pyramid', tiles: [[7, 12]], bp: [[2, 15]] },
 };
 const frontier = { active: false, streak: 0, cfg: null, runParty: null };
 // heal a team IN MEMORY without persisting — used between Frontier bouts so the run
@@ -443,6 +445,12 @@ function interact() {
 		const cfg = Frontier.FACILITIES[lobby.facility];
 		dialog.open(`Welcome to the ${cfg.name}!\n\nBattle for BP — you have ${Frontier.getBP()} BP.\n\nTake the challenge?   Z = Yes   X = No`, declined => {
 			if (declined !== 'x') startFacility(lobby.facility);
+		});
+		return;
+	}
+	if (lobby && !frontier.active && lobby.bp && lobby.bp.some(([x, y]) => x === fx && y === fy)) {
+		dialog.open(`BP EXCHANGE\n\nWelcome! You have ${Frontier.getBP()} BP to spend.\n\nZ = Shop   X = Leave`, declined => {
+			if (declined !== 'x') openBpShop(null);
 		});
 		return;
 	}

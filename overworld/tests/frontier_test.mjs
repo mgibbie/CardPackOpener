@@ -126,6 +126,20 @@ try {
 	// enters a real battle (the riskiest wiring)
 	await page.evaluate(async () => { await window.__ow.moveToMap('BattleFrontier_BattleFactoryLobby'); });
 	await waitFor(() => page.evaluate(() => /BattleFactoryLobby/.test(window.__ow.world.current?.name || '')), 8000);
+
+	// the BP EXCHANGE counter in the lobby opens the shop (clerk at (3,11), face from above)
+	const counter = await page.evaluate(async () => {
+		window.__ow.frontier.active = false;
+		const p = window.__ow.player; p.setTile(3, 10); p.facing = 'down'; p.moving = false;
+		window.__ow.interact();
+		const d = window.__ow.dialog;
+		for (let i = 0; i < 12; i++) { if (window.__ow.bpShopMenu.open) break; if (d.blocking) d.key('z'); await new Promise(r => setTimeout(r, 40)); }
+		const open = window.__ow.bpShopMenu.open;
+		window.__ow.bpShopKey('x');
+		return { open };
+	});
+	A(counter.open, 'the BP EXCHANGE counter in a Frontier lobby opens the shop');
+
 	const factory = await page.evaluate(async () => {
 		window.__ow.frontier.active = false;
 		window.__ow.startFacility('factory');
