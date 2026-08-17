@@ -5,6 +5,7 @@
 // snapshot), team dots, and the current message. No input beyond leaving.
 import * as UI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
+import * as Chat from '../battlecards/chat.js';
 
 export class FactorySpec {
 	constructor() { this.active = null; }
@@ -16,6 +17,8 @@ export class FactorySpec {
 			msg: `Loading ${runner}’s run…`, t: 0, polling: true,
 			shownMe: 0, shownFoe: 0, lastMe: null, lastFoe: null,
 		};
+		// spectator chat: read the runner's room, chat with other spectators (spec room)
+		Chat.mount({ room: 'u:' + runner, canPost: false, specRoom: 'spec:' + runner });
 		this.pollLoop();
 	}
 	async pollLoop() {
@@ -47,7 +50,7 @@ export class FactorySpec {
 		if (data.over) this.markOver();
 	}
 	markOver() { const a = this.active; if (a) { a.over = true; a.msg = `${a.runner}’s run has ended.`; } }
-	quit() { const a = this.active; if (!a) return; a.polling = false; this.active = null; a.onEnd?.(); }
+	quit() { const a = this.active; if (!a) return; a.polling = false; this.active = null; if (Chat.active()) Chat.unmount(); a.onEnd?.(); }
 
 	update(dt) {
 		const a = this.active; if (!a) return;

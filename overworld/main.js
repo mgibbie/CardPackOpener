@@ -30,6 +30,7 @@ import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
+import * as Chat from '../battlecards/chat.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -287,6 +288,8 @@ function frontierPublish(over) {
 function startFrontierPublish() {
 	if (!MP_ON || frontierPubTimer) return;
 	frontierWatchers = 0;
+	const uname = mpAccount?.username; // runner + spectators share the run's chat room
+	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true });
 	const tick = () => { frontierPublish(false); frontierPubTimer = frontier.active ? setTimeout(tick, 1200) : null; };
 	tick();
 }
@@ -294,6 +297,7 @@ function stopFrontierPublish() {
 	if (frontierPubTimer) { clearTimeout(frontierPubTimer); frontierPubTimer = null; }
 	frontierPublish(true); // final "run over" push so watchers see it end promptly
 	frontierWatchers = 0;
+	if (Chat.active()) Chat.unmount();
 }
 // a "N watching" badge on the runner's own screen while friends are spectating
 function drawWatchingBadge(W, H) {

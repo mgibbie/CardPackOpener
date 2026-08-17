@@ -70,6 +70,7 @@ try {
 
 	// the runner captures the live watcher count from the publish response (drives the badge)
 	A(await waitFor(() => page.evaluate(() => window.__ow.frontierWatchers === 3), 4000), 'the runner picks up the "N watching" count from the relay (badge input)');
+	A(await page.evaluate(() => !!document.getElementById('mp-chat')), 'a spectator chat overlay is mounted for the runner during a run');
 
 	// the spectate view renders a snapshot read-only without crashing
 	const spec = await page.evaluate(async (theSnap) => {
@@ -78,12 +79,14 @@ try {
 		fsv.active.polling = false;          // stop the poll so our injected snapshot stays
 		fsv.ingest({ snapshot: theSnap, seq: 7, watchers: 3, over: false });
 		await new Promise(r => setTimeout(r, 300)); // let the draw loop render it a few frames
-		const out = { blocking: fsv.blocking, name: fsv.active?.snap?.me?.name, watchers: fsv.active?.watchers };
+		const chatOpen = !!document.getElementById('mp-chat');
+		const out = { blocking: fsv.blocking, name: fsv.active?.snap?.me?.name, watchers: fsv.active?.watchers, chatOpen };
 		fsv.quit();
-		return { ...out, closed: !fsv.blocking };
+		return { ...out, closed: !fsv.blocking, chatClosed: !document.getElementById('mp-chat') };
 	}, snap);
 	A(spec.blocking && spec.name === snap.me.name && spec.watchers === 3, 'the spectate view ingests + renders a snapshot (read-only)', JSON.stringify(spec));
-	A(spec.closed, 'leaving the spectate view (quit) closes it');
+	A(spec.chatOpen, 'the spectator chat overlay is mounted while watching');
+	A(spec.closed && spec.chatClosed, 'leaving the spectate view (quit) closes it AND unmounts the chat');
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));
