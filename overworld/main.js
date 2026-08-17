@@ -134,7 +134,10 @@ trainers.onEngage = t => {
 
 // un-hide villain grunts while their beat is active + the current map is one of the
 // beat's dungeon floors (they then route through the normal sight/battle pipeline)
-trainers.spawnFlagged = () => Quest.isDungeonFloor(playerRegion(), world.current.name);
+// un-hide villain grunts during their beat, AND spawn RED atop MT SILVER once you're
+// the JOHTO CHAMPION (his object is flag-hidden by default) — Johto's post-game climax
+trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
+	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO'));
 
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
@@ -170,6 +173,13 @@ function leagueGateMessage(script) {
 // Called on any trainer victory. Gym Leaders award their badge; the Champion
 // crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
 function onTrainerDefeated(script, opts) {
+	// RED at Mt Silver — the ultimate battle; not a gym/league, so handle it here
+	if (script === 'Red') {
+		const fresh = !Story.getFlag('beat_red');
+		Story.setFlag('beat_red');
+		if (fresh && !(opts && opts.silent)) dialog.open('. . . . . . . . .\n\nRED says nothing, and turns back to the mountain.\n\nYou have bested the strongest trainer of all.');
+		return;
+	}
 	const info = Badges.scriptInfo(script);
 	if (!info) return;
 	// a scripted battle plays the leader's own authentic speech (which already
@@ -190,14 +200,34 @@ function onTrainerDefeated(script, opts) {
 			Bag.addItem('rainbowwing'); Bag.registerName('rainbowwing', 'RAINBOW WING');
 			Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');
 		}
+		// record the team, heal, and warp home — otherwise the player is stranded in the
+		// Champion's Room (the decomp room-warp + credits roll was never ported). This is
+		// what makes the post-game reachable at all.
+		const finish = () => {
+			if (fresh) recordHallOfFame(info.region, party);
+			healParty(party); saveParty(party);
+			const home = Quest.START[info.region];
+			if (home) moveToMap(home);
+			refreshObjective();
+		};
 		if (!silent) {
 			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
 			dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
 				() => dialog.open('*  HALL OF FAME  *\n\nYour team is recorded for all time.'
-					+ (fresh ? '' : '\n\n(You have cleared this League before.)')));
-		}
+					+ (fresh ? '' : '\n\n(You have cleared this League before.)'), finish));
+		} else finish();
+		return; // finish() calls refreshObjective when the Hall of Fame closes
 	}
 	refreshObjective(); // the quest stage just advanced
+}
+// snapshot the winning team into the Hall of Fame log (magepunk_hof)
+function recordHallOfFame(region, roster) {
+	try {
+		const hof = safeLoad('magepunk_hof', []);
+		const team = (roster || []).filter(Boolean).map(m => ({ species: m.speciesId, name: m.name, level: m.level }));
+		hof.push({ region, date: Date.now(), team });
+		safeSave('magepunk_hof', hof.slice(-20)); // keep the last 20 clears
+	} catch { }
 }
 evolution.onDone = () => saveParty(party);
 let loading = true;
@@ -1656,6 +1686,13 @@ const LEGENDARY_ENCOUNTERS = {
 	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
 	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
+	// the three REGI — sealed in their chambers, they stir only for the HOENN CHAMPION
+	MAP_DESERT_RUINS: { species: 'regirock', dex: 377, level: 40, x: 8, y: 7, flag: 'legend_caught_regirock',
+		requires: () => Badges.isChampion('HOENN'), intro: 'A golem of ancient stone stands sealed here — REGIROCK awakens.' },
+	MAP_ISLAND_CAVE: { species: 'regice', dex: 378, level: 40, x: 8, y: 7, flag: 'legend_caught_regice',
+		requires: () => Badges.isChampion('HOENN'), intro: 'The cave breathes freezing air — REGICE emerges from the ice.' },
+	MAP_ANCIENT_TOMB: { species: 'registeel', dex: 379, level: 40, x: 8, y: 7, flag: 'legend_caught_registeel',
+		requires: () => Badges.isChampion('HOENN'), intro: 'A body of tempered steel unseals itself — REGISTEEL awakens.' },
 	// Kanto birds — catchable in their lairs (no gate)
 	MAP_SEAFOAM_ISLANDS_B4F: { species: 'articuno', dex: 144, level: 50, x: 9, y: 2, flag: 'legend_caught_articuno', intro: 'A freezing gale howls through the cavern — ARTICUNO descends!' },
 	MAP_POWER_PLANT:         { species: 'zapdos',   dex: 145, level: 50, x: 5, y: 11, flag: 'legend_caught_zapdos',  intro: 'The air crackles with electricity — ZAPDOS spreads its wings!' },

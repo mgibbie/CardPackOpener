@@ -214,13 +214,20 @@ export function stage(region) {
 // map used to detect a villain beat gating the League approach, per region
 const LEAGUE_MAP = { KANTO: 'IndigoPlateau', JOHTO: 'VictoryRoad', HOENN: 'EverGrandeCity' };
 
+// post-game "NEXT:" line once you're CHAMPION — points at each region's real post-game
+const DONE_OBJECTIVE = {
+	KANTO: 'CHAMPION of KANTO! MEWTWO now stirs deep in CERULEAN CAVE — and the legendary birds await.',
+	JOHTO: 'CHAMPION of JOHTO! A silent trainer is said to wait at the summit of MT SILVER...',
+	HOENN: 'CHAMPION of HOENN! The three REGI slumber in their sealed chambers — seek them out.',
+};
+
 // the player-facing "NEXT:" objective for the current stage. A required villain
 // beat gating the immediate next gym (or the League) takes precedence over the gym.
 export function objective(region) {
 	const rk = regionKey(region);
 	const s = stage(rk);
 	if (s === INTRO) return 'Get your first POKeMON from the LAB.';
-	if (s === DONE) return `CHAMPION of ${rk}! Legendary POKeMON now stir — seek them in their lairs.`;
+	if (s === DONE) return DONE_OBJECTIVE[rk] || `CHAMPION of ${rk}! Legendary POKeMON now stir.`;
 	if (s === LEAGUE) {
 		const lb = gateBeat(rk, LEAGUE_MAP[rk]);
 		if (lb) return lb.objective;
