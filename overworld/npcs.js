@@ -3,7 +3,7 @@
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META } from './engine.js';
-import { isTrainerEvent } from './trainers.js';
+import { isTrainerEvent, spriteFor } from './trainers.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const NPC_SPEED = 60; // px/s — NPCs stroll
@@ -122,13 +122,14 @@ export class NPCs {
 		this.list = [];
 		const evs = this.world.current.map.object_events || [];
 		await Promise.all(evs.map(async ev => {
-			if (ev.type !== 'object') return;
+			if (ev.type != null && ev.type !== 'object') return; // Emerald maps omit `type` — treat missing as object (else no Hoenn NPCs)
 			if (ev.flag && ev.flag !== '0') return;        // hidden-by-flag (story NPCs)
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
 			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|BERRY_TREE|FRUIT_TREE|BOULDER/.test(ev.graphics_id || '')) return; // items.js owns these
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
-			const img = await getImage(`data/people/${file}`).catch(() => null);
+			let img = await getImage(`data/people/${file}`).catch(() => null);
+			if (!img) img = await getImage(`data/people/${spriteFor(ev.graphics_id, false)}`).catch(() => null);
 			if (img) this.list.push(new NPC(ev, img));
 		}));
 	}

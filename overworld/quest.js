@@ -146,7 +146,12 @@ export const VILLAIN_BEATS = {
 			outro: ["MATT: Argh, so strong... this isn't over!", '(TEAM AQUA scatters from the hideout.)'],
 		},
 		{
-			id: 'seafloor', afterBadges: 7, at: 'SeafloorCavern_Room1', boss: 'ARCHIE',
+			id: 'seafloor', afterBadges: 7, at: 'SeafloorCavern_Room9', boss: 'ARCHIE',
+			// grunts + Shelly populate the cavern; the Strength/Rock-Smash boulder maze
+			// to Room9 is the faithful (solvable) vanilla layout and resets on every room
+			// re-entry (items.js rebuilds field objects per visit), so it can never
+			// permanently strand — and the player has Strength/Rock Smash by 7 badges.
+			maps: ['SeafloorCavern_Entrance', 'SeafloorCavern_Room1', 'SeafloorCavern_Room2', 'SeafloorCavern_Room3', 'SeafloorCavern_Room4', 'SeafloorCavern_Room5', 'SeafloorCavern_Room6', 'SeafloorCavern_Room7', 'SeafloorCavern_Room8'],
 			gate: ['EverGrandeCity', 'VictoryRoad_1F', 'EverGrandeCity_PokemonLeague_1F'],
 			team: [{ s: 'mightyena', l: 41 }, { s: 'crobat', l: 41 }, { s: 'sharpedo', l: 43 }],
 			doneFlag: 'villain_hoenn_climax',

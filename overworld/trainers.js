@@ -16,10 +16,27 @@ const FACE_OF = {
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const DEFEATED_KEY = 'magepunk_defeated_v1';
 
+// The Emerald sprite set was never imported, so Hoenn gym leaders (and some NPCs)
+// have no people/*.png and would silently fail to spawn — leaving Hoenn gyms
+// unbeatable. Fall back to a gender-appropriate generic so they render + battle.
+// (gfx_map.json lives in the read-only owdata data, so this must live in code.)
+export const SPRITE_FALLBACK = {
+	OBJ_EVENT_GFX_ROXANNE: 'woman_1.png', OBJ_EVENT_GFX_FLANNERY: 'woman_2.png',
+	OBJ_EVENT_GFX_WINONA: 'woman_3.png', OBJ_EVENT_GFX_LIZA: 'beauty.png',
+	OBJ_EVENT_GFX_BRAWLY: 'cooltrainer_m.png', OBJ_EVENT_GFX_TATE: 'cooltrainer_m.png',
+	OBJ_EVENT_GFX_WATTSON: 'gentleman.png', OBJ_EVENT_GFX_NORMAN: 'gentleman.png',
+	OBJ_EVENT_GFX_JUAN: 'gentleman.png', OBJ_EVENT_GFX_WALLACE: 'gentleman.png',
+};
+export const spriteFor = (graphicsId, isTrainer) =>
+	SPRITE_FALLBACK[graphicsId] || (isTrainer ? 'cooltrainer_m.png' : 'man.png');
+
 // all battle-capable trainers, including talk-to ones (sight range 0 — gym
 // leaders etc.). npcs.js excludes these; trainers.js renders them.
 export function isTrainerEvent(ev) {
-	return ev.type === 'object'
+	// object_events are always objects; the Emerald (Hoenn) map parser omits the
+	// `type` field entirely, so treat a missing type as 'object' (else no Hoenn
+	// trainer — gym leaders included — would ever spawn)
+	return (ev.type === 'object' || ev.type == null)
 		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS')
 		&& ev.script && ev.script !== '0x0';
 }
@@ -94,7 +111,7 @@ export class Trainers {
 	// entry (gym leaders are TRAINER_TYPE_NONE but script-battled)
 	claims(ev) {
 		if (isTrainerEvent(ev)) return true;
-		return ev.type === 'object' && ev.script && this.data?.rosters?.[ev.script] != null;
+		return (ev.type === 'object' || ev.type == null) && ev.script && this.data?.rosters?.[ev.script] != null;
 	}
 
 	async loadForMap() {
@@ -110,7 +127,9 @@ export class Trainers {
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
-			const img = await getImage(`data/people/${file}`).catch(() => null);
+			let img = await getImage(`data/people/${file}`).catch(() => null);
+			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer
+			if (!img) img = await getImage(`data/people/${spriteFor(ev.graphics_id, true)}`).catch(() => null);
 			if (img) { const t = new Trainer(ev, img); if (flagged) t.villain = true; this.list.push(t); }
 		}));
 	}

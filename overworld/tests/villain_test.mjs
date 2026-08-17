@@ -113,7 +113,7 @@ try {
 			localStorage.setItem('magepunk_party_v1', JSON.stringify([{ speciesId: 'mudkip', name: 'MUDKIP', nickname: null, level: 45, gender: 'M', ability: 'Torrent', types: ['Water'], ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, stats: { hp: 120, atk: 90, def: 80, spa: 80, spd: 80, spe: 70 }, maxHP: 120, curHP: 120, exp: 91125, moves: [{ id: 'surf', name: 'Surf', pp: 15, maxPp: 15 }], num: 258, sprite: 'mudkip.png' }]));
 		} catch { }
 	}, STATE);
-	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=SeafloorCavern_Room1`, { waitUntil: 'domcontentloaded' });
+	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=SeafloorCavern_Room9`, { waitUntil: 'domcontentloaded' });
 	await waitFor(() => page.evaluate(() => !!(window.__ow && window.__ow.Quest && window.__ow.checkVillainTrigger)), 30000);
 	// intro done + all 8 badges so we're at the League stage with the climax pending
 	await page.evaluate(() => {
@@ -121,7 +121,10 @@ try {
 		const B = window.__ow.Badges; for (const b of B.list('HOENN')) B.earn('HOENN', b.id);
 		window.__ow.refreshObjective();
 	});
-	A(await page.evaluate(() => window.__ow.Quest.beatAt('HOENN', 'SeafloorCavern_Room1')?.id) === 'seafloor', 'live: the Seafloor beat is active at its location with 8 badges');
+	A(await page.evaluate(() => window.__ow.Quest.beatAt('HOENN', 'SeafloorCavern_Room9')?.id) === 'seafloor', 'live: the Seafloor beat fires at the deep boss room (Room9) with 8 badges');
+	// grunts populate the cavern crawl rooms (Room1 has Aqua grunts)
+	A(await page.evaluate(async () => { await window.__ow.moveToMap('SeafloorCavern_Room1'); return window.__ow.trainers.list.filter(t => t.villain).length >= 1; }), 'Aqua grunts populate the Seafloor cavern crawl (Room1)');
+	await page.evaluate(async () => { await window.__ow.moveToMap('SeafloorCavern_Room9'); }); // back to the boss room for the trigger test
 	A(await page.evaluate(() => { const b = window.__ow.Quest.blocked('HOENN', 'EverGrandeCity', 'Route128'); return !!(b && b.villain); }), 'live: the League is villain-sealed before the climax');
 	A(/ARCHIE/.test(await page.evaluate(() => window.__ow.Quest.objective('HOENN'))), 'live: the objective is the Seafloor climax');
 	A(/ARCHIE|SEAFLOOR|AQUA/i.test(await page.evaluate(() => document.getElementById('objective')?.textContent || '')), 'the #objective HUD line shows the villain climax');
@@ -139,6 +142,22 @@ try {
 	});
 	A(done.blocked === null, 'live: the League opens once the climax is done');
 	A(/LEAGUE/.test(done.obj), 'live: the objective becomes the League after the climax', done.obj);
+
+	// Hoenn was unplayable: the Emerald map parser omits object_events' `type` field,
+	// so no Hoenn trainer/NPC spawned (gym leaders included). Verify the fix: a Hoenn
+	// gym leader now spawns + is battleable (even though its sprite is missing), and a
+	// Hoenn route is populated with trainers.
+	const hoenn = await page.evaluate(async () => {
+		await window.__ow.moveToMap('RustboroCity_Gym');
+		const list = window.__ow.trainers.list, data = window.__ow.trainers.data;
+		const leader = list.find(t => data.rosters?.[t.ev.script]?.class === 'Gym Leader');
+		const team = leader ? window.__ow.trainers.buildBattle(leader, window.__ow.battle.data).party.length : 0;
+		await window.__ow.moveToMap('Route110');
+		return { leader: !!leader, name: leader && data.rosters[leader.ev.script].name, team, route: window.__ow.trainers.list.length };
+	});
+	A(hoenn.leader && hoenn.name === 'Roxanne', 'a HOENN gym leader (Roxanne) now spawns — Hoenn gyms are beatable', JSON.stringify(hoenn));
+	A(hoenn.team >= 1, 'the HOENN leader resolves a real battle team (missing-sprite fallback still battles)');
+	A(hoenn.route >= 5, 'a HOENN route is populated with trainers (was empty — the type fix)', JSON.stringify(hoenn.route));
 
 	// dungeon population: switch to Kanto, activate the Rocket Hideout beat, and walk
 	// into a crawl floor — the previously-hidden grunts now spawn as real trainers
