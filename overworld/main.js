@@ -184,6 +184,62 @@ function leagueGateMessage(script) {
 	return `The POKeMON LEAGUE is only open to trainers who\nhave earned all 8 badges.\n\nYou still need ${need} more.`;
 }
 
+// ---------- cross-region tier rewards ----------
+// Clearing gym N in the LAST of the three regions advances the shared tier (globalTier);
+// that milestone grants a scaling reward, once per tier. Items are all real bag.js ids.
+const TIER_REWARDS = {
+	1: { money: 1500, items: [['greatball', 5]], label: '$1500 + 5 GREAT BALLS' },
+	2: { money: 2000, items: [['hyperpotion', 5]], label: '$2000 + 5 HYPER POTIONS' },
+	3: { money: 2500, items: [['rarecandy', 1]], label: '$2500 + a RARE CANDY' },
+	4: { money: 3000, items: [['ultraball', 5]], label: '$3000 + 5 ULTRA BALLS' },
+	5: { money: 3500, items: [['leftovers', 1]], label: '$3500 + LEFTOVERS' },
+	6: { money: 4500, items: [['focussash', 1]], label: '$4500 + a FOCUS SASH' },
+	7: { money: 6000, items: [['lifeorb', 1]], label: '$6000 + a LIFE ORB' },
+	8: { money: 10000, items: [['rarecandy', 2], ['maxrevive', 3]], label: '$10000 + 2 RARE CANDIES + 3 MAX REVIVES' },
+};
+// grant the reward for a just-completed tier (once). Returns the reward label, or null.
+function grantTierReward(tier) {
+	if (Story.getFlag('tier_reward_' + tier)) return null;
+	Story.setFlag('tier_reward_' + tier);
+	const r = TIER_REWARDS[tier];
+	if (!r) return null;
+	if (r.money) Bag.earn(r.money);
+	for (const [id, n] of (r.items || [])) Bag.addItem(id, n);
+	syncOverworldAchievements(); // the tier milestone feeds the profile achievements
+	return r.label;
+}
+function showTierRewardDialog(tier) {
+	const lbl = grantTierReward(tier);
+	if (lbl) dialog.open(`TIER ${tier} COMPLETE!\n\nEvery region has cleared its GYM ${tier} — the circuit opens up!\n\nReward: ${lbl}`);
+}
+
+// ---------- level-curve tune (interleave) ----------
+// Vanilla gym-leader levels differ a lot at the same badge index (e.g. tier-7 Blaine L47 vs
+// Pryce L31). Under the cross-region interleave you face all three same-tier gyms at one
+// party level, so the laggards play as trivial pushovers. Raise each shared-region gym
+// leader's team to a per-tier FLOOR (shift the whole team up; never lowers) so same-tier
+// gyms are comparable. Applied once to the loaded roster data → every build path sees it.
+// JohKanto (the Gen-2 Kanto dupes) is excluded.
+const TIER_LEVEL_FLOOR = [14, 20, 26, 29, 40, 42, 46, 48]; // index = tier (the (tier+1)th gym)
+function applyGymLevelFloors() {
+	const rosters = trainers.data && trainers.data.rosters;
+	if (!rosters) return;
+	for (const region of Quest.SHARED) {
+		Quest.GYMS[region].forEach((g, tier) => {
+			const floor = TIER_LEVEL_FLOOR[tier] || 0;
+			const leader = g.leader.toUpperCase().replace(/\s+/g, ' ').trim();
+			for (const key of Object.keys(rosters)) {
+				const v = rosters[key];
+				if (!v || !v.party || !v.party.length || !/Gym Leader/i.test(v.class || '')) continue;
+				if (/johkanto/i.test(key)) continue; // exclude the Gen-2 Kanto leader dupes
+				if ((v.name || '').toUpperCase().replace(/\s+/g, ' ').trim() !== leader) continue;
+				const bump = floor - Math.max(...v.party.map(p => p.l | 0));
+				if (bump > 0) for (const p of v.party) p.l = (p.l | 0) + bump;
+			}
+		});
+	}
+}
+
 // Called on any trainer victory. Gym Leaders award their badge; the Champion
 // crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
 function onTrainerDefeated(script, opts) {
@@ -202,14 +258,22 @@ function onTrainerDefeated(script, opts) {
 	const silent = !!(opts && opts.silent);
 	if (info.kind === 'gym') {
 		const slice = badgeSliceFor(info.region);
+		const beforeTier = Quest.globalTier();
 		const earned = Badges.earn(slice, info.id);
+		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
+		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
 		if (earned && !silent) {
 			const n = Badges.count(slice);
 			dialog.open(slice === 'JOHKANTO'
 				? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
 					+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
 				: `You earned the ${info.name}!\n\nBadges: ${n}/8`
-					+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''));
+					+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''),
+				tierUp ? () => showTierRewardDialog(tierUp) : undefined); // chain the tier reward after the badge toast
+		} else if (tierUp) {
+			// scripted (silent) win: grant quietly with a HUD line
+			const lbl = grantTierReward(tierUp);
+			if (lbl) hud.textContent = `TIER ${tierUp} cleared in every region!  ${lbl}`;
 		}
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
@@ -4283,6 +4347,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await encounters.init();
 	await battle.init();
 	await trainers.init();
+	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	await services.init();
 	await arcade.init();
 	await blockers.init();
@@ -4391,6 +4456,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
+		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
