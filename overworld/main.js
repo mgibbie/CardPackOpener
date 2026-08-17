@@ -249,6 +249,11 @@ const FACILITY_LOBBIES = {
 	MAP_BATTLE_FRONTIER_BATTLE_PYRAMID_LOBBY: { facility: 'pyramid', tiles: [[7, 12]] },
 };
 const frontier = { active: false, streak: 0, cfg: null, runParty: null };
+// heal a team IN MEMORY without persisting — used between Frontier bouts so the run
+// party (which may be generated RENTALS) never overwrites the real saved party
+function healTeam(team) {
+	for (const m of (team || [])) { if (!m) continue; m.curHP = m.maxHP; m.status = null; for (const mv of m.moves || []) mv.pp = mv.maxPp; }
+}
 function facLevel(cfg) {
 	const base = Math.min(100, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50))));
 	if (cfg.level === 50) return 50;
@@ -277,7 +282,7 @@ function frontierNext() {
 		dialog.open('A hidden chamber! You pocket 1 BP and press deeper.', frontierNext);
 		return;
 	}
-	if (cfg.heal) healParty(frontier.runParty);
+	if (cfg.heal) healTeam(frontier.runParty); // in-memory (rentals must not be saved)
 	const foe = Frontier.genTeam(battle.data, facLevel(cfg), cfg.size);
 	if (!foe.length) { endFacility(); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
@@ -299,14 +304,19 @@ function frontierNext() {
 function completeFacility() {
 	const cfg = frontier.cfg;
 	frontier.active = false; frontier.streak = 0;
-	healParty(party); saveParty(party);
-	dialog.open(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
+	if (factoryStandalone) healTeam(party); else healParty(party); // heal+save only for a real save
+	frontierEndDialog(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
 }
 function endFacility() {
 	const cfg = frontier.cfg, s = frontier.streak;
 	frontier.active = false; frontier.streak = 0;
-	healParty(party); saveParty(party);
-	dialog.open(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
+	if (factoryStandalone) healTeam(party); else healParty(party);
+	frontierEndDialog(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
+}
+// in the standalone mini-game, offer another run instead of dropping to the overworld
+function frontierEndDialog(msg) {
+	if (factoryStandalone) dialog.open(msg + '\n\nPlay again?   Z = Yes   X = No', declined => { if (declined !== 'x') startFacility('factory'); });
+	else dialog.open(msg);
 }
 
 // snapshot the winning team into the Hall of Fame log (magepunk_hof)
@@ -359,7 +369,11 @@ addEventListener('keyup', e => {
 
 // where you are, so a return visit resumes there (URL params still win)
 const POS_KEY = 'magepunk_pos_v1';
+// standalone Battle Factory mini-game (?factory=1 from the home page): rentals only,
+// no save/party needed — and it must never write over a real overworld save
+let factoryStandalone = false;
 function savePos() {
+	if (factoryStandalone) return; // the mini-game never persists position
 	safeSave(POS_KEY, { map: world.current.name, x: player.tx, y: player.ty });
 }
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
@@ -3942,8 +3956,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	party = loadParty(battle.data);
+	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
+	// battles with rentals). Suppress the region picker; the post-boot hook warps to
+	// the Factory and provisions a throwaway lead just before starting.
+	factoryStandalone = new URLSearchParams(location.search).has('factory');
 	if (party) Dex.seedFrom([...party, ...getBox()]);
-	if (!party) {
+	if (!party && !factoryStandalone) {
 		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
 		starterMenu.phase = 'region';
@@ -4044,4 +4062,13 @@ function drawFriendGhosts(ctx, camX, camY) {
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
+	// standalone mini-game: warp to the Battle Factory (moveToMap is the safe path)
+	// and drop straight into a run
+	if (factoryStandalone) {
+		hud.textContent = 'BATTLE FACTORY';
+		if (!party) party = Frontier.genTeam(battle.data, 50, 1); // throwaway lead (guards)
+		moveToMap('BattleFrontier_BattleFactoryLobby').then(() => {
+			dialog.open('BATTLE FACTORY\n\nYou’ll be lent a team of RENTAL POKeMON.\nWin battles back-to-back to earn BP!\n\nZ = Begin', () => startFacility('factory'));
+		});
+	}
 })();

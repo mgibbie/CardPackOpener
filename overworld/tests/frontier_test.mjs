@@ -99,7 +99,39 @@ try {
 	A(factory.rentalIsGenerated, 'the BATTLE FACTORY uses a generated RENTAL team, not your own party');
 	A(factory.inBattle, 'the BATTLE FACTORY still starts a real battle with the rentals', JSON.stringify(factory));
 
-	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
+	// ---- standalone Battle Factory mini-game (?factory=1 from the home page) ----
+	// a FRESH visitor with no save should drop straight into a Factory run, and it
+	// must NOT write over any overworld save (party/position).
+	const page2 = await browser.newPage();
+	const err2 = [];
+	page2.on('pageerror', e => err2.push('pageerr: ' + e.message));
+	page2.on('console', m => { if (m.type() === 'error') err2.push('console: ' + m.text().slice(0, 160)); });
+	await page2.evaluateOnNewDocument((st) => {
+		try {
+			localStorage.clear();
+			// the harness needs the MP scaffolding the other tests use (local data serving
+			// stalls the fresh-visitor path otherwise) — but crucially NO party, so we
+			// exercise the standalone provisioning.
+			localStorage.setItem('magepunk_mp_token_v1', 'ft2-token');
+			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
+			localStorage.setItem('magepunk_region', 'HOENN');
+		} catch { }
+	}, STATE);
+	await page2.goto(`http://localhost:${PORT}/overworld/index.html?factory=1`, { waitUntil: 'domcontentloaded' });
+	await waitFor(() => page2.evaluate(() => !!(window.__ow && window.__ow.startFacility && window.__ow.world.current)), 30000);
+	const inLobby = await waitFor(() => page2.evaluate(() => /BattleFactoryLobby/.test(window.__ow.world.current?.name || '')), 10000);
+	A(inLobby, 'the ?factory=1 mini-game boots straight into the BATTLE FACTORY lobby');
+	A(await page2.evaluate(() => (window.__ow.party || []).length > 0), 'a throwaway rental-ready party is provisioned (no save needed)');
+	const solo = await page2.evaluate(async () => {
+		const d = window.__ow.dialog;
+		for (let i = 0; i < 80; i++) { if (window.__ow.battle.blocking) break; if (d.blocking) d.key('x'); await new Promise(r => setTimeout(r, 60)); }
+		return { inBattle: window.__ow.battle.blocking, savedParty: localStorage.getItem('magepunk_party_v1') };
+	});
+	A(solo.inBattle, 'the mini-game auto-starts a Factory battle for a fresh visitor', JSON.stringify({ inBattle: solo.inBattle }));
+	A(solo.savedParty === null, 'the mini-game never writes an overworld party save');
+	await page2.close();
+
+	const fatal = errors.filter(e => !/Failed to load resource/i.test(e)).concat(err2.filter(e => !/Failed to load resource/i.test(e)));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message); console.error(e);
