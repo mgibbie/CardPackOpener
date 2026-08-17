@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { EXTRA_DIVE } from '../divelinks.js';
+import { GYMS } from '../quest.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.resolve(HERE, '../data');
@@ -51,6 +52,27 @@ export function buildGraph() {
 			if (dest) { add(stem, dest); add(dest, stem); }
 		}
 	}
+	return adj;
+}
+
+// inter-region PORTAL edges: the three shared regions' SAME-tier gym towns are linked
+// by a portal pad beside each town's Pokemon Center (portals.js). Mirrored here so the
+// cross-region strand check can traverse them. reachable() still gates each endpoint by
+// its own need, so a portal never opens a town earlier than its badge level.
+export function portalEdges() {
+	const edges = [];
+	for (let t = 0; t < 8; t++) {
+		const towns = ['KANTO', 'JOHTO', 'HOENN'].map(r => GYMS[r][t].townMap);
+		for (let i = 0; i < towns.length; i++) for (let j = i + 1; j < towns.length; j++) edges.push([towns[i], towns[j]]);
+	}
+	return edges;
+}
+// the walk graph AUGMENTED with the portal edges (a separate builder so the per-region
+// tests keep using the portal-free graph)
+export function buildGraphWithPortals() {
+	const adj = buildGraph();
+	const add = (a, b) => { if (!adj.has(a)) adj.set(a, new Set()); adj.get(a).add(b); };
+	for (const [a, b] of portalEdges()) { add(a, b); add(b, a); }
 	return adj;
 }
 

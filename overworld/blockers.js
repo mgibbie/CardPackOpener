@@ -13,6 +13,7 @@ import { getImage, META } from './engine.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
+import { globalTier } from './quest.js';
 
 function region() { return Badges.regionKey(localStorage.getItem('magepunk_region')); }
 
@@ -21,9 +22,13 @@ function condMet(cond) {
 	if (!cond) return false;
 	if (cond.all) return cond.all.every(condMet);
 	if (cond.any) return cond.any.some(condMet);
-	if (cond.badge != null) return Badges.count(region()) >= cond.badge;
+	// a tier guard drops only when gym `badge` is cleared in EVERY shared region
+	// (globalTier), matching Quest.blocked — otherwise the sprite would vanish while
+	// the quest gate still bounced you (the old invisible-wall bug).
+	if (cond.badge != null) return globalTier() >= cond.badge;
 	if (cond.item) return Bag.count(cond.item) > 0;
 	if (cond.flag) return Story.getFlag(cond.flag);
+	// HM field-move availability stays region-local (an ability, not a tier gate)
 	if (cond.hm) return Badges.count(region()) >= Badges.hmReq(region(), cond.hm);
 	return false;
 }

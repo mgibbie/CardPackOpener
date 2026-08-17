@@ -199,6 +199,19 @@ function gateBeat(region, destMap) {
 
 export function regionKey(r) { return Badges.regionKey(r); }
 
+// ---------- cross-region badge-thirds ----------
+// The three shared regions advance in lockstep: each gym gives a "third" of that
+// tier's badge, so you may enter gym N+1's zone in ANY region only once gym N is
+// cleared in ALL THREE. `globalTier` is that shared floor = min gyms cleared across
+// the three. It is monotonic non-decreasing and a region can lead it by at most 1
+// (clearing gym k+1 already required globalTier >= k), which makes the gate below
+// both strand-safe and order-preserving. JohKanto (the Gen-2 Kanto 16-badge path) is
+// deliberately EXCLUDED — it is not one of the shared regions.
+export const SHARED = ['KANTO', 'JOHTO', 'HOENN'];
+export function globalTier() { return Math.min(...SHARED.map(r => Badges.count(r))); }
+// the shared regions still short of the current tier (they hold the world back)
+export function laggingRegions() { const g = globalTier(); return SHARED.filter(r => Badges.count(r) === g); }
+
 export const INTRO = -1, LEAGUE = 8, DONE = 9;
 
 // current stage: INTRO (no starter yet) -> 0..7 (working toward gym stage+1) ->
@@ -221,6 +234,19 @@ const DONE_OBJECTIVE = {
 	HOENN: 'CHAMPION of HOENN! The three REGI slumber in their sealed chambers — seek them out.',
 };
 
+// cross-region "waiting" objective: if this region has cleared more gyms than the
+// shared tier, it's a gym ahead and can't advance until the LAGGING regions catch up.
+// Returns the where-to-go line (naming the same-tier gym in each lagging region + the
+// portal), or null when the region is at the floor and should just beat its next gym.
+function crossRegionWait(rk) {
+	const g = globalTier();
+	if (Badges.count(rk) <= g) return null;             // at the floor — advance normally
+	const laggers = laggingRegions().filter(r => r !== rk);
+	const where = laggers.map(r => `${GYMS[r][g].leader} in ${GYMS[r][g].town}`);
+	const lead = where.length ? where.join(' and ') : 'the other regions';
+	return `${rk} is ahead! Beat GYM ${g + 1} in the other regions — ${lead} — to advance. Take the PORTAL by the POKeMON CENTER.`;
+}
+
 // the player-facing "NEXT:" objective for the current stage. A required villain
 // beat gating the immediate next gym (or the League) takes precedence over the gym.
 export function objective(region) {
@@ -228,6 +254,8 @@ export function objective(region) {
 	const s = stage(rk);
 	if (s === INTRO) return 'Get your first POKeMON from the LAB.';
 	if (s === DONE) return DONE_OBJECTIVE[rk] || `CHAMPION of ${rk}! Legendary POKeMON now stir.`;
+	const wait = crossRegionWait(rk);                   // ahead of the shared tier?
+	if (wait) return wait;
 	if (s === LEAGUE) {
 		const lb = gateBeat(rk, LEAGUE_MAP[rk]);
 		if (lb) return lb.objective;
@@ -247,6 +275,7 @@ export function shortObjective(region) {
 	const s = stage(rk);
 	if (s === INTRO) return 'Get a starter';
 	if (s === DONE) return 'CHAMPION!';
+	if (Badges.count(rk) > globalTier()) return `Portal: GYM ${globalTier() + 1} abroad`; // waiting on the other regions
 	if (s === LEAGUE) { const lb = gateBeat(rk, LEAGUE_MAP[rk]); return lb ? `Stop ${lb.boss}` : 'POKeMON LEAGUE'; }
 	const gb = gateBeat(rk, GYMS[rk][s].map);
 	return gb ? `Stop ${gb.boss}` : GYMS[rk][s].town;
@@ -300,9 +329,16 @@ export function blocked(region, destMap, fromMap) {
 	if (vb) return { villain: true, need: 0, msg: `The way is blocked!\n${vb.objective}` };
 	const need = gateFor(rk, destMap);
 	if (need <= 0) return null;
-	if (Badges.count(rk) >= need) return null;      // you've earned entry
+	// cross-region gate: entry is earned once the shared TIER (min gyms across the
+	// three regions) reaches `need` — i.e. gym `need` is cleared in EVERY region. Uses
+	// globalTier, not this region's own count, so a region that races ahead must wait
+	// for the others to catch up. JohKanto maps aren't gated here (gateFor returns 0).
+	if (globalTier() >= need) return null;          // the tier is unlocked everywhere
 	if (need <= gateFor(rk, fromMap)) return null;  // retreat / lateral — never blocked
-	const badge = Badges.list(rk)[need - 1];
-	const bn = badge ? badge.name : 'next badge';
-	return { need, msg: `The way ahead is sealed.\nYou need the ${bn} to proceed.` };
+	// name the badge the LAGGING regions still owe (the player's own region may already
+	// hold it), so the message points at what actually blocks progress
+	const laggers = laggingRegions();
+	const towns = laggers.map(r => GYMS[r][need - 1]?.town).filter(Boolean);
+	const where = towns.length ? towns.join(' and ') : 'the other regions';
+	return { need, msg: `The way ahead is sealed.\nClear GYM ${need} in ${where} first — every region must keep pace.` };
 }

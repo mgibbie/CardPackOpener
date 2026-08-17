@@ -23,7 +23,10 @@ const PORT = 8880;
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const reset = () => { Badges._reset(); Story.resetStory(); };
-const earnN = (region, k) => { for (let i = 0; i < k; i++) Badges.earn(region, Badges.list(region)[i].id); };
+// earn k badges in EVERY shared region (lockstep) — the cross-region badge-thirds rule
+// means a region can never get ahead of the others, so a beat at `badges` is only reached
+// when all three are at that tier. `region` is the one under test (it gets k badges too).
+const earnN = (region, k) => { for (const r of ['KANTO', 'JOHTO', 'HOENN']) for (let i = 0; i < k; i++) Badges.earn(r, Badges.list(r)[i].id); };
 
 // ---------- Part 1: pure-node unit ----------
 // every boss-team species resolves against the battle species data
@@ -115,10 +118,11 @@ try {
 	}, STATE);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=SeafloorCavern_Room9`, { waitUntil: 'domcontentloaded' });
 	await waitFor(() => page.evaluate(() => !!(window.__ow && window.__ow.Quest && window.__ow.checkVillainTrigger)), 30000);
-	// intro done + all 8 badges so we're at the League stage with the climax pending
+	// intro done + all 8 badges in EVERY shared region (cross-region lockstep) so HOENN is
+	// at the League stage — not "ahead" — with the Seafloor climax pending
 	await page.evaluate(() => {
 		window.__ow.Story.setFlag('intro_done');
-		const B = window.__ow.Badges; for (const b of B.list('HOENN')) B.earn('HOENN', b.id);
+		const B = window.__ow.Badges; for (const r of ['KANTO', 'JOHTO', 'HOENN']) for (const b of B.list(r)) B.earn(r, b.id);
 		window.__ow.refreshObjective();
 	});
 	A(await page.evaluate(() => window.__ow.Quest.beatAt('HOENN', 'SeafloorCavern_Room9')?.id) === 'seafloor', 'live: the Seafloor beat fires at the deep boss room (Room9) with 8 badges');

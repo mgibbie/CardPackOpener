@@ -38,11 +38,19 @@ for (const region of ['KANTO', 'JOHTO', 'HOENN']) {
 		const want = k + 1 < 8 ? k + 1 : Quest.LEAGUE;
 		A(Quest.stage(region) === want, `[${region}] ${k + 1} badges -> stage ${want}`);
 	}
-	A(/LEAGUE/.test(Quest.objective(region)), `[${region}] 8 badges -> League objective`);
+	// only THIS region has badges (others at 0), so it's ahead of the shared tier and
+	// the objective tells you to catch the others up before the League (cross-region rule)
+	A(/ahead/i.test(Quest.objective(region)), `[${region}] 8 badges while others lag -> "finish the other regions" objective`, Quest.objective(region));
 	Badges.crown(region);
 	A(Quest.stage(region) === Quest.DONE, `[${region}] champion -> DONE`);
 	A(/CHAMPION/.test(Quest.objective(region)), `[${region}] done objective congratulates the champion`);
 }
+
+// with every shared region maxed, the tier is 8 and each region's objective is the League
+reset(); Story.setFlag('intro_done');
+for (const r of ['KANTO', 'JOHTO', 'HOENN']) for (let k = 0; k < 8; k++) earn(r, k);
+A(Quest.globalTier() === 8, 'globalTier is 8 once every shared region has all 8 badges');
+for (const region of ['KANTO', 'JOHTO', 'HOENN']) A(/LEAGUE/.test(Quest.objective(region)), `[${region}] all three regions maxed -> League objective`, Quest.objective(region));
 
 // gates: gym-door gate needs the gym's index; corridor entry needs its badge; a
 // blocked map opens the moment you earn the badge; ungated maps are free
@@ -53,13 +61,14 @@ A(Quest.gateFor('KANTO', 'ViridianCity_Gym') === 7, 'KANTO Viridian gym-door gat
 A(Quest.gateFor('KANTO', 'PalletTown') === 0, 'the start town is ungated');
 A(Quest.blocked('KANTO', 'CeruleanCity') !== null, 'Cerulean is blocked at 0 badges');
 A(Quest.blocked('KANTO', 'PewterCity_Gym') === null, 'gym 1 is open at 0 badges (its door needs 0)');
-earn('KANTO', 0); // Brock
-A(Quest.blocked('KANTO', 'CeruleanCity') === null, 'Cerulean opens the moment you earn the Boulder Badge');
-A(Quest.blocked('KANTO', 'VermilionCity') !== null, 'Vermilion is still blocked at 1 badge (needs 2)');
+earn('KANTO', 0); // Brock only — the other regions still lag, so the shared TIER hasn't moved
+A(Quest.blocked('KANTO', 'CeruleanCity') !== null, 'Cerulean stays sealed with only KANTO gym 1 (tier not cleared everywhere)');
+earn('JOHTO', 0); earn('HOENN', 0); // gym 1 now cleared in ALL THREE regions -> tier 1
+A(Quest.blocked('KANTO', 'CeruleanCity') === null, 'Cerulean opens once gym 1 is cleared in all three regions');
+A(Quest.blocked('KANTO', 'VermilionCity') !== null, 'Vermilion is still blocked at tier 1 (needs tier 2)');
 {
 	const vb = Quest.blocked('KANTO', 'VermilionCity');
-	const need2Name = Badges.list('KANTO')[1].name; // the 2nd badge (Cascade)
-	A(vb.need === 2 && vb.msg.includes(need2Name), 'the block message names the required badge', `${need2Name} :: ${vb.msg}`);
+	A(vb.need === 2 && /GYM 2/.test(vb.msg), 'the block message names the tier gym still owed elsewhere', vb.msg.replace(/\n/g, ' '));
 }
 A(Quest.blocked('HOENN', 'PetalburgCity_Gym') !== null && Quest.blocked('HOENN', 'PetalburgCity_Gym').need === 4, 'HOENN Petalburg gym (Norman) needs 4 badges though the town is early');
 
@@ -124,17 +133,18 @@ try {
 	const obj = await page.evaluate(() => document.getElementById('objective')?.textContent || '');
 	A(/NEXT:/.test(obj) && /BROCK/i.test(obj), 'the #objective HUD line shows the current gym-1 objective', JSON.stringify(obj));
 
-	// corridor gate is live: Cerulean blocked at 0 badges, opens after Brock
+	// corridor gate is live: Cerulean blocked at 0 badges, opens once the tier clears everywhere
 	const gate = await page.evaluate(() => {
+		const B = window.__ow.Badges;
 		const before = window.__ow.Quest.blocked('KANTO', 'CeruleanCity');
-		window.__ow.Badges.earn('KANTO', window.__ow.Badges.list('KANTO')[0].id);
+		for (const r of ['KANTO', 'JOHTO', 'HOENN']) B.earn(r, B.list(r)[0].id); // gym 1 in all three
 		const after = window.__ow.Quest.blocked('KANTO', 'CeruleanCity');
 		window.__ow.refreshObjective();
 		return { before: !!before, after: !!after, obj: document.getElementById('objective')?.textContent || '' };
 	});
 	A(gate.before === true, 'live: Cerulean is corridor-blocked at 0 badges');
-	A(gate.after === false, 'live: Cerulean opens after earning the Boulder Badge');
-	A(/MISTY/i.test(gate.obj), 'the objective advances to gym 2 (MISTY) after the badge', JSON.stringify(gate.obj));
+	A(gate.after === false, 'live: Cerulean opens once gym 1 is cleared in all three regions');
+	A(/MISTY/i.test(gate.obj), 'the objective advances to gym 2 (MISTY) once the tier is cleared everywhere', JSON.stringify(gate.obj));
 
 	// QUEST menu + Trainer Card render without throwing
 	const render = await page.evaluate(() => {

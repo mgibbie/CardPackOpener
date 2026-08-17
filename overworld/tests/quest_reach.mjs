@@ -4,7 +4,7 @@
 // reachable set grows monotonically with badges (earning badges only ever opens
 // areas — never strands); (SOFT/report) how strictly each next town is locked.
 // Run: node overworld/tests/quest_reach.mjs
-import { buildGraph, reachable } from './quest_graph.mjs';
+import { buildGraph, buildGraphWithPortals, reachable } from './quest_graph.mjs';
 import { GYMS, GATED_MAPS, START, VILLAIN_BEATS } from '../quest.js';
 
 let pass = 0, fail = 0;
@@ -50,6 +50,33 @@ for (const region of ['KANTO', 'JOHTO', 'HOENN']) {
 		const need = Math.min(8, b.afterBadges);
 		A(reach[need].has(b.at), `[${region}] villain boss floor ${b.at} reachable at ${need} badges`, `(beat ${b.id})`);
 		for (const m of b.maps || []) A(reach[need].has(m), `[${region}] villain grunt floor ${m} reachable at ${need} badges`, `(beat ${b.id})`);
+	}
+}
+
+// ---------- cross-region strand-safety (badge-thirds + portals) ----------
+// The three shared regions advance in lockstep on `globalTier` (min gyms cleared). For
+// the interleave to never strand, at every shared tier g the player must be able to
+// reach EVERY region's current gym town (index g) — otherwise they couldn't clear gym
+// g+1 somewhere and would be stuck forever. The portal triangles (same-tier gym towns
+// linked) provide that: from any region's start at globalTier g, all three index-g gym
+// towns are reachable in the augmented graph. (Data-gap towns unreachable even ungated
+// are warned, not failed — same caveat as the per-region check; portals actually rescue
+// most of them, e.g. Sootopolis via the tier-8 pad.)
+const uni = buildGraphWithPortals();
+const uniGate = {};
+for (const region of ['KANTO', 'JOHTO', 'HOENN']) {
+	Object.assign(uniGate, GATED_MAPS[region]);
+	GYMS[region].forEach((g, k) => { uniGate[g.map] = k; });
+}
+const uniUngated = reachable(uni, START.KANTO, {}, 999); // raw reachability across the portal-joined graph
+for (let g = 0; g <= 7; g++) {
+	for (const from of ['KANTO', 'JOHTO', 'HOENN']) {
+		const reach = reachable(uni, START[from], uniGate, g);
+		for (const to of ['KANTO', 'JOHTO', 'HOENN']) {
+			const town = GYMS[to][g].townMap;
+			if (!uniUngated.has(town)) { console.log(`[x-region] WARN gym ${g + 1} town ${town} unreachable even ungated (data gap)`); continue; }
+			A(reach.has(town), `[x-region] from ${from} start at tier ${g}: ${to} gym ${g + 1} town ${town} reachable`);
+		}
 	}
 }
 

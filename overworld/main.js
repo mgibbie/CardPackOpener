@@ -8,6 +8,7 @@ import { Dialog } from './dialog.js';
 import { Services } from './services.js';
 import { Arcade } from './arcade.js';
 import { Blockers } from './blockers.js';
+import { Portals } from './portals.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
@@ -71,6 +72,7 @@ const dialog = new Dialog();
 const services = new Services(world);
 const arcade = new Arcade(world);
 const blockers = new Blockers(world);
+const portals = new Portals(world);
 const evolution = new Evolution();
 const items = new Items(world);
 const pvp = new Pvp();
@@ -91,7 +93,7 @@ const STARTERS = [
 // then 'pick' phase (choose the starter on-screen inside the region's lab).
 const starterMenu = { open: false, row: 0, col: 0, sprites: {}, phase: 'region', region: null };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
@@ -511,6 +513,11 @@ function interact() {
 		});
 		return;
 	}
+	// inter-region PORTAL pad — open the destination menu (fly to another region's
+	// same-tier gym town). Also try the tile the player stands on (pads render beside
+	// the PC, so you'll usually be facing or on one).
+	const portal = portals.at(fx, fy) || portals.at(player.tx, player.ty);
+	if (portal) { portalMenu.open = true; portalMenu.idx = 0; portalMenu.dests = portal.dests; portalMenu.town = null; return; }
 	// authentic progression obstacle: a giver hands over its key item; a blocker
 	// (guard / SNORLAX / grunt) turns you back with its themed line
 	if (blockers.giverAt(fx, fy)) { const m = blockers.grantAt(fx, fy); if (m) dialog.open(m); return; }
@@ -1127,6 +1134,28 @@ function ferryKey(k) {
 		moveToMap(dest.file).then(() => dialog.open(`The ferry sets sail...\n\nWelcome to ${dest.label}!`));
 	}
 }
+// inter-region PORTAL destination menu (opened from a portal pad). dests = the two
+// other shared regions' same-tier gym towns (portals.js destsFor); + a Cancel row.
+const portalMenu = { open: false, idx: 0, dests: [], town: null };
+function portalKey(k) {
+	const n = portalMenu.dests.length + 1; // + Cancel
+	if (k === 'ArrowUp') portalMenu.idx = (portalMenu.idx + n - 1) % n;
+	if (k === 'ArrowDown') portalMenu.idx = (portalMenu.idx + 1) % n;
+	if (k === 'x' || k === 'Escape') { portalMenu.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		if (portalMenu.idx >= portalMenu.dests.length) { portalMenu.open = false; return; } // Cancel
+		const d = portalMenu.dests[portalMenu.idx];
+		portalMenu.open = false;
+		travelPortal(d);
+	}
+}
+// step through: flip the current region so all region logic tracks you, then fly to the
+// destination town's PC-front landing (right beside that town's own portal pad). flyTo's
+// refreshMapContent re-registers the Fly point + reloads content under the new region.
+function travelPortal(d) {
+	safeSaveStr('magepunk_region', d.regionLower);
+	flyTo(d.mapId, d.x, d.y).then(() => { refreshObjective(); dialog.open(`You step through the PORTAL...\n\nWelcome to ${d.town}!`); });
+}
 const shopMenu = { open: false, idx: 0, mode: 'buy' };
 // items the mart will buy back (must have a price); sell yields half
 function sellList() {
@@ -1408,6 +1437,7 @@ function pressKey(k) {
 	if (runMenu.open) { runKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
+	if (portalMenu.open) { portalKey(k); return; }
 	if (bpShopMenu.open) { bpShopKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
@@ -1459,7 +1489,7 @@ function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || factorySpec.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || bpShopMenu.open
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
@@ -1551,6 +1581,7 @@ async function refreshMapContent(label) {
 	services.loadForMap();
 	arcade.loadForMap();
 	blockers.loadForMap();
+	portals.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
@@ -2850,6 +2881,7 @@ function tick(now) {
 	items.draw(ctx, camX, camY);
 	drawLegendary(ctx, camX, camY);
 	drawAwakening(ctx, camX, camY);
+	portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
 	blockers.draw(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player];
@@ -2885,6 +2917,7 @@ function tick(now) {
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
+		else if (portalMenu.open) drawPortalMenu(SW, SH);
 		else if (bpShopMenu.open) drawBpShopMenu(SW, SH);
 		else if (trade.open) drawTrade(SW, SH);
 		else if (playerMenu.open) drawPlayerMenu(SW, SH);
@@ -3591,6 +3624,19 @@ function drawFerryMenu(W, H) {
 	});
 }
 
+function drawPortalMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'PORTAL', 'The pad hums. Where to, traveler?');
+	const rows = portalMenu.dests.map(d => `${d.town}  (${d.region})`).concat(['Cancel']);
+	rows.forEach((label, i) => {
+		const bid = 'portal:' + i;
+		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
+			label, big: true, center: true, kbSel: portalMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || portalMenu.idx === i, u);
+	});
+}
+
 // a compact vertical list menu (Start / Cards); returns tappable rows
 function drawVertical(W, H, u, title, sub, items, idx, idPrefix) {
 	menuChrome(W, H, u, title, sub, title !== 'MENU');
@@ -3664,6 +3710,7 @@ function menuTap(id) {
 	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; } return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'portal') { portalMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'bp') { bpShopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
@@ -3694,7 +3741,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -4184,6 +4231,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	services.loadForMap();
 	arcade.loadForMap();
 	blockers.loadForMap();
+	portals.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;
@@ -4250,6 +4298,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
+		portals, get portalMenu() { return portalMenu; }, travelPortal, Quest_globalTier: Quest.globalTier,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
 	factorySnapshot, get factorySpec() { return factorySpec; }, get frontierWatchers() { return frontierWatchers; },

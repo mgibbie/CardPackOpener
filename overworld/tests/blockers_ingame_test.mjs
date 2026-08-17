@@ -52,10 +52,11 @@ try {
 	A(await page.evaluate(() => window.__ow.blockers.kindAt(0, 11)?.id) === 'k_route3', 'the blocker there is the ROUTE 3 gym-guide');
 	A(await page.evaluate(() => /BOULDER BADGE/.test(window.__ow.blockers.messageAt(0, 11) || '')), 'bumping it mentions the BOULDER BADGE');
 
-	// earn the Boulder Badge -> reload the map -> the guard is gone, the road is open
-	await page.evaluate(() => { window.__ow.Badges.earn('KANTO', 'boulder'); });
+	// clear gym 1 in ALL THREE regions (the cross-region badge-thirds rule: a tier guard
+	// drops only when the tier is cleared everywhere) -> reload -> the guard is gone
+	await page.evaluate(() => { const B = window.__ow.Badges; for (const r of ['KANTO', 'JOHTO', 'HOENN']) B.earn(r, B.list(r)[0].id); });
 	await page.evaluate(async () => { window.__ow.blockers.loadForMap(); });
-	A(await page.evaluate(() => !window.__ow.blockers.blocks(0, 11)), 'the guard steps aside once you hold the BOULDER BADGE');
+	A(await page.evaluate(() => !window.__ow.blockers.blocks(0, 11)), 'the guard steps aside once gym 1 is cleared in all three regions');
 
 	// a giver grants its key item once (Fuji -> POKe FLUTE, after the Rocket Hideout beat)
 	await page.evaluate(async () => { await window.__ow.moveToMap('LavenderTown_VolunteerPokemonHouse'); });
