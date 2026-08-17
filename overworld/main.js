@@ -8,7 +8,7 @@ import { Dialog } from './dialog.js';
 import { Services } from './services.js';
 import { Arcade } from './arcade.js';
 import { Blockers } from './blockers.js';
-import { Portals } from './portals.js';
+import { Portals, PORTAL_TOWNS } from './portals.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
@@ -1156,6 +1156,16 @@ function travelPortal(d) {
 	safeSaveStr('magepunk_region', d.regionLower);
 	flyTo(d.mapId, d.x, d.y).then(() => { refreshObjective(); dialog.open(`You step through the PORTAL...\n\nWelcome to ${d.town}!`); });
 }
+// one-time teaching moment: the FIRST time a cross-region tier wall turns the player
+// back, explain the badge-thirds rule + point them at the PORTAL. Villain seals and
+// the pre-starter bounce don't count — only a real tier gate (qb.need > 0).
+function maybePortalTutorial(qb) {
+	if (!qb || qb.villain || !(qb.need > 0) || Story.getFlag('tut_portal_seen')) return;
+	Story.setFlag('tut_portal_seen');
+	dialog.open('The way ahead is sealed!\n\n'
+		+ 'GYM badges now come in THIRDS — you must beat this tier’s GYM in ALL THREE regions before the next one opens anywhere.\n\n'
+		+ 'Look for the glowing PORTAL pad beside any GYM town’s POKeMON CENTER. It flies you to the other regions’ same-tier GYM towns. Beat their GYMS, then come back to advance!');
+}
 const shopMenu = { open: false, idx: 0, mode: 'buy' };
 // items the mart will buy back (must have a price); sell yields half
 function sellList() {
@@ -1896,7 +1906,7 @@ player.onArrive = () => {
 		// hasn't unlocked (the player stays on the door tile)
 		const destFile = world.fileFor(w.dest_map);
 		const qb = destFile ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
-		if (qb) { return; } // silent strand backstop — the physical blocker shows the reason
+		if (qb) { maybePortalTutorial(qb); return; } // silent strand backstop — the physical blocker shows the reason
 		warpTo(w.dest_map, w.dest_warp_id);
 		return;
 	}
@@ -1918,6 +1928,7 @@ player.onArrive = () => {
 			const qb = Quest.blocked(playerRegion(), hit.conn.name, world.current.name);
 			if (qb) {
 				// silent strand backstop — a physical blocker on the near side shows the reason
+				maybePortalTutorial(qb);
 				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
 				return;
 			}
@@ -3258,6 +3269,30 @@ function drawTownMap(W, H) {
 	sctx.fillStyle = visited ? BUI.C.accent : BUI.C.dim;
 	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
 	sctx.fillText(visited ? 'Visited — Z to fly' : 'Not yet visited', rx + 18 * u, ry + 62 * u);
+	// cross-region progress: the shared world tier, this region's gyms, and whether it still
+	// owes the current tier's gym; plus a GYM tag if the selected town is a gym town.
+	const rkey = { kanto: 'KANTO', johto: 'JOHTO', hoenn: 'HOENN' }[region];
+	let ty = ry + 100 * u;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillStyle = BUI.C.dim;
+	sctx.fillText(`WORLD GYM TIER ${Quest.globalTier()}/8`, rx + 18 * u, ty); ty += 22 * u;
+	if (rkey) {
+		const owes = Quest.laggingRegions().includes(rkey);
+		sctx.fillStyle = BUI.C.text;
+		sctx.fillText(`${Fly.REGION_LABEL[region]}: ${Badges.count(rkey)}/8 gyms`, rx + 18 * u, ty); ty += 20 * u;
+		if (owes && Quest.globalTier() < 8) {
+			sctx.fillStyle = '#ffd27a';
+			sctx.fillText(`Owes GYM ${Quest.globalTier() + 1} here`, rx + 18 * u, ty); ty += 20 * u;
+		}
+	} else {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText('(post-game region)', rx + 18 * u, ty); ty += 20 * u;
+	}
+	const gt = PORTAL_TOWNS[sel.map];
+	if (gt) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText(`GYM ${gt.tier + 1}: ${Quest.GYMS[gt.region][gt.tier].leader}`, rx + 18 * u, ty);
+	}
 	if (visited) {
 		const b = { id: 'townfly', x: rx + 18 * u, y: ry + ph - 56 * u, w: 198 * u, h: 40 * u, label: 'FLY HERE', center: true };
 		menuUi.push(b);
@@ -3283,11 +3318,14 @@ function drawTrainerCard(W, H) {
 	sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
 	BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
 	const rk = Badges.regionKey(region);
-	const badgeN = Badges.count(rk);
+	const gTier = Quest.globalTier();
+	const laggers = Quest.laggingRegions();
+	const allChamp = Quest.SHARED.every(r => Badges.isChampion(r));
+	// LEFT COLUMN — stats (values right-align to the column split)
 	const lines = [
 		['NAME', name],
 		['REGION', region],
-		['BADGES', Badges.isChampion(rk) ? `${badgeN}/8  * CHAMPION` : `${badgeN}/8`],
+		['GYM TIER', allChamp ? `${gTier}/8  GRAND CHAMP` : `${gTier}/8`],
 		['OBJECTIVE', Quest.shortObjective(rk)],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
@@ -3296,48 +3334,65 @@ function drawTrainerCard(W, H) {
 		['PARTY', `${party.length}/6`],
 		['PLAYTIME', playtimeStr()],
 	];
-	sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+	const midX = cardX + cardW * 0.54;
+	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	lines.forEach(([k, v], i) => {
-		const y = cardY + (40 + i * 34) * u;
+		const y = cardY + (34 + i * 28) * u;
 		sctx.fillStyle = BUI.C.dim;
-		sctx.fillText(k, cardX + 32 * u, y);
-		sctx.fillStyle = k === 'BADGES' && badgeN > 0 ? BUI.C.accent : BUI.C.text;
+		sctx.fillText(k, cardX + 28 * u, y);
+		sctx.fillStyle = k === 'GYM TIER' && gTier > 0 ? BUI.C.accent : BUI.C.text;
 		sctx.textAlign = 'right';
-		sctx.fillText(v, cardX + cardW - 32 * u, y);
+		sctx.fillText(v, midX, y);
 		sctx.textAlign = 'left';
 	});
-	// a row of 8 pips (filled = earned) so the badge case reads at a glance
-	const badges = Badges.list(rk);
-	const pipY = cardY + (40 + lines.length * 34 + 10) * u, pipR = 11 * u;
-	const gap = (cardW - 64 * u) / 8;
-	badges.forEach((b, i) => {
-		const px = cardX + 32 * u + gap * i + gap / 2;
-		sctx.beginPath();
-		sctx.arc(px, pipY, pipR, 0, Math.PI * 2);
-		sctx.fillStyle = b.earned ? BUI.C.accent : 'rgba(255,255,255,0.12)';
-		sctx.fill();
-		if (b.earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1.5; sctx.stroke(); }
+	// RIGHT COLUMN — the cross-region TIER tracker: one row of 8 pips per shared region
+	// (fill = earned). The current tier's pip is ringed on the regions that still OWE this
+	// tier's gym, so you can see at a glance who's holding the world back.
+	const rX = cardX + cardW * 0.57;
+	sctx.fillStyle = BUI.C.accent;
+	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+	sctx.fillText(`GYM TIER ${gTier}/8`, rX, cardY + 30 * u);
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
+	sctx.fillText('beat each in all 3 regions', rX, cardY + 46 * u);
+	const rowLbl = { KANTO: 'KAN', JOHTO: 'JOH', HOENN: 'HOE' };
+	const pipAreaX = rX + 44 * u, pipAreaW = (cardX + cardW - 24 * u) - pipAreaX, pgap = pipAreaW / 8, pipR = 6 * u;
+	Quest.SHARED.forEach((r, ri) => {
+		const ry = cardY + (72 + ri * 26) * u;
+		const owes = laggers.includes(r), champ = Badges.isChampion(r), list = Badges.list(r);
+		sctx.fillStyle = owes ? BUI.C.text : BUI.C.dim;
+		sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+		sctx.fillText(rowLbl[r] + (champ ? '*' : ''), rX, ry + 4 * u);
+		for (let i = 0; i < 8; i++) {
+			const px = pipAreaX + pgap * i + pgap / 2;
+			sctx.beginPath();
+			sctx.arc(px, ry, pipR, 0, Math.PI * 2);
+			sctx.fillStyle = list[i].earned ? BUI.C.accent : 'rgba(255,255,255,0.12)';
+			sctx.fill();
+			if (i === gTier && owes && gTier < 8) { sctx.strokeStyle = '#ffd27a'; sctx.lineWidth = 2; sctx.stroke(); } // the tier they owe
+			else if (list[i].earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1; sctx.stroke(); }
+		}
 	});
-	// FRONTIER SYMBOLS — a compact row of diamonds (gold/silver), shown once earned
+	// FRONTIER SYMBOLS — a compact row of diamonds (gold/silver) under the tier tracker
 	const symbols = Frontier.getSymbols();
 	const facOrder = [['tower', 'TO'], ['dome', 'DO'], ['factory', 'FA'], ['palace', 'PA'], ['arena', 'AR'], ['pike', 'PI'], ['pyramid', 'PY']];
 	if (facOrder.some(([id]) => symbols[id])) {
-		const symY = pipY + 42 * u, r = 10 * u;
+		const symY = cardY + 172 * u, r = 8 * u, rW = (cardX + cardW - 24 * u) - rX;
 		sctx.fillStyle = BUI.C.dim;
-		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		sctx.fillText('FRONTIER SYMBOLS', cardX + 32 * u, symY - 15 * u);
-		const sgap = (cardW - 64 * u) / 7;
+		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
+		sctx.fillText('FRONTIER SYMBOLS', rX, symY - 14 * u);
+		const sgap = rW / 7;
 		facOrder.forEach(([id, code], i) => {
-			const sx = cardX + 32 * u + sgap * i + sgap / 2, tier = symbols[id];
+			const sx = rX + sgap * i + sgap / 2, tier = symbols[id];
 			sctx.beginPath();
 			sctx.moveTo(sx, symY - r); sctx.lineTo(sx + r, symY); sctx.lineTo(sx, symY + r); sctx.lineTo(sx - r, symY); sctx.closePath();
 			sctx.fillStyle = tier === 'gold' ? '#f5c542' : tier === 'silver' ? '#c9d2dc' : 'rgba(255,255,255,0.12)';
 			sctx.fill();
 			if (tier) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1.2; sctx.stroke(); }
 			sctx.fillStyle = tier ? '#16273f' : BUI.C.dim;
-			sctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
+			sctx.font = `${Math.round(9 * u)}px m6x11plus, monospace`;
 			sctx.textAlign = 'center';
-			sctx.fillText(code, sx, symY + 3.5 * u);
+			sctx.fillText(code, sx, symY + 3 * u);
 			sctx.textAlign = 'left';
 		});
 	}
@@ -3655,7 +3710,9 @@ function drawStartMenu(W, H) {
 function drawQuest(W, H) {
 	const rk = playerRegion();
 	const rows = Quest.log(rk).map(r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label);
-	optionList(W, H, H / 480, `${rk} — MAIN QUEST`, 'NEXT: ' + Quest.objective(rk), rows, questMenu.idx, 'quest:', null);
+	// the title carries the SHARED gym tier (all three regions must clear each tier); the
+	// subtitle's objective already spells out the cross-region "who's behind" when relevant
+	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + Quest.objective(rk), rows, questMenu.idx, 'quest:', null);
 }
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
@@ -4295,10 +4352,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
-		portals, get portalMenu() { return portalMenu; }, travelPortal, Quest_globalTier: Quest.globalTier,
+		portals, get portalMenu() { return portalMenu; }, travelPortal, maybePortalTutorial, Quest_globalTier: Quest.globalTier,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
 	factorySnapshot, get factorySpec() { return factorySpec; }, get frontierWatchers() { return frontierWatchers; },
