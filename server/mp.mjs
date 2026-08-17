@@ -1766,6 +1766,7 @@ export default async function handler(req, env) {
 			villains: strArr(ow.villains, 20, 32),
 			beatRed: !!ow.beatRed,
 			awakening: !!ow.awakening,
+			grandChampion: !!ow.grandChampion,
 			dexCaught: Math.max(0, Math.min(3000, ow.dexCaught | 0)),
 			bp: Math.max(0, Math.min(999999, ow.bp | 0)),
 			bestStreak: Math.max(0, Math.min(9999, ow.bestStreak | 0)),

@@ -213,6 +213,31 @@ function showTierRewardDialog(tier) {
 	if (lbl) dialog.open(`TIER ${tier} COMPLETE!\n\nEvery region has cleared its GYM ${tier} — the circuit opens up!\n\nReward: ${lbl}`);
 }
 
+// ---------- Grand Champion finale ----------
+// Becoming CHAMPION of all three shared regions is the top of the whole spine. Grant the
+// capstone (once) and, when it happens live, play a finale cutscene.
+function grantGrandChampionReward() {
+	if (Story.getFlag('grand_champion')) return false;
+	Story.setFlag('grand_champion');
+	Bag.earn(50000);
+	Bag.addItem('rarecandy', 3);
+	Bag.addItem('maxrevive', 3);
+	Bag.addItem('goldtrophy', 1); Bag.registerName('goldtrophy', 'GOLD TROPHY');
+	syncOverworldAchievements(); // surfaces the Grand Champion achievement on the profile
+	return true;
+}
+function grandChampionFinale(cb) {
+	if (!grantGrandChampionReward()) { cb && cb(); return; } // already crowned — just continue
+	const you = localStorage.getItem('magepunk_name') || 'You';
+	startCutscene([
+		{ op: 'say', text: '. . . . . . . . .' },
+		{ op: 'say', text: 'CHAMPION of KANTO. CHAMPION of JOHTO. CHAMPION of HOENN.' },
+		{ op: 'say', text: 'No trainer has ever held all three crowns at once — until now.' },
+		{ op: 'say', text: `You are hereby named the GRAND CHAMPION of all three regions, ${you}!` },
+		{ op: 'say', text: 'Received the GOLD TROPHY, 3 RARE CANDIES,\n3 MAX REVIVES, and $50000!' },
+	], cb);
+}
+
 // ---------- level-curve tune (interleave) ----------
 // Vanilla gym-leader levels differ a lot at the same badge index (e.g. tier-7 Blaine L47 vs
 // Pryce L31). Under the cross-region interleave you face all three same-tier gyms at one
@@ -293,9 +318,10 @@ function onTrainerDefeated(script, opts) {
 			if (fresh) recordHallOfFame(info.region, party);
 			healParty(party); saveParty(party);
 			const home = Quest.START[info.region];
-			if (home) moveToMap(home);
-			refreshObjective();
-			syncOverworldAchievements(); // a Championship (and maybe the Grand Champion tile) just unlocked
+			const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };
+			// the third League just fell -> the GRAND CHAMPION finale, then warp home
+			if (Quest.SHARED.every(r => Badges.isChampion(r))) grandChampionFinale(goHome);
+			else goHome();
 		};
 		if (!silent) {
 			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
@@ -2805,6 +2831,7 @@ function overworldSummary() {
 		villains,
 		beatRed: !!Story.getFlag('beat_red'),
 		awakening: awState() >= 6, // the Hoenn weather crisis was resolved (RAYQUAZA calmed the trio)
+		grandChampion: !!Story.getFlag('grand_champion'), // Champion of all three shared regions
 		dexCaught: Dex.counts().caught,
 		bp: Frontier.getBP(),
 		bestStreak: Frontier.bestStreak(),
@@ -4431,6 +4458,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 		presLoop();
 		setInterval(pollChallenges, 2000);
 		syncOverworldAchievements(); // backfill existing progress into the account for the achievements page
+		// Grand Champion catch-up: a save already 3x champion before this shipped gets the
+		// crown + capstone on load (silent — a cutscene mid-boot would be risky)
+		if (Quest.SHARED.every(r => Badges.isChampion(r)) && !Story.getFlag('grand_champion')) {
+			grantGrandChampionReward();
+			hud.textContent = 'GRAND CHAMPION of all three regions! A GOLD TROPHY awaits in your BAG.';
+		}
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)
@@ -4457,6 +4490,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
+		grantGrandChampionReward, grandChampionFinale,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
