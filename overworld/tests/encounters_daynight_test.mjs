@@ -49,24 +49,18 @@ try {
 	await waitFor(() => page.evaluate(() => !!(window.__ow && window.__ow.encounters && window.__ow.encounters.data)), 30000);
 
 	// 1 + 2: day/night reweighting + night overlay on MAP_ROUTE1 land (pidgey diurnal, rattata nocturnal)
-	const dn = await page.evaluate((POOL) => {
-		const E = window.__ow.encounters, MAP = 'MAP_ROUTE1', N = 1500, pool = new Set(POOL);
-		const run = (phase) => {
-			let rattata = 0, poolHits = 0, base = 0;
-			for (let i = 0; i < N; i++) {
-				const r = E.pick(MAP, 'land', phase);
-				if (!r) continue;
-				if (r.id === 'rattata') rattata++;
-				if (pool.has(r.id)) poolHits++;
-				if (r.id === 'pidgey' || r.id === 'rattata') base++;
-			}
-			return { rattata: rattata / N, poolHits, base };
-		};
-		return { day: run('day'), night: run('night') };
-	}, NIGHT_POOL);
-	A(dn.night.rattata > dn.day.rattata * 1.8, 'the nocturnal RATTATA is much more common at night than by day', `day ${(dn.day.rattata * 100 | 0)}% vs night ${(dn.night.rattata * 100 | 0)}%`);
-	A(dn.day.poolHits === 0, 'the night overlay never injects night-dwellers by DAY (base table only)', String(dn.day.poolHits));
-	A(dn.night.poolHits > 100, 'after dark, some LAND encounters are night-pool dwellers not on the base table', String(dn.night.poolHits));
+	// Gen-3 (FireRed Kanto) DAY reweighting: Route 1 by day favours the diurnal PIDGEY over the
+	// nocturnal RATTATA (the base owdata table, reweighted by time of day). Night is a separate
+	// fakemon list (tested below); the reweighting/overlay is the fallback for day/morning and
+	// any map without an authentic (Johto) or fakemon (FR/Emerald) night table.
+	const dn = await page.evaluate(() => {
+		const E = window.__ow.encounters, sp = window.__ow.battle.data.species, N = 1500;
+		let pidgey = 0, rattata = 0, fakemon = 0;
+		for (let i = 0; i < N; i++) { const r = E.pick('MAP_ROUTE1', 'land', 'day'); if (!r) continue; if (r.id === 'pidgey') pidgey++; if (r.id === 'rattata') rattata++; if ((sp[r.id]?.num || 0) <= 0) fakemon++; }
+		return { pidgey, rattata, fakemon };
+	});
+	A(dn.pidgey > dn.rattata * 2, 'Gen-3 DAY reweighting favours the diurnal PIDGEY over the nocturnal RATTATA on Route 1', JSON.stringify(dn));
+	A(dn.fakemon === 0, 'Gen-3 maps never spawn fakemon by DAY (base table only)', String(dn.fakemon));
 
 	// AUTHENTIC Johto per-map day/night tables (from pokecrystal) — Sprout Tower is Rattata
 	// by day and Gastly by night; Route 29 gains Hoothoot at night. These override the base
@@ -91,6 +85,26 @@ try {
 	// the live Clock drives the phase for a normal roll (setHour flips day<->night)
 	const clock = await page.evaluate(() => { const C = window.__ow.Clock; C.setHour(22); const n = C.phase(); C.setHour(12); const d = C.phase(); C.clearOverride(); return { n, d }; });
 	A(clock.n === 'night' && clock.d === 'day', 'Clock.phase (which roll() reads live) reflects the time of day', JSON.stringify(clock));
+
+	// FR/Emerald NIGHT fakemon list: Route 1 uses its base table (pidgey/rattata) by day, but a
+	// fakemon night list after dark (all clean fakemon, num<=0), keyed to the base level range.
+	const frem = await page.evaluate(() => {
+		const E = window.__ow.encounters, sp = window.__ow.battle.data.species, MAP = 'MAP_ROUTE1', N = 300;
+		const run = phase => { const set = new Set(); let fakemon = 0, base = 0, hi = 0; for (let i = 0; i < N; i++) { const r = E.pick(MAP, 'land', phase); if (!r) continue; set.add(r.id); if ((sp[r.id]?.num || 0) <= 0) fakemon++; if (r.id === 'pidgey' || r.id === 'rattata') base++; hi = Math.max(hi, r.level); } return { species: [...set], fakemon, base, hi }; };
+		const out = { day: run('day'), night: run('night') };
+		out.nightTypes = out.night.species.map(id => sp[id].types);
+		return out;
+	});
+	A(frem.night.fakemon === 300 && frem.night.base === 0, 'FR/Emerald Route 1 at NIGHT uses the fakemon list (all fakemon, no base mons)', JSON.stringify(frem.night.species.slice(0, 8)));
+	A(frem.night.hi <= 6, 'the night fakemon are kept to Route 1’s base level range (<=6)', 'maxLevel ' + frem.night.hi);
+	A(frem.nightTypes.every(t => t.includes('Normal') || t.includes('Flying')), 'the Route 1 night fakemon are biome-matched to the grassland route (all Normal/Flying)', JSON.stringify(frem.nightTypes));
+	// a night fakemon must actually BUILD into a wild battle (guards against a broken species crashing a night encounter)
+	const built = await page.evaluate(async () => {
+		const ow = window.__ow; const enc = ow.encounters.pick('MAP_ROUTE1', 'land', 'night');
+		ow.startWildBattle(enc); await new Promise(r => setTimeout(r, 250));
+		return { blocking: ow.battle.blocking, id: enc.id };
+	});
+	A(built.blocking, 'a night fakemon encounter builds into a real wild battle (buildMon works on it)', built.id);
 
 	// 3: fishing picks from the rod tier's slot band (Old rod -> the low band; a no-fishing map -> null)
 	const fishing = await page.evaluate(() => {

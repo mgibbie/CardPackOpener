@@ -10,6 +10,7 @@
 import { getJSON } from './engine.js';
 import * as Clock from './clock.js';
 import { DAYNIGHT } from './encounters_daynight.js';
+import { FREM_NIGHT } from './encounters_frem_night.js';
 
 // species that skew NOCTURNAL (more common at night) — mostly cave/grass night dwellers
 const NOCTURNAL = new Set([
@@ -69,8 +70,14 @@ export class Encounters {
 		// it's already time-specific, so pick from it raw (no reweighting, no overlay).
 		const dn = DAYNIGHT[mapId]?.[kind]?.[phase];
 		if (dn && dn.length) return this.weightedPick(dn, phase, true);
-		// else the base owdata table + the code reweighting/overlay (Kanto/Hoenn have no
-		// authentic day/night split, so time-of-day is synthesized here)
+		// FireRed Kanto / Emerald Hoenn NIGHT list: a biome-matched fakemon table (Gen-3 has
+		// no vanilla day/night). Night + land only — day/morning fall through to the base table.
+		if (phase === 'night' && kind === 'land') {
+			const fn = FREM_NIGHT[mapId]?.land?.night;
+			if (fn && fn.length) return this.weightedPick(fn, phase, true);
+		}
+		// else the base owdata table + the code reweighting/overlay (day/morning on Gen-3, and
+		// any map without a code night table — time-of-day is synthesized here)
 		const grp = this.data[mapId]?.[kind];
 		if (!grp || !grp.slots?.length) return null;
 		const base = this.weightedPick(grp.slots, phase);
