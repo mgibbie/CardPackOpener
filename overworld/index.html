@@ -13,6 +13,8 @@
 		#screen { image-rendering: pixelated; border: 2px solid #2a2340; border-radius: 4px; max-width: 98vw; height: auto; }
 		#bar { color: #9d8fd4; font-size: 13px; margin-top: 8px; display: flex; gap: 18px; }
 		#hud { color: #e8e2f4; font-weight: 600; }
+		#objective { color: #ffd479; font-weight: 600; }
+		#objective:empty { display: none; }
 		a { color: #9d8fd4; }
 
 		/* virtual controls: shown on touch devices */
@@ -58,6 +60,7 @@
 	<canvas id="screen"></canvas>
 	<div id="bar">
 		<span id="hud">Loading…</span>
+		<span id="objective"></span>
 		<span>arrows/WASD move · Z interact · Enter menu · P party · B bag</span>
 		<a href="../">home</a>
 	</div>

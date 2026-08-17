@@ -18,6 +18,7 @@ import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
 import * as Badges from './badges.js';
+import * as Quest from './quest.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
@@ -49,6 +50,12 @@ const ctx = frame.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
 const hud = document.getElementById('hud');
+const objectiveEl = document.getElementById('objective');
+// keep the persistent on-screen objective in sync with the quest stage
+function refreshObjective() {
+	if (!objectiveEl) return;
+	objectiveEl.textContent = party ? ('NEXT: ' + Quest.objective(playerRegion())) : '';
+}
 const world = new World();
 const player = new Player(world);
 const npcs = new NPCs(world, player);
@@ -177,6 +184,7 @@ function onTrainerDefeated(script, opts) {
 					+ (fresh ? '' : '\n\n(You have cleared this League before.)')));
 		}
 	}
+	refreshObjective(); // the quest stage just advanced
 }
 evolution.onDone = () => saveParty(party);
 let loading = true;
@@ -309,6 +317,7 @@ const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE
 
 const partyMenu = { open: false, idx: 0, summary: false, action: null };
 const startMenu = { open: false, idx: 0 };
+const questMenu = { open: false, idx: 0 }; // the main-quest log (read-only list)
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 const playerMenu = { open: false, idx: 0, target: null };
 const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
@@ -563,7 +572,7 @@ const friendsMenu = { open: false, idx: 0 };
 function startItems() {
 	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
 	if (MP_ON) items.push('FRIENDS');
-	items.push('BAG', 'TOWN MAP', 'CARD', 'SAVE', 'OPTION', 'EXIT');
+	items.push('BAG', 'TOWN MAP', 'CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
 	return items;
 }
 const cardsItems = () => MP_ON
@@ -595,12 +604,20 @@ function startKey(k) {
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
 		else if (it === 'CARD') { trainerCard.open = true; }
+		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
+}
+
+function questKey(k) {
+	const n = Quest.log(playerRegion()).length;
+	if (k === 'ArrowUp') questMenu.idx = (questMenu.idx + n - 1) % n;
+	if (k === 'ArrowDown') questMenu.idx = (questMenu.idx + 1) % n;
+	if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') questMenu.open = false;
 }
 
 function playerMenuKey(k) {
@@ -1115,6 +1132,7 @@ function pressKey(k) {
 	if (nameRater.open) { nameRaterKey(k); return; }
 	if (moveShop.open) { moveShopKey(k); return; }
 	if (optionsMenu.open) { optionsKey(k); return; }
+	if (questMenu.open) { questKey(k); return; }
 	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
 	if (partyMenu.open) {
 		// the per-POKeMON action menu (field moves / summary / switch)
@@ -1157,7 +1175,7 @@ function pressKey(k) {
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
 	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
-	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
+	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -1261,6 +1279,7 @@ async function refreshMapContent(label) {
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
+	refreshObjective();
 }
 
 // visited Fly points (magepunk_flypoints); a town unlocks when you first stand on it
@@ -1516,8 +1535,13 @@ player.onArrive = () => {
 	if (!w) savePos();
 	if (w) {
 		const dest = parseInt(w.dest_warp_id, 10);
-		if (dest === -1) backWarp();
-		else warpTo(w.dest_map, w.dest_warp_id);
+		if (dest === -1) { backWarp(); return; } // backward warp — never gated
+		// strict-corridor / gym-door gate: block entering a map the current stage
+		// hasn't unlocked (the player stays on the door tile)
+		const destFile = world.fileFor(w.dest_map);
+		const qb = destFile ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
+		if (qb) { dialog.open(qb.msg); return; }
+		warpTo(w.dest_map, w.dest_warp_id);
 		return;
 	}
 	// crossed into a connection?
@@ -1531,6 +1555,14 @@ player.onArrive = () => {
 			if (!party) {
 				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
 				dialog.open("It's not safe to go out without a POKeMON!\n\nVisit the POKeMON LAB and get your first partner.");
+				return;
+			}
+			// strict-corridor gate: block crossing into an area this quest stage hasn't
+			// unlocked yet — bounce the player back inside (backtracking is never gated)
+			const qb = Quest.blocked(playerRegion(), hit.conn.name, world.current.name);
+			if (qb) {
+				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
+				dialog.open(qb.msg);
 				return;
 			}
 			crossConnection(hit); return;
@@ -2168,6 +2200,7 @@ function afterRival(region) {
 	Story.setFlag('intro_done');
 	Story.setFlag('FLAG_GOT_FIRST_POKEMON');
 	Story.setFlag('FLAG_SYS_POKEDEX_GET');
+	refreshObjective(); // intro over — the gym-1 objective is now live
 	const prof = cfg ? cfg.prof : 'PROF. OAK';
 	const sendoff = cfg ? cfg.sendoff : 'Your adventure begins now!';
 	startCutscene([
@@ -2310,6 +2343,7 @@ function tick(now) {
 		else if (nameRater.open) drawNameRater(SW, SH);
 		else if (moveShop.open) drawMoveShop(SW, SH);
 		else if (optionsMenu.open) drawOptions(SW, SH);
+		else if (questMenu.open) drawQuest(SW, SH);
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
@@ -2680,6 +2714,7 @@ function drawTrainerCard(W, H) {
 		['NAME', name],
 		['REGION', region],
 		['BADGES', Badges.isChampion(rk) ? `${badgeN}/8  * CHAMPION` : `${badgeN}/8`],
+		['OBJECTIVE', Quest.shortObjective(rk)],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
 		['POKeDEX SEEN', String(c.seen)],
@@ -3007,6 +3042,11 @@ function drawVertical(W, H, u, title, sub, items, idx, idPrefix) {
 function drawStartMenu(W, H) {
 	drawVertical(W, H, H / 480, 'MENU', 'Press START/Enter to close.', startItems(), startMenu.idx, 'start');
 }
+function drawQuest(W, H) {
+	const rk = playerRegion();
+	const rows = Quest.log(rk).map(r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label);
+	optionList(W, H, H / 480, `${rk} — MAIN QUEST`, 'NEXT: ' + Quest.objective(rk), rows, questMenu.idx, 'quest:', null);
+}
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
 }
@@ -3089,7 +3129,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -3578,6 +3618,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	markFlyPoint(world.current.map.id);
 	loading = false;
 	runMapTransition();
+	refreshObjective(); // show the current quest objective on boot
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
 	function freezeLoop(on) { loading = !!on; }
@@ -3632,6 +3673,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
