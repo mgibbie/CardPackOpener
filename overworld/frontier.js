@@ -5,6 +5,23 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { buildMon } from './battle.js';
 
+// the seven facilities, each a variation on the shared streak/BP core:
+//  heal   — full-heal between bouts (false = an endurance run, HP carries over)
+//  rounds — Infinity for an endless streak, or a fixed count (a tournament/match)
+//  rental — battle with a GENERATED team instead of your own party (Factory)
+//  bpWin  — BP per victory; bonus — extra BP for completing a fixed run
+//  level  — 'party' (match your team), 50 (fixed), or 'party+5' (harder)
+//  rooms  — Pike: some steps are a lucky room (free BP, no battle)
+export const FACILITIES = {
+	tower:   { name: 'BATTLE TOWER',   heal: true,  rounds: Infinity, rental: false, bpWin: 1, level: 'party',   size: 3 },
+	dome:    { name: 'BATTLE DOME',    heal: true,  rounds: 5,        rental: false, bpWin: 1, bonus: 5, level: 'party', size: 3, unit: 'Round' },
+	factory: { name: 'BATTLE FACTORY', heal: true,  rounds: Infinity, rental: true,  bpWin: 1, level: 50,        size: 3 },
+	palace:  { name: 'BATTLE PALACE',  heal: false, rounds: Infinity, rental: false, bpWin: 1, level: 'party',   size: 3 },
+	arena:   { name: 'BATTLE ARENA',   heal: false, rounds: 3,        rental: false, bpWin: 1, bonus: 3, level: 'party', size: 3, unit: 'Round' },
+	pike:    { name: 'BATTLE PIKE',    heal: true,  rounds: Infinity, rental: false, bpWin: 1, level: 'party',   size: 3, rooms: true },
+	pyramid: { name: 'BATTLE PYRAMID', heal: false, rounds: Infinity, rental: false, bpWin: 2, level: 'party+5', size: 3 },
+};
+
 const BP_KEY = 'magepunk_bp';
 const STREAK_KEY = 'magepunk_frontier_best'; // best streak per facility
 

@@ -64,16 +64,40 @@ try {
 	A(bp.after === bp.start + 5 && bp.ok === true && bp.left === bp.after - 3, 'BP is earned and spent correctly');
 	A(bp.bad === false && bp.still === bp.left, 'an over-spend of BP is refused');
 
-	// the Frontier is reachable and the challenge actually starts a battle
-	await page.evaluate(async () => { await window.__ow.moveToMap('BattleFrontier_BattleTowerLobby'); });
-	await waitFor(() => page.evaluate(() => /BattleTowerLobby/.test(window.__ow.world.current?.name || '')), 8000);
-	const started = await page.evaluate(async () => {
-		window.__ow.startFrontierChallenge();
+	// all SEVEN facilities are configured
+	A(await page.evaluate(() => Object.keys(window.__ow.Frontier.FACILITIES).length) === 7, 'all seven Battle Frontier facilities are configured');
+	A(await page.evaluate(() => {
+		const F = window.__ow.Frontier.FACILITIES;
+		return F.factory.rental === true && F.palace.heal === false && F.dome.rounds === 5 && F.arena.rounds === 3 && F.pyramid.bpWin === 2 && F.pike.rooms === true;
+	}), 'each facility has its distinguishing rule (Factory rentals, Palace/Pyramid endurance, Dome/Arena fixed rounds, Pike rooms)');
+
+	// every facility STARTS and sets its config (reset active between, no battle needed)
+	const starts = await page.evaluate(() => {
+		const out = {};
+		for (const id of ['tower', 'dome', 'factory', 'palace', 'arena', 'pike', 'pyramid']) {
+			window.__ow.frontier.active = false;             // clear any prior run
+			window.__ow.startFacility(id);
+			out[id] = window.__ow.frontier.active && window.__ow.frontier.cfg?.name === window.__ow.Frontier.FACILITIES[id].name;
+		}
+		window.__ow.frontier.active = false;
+		return out;
+	});
+	A(Object.values(starts).every(Boolean), 'every facility challenge starts with the right config', JSON.stringify(starts));
+
+	// the FACTORY runs on a RENTAL team (generated), not your own party — and still
+	// enters a real battle (the riskiest wiring)
+	await page.evaluate(async () => { await window.__ow.moveToMap('BattleFrontier_BattleFactoryLobby'); });
+	await waitFor(() => page.evaluate(() => /BattleFactoryLobby/.test(window.__ow.world.current?.name || '')), 8000);
+	const factory = await page.evaluate(async () => {
+		window.__ow.frontier.active = false;
+		window.__ow.startFacility('factory');
+		const rentalIsGenerated = window.__ow.frontier.runParty !== window.__ow.party;
 		const d = window.__ow.dialog;
 		for (let i = 0; i < 40; i++) { if (window.__ow.battle.blocking) break; if (d.blocking) d.key('x'); await new Promise(r => setTimeout(r, 60)); }
-		return { active: window.__ow.frontier.active, inBattle: window.__ow.battle.blocking };
+		return { rentalIsGenerated, inBattle: window.__ow.battle.blocking };
 	});
-	A(started.active && started.inBattle, 'taking the BATTLE TOWER challenge starts a real battle', JSON.stringify(started));
+	A(factory.rentalIsGenerated, 'the BATTLE FACTORY uses a generated RENTAL team, not your own party');
+	A(factory.inBattle, 'the BATTLE FACTORY still starts a real battle with the rentals', JSON.stringify(factory));
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));

@@ -235,36 +235,78 @@ function onTrainerDefeated(script, opts) {
 	}
 	refreshObjective(); // the quest stage just advanced
 }
-// ---------- BATTLE FRONTIER (Battle Tower) ----------
-// A champion-gated post-game facility: consecutive singles battles vs generated
-// teams; each win extends the streak and earns 1 BP; a loss ends the run.
-const frontier = { active: false, streak: 0 };
-function frontierLevel() { return Math.min(100, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50)))); }
-function startFrontierChallenge() {
-	if (!party || !leadMon(party) || frontier.active || battle.blocking) return;
-	frontier.active = true; frontier.streak = 0;
-	dialog.open('The BATTLE TOWER challenge begins!\n\nBattle on — and don’t lose!', frontierNextBattle);
+// ---------- BATTLE FRONTIER (7 facilities) ----------
+// Each facility is a variation on a shared streak/BP core (see FACILITIES in
+// frontier.js): heal-or-endurance, endless-or-fixed-rounds, your-team-or-rentals.
+// Lobby reception counters (attendant tiles) that start each facility's challenge:
+const FACILITY_LOBBIES = {
+	MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY:   { facility: 'tower',   tiles: [[6, 5], [10, 5], [14, 5], [18, 5]] },
+	MAP_BATTLE_FRONTIER_BATTLE_DOME_LOBBY:    { facility: 'dome',    tiles: [[5, 10], [17, 10]] },
+	MAP_BATTLE_FRONTIER_BATTLE_FACTORY_LOBBY: { facility: 'factory', tiles: [[4, 7], [14, 7]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PALACE_LOBBY:  { facility: 'palace',  tiles: [[5, 6], [19, 6]] },
+	MAP_BATTLE_FRONTIER_BATTLE_ARENA_LOBBY:   { facility: 'arena',   tiles: [[7, 7]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PIKE_LOBBY:    { facility: 'pike',    tiles: [[5, 5]] },
+	MAP_BATTLE_FRONTIER_BATTLE_PYRAMID_LOBBY: { facility: 'pyramid', tiles: [[7, 12]] },
+};
+const frontier = { active: false, streak: 0, cfg: null, runParty: null };
+function facLevel(cfg) {
+	const base = Math.min(100, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50))));
+	if (cfg.level === 50) return 50;
+	if (cfg.level === 'party+5') return Math.min(100, base + 5);
+	return base;
 }
-function frontierNextBattle() {
+function startFacility(id) {
+	const cfg = Frontier.FACILITIES[id];
+	if (!cfg || !party || !leadMon(party) || frontier.active || battle.blocking) return;
+	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : party;
+	if (cfg.rental && !runParty.length) { dialog.open('No rental POKeMON are available right now.'); return; }
+	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.runParty = runParty;
+	const intro = cfg.rental ? `The ${cfg.name} challenge begins!\n\nYou’ll battle with a set of RENTAL POKeMON.`
+		: cfg.heal ? `The ${cfg.name} challenge begins!\n\nBattle on — and don’t lose!`
+			: `The ${cfg.name} challenge begins!\n\nNo healing between bouts — endure!`;
+	dialog.open(intro, frontierNext);
+}
+// backward-compatible alias (the Battle Tower)
+function startFrontierChallenge() { startFacility('tower'); }
+function frontierNext() {
 	if (!frontier.active) return;
-	healParty(party); // Tower rule: full heal before each bout
-	const foe = Frontier.genTeam(battle.data, frontierLevel(), 3);
-	if (!foe.length) { endFrontier(); return; }
+	const cfg = frontier.cfg;
+	// Pike: some steps are a lucky room (free BP, no battle)
+	if (cfg.rooms && Math.random() < 0.22) {
+		Frontier.addBP(1);
+		dialog.open('A hidden chamber! You pocket 1 BP and press deeper.', frontierNext);
+		return;
+	}
+	if (cfg.heal) healParty(frontier.runParty);
+	const foe = Frontier.genTeam(battle.data, facLevel(cfg), cfg.size);
+	if (!foe.length) { endFacility(); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
-	battle.startTrainer(party, foe, { displayName: 'FRONTIER TRAINER', defeatText: '', money: 0 }, result => {
+	battle.startTrainer(frontier.runParty, foe, { displayName: 'FRONTIER TRAINER', defeatText: '', money: 0 }, result => {
 		if (result === 'victory') {
-			frontier.streak++; Frontier.addBP(1); Frontier.recordStreak(frontier.streak); saveParty(party);
-			dialog.open(`Win streak: ${frontier.streak}!  (+1 BP)\n\nBattle on?  Z = Continue   X = Rest`, declined => {
-				if (declined === 'x') endFrontier(); else frontierNextBattle();
-			});
-		} else endFrontier();
+			frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
+			if (!cfg.rental) saveParty(party);
+			if (Number.isFinite(cfg.rounds)) {
+				if (frontier.streak >= cfg.rounds) { Frontier.addBP(cfg.bonus || 0); completeFacility(); }
+				else dialog.open(`${cfg.unit || 'Round'} ${frontier.streak} won!  (+${cfg.bpWin} BP)`, frontierNext); // fixed run auto-continues
+			} else {
+				dialog.open(`Win streak: ${frontier.streak}!  (+${cfg.bpWin} BP)\n\nBattle on?   Z = Continue   X = Rest`, declined => {
+					if (declined === 'x') endFacility(); else frontierNext();
+				});
+			}
+		} else endFacility();
 	});
 }
-function endFrontier() {
-	const s = frontier.streak;
+function completeFacility() {
+	const cfg = frontier.cfg;
 	frontier.active = false; frontier.streak = 0;
 	healParty(party); saveParty(party);
-	dialog.open(`Your BATTLE TOWER challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
+	dialog.open(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
+}
+function endFacility() {
+	const cfg = frontier.cfg, s = frontier.streak;
+	frontier.active = false; frontier.streak = 0;
+	healParty(party); saveParty(party);
+	dialog.open(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
 }
 
 // snapshot the winning team into the Hall of Fame log (magepunk_hof)
@@ -363,10 +405,12 @@ function interact() {
 		});
 		return;
 	}
-	// BATTLE TOWER reception counter — start a Frontier challenge
-	if (world.current.map.id === 'MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY' && fy === 5 && [6, 10, 14, 18].includes(fx) && !frontier.active) {
-		dialog.open(`Welcome to the BATTLE TOWER!\n\nBattle trainers back-to-back for BP.\nEarned so far: ${Frontier.getBP()} BP.\n\nTake the challenge?   Z = Yes   X = No`, declined => {
-			if (declined !== 'x') startFrontierChallenge();
+	// BATTLE FRONTIER reception counter — start that facility's challenge
+	const lobby = FACILITY_LOBBIES[world.current.map.id];
+	if (lobby && !frontier.active && lobby.tiles.some(([x, y]) => x === fx && y === fy)) {
+		const cfg = Frontier.FACILITIES[lobby.facility];
+		dialog.open(`Welcome to the ${cfg.name}!\n\nBattle for BP — you have ${Frontier.getBP()} BP.\n\nTake the challenge?   Z = Yes   X = No`, declined => {
+			if (declined !== 'x') startFacility(lobby.facility);
 		});
 		return;
 	}
@@ -3994,7 +4038,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
-	Frontier, get frontier() { return frontier; }, startFrontierChallenge, frontierLevel,
+	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
