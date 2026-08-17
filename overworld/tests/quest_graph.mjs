@@ -4,6 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { EXTRA_DIVE } from '../divelinks.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.resolve(HERE, '../data');
@@ -40,6 +41,13 @@ export function buildGraph() {
 		}
 		for (const w of m.warp_events || []) {
 			const dest = fileFor(w.dest_map);
+			if (dest) { add(stem, dest); add(dest, stem); }
+		}
+	}
+	// code-restored dive/emerge links (divelinks.js) that the map data is missing
+	for (const [stem, kinds] of Object.entries(EXTRA_DIVE)) {
+		for (const k of Object.keys(kinds)) {
+			const dest = fileFor(kinds[k].map);
 			if (dest) { add(stem, dest); add(dest, stem); }
 		}
 	}

@@ -19,6 +19,7 @@ import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
 import * as Badges from './badges.js';
 import * as Quest from './quest.js';
+import { EXTRA_DIVE } from './divelinks.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
@@ -1312,6 +1313,21 @@ function findLanding(px, py) {
 	}
 	return [px, py];
 }
+// nearest SURFABLE (water) tile to a preferred spot — used when emerging into a
+// lake whose underwater twin is a different size (Sootopolis), so the same-tile
+// clamp wouldn't land on water
+function findSurfLanding(px, py) {
+	for (let r = 0; r < 24; r++) {
+		for (let dy = -r; dy <= r; dy++) {
+			for (let dx = -r; dx <= r; dx++) {
+				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+				const x = px + dx, y = py + dy;
+				if (world.isSurfable(x, y)) return [x, y];
+			}
+		}
+	}
+	return [px, py];
+}
 
 // direct travel (region select, ferries): land near the map's center
 // load-guard: on any load failure world.load leaves world.current on the old
@@ -1395,8 +1411,14 @@ function toggleBike() {
 // Dive/emerge are overlay map connections (same footprint, offset 0): plunging
 // swaps the surface map for its underwater twin at the same tile, surfacing does
 // the reverse. Dive needs a Water-type in the party (same gate as Surf).
+// the dive/emerge connection for the current map: the map's own, else a code-level
+// link restored in divelinks.js (maps served read-only from owdata)
+function diveConn(kind) {
+	return (world.current.map.connections || []).find(x => x.direction === kind)
+		|| EXTRA_DIVE[world.current.name]?.[kind] || null;
+}
 async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
-	const c = (world.current.map.connections || []).find(x => x.direction === kind);
+	const c = diveConn(kind);
 	if (!c) return false;
 	const file = world.fileFor(c.map);
 	if (!file) return false;
@@ -1405,8 +1427,17 @@ async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 	try {
 		await world.load(file);
 		const lay = world.current.layout;
-		player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
-		player.surfing = kind === 'emerge'; // surface -> back on the waves; dive -> walk the seabed
+		if (c.x != null && c.y != null) {
+			// explicit landing (size-mismatched twins, e.g. Sootopolis): snap to a
+			// valid tile near it and set surfing from what we actually land on
+			const [lx, ly] = kind === 'emerge' ? findSurfLanding(c.x, c.y) : findLanding(c.x, c.y);
+			player.setTile(lx, ly);
+			player.surfing = world.isSurfable(lx, ly);
+		} else {
+			// same-footprint twin: keep the exact tile, surface -> water / dive -> seabed
+			player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
+			player.surfing = kind === 'emerge';
+		}
 		player.biking = false;
 		world.lastWarpSource = src;
 		await refreshMapContent(file);
@@ -1470,10 +1501,10 @@ const HM_FIELD = {
 	} },
 	dive: { name: 'DIVE', use() {
 		// The Emerald->web tileset flattens all sea to one ocean behavior, so a
-		// "valid dive spot" is a map that offers a dive/emerge overlay.
-		const conns = world.current.map.connections || [];
-		if (conns.some(c => c.direction === 'emerge')) { diveTo('emerge'); return; }
-		if (conns.some(c => c.direction === 'dive')) {
+		// "valid dive spot" is a map that offers a dive/emerge overlay (map data or
+		// a code-restored link like Sootopolis).
+		if (diveConn('emerge')) { diveTo('emerge'); return; }
+		if (diveConn('dive')) {
 			if (!player.surfing) { dialog.open('You need to be out on the water to DIVE.'); return; }
 			diveTo('dive'); return;
 		}
