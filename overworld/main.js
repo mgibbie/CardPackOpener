@@ -3174,6 +3174,29 @@ function drawTrainerCard(W, H) {
 		sctx.fill();
 		if (b.earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1.5; sctx.stroke(); }
 	});
+	// FRONTIER SYMBOLS — a compact row of diamonds (gold/silver), shown once earned
+	const symbols = Frontier.getSymbols();
+	const facOrder = [['tower', 'TO'], ['dome', 'DO'], ['factory', 'FA'], ['palace', 'PA'], ['arena', 'AR'], ['pike', 'PI'], ['pyramid', 'PY']];
+	if (facOrder.some(([id]) => symbols[id])) {
+		const symY = pipY + 42 * u, r = 10 * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText('FRONTIER SYMBOLS', cardX + 32 * u, symY - 15 * u);
+		const sgap = (cardW - 64 * u) / 7;
+		facOrder.forEach(([id, code], i) => {
+			const sx = cardX + 32 * u + sgap * i + sgap / 2, tier = symbols[id];
+			sctx.beginPath();
+			sctx.moveTo(sx, symY - r); sctx.lineTo(sx + r, symY); sctx.lineTo(sx, symY + r); sctx.lineTo(sx - r, symY); sctx.closePath();
+			sctx.fillStyle = tier === 'gold' ? '#f5c542' : tier === 'silver' ? '#c9d2dc' : 'rgba(255,255,255,0.12)';
+			sctx.fill();
+			if (tier) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1.2; sctx.stroke(); }
+			sctx.fillStyle = tier ? '#16273f' : BUI.C.dim;
+			sctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
+			sctx.textAlign = 'center';
+			sctx.fillText(code, sx, symY + 3.5 * u);
+			sctx.textAlign = 'left';
+		});
+	}
 }
 
 // a simple scrollable option-list menu (label rows + optional flash)

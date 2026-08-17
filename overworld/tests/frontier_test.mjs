@@ -78,6 +78,12 @@ try {
 	A(brains.silver === 'silver' && brains.gold === 'gold' && brains.none === null, 'the Brain challenges at streak 7 (silver) and 21 (gold)');
 	A(brains.sym.a === 'silver' && brains.sym.b === 'gold' && brains.sym.c === 'gold', 'symbols are recorded and GOLD outranks SILVER (never downgrades)');
 
+	// the trainer card renders the FRONTIER SYMBOLS row without error (tower is GOLD now)
+	await page.evaluate(() => { window.__ow.trainerCard.open = true; });
+	await new Promise(r => setTimeout(r, 400));
+	A(await page.evaluate(() => window.__ow.trainerCard.open), 'the trainer card opens and renders the symbols row');
+	await page.evaluate(() => { window.__ow.trainerCard.open = false; });
+
 	// BP EXCHANGE (shop) — every item is real; buying spends BP and adds it
 	const shop = await page.evaluate(() => {
 		const F = window.__ow.Frontier;
