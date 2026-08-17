@@ -77,8 +77,11 @@ const lg = Quest.log('KANTO');
 A(lg[0].state === 'done', 'log: gym 1 is done after 1 badge');
 A(lg[1].state === 'current', 'log: gym 2 is the current objective');
 A(lg[2].state === 'locked', 'log: gym 3 is locked');
-A(lg[8].label === 'POKeMON LEAGUE' && lg[8].state === 'locked', 'log: the League row is locked pre-8-badges');
-A(lg[9].label === 'CHAMPION', 'log: the last row is CHAMPION');
+// villain rows are interleaved now, so find the League/Champion rows by label
+const leagueRow = lg.find(r => r.label === 'POKeMON LEAGUE');
+const champRow = lg[lg.length - 1];
+A(leagueRow && leagueRow.state === 'locked', 'log: the League row is locked pre-8-badges');
+A(champRow.label === 'CHAMPION', 'log: the last row is CHAMPION');
 reset();
 
 // ---------- Part 2: headless wiring ----------

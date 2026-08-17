@@ -1280,6 +1280,8 @@ async function refreshMapContent(label) {
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
+	// villain-arc boss confrontation on entering an evil-team location
+	try { checkVillainTrigger(); } catch (e) { console.warn('[villain] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	refreshObjective();
 }
 
@@ -2170,6 +2172,37 @@ function checkIntroTrigger() {
 	if (cfg && world.current.name === cfg.lab) {
 		startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
 	}
+}
+
+// ---------- villain arcs ----------
+// Entering a villain beat's location (beat active + undone) plays the boss speech
+// then the battle. A win sets the beat's doneFlag (which opens the gated gym /
+// League); a loss heals in place so you can leave and re-enter to retry. The
+// villain NPCs from the map data are all flag-skipped, so this code-triggered
+// encounter is the whole fight (see quest.js VILLAIN_BEATS).
+function checkVillainTrigger() {
+	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!Story.getFlag('intro_done')) return;
+	const region = playerRegion();
+	const beat = Quest.beatAt(region, world.current.name);
+	if (!beat) return;
+	startCutscene(beat.intro.map(text => ({ op: 'say', text })), () => startVillainBattle(region, beat));
+}
+function startVillainBattle(region, beat) {
+	const foe = beat.team.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	if (!foe.length || !party || !leadMon(party)) { completeVillainBeat(region, beat); return; }
+	for (const m of foe) Dex.markSeen(m.speciesId);
+	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12 };
+	battle.startTrainer(party, foe, info, result => {
+		if (result === 'victory') { completeVillainBeat(region, beat); }
+		else { healParty(party); saveParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
+	});
+}
+function completeVillainBeat(region, beat) {
+	Story.setFlag(beat.doneFlag);
+	saveParty(party);
+	refreshObjective();
+	startCutscene(beat.outro.map(text => ({ op: 'say', text })));
 }
 
 // open the on-screen starter picker locked to one region's trio
@@ -3705,6 +3738,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
+		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,

@@ -86,6 +86,95 @@ export const GATED_MAPS = {
 	},
 };
 
+// ---------- villain arcs (evil-team beats woven into the quest) ----------
+// Each beat is a code-triggered boss confrontation (the decomp villain NPCs are
+// all flag-skipped by npcs.js/trainers.js, so nothing spawns from the data — this
+// layer supplies its own boss team + flag). A beat with a `gate` is REQUIRED: the
+// gated gym/League map stays sealed until the beat's doneFlag is set. Beats without
+// a gate are optional flavor, discoverable by visiting the location. Boss teams are
+// inline (Kanto/Hoenn mirror data/trainer_teams.json; Johto's are authored here
+// since the Crystal villain constants ship no teams). `at` = the entrance map the
+// confrontation fires on (reliably reachable at `afterBadges`, so strand-safe).
+export const VILLAIN_BEATS = {
+	KANTO: [
+		{
+			id: 'rocket_hideout', afterBadges: 3, at: 'RocketHideout_B1F', boss: 'GIOVANNI',
+			team: [{ s: 'onix', l: 25 }, { s: 'rhyhorn', l: 24 }, { s: 'kangaskhan', l: 29 }],
+			doneFlag: 'villain_kanto_hideout',
+			objective: 'TEAM ROCKET has taken over the CELADON GAME CORNER — storm their HIDEOUT.',
+			intro: ['GIOVANNI: So a nosy kid found our hideout.', "GIOVANNI: I am the boss of TEAM ROCKET. Interfere and you'll regret it!"],
+			outro: ['GIOVANNI: ...Impressive. But TEAM ROCKET will rise again!', '(TEAM ROCKET flees the CELADON hideout.)'],
+		},
+		{
+			id: 'silph', afterBadges: 5, at: 'SilphCo_1F', boss: 'GIOVANNI', gate: 'SaffronCity_Gym',
+			team: [{ s: 'nidorino', l: 37 }, { s: 'kangaskhan', l: 35 }, { s: 'rhyhorn', l: 37 }, { s: 'nidoqueen', l: 41 }],
+			doneFlag: 'villain_kanto_silph',
+			objective: 'TEAM ROCKET has seized SILPH CO. in SAFFRON — drive them out.',
+			intro: ['GIOVANNI: You again! TEAM ROCKET now controls SILPH CO.', 'GIOVANNI: This is your last warning. Leave — or be crushed!'],
+			outro: ['GIOVANNI: ...Beaten again. TEAM ROCKET, retreat!', "(SAFFRON is free — SABRINA's GYM has reopened.)"],
+		},
+	],
+	JOHTO: [
+		{
+			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB1F', boss: 'PROTON', gate: 'AzaleaGym',
+			team: [{ s: 'zubat', l: 14 }, { s: 'rattata', l: 14 }, { s: 'koffing', l: 16 }],
+			doneFlag: 'villain_johto_slowpoke',
+			objective: 'TEAM ROCKET is cutting SLOWPOKE tails in the SLOWPOKE WELL by AZALEA — stop them.',
+			intro: ["PROTON: I'm PROTON, an executive of TEAM ROCKET.", 'PROTON: These SLOWPOKE tails sell for a fortune. Out of my way, brat!'],
+			outro: ["PROTON: Tch... you'll pay for this.", "(TEAM ROCKET flees — AZALEA's GYM is clear.)"],
+		},
+		{
+			id: 'rocket_hq', afterBadges: 6, at: 'TeamRocketBaseB1F', boss: 'ARIANA', gate: 'MahoganyGym',
+			team: [{ s: 'gloom', l: 32 }, { s: 'murkrow', l: 32 }, { s: 'arbok', l: 34 }, { s: 'vileplume', l: 36 }],
+			doneFlag: 'villain_johto_hq',
+			objective: "TEAM ROCKET's secret base hides beneath MAHOGANY TOWN — shut it down.",
+			intro: ['ARIANA: How did a kid get into our secret HQ?!', "ARIANA: I'm ARIANA of TEAM ROCKET. You won't leave here!"],
+			outro: ['ARIANA: Impossible... TEAM ROCKET, fall back!', "(The MAHOGANY hideout is shut down — PRYCE's GYM has opened.)"],
+		},
+	],
+	HOENN: [
+		{
+			id: 'aqua_hideout', afterBadges: 5, at: 'AquaHideout_1F', boss: 'MATT',
+			team: [{ s: 'mightyena', l: 34 }, { s: 'golbat', l: 34 }, { s: 'carvanha', l: 32 }],
+			doneFlag: 'villain_hoenn_hideout',
+			objective: 'TEAM AQUA is scheming in their LILYCOVE HIDEOUT — foil their plan.',
+			intro: ['MATT: Hehe, you followed us into the AQUA HIDEOUT?', "MATT: I'm MATT! Nobody wrecks TEAM AQUA's plans!"],
+			outro: ["MATT: Argh, so strong... this isn't over!", '(TEAM AQUA scatters from the hideout.)'],
+		},
+		{
+			id: 'seafloor', afterBadges: 7, at: 'SeafloorCavern_Room1', boss: 'ARCHIE',
+			gate: ['EverGrandeCity', 'VictoryRoad_1F', 'EverGrandeCity_PokemonLeague_1F'],
+			team: [{ s: 'mightyena', l: 41 }, { s: 'crobat', l: 41 }, { s: 'sharpedo', l: 43 }],
+			doneFlag: 'villain_hoenn_climax',
+			objective: 'TEAM AQUA is awakening a legend in the SEAFLOOR CAVERN — stop ARCHIE before the LEAGUE.',
+			intro: ["ARCHIE: You're too late! I'll awaken the sea's guardian!", 'ARCHIE: I am ARCHIE, leader of TEAM AQUA. Stand aside!'],
+			outro: ['ARCHIE: What have I... the sea rages beyond control. I must go!', '(TEAM AQUA flees — the path to the POKeMON LEAGUE is open.)'],
+		},
+	],
+};
+
+// the beat located at `map` that is active (badges reached) and not yet done —
+// what checkVillainTrigger fires on entry
+export function beatAt(region, map) {
+	const rk = regionKey(region);
+	if (!Story.getFlag('intro_done')) return null;
+	const n = Badges.count(rk);
+	for (const b of VILLAIN_BEATS[rk] || []) {
+		if (b.at === map && n >= b.afterBadges && !Story.getFlag(b.doneFlag)) return b;
+	}
+	return null;
+}
+// the (required) beat that gates `destMap` and is not yet done, else null
+function gateBeat(region, destMap) {
+	const rk = regionKey(region);
+	for (const b of VILLAIN_BEATS[rk] || []) {
+		if (!b.gate) continue;
+		const gates = Array.isArray(b.gate) ? b.gate : [b.gate];
+		if (gates.includes(destMap) && !Story.getFlag(b.doneFlag)) return b;
+	}
+	return null;
+}
+
 export function regionKey(r) { return Badges.regionKey(r); }
 
 export const INTRO = -1, LEAGUE = 8, DONE = 9;
@@ -100,14 +189,24 @@ export function stage(region) {
 	return n >= 8 ? LEAGUE : n;
 }
 
-// the player-facing "NEXT:" objective for the current stage
+// map used to detect a villain beat gating the League approach, per region
+const LEAGUE_MAP = { KANTO: 'IndigoPlateau', JOHTO: 'VictoryRoad', HOENN: 'EverGrandeCity' };
+
+// the player-facing "NEXT:" objective for the current stage. A required villain
+// beat gating the immediate next gym (or the League) takes precedence over the gym.
 export function objective(region) {
 	const rk = regionKey(region);
 	const s = stage(rk);
 	if (s === INTRO) return 'Get your first POKeMON from the LAB.';
 	if (s === DONE) return `You are the CHAMPION of ${rk}! The region is yours to explore.`;
-	if (s === LEAGUE) return 'All 8 badges earned! Enter VICTORY ROAD and challenge the POKeMON LEAGUE.';
+	if (s === LEAGUE) {
+		const lb = gateBeat(rk, LEAGUE_MAP[rk]);
+		if (lb) return lb.objective;
+		return 'All 8 badges earned! Enter VICTORY ROAD and challenge the POKeMON LEAGUE.';
+	}
 	const g = GYMS[rk][s];
+	const gb = gateBeat(rk, g.map);
+	if (gb) return gb.objective;
 	return `Head to ${g.town} and defeat ${g.leader} for your ${ordinal(s + 1)} badge.`;
 }
 
@@ -119,19 +218,31 @@ export function shortObjective(region) {
 	const s = stage(rk);
 	if (s === INTRO) return 'Get a starter';
 	if (s === DONE) return 'CHAMPION!';
-	if (s === LEAGUE) return 'POKeMON LEAGUE';
-	return GYMS[rk][s].town;
+	if (s === LEAGUE) { const lb = gateBeat(rk, LEAGUE_MAP[rk]); return lb ? `Stop ${lb.boss}` : 'POKeMON LEAGUE'; }
+	const gb = gateBeat(rk, GYMS[rk][s].map);
+	return gb ? `Stop ${gb.boss}` : GYMS[rk][s].town;
 }
 
-// ordered quest-log rows for the QUEST menu (done / current / locked)
+// ordered quest-log rows for the QUEST menu (done / current / locked), with the
+// villain beats interleaved at the point in the badge order where they happen
 export function log(region) {
 	const rk = regionKey(region);
 	const n = Badges.count(rk);
 	const champ = Badges.isChampion(rk);
-	const rows = GYMS[rk].map((g, i) => ({
-		label: `${g.leader} — ${g.town}`,
+	const team = rk === 'HOENN' ? 'TEAM AQUA' : 'TEAM ROCKET';
+	const items = GYMS[rk].map((g, i) => ({
+		key: i, label: `${g.leader} — ${g.town}`,
 		state: i < n ? 'done' : (i === n && !champ ? 'current' : 'locked'),
 	}));
+	for (const b of VILLAIN_BEATS[rk] || []) {
+		const done = Story.getFlag(b.doneFlag);
+		items.push({
+			key: b.afterBadges - 0.5, label: `${b.boss} — ${team}`,
+			state: done ? 'done' : (n >= b.afterBadges ? 'current' : 'locked'),
+		});
+	}
+	items.sort((a, c) => a.key - c.key);
+	const rows = items.map(({ label, state }) => ({ label, state }));
 	rows.push({ label: 'POKeMON LEAGUE', state: champ ? 'done' : (n >= 8 ? 'current' : 'locked') });
 	rows.push({ label: 'CHAMPION', state: champ ? 'done' : 'locked' });
 	return rows;
@@ -153,6 +264,11 @@ export function gateFor(region, destMap) {
 // So a save left mid-region past its badges can still walk back to a gym.
 export function blocked(region, destMap, fromMap) {
 	const rk = regionKey(region);
+	// villain flag-gate: a required beat seals this gym/League until its boss is
+	// beaten (takes precedence over the badge gate — you may have the badges but the
+	// evil team still bars the way). These gate terminal maps, so no retreat concern.
+	const vb = gateBeat(rk, destMap);
+	if (vb) return { villain: true, need: 0, msg: `The way is blocked!\n${vb.objective}` };
 	const need = gateFor(rk, destMap);
 	if (need <= 0) return null;
 	if (Badges.count(rk) >= need) return null;      // you've earned entry
