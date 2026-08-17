@@ -182,6 +182,12 @@ function onTrainerDefeated(script, opts) {
 		}
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
+		// becoming JOHTO Champion opens the legendary-bird tower hunt: the wings that
+		// summon HO-OH (Tin Tower) and LUGIA (Whirl Islands)
+		if (fresh && info.region === 'JOHTO') {
+			Bag.addItem('rainbowwing'); Bag.registerName('rainbowwing', 'RAINBOW WING');
+			Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');
+		}
 		if (!silent) {
 			const region = info.region.charAt(0) + info.region.slice(1).toLowerCase();
 			dialog.open(`You defeated the CHAMPION!\n\n. . .\n\nYou and your POKeMON are the new\n${region} CHAMPION!`,
@@ -1632,9 +1638,22 @@ player.onArrive = () => {
 // stay seeded off (they assume story state and lead to no catch); this is the
 // catch itself, decoupled from them.
 const LEGENDARY_ENCOUNTERS = {
+	// Hoenn weather trio (decoupled from the awakening plot)
 	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
 	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
+	// Kanto birds — catchable in their lairs (no gate)
+	MAP_SEAFOAM_ISLANDS_B4F: { species: 'articuno', dex: 144, level: 50, x: 9, y: 2, flag: 'legend_caught_articuno', intro: 'A freezing gale howls through the cavern — ARTICUNO descends!' },
+	MAP_POWER_PLANT:         { species: 'zapdos',   dex: 145, level: 50, x: 5, y: 11, flag: 'legend_caught_zapdos',  intro: 'The air crackles with electricity — ZAPDOS spreads its wings!' },
+	MAP_MT_EMBER_SUMMIT:     { species: 'moltres',  dex: 146, level: 50, x: 9, y: 6, flag: 'legend_caught_moltres',  intro: 'The summit blazes — MOLTRES erupts from the flames!' },
+	// Mewtwo — only in the depths of Cerulean Cave once you are the KANTO CHAMPION
+	MAP_CERULEAN_CAVE_B1F: { species: 'mewtwo', dex: 150, level: 70, x: 7, y: 12, flag: 'legend_caught_mewtwo',
+		requires: () => Badges.isChampion('KANTO'), intro: 'A cold, immense psychic presence fills the cave... MEWTWO awaits.' },
+	// Johto tower duo — answer to their WINGS (a key-item hunt; wings granted on becoming CHAMPION)
+	MAP_TIN_TOWER_ROOF: { species: 'hooh', dex: 250, level: 60, x: 9, y: 5, flag: 'legend_caught_hooh',
+		requires: () => Bag.count('rainbowwing') > 0, intro: 'Rainbow light spills across the tower — HO-OH answers the RAINBOW WING!' },
+	MAP_WHIRL_ISLAND_LUGIA_CHAMBER: { species: 'lugia', dex: 249, level: 60, x: 9, y: 5, flag: 'legend_caught_lugia',
+		requires: () => Bag.count('silverwing') > 0, intro: 'The sea roars in the depths — LUGIA rises, drawn by the SILVER WING!' },
 };
 // a Pokemon's overworld sprite, loaded on demand from data/pokemon_ow/<id>.png
 const owMonCache = new Map();
@@ -1720,7 +1739,9 @@ function drawFollower(ctx, camX, camY) {
 }
 function legendaryHere() {
 	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
-	return e && !Story.getFlag(e.flag) ? e : null;
+	if (!e || Story.getFlag(e.flag)) return null;
+	if (e.requires && !e.requires()) return null; // gated — key item / champion not yet met
+	return e;
 }
 function startLegendaryBattle(e) {
 	if (!party || !leadMon(party) || battle.blocking) return;
@@ -3744,7 +3765,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
-		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS,
+		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,

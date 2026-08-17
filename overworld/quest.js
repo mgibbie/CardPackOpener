@@ -219,7 +219,7 @@ export function objective(region) {
 	const rk = regionKey(region);
 	const s = stage(rk);
 	if (s === INTRO) return 'Get your first POKeMON from the LAB.';
-	if (s === DONE) return `You are the CHAMPION of ${rk}! The region is yours to explore.`;
+	if (s === DONE) return `CHAMPION of ${rk}! Legendary POKeMON now stir — seek them in their lairs.`;
 	if (s === LEAGUE) {
 		const lb = gateBeat(rk, LEAGUE_MAP[rk]);
 		if (lb) return lb.objective;
