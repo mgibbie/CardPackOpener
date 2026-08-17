@@ -1292,6 +1292,8 @@ async function refreshMapContent(label) {
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
 	// villain-arc boss confrontation on entering an evil-team location
 	try { checkVillainTrigger(); } catch (e) { console.warn('[villain] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// Hoenn legendary-awakening beats (post-climax): KYOGRE/GROUDON clash -> RAYQUAZA
+	try { checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	refreshObjective();
 }
 
@@ -1617,6 +1619,8 @@ player.onArrive = () => {
 		if (!cutscene.blocking && checkCoordTrigger()) return;
 		if (!cutscene.blocking) checkOnFrame();
 	} catch (e) { console.warn('[plot] coord/onFrame trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// a due awakening beat on this map (e.g. WALLACE's pointer right after the clash)
+	try { if (!cutscene.blocking) checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] step trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a static legendary sitting on this tile
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
@@ -1682,6 +1686,88 @@ function drawLegendary(ctx, camX, camY) {
 		const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
 		ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
 	}
+}
+
+// ---------- Hoenn legendary-awakening chain ----------
+// After the Team Aqua climax (villain_hoenn_climax), the roused weather trio tear
+// HOENN apart until RAYQUAZA is woken to calm them. The decomp drives this through
+// camera/weather/battle `special` ops + flag-gated story objects, all of which are
+// inert or never spawned in this port — so the literal scripts would play as
+// invisible state changes. Instead a self-contained director advances its OWN state
+// var (keeping the decomp scene vars dormant, so their onFrame scenes never fire)
+// and RENDERS the beats: KYOGRE & GROUDON clash over SOOTOPOLIS on their real decomp
+// tiles, then RAYQUAZA descends to still them. The catch itself is untouched — it
+// stays a real battle on each legendary's lair tile via LEGENDARY_ENCOUNTERS.
+const AW_VAR = 'VAR_HOENN_AWAKENING'; // 0 ready -> 6 resolved
+function awState() { return Story.getVar(AW_VAR); }
+function awActive() { return Story.getFlag('villain_hoenn_climax') && awState() < 6; }
+// a scripted actor's real decomp position, read live from the map's object_events
+function awObjPos(re) {
+	const o = (world.current.map.object_events || []).find(e => re.test(e.graphics_id || ''));
+	return o ? { x: +o.x, y: +o.y } : null;
+}
+const AWAKENING_SCENES = [
+	{ map: 'Route128', when: aw => aw === 0, next: 1, lines: [
+		'The sea churns violently off ROUTE 128. ARCHIE stares into the raging water, the BLUE ORB dark and cold in his fist.',
+		'ARCHIE: What have I done...? KYOGRE won’t heed me! The sea itself is rising to swallow everything!',
+		'MAXIE: Your precious KYOGRE has doomed us all, ARCHIE!',
+		'STEVEN: Enough! The two POKeMON have gone berserk — drought and downpour tearing at each other. We must reach SOOTOPOLIS before HOENN drowns.',
+	] },
+	{ map: 'SootopolisCity', when: aw => aw < 2, next: 2, lines: [
+		'You surface into SOOTOPOLIS to chaos. Above the crater lake, KYOGRE and GROUDON are locked in an ancient fury.',
+		'Torrents of rain and searing heat collide over the city — the sky itself is at war.',
+		'STEVEN: Their power only feeds on the clash! No trainer can stop them now... only a greater force could.',
+		'WALLACE: There is one — the serpent that rules the skies above them both. RAYQUAZA.',
+	] },
+	{ map: 'SootopolisCity', when: aw => aw === 2, next: 3, lines: [
+		'WALLACE: RAYQUAZA slumbers atop the SKY PILLAR, far to the east beyond PACIFIDLOG.',
+		'WALLACE: Only it can quell KYOGRE and GROUDON. Go — wake the guardian of the sky, before SOOTOPOLIS is lost!',
+	] },
+	{ map: 'SkyPillar_Outside', when: aw => aw === 3, next: 4, door: true, lines: [
+		'WALLACE stands before the SKY PILLAR’s sealed door, waiting for you.',
+		'WALLACE: I’ve opened the way. Climb to the summit — RAYQUAZA waits at the very top. Hurry!',
+	] },
+	{ map: 'SkyPillar_Top', when: aw => aw === 4, next: 5, lines: [
+		'At the pillar’s summit an immense green POKeMON coils in the thin air. RAYQUAZA.',
+		'Your presence stirs it. RAYQUAZA’s eyes snap open — it uncoils and hurtles skyward, streaking west toward SOOTOPOLIS!',
+	] },
+	{ map: 'SootopolisCity', when: aw => aw === 5, next: 6, resolve: true, lines: [
+		'RAYQUAZA descends through the storm in a spiral of light.',
+		'Its roar shakes the heavens. KYOGRE and GROUDON freeze — then, cowed, sink back into the depths from which they rose.',
+		'The rain stills. The blistering heat fades. RAYQUAZA gives a final cry and vanishes into the clouds.',
+		'STEVEN: It’s over... HOENN is safe. The three still linger in the wild, though — seek them out, if you dare.',
+	] },
+];
+// map-entry / per-step hook: play the next awakening beat if one is due here
+function checkAwakeningTrigger() {
+	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!Story.getFlag('villain_hoenn_climax') || playerRegion() !== 'HOENN') return;
+	const aw = awState();
+	const scene = AWAKENING_SCENES.find(s => s.map === world.current.name && s.when(aw));
+	if (!scene) return;
+	startCutscene(scene.lines.map(text => ({ op: 'say', text })), () => {
+		if (scene.door) { // make the SKY PILLAR door walkable (decomp opens it via an OnLoad the port never runs)
+			const lay = world.current?.layout;
+			if (lay?.map?.[4]) world.setMetatile(14, 4, lay.map[4][14], false);
+			if (lay?.map?.[5]) world.setMetatile(14, 5, lay.map[5][14], false);
+		}
+		Story.setVar(AW_VAR, scene.next);
+		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); }
+	});
+}
+// render the clashing legendaries over SOOTOPOLIS during the crisis (real decomp tiles)
+function drawAwakening(ctx, camX, camY) {
+	if (world.current.name !== 'SootopolisCity' || !awActive()) return;
+	const put = (species, pos) => {
+		if (!pos) return;
+		const img = owMonSprite(species);
+		if (!img) return;
+		const cx = pos.x * META + META / 2, by = pos.y * META + META;
+		ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+	};
+	put('groudon', awObjPos(/GROUDON/));
+	put('kyogre', awObjPos(/KYOGRE/));
+	if (awState() === 5) put('rayquaza', awObjPos(/RAYQUAZA/)); // descends to calm them
 }
 
 // ---------- follower (lead POKeMON walks behind you, HG/SS style) ----------
@@ -2422,6 +2508,7 @@ function tick(now) {
 	arcade.draw(ctx, camX, camY);
 	items.draw(ctx, camX, camY);
 	drawLegendary(ctx, camX, camY);
+	drawAwakening(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player];
 	if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
@@ -3782,6 +3869,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
+	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
