@@ -1654,6 +1654,16 @@ const LEGENDARY_ENCOUNTERS = {
 		requires: () => Bag.count('rainbowwing') > 0, intro: 'Rainbow light spills across the tower — HO-OH answers the RAINBOW WING!' },
 	MAP_WHIRL_ISLAND_LUGIA_CHAMBER: { species: 'lugia', dex: 249, level: 60, x: 9, y: 5, flag: 'legend_caught_lugia',
 		requires: () => Bag.count('silverwing') > 0, intro: 'The sea roars in the depths — LUGIA rises, drawn by the SILVER WING!' },
+	// The three legendary beasts — once you've woken them at the Burned Tower they can
+	// be confronted at the top of Tin Tower (a map can hold several: an array).
+	MAP_TIN_TOWER_1F: [
+		{ species: 'raikou', dex: 243, level: 40, x: 7, y: 9, flag: 'legend_caught_raikou',
+			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'Thunder cracks — RAIKOU bares its fangs!' },
+		{ species: 'suicune', dex: 245, level: 40, x: 9, y: 9, flag: 'legend_caught_suicune',
+			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'The north wind stirs — SUICUNE regards you with clear eyes.' },
+		{ species: 'entei', dex: 244, level: 40, x: 12, y: 9, flag: 'legend_caught_entei',
+			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'A volcanic roar — ENTEI blocks your path!' },
+	],
 };
 // a Pokemon's overworld sprite, loaded on demand from data/pokemon_ow/<id>.png
 const owMonCache = new Map();
@@ -1666,12 +1676,12 @@ function owMonSprite(id) {
 	return owMonCache.get(id);
 }
 function drawLegendary(ctx, camX, camY) {
-	const e = legendaryHere();
-	if (!e) return;
-	const img = owMonSprite(e.species);
-	if (!img) return;
-	const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
-	ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+	for (const e of legendariesHere()) {
+		const img = owMonSprite(e.species);
+		if (!img) continue;
+		const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
+		ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+	}
 }
 
 // ---------- follower (lead POKeMON walks behind you, HG/SS style) ----------
@@ -1737,12 +1747,14 @@ function drawFollower(ctx, camX, camY) {
 	const dy = Math.round(follower.py + META - dh - camY);
 	ctx.drawImage(img, col * fs, row * fs, fs, fs, dx, dy, dw, dh);
 }
-function legendaryHere() {
-	const e = LEGENDARY_ENCOUNTERS[world.current.map.id];
-	if (!e || Story.getFlag(e.flag)) return null;
-	if (e.requires && !e.requires()) return null; // gated — key item / champion not yet met
-	return e;
+// all un-caught, requirement-met legendaries on the current map (a map may hold
+// several, e.g. the Tin Tower beasts — stored as an array)
+function legendariesHere() {
+	const v = LEGENDARY_ENCOUNTERS[world.current.map.id];
+	if (!v) return [];
+	return (Array.isArray(v) ? v : [v]).filter(e => !Story.getFlag(e.flag) && (!e.requires || e.requires()));
 }
+function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
 function startLegendaryBattle(e) {
 	if (!party || !leadMon(party) || battle.blocking) return;
 	Dex.markSeen(e.species);
@@ -1765,10 +1777,10 @@ function startLegendaryBattle(e) {
 		});
 	});
 }
-// on-arrive: standing on the legendary's tile starts the encounter
+// on-arrive: standing on a legendary's tile starts that encounter
 function checkLegendaryTrigger() {
-	const e = legendaryHere();
-	if (e && player.tx === e.x && player.ty === e.y) { startLegendaryBattle(e); return true; }
+	const e = legendariesHere().find(x => player.tx === x.x && player.ty === x.y);
+	if (e) { startLegendaryBattle(e); return true; }
 	return false;
 }
 
@@ -3765,7 +3777,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
-		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere,
+		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,

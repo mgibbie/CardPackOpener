@@ -28,7 +28,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 	const sp = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
 	const keys = new Set((Array.isArray(sp) ? sp.map(s => s.id || s.speciesId || s.name) : Object.keys(sp)).map(k => String(k).toLowerCase()));
 	const ow = new Set(fs.readdirSync(path.join(ROOT, 'overworld/data/pokemon_ow')).map(f => f.replace('.png', '')));
-	for (const s of ['articuno', 'zapdos', 'moltres', 'mewtwo', 'hooh', 'lugia']) {
+	for (const s of ['articuno', 'zapdos', 'moltres', 'mewtwo', 'hooh', 'lugia', 'raikou', 'entei', 'suicune']) {
 		A(keys.has(s), `species "${s}" resolves in battle data`);
 		A(ow.has(s), `overworld sprite for "${s}" exists (visible legendary)`);
 	}
@@ -82,6 +82,13 @@ try {
 	await page.evaluate(() => window.__ow.moveToMap('SeafoamIslands_B4F'));
 	await waitFor(() => page.evaluate(() => /SeafoamIslands_B4F/.test(window.__ow.world.current?.name || '')), 8000);
 	A(await page.evaluate(() => window.__ow.legendaryHere()?.species) === 'articuno', 'ARTICUNO is catchable in its lair (ungated)');
+
+	// the 3 beasts appear together at Tin Tower 1F only after the Burned Tower release
+	await page.evaluate(() => window.__ow.moveToMap('TinTower1F'));
+	await waitFor(() => page.evaluate(() => /TinTower1F/.test(window.__ow.world.current?.name || '')), 8000);
+	A(await page.evaluate(() => window.__ow.legendariesHere().length) === 0, 'the beasts are absent at Tin Tower before the Burned Tower release');
+	const beasts = await page.evaluate(() => { window.__ow.Story.setFlag('EVENT_RELEASED_THE_BEASTS'); return window.__ow.legendariesHere().map(e => e.species).sort(); });
+	A(JSON.stringify(beasts) === JSON.stringify(['entei', 'raikou', 'suicune']), 'RAIKOU / ENTEI / SUICUNE all appear at Tin Tower once released', JSON.stringify(beasts));
 
 	// becoming JOHTO Champion grants the wings (test with Silver Wing, never added manually)
 	const grant = await page.evaluate(() => {
