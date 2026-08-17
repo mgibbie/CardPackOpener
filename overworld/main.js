@@ -265,7 +265,7 @@ function facLevel(cfg) {
 	return base;
 }
 // ---- spectate broadcast: publish a board snapshot of the run so friends can watch ----
-let frontierSeq = 0, frontierLastSnap = '', frontierPubTimer = null;
+let frontierSeq = 0, frontierLastSnap = '', frontierPubTimer = null, frontierWatchers = 0;
 function factorySnapshot() {
 	if (!frontier.active) return null;
 	const base = { facility: frontier.cfg?.name || '', streak: frontier.streak, bp: Frontier.getBP() };
@@ -280,16 +280,34 @@ function frontierPublish(over) {
 	const snap = over ? null : factorySnapshot();
 	const s = JSON.stringify(snap);
 	if (s !== frontierLastSnap) { frontierLastSnap = s; frontierSeq++; }
-	MP.call('publish-factory', { snapshot: snap, label: frontier.cfg?.name || 'BATTLE FRONTIER', seq: frontierSeq, over: !!over }).catch(() => { });
+	MP.call('publish-factory', { snapshot: snap, label: frontier.cfg?.name || 'BATTLE FRONTIER', seq: frontierSeq, over: !!over })
+		.then(d => { if (d && typeof d.watchers === 'number') frontierWatchers = d.watchers; })
+		.catch(() => { });
 }
 function startFrontierPublish() {
 	if (!MP_ON || frontierPubTimer) return;
+	frontierWatchers = 0;
 	const tick = () => { frontierPublish(false); frontierPubTimer = frontier.active ? setTimeout(tick, 1200) : null; };
 	tick();
 }
 function stopFrontierPublish() {
 	if (frontierPubTimer) { clearTimeout(frontierPubTimer); frontierPubTimer = null; }
 	frontierPublish(true); // final "run over" push so watchers see it end promptly
+	frontierWatchers = 0;
+}
+// a "N watching" badge on the runner's own screen while friends are spectating
+function drawWatchingBadge(W, H) {
+	const u = H / 480;
+	const label = `\u{1F441} ${frontierWatchers} watching`;
+	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+	sctx.textAlign = 'left';
+	const w = sctx.measureText(label).width + 20 * u, h = 26 * u, x = W - w - 12 * u, y = 12 * u;
+	sctx.fillStyle = 'rgba(20,30,50,0.82)';
+	BUI.rr(sctx, x, y, w, h, 8 * u); sctx.fill();
+	sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 1.5;
+	BUI.rr(sctx, x, y, w, h, 8 * u); sctx.stroke();
+	sctx.fillStyle = BUI.C.text;
+	sctx.fillText(label, x + 10 * u, y + 18 * u);
 }
 
 function startFacility(id) {
@@ -2830,6 +2848,8 @@ function tick(now) {
 		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
+	// while your run is being spectated, show a live "N watching" badge on top
+	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
 }
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------
@@ -4184,7 +4204,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
-	factorySnapshot, get factorySpec() { return factorySpec; },
+	factorySnapshot, get factorySpec() { return factorySpec; }, get frontierWatchers() { return frontierWatchers; },
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,

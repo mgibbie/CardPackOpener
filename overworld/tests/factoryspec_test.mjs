@@ -22,7 +22,12 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 // /api/mp mock: enough for MP_ON + the publish/poll calls to no-op cleanly
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
-	if (u === '/api/mp') { for await (const _ of req) { } res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, state: STATE, friends: [], challenges: [], match: null, presence: null, snapshot: null })); return; }
+	if (u === '/api/mp') {
+		let raw = ''; for await (const c of req) raw += c;
+		let action = ''; try { action = JSON.parse(raw).action; } catch { }
+		const extra = action === 'publish-factory' ? { watchers: 3, watcherNames: ['pat', 'sam', 'lee'] } : {};
+		res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, state: STATE, friends: [], challenges: [], match: null, presence: null, snapshot: null, ...extra })); return;
+	}
 	const f = u === '/' ? '/index.html' : u;
 	fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
 });
@@ -62,6 +67,9 @@ try {
 	A(snap && snap.me.maxHP > 0 && typeof snap.me.name === 'string' && Array.isArray(snap.me.types), 'the snapshot carries name/HP/types for the near mon');
 	A(snap && Array.isArray(snap.meTeam) && Array.isArray(snap.foeTeam) && /FACTORY/i.test(snap.facility || ''), 'the snapshot carries team dots + the facility label', JSON.stringify({ facility: snap && snap.facility }));
 	A(await page.evaluate(() => window.__ow.frontier.active) === true, 'presence/publish are active during the run (frontier.active)');
+
+	// the runner captures the live watcher count from the publish response (drives the badge)
+	A(await waitFor(() => page.evaluate(() => window.__ow.frontierWatchers === 3), 4000), 'the runner picks up the "N watching" count from the relay (badge input)');
 
 	// the spectate view renders a snapshot read-only without crashing
 	const spec = await page.evaluate(async (theSnap) => {
