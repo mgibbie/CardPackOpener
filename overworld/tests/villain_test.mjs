@@ -152,11 +152,13 @@ try {
 		const list = window.__ow.trainers.list, data = window.__ow.trainers.data;
 		const leader = list.find(t => data.rosters?.[t.ev.script]?.class === 'Gym Leader');
 		const team = leader ? window.__ow.trainers.buildBattle(leader, window.__ow.battle.data).party.length : 0;
+		const imgW = leader?.img?.width, imgSrc = leader?.img?.src || '';
 		await window.__ow.moveToMap('Route110');
-		return { leader: !!leader, name: leader && data.rosters[leader.ev.script].name, team, route: window.__ow.trainers.list.length };
+		return { leader: !!leader, name: leader && data.rosters[leader.ev.script].name, team, imgW, realArt: /people_extra\/roxanne/.test(imgSrc), route: window.__ow.trainers.list.length };
 	});
 	A(hoenn.leader && hoenn.name === 'Roxanne', 'a HOENN gym leader (Roxanne) now spawns — Hoenn gyms are beatable', JSON.stringify(hoenn));
-	A(hoenn.team >= 1, 'the HOENN leader resolves a real battle team (missing-sprite fallback still battles)');
+	A(hoenn.realArt && hoenn.imgW === 48, 'the leader renders her REAL Emerald art from people_extra (48x32, not a generic)', JSON.stringify({ imgW: hoenn.imgW, realArt: hoenn.realArt }));
+	A(hoenn.team >= 1, 'the HOENN leader resolves a real battle team');
 	A(hoenn.route >= 5, 'a HOENN route is populated with trainers (was empty — the type fix)', JSON.stringify(hoenn.route));
 
 	// dungeon population: switch to Kanto, activate the Rocket Hideout beat, and walk

@@ -3,7 +3,7 @@
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META } from './engine.js';
-import { isTrainerEvent, spriteFor } from './trainers.js';
+import { isTrainerEvent, spritePath } from './trainers.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const NPC_SPEED = 60; // px/s — NPCs stroll
@@ -129,7 +129,7 @@ export class NPCs {
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			let img = await getImage(`data/people/${file}`).catch(() => null);
-			if (!img) img = await getImage(`data/people/${spriteFor(ev.graphics_id, false)}`).catch(() => null);
+			if (!img) img = await getImage(spritePath(ev.graphics_id, false)).catch(() => null);
 			if (img) this.list.push(new NPC(ev, img));
 		}));
 	}

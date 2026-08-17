@@ -16,19 +16,17 @@ const FACE_OF = {
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const DEFEATED_KEY = 'magepunk_defeated_v1';
 
-// The Emerald sprite set was never imported, so Hoenn gym leaders (and some NPCs)
-// have no people/*.png and would silently fail to spawn — leaving Hoenn gyms
-// unbeatable. Fall back to a gender-appropriate generic so they render + battle.
-// (gfx_map.json lives in the read-only owdata data, so this must live in code.)
-export const SPRITE_FALLBACK = {
-	OBJ_EVENT_GFX_ROXANNE: 'woman_1.png', OBJ_EVENT_GFX_FLANNERY: 'woman_2.png',
-	OBJ_EVENT_GFX_WINONA: 'woman_3.png', OBJ_EVENT_GFX_LIZA: 'beauty.png',
-	OBJ_EVENT_GFX_BRAWLY: 'cooltrainer_m.png', OBJ_EVENT_GFX_TATE: 'cooltrainer_m.png',
-	OBJ_EVENT_GFX_WATTSON: 'gentleman.png', OBJ_EVENT_GFX_NORMAN: 'gentleman.png',
-	OBJ_EVENT_GFX_JUAN: 'gentleman.png', OBJ_EVENT_GFX_WALLACE: 'gentleman.png',
-};
-export const spriteFor = (graphicsId, isTrainer) =>
-	SPRITE_FALLBACK[graphicsId] || (isTrainer ? 'cooltrainer_m.png' : 'man.png');
+// The Emerald sprite set was never imported into data/people (served read-only from
+// owdata), so Hoenn gym leaders had no sprite and silently failed to spawn — leaving
+// Hoenn gyms unbeatable. Their real overworld art now ships in overworld/people_extra/
+// (tracked — served by the MAIN deploy, so no owdata push needed). Anything else that
+// is still missing a sprite falls back to a generic so an NPC/trainer can never fail
+// to render. Returns a full page-relative path.
+const LEADER_ART = new Set(['ROXANNE', 'BRAWLY', 'WATTSON', 'FLANNERY', 'NORMAN', 'WINONA', 'TATE', 'LIZA', 'JUAN', 'WALLACE'].map(n => 'OBJ_EVENT_GFX_' + n));
+export function spritePath(graphicsId, isTrainer) {
+	if (LEADER_ART.has(graphicsId)) return `people_extra/${graphicsId.replace('OBJ_EVENT_GFX_', '').toLowerCase()}.png`;
+	return `data/people/${isTrainer ? 'cooltrainer_m.png' : 'man.png'}`;
+}
 
 // all battle-capable trainers, including talk-to ones (sight range 0 — gym
 // leaders etc.). npcs.js excludes these; trainers.js renders them.
@@ -128,8 +126,9 @@ export class Trainers {
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			let img = await getImage(`data/people/${file}`).catch(() => null);
-			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer
-			if (!img) img = await getImage(`data/people/${spriteFor(ev.graphics_id, true)}`).catch(() => null);
+			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer —
+			// use their real people_extra art, else a generic
+			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
 			if (img) { const t = new Trainer(ev, img); if (flagged) t.villain = true; this.list.push(t); }
 		}));
 	}
