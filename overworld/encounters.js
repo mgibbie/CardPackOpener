@@ -9,6 +9,7 @@
 // a night-dweller from NIGHT_POOL so even all-diurnal routes feel different at night.
 import { getJSON } from './engine.js';
 import * as Clock from './clock.js';
+import { DAYNIGHT } from './encounters_daynight.js';
 
 // species that skew NOCTURNAL (more common at night) — mostly cave/grass night dwellers
 const NOCTURNAL = new Set([
@@ -64,6 +65,12 @@ export class Encounters {
 	// explicitly (e.g. for tests) to force a time of day. Used for wild rolls AND the
 	// double-battle partner pick.
 	pick(mapId, kind = 'land', phase = Clock.phase()) {
+		// AUTHENTIC per-map day/night table (Johto grass, from pokecrystal) takes precedence —
+		// it's already time-specific, so pick from it raw (no reweighting, no overlay).
+		const dn = DAYNIGHT[mapId]?.[kind]?.[phase];
+		if (dn && dn.length) return this.weightedPick(dn, phase, true);
+		// else the base owdata table + the code reweighting/overlay (Kanto/Hoenn have no
+		// authentic day/night split, so time-of-day is synthesized here)
 		const grp = this.data[mapId]?.[kind];
 		if (!grp || !grp.slots?.length) return null;
 		const base = this.weightedPick(grp.slots, phase);
@@ -91,10 +98,11 @@ export class Encounters {
 		return { id: slot.id, level: slot.min + Math.floor(Math.random() * (slot.max - slot.min + 1)) };
 	}
 
-	// weighted slot pick with the per-phase weight multipliers applied
-	weightedPick(slots, phase) {
+	// weighted slot pick. `raw` uses the slots' own weights (an authentic time-specific
+	// table); otherwise the per-phase nocturnal/diurnal multipliers are applied.
+	weightedPick(slots, phase, raw = false) {
 		let total = 0;
-		const weighted = slots.map(s => { const w = s.w * phaseFactor(s.id, phase); total += w; return { s, w }; });
+		const weighted = slots.map(s => { const w = raw ? s.w : s.w * phaseFactor(s.id, phase); total += w; return { s, w }; });
 		let chosen;
 		if (total <= 0) { chosen = slots[Math.floor(Math.random() * slots.length)]; } // safety: flat pick
 		else {

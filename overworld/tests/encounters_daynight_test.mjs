@@ -68,6 +68,23 @@ try {
 	A(dn.day.poolHits === 0, 'the night overlay never injects night-dwellers by DAY (base table only)', String(dn.day.poolHits));
 	A(dn.night.poolHits > 100, 'after dark, some LAND encounters are night-pool dwellers not on the base table', String(dn.night.poolHits));
 
+	// AUTHENTIC Johto per-map day/night tables (from pokecrystal) — Sprout Tower is Rattata
+	// by day and Gastly by night; Route 29 gains Hoothoot at night. These override the base
+	// table, so the species literally SWAP (not just reweight).
+	const johto = await page.evaluate(() => {
+		const E = window.__ow.encounters, N = 400;
+		const count = (map, phase, id) => { let c = 0; for (let i = 0; i < N; i++) { const r = E.pick(map, 'land', phase); if (r && r.id === id) c++; } return c; };
+		return {
+			sproutDayGastly: count('MAP_SPROUT_TOWER_2F', 'day', 'gastly'),
+			sproutNightGastly: count('MAP_SPROUT_TOWER_2F', 'night', 'gastly'),
+			r29DayHoot: count('MAP_ROUTE_29', 'day', 'hoothoot'),
+			r29NightHoot: count('MAP_ROUTE_29', 'night', 'hoothoot'),
+			hasTable: !!window.__ow.encounters && !!(window.__ow.DAYNIGHT || true),
+		};
+	});
+	A(johto.sproutDayGastly === 0 && johto.sproutNightGastly > 150, 'Sprout Tower: authentic table gives RATTATA by day, GASTLY at night', JSON.stringify(johto));
+	A(johto.r29DayHoot === 0 && johto.r29NightHoot > 0, 'Route 29: HOOTHOOT appears only at night (authentic per-map night list)', JSON.stringify({ day: johto.r29DayHoot, night: johto.r29NightHoot }));
+
 	// the live Clock drives the phase for a normal roll (setHour flips day<->night)
 	const clock = await page.evaluate(() => { const C = window.__ow.Clock; C.setHour(22); const n = C.phase(); C.setHour(12); const d = C.phase(); C.clearOverride(); return { n, d }; });
 	A(clock.n === 'night' && clock.d === 'day', 'Clock.phase (which roll() reads live) reflects the time of day', JSON.stringify(clock));
