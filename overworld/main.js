@@ -29,6 +29,7 @@ import { getImage } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Pvp } from './pvp.js';
+import { FactorySpec } from './factoryspec.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -72,6 +73,7 @@ const blockers = new Blockers(world);
 const evolution = new Evolution();
 const items = new Items(world);
 const pvp = new Pvp();
+const factorySpec = new FactorySpec();
 const cutscene = new Story.Cutscene();
 let signTexts = {};
 let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
@@ -262,12 +264,41 @@ function facLevel(cfg) {
 	if (cfg.level === 'party+5') return Math.min(100, base + 5);
 	return base;
 }
+// ---- spectate broadcast: publish a board snapshot of the run so friends can watch ----
+let frontierSeq = 0, frontierLastSnap = '', frontierPubTimer = null;
+function factorySnapshot() {
+	if (!frontier.active) return null;
+	const base = { facility: frontier.cfg?.name || '', streak: frontier.streak, bp: Frontier.getBP() };
+	const a = battle.active;
+	if (!a || !a.me || !a.foe) return { ...base, waiting: true };
+	const mon = m => m ? { name: m.name, level: m.level, species: m.speciesId, curHP: m.curHP, maxHP: m.maxHP, status: m.status || null, types: m.types || [] } : null;
+	const team = arr => (arr || []).map(m => ({ curHP: m.curHP, maxHP: m.maxHP }));
+	return { ...base, me: mon(a.me), foe: mon(a.foe), meBoosts: a.meBoosts, foeBoosts: a.foeBoosts, meTeam: team(a.party), foeTeam: team(a.foes), msg: a.msg || '' };
+}
+function frontierPublish(over) {
+	if (!MP_ON) return;
+	const snap = over ? null : factorySnapshot();
+	const s = JSON.stringify(snap);
+	if (s !== frontierLastSnap) { frontierLastSnap = s; frontierSeq++; }
+	MP.call('publish-factory', { snapshot: snap, label: frontier.cfg?.name || 'BATTLE FRONTIER', seq: frontierSeq, over: !!over }).catch(() => { });
+}
+function startFrontierPublish() {
+	if (!MP_ON || frontierPubTimer) return;
+	const tick = () => { frontierPublish(false); frontierPubTimer = frontier.active ? setTimeout(tick, 1200) : null; };
+	tick();
+}
+function stopFrontierPublish() {
+	if (frontierPubTimer) { clearTimeout(frontierPubTimer); frontierPubTimer = null; }
+	frontierPublish(true); // final "run over" push so watchers see it end promptly
+}
+
 function startFacility(id) {
 	const cfg = Frontier.FACILITIES[id];
 	if (!cfg || !party || !leadMon(party) || frontier.active || battle.blocking) return;
 	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : party;
 	if (cfg.rental && !runParty.length) { dialog.open('No rental POKeMON are available right now.'); return; }
 	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.id = id; frontier.runParty = runParty;
+	startFrontierPublish();
 	const intro = cfg.rental ? `The ${cfg.name} challenge begins!\n\nYou’ll battle with a set of RENTAL POKeMON.`
 		: cfg.heal ? `The ${cfg.name} challenge begins!\n\nBattle on — and don’t lose!`
 			: `The ${cfg.name} challenge begins!\n\nNo healing between bouts — endure!`;
@@ -320,13 +351,13 @@ function runFrontierBattle(foe, info, tier, brain) {
 }
 function completeFacility() {
 	const cfg = frontier.cfg;
-	frontier.active = false; frontier.streak = 0;
+	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
 	if (factoryStandalone) healTeam(party); else healParty(party); // heal+save only for a real save
 	frontierEndDialog(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
 }
 function endFacility() {
 	const cfg = frontier.cfg, s = frontier.streak;
-	frontier.active = false; frontier.streak = 0;
+	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
 	if (factoryStandalone) healTeam(party); else healParty(party);
 	frontierEndDialog(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
 }
@@ -1007,6 +1038,13 @@ function friendAction(f) {
 		});
 		return;
 	}
+	if ((f.status || '').startsWith('factory:')) {
+		const label = f.status.slice('factory:'.length) || 'BATTLE FRONTIER';
+		dialog.open(`${f.username} is in the ${label}!\n\nZ = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') location.href = '/overworld/?watchfactory=' + encodeURIComponent(f.username) + '&mp=1';
+		});
+		return;
+	}
 	dialog.open(`${f.username}:  Z=Battle challenge  X=Visit world`, (declined) => {
 		if (declined === 'x') visitWorld(f);
 		else sendChallenge(f);
@@ -1335,6 +1373,7 @@ function pressKey(k) {
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
+	if (factorySpec.blocking) { factorySpec.key(k); return; }
 	if (trade.open) { tradeKey(k); return; }
 	if (playerMenu.open) { playerMenuKey(k); return; }
 	if (deckSelect.open) { deckSelectKey(k); return; }
@@ -1394,7 +1433,7 @@ function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || bpShopMenu.open
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || bpShopMenu.open
 	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
@@ -1439,6 +1478,7 @@ function screenPos(e) {
 		(e.clientY - r.top) * (screen.height / r.height)];
 }
 screen.addEventListener('pointermove', e => {
+	if (factorySpec.blocking) { factorySpec.hover(...screenPos(e)); return; }
 	if (pvp.blocking) { pvp.hover(...screenPos(e)); return; }
 	if (battle.blocking) { battle.hover(...screenPos(e)); return; }
 	if (anyMenuOpen()) {
@@ -1449,6 +1489,7 @@ screen.addEventListener('pointermove', e => {
 });
 screen.addEventListener('pointerdown', e => {
 	e.preventDefault();
+	if (factorySpec.blocking) { factorySpec.tap(...screenPos(e)); return; }
 	if (pvp.blocking) { pvp.tap(...screenPos(e)); return; }
 	if (battle.blocking) { battle.tap(...screenPos(e)); return; }
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
@@ -2717,6 +2758,7 @@ function tick(now) {
 
 	battle.update(dt);
 	pvp.update(dt);
+	factorySpec.update(dt);
 	evolution.update(dt);
 	dialog.update(dt);
 	cutscene.update(dt);
@@ -2725,7 +2767,7 @@ function tick(now) {
 	const inBattleNow = battle.blocking || pvp.blocking;
 	if (wasInBattle && !inBattleNow) heldKeys.length = 0;
 	wasInBattle = inBattleNow;
-	if (!battle.blocking && !pvp.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
+	if (!battle.blocking && !pvp.blocking && !factorySpec.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
@@ -2761,6 +2803,8 @@ function tick(now) {
 		battle.draw(sctx, SW, SH);
 	} else if (pvp.blocking) {
 		pvp.draw(sctx, SW, SH);
+	} else if (factorySpec.blocking) {
+		factorySpec.draw(sctx, SW, SH);
 	} else {
 		if (partyMenu.open) drawPartyMenu(SW, SH);
 		else if (shopMenu.open) drawShopMenu(SW, SH);
@@ -3906,8 +3950,9 @@ async function heartbeat() {
 			map: world.current.name, x: player.tx, y: player.ty,
 			facing: player.facing,
 			status: pvp.blocking ? 'battling:' + (pvp.active?.matchId || '')
-				: visiting ? 'visiting:' + visiting.username : 'roaming',
-			region: world.current.map.name || '',
+				: frontier.active ? 'factory:' + (frontier.cfg?.name || 'BATTLE FRONTIER')
+					: visiting ? 'visiting:' + visiting.username : 'roaming',
+			region: frontier.active ? (frontier.cfg?.name || '') : (world.current.map.name || ''),
 		});
 	} catch (e) {}
 }
@@ -4113,8 +4158,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)
 		const qp = new URLSearchParams(location.search);
-		const directBattle = qp.get('battle'), watchBattle = qp.get('watch');
-		if (watchBattle) enterMatch(watchBattle, true);
+		const directBattle = qp.get('battle'), watchBattle = qp.get('watch'), watchFactory = qp.get('watchfactory');
+		if (watchFactory) factorySpec.start(watchFactory, () => { if (history.length > 1) history.back(); else location.href = '/overworld/?mp=1'; });
+		else if (watchBattle) enterMatch(watchBattle, true);
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
@@ -4138,6 +4184,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
 	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
+	factorySnapshot, get factorySpec() { return factorySpec; },
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,

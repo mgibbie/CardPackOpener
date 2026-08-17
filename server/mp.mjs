@@ -911,6 +911,43 @@ export default async function handler(req, env) {
 		return json({ ...cs, watchers, watcherNames });
 	}
 
+	// a BATTLE FRONTIER run publishes a board snapshot here every ~1.2s so friends can
+	// spectate it (mirrors publish-cardstate). Unlike the card runs — which live on their
+	// own page — a Frontier run is inside the overworld, whose heartbeat owns presence, so
+	// this does NOT write presence (the heartbeat sets `factory:<label>` itself).
+	if (action === 'publish-factory') {
+		const now = Date.now();
+		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
+		const watchers = watcherNames.length;
+		await store.setJSON('factorystate:' + username, {
+			snapshot: body.snapshot || null,
+			label: String(body.label || '').slice(0, 48),
+			room: 'u:' + username, // spectators join the runner's chat room
+			seq: +body.seq || 0,
+			ts: now,
+			over: !!body.over,
+			watchers, watcherNames,
+		});
+		return json({ ok: true, watchers, watcherNames });
+	}
+
+	// a friend reads the latest Frontier snapshot to render read-only
+	if (action === 'factory-state') {
+		const who = String(body.username || '');
+		if (!user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
+		const fs = await store.get('factorystate:' + who);
+		if (!fs || Date.now() - fs.ts > CARDSTATE_MS) return json({ snapshot: null });
+		const now = Date.now();
+		const watching = await gameWatchers(store, fs, who, now); // cap concurrent spectators
+		if (!watching.includes(username) && watching.length >= SPEC_CAP) return json({ snapshot: null, full: true, max: SPEC_CAP }, 403);
+		await store.setJSON('spec:' + who + ':' + username, now); // heartbeat: I'm watching `who`
+		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
+		if (body.seq != null && +body.seq === (fs.seq | 0)) {
+			return json({ unchanged: true, seq: fs.seq, room: fs.room, label: fs.label, over: !!fs.over, watchers, watcherNames });
+		}
+		return json({ ...fs, watchers, watcherNames });
+	}
+
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
 	// + live watcher count. Read-only — reading cardstate:<f> here does NOT write a
 	// heartbeat, so browsing the hub never counts you as watching anyone.
@@ -927,6 +964,10 @@ export default async function handler(req, env) {
 				live.push({ username: f, kind: 'card', mode: st.slice(5), label: p.region || '', watchers: cs.watchers || 0, full: (cs.watchers || 0) >= SPEC_CAP });
 			} else if (st.startsWith('battling:')) {
 				live.push({ username: f, kind: 'pokemon', matchId: st.slice('battling:'.length), mode: 'pokemon', label: 'Pokémon battle' });
+			} else if (st.startsWith('factory:')) {
+				const fs = await store.get('factorystate:' + f);
+				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
+				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
 			}
 		}
 		return json({ live });
