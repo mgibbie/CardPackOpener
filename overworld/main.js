@@ -879,9 +879,14 @@ const FERRY_DESTS = [
 	{ label: 'Vermilion Harbor (Kanto)', file: 'SSAnne_Exterior' },
 	{ label: 'Olivine Port (Johto)', file: 'OlivinePort' },
 	{ label: 'Slateport Harbor (Hoenn)', file: 'SlateportCity_Harbor' },
+	// post-game island routes — a champion's SEAGALLOP / EON ferry to the orphaned lairs
+	{ label: 'Sevii Islands (Seagallop)', file: 'OneIsland', requires: () => Badges.isChampion('KANTO') },
+	{ label: 'Southern Island (Eon)', file: 'SouthernIsland_Exterior', requires: () => Badges.isChampion('HOENN') },
+	{ label: 'Birth Island', file: 'BirthIsland_Exterior', requires: () => Badges.isChampion('HOENN') },
+	{ label: 'Faraway Island', file: 'FarawayIsland_Entrance', requires: () => Badges.isChampion('HOENN') },
 ];
 function ferryKey(k) {
-	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name);
+	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
 	if (k === 'ArrowUp') ferryMenu.idx = (ferryMenu.idx + dests.length - 1) % dests.length;
 	if (k === 'ArrowDown') ferryMenu.idx = (ferryMenu.idx + 1) % dests.length;
 	if (k === 'x' || k === 'Escape') ferryMenu.open = false;
@@ -1693,6 +1698,13 @@ const LEGENDARY_ENCOUNTERS = {
 		requires: () => Badges.isChampion('HOENN'), intro: 'The cave breathes freezing air — REGICE emerges from the ice.' },
 	MAP_ANCIENT_TOMB: { species: 'registeel', dex: 379, level: 40, x: 8, y: 7, flag: 'legend_caught_registeel',
 		requires: () => Badges.isChampion('HOENN'), intro: 'A body of tempered steel unseals itself — REGISTEEL awakens.' },
+	// event-island legendaries (reached by the post-game EON/SEAGALLOP ferry, champion-gated)
+	MAP_SOUTHERN_ISLAND_INTERIOR: { species: 'latios', dex: 381, level: 50, x: 13, y: 12, flag: 'legend_caught_latios',
+		requires: () => Badges.isChampion('HOENN'), intro: 'A blue eon POKeMON drifts amid the leaves — LATIOS regards you keenly.' },
+	MAP_BIRTH_ISLAND_EXTERIOR: { species: 'deoxys', dex: 386, level: 60, x: 15, y: 3, flag: 'legend_caught_deoxys',
+		requires: () => Badges.isChampion('HOENN'), intro: 'The strange triangle pulses — DEOXYS materializes from deep space.' },
+	MAP_FARAWAY_ISLAND_INTERIOR: { species: 'mew', dex: 151, level: 30, x: 13, y: 17, flag: 'legend_caught_mew',
+		requires: () => Badges.isChampion('HOENN'), intro: 'Something playful darts through the grass... MEW appears!' },
 	// Kanto birds — catchable in their lairs (no gate)
 	MAP_SEAFOAM_ISLANDS_B4F: { species: 'articuno', dex: 144, level: 50, x: 9, y: 2, flag: 'legend_caught_articuno', intro: 'A freezing gale howls through the cavern — ARTICUNO descends!' },
 	MAP_POWER_PLANT:         { species: 'zapdos',   dex: 145, level: 50, x: 5, y: 11, flag: 'legend_caught_zapdos',  intro: 'The air crackles with electricity — ZAPDOS spreads its wings!' },

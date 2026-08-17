@@ -53,6 +53,13 @@ try {
 	const regiTable = await page.evaluate(() => { const t = window.__ow.LEGENDARY_ENCOUNTERS; return { rock: t.MAP_DESERT_RUINS?.species, ice: t.MAP_ISLAND_CAVE?.species, steel: t.MAP_ANCIENT_TOMB?.species }; });
 	A(regiTable.rock === 'regirock' && regiTable.ice === 'regice' && regiTable.steel === 'registeel', 'all three REGI chambers are wired', JSON.stringify(regiTable));
 
+	// ---- Phase 3: event-island legendaries reachable via the champion ferry ----
+	for (const [stem, species] of [['SouthernIsland_Interior', 'latios'], ['BirthIsland_Exterior', 'deoxys'], ['FarawayIsland_Interior', 'mew']]) {
+		await page.evaluate(async (s) => { await window.__ow.moveToMap(s); }, stem);
+		await waitFor(() => page.evaluate((s) => new RegExp(s).test(window.__ow.world.current?.name || ''), stem), 8000);
+		A(await page.evaluate(() => window.__ow.legendariesHere()[0]?.species) === species, `${species.toUpperCase()} is catchable on its island once you are HOENN CHAMPION`);
+	}
+
 	// ---- Phase 2: RED spawns atop MT SILVER only for the JOHTO CHAMPION ----
 	await page.evaluate(async () => { await window.__ow.moveToMap('SilverCaveRoom3'); });
 	await waitFor(() => page.evaluate(() => /SilverCaveRoom3/.test(window.__ow.world.current?.name || '')), 8000);
