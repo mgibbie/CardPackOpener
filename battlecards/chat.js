@@ -18,9 +18,13 @@ export const EMOTES = {
 	oops: { icon: '😅', label: 'Oops.' },
 	threaten: { icon: '😠', label: "You'll pay for that!" },
 	laugh: { icon: '😂', label: 'Haha!' },
+	clap: { icon: '👏', label: 'Bravo!' },
+	fire: { icon: '🔥', label: 'On fire!' },
+	heart: { icon: '❤️', label: 'Nice one!' },
+	cry: { icon: '😭', label: 'So close!' },
 	gg: { icon: '🎉', label: 'Good game!' },
 };
-const BAR = ['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'gg'];
+const BAR = ['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'clap', 'fire', 'heart', 'gg'];
 const FADE_AFTER = 8000, FADE_DUR = 800; // a message lingers 8s, then fades over 0.8s
 
 let el = null, timer = null, room = null, specRoom = null, me = null, seen = new Set(), lastTs = 0, lastSpecTs = 0, poll = 1500;

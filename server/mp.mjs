@@ -976,7 +976,7 @@ export default async function handler(req, env) {
 	// ---------- in-battle chat + emotes ----------
 	// Rooms: 'm:<matchId>' (card or pokemon match, participants + friend-spectators)
 	// or 'u:<username>' (a solo run being spectated: the runner + their friends).
-	const EMOTES = new Set(['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'gg', 'wow2', 'oops2']);
+	const EMOTES = new Set(['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'clap', 'fire', 'heart', 'cry', 'gg', 'wow2', 'oops2']);
 	const CHAT_CAP = 40;
 	// a 'spec:<X>' room is the SPECTATOR-ONLY chat for whoever is watching X's game.
 	// A spectator = a friend of X who is NOT X and NOT a co-participant in X's live

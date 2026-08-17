@@ -80,12 +80,14 @@ try {
 		fsv.ingest({ snapshot: theSnap, seq: 7, watchers: 3, over: false });
 		await new Promise(r => setTimeout(r, 300)); // let the draw loop render it a few frames
 		const chatOpen = !!document.getElementById('mp-chat');
-		const out = { blocking: fsv.blocking, name: fsv.active?.snap?.me?.name, watchers: fsv.active?.watchers, chatOpen };
+		const emotes = document.querySelectorAll('#mp-chat .mc-em').length;
+		const out = { blocking: fsv.blocking, name: fsv.active?.snap?.me?.name, watchers: fsv.active?.watchers, chatOpen, emotes };
 		fsv.quit();
 		return { ...out, closed: !fsv.blocking, chatClosed: !document.getElementById('mp-chat') };
 	}, snap);
 	A(spec.blocking && spec.name === snap.me.name && spec.watchers === 3, 'the spectate view ingests + renders a snapshot (read-only)', JSON.stringify(spec));
 	A(spec.chatOpen, 'the spectator chat overlay is mounted while watching');
+	A(spec.emotes === 11, 'the spectator chat offers the expanded emote palette (11 quick emotes)', JSON.stringify({ emotes: spec.emotes }));
 	A(spec.closed && spec.chatClosed, 'leaving the spectate view (quit) closes it AND unmounts the chat');
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
