@@ -1355,19 +1355,10 @@ function castRod(id, item) {
 		dialog.open('No good — you need to face the water to fish.');
 		return;
 	}
-	const grp = encounters.data[world.current.map.id]?.fishing;
-	const bands = { 1: [0, 1], 2: [2, 4], 3: [5, 9] };
-	const [lo, hi] = bands[item.tier] || [0, 1];
-	const slots = grp ? grp.slots.slice(lo, hi + 1) : [];
-	if (!slots.length || Math.random() > 0.6) {
-		dialog.open(`You cast the ${item.name}...\n\nNot even a nibble.`);
-		return;
-	}
-	const total = slots.reduce((s, x) => s + x.w, 0);
-	let r = Math.random() * total, slot = slots[0];
-	for (const s of slots) { r -= s.w; if (r <= 0) { slot = s; break; } }
-	const level = slot.min + Math.floor(Math.random() * (slot.max - slot.min + 1));
-	dialog.open(`You cast the ${item.name}...\n\nOh! A bite!`, () => startWildBattle({ id: slot.id, level }));
+	// 60% the fish bites; the rod tier decides which slot band you can hook (encounters.fish)
+	const hit = Math.random() <= 0.6 ? encounters.fish(world.current.map.id, item.tier) : null;
+	if (!hit) { dialog.open(`You cast the ${item.name}...\n\nNot even a nibble.`); return; }
+	dialog.open(`You cast the ${item.name}...\n\nOh! A bite!`, () => startWildBattle(hit));
 }
 
 function bagKey(k) {
