@@ -1,0 +1,286 @@
+================================================================================
+ MAGEPUNK / CardPackOpener  —  PROGRESSION BY ZONE  (CROSS-REGION INTERLEAVE)
+ The main quest is now ONE interleaved circuit across all three regions, gated by
+ authentic per-spot obstacles + inter-region PORTALS.
+================================================================================
+ Generated from the live code (overworld/quest.js + blockers.js + portals.js +
+ badges.js + flydata.js), commit 27fbdd94, 2026-08-17.
+
+ WHAT CHANGED THIS REVISION  (badge-thirds + portals)
+   The three regions used to be independent, isolated campaigns. They are now a
+   single interleaved circuit:
+
+     Each gym gives a THIRD of a tier's badge. You must beat gym N in ALL THREE
+     regions (Kanto + Johto + Hoenn) before you can advance to gym N+1 in ANY of
+     them. JohKanto (the Gen-2 Kanto 16-badge post-game path) is NOT part of this.
+
+   Because the three regions are otherwise separate maps you can't walk between,
+   every gym town now has an INTER-REGION PORTAL pad beside its Pokemon Center that
+   links the three regions' SAME-tier gym towns. Step onto it (face it, press A) and
+   pick a destination — it flies you to that region's same-tier gym town and makes
+   it your current region. The portals are what make beating gym N in all three
+   regions possible in one save.
+
+ THE GLOBAL TIER RULE  (how "zones" work now)
+   TIER T = gym T cleared in EVERY region (T badges in Kanto AND Johto AND Hoenn).
+   Within tier T, each region's gym T+1 is the current challenge. You can beat your
+   region's gym T+1 (earning its badge) — but that region then WAITS: its road into
+   the gym-(T+2) zone stays sealed until the OTHER two regions also clear gym T+1.
+   A region can be at most ONE gym ahead of the others; then it has to help the
+   laggards catch up (portal over and beat their gym) before anyone advances.
+   The objective line tells you exactly who's behind, e.g.:
+     "KANTO is ahead! Beat GYM 1 in the other regions — FALKNER in VIOLET CITY and
+      ROXANNE in RUSTBORO CITY — to advance. Take the PORTAL by the POKeMON CENTER."
+
+ ZONE = TIER
+   Zone N below = the area that opens in a region once TIER N is reached (gym N
+   cleared in all three regions). Zone 0 = before any gym. The gym inside zone N is
+   the (N+1)th; clearing it in all three regions opens zone N+1 everywhere. Zone 8 =
+   the Pokemon League (opens once every region has all 8). "DONE" = Champion.
+
+ THE OBSTACLE TYPES  (all still SEEN and walked-into — never an invisible check)
+   GUARD   — a gym guide / officer who steps aside once the tier is cleared
+             EVERYWHERE (it now checks the shared tier, not just this region).
+   VILLAIN — TEAM ROCKET/AQUA occupying a spot until their boss is beaten (this is
+             a per-region story beat — local, not cross-region).
+   MON     — a Pokemon (Snorlax / Sudowoodo / Kecleon) cleared by a KEY ITEM (local).
+   TERRAIN — water / dive / a cut tree that an HM opens (HM availability stays
+             per-region — an ability you earned, not a tier gate).
+   PORTAL  — the pad by each gym town's Pokemon Center; links the three regions'
+             same-tier gym towns and flips your current region on use.
+
+ PRECONDITION: pick a region and receive a starter from its lab. You begin in that
+   region's start town; the portal in each gym town opens the rest of the journey.
+
+
+################################################################################
+#  THE TIER LADDER  (the three regions advance in lockstep)
+################################################################################
+ Each row is one tier. To advance a row you must clear that row's gym in ALL THREE
+ regions. The three towns in a row are joined by a PORTAL triangle (step from any
+ one to the other two).
+
+  TIER │ KANTO gym          │ JOHTO gym          │ HOENN gym          │ PORTAL LINKS
+ ──────┼────────────────────┼────────────────────┼────────────────────┼──────────────
+   1   │ BROCK · Pewter     │ FALKNER · Violet   │ ROXANNE · Rustboro │ Pewter↔Violet↔Rustboro
+   2   │ MISTY · Cerulean   │ BUGSY · Azalea     │ BRAWLY · Dewford   │ Cerulean↔Azalea↔Dewford
+   3   │ SURGE · Vermilion  │ WHITNEY · Goldenrod│ WATTSON · Mauville │ Vermilion↔Goldenrod↔Mauville
+   4   │ ERIKA · Celadon    │ MORTY · Ecruteak   │ FLANNERY · Lavaridge│ Celadon↔Ecruteak↔Lavaridge
+   5   │ KOGA · Fuchsia     │ CHUCK · Cianwood   │ NORMAN · Petalburg │ Fuchsia↔Cianwood↔Petalburg
+   6   │ SABRINA · Saffron  │ JASMINE · Olivine  │ WINONA · Fortree   │ Saffron↔Olivine↔Fortree
+   7   │ BLAINE · Cinnabar  │ PRYCE · Mahogany   │ TATE&LIZA · Mossdeep│ Cinnabar↔Mahogany↔Mossdeep
+   8   │ GIOVANNI · Viridian│ CLAIR · Blackthorn │ WALLACE · Sootopolis│ Viridian↔Blackthorn↔Sootopolis
+ ──────┴────────────────────┴────────────────────┴────────────────────┴──────────────
+ After all three tier-8 gyms: each region's POKeMON LEAGUE opens (needs all 8).
+
+
+################################################################################
+#  KANTO   (start PALLET TOWN)
+################################################################################
+ Gyms: Brock·Boulder, Misty·Cascade, Surge·Thunder, Erika·Rainbow, Koga·Soul,
+       Sabrina·Marsh, Blaine·Volcano, Giovanni·Earth.
+ Key items: POKe FLUTE (from MR. FUJI in LAVENDER, after the CELADON Rocket
+   Hideout is cleared) — wakes the two SNORLAX.
+
+ZONE 0  (tier 0) — Pallet, Route 1-2, Viridian Forest, PEWTER + BROCK.
+  PORTAL @ PEWTER → VIOLET CITY (Johto) · RUSTBORO CITY (Hoenn).
+  >> To ZONE 1: a GYM GUIDE blocks the east road out of Pewter (Route 3):
+     "Come back with the BOULDER BADGE!" — steps aside once gym 1 is beaten in ALL
+     THREE regions (Brock + Falkner + Roxanne). Portal over to beat the others.
+
+ZONE 1  (tier 1) — Route 3, Mt. Moon, Route 4, CERULEAN + MISTY, Nugget Bridge.
+  PORTAL @ CERULEAN → AZALEA TOWN (Johto) · DEWFORD TOWN (Hoenn).
+  >> To ZONE 2: a GYM GUIDE at the Vermilion approach (Route 6) wants the tier-2
+     badge — beat MISTY here AND Bugsy + Brawly. (The eastern back-route past
+     Lavender is sealed by the two SNORLAX below.)
+
+ZONE 2  (tier 2) — VERMILION + LT. SURGE, S.S. Anne, Diglett's Cave.
+  PORTAL @ VERMILION → GOLDENROD CITY (Johto) · MAUVILLE CITY (Hoenn).
+  >> To ZONE 3: a GYM GUIDE at the Celadon approach (Route 7) wants tier 3 — beat
+     LT. SURGE + Whitney + Wattson.
+
+ZONE 3  (tier 3) — CELADON + ERIKA, Game Corner + ROCKET HIDEOUT.
+  PORTAL @ CELADON → ECRUTEAK CITY (Johto) · LAVARIDGE TOWN (Hoenn).
+  KEY EVENT (local): beating GIOVANNI at the Rocket Hideout lets MR. FUJI (Lavender)
+     give you the POKe FLUTE — which wakes the two road-blocking SNORLAX:
+       • SNORLAX on ROUTE 12  and  • SNORLAX on ROUTE 16.
+  >> To ZONE 4: a GYM GUIDE at the Fuchsia approach (Route 18) wants tier 4 — beat
+     ERIKA + Morty + Flannery.
+
+ZONE 4  (tier 4) — FUCHSIA + KOGA, Safari Zone, Cycling Road.
+  PORTAL @ FUCHSIA → CIANWOOD CITY (Johto) · PETALBURG CITY (Hoenn).
+  >> To ZONE 5: TEAM ROCKET occupies SAFFRON — a ROCKET GRUNT bars SABRINA's gym
+     ("the GYM's closed — boss's orders"). Clear SILPH CO. to drive them out (local
+     story). Tier advances when SABRINA + Chuck + Norman are all beaten.
+
+ZONE 5  (tier 5) — SAFFRON + SILPH CO. + SABRINA (once Rocket is gone).
+  PORTAL @ SAFFRON → OLIVINE CITY (Johto) · FORTREE CITY (Hoenn).
+  >> To ZONE 6: CINNABAR is across the sea — you need SURF (a Kanto ability, usable
+     at 5 Kanto badges). On the island a GYM GUIDE bars BLAINE's gym until tier 6 is
+     cleared — beat BLAINE + Jasmine + Winona.
+
+ZONE 6  (tier 6) — CINNABAR + BLAINE, Pokemon Mansion.
+  PORTAL @ CINNABAR → MAHOGANY TOWN (Johto) · MOSSDEEP CITY (Hoenn).
+  >> To ZONE 7: a GYM GUIDE at VIRIDIAN's long-shut gym says only a top-tier trainer
+     can draw the LEADER out — beat BLAINE + Pryce + Tate&Liza (tier 7).
+
+ZONE 7  (tier 7) — VIRIDIAN GYM + GIOVANNI.
+  PORTAL @ VIRIDIAN → BLACKTHORN CITY (Johto) · SOOTOPOLIS CITY (Hoenn).
+  >> To ZONE 8: an OFFICER on the Route 22 gate checks all 8 badges before the
+     POKeMON LEAGUE. Beat GIOVANNI + Clair + Wallace (tier 8) — then every League
+     opens together.
+
+ZONE 8  (LEAGUE) — Victory Road, Indigo Plateau, Elite Four, CHAMPION (Blue).
+
+
+################################################################################
+#  JOHTO   (start NEW BARK TOWN)
+################################################################################
+ Gyms: Falkner·Zephyr, Bugsy·Hive, Whitney·Plain, Morty·Fog, Chuck·Storm,
+       Jasmine·Mineral, Pryce·Glacier, Clair·Rising.
+ Key item: SQUIRTBOTTLE (from the GOLDENROD FLOWER SHOP florist, after WHITNEY)
+   — clears the ROUTE 36 SUDOWOODO.
+
+ZONE 0  (tier 0) — New Bark, Route 29-31, VIOLET + FALKNER, Sprout Tower.
+  PORTAL @ VIOLET → PEWTER CITY (Kanto) · RUSTBORO CITY (Hoenn).
+  >> To ZONE 1: a GYM GUIDE at the Azalea approach (from Route 33) wants the tier-1
+     badge — beat FALKNER + Brock + Roxanne.
+
+ZONE 1  (tier 1) — Union Cave, AZALEA, SLOWPOKE WELL.
+  PORTAL @ AZALEA → CERULEAN CITY (Kanto) · DEWFORD TOWN (Hoenn).
+  GYM (local story): TEAM ROCKET is cutting SLOWPOKE tails — a ROCKET GRUNT bars
+     BUGSY's gym until you beat PROTON in the SLOWPOKE WELL.
+  >> To ZONE 2: ILEX FOREST's path south is blocked by a CUT tree (CUT is a Johto
+     ability at 2 Johto badges) — advance once BUGSY + Misty + Brawly are beaten.
+
+ZONE 2  (tier 2) — Ilex Forest, GOLDENROD + WHITNEY, Radio Tower, National Park.
+  PORTAL @ GOLDENROD → VERMILION CITY (Kanto) · MAUVILLE CITY (Hoenn).
+  KEY EVENT (local): after WHITNEY, the FLOWER SHOP florist gives you the SQUIRTBOTTLE.
+  >> To ZONE 3: ROUTE 36's north road is blocked by SUDOWOODO ("a tree that looks
+     OFF") — water it with the SQUIRTBOTTLE. Tier advances with WHITNEY + Surge +
+     Wattson.
+
+ZONE 3  (tier 3) — ECRUTEAK + MORTY, Burned Tower (wakes the beasts), Tin Tower.
+  PORTAL @ ECRUTEAK → CELADON CITY (Kanto) · LAVARIDGE TOWN (Hoenn).
+  >> To ZONE 4: CIANWOOD is across the sea (Route 40/41) — you need SURF (a Johto
+     ability at 4 Johto badges). Tier advances with MORTY + Erika + Flannery.
+
+ZONE 4  (tier 4) — Route 38-41, CIANWOOD + CHUCK.
+  PORTAL @ CIANWOOD → FUCHSIA CITY (Kanto) · PETALBURG CITY (Hoenn).
+  >> To ZONE 5: a GYM GUIDE at OLIVINE says JASMINE is tending a sick POKeMON at the
+     LIGHTHOUSE and won't battle until the tier is cleared — beat CHUCK + Koga +
+     Norman.
+
+ZONE 5  (tier 5) — OLIVINE + JASMINE, Glitter Lighthouse.
+  PORTAL @ OLIVINE → SAFFRON CITY (Kanto) · FORTREE CITY (Hoenn).
+  >> To ZONE 6: a GYM GUIDE at the Mahogany approach (Route 42) wants tier 6 — beat
+     JASMINE + Sabrina + Winona.
+
+ZONE 6  (tier 6) — MAHOGANY, Lake of Rage, ROCKET HQ.
+  PORTAL @ MAHOGANY → CINNABAR ISLAND (Kanto) · MOSSDEEP CITY (Hoenn).
+  GYM (local story): TEAM ROCKET's base hides under the town — a ROCKET GRUNT bars
+     PRYCE's gym until you beat ARIANA in the ROCKET HIDEOUT.
+  >> To ZONE 7: a GYM GUIDE at the Blackthorn approach (Route 44 / Ice Path) wants
+     tier 7 — beat PRYCE + Blaine + Tate&Liza.
+
+ZONE 7  (tier 7) — Ice Path, BLACKTHORN + CLAIR, Dragon's Den.
+  PORTAL @ BLACKTHORN → VIRIDIAN CITY (Kanto) · SOOTOPOLIS CITY (Hoenn).
+  >> To ZONE 8: an OFFICER on the Route 26 league gate checks all 8 badges — beat
+     CLAIR + Giovanni + Wallace (tier 8).
+
+ZONE 8  (LEAGUE) — Victory Road, Indigo Plateau, Elite Four, CHAMPION (Lance).
+
+
+################################################################################
+#  HOENN   (start LITTLEROOT TOWN)
+################################################################################
+ Gyms: Roxanne·Stone, Brawly·Knuckle, Wattson·Dynamo, Flannery·Heat,
+       Norman·Balance, Winona·Feather, Tate&Liza·Mind, Wallace/Juan·Rain.
+ Key item: DEVON SCOPE (from STEVEN on ROUTE 120) — reveals the KECLEON bridge.
+
+ZONE 0  (tier 0) — Littleroot, Oldale, Route 101-104, Petalburg Woods,
+        RUSTBORO + ROXANNE.
+  PORTAL @ RUSTBORO → PEWTER CITY (Kanto) · VIOLET CITY (Johto).
+  >> To ZONE 1: MR. BRINEY won't sail you to DEWFORD until the tier is cleared — beat
+     ROXANNE + Brock + Falkner. (He stands by his boat on Route 104.)
+
+ZONE 1  (tier 1) — DEWFORD + BRAWLY, Granite Cave.
+  PORTAL @ DEWFORD → CERULEAN CITY (Kanto) · AZALEA TOWN (Johto).
+  >> To ZONE 2: a GYM GUIDE at the Mauville approach (Route 110, from Slateport)
+     wants tier 2 — beat BRAWLY + Misty + Surge.
+
+ZONE 2  (tier 2) — Slateport, MAUVILLE + WATTSON, Route 117.
+  PORTAL @ MAUVILLE → VERMILION CITY (Kanto) · GOLDENROD CITY (Johto).
+  >> To ZONE 3: a GYM GUIDE at the Lavaridge approach (Route 112 / Jagged Pass)
+     wants tier 3 — beat WATTSON + Surge + Whitney.
+
+ZONE 3  (tier 3) — Mt. Chimney, Fiery Path, LAVARIDGE + FLANNERY.
+  PORTAL @ LAVARIDGE → CELADON CITY (Kanto) · ECRUTEAK CITY (Johto).
+  >> To ZONE 4: PETALBURG's gym (your father NORMAN) won't accept your challenge
+     until the tier is cleared — a GYM GUIDE turns you away. Beat FLANNERY + Erika +
+     Morty.
+
+ZONE 4  (tier 4) — PETALBURG + NORMAN, Route 118.
+  PORTAL @ PETALBURG → FUCHSIA CITY (Kanto) · CIANWOOD CITY (Johto).
+  >> To ZONE 5: ROUTE 118 is split by water — you need SURF (a Hoenn ability at 5
+     Hoenn badges). Tier advances with NORMAN + Koga + Chuck. (On the way, ROUTE
+     120's bridge is blocked by an invisible KECLEON; STEVEN gives you the DEVON
+     SCOPE there to reveal it.)
+
+ZONE 5  (tier 5) — Route 118-120, Weather Institute, FORTREE + WINONA, Lilycove,
+        AQUA HIDEOUT (optional).
+  PORTAL @ FORTREE → SAFFRON CITY (Kanto) · OLIVINE CITY (Johto).
+  >> To ZONE 6: MOSSDEEP is across the sea (Route 124, SURF). A GYM GUIDE bars
+     TATE & LIZA's gym until tier 6 — beat WINONA + Sabrina + Jasmine.
+
+ZONE 6  (tier 6) — Mt. Pyre, MOSSDEEP + TATE & LIZA, Space Center.
+  PORTAL @ MOSSDEEP → CINNABAR ISLAND (Kanto) · MAHOGANY TOWN (Johto).
+  >> To ZONE 7: SOOTOPOLIS sits in a sealed crater — the only way in is to DIVE
+     under Route 126 (DIVE is a Hoenn ability at 7 Hoenn badges) — beat TATE & LIZA
+     + Blaine + Pryce.
+
+ZONE 7  (tier 7) — SOOTOPOLIS + WALLACE/JUAN, Seafloor Cavern, Sky Pillar.
+  PORTAL @ SOOTOPOLIS → VIRIDIAN CITY (Kanto) · BLACKTHORN CITY (Johto).
+  STORY (local): beating the gym isn't enough — TEAM AQUA's ARCHIE must be stopped at
+     the SEAFLOOR CAVERN (this also triggers the Kyogre/Groudon/Rayquaza awakening).
+  >> To ZONE 8: an OFFICER at EVER GRANDE bars VICTORY ROAD and the LEAGUE doors
+     until you hold all 8 badges AND the SEAFLOOR crisis is settled. Beat WALLACE +
+     Giovanni + Clair (tier 8). (Ever Grande itself is reached by SURF; the doors
+     inside are what's gated.)
+
+ZONE 8  (LEAGUE) — Victory Road, Elite Four, CHAMPION (Wallace).
+
+
+================================================================================
+ QUICK REFERENCE — the boundary obstacle in each region  (now checks the SHARED tier)
+================================================================================
+ The per-spot obstacle is unchanged; its condition is now the GLOBAL tier (gym N
+ cleared in all three regions), and each gym town has a PORTAL to the same-tier towns.
+
+ KANTO:  0→1 Pewter/Route3 GUIDE | 1→2 Vermilion GUIDE | 2→3 Celadon GUIDE | 3→4
+         Fuchsia GUIDE (+ Snorlax×2 need the POKe FLUTE, local) | 4→5 Saffron ROCKET
+         (beat Silph, local) | 5→6 SURF + Cinnabar GUIDE | 6→7 Viridian GUIDE | 7→8
+         Route22 OFFICER·8badges.
+ JOHTO:  0→1 Azalea GUIDE | Azalea gym ROCKET (beat Slowpoke Well, local) | 1→2 Ilex
+         CUT tree | Goldenrod florist → SQUIRTBOTTLE (local); 2→3 Route36 SUDOWOODO
+         (Squirtbottle) | 3→4 SURF to Cianwood | 4→5 Olivine GUIDE | 5→6 Mahogany
+         GUIDE | Mahogany gym ROCKET (beat Rocket HQ, local); 6→7 Blackthorn GUIDE |
+         7→8 Route26 OFFICER·8badges.
+ HOENN:  0→1 BRINEY won't sail | 1→2 Mauville GUIDE | 2→3 Lavaridge GUIDE | 3→4
+         Petalburg/Norman GUIDE | 4→5 SURF + Route120 KECLEON (Devon Scope, local) |
+         5→6 SURF to Mossdeep + gym GUIDE | 6→7 DIVE to Sootopolis | 7→8 Ever Grande
+         OFFICER·8badges + beat ARCHIE at the Seafloor Cavern (local).
+
+ REMEMBER: every "→ next zone" arrow above also requires the SAME gym cleared in the
+ other two regions. Portal from any gym town to its two same-tier siblings to do it.
+
+ NO SOFT-LOCKS:
+   • Every key item (POKe FLUTE, SQUIRTBOTTLE, DEVON SCOPE) is obtainable on the near
+     side of the obstacle it opens; no obstacle can wall you in — only open area.
+   • The shared tier can only ever RISE, and a region can lead it by at most one gym,
+     so an unlocked area never re-locks.
+   • From any gym town you can always reach the other two regions' current gym towns
+     (via the portal triangles) — so you can always advance the interleave.
+   Verified by tests/blockers_test.mjs, tests/crossregion_test.mjs, and the 72
+   cross-region reachability checks in tests/quest_reach.mjs.
+================================================================================
