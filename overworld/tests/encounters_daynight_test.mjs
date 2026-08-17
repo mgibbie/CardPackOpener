@@ -79,11 +79,14 @@ try {
 			sproutNightGastly: count('MAP_SPROUT_TOWER_2F', 'night', 'gastly'),
 			r29DayHoot: count('MAP_ROUTE_29', 'day', 'hoothoot'),
 			r29NightHoot: count('MAP_ROUTE_29', 'night', 'hoothoot'),
-			hasTable: !!window.__ow.encounters && !!(window.__ow.DAYNIGHT || true),
+			// JohKanto (Crystal Gen-2 Kanto) also gets authentic day/night — Route 1 Hoothoot at night
+			jkDayHoot: count('MAP_JOHKANTO_ROUTE_1', 'day', 'hoothoot'),
+			jkNightHoot: count('MAP_JOHKANTO_ROUTE_1', 'night', 'hoothoot'),
 		};
 	});
 	A(johto.sproutDayGastly === 0 && johto.sproutNightGastly > 150, 'Sprout Tower: authentic table gives RATTATA by day, GASTLY at night', JSON.stringify(johto));
 	A(johto.r29DayHoot === 0 && johto.r29NightHoot > 0, 'Route 29: HOOTHOOT appears only at night (authentic per-map night list)', JSON.stringify({ day: johto.r29DayHoot, night: johto.r29NightHoot }));
+	A(johto.jkDayHoot === 0 && johto.jkNightHoot > 0, 'JohKanto Route 1: HOOTHOOT appears only at night (Gen-2 Kanto day/night)', JSON.stringify({ day: johto.jkDayHoot, night: johto.jkNightHoot }));
 
 	// the live Clock drives the phase for a normal roll (setHour flips day<->night)
 	const clock = await page.evaluate(() => { const C = window.__ow.Clock; C.setHour(22); const n = C.phase(); C.setHour(12); const d = C.phase(); C.clearOverride(); return { n, d }; });
