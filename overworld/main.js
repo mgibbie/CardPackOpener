@@ -134,10 +134,10 @@ trainers.onEngage = t => {
 
 // un-hide villain grunts while their beat is active + the current map is one of the
 // beat's dungeon floors (they then route through the normal sight/battle pipeline)
-// un-hide villain grunts during their beat, AND spawn RED atop MT SILVER once you're
-// the JOHTO CHAMPION (his object is flag-hidden by default) — Johto's post-game climax
+// un-hide villain grunts during their beat, AND spawn RED atop MT SILVER once you hold
+// all 16 badges (JOHTO Champion + the 8 JohKanto gyms) — the post-game crown
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
-	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO'));
+	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
@@ -159,6 +159,13 @@ function startTrainerBattle(t, foeParty, info) {
 // HMs and the League gate by the player's chosen region; a badge is awarded for
 // the region the beaten Gym Leader belongs to (from the battle-script name).
 function playerRegion() { return Badges.regionKey(localStorage.getItem('magepunk_region')); }
+
+// a JOHTO save beating a crystal-Kanto (JohKanto) gym fills the post-game JOHKANTO
+// badge slice (toward a 16-badge total + RED), NOT the standalone-Kanto game's badges
+function badgeSliceFor(region) {
+	if (region === 'KANTO' && playerRegion() === 'JOHTO' && /^MAP_JOHKANTO/.test(world.current.map.id || '')) return 'JOHKANTO';
+	return region;
+}
 
 // If `script` is an Elite Four/Champion battle and the player is short of that
 // region's 8 badges, returns the block message; otherwise null (battle proceeds).
@@ -186,19 +193,26 @@ function onTrainerDefeated(script, opts) {
 	// announces the badge), so record it silently and skip the synthetic toast
 	const silent = !!(opts && opts.silent);
 	if (info.kind === 'gym') {
-		const earned = Badges.earn(info.region, info.id);
+		const slice = badgeSliceFor(info.region);
+		const earned = Badges.earn(slice, info.id);
 		if (earned && !silent) {
-			const n = Badges.count(info.region);
-			dialog.open(`You earned the ${info.name}!\n\nBadges: ${n}/8`
-				+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''));
+			const n = Badges.count(slice);
+			dialog.open(slice === 'JOHKANTO'
+				? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
+					+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
+				: `You earned the ${info.name}!\n\nBadges: ${n}/8`
+					+ (n >= 8 ? '\n\nWith all 8 badges, the POKeMON LEAGUE\nnow awaits beyond Victory Road!' : ''));
 		}
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
-		// becoming JOHTO Champion opens the legendary-bird tower hunt: the wings that
-		// summon HO-OH (Tin Tower) and LUGIA (Whirl Islands)
-		if (fresh && info.region === 'JOHTO') {
-			Bag.addItem('rainbowwing'); Bag.registerName('rainbowwing', 'RAINBOW WING');
-			Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');
+		// becoming JOHTO Champion opens the legendary-bird tower hunt (the HO-OH/LUGIA
+		// wings) and restores the power that lets the MAGNET TRAIN run to KANTO
+		if (info.region === 'JOHTO') {
+			Story.setFlag('EVENT_RESTORED_POWER_TO_KANTO');
+			if (fresh) {
+				Bag.addItem('rainbowwing'); Bag.registerName('rainbowwing', 'RAINBOW WING');
+				Bag.addItem('silverwing'); Bag.registerName('silverwing', 'SILVER WING');
+			}
 		}
 		// record the team, heal, and warp home — otherwise the player is stranded in the
 		// Champion's Room (the decomp room-warp + credits roll was never ported). This is
@@ -2248,6 +2262,13 @@ function runSpecial(name, store) {
 	switch (name) {
 		// --- action specials ---
 		case 'HealPlayerParty': healParty(party); return;
+		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
+			const here = world.current.map.id;
+			const dest = here === 'MAP_GOLDENROD_MAGNET_TRAIN_STATION'
+				? 'MAP_JOHKANTO_SAFFRON_MAGNET_TRAIN_STATION' : 'MAP_GOLDENROD_MAGNET_TRAIN_STATION';
+			warpTo(dest, 0);
+			return;
+		}
 		case 'SetSeenMon': case 'SetSeenMon2': return; // dex-see: numeric species, skipped
 		case 'DrawWholeMapView': case 'ShakeScreen': case 'SpawnCameraObject':
 		case 'RemoveCameraObject': case 'DisableMsgBoxWalkaway':

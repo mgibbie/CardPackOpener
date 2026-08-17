@@ -64,10 +64,16 @@ try {
 	await page.evaluate(async () => { await window.__ow.moveToMap('SilverCaveRoom3'); });
 	await waitFor(() => page.evaluate(() => /SilverCaveRoom3/.test(window.__ow.world.current?.name || '')), 8000);
 	A(await page.evaluate(() => window.__ow.trainers.list.some(t => t.ev?.script === 'Red')) === false, 'RED is absent before you are JOHTO CHAMPION');
+	// RED needs all 16 badges — being JOHTO Champion alone is not enough
 	await page.evaluate(() => window.__ow.Badges.crown('JOHTO'));
 	await page.evaluate(async () => { await window.__ow.moveToMap('ViridianForest'); await window.__ow.moveToMap('SilverCaveRoom3'); });
 	await waitFor(() => page.evaluate(() => /SilverCaveRoom3/.test(window.__ow.world.current?.name || '')), 8000);
-	A(await page.evaluate(() => window.__ow.trainers.list.some(t => t.ev?.script === 'Red')), 'RED stands atop MT SILVER once you are JOHTO CHAMPION');
+	A(await page.evaluate(() => window.__ow.trainers.list.some(t => t.ev?.script === 'Red')) === false, 'RED still waits — JOHTO Champion alone is not enough (needs all 16 badges)');
+	await page.evaluate(() => ['boulder', 'cascade', 'thunder', 'rainbow', 'soul', 'marsh', 'volcano', 'earth'].forEach(id => window.__ow.Badges.earn('JOHKANTO', id)));
+	A(await page.evaluate(() => window.__ow.Badges.count('JOHKANTO')) === 8, 'the JohKanto badge slice tracks the 8 crystal-Kanto gyms');
+	await page.evaluate(async () => { await window.__ow.moveToMap('ViridianForest'); await window.__ow.moveToMap('SilverCaveRoom3'); });
+	await waitFor(() => page.evaluate(() => /SilverCaveRoom3/.test(window.__ow.world.current?.name || '')), 8000);
+	A(await page.evaluate(() => window.__ow.trainers.list.some(t => t.ev?.script === 'Red')), 'RED stands atop MT SILVER once you hold all 16 badges');
 	// beating RED sets the beat_red honor
 	A(await page.evaluate(() => { window.__ow.onTrainerDefeated('Red'); return window.__ow.Story.getFlag('beat_red'); }), 'beating RED records the beat_red honor');
 
@@ -85,6 +91,23 @@ try {
 	A(await page.evaluate(() => (window.__ow.party || []).every(m => !m || m.curHP === m.maxHP)), 'your party is healed on returning home');
 	const hof = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('magepunk_hof') || '[]'); } catch { return []; } });
 	A(Array.isArray(hof) && hof.some(e => e.region === 'KANTO' && Array.isArray(e.team) && e.team.length), 'the winning team is recorded in the HALL OF FAME log', JSON.stringify(hof.slice(-1)));
+
+	// P4a routing: a JOHTO player beating a JohKanto (crystal-Kanto) gym fills the
+	// JOHKANTO slice, NOT the standalone-Kanto game's badges
+	const routed = await page.evaluate(async () => {
+		localStorage.setItem('magepunk_region', 'JOHTO');
+		await window.__ow.moveToMap('JohKantoVermilionGym');
+		const kBefore = window.__ow.Badges.count('KANTO'), jkBefore = window.__ow.Badges.count('JOHKANTO');
+		window.__ow.Badges.earn('JOHKANTO', 'thunder') && null; // ensure not pre-counted
+		return { kBefore, jkBefore };
+	});
+	// beat Lt. Surge's JohKanto gym via the crystal script — must land in JOHKANTO
+	const after = await page.evaluate(() => {
+		const kBefore = window.__ow.Badges.count('KANTO');
+		window.__ow.onTrainerDefeated('VermilionGymSurgeScript');
+		return { jk: window.__ow.Badges.count('JOHKANTO'), kDelta: window.__ow.Badges.count('KANTO') - kBefore };
+	});
+	A(after.kDelta === 0, 'a JOHTO player beating a JohKanto gym does NOT fill the standalone-KANTO badges', JSON.stringify(after));
 
 	const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 	A(fatal.length === 0, 'no uncaught client errors during the run', fatal.slice(0, 4).join(' | '));

@@ -41,6 +41,20 @@ export const BADGES = {
 		{ id: 'mind', name: 'Mind Badge', leader: 'Tate & Liza' },
 		{ id: 'rain', name: 'Rain Badge', leader: 'Juan' },
 	],
+	// JOHTO's post-game KANTO (the 8 crystal-Kanto gyms) — a second badge slice a Johto
+	// save fills for a 16-badge total, the requirement to face RED at Mt Silver. Not a
+	// player region (localStorage 'magepunk_region' is only KANTO/JOHTO/HOENN); it's a
+	// virtual slice keyed off the JohKanto gym maps.
+	JOHKANTO: [
+		{ id: 'boulder', name: 'Boulder Badge', leader: 'Brock' },
+		{ id: 'cascade', name: 'Cascade Badge', leader: 'Misty' },
+		{ id: 'thunder', name: 'Thunder Badge', leader: 'Lt. Surge' },
+		{ id: 'rainbow', name: 'Rainbow Badge', leader: 'Erika' },
+		{ id: 'soul', name: 'Soul Badge', leader: 'Janine' },
+		{ id: 'marsh', name: 'Marsh Badge', leader: 'Sabrina' },
+		{ id: 'volcano', name: 'Volcano Badge', leader: 'Blaine' },
+		{ id: 'earth', name: 'Earth Badge', leader: 'Blue' },
+	],
 };
 
 // Gym-leader battle script -> [region, badgeId]. Keys are the roster script names
@@ -124,10 +138,11 @@ export const HM_GATE = {
 	KANTO: { flash: 1, cut: 2, fly: 3, strength: 4, surf: 5, rocksmash: 0, waterfall: 0, dive: 0 },
 	JOHTO: { flash: 1, cut: 2, strength: 3, surf: 4, fly: 5, rocksmash: 0, waterfall: 8, dive: 0 },
 	HOENN: { cut: 1, flash: 2, rocksmash: 3, strength: 4, surf: 5, fly: 6, dive: 7, waterfall: 8 },
+	JOHKANTO: { flash: 1, cut: 2, fly: 3, strength: 4, surf: 5, rocksmash: 0, waterfall: 0, dive: 0 },
 };
 
 const KEY = 'magepunk_badges_v1';
-const REGIONS = ['KANTO', 'JOHTO', 'HOENN'];
+const REGIONS = ['KANTO', 'JOHTO', 'HOENN', 'JOHKANTO'];
 
 export function regionKey(r) {
 	const u = String(r || '').toUpperCase();
