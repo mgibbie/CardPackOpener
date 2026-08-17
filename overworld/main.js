@@ -9,6 +9,7 @@ import { Services } from './services.js';
 import { Arcade } from './arcade.js';
 import { Blockers } from './blockers.js';
 import { Portals, PORTAL_TOWNS } from './portals.js';
+import { RIVAL_TIERS, rivalDue, rivalFlag } from './rivals.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
@@ -1611,6 +1612,8 @@ async function refreshMapContent(label) {
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
 	// villain-arc boss confrontation on entering an evil-team location
 	try { checkVillainTrigger(); } catch (e) { console.warn('[villain] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// the recurring cross-region rival intercepts you at the current tier's gym town
+	try { checkRivalTrigger(); } catch (e) { console.warn('[rival] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// Hoenn legendary-awakening beats (post-climax): KYOGRE/GROUDON clash -> RAYQUAZA
 	try { checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	refreshObjective();
@@ -2669,6 +2672,38 @@ function startVillainBattle(region, beat) {
 		else { healParty(party); saveParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
 	});
 }
+
+// ---------- recurring cross-region rival ----------
+// Your home-region rival is climbing all three regions too (rivals.js); they intercept you
+// once per tier at that tier's gym town, in whichever region you reach first. On-arrive,
+// one-shot per tier (flag set win or lose so it never walls you). Threads the region-hopping.
+function checkRivalTrigger() {
+	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	const tier = rivalDue(world.current.map.id);
+	if (tier == null) return;
+	startRivalEncounter(tier);
+}
+function startRivalEncounter(tier) {
+	const name = localStorage.getItem('magepunk_rival') || 'RIVAL';
+	const you = localStorage.getItem('magepunk_name') || 'PLAYER';
+	const foe = (RIVAL_TIERS[tier] || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	if (!foe.length) { Story.setFlag(rivalFlag(tier)); return; }
+	for (const m of foe) Dex.markSeen(m.speciesId);
+	const intro = [
+		`${name} is here!`,
+		`${name}: ${you}! Small world — or should I say small WORLDS?`,
+		`${name}: We're both chasing every GYM in all three regions. Let's see who's really ahead — battle me!`,
+	];
+	startCutscene(intro.map(text => ({ op: 'say', text })), () => {
+		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40 };
+		battle.startTrainer(party, foe, info, result => {
+			Story.setFlag(rivalFlag(tier)); // one-shot per tier, win or lose
+			saveParty(party);
+			if (result === 'victory') startCutscene([{ op: 'say', text: `${name}: Tch — you got me. But I'll take the next region first. See you out there!` }]);
+			else { healParty(party); startCutscene([{ op: 'say', text: `${name}: Ha! Told you I was ahead. Go train and catch up!` }]); }
+		});
+	});
+}
 function completeVillainBeat(region, beat) {
 	Story.setFlag(beat.doneFlag);
 	saveParty(party);
@@ -2782,6 +2817,10 @@ function afterRival(region) {
 		{ op: 'say', text: `${prof}: Wait — take this with you.\nIt's the POKeDEX! It records every POKeMON you meet.` },
 		{ op: 'hud', text: 'Received the POKeDEX!' },
 		{ op: 'say', text: sendoff },
+		// the tri-region premise — why the journey spans all three regions, and the portal + rival
+		{ op: 'say', text: `${prof}: One thing you should know: the GYMS of KANTO, JOHTO, and HOENN are linked now.` },
+		{ op: 'say', text: `${prof}: You must earn each tier's badge in ALL THREE regions before the next GYM will admit you anywhere.` },
+		{ op: 'say', text: `${prof}: A PORTAL by every GYM town's POKeMON CENTER carries you between the regions — and you won't be climbing alone. Off you go!` },
 	]);
 }
 
@@ -4354,6 +4393,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
+		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
 		portals, get portalMenu() { return portalMenu; }, travelPortal, maybePortalTutorial, Quest_globalTier: Quest.globalTier,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
