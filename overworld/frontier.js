@@ -22,6 +22,40 @@ export const FACILITIES = {
 	pyramid: { name: 'BATTLE PYRAMID', heal: false, rounds: Infinity, rental: false, bpWin: 2, level: 'party+5', size: 3 },
 };
 
+// each facility's FRONTIER BRAIN — the boss who challenges you at streak milestones
+export const BRAINS = {
+	tower:   { name: 'ANABEL',  title: 'Salon Maiden' },
+	dome:    { name: 'TUCKER',  title: 'Dome Ace' },
+	factory: { name: 'NOLAND',  title: 'Factory Head' },
+	palace:  { name: 'SPENSER', title: 'Palace Maven' },
+	arena:   { name: 'GRETA',   title: 'Arena Tycoon' },
+	pike:    { name: 'LUCY',    title: 'Pike Queen' },
+	pyramid: { name: 'BRANDON', title: 'Pyramid King' },
+};
+// the Brain appears at these streaks (a SILVER symbol, then a GOLD one)
+export function brainTier(round) { return round === 21 ? 'gold' : round === 7 ? 'silver' : null; }
+
+const SYMBOL_KEY = 'magepunk_frontier_symbols';
+export function getSymbols() { const s = safeLoad(SYMBOL_KEY, {}); return (s && typeof s === 'object') ? s : {}; }
+export function earnSymbol(facility, tier) {
+	const s = getSymbols();
+	if (s[facility] !== 'gold') { s[facility] = tier; safeSave(SYMBOL_KEY, s); } // gold outranks silver
+	return s[facility];
+}
+
+// the BP EXCHANGE stock (ids exist in bag.js ITEMS) — spend BP earned in the facilities
+export const BP_SHOP = [
+	{ id: 'rarecandy',  cost: 48 },
+	{ id: 'choiceband', cost: 48 },
+	{ id: 'choicespecs',cost: 48 },
+	{ id: 'choicescarf',cost: 48 },
+	{ id: 'lifeorb',    cost: 48 },
+	{ id: 'leftovers',  cost: 48 },
+	{ id: 'focussash',  cost: 48 },
+	{ id: 'fullrestore',cost: 6 },
+	{ id: 'maxrevive',  cost: 12 },
+];
+
 const BP_KEY = 'magepunk_bp';
 const STREAK_KEY = 'magepunk_frontier_best'; // best streak per facility
 

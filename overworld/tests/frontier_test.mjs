@@ -64,6 +64,44 @@ try {
 	A(bp.after === bp.start + 5 && bp.ok === true && bp.left === bp.after - 3, 'BP is earned and spent correctly');
 	A(bp.bad === false && bp.still === bp.left, 'an over-spend of BP is refused');
 
+	// FRONTIER BRAINS — a boss per facility, at streak milestones, with symbols
+	const brains = await page.evaluate(() => {
+		const F = window.__ow.Frontier;
+		return {
+			count: Object.keys(F.BRAINS).length,
+			silver: F.brainTier(7), gold: F.brainTier(21), none: F.brainTier(5),
+			named: F.BRAINS.pyramid?.name === 'BRANDON' && F.BRAINS.tower?.name === 'ANABEL',
+			sym: (() => { F.earnSymbol('tower', 'silver'); const a = window.__ow.Frontier.getSymbols().tower; F.earnSymbol('tower', 'gold'); const b = window.__ow.Frontier.getSymbols().tower; F.earnSymbol('tower', 'silver'); const c = window.__ow.Frontier.getSymbols().tower; return { a, b, c }; })(),
+		};
+	});
+	A(brains.count === 7 && brains.named, 'each facility has a named FRONTIER BRAIN');
+	A(brains.silver === 'silver' && brains.gold === 'gold' && brains.none === null, 'the Brain challenges at streak 7 (silver) and 21 (gold)');
+	A(brains.sym.a === 'silver' && brains.sym.b === 'gold' && brains.sym.c === 'gold', 'symbols are recorded and GOLD outranks SILVER (never downgrades)');
+
+	// BP EXCHANGE (shop) — every item is real; buying spends BP and adds it
+	const shop = await page.evaluate(() => {
+		const F = window.__ow.Frontier;
+		const allValid = F.BP_SHOP.every(it => !!window.__ow.Bag.ITEMS[it.id]);
+		F.addBP(500); // plenty
+		window.__ow.openBpShop(null);
+		const opened = window.__ow.bpShopMenu.open;
+		const it = F.BP_SHOP[0], bp0 = F.getBP(), bag0 = window.__ow.Bag.count(it.id);
+		window.__ow.bpShopKey('z');                 // buy item 0
+		const bought = { spent: bp0 - F.getBP(), gained: window.__ow.Bag.count(it.id) - bag0, cost: it.cost };
+		// drain BP, then a purchase must be refused
+		F.spendBP(F.getBP());
+		const bp1 = F.getBP(), bag1 = window.__ow.Bag.count(it.id);
+		window.__ow.bpShopKey('z');
+		const refused = F.getBP() === bp1 && window.__ow.Bag.count(it.id) === bag1;
+		window.__ow.bpShopKey('x');                 // close
+		return { allValid, opened, bought, refused, closed: !window.__ow.bpShopMenu.open };
+	});
+	A(shop.allValid, 'every BP EXCHANGE item is a real bag item');
+	A(shop.opened, 'the BP EXCHANGE menu opens');
+	A(shop.bought.spent === shop.bought.cost && shop.bought.gained === 1, 'buying spends the BP cost and adds the item to the bag', JSON.stringify(shop.bought));
+	A(shop.refused, 'a purchase with insufficient BP is refused');
+	A(shop.closed, 'the BP EXCHANGE closes on X');
+
 	// all SEVEN facilities are configured
 	A(await page.evaluate(() => Object.keys(window.__ow.Frontier.FACILITIES).length) === 7, 'all seven Battle Frontier facilities are configured');
 	A(await page.evaluate(() => {

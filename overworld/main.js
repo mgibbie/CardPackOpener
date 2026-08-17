@@ -265,7 +265,7 @@ function startFacility(id) {
 	if (!cfg || !party || !leadMon(party) || frontier.active || battle.blocking) return;
 	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : party;
 	if (cfg.rental && !runParty.length) { dialog.open('No rental POKeMON are available right now.'); return; }
-	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.runParty = runParty;
+	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.id = id; frontier.runParty = runParty;
 	const intro = cfg.rental ? `The ${cfg.name} challenge begins!\n\nYou’ll battle with a set of RENTAL POKeMON.`
 		: cfg.heal ? `The ${cfg.name} challenge begins!\n\nBattle on — and don’t lose!`
 			: `The ${cfg.name} challenge begins!\n\nNo healing between bouts — endure!`;
@@ -283,13 +283,24 @@ function frontierNext() {
 		return;
 	}
 	if (cfg.heal) healTeam(frontier.runParty); // in-memory (rentals must not be saved)
-	const foe = Frontier.genTeam(battle.data, facLevel(cfg), cfg.size);
+	// at streak 7 / 21, the facility's FRONTIER BRAIN challenges you (a tougher team)
+	const round = frontier.streak + 1;
+	const tier = Frontier.brainTier(round);
+	const brain = tier ? Frontier.BRAINS[frontier.id] : null;
+	const foe = Frontier.genTeam(battle.data, facLevel(cfg) + (tier ? 8 : 0), cfg.size);
 	if (!foe.length) { endFacility(); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
-	battle.startTrainer(frontier.runParty, foe, { displayName: 'FRONTIER TRAINER', defeatText: '', money: 0 }, result => {
-		if (result === 'victory') {
-			frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
-			if (!cfg.rental) saveParty(party);
+	const info = { displayName: brain ? brain.name : 'FRONTIER TRAINER', defeatText: '', money: 0 };
+	if (brain) dialog.open(`The ${cfg.name} BRAIN, ${brain.title} ${brain.name}, blocks your path!`, () => runFrontierBattle(foe, info, tier, brain));
+	else runFrontierBattle(foe, info, null, null);
+}
+function runFrontierBattle(foe, info, tier, brain) {
+	const cfg = frontier.cfg;
+	battle.startTrainer(frontier.runParty, foe, info, result => {
+		if (result !== 'victory') { endFacility(); return; }
+		frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
+		if (!cfg.rental) saveParty(party);
+		const cont = () => {
 			if (Number.isFinite(cfg.rounds)) {
 				if (frontier.streak >= cfg.rounds) { Frontier.addBP(cfg.bonus || 0); completeFacility(); }
 				else dialog.open(`${cfg.unit || 'Round'} ${frontier.streak} won!  (+${cfg.bpWin} BP)`, frontierNext); // fixed run auto-continues
@@ -298,7 +309,11 @@ function frontierNext() {
 					if (declined === 'x') endFacility(); else frontierNext();
 				});
 			}
-		} else endFacility();
+		};
+		if (brain) {
+			Frontier.addBP(10); Frontier.earnSymbol(frontier.id, tier);
+			dialog.open(`Incredible — you defeated ${brain.name}!\n\nYou earned the ${tier.toUpperCase()} SYMBOL!   (+10 BP)`, cont);
+		} else cont();
 	});
 }
 function completeFacility() {
@@ -313,10 +328,13 @@ function endFacility() {
 	if (factoryStandalone) healTeam(party); else healParty(party);
 	frontierEndDialog(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
 }
-// in the standalone mini-game, offer another run instead of dropping to the overworld
+// at run end: offer the BP EXCHANGE (spend what you just earned), then — in the
+// standalone mini-game — offer another run instead of dropping to the overworld
 function frontierEndDialog(msg) {
-	if (factoryStandalone) dialog.open(msg + '\n\nPlay again?   Z = Yes   X = No', declined => { if (declined !== 'x') startFacility('factory'); });
-	else dialog.open(msg);
+	const playAgain = () => { if (factoryStandalone) dialog.open('Play again?   Z = Yes   X = No', d => { if (d !== 'x') startFacility('factory'); }); };
+	dialog.open(msg + '\n\nSpend BP now?   Z = BP SHOP   X = Leave', declined => {
+		if (declined !== 'x') openBpShop(playAgain); else playAgain();
+	});
 }
 
 // snapshot the winning team into the Hall of Fame log (magepunk_hof)
@@ -986,6 +1004,34 @@ function friendAction(f) {
 		else sendChallenge(f);
 	});
 }
+// ---------- BP EXCHANGE (spend Battle Frontier points) ----------
+const bpShopMenu = { open: false, idx: 0, onClose: null };
+function bpItemName(id) { return (Bag.ITEMS[id]?.name || id).toUpperCase(); }
+function openBpShop(onClose) { bpShopMenu.open = true; bpShopMenu.idx = 0; bpShopMenu.onClose = onClose || null; }
+function closeBpShop() { bpShopMenu.open = false; const cb = bpShopMenu.onClose; bpShopMenu.onClose = null; if (cb) cb(); }
+function bpShopKey(k) {
+	const items = Frontier.BP_SHOP;
+	if (k === 'ArrowUp') bpShopMenu.idx = (bpShopMenu.idx + items.length - 1) % items.length;
+	if (k === 'ArrowDown') bpShopMenu.idx = (bpShopMenu.idx + 1) % items.length;
+	if (k === 'x' || k === 'Escape') { closeBpShop(); return; }
+	if (k === 'z' || k === 'Enter') {
+		const it = items[bpShopMenu.idx];
+		if (Frontier.getBP() < it.cost) { dialog.open(`Not enough BP.\n\n${bpItemName(it.id)} costs ${it.cost} BP;\nyou have ${Frontier.getBP()}.`); return; }
+		Frontier.spendBP(it.cost); Bag.addItem(it.id); Bag.registerName(it.id, bpItemName(it.id));
+		dialog.open(`You exchanged BP for a ${bpItemName(it.id)}!\n\nBP remaining: ${Frontier.getBP()}.`);
+	}
+}
+function drawBpShopMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'BP EXCHANGE', `You have ${Frontier.getBP()} BP.    (X to leave)`);
+	Frontier.BP_SHOP.forEach((it, i) => {
+		const bid = 'bp:' + i;
+		const b = { id: bid, x: 24 * u, y: (80 + i * 40) * u, w: W - 48 * u, h: 34 * u,
+			label: `${bpItemName(it.id)}   —   ${it.cost} BP`, center: true, kbSel: bpShopMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || bpShopMenu.idx === i, u);
+	});
+}
 const ferryMenu = { open: false, idx: 0 };
 const FERRY_DESTS = [
 	{ label: 'Vermilion Harbor (Kanto)', file: 'SSAnne_Exterior' },
@@ -1289,6 +1335,7 @@ function pressKey(k) {
 	if (runMenu.open) { runKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
+	if (bpShopMenu.open) { bpShopKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
 	if (pcMenu.open) { pcKey(k); return; }
@@ -1339,7 +1386,7 @@ function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open
+	|| battle.blocking || pvp.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || bpShopMenu.open
 	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
@@ -2721,6 +2768,7 @@ function tick(now) {
 		else if (trainerCard.open) drawTrainerCard(SW, SH);
 		else if (starterMenu.open) drawStarterMenu(SW, SH);
 		else if (ferryMenu.open) drawFerryMenu(SW, SH);
+		else if (bpShopMenu.open) drawBpShopMenu(SW, SH);
 		else if (trade.open) drawTrade(SW, SH);
 		else if (playerMenu.open) drawPlayerMenu(SW, SH);
 		else if (deckSelect.open) drawDeckSelect(SW, SH);
@@ -3474,6 +3522,7 @@ function menuTap(id) {
 	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; } return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'bp') { bpShopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'forget') { if (bagMenu.forget) bagMenu.forget.idx = +a; pressKey('z'); return; }
@@ -3503,7 +3552,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -4057,6 +4106,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
 	Frontier, get frontier() { return frontier; }, startFrontierChallenge, startFacility, FACILITY_LOBBIES,
+	get bpShopMenu() { return bpShopMenu; }, openBpShop, bpShopKey,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
