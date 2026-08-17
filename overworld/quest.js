@@ -59,7 +59,7 @@ export const GATED_MAPS = {
 		VermilionCity: 2,
 		CeladonCity: 3,
 		FuchsiaCity: 4,
-		CinnabarIsland: 6,
+		CinnabarIsland: 5, // reached by SURF (usable at 5 badges); BLAINE's gym stays gym-door-gated at 6
 		// League approach (needs all 8)
 		Route23: 8, KantoVictoryRoad_1F: 8, KantoVictoryRoad_2F: 8, KantoVictoryRoad_3F: 8,
 		IndigoPlateau_Exterior: 8, IndigoPlateau: 8,
@@ -79,10 +79,11 @@ export const GATED_MAPS = {
 		MauvilleCity: 2,
 		LavaridgeTown: 3,
 		FortreeCity: 5,
-		MossdeepCity: 6,
+		MossdeepCity: 5, // reached by SURF (usable at 5 badges); TATE&LIZA's gym stays gym-door-gated at 6
 		SootopolisCity: 7,
 		// League approach (needs all 8)
-		EverGrandeCity: 8, VictoryRoad_1F: 8, EverGrandeCity_PokemonLeague_1F: 8,
+		EverGrandeCity: 5, // reached by SURF; the League/Victory Road DOORS inside stay gated at 8 + the climax
+		VictoryRoad_1F: 8, EverGrandeCity_PokemonLeague_1F: 8,
 	},
 };
 

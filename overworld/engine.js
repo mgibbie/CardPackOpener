@@ -419,7 +419,9 @@ export class Player {
 			// moves, the player steps into the vacated tile
 			if (this.pushBoulder && this.pushBoulder(nx, ny, dx, dy)) {
 				this.beginMove(nx, ny, META, false);
+				return;
 			}
+			this.onBump?.(nx, ny);
 			return;
 		}
 		this.beginMove(nx, ny, META, false);

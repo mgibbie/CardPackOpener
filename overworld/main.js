@@ -7,6 +7,7 @@ import { Trainers } from './trainers.js';
 import { Dialog } from './dialog.js';
 import { Services } from './services.js';
 import { Arcade } from './arcade.js';
+import { Blockers } from './blockers.js';
 import * as Bag from './bag.js';
 import { getJSON } from './engine.js';
 import { loadParty, saveParty, healParty, leadMon, addCaught, createStarter } from './party.js';
@@ -66,6 +67,7 @@ const trainers = new Trainers(world, player);
 const dialog = new Dialog();
 const services = new Services(world);
 const arcade = new Arcade(world);
+const blockers = new Blockers(world);
 const evolution = new Evolution();
 const items = new Items(world);
 const pvp = new Pvp();
@@ -85,7 +87,7 @@ const STARTERS = [
 // then 'pick' phase (choose the starter on-screen inside the region's lab).
 const starterMenu = { open: false, row: 0, col: 0, sprites: {}, phase: 'region', region: null };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
-player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || items.occupied(tx, ty);
+player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and
 // the destination is clear. Returns true when the boulder actually moved.
@@ -284,6 +286,11 @@ function interact() {
 		});
 		return;
 	}
+	// authentic progression obstacle: a giver hands over its key item; a blocker
+	// (guard / SNORLAX / grunt) turns you back with its themed line
+	if (blockers.giverAt(fx, fy)) { const m = blockers.grantAt(fx, fy); if (m) dialog.open(m); return; }
+	const blk = blockers.kindAt(fx, fy);
+	if (blk) { dialog.open(blk.msg); return; }
 	// water's edge: SURF carries you across (used from the party menu)
 	if (!player.surfing && world.isSurfable(fx, fy)) {
 		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');
@@ -1273,6 +1280,7 @@ async function refreshMapContent(label) {
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
 	arcade.loadForMap();
+	blockers.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
@@ -1571,6 +1579,8 @@ async function crossConnection(hit) {
 
 // nudge the player toward the bike when a cracked floor stops them
 player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
+// walking into an authentic blocker (guard / SNORLAX / grunt) shows its themed line
+player.onBump = (tx, ty) => { if (dialog.blocking || !party) return; const m = blockers.messageAt(tx, ty); if (m) dialog.open(m); };
 
 player.onArrive = () => {
 	// each completed step accrues Day Care EXP and incubates any egg
@@ -1585,7 +1595,7 @@ player.onArrive = () => {
 		// hasn't unlocked (the player stays on the door tile)
 		const destFile = world.fileFor(w.dest_map);
 		const qb = destFile ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
-		if (qb) { dialog.open(qb.msg); return; }
+		if (qb) { return; } // silent strand backstop — the physical blocker shows the reason
 		warpTo(w.dest_map, w.dest_warp_id);
 		return;
 	}
@@ -1606,8 +1616,8 @@ player.onArrive = () => {
 			// unlocked yet — bounce the player back inside (backtracking is never gated)
 			const qb = Quest.blocked(playerRegion(), hit.conn.name, world.current.name);
 			if (qb) {
+				// silent strand backstop — a physical blocker on the near side shows the reason
 				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
-				dialog.open(qb.msg);
 				return;
 			}
 			crossConnection(hit); return;
@@ -2509,6 +2519,7 @@ function tick(now) {
 	items.draw(ctx, camX, camY);
 	drawLegendary(ctx, camX, camY);
 	drawAwakening(ctx, camX, camY);
+	blockers.draw(ctx, camX, camY);
 	// sprites in y order so overlaps stack correctly
 	const sprites = [...npcs.list, ...trainers.list, player];
 	if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
@@ -3770,6 +3781,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await trainers.init();
 	await services.init();
 	await arcade.init();
+	await blockers.init();
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
@@ -3806,6 +3818,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	services.loadForMap();
 	arcade.loadForMap();
+	blockers.loadForMap();
 	items.loadForMap();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;
@@ -3869,7 +3882,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
-	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState,
+	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,

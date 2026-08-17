@@ -38,6 +38,16 @@ function emeraldBerry(treeId) {
 
 const berryPretty = id => id.replace(/berry$/, ' Berry').replace(/^./, c => c.toUpperCase());
 
+// HM-terrain obstacles seeded in code at progression chokepoints (Ilex Cut, Fiery
+// Path rock, etc.) — map data is read-only so these can't live in the map JSON.
+// Filled by the per-region blocker passes; keys are MAP_ ids.
+const CODE_FIELD_OBJS = {
+	// Ilex Forest: the single-tile CUT gap that gates the road south to Goldenrod
+	// (Cut is badge-gated at 2 badges in Johto — HM_GATE). No CUTTABLE_TREE exists in
+	// this map's data, so it's seeded here.
+	MAP_ILEX_FOREST: [{ tx: 8, ty: 25, kind: 'cut' }],
+};
+
 export class Items {
 	constructor(world) {
 		this.world = world;
@@ -99,6 +109,9 @@ export class Items {
 				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.collected.has(key) });
 			}
 		}
+		// authentic HM-terrain chokepoints injected in code (map data is read-only):
+		// cut trees / rocks / boulders at progression gates, cleared by the usual HMs
+		for (const o of CODE_FIELD_OBJS[map.id] || []) this.fieldObjs.push({ tx: o.tx, ty: o.ty, kind: o.kind });
 		for (const b of map.bg_events || []) {
 			if (b.type !== 'hidden_item') continue;
 			const parsed = parseItemConst(b.item);
