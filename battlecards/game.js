@@ -1836,6 +1836,33 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'grant-target') {
+		// a Contraption (Turbo-Thwacking) grants a keyword to a creature YOU choose
+		const board = state.players[HUMAN].board;
+		const kw = pend.keyword.charAt(0).toUpperCase() + pend.keyword.slice(1);
+		modal.innerHTML = `<div class="wm-title">Grant ${kw} — choose a creature</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cr = board.find(x => x.uid === id);
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${(cr && cr.name) || '?'}</b>${cr ? `<br><span style="font-size:.85em">${cr.attack}/${E.hp(cr)}</span>` : ''}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'assemble') {
 		// Assemble: you got a random Contraption — choose which Sprocket slot it goes in
 		const def = state.cardsById[pend.contraptionId];

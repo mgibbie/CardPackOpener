@@ -98,12 +98,23 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.crankSprocket(st, 0);
   ok('Thud-for-Duds deals 3 to a random enemy creature', foe.damage === 3 && E.hp(foe) === 3, `dmg=${foe.damage} hp=${E.hp(foe)}`); }
 
-// Turbo-Thwacking Auto-Hammer grants Windfury to a friendly creature
+// Turbo-Thwacking Auto-Hammer grants Windfury: a lone creature auto-gets it
 { const st = game();
   const c = E.instantiate(byId._m, 0); c.zone = 'board'; st.players[0].board.push(c);
   E.placeContraption(st, 0, 0, 'contraption_turbo_thwacking_auto_hammer');
   E.crankSprocket(st, 0);
-  ok('Turbo-Thwacking grants Windfury to a friendly', c.keywords.includes('windfury'), c.keywords); }
+  ok('Turbo-Thwacking: a lone creature auto-gets Windfury', c.keywords.includes('windfury'), c.keywords); }
+
+// ...with 2+ creatures it opens a TARGET pick (you choose, not random)
+{ const st = game();
+  const a = E.instantiate(byId._m, 0); a.zone = 'board'; st.players[0].board.push(a);
+  const b = E.instantiate(byId._m, 0); b.zone = 'board'; st.players[0].board.push(b);
+  E.placeContraption(st, 0, 0, 'contraption_turbo_thwacking_auto_hammer');
+  E.crankSprocket(st, 0);
+  const pq = st.pickQueue[0];
+  ok('Turbo-Thwacking with 2 creatures opens a grant-target pick', pq && pq.mode === 'grant-target' && pq.keyword === 'windfury' && pq.ids.length === 2, pq);
+  E.resolvePick(st, b.uid);
+  ok('the CHOSEN creature gets Windfury (not random)', b.keywords.includes('windfury') && !a.keywords.includes('windfury')); }
 
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {

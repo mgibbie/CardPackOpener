@@ -3635,12 +3635,30 @@ export function contraptionEta(player, slot) {
 	return ((slot - ptr + 3) % 3) + 1;
 }
 
+// grant a keyword to a friendly creature you CHOOSE (Turbo-Thwacking Auto-Hammer):
+// 0 creatures fizzles, 1 auto-applies, 2+ opens a target pick
+export function grantKeywordToChoice(state, pi, keyword) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const creatures = p.board.filter(c => c.type === 'creature' && !isDead(c));
+	if (!creatures.length) return;
+	const apply = c => { if (!c.keywords.includes(keyword)) { c.keywords.push(keyword); emit(state, { type: 'keywordGranted', player: pi, uid: c.uid, keyword }); recomputeAuras(state); } };
+	if (creatures.length === 1) { apply(creatures[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'grant-target', keyword, ids: creatures.map(c => c.uid) });
+	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
 	if (pend.mode === 'assemble') {
 		const slot = ['0', '1', '2'].includes(String(id)) ? Number(id) : 0;
 		placeContraption(state, pend.player, slot, pend.contraptionId);
+		return true;
+	}
+	if (pend.mode === 'grant-target') {
+		const c = state.players[pend.player].board.find(x => x.uid === id && !isDead(x));
+		if (c && !c.keywords.includes(pend.keyword)) { c.keywords.push(pend.keyword); emit(state, { type: 'keywordGranted', player: pend.player, uid: c.uid, keyword: pend.keyword }); recomputeAuras(state); }
 		return true;
 	}
 	if (pend.advance) {

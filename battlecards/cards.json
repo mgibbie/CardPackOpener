@@ -20353,7 +20353,7 @@
       "tribe": "Contraption",
       "id": "contraption_insufferable_syphon",
       "name": "Insufferable Syphon",
-      "description": "Contraption. The enemy hero discards a card.",
+      "description": "Contraption: Target player discards a card.",
       "effects": [
         {
           "type": "enemy-discard",
@@ -20389,7 +20389,7 @@
       "tribe": "Contraption",
       "id": "contraption_widget",
       "name": "Widget Contraption",
-      "description": "Contraption. Assemble a random Contraption.",
+      "description": "Contraption: Assemble.",
       "effects": [
         {
           "type": "assemble"
@@ -20650,7 +20650,7 @@
       "tribe": "Contraption",
       "id": "contraption_hypnotic_swirly_disc",
       "name": "Hypnotic Swirly Disc",
-      "description": "Contraption. The enemy mills 2 cards.",
+      "description": "Contraption: Target player mills 2.",
       "effects": [
         {
           "type": "mill",
@@ -20725,10 +20725,10 @@
       "contraption": true,
       "cardClass": "neutral",
       "tribe": "Contraption",
-      "description": "Contraption. Give a friendly creature Windfury.",
+      "description": "Contraption: Target creature you control gains Windfury.",
       "effects": [
         {
-          "type": "grant",
+          "type": "grant-target",
           "keyword": "windfury"
         }
       ]
