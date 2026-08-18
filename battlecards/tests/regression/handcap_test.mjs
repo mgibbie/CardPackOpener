@@ -3,6 +3,7 @@
 // MAX_HAND (40) is just a high mid-turn safety ceiling. Regression coverage for the split.
 import fs from 'fs';
 import * as E from '../../engine.js';
+import * as AI from '../../ai.js';
 import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
@@ -81,6 +82,24 @@ ok('MAX_HAND ceiling is well above 15', E.MAX_HAND > 15);
 	E.resolveDiscard(st, picks);
 	ok('after resolving, hand is exactly the limit (15)', st.players[0].hand.length === 15);
 }
+
+// --- the AI's cleanup discard is SENSIBLE: keep the bombs, shed the chaff ---
+byId.t_bomb = { id: 't_bomb', name: 'Bomb', type: 'creature', cost: 10, attack: 12, health: 12, keywords: ['taunt'], rarity: 'common' };
+byId.t_good_cheap = { id: 't_good_cheap', name: 'Good Cheap', type: 'creature', cost: 2, attack: 5, health: 5, keywords: ['lifesteal'], rarity: 'common' };
+{
+	const st = game();
+	fill(st, 0, 15);                                  // 15 one-cost chaff
+	for (let i = 0; i < 3; i++) { const c = E.instantiate(byId.t_bomb, 0); c.zone = 'hand'; st.players[0].hand.push(c); } // + 3 bombs = 18
+	st.discardQueue.push({ player: 0, count: 3, cleanup: true });
+	AI.step(st, 0);                                   // AI resolves the cleanup discard
+	ok('AI cleanup keeps ALL 3 bombs (sheds chaff instead)', st.players[0].hand.filter(c => c.id === 't_bomb').length === 3);
+	ok('AI cleanup discarded the cheap chaff', st.players[0].graveyard.every(c => c.id === 't_filler'));
+	ok('AI cleanup leaves the hand at exactly the limit', st.players[0].hand.length === 15);
+}
+// value heuristic: a strong cheap card outranks a weak pricier one
+ok('handKeepValue ranks a 5/5 lifesteal 2-drop above a vanilla 1/1', AI.handKeepValue(byId.t_good_cheap) > AI.handKeepValue(byId.t_filler));
+// and a real bomb outranks efficient cheap cards (kept on cleanup)
+ok('handKeepValue keeps a 10-cost bomb over a 2-cost body', AI.handKeepValue(byId.t_bomb) > AI.handKeepValue(byId.t_good_cheap));
 
 console.log(`${pass}/${pass + fail} hand-cap checks passed`);
 process.exit(fail ? 1 : 0);

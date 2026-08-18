@@ -9,6 +9,23 @@ function threatScore(c) {
 	return c.attack * 2 + E.hp(c);
 }
 
+// How much a hand card is worth KEEPING when discarding down to hand size (end-of-turn
+// cleanup). Higher = keep. Unlike a Loot discard (where you dump your priciest, least-
+// castable card), a cleanup should shed the least valuable chaff and keep your bombs —
+// value ≈ cost (impact proxy) plus a stat/keyword bonus so a strong cheap card outranks
+// a weak pricier one. Exported so game.js's between-turn resolver uses the same logic.
+const KEEP_KEYWORDS = ['taunt', 'divine_shield', 'lifesteal', 'deathrattle', 'rush', 'charge', 'windfury', 'poisonous', 'venomous'];
+export function handKeepValue(c) {
+	let v = (c.cost || 0) * 3;
+	if (c.type === 'creature') v += (c.attack || 0) + (c.maxHealth || c.health || 0);
+	for (const k of (c.keywords || [])) if (KEEP_KEYWORDS.includes(k)) v += 2;
+	return v;
+}
+// the `count` cheapest-to-keep card uids in a player's hand — what to discard on cleanup
+export function cleanupDiscardUids(p, count) {
+	return [...p.hand].sort((a, b) => handKeepValue(a) - handKeepValue(b)).slice(0, count).map(c => c.uid);
+}
+
 function creatureOf(state, t) {
 	return state.players[t.player].board.find(c => c.uid === t.uid);
 }
@@ -153,10 +170,13 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
-	// -1a. resolve pending Loot discards: dump the most expensive card
+	// -1a. resolve a pending discard. End-of-turn CLEANUP (over hand size): keep your bombs,
+	// shed the least valuable chaff. Loot/other discards: dump the priciest (least castable).
 	if (state.discardQueue.length && state.discardQueue[0].player === pi) {
 		const pend = state.discardQueue[0];
-		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
+		const picks = pend.cleanup
+			? cleanupDiscardUids(p, pend.count)
+			: [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
 		E.resolveDiscard(state, picks);
 		return true;
 	}

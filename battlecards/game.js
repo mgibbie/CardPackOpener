@@ -1511,12 +1511,15 @@ function pump() {
 	if (!queueBusy) nextEvent();
 }
 
-// AI loot discards: dump the most expensive card
+// AI discards: end-of-turn cleanup keeps the bombs and sheds chaff (AI.cleanupDiscardUids);
+// loot/other discards dump the most expensive (least castable) card.
 function resolveAIDiscards() {
 	while (state.discardQueue.length && isAiSeat(state.discardQueue[0].player)) {
 		const pend = state.discardQueue[0];
 		const p = state.players[pend.player];
-		const picks = [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
+		const picks = pend.cleanup
+			? AI.cleanupDiscardUids(p, pend.count)
+			: [...p.hand].sort((a, b) => b.cost - a.cost).slice(0, pend.count).map(c => c.uid);
 		E.resolveDiscard(state, picks);
 	}
 }
