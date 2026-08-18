@@ -20725,11 +20725,11 @@
       "contraption": true,
       "cardClass": "neutral",
       "tribe": "Contraption",
-      "description": "Contraption (MTG Unstable). Give a friendly creature Double Strike.",
+      "description": "Contraption (MTG Unstable). Give a friendly creature Windfury.",
       "effects": [
         {
           "type": "grant",
-          "keyword": "double_strike"
+          "keyword": "windfury"
         }
       ]
     },

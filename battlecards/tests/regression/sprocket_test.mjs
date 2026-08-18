@@ -98,6 +98,13 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.crankSprocket(st, 0);
   ok('Thud-for-Duds deals 3 to a random enemy creature', foe.damage === 3 && E.hp(foe) === 3, `dmg=${foe.damage} hp=${E.hp(foe)}`); }
 
+// Turbo-Thwacking Auto-Hammer grants Windfury to a friendly creature
+{ const st = game();
+  const c = E.instantiate(byId._m, 0); c.zone = 'board'; st.players[0].board.push(c);
+  E.placeContraption(st, 0, 0, 'contraption_turbo_thwacking_auto_hammer');
+  E.crankSprocket(st, 0);
+  ok('Turbo-Thwacking grants Windfury to a friendly', c.keywords.includes('windfury'), c.keywords); }
+
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {
     const st = game();
