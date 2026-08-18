@@ -84,6 +84,42 @@ ok('absorbent_parasite magnetizes to Beast', cardsById.absorbent_parasite?.magne
 	ok('annoy_o_module did NOT merge onto a Pirate', st.players[0].board.length === 2);
 }
 
+// ---------- generated Magnetic tokens are actually Magnetic ----------
+// drone_deconstructor (1/2 Mech): Battlecry adds the real ttn_sparkbot token (magnetic)
+{
+	const st = game();
+	const dd = toHand(st, 0, 'drone_deconstructor');
+	E.playCard(st, 0, dd.uid);
+	const spark = st.players[0].hand.find(c => c.id === 'ttn_sparkbot');
+	ok('drone_deconstructor generates a Sparkbot', !!spark);
+	ok('its Sparkbot has the magnetic flag', spark?.magnetic === true);
+	const mech = putMon(st, 0, { attack: 2, health: 6, tribe: 'Mech' });
+	const before = st.players[0].board.length;
+	magnetizeOnto(st, 0, spark, mech);
+	ok('its Sparkbot merges onto a Mech', st.players[0].board.length === before && mech.attack === 3);
+}
+// from_the_scrapheap: add-token with count:3 and keywords:['magnetic'] (the flag must be set)
+{
+	const st = game();
+	const scrap = toHand(st, 0, 'from_the_scrapheap');
+	E.playCard(st, 0, scrap.uid);
+	const sparks = st.players[0].hand.filter(c => /sparkbot/i.test(c.name));
+	ok('from_the_scrapheap generates THREE tokens (count honored)', sparks.length === 3);
+	ok('all three are magnetic', sparks.length === 3 && sparks.every(c => c.magnetic === true));
+	ok("'magnetic' is not left as a bogus keyword", sparks.every(c => !c.keywords.includes('magnetic')));
+	const mech = putMon(st, 0, { attack: 2, health: 6, tribe: 'Mech' });
+	const before = st.players[0].board.length;
+	magnetizeOnto(st, 0, sparks[0], mech);
+	ok('a generated Sparkbot merges onto a Mech', st.players[0].board.length === before && mech.attack === 3);
+}
+// the_badlands_bandits: count:8 must produce eight tokens (was dropping to one)
+{
+	const st = game();
+	const bb = toHand(st, 0, 'the_badlands_bandits');
+	E.playCard(st, 0, bb.uid);
+	ok('the_badlands_bandits generates EIGHT tokens', st.players[0].hand.filter(c => /bandit/i.test(c.name)).length === 8);
+}
+
 // ---------- the AI magnetizes onto its own Mechs ----------
 const runAI = st => { for (let i = 0; i < 10 && st.current === 0 && st.players[0].hand.length; i++) AI.step(st, 0); };
 

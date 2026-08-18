@@ -848,17 +848,24 @@ register('resurrect-frenzy', ({ state, pi, target, source, enemies, scaled, hm, 
 
 
 register('add-token', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// Fire Fly: a fresh token creature lands in your hand
+			// Fire Fly: a fresh token creature lands in your hand. Honors `count` (From the
+			// Scrapheap: three; The Badlands Bandits: eight) and Magnetic — the flag lives on
+			// `magnetic`, not in `keywords`, so a keywords:['magnetic'] token must set it here
+			// (otherwise the generated Sparkbot couldn't actually Magnetize).
 			const p = state.players[pi];
-			if (p.hand.length < MAX_HAND) {
+			const isMagnetic = !!e.magnetic || (e.keywords || []).includes('magnetic');
+			const kws = (e.keywords || []).filter(k => k !== 'magnetic'); // 'magnetic' is a flag, not a keyword
+			for (let n = 0; n < (e.count || 1); n++) {
+				if (p.hand.length >= MAX_HAND) break;
 				const card = instantiate({
 					id: 'token_' + e.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: e.name, type: 'creature', cost: e.cost || 1, rarity: 'common',
 					description: `A ${e.attack}/${e.health} token.`,
-					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true, keywords: e.keywords || [],
+					attack: e.attack, health: e.health, tribe: e.tribe || null, token: true, keywords: kws,
+					magnetic: isMagnetic, magnetizeTribes: e.magnetizeTribes || null,
 				}, pi);
 				card.zone = 'hand';
-				if (e.withGift) applyGift(state, card, null, {}); // Voronei Recruiter: a Crewmate with a random Bonus Effect
+				if (e.withGift) applyGift(state, card, null, {}); // Voronei Recruiter: a Crewmate with a random Bonus Effect (each token its own)
 				p.hand.push(card);
 				emit(state, { type: 'conjure', player: pi, card, color: null });
 			}
