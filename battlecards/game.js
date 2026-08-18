@@ -773,6 +773,23 @@ function openTapMenu(card, ev) {
 		menu.appendChild(btn);
 	});
 	if (card.zone === 'land') {
+		// upgrade this slot into an advanced land that shares one of its current
+		// colors and fits your color identity — 3 mana, each opponent gets a coin
+		const canAfford = !state.over && state.current === HUMAN && E.availableMana(state.players[HUMAN]) >= E.LAND_COST;
+		for (const def of E.availableUpgrades(state, HUMAN, card.uid)) {
+			const up = document.createElement('button');
+			up.innerHTML = `<span class="wm-cost">${E.LAND_COST}</span>Upgrade → <b>${def.name}</b>`;
+			up.title = def.description || '';
+			up.disabled = !canAfford;
+			up.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				hideWalkerMenu();
+				actUpgrade(card.uid, def.id);
+			});
+			menu.appendChild(up);
+		}
+	}
+	if (card.zone === 'land') {
 		// every land can be cashed in for a card
 		const sac = document.createElement('button');
 		sac.innerHTML = `<span class="wm-cost">💀</span>Sacrifice: draw a card`;
@@ -3961,6 +3978,7 @@ function applyGuestIntent(it) {
 				case 'heroattack': E.heroAttack(state, P, it.target); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
 			case 'land': E.buyLand(state, P, it.defId); break;
+				case 'upgrade': E.upgradeLand(state, P, it.uid, it.defId); break;
 			case 'trade': E.tradeCard(state, P, it.uid); break;
 			case 'prepare': E.prepareCard(state, P, it.uid); break;
 			case 'forge': E.forgeCard(state, P, it.uid); break;
@@ -4241,6 +4259,11 @@ function actAttack(attacker, target) {
 function actLand(defId) {
 	if (isGuest()) return guestApply(() => E.buyLand(state, HUMAN, defId), { k: 'land', defId });
 	E.buyLand(state, HUMAN, defId); pump();
+	if (duel.on) publishDuel();
+}
+function actUpgrade(uid, defId) {
+	if (isGuest()) return guestApply(() => E.upgradeLand(state, HUMAN, uid, defId), { k: 'upgrade', uid, defId });
+	E.upgradeLand(state, HUMAN, uid, defId); pump();
 	if (duel.on) publishDuel();
 }
 // tapping a land for one of its abilities (e.g. Swamp → conjure a black card).

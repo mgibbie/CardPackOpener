@@ -1284,28 +1284,52 @@ export function landPool(state) {
 	return Object.values(state.cardsById).filter(d => d.type === 'land');
 }
 
-// the five basics establish your color identity; advanced lands unlock once
-// every color they need is already among your basics (Wastes comes later)
+// A land slot walks blank -> basic -> advanced, in place. The five basics anchor
+// a color; each advanced land you upgrade INTO carries its own colors. Your color
+// identity is the LIVE union of the colors ALL your current lands can produce —
+// read from their boost taps (NOT the `colors` field, so Abzan Citadel, which is
+// colors:[] but taps for W/B/G, still reads as WBG). Sacrificing a land sheds it.
 const BASIC_LANDS = ['plains', 'island', 'swamp', 'mountain', 'forest'];
+const isBasicLand = id => BASIC_LANDS.includes(id);
+
+// the colors a land can produce = the colors of its boost taps
+export function landColors(def) {
+	const s = new Set();
+	for (const t of (def.taps || [])) for (const e of (t.effects || [])) if (e.type === 'boost' && e.color) s.add(e.color);
+	return s;
+}
 
 export function colorIdentity(state, pi) {
 	const id = new Set();
-	for (const l of state.players[pi].lands) {
-		if (BASIC_LANDS.includes(l.id)) for (const c of l.colors || []) id.add(c);
-	}
+	for (const l of state.players[pi].lands) for (const c of landColors(l)) id.add(c);
 	return id;
 }
 
+// a blank slot can only ever become a BASIC (Wastes/colorless comes later)
 export function availableLands(state, pi) {
+	return landPool(state).filter(d => isBasicLand(d.id));
+}
+
+// advanced lands the slot holding `landUid` can upgrade INTO: must share a color
+// with that land's CURRENT colors AND every color it needs must be in your identity
+export function availableUpgrades(state, pi, landUid) {
+	const p = state.players[pi];
+	const cur = p.lands.find(l => l.uid === landUid);
+	if (!cur) return [];
+	const curCols = landColors(cur);
 	const identity = colorIdentity(state, pi);
 	return landPool(state).filter(d => {
-		if (BASIC_LANDS.includes(d.id)) return true;
-		if (!d.colors || !d.colors.length) return false; // wastes/colorless: later
-		return d.colors.every(c => identity.has(c));
+		if (isBasicLand(d.id) || d.id === cur.id) return false; // upgrades only, never a lateral no-op
+		const dc = landColors(d);
+		if (!dc.size) return false;                             // colorless advanced (none yet): later
+		let shares = false; for (const c of dc) if (curCols.has(c)) { shares = true; break; }
+		if (!shares) return false;                              // must share a current color (the anchor)
+		for (const c of dc) if (!identity.has(c)) return false; // and be within your color identity
+		return true;
 	});
 }
 
-// every land can be sacrificed to draw a card
+// every land can be sacrificed to draw a card — this is how you shed identity
 export function sacrificeLand(state, pi, cardUid) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
@@ -1318,28 +1342,55 @@ export function sacrificeLand(state, pi, cardUid) {
 	return true;
 }
 
+// on-enter hooks shared by developing a basic and upgrading a slot
+function landEntered(state, pi, card) {
+	runBattlecry(state, pi, card, null); // on-play land effects still fire
+	fireOngoing(state, pi, 'landfall', { land: card }); // Landfall: "whenever a land you control enters"
+	questTick(state, 'land', pi);
+	sweepDeaths(state);
+}
+
 export function canBuyLand(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
 	return p.lands.length < MAX_LANDS && availableMana(p) >= LAND_COST;
 }
 
+// develop a BASIC land into a blank slot — 3 mana, each opponent gets The Coin
 export function buyLand(state, pi, landId) {
 	if (!canBuyLand(state, pi)) return false;
 	const def = state.cardsById[landId];
-	if (!def || def.type !== 'land') return false;
+	if (!def || def.type !== 'land' || !isBasicLand(landId)) return false;
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
-	// paper rules: developing a land puts The Coin into each opponent's hand
 	for (const o of opponentsOf(state, pi)) addCoin(state, o);
 	const card = instantiate(def, pi);
 	card.zone = 'land';
 	p.lands.push(card);
 	emit(state, { type: 'landPlayed', player: pi, card, mana: availableMana(p) });
-	runBattlecry(state, pi, card, null); // on-play land effects still fire
-	fireOngoing(state, pi, 'landfall', { land: card }); // Landfall: "whenever a land you control enters"
-	questTick(state, 'land', pi);
-	sweepDeaths(state);
+	landEntered(state, pi, card);
+	return true;
+}
+
+// upgrade a slot's land into an advanced land, in place — same 3 mana + Coin cost.
+// The new land inherits the tapped state so you can't tap for mana then upgrade
+// and tap again the same turn.
+export function upgradeLand(state, pi, landUid, advId) {
+	if (state.over || state.current !== pi) return false;
+	const p = state.players[pi];
+	const idx = p.lands.findIndex(l => l.uid === landUid);
+	if (idx < 0 || availableMana(p) < LAND_COST) return false;
+	if (!availableUpgrades(state, pi, landUid).some(d => d.id === advId)) return false;
+	const def = state.cardsById[advId];
+	if (!def || def.type !== 'land') return false;
+	spendMana(p, LAND_COST);
+	for (const o of opponentsOf(state, pi)) addCoin(state, o);
+	const card = instantiate(def, pi);
+	card.zone = 'land';
+	card.tapped = p.lands[idx].tapped;
+	p.lands[idx] = card;
+	emit(state, { type: 'landUpgraded', player: pi, card, mana: availableMana(p) });
+	landEntered(state, pi, card);
 	return true;
 }
 

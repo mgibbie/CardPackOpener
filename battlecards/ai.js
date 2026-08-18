@@ -271,9 +271,26 @@ export function step(state, pi = 1) {
 	// 0b. develop a land when flush enough that it doesn't cost the turn — but NOT while the
 	// hand is over the limit: a flooded hand should be spending mana dumping cards (or it'll
 	// discard them at end of turn), not ramping.
-	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3 && p.hand.length <= E.HAND_LIMIT) {
-		const pool = E.availableLands(state, pi);
-		if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
+	if (E.availableMana(p) >= E.LAND_COST + 3 && p.hand.length <= E.HAND_LIMIT && !state.over && state.current === pi) {
+		const BASICS = ['plains', 'island', 'swamp', 'mountain', 'forest'];
+		const want = new Set(p.hand.flatMap(c => c.colors || [])); // colors this hand actually wants to cast
+		const have = E.colorIdentity(state, pi);
+		// upgrade a BASIC slot toward an advanced land (its pool + fixing) — prefer one the hand wants
+		for (const l of p.lands) {
+			if (!BASICS.includes(l.id)) continue; // don't thrash already-advanced slots
+			const ups = E.availableUpgrades(state, pi, l.uid);
+			if (!ups.length) continue;
+			const pref = ups.filter(d => [...E.landColors(d)].some(c => want.has(c)));
+			const from = pref.length ? pref : ups;
+			if (E.upgradeLand(state, pi, l.uid, from[Math.floor(Math.random() * from.length)].id)) return true;
+		}
+		// otherwise develop a basic — favor a color the hand wants but the board can't make yet
+		if (E.canBuyLand(state, pi) && p.lands.length < 3) {
+			const basics = E.availableLands(state, pi);
+			const need = basics.filter(d => [...E.landColors(d)].some(c => want.has(c) && !have.has(c)));
+			const pool = need.length ? need : basics;
+			if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
+		}
 	}
 
 	// 1. play the most expensive playable card
