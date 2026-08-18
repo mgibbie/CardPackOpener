@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "4b79cbf",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Teach the AI to Magnetize onto its Mechs",
+			"body": "The AI played Magnetic minions as standalone bodies (pickTarget returns\nnull for them, so they were summoned normally). Now, before playing a\nMagnetic creature, the AI considers merging it onto a friendly Mech (or\nits magnetizeTribes).\n\nBecause the board cap is large (MAX_BOARD=40), space is rarely the\nconstraint, so the decision is value-based: fuse when it stacks a\nkeyword (Divine Shield / Taunt / Lifesteal / Windfury / Rush / Poison /\nDeathtouch / Stealth), a Deathrattle, or an Ongoing — or when there's a\nDivine Shield Mech to load stats behind; otherwise develop a separate\nbody (going wide is strong in this format). Target picks the best\ncarrier: shielded first, then a Taunt wall, then the biggest threat.\n\nmagnetic_test.mjs extended with 3 AI scenarios (fuse a keyword minion,\nbody-out a vanilla stat-stick, body-out when no Mech). Suite 203/203.",
+			"cards": []
+		},
+		{
 			"sha": "4e87407",
 			"date": "2026-08-18",
 			"kind": "patch",
