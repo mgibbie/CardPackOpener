@@ -2,6 +2,47 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "7d4a320",
+			"date": "2026-08-18",
+			"kind": "cards",
+			"title": "Add Exuberant Conspirator (3/2 Elf, Battlecry: Advance / Deathrattle: Planeshift)",
+			"body": "New collectible uncommon neutral creature: 2-cost 3/2 Elf. Battlecry: Advance\n(venture a dungeon on play); Deathrattle: Planeshift (shift the arena to a random\nplane on death). Both are existing keywords/effects, so the description shows both\ntooltips. Art wired (battlecards/art/exuberant_conspirator.jpg, deployed via wrangler).\n\nVerified: 3/2 summon, Battlecry queues the dungeon pick, Deathrattle shifts the\nplane. Suite 210 green (no fragile-test regression from the deck-RNG shift).",
+			"cards": [
+				{
+					"id": "exuberant_conspirator",
+					"name": "Exuberant Conspirator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "98e0894",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "In-game dungeon panel with a \"you are here\" marker",
+			"body": "While you're venturing (p.dungeon set), a fixed left-side panel shows your\ndungeon's flowchart card with the current room highlighted, plus the room name.\nupdateDungeonPanel() (called from updateHud) renders the type:\"dungeon\" card via\ndrawCardFace(card, {currentRoom}); it redraws only when the room changes and\nhides when you're not in a dungeon. Reuses the drawDungeonFace currentRoom\nhighlight built for the cards. Verified the data path end-to-end headlessly\n(advance -> pick -> p.dungeon -> dungeon card + room resolve).",
+			"cards": []
+		},
+		{
+			"sha": "1b693e7",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Dungeon cards: procedural room-flowchart face + wiki visuals",
+			"body": "Each Advance dungeon is now a no-cost type:\"dungeon\" card (lost_mine, tomb,\nmad_mage; uncollectible) whose face is a room flowchart drawn procedurally from\nengine/dungeons.js:\n- cardart.js drawDungeonFace(): lays rooms out by longest-path depth (rows) with\n  branch columns, draws arrows between rooms, room name + effect text per node,\n  START / ★-payoff badges, per-dungeon theming, and an optional \"you are here\"\n  highlight (currentRoom) for future in-game use. drawCardFace dispatches on\n  type:\"dungeon\".\n- designwiki Advance Dungeons section now renders each dungeon's flowchart card\n  face beside its readable room breakdown. (The cards also appear in the gallery.)\n\nAll procedural from the game's own data — no external images. Suite 210 green\n(dungeon cards are uncollectible, so no deck-RNG shift). Bumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "cf19f80",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: real Scryfall art; drop the \"(MTG Unstable)\" label",
+			"body": "- Fetched each of the 21 Contraptions' art_crop from Scryfall (t:contraption),\n  cropped to the 294x218 art window, saved to battlecards/art/<id>.jpg, and\n  registered in art/index.json (deployed via wrangler).\n- Removed \"(MTG Unstable)\" from all 21 Contraption card descriptions and from\n  the designwiki Contraptions blurb.\n- Bumped designwiki ?v (20260831 -> 20260832).",
+			"cards": []
+		},
+		{
 			"sha": "6ea53c6",
 			"date": "2026-08-18",
 			"kind": "cards",
