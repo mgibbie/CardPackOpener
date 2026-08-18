@@ -3648,6 +3648,20 @@ export function grantKeywordToChoice(state, pi, keyword) {
 	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
 }
 
+// "target player" for a harmful contraption (Hypnotic Swirly Disc / Insufferable Syphon):
+// choose which opponent — auto in 1v1, a pick in a free-for-all
+function applyPlayerAction(state, pi, idx, action, value) {
+	if (action === 'mill') execEffects(state, pi, [{ type: 'mill', value, player: idx }], null, null);
+	else if (action === 'discard') execEffects(state, pi, [{ type: 'enemy-discard', count: value, player: idx }], null, null);
+}
+export function targetOpponent(state, pi, action, value) {
+	const opps = opponentsOf(state, pi).filter(o => !state.players[o].eliminated);
+	if (!opps.length) return;
+	if (opps.length === 1) { applyPlayerAction(state, pi, opps[0], action, value); return; }
+	state.pickQueue.push({ player: pi, mode: 'target-player', action, value, ids: opps.map(String) });
+	emit(state, { type: 'pickStart', player: pi, count: opps.length });
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
@@ -3659,6 +3673,10 @@ export function resolvePick(state, id) {
 	if (pend.mode === 'grant-target') {
 		const c = state.players[pend.player].board.find(x => x.uid === id && !isDead(x));
 		if (c && !c.keywords.includes(pend.keyword)) { c.keywords.push(pend.keyword); emit(state, { type: 'keywordGranted', player: pend.player, uid: c.uid, keyword: pend.keyword }); recomputeAuras(state); }
+		return true;
+	}
+	if (pend.mode === 'target-player') {
+		applyPlayerAction(state, pend.player, Number(id), pend.action, pend.value);
 		return true;
 	}
 	if (pend.advance) {

@@ -20356,7 +20356,8 @@
       "description": "Contraption: Target player discards a card.",
       "effects": [
         {
-          "type": "enemy-discard",
+          "type": "target-player",
+          "action": "discard",
           "value": 1
         }
       ]
@@ -20653,7 +20654,8 @@
       "description": "Contraption: Target player mills 2.",
       "effects": [
         {
-          "type": "mill",
+          "type": "target-player",
+          "action": "mill",
           "value": 2
         }
       ]

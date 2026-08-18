@@ -1836,6 +1836,31 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'target-player') {
+		// a Contraption (Hypnotic Swirly Disc / Insufferable Syphon) targets a player YOU choose
+		const label = pend.action === 'mill' ? `mills ${pend.value}` : 'discards a card';
+		modal.innerHTML = `<div class="wm-title">Target player — who ${label}?</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${nameOf(Number(id))}</b></div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'grant-target') {
 		// a Contraption (Turbo-Thwacking) grants a keyword to a creature YOU choose
 		const board = state.players[HUMAN].board;

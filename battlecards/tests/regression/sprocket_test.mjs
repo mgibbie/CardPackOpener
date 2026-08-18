@@ -116,6 +116,23 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.resolvePick(st, b.uid);
   ok('the CHOSEN creature gets Windfury (not random)', b.keywords.includes('windfury') && !a.keywords.includes('windfury')); }
 
+// Hypnotic Swirly Disc / Insufferable Syphon: 1v1 auto-targets the lone opponent
+{ const st = game(); st.players[1].deck = ['_m', '_m', '_m', '_m'];
+  E.placeContraption(st, 0, 0, 'contraption_hypnotic_swirly_disc'); E.crankSprocket(st, 0);
+  ok('Hypnotic mills the lone opponent 2 (auto-target)', st.players[1].deck.length === 2, st.players[1].deck.length); }
+{ const st = game(); const fc = E.instantiate(byId._m, 1); fc.zone = 'hand'; st.players[1].hand.push(fc);
+  E.placeContraption(st, 0, 0, 'contraption_insufferable_syphon'); E.crankSprocket(st, 0);
+  ok('Insufferable: the lone opponent discards a card (auto-target)', st.players[1].hand.length === 0); }
+
+// ...in a free-for-all (2+ opponents) it opens a target-player pick (you choose)
+{ const st = E.createGame(byId, seededRng(3), null, 3, [{ id: 'mage', name: 'A', power: null }, { id: 'mage', name: 'B', power: null }, { id: 'mage', name: 'C', power: null }]);
+  st.current = 0; for (const p of st.players) { p.hand = []; p.deck = ['_m', '_m', '_m', '_m']; p.board = []; p.sprocket = [null, null, null]; p.sprocketPointer = 0; }
+  E.placeContraption(st, 0, 0, 'contraption_hypnotic_swirly_disc'); E.crankSprocket(st, 0);
+  const pq = st.pickQueue[0];
+  ok('Hypnotic in a 3-player game opens a target-player pick', pq && pq.mode === 'target-player' && pq.action === 'mill' && pq.ids.length === 2, pq);
+  E.resolvePick(st, '2');
+  ok('only the CHOSEN opponent (player 2) is milled', st.players[2].deck.length === 2 && st.players[1].deck.length === 4); }
+
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {
     const st = game();

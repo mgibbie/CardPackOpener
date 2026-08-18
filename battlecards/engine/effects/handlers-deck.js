@@ -678,7 +678,7 @@ register('put-spell-on-enemy-deck-top', ({ state, pi, target, source, enemies, s
 register('enemy-discard', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// each opponent discards at random
 			const dn = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
-			for (const o of enemies) {
+			for (const o of (e.player != null ? [e.player] : enemies)) { // e.player = a chosen target (target-player)
 				const op = state.players[o];
 				for (let i = 0; i < dn; i++) {
 					const pool = e.spellOnly ? op.hand.filter(c => isSpellType(c)) : op.hand; // Disruptive Spellbreaker: discard a spell
@@ -697,7 +697,7 @@ register('mill', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 			// 'self' = your own deck — Tickatus)
 			if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) for (let i = 0; i < (e.value || 1); i++) state.players[s2].deck.pop(); }
 			else if (e.target === 'self') { for (let i = 0; i < (e.value || 1); i++) e.bottom ? state.players[pi].deck.shift() : state.players[pi].deck.pop(); } // Waste Remover: bottom of own deck
-			else { const victim = enemyHero(); if (victim != null) { for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop(); } }
+			else { const victim = e.player != null ? e.player : enemyHero(); if (victim != null) { for (let i = 0; i < (e.value || 1); i++) state.players[victim].deck.pop(); } } // e.player = a chosen target (target-player)
 } });
 
 
