@@ -1,6 +1,30 @@
 {
-	"generated": "2026-08-17",
+	"generated": "2026-08-18",
 	"entries": [
+		{
+			"sha": "fd6796a",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Add per-species battleScale for authentic relative sprite sizing",
+			"body": "Sprites are fit into the 96px box (contain), then multiplied by a new\nper-species `battleScale` so mons draw at their real relative size —\nDiglett 0.60, Pikachu 0.74, Charizard 1.19, Snorlax 1.28, Onix/Wailord\ncapped at 1.90 — instead of every mon flattened to the same size.\n\n- tools/gen_battlescale.mjs: derives battleScale from canonical Pokedex\n  height (Showdown pokedex.ts heightm) via scale = clamp((h/1m)^0.33,\n  0.6, 1.9). 951 species scaled; fakemon/no-height default to 1.0. Field\n  written into species_battle.json only where it deviates (absent => 1).\n- battle.js drawSide, pvp.js drawMon, evolution.js: multiply the box-fit\n  by battleScale. PvP mons arrive without a species handle, so main.js\n  feeds pvp a sprite->scale map on boot. Evolution bottom-anchors + clamps\n  so a big mon can't overflow the small view.\n- gen_designwiki: expose battleScale on wiki pokemon entries.\n\nSpecies data deployed to owdata; wiki regenerated.",
+			"cards": []
+		},
+		{
+			"sha": "bfe9b6f",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Fix battle sprite sizing: normalize every mon to the 96px canvas",
+			"body": "Battle front/back sprites were drawn as native_size × fixed_scale, where\nthe scale was tuned for the standard 96x96 canvas. But the sprite set has\n1101 distinct native sizes (12px crops up to 256px Gen-9 art), so only\n643 of 1751 in-game mons rendered at a sensible size:\n  - 423 rendered OVERSIZED  (the 256px Gen-9 batch, ~2.7x too big)\n  - 685 rendered UNDERSIZED (Rolycoly 20px ~0.2x, many fakemon ~0.35x)\n\nThe menu renderers (party/summary/dex/starter) already fit sprites into a\nbox via min(box/w, box/h); the battle path (battle.js drawSide, pvp.js\ndrawMon) and the evolution scene were the only ones still scaling raw\ndims. Fit each into a 96 box (contain), preserving aspect and consistent\nbottom-anchoring. The 643 already-correct 96px sprites are unchanged.",
+			"cards": []
+		},
+		{
+			"sha": "1e6a9cb",
+			"date": "2026-08-17",
+			"kind": "patch",
+			"title": "Update design wiki + Magepunk News for the overworld work",
+			"body": "Wiki (designwiki/data) was seeded from the old Lua project and had gone stale vs the\nweb game. New tools/gen_designwiki.mjs rebuilds it from the LIVE game data\n(overworld/data/*): pokemon.json/moves.json/abilities.json regenerated in full, and\nregions.json refreshed in place (reusing the region/map/trainer skeleton, pulling every\nencounter table + trainer team from the current data). Now the wiki reflects: the\nrepaired fakemon movesets/abilities (e.g. scarazor is Bug with a spread learnset;\nfawnlora's ability is Overgrow), the day/night wild tables (Johto authentic +\nFR/Emerald fakemon \"grass (night)\" methods, incl. the missingno easter egg), and the\nfakemon now on trainers. Ability descriptions are carried over; formatting matches the\nrepo (minified dexes, pretty regions).\n\nNews (magepunknews): extended gen-magepunknews.mjs GAME_FILES to also track overworld/\ngame modules + the data-shipping tools, so the RPG's gameplay commits become patch\nnotes. Rebuilt news.json — 917 entries, incl. 34 overworld patch notes (the cross-region\nspine, day/night encounters, fishing, and the full fakemon repair/deploy).",
+			"cards": []
+		},
 		{
 			"sha": "fa521b1",
 			"date": "2026-08-17",
