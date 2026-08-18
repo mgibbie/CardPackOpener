@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "2e42947",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "AI: don't ramp lands while the hand is over the limit",
+			"body": "Verifying AI play with large hands surfaced one rough edge: when flush\nwith mana but holding a bloated hand, the land-development rule (0b)\nwould spend the turn buying lands (ramping) and play only 1 card — e.g.\n22 cards + 10 mana -> 3 lands bought, 1 creature. A flooded hand should\nbe dumping cards (or it discards them at end of turn), not ramping.\n\nGuarded 0b with `p.hand.length <= HAND_LIMIT`, so ramping only happens\nwhen the hand isn't over the limit. Same case now plays 2 creatures with\nall 10 mana instead. Only affects >15-card hands, so normal early-game\nland development is unchanged.\n\nEverything else already checked out: the AI uses all its mana each turn\n(0 wasted), dumps cheap cards up to the mana limit, and over 940\nAI-vs-AI turns had 0 crashes / 0 state-validation violations at <=11ms\nper turn. handcap_test.mjs +4 checks (20 total); suite 204/204.",
+			"cards": []
+		},
+		{
 			"sha": "2a63ec2",
 			"date": "2026-08-18",
 			"kind": "patch",
