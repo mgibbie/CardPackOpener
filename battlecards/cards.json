@@ -8004,11 +8004,6 @@
             }
           ]
         }
-      ],
-      "colors": [
-        "B",
-        "G",
-        "W"
       ]
     },
     {
@@ -9724,7 +9719,12 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Soldier"
+      "tribe": "Human Soldier",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ]
     },
     {
       "id": "abzan_fortification",
@@ -9740,6 +9740,11 @@
       "tribe": "Wall",
       "keywords": [
         "defender"
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
@@ -9758,6 +9763,11 @@
       "tradeable": true,
       "keywords": [
         "lifesteal"
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
@@ -9784,6 +9794,11 @@
           "health": 2,
           "target": "creature"
         }
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
@@ -9800,6 +9815,11 @@
       "tribe": "Human Warrior",
       "keywords": [
         "lifesteal"
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
@@ -19238,7 +19258,12 @@
             ]
           }
         ]
-      }
+      },
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ]
     },
     {
       "id": "quick_pick",
@@ -20165,6 +20190,11 @@
             }
           ]
         }
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
@@ -21014,6 +21044,11 @@
             }
           ]
         }
+      ],
+      "colors": [
+        "W",
+        "B",
+        "G"
       ]
     },
     {
