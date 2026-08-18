@@ -102,11 +102,15 @@ export class Evolution {
 		}
 		if (img) {
 			const s = 64;
-			const x = VIEW_W / 2 - s / 2, y = 30;
+			// fit the sprite into a 64px box (contain) so tall/large exports don't overflow
+			// the view; center horizontally and bottom-align within the box
+			const nz = s / Math.max(img.width, img.height);
+			const dw = img.width * nz, dh = img.height * nz;
+			const x = VIEW_W / 2 - dw / 2, y = 30 + (s - dh);
 			if (white) {
 				ctx.globalAlpha = 0.6 + 0.4 * Math.sin(c.t * 20);
 			}
-			ctx.drawImage(img, x, y, s, s * (img.height / img.width));
+			ctx.drawImage(img, x, y, dw, dh);
 			ctx.globalAlpha = 1;
 		}
 

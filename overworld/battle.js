@@ -3107,7 +3107,13 @@ export class Battle {
 		ctx.save();
 		ctx.globalAlpha = pose.alpha;
 		ctx.imageSmoothingEnabled = false;
-		const w = img.width * pose.scale, h = img.height * pose.scale;
+		// Normalize to the 96px standard canvas. Sprites were exported at wildly varying
+		// native sizes (~12px crops up to 256px Gen-9 art); a fixed scale on raw dims made
+		// big-canvas mons render ~2.7x too large and tiny crops render as dots. Fitting each
+		// sprite into a 96-box (contain) draws every mon at a consistent battle size, and
+		// keeps bottom-anchoring consistent so feet sit on the platform.
+		const norm = 96 / Math.max(img.width, img.height);
+		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
 		ctx.drawImage(img, pose.x + pose.dx - w / 2, pose.y + pose.dy - h + 10 * u, w, h);
 		ctx.restore();
 	}
