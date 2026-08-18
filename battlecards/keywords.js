@@ -53,7 +53,7 @@ const K = [
 	{ p: ['Finale'], t: 'A bonus effect that happens if you spent all your remaining mana to play this card.' },
 	{ p: ['Emerge'], t: 'Triggers from your hand the moment this card is drawn or discovered (not from your opening hand).' },
 	{ p: ['Spell Damage'], t: 'Your spells deal extra damage.' },
-	{ p: ['Magnetic'], t: 'Play it left of a friendly Mech to fuse their stats and text.' },
+	{ p: ['Magnetic'], t: 'Drop it onto a friendly Mech to merge its stats and text onto that Mech (some can Magnetize to other tribes too).' },
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
 	{ p: ['Counter target spell', 'Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },

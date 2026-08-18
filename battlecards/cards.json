@@ -10208,7 +10208,8 @@
       "tribe": "Mech",
       "keywords": [
         "rush"
-      ]
+      ],
+      "magnetic": true
     },
     {
       "id": "southsea_deckhand",
@@ -12849,7 +12850,11 @@
         "blood": 0,
         "frost": 0,
         "unholy": 0
-      }
+      },
+      "magnetizeTribes": [
+        "Mech",
+        "Undead"
+      ]
     },
     {
       "id": "mantle_shaper",
@@ -12891,7 +12896,8 @@
           "health": 2,
           "name": "Treefolk"
         }
-      ]
+      ],
+      "magnetic": true
     },
     {
       "id": "domino_damselfish",
@@ -13343,7 +13349,11 @@
       "keywords": [
         "windfury"
       ],
-      "magnetic": true
+      "magnetic": true,
+      "magnetizeTribes": [
+        "Mech",
+        "Totem"
+      ]
     },
     {
       "id": "wraith_of_enochia",
@@ -13733,7 +13743,8 @@
             "value": 3
           }
         ]
-      }
+      },
+      "magnetic": true
     },
     {
       "id": "gogogo_goram",
@@ -13759,7 +13770,8 @@
             "value": 1
           }
         ]
-      }
+      },
+      "magnetic": true
     },
     {
       "id": "unfathomable_being",
@@ -41879,7 +41891,12 @@
             "value": 3
           }
         ]
-      }
+      },
+      "magnetic": true,
+      "magnetizeTribes": [
+        "Mech",
+        "Pirate"
+      ]
     },
     {
       "id": "blackwing_full_armor_master",
@@ -48914,7 +48931,11 @@
       "keywords": [
         "rush"
       ],
-      "magnetic": true
+      "magnetic": true,
+      "magnetizeTribes": [
+        "Mech",
+        "Beast"
+      ]
     },
     {
       "id": "chained_guardian",
@@ -48968,7 +48989,8 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Mech"
+      "tribe": "Mech",
+      "magnetic": true
     },
     {
       "id": "angry_helhound",

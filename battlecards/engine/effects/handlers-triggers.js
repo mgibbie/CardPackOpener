@@ -395,6 +395,7 @@ registerTrigger('copy-forged-to-hand', (state, pi, e, ctx, triggering) => {
 				copy.cost = src.cost;
 				copy.keywords = [...(src.keywords || [])];
 				copy.magnetic = src.magnetic;
+				copy.magnetizeTribes = src.magnetizeTribes || null;
 				copy.forged = true;
 				copy.forge = src.forge ? JSON.parse(JSON.stringify(src.forge)) : null; // a forged copy is spent (unless endless)
 				if (src.effects) copy.effects = JSON.parse(JSON.stringify(src.effects));

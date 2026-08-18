@@ -632,7 +632,8 @@ function releasePlay(c, ev) {
 		const pos = placementIndexAt(ev.clientX);
 		if (c.choices) { openChoiceMenu(c, ev, pos); return; }
 		const over = cardOf(pick(ev, c.uid));
-		if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN && (over.tribe || '').includes('Mech')) {
+		const magTribes = c.magnetizeTribes?.length ? c.magnetizeTribes : ['Mech'];
+		if (c.magnetic && over && over.zone === 'board' && over.controller === HUMAN && magTribes.some(tr => (over.tribe || '').includes(tr))) {
 			actPlay(c.uid, { type: 'creature', uid: over.uid, player: HUMAN });
 		} else {
 			playFromHand(c, ev, pos);
@@ -3042,6 +3043,16 @@ function updatePlaceMarker() {
 		const cc = cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid));
 		return !!cc && cc.zone === 'hand' && cc.controller === HUMAN;
 	})();
+	// dragging a Magnetic creature over a valid friendly target? it will MERGE onto that
+	// creature instead of taking a board slot — surface that so the play is discoverable
+	const magTarget = (placing && placing.dragging && !longPressFired && state && state.current === HUMAN && (() => {
+		const c = placing.card;
+		if (!c.magnetic || c.type !== 'creature' || !E.canPlay(state, HUMAN, c)) return null;
+		const over = cardOf(pick({ clientX: mouseX, clientY: mouseY }, c.uid));
+		if (!over || over.zone !== 'board' || over.controller !== HUMAN) return null;
+		const magTribes = c.magnetizeTribes?.length ? c.magnetizeTribes : ['Mech'];
+		return magTribes.some(tr => (over.tribe || '').includes(tr)) ? over : null;
+	})()) || null;
 	// live hint while dragging a card out of the hand (suppressed once a press-and-
 	// hold turns the gesture into a preview)
 	if (placing && placing.dragging && !longPressFired && state) {
@@ -3050,14 +3061,17 @@ function updatePlaceMarker() {
 		const inPlay = !overOwnHand && mouseY < innerHeight * 0.94;
 		$('hint').textContent = !inPlay ? 'drag onto the field to play · release on your hand to cancel'
 			: !yours ? "can't play on your opponent's turn"
+			: magTarget ? `release to Magnetize ${c.name} onto ${magTarget.name}`
 			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
 			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
 			: `not enough mana for ${c.name}`;
 	}
 	const isCreature = placing && (placing.card.type === 'creature' || placing.card.type === 'location');
+	// a Magnetic merge doesn't take a slot, so hide the between-minions gap marker for it
 	const active = isCreature && placing.dragging && !longPressFired && state && state.current === HUMAN
 		&& state.players[HUMAN].board.length
 		&& E.canPlay(state, HUMAN, placing.card)
+		&& !magTarget
 		&& !overOwnHand && mouseY < innerHeight * 0.94;
 	placeMarker.visible = !!active;
 	if (!active) return;

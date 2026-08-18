@@ -292,6 +292,7 @@ export function instantiate(def, controller) {
 		attackAgainOnKill: !!def.attackAgainOnKill, // Rush hunters: kills refund the attack
 		ward: def.ward ? { ...def.ward } : null, // cost to target: {mana?, life?, discard?}
 		magnetic: !!def.magnetic,     // may merge onto a friendly Mech instead of playing
+		magnetizeTribes: def.magnetizeTribes || null, // tribes it can Magnetize onto (default: Mech only)
 		inHandSwap: !!def.inHandSwap, // "each turn this is in your hand, swap its Attack & Health"
 		inHandCopyLastPlayed: def.inHandCopyLastPlayed || null, // Floop/Mirrex: a hand card that IS a copy of the last creature played
 		accrueDarkGifts: def.accrueDarkGifts || false, // Wallow: copies every Dark Gift given to your minions while held/decked
@@ -2093,7 +2094,8 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 
 	if (card.type === 'creature' && card.magnetic && target?.type === 'creature'
 		&& (() => { const t = findCreature(state, target.uid);
-			return t && t.controller === pi && !isDead(t) && (t.tribe || '').includes('Mech'); })()) {
+			const tribes = card.magnetizeTribes?.length ? card.magnetizeTribes : ['Mech'];
+			return t && t.controller === pi && !isDead(t) && tribes.some(tr => (t.tribe || '').includes(tr)); })()) {
 		// Magnetic: merge onto the chosen friendly Mech instead of entering play
 		const t = findCreature(state, target.uid);
 		t.attack += card.attack;
