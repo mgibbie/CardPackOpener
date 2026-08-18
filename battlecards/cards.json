@@ -4617,8 +4617,8 @@
           "effects": [
             {
               "type": "conjure",
-              "color": "W",
-              "count": 1
+              "count": 1,
+              "landSet": "Plains"
             }
           ]
         }
@@ -4663,8 +4663,8 @@
           "effects": [
             {
               "type": "conjure",
-              "color": "U",
-              "count": 1
+              "count": 1,
+              "landSet": "Island"
             }
           ]
         }
@@ -4706,8 +4706,8 @@
           "effects": [
             {
               "type": "conjure",
-              "color": "B",
-              "count": 1
+              "count": 1,
+              "landSet": "Swamp"
             }
           ]
         }
@@ -4749,8 +4749,8 @@
           "effects": [
             {
               "type": "conjure",
-              "color": "R",
-              "count": 1
+              "count": 1,
+              "landSet": "Mountain"
             }
           ]
         }
@@ -4792,8 +4792,8 @@
           "effects": [
             {
               "type": "conjure",
-              "color": "G",
-              "count": 1
+              "count": 1,
+              "landSet": "Forest"
             }
           ]
         }
@@ -7999,9 +7999,9 @@
           "effects": [
             {
               "type": "discover",
-              "match": "Abzan",
               "count": 1,
-              "pick": 3
+              "pick": 3,
+              "landSet": "Abzan"
             }
           ]
         }
@@ -9714,7 +9714,6 @@
       "name": "Abzan Falconer",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
       "set": "paper",
       "description": "Creatures you control with Attack of 5 or greater have Windfury.",
       "type": "creature",
@@ -9725,14 +9724,15 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_fortification",
       "name": "Abzan Fortification",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
       "set": "paper",
       "description": "Defender\nStatic",
       "type": "creature",
@@ -9746,14 +9746,15 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_guide",
       "name": "Abzan Guide",
       "cardClass": "magepunk",
       "cost": 6,
-      "rarity": "common",
       "set": "paper",
       "description": "Lifesteal Medic 2 Tradeable",
       "type": "creature",
@@ -9769,14 +9770,15 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_skycaptain",
       "name": "Abzan Skycaptain",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
       "set": "paper",
       "description": "Battlecry: Target creature gains +2/+2. Taunt Windfury",
       "type": "creature",
@@ -9800,14 +9802,15 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_steward",
       "name": "Abzan Steward",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
       "set": "paper",
       "description": "Lifesteal",
       "type": "creature",
@@ -9821,7 +9824,9 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "blood_gem",
@@ -19230,7 +19235,6 @@
       "name": "Abzan Ascendancy",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
       "set": "paper",
       "description": "Battlecry: Target creature gains +1/+1. Whenever a nontoken creature you control dies, create a 1/1 Spirit token with Windfury.",
       "type": "enchantment",
@@ -19264,7 +19268,9 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "quick_pick",
@@ -20171,7 +20177,6 @@
       "name": "Abzan Infantry",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
       "set": "paper",
       "description": "Taunt\nDeathrattle: Luck: Return this card to your hand.",
       "type": "creature",
@@ -20196,7 +20201,9 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "sanguine_templar",
@@ -20985,7 +20992,6 @@
       "name": "Abzan Charm",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
       "set": "paper",
       "description": "Choose one - • Exile target creature with 3 or more Attack. • Draw 2 cards & take 2 damage. • Target creature gains +2/+2. • Target creature gains Taunt. • Target creature gains Medic 2.",
       "type": "instant",
@@ -21050,7 +21056,9 @@
         "W",
         "B",
         "G"
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_advantage",
@@ -21058,7 +21066,6 @@
       "cost": 2,
       "type": "instant",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21079,7 +21086,9 @@
           "health": 1,
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_battlepriest",
@@ -21090,7 +21099,6 @@
       "health": 2,
       "tribe": "Human Cleric",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21111,7 +21119,9 @@
           ],
           "text": "Give a creature +1/+1."
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_runemark",
@@ -21119,7 +21129,6 @@
       "cost": 3,
       "type": "sorcery",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21146,7 +21155,9 @@
           },
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_sand_blessing",
@@ -21154,7 +21165,6 @@
       "cost": 2,
       "type": "enchantment",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21168,7 +21178,9 @@
         "keywords": [
           "taunt"
         ]
-      }
+      },
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_strike",
@@ -21176,7 +21188,6 @@
       "cost": 1,
       "type": "instant",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21195,11 +21206,13 @@
           "value": 1
         },
         {
-          "type": "conjure-named",
-          "match": "Abzan",
-          "count": 1
+          "type": "conjure",
+          "count": 1,
+          "landSet": "Abzan"
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_survivalist",
@@ -21210,7 +21223,6 @@
       "health": 3,
       "tribe": "Human Warrior",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21235,7 +21247,9 @@
           ],
           "text": "Spend all remaining mana: deal that much damage to a creature."
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "abzan_warlord",
@@ -21246,7 +21260,6 @@
       "health": 4,
       "tribe": "Human Soldier",
       "cardClass": "magepunk",
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "W",
@@ -21262,7 +21275,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Abzan",
+      "collectible": false
     },
     {
       "id": "ancient_totem",
@@ -38385,7 +38400,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "tribe": "Merfolk",
       "type": "creature",
       "attack": 1,
@@ -38402,7 +38416,9 @@
           "text": "Draw a card, then discard a card."
         }
       ],
-      "description": "Once per turn: Draw a card, then discard a card."
+      "description": "Once per turn: Draw a card, then discard a card.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "ember_hauler",
@@ -38412,7 +38428,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "tribe": "Goblin",
       "type": "creature",
       "attack": 2,
@@ -38431,7 +38446,9 @@
           "text": "Sacrifice: deal 2 damage to any target."
         }
       ],
-      "description": "1, Sacrifice: Deal 2 damage to any target."
+      "description": "1, Sacrifice: Deal 2 damage to any target.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "pacifism",
@@ -38441,7 +38458,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "type": "sorcery",
       "effects": [
         {
@@ -38452,7 +38468,9 @@
           "target": "enemy-creature"
         }
       ],
-      "description": "Enchant a creature an opponent controls: it can't attack."
+      "description": "Enchant a creature an opponent controls: it can't attack.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "arrest",
@@ -38462,7 +38480,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "type": "sorcery",
       "effects": [
         {
@@ -38473,7 +38490,9 @@
           "target": "enemy-creature"
         }
       ],
-      "description": "Enchant a creature an opponent controls: it can't attack or use abilities."
+      "description": "Enchant a creature an opponent controls: it can't attack or use abilities.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "champion_of_the_parish",
@@ -38483,7 +38502,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "rare",
       "tribe": "Human Soldier",
       "type": "creature",
       "attack": 1,
@@ -38500,7 +38518,9 @@
           }
         ]
       },
-      "description": "Whenever a Human enters the battlefield under your control, this gains +1/+1."
+      "description": "Whenever a Human enters the battlefield under your control, this gains +1/+1.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "secure_the_wastes",
@@ -38510,7 +38530,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "rare",
       "type": "sorcery",
       "xSpell": true,
       "effects": [
@@ -38522,7 +38541,9 @@
           "name": "Warrior"
         }
       ],
-      "description": "Spend all your mana: create a 1/1 Warrior creature token for each point beyond the first."
+      "description": "Spend all your mana: create a 1/1 Warrior creature token for each point beyond the first.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "unearth",
@@ -38532,7 +38553,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "type": "sorcery",
       "effects": [
         {
@@ -38542,7 +38562,9 @@
           "maxCost": 3
         }
       ],
-      "description": "Return a creature that costs 3 or less from your graveyard to the battlefield."
+      "description": "Return a creature that costs 3 or less from your graveyard to the battlefield.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "eternal_witness",
@@ -38552,7 +38574,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "rare",
       "tribe": "Human Shaman",
       "type": "creature",
       "attack": 2,
@@ -38566,7 +38587,9 @@
           "to": "hand"
         }
       ],
-      "description": "Battlecry: Return a card from your graveyard to your hand."
+      "description": "Battlecry: Return a card from your graveyard to your hand.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "demonic_tutor",
@@ -38576,7 +38599,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "epic",
       "type": "sorcery",
       "effects": [
         {
@@ -38584,7 +38606,9 @@
           "to": "hand"
         }
       ],
-      "description": "Search your deck for any card & put it into your hand."
+      "description": "Search your deck for any card & put it into your hand.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "imperial_recruiter",
@@ -38594,7 +38618,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "epic",
       "tribe": "Human",
       "type": "creature",
       "attack": 1,
@@ -38610,7 +38633,9 @@
           "to": "hand"
         }
       ],
-      "description": "Battlecry: Search your deck for a creature with 2 or less Attack."
+      "description": "Battlecry: Search your deck for a creature with 2 or less Attack.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "precinct_captain",
@@ -38620,7 +38645,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -38641,7 +38665,9 @@
           }
         ]
       },
-      "description": "First Strike.\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token."
+      "description": "First Strike.\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "soul_warden",
@@ -38651,7 +38677,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -38667,7 +38692,9 @@
           }
         ]
       },
-      "description": "Whenever another creature enters, you gain 1 life."
+      "description": "Whenever another creature enters, you gain 1 life.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "soul_s_attendant",
@@ -38677,7 +38704,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -38693,7 +38719,9 @@
           }
         ]
       },
-      "description": "Whenever another creature enters, you may gain 1 life."
+      "description": "Whenever another creature enters, you may gain 1 life.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "knight_of_meadowgrain",
@@ -38703,7 +38731,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -38713,7 +38740,9 @@
         "first_strike",
         "lifesteal"
       ],
-      "description": "First Strike.\nLifesteal."
+      "description": "First Strike.\nLifesteal.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "wrath_of_god",
@@ -38723,7 +38752,6 @@
       ],
       "cardClass": "neutral",
       "cost": 4,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -38731,7 +38759,9 @@
           "type": "destroy-all"
         }
       ],
-      "description": "Destroy all creatures. They can't be regenerated."
+      "description": "Destroy all creatures. They can't be regenerated.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "day_of_judgment",
@@ -38741,7 +38771,6 @@
       ],
       "cardClass": "neutral",
       "cost": 4,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -38749,7 +38778,9 @@
           "type": "destroy-all"
         }
       ],
-      "description": "Destroy all creatures."
+      "description": "Destroy all creatures.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "honor_of_the_pure",
@@ -38759,14 +38790,15 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "enchantment",
       "aura": {
         "attack": 1,
         "health": 1
       },
-      "description": "White creatures you control get +1/+1."
+      "description": "White creatures you control get +1/+1.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "glorious_anthem",
@@ -38776,14 +38808,15 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "enchantment",
       "aura": {
         "attack": 1,
         "health": 1
       },
-      "description": "Creatures you control get +1/+1."
+      "description": "Creatures you control get +1/+1.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "smite_the_monstrous",
@@ -38793,7 +38826,6 @@
       ],
       "cardClass": "neutral",
       "cost": 4,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -38803,7 +38835,9 @@
           "minAttack": 4
         }
       ],
-      "description": "Destroy target creature with power 4 or greater."
+      "description": "Destroy target creature with power 4 or greater.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "aether_adept",
@@ -38813,7 +38847,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -38828,7 +38861,9 @@
           "target": "creature"
         }
       ],
-      "description": "Battlecry: return target creature to its owner's hand."
+      "description": "Battlecry: return target creature to its owner's hand.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "waterfront_bouncer",
@@ -38838,7 +38873,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -38857,7 +38891,9 @@
           "text": "Return target creature to its owner's hand."
         }
       ],
-      "description": "1: Return target creature to its owner's hand."
+      "description": "1: Return target creature to its owner's hand.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "neurok_commando",
@@ -38867,7 +38903,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -38885,7 +38920,9 @@
           }
         ]
       },
-      "description": "Elusive.\nWhenever this creature deals combat damage to a player, you may draw a card."
+      "description": "Elusive.\nWhenever this creature deals combat damage to a player, you may draw a card.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "sage_s_row_savant",
@@ -38895,7 +38932,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -38910,7 +38946,9 @@
           "value": 2
         }
       ],
-      "description": "Battlecry: scry 2."
+      "description": "Battlecry: scry 2.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "sigiled_starfish",
@@ -38920,7 +38958,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 0,
@@ -38938,7 +38975,9 @@
           "text": "Scry 1."
         }
       ],
-      "description": "0: Scry 1."
+      "description": "0: Scry 1.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "jace_s_ingenuity",
@@ -38948,7 +38987,6 @@
       ],
       "cardClass": "neutral",
       "cost": 5,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -38957,7 +38995,9 @@
           "value": 3
         }
       ],
-      "description": "Draw three cards."
+      "description": "Draw three cards.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "unsummon",
@@ -38967,7 +39007,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -38976,7 +39015,9 @@
           "target": "creature"
         }
       ],
-      "description": "Return target creature to its owner's hand."
+      "description": "Return target creature to its owner's hand.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "diregraf_ghoul",
@@ -38986,13 +39027,14 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Undead",
-      "description": "A 2/2 creature."
+      "description": "A 2/2 creature.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "nantuko_shade",
@@ -39002,7 +39044,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
@@ -39021,7 +39062,9 @@
           "text": "This creature gets +1/+1 until end of turn."
         }
       ],
-      "description": "1: This creature gets +1/+1 until end of turn."
+      "description": "1: This creature gets +1/+1 until end of turn.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "dusk_legion_zealot",
@@ -39031,7 +39074,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39051,7 +39093,9 @@
           "target": "own-hero"
         }
       ],
-      "description": "Battlecry: you draw a card & you lose 1 life."
+      "description": "Battlecry: you draw a card & you lose 1 life.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "walking_corpse",
@@ -39061,13 +39105,14 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Undead",
-      "description": "A 2/2 creature."
+      "description": "A 2/2 creature.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "shambling_ghoul",
@@ -39077,13 +39122,14 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Undead",
-      "description": "A 2/3 creature."
+      "description": "A 2/3 creature.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "black_cat",
@@ -39093,7 +39139,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39108,7 +39153,9 @@
           "value": 1
         }
       ],
-      "description": "Deathrattle: target opponent discards a card at random."
+      "description": "Deathrattle: target opponent discards a card at random.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "ostracize",
@@ -39118,7 +39165,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39127,7 +39173,9 @@
           "value": 1
         }
       ],
-      "description": "Target opponent reveals their hand. You choose a creature card from it. That player discards that card."
+      "description": "Target opponent reveals their hand. You choose a creature card from it. That player discards that card.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "hymn_to_tourach",
@@ -39137,7 +39185,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39146,7 +39193,9 @@
           "value": 2
         }
       ],
-      "description": "Target player discards two cards at random."
+      "description": "Target player discards two cards at random.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "grasp_of_darkness",
@@ -39156,7 +39205,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39167,7 +39215,9 @@
           "target": "creature"
         }
       ],
-      "description": "Target creature gets -4/-4 until end of turn."
+      "description": "Target creature gets -4/-4 until end of turn.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "dismember",
@@ -39177,7 +39227,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39188,7 +39237,9 @@
           "target": "creature"
         }
       ],
-      "description": "Target creature gets -5/-5 until end of turn."
+      "description": "Target creature gets -5/-5 until end of turn.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "despise",
@@ -39198,7 +39249,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39207,7 +39257,9 @@
           "value": 1
         }
       ],
-      "description": "Target opponent reveals their hand. You choose a creature or planeswalker card from it. That player discards that card."
+      "description": "Target opponent reveals their hand. You choose a creature or planeswalker card from it. That player discards that card.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "distress",
@@ -39217,7 +39269,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39226,7 +39277,9 @@
           "value": 1
         }
       ],
-      "description": "Target player reveals their hand. You choose a nonland card from it. That player discards that card."
+      "description": "Target player reveals their hand. You choose a nonland card from it. That player discards that card.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "diabolic_edict",
@@ -39236,7 +39289,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39244,7 +39296,9 @@
           "type": "sacrifice-each-enemy"
         }
       ],
-      "description": "Target player sacrifices a creature of their choice."
+      "description": "Target player sacrifices a creature of their choice.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "goblin_matron",
@@ -39254,7 +39308,6 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39271,7 +39324,9 @@
           "tribe": "Goblin"
         }
       ],
-      "description": "Battlecry: search your library for a Goblin card, reveal that card, put it into your hand, then shuffle."
+      "description": "Battlecry: search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "goblin_instigator",
@@ -39281,7 +39336,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39299,7 +39353,9 @@
           "name": "Goblin"
         }
       ],
-      "description": "Battlecry: create a 1/1 red Goblin creature token."
+      "description": "Battlecry: create a 1/1 red Goblin creature token.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "monastery_swiftspear",
@@ -39309,7 +39365,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39328,7 +39383,9 @@
           }
         ]
       },
-      "description": "Charge.\nProwess: +1/+1 this turn whenever you cast a spell."
+      "description": "Charge.\nProwess: +1/+1 this turn whenever you cast a spell.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "kiln_fiend",
@@ -39338,7 +39395,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39354,7 +39410,9 @@
           }
         ]
       },
-      "description": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn."
+      "description": "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "raging_goblin",
@@ -39364,7 +39422,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39373,7 +39430,9 @@
       "keywords": [
         "charge"
       ],
-      "description": "Charge."
+      "description": "Charge.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "lava_spike",
@@ -39383,7 +39442,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39393,7 +39451,9 @@
           "target": "enemy-heroes"
         }
       ],
-      "description": "this creature deals 3 damage to target player or planeswalker."
+      "description": "this creature deals 3 damage to target player or planeswalker.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "searing_spear",
@@ -39403,7 +39463,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39413,7 +39472,9 @@
           "target": "any"
         }
       ],
-      "description": "this creature deals 3 damage to any target."
+      "description": "this creature deals 3 damage to any target.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "lightning_strike",
@@ -39423,7 +39484,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39433,7 +39493,9 @@
           "target": "any"
         }
       ],
-      "description": "this creature deals 3 damage to any target."
+      "description": "this creature deals 3 damage to any target.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "flame_slash",
@@ -39443,7 +39505,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39453,7 +39514,9 @@
           "target": "creature"
         }
       ],
-      "description": "this creature deals 4 damage to target creature."
+      "description": "this creature deals 4 damage to target creature.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "volcanic_hammer",
@@ -39463,7 +39526,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39473,7 +39535,9 @@
           "target": "any"
         }
       ],
-      "description": "this creature deals 3 damage to any target."
+      "description": "this creature deals 3 damage to any target.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "flame_javelin",
@@ -39483,7 +39547,6 @@
       ],
       "cardClass": "neutral",
       "cost": 6,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39493,7 +39556,9 @@
           "target": "any"
         }
       ],
-      "description": "this creature deals 4 damage to any target."
+      "description": "this creature deals 4 damage to any target.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "magma_jet",
@@ -39503,7 +39568,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39517,7 +39581,9 @@
           "value": 2
         }
       ],
-      "description": "this creature deals 2 damage to any target. Scry 2."
+      "description": "this creature deals 2 damage to any target. Scry 2.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "pyroclasm",
@@ -39527,7 +39593,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39537,7 +39602,9 @@
           "target": "all-creatures"
         }
       ],
-      "description": "this creature deals 2 damage to each creature."
+      "description": "this creature deals 2 damage to each creature.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "leatherback_baloth",
@@ -39547,13 +39614,14 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Beast",
-      "description": "A 4/5 creature."
+      "description": "A 4/5 creature.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "kalonian_tusker",
@@ -39563,13 +39631,14 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Beast",
-      "description": "A 3/3 creature."
+      "description": "A 3/3 creature.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "garruk_s_companion",
@@ -39579,7 +39648,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 3,
@@ -39588,7 +39656,9 @@
       "keywords": [
         "trample"
       ],
-      "description": "Trample."
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "nessian_courser",
@@ -39598,13 +39668,14 @@
       ],
       "cardClass": "neutral",
       "cost": 3,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Centaur Warrior",
-      "description": "A 3/3 creature."
+      "description": "A 3/3 creature.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "elvish_visionary",
@@ -39614,7 +39685,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "creature",
       "attack": 1,
@@ -39629,7 +39699,9 @@
           "value": 1
         }
       ],
-      "description": "Battlecry: draw a card."
+      "description": "Battlecry: draw a card.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "harmonize",
@@ -39639,7 +39711,6 @@
       ],
       "cardClass": "neutral",
       "cost": 4,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39648,7 +39719,9 @@
           "value": 3
         }
       ],
-      "description": "Draw three cards."
+      "description": "Draw three cards.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "collective_unconscious",
@@ -39658,7 +39731,6 @@
       ],
       "cardClass": "neutral",
       "cost": 6,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39668,7 +39740,9 @@
           "valuePer": "friendly-creatures"
         }
       ],
-      "description": "Draw a card for each creature you control."
+      "description": "Draw a card for each creature you control.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "giant_growth",
@@ -39678,7 +39752,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39689,7 +39762,9 @@
           "target": "creature"
         }
       ],
-      "description": "Target creature gets +3/+3 until end of turn."
+      "description": "Target creature gets +3/+3 until end of turn.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "mutagenic_growth",
@@ -39699,7 +39774,6 @@
       ],
       "cardClass": "neutral",
       "cost": 1,
-      "rarity": "common",
       "set": "wubrg",
       "type": "instant",
       "effects": [
@@ -39710,7 +39784,9 @@
           "target": "creature"
         }
       ],
-      "description": "Target creature gets +2/+2 until end of turn."
+      "description": "Target creature gets +2/+2 until end of turn.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "damnation",
@@ -39720,7 +39796,6 @@
       ],
       "cardClass": "neutral",
       "cost": 4,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39728,7 +39803,9 @@
           "type": "destroy-all"
         }
       ],
-      "description": "Destroy all creatures. They can't be regenerated."
+      "description": "Destroy all creatures. They can't be regenerated.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "night_s_whisper",
@@ -39738,7 +39815,6 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "rarity": "common",
       "set": "wubrg",
       "type": "sorcery",
       "effects": [
@@ -39752,7 +39828,9 @@
           "target": "own-hero"
         }
       ],
-      "description": "You draw two cards & lose 2 life."
+      "description": "You draw two cards & lose 2 life.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bladed_cultist",
@@ -57751,7 +57829,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to any target.",
       "effects": [
@@ -57760,7 +57837,9 @@
           "value": 3,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "incinerate",
@@ -57771,7 +57850,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to any target.",
       "effects": [
@@ -57780,7 +57858,9 @@
           "value": 3,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "flame_rift",
@@ -57791,7 +57871,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Each player takes 4 damage.",
       "effects": [
@@ -57800,7 +57879,9 @@
           "value": 4,
           "target": "all-heroes"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "ancestral_recall",
@@ -57811,7 +57892,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Draw 3 cards.",
       "effects": [
@@ -57819,7 +57899,9 @@
           "type": "draw",
           "value": 3
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "preordain",
@@ -57830,7 +57912,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Scry 2, then draw a card.",
       "effects": [
@@ -57842,7 +57923,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "ponder",
@@ -57853,7 +57936,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Scry 3, then draw a card.",
       "effects": [
@@ -57865,7 +57947,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "infernal_grasp",
@@ -57876,7 +57960,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature.\nYou lose 2 life.",
       "effects": [
@@ -57889,7 +57972,9 @@
           "value": 2,
           "target": "own-hero"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "sign_in_blood",
@@ -57900,7 +57985,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Draw 2 cards.\nYou lose 2 life.",
       "effects": [
@@ -57913,7 +57997,9 @@
           "value": 2,
           "target": "own-hero"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "swords_to_plowshares",
@@ -57924,7 +58010,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "Exile a creature.",
       "effects": [
@@ -57932,7 +58017,9 @@
           "type": "exile",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "fiend_hunter",
@@ -57945,7 +58032,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -57956,7 +58042,9 @@
           "type": "exile-until-return",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "steppe_lynx",
@@ -57969,7 +58057,6 @@
       "cardClass": "neutral",
       "attack": 0,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "Landfall: this gets +2/+2 until end of turn.",
@@ -57982,7 +58069,9 @@
             "health": 2
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "giant_killer",
@@ -57995,11 +58084,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "",
-      "effects": []
+      "effects": [],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "sunlance",
@@ -58010,7 +58100,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to a creature.",
       "effects": [
@@ -58019,7 +58108,9 @@
           "value": 3,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "vapor_snag",
@@ -58030,7 +58121,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Return a creature an opponent controls to its owner's hand.\nThat player loses 1 life.",
       "effects": [
@@ -58043,7 +58133,9 @@
           "value": 1,
           "target": "enemy-heroes"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "snap",
@@ -58054,7 +58146,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Return a creature to its owner's hand.",
       "effects": [
@@ -58062,7 +58153,9 @@
           "type": "bounce",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "thought_scour",
@@ -58073,7 +58166,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Mill 2 cards, then draw a card.",
       "effects": [
@@ -58085,7 +58177,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "chart_a_course",
@@ -58096,7 +58190,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Draw 2 cards.",
       "effects": [
@@ -58104,7 +58197,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "ravenous_chupacabra",
@@ -58117,7 +58212,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58129,7 +58223,9 @@
           "target": "enemy-creature"
         }
       ],
-      "tribe": "Undead Beast"
+      "tribe": "Undead Beast",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "read_the_bones",
@@ -58140,7 +58236,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Scry 2, then draw 2 cards.\nYou lose 2 life.",
       "effects": [
@@ -58157,7 +58252,9 @@
           "value": 2,
           "target": "own-hero"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "doom_blade",
@@ -58168,7 +58265,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature an opponent controls.",
       "effects": [
@@ -58176,7 +58272,9 @@
           "type": "destroy",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "pillar_of_flame",
@@ -58187,7 +58285,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 2 damage to any target.",
       "effects": [
@@ -58196,7 +58293,9 @@
           "value": 2,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "mogg_fanatic",
@@ -58209,7 +58308,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "Sacrifice this: deal 1 damage to any target.",
@@ -58226,7 +58324,9 @@
           ],
           "text": "Sacrifice: deal 1 damage to any target."
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "goblin_arsonist",
@@ -58239,7 +58339,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "deathrattle"
@@ -58251,7 +58350,9 @@
           "value": 1,
           "target": "enemy-heroes"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "banisher_priest",
@@ -58264,7 +58365,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58275,7 +58375,9 @@
           "type": "exile-until-return",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "raise_the_alarm",
@@ -58286,7 +58388,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Create two 1/1 Soldier creature tokens.",
       "effects": [
@@ -58298,7 +58399,9 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "elite_vanguard",
@@ -58311,12 +58414,13 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "",
       "effects": [],
-      "tribe": "Human Soldier"
+      "tribe": "Human Soldier",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "opt",
@@ -58327,7 +58431,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Scry 1, then draw a card.",
       "effects": [
@@ -58339,7 +58442,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "serum_visions",
@@ -58350,7 +58455,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Draw a card, then Scry 2.",
       "effects": [
@@ -58362,7 +58466,9 @@
           "type": "scry",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "man_o_war",
@@ -58375,7 +58481,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58386,7 +58491,9 @@
           "type": "bounce",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "gravedigger",
@@ -58399,7 +58506,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58410,7 +58516,9 @@
           "type": "gy-return",
           "to": "hand"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "goblin_guide",
@@ -58423,13 +58531,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "charge"
       ],
       "description": "Charge.",
-      "effects": []
+      "effects": [],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "abrade",
@@ -58440,7 +58549,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to a creature.",
       "effects": [
@@ -58449,7 +58557,9 @@
           "value": 3,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "acidic_slime",
@@ -58462,7 +58572,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "deathtouch",
@@ -58474,7 +58583,9 @@
           "type": "destroy",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "beast_within",
@@ -58485,7 +58596,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature.",
       "effects": [
@@ -58493,7 +58603,9 @@
           "type": "destroy",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "blacksmith_skill",
@@ -58504,7 +58616,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Target creature gains Immune for 3 turns.",
       "effects": [
@@ -58513,7 +58624,9 @@
           "target": "creature",
           "turns": 3
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "frost_lynx",
@@ -58526,7 +58639,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58537,7 +58649,9 @@
           "type": "freeze",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "sea_gate_oracle",
@@ -58550,7 +58664,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58561,7 +58674,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "cut_down",
@@ -58572,7 +58687,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature with 3 or less Attack.",
       "effects": [
@@ -58581,7 +58695,9 @@
           "target": "creature",
           "maxAttack": 3
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "vampire_nighthawk",
@@ -58594,14 +58710,15 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "uncommon",
       "set": "wubrg",
       "keywords": [
         "deathtouch",
         "lifesteal"
       ],
       "description": "Deathtouch.\nLifesteal.",
-      "effects": []
+      "effects": [],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "unholy_heat",
@@ -58612,7 +58729,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 2 damage to a creature.",
       "effects": [
@@ -58621,7 +58737,9 @@
           "value": 2,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "fervent_champion",
@@ -58634,14 +58752,15 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "first_strike",
         "charge"
       ],
       "description": "First Strike.\nCharge.",
-      "effects": []
+      "effects": [],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "borderland_marauder",
@@ -58654,7 +58773,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "Whenever this attacks, it gets +2/+0 until end of turn.",
@@ -58667,7 +58785,9 @@
             "health": 0
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "ash_zealot",
@@ -58680,14 +58800,15 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "first_strike",
         "charge"
       ],
       "description": "First Strike.\nCharge.",
-      "effects": []
+      "effects": [],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "clockwork_fox",
@@ -58700,7 +58821,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "deathrattle"
@@ -58711,7 +58831,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "rumbling_baloth",
@@ -58724,11 +58846,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "",
-      "effects": []
+      "effects": [],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "midnight_reaper",
@@ -58741,7 +58864,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [],
       "description": "Whenever a creature you control dies, draw a card.",
@@ -58753,7 +58875,9 @@
             "value": 1
           }
         ]
-      }
+      },
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "blood_artist",
@@ -58766,7 +58890,6 @@
       "cardClass": "neutral",
       "attack": 0,
       "health": 1,
-      "rarity": "uncommon",
       "set": "wubrg",
       "keywords": [],
       "description": "Whenever any creature dies, each other player loses 1 life & you gain 1 life.",
@@ -58785,7 +58908,9 @@
           }
         ]
       },
-      "tribe": "Vampire Noble"
+      "tribe": "Vampire Noble",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "lightning_helix",
@@ -58796,7 +58921,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to any target.\nGain 3 life.",
       "effects": [
@@ -58810,7 +58934,9 @@
           "value": 3,
           "target": "self"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "terminate",
@@ -58821,7 +58947,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature an opponent controls.",
       "effects": [
@@ -58829,7 +58954,9 @@
           "type": "destroy",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "pelakka_wurm",
@@ -58842,7 +58969,6 @@
       "cardClass": "neutral",
       "attack": 7,
       "health": 7,
-      "rarity": "uncommon",
       "set": "wubrg",
       "keywords": [
         "battlecry",
@@ -58861,7 +58987,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "wall_of_omens",
@@ -58874,7 +59002,6 @@
       "cardClass": "neutral",
       "attack": 0,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [
         "taunt",
@@ -58886,7 +59013,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "goblin_chainwhirler",
@@ -58899,7 +59028,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "rare",
       "set": "wubrg",
       "keywords": [
         "battlecry"
@@ -58911,7 +59039,9 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "grizzled_outrider",
@@ -58924,11 +59054,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "keywords": [],
       "description": "",
-      "effects": []
+      "effects": [],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "shock",
@@ -58939,7 +59070,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 2 damage to any target.",
       "effects": [
@@ -58948,7 +59078,9 @@
           "value": 2,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "divination",
@@ -58959,7 +59091,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Draw 2 cards.",
       "effects": [
@@ -58967,7 +59098,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "murder",
@@ -58978,7 +59111,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature.",
       "effects": [
@@ -58986,7 +59118,9 @@
           "type": "destroy",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "youthful_knight",
@@ -58999,14 +59133,15 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Knight",
       "keywords": [
         "first_strike"
       ],
       "description": "First Strike.",
-      "effects": []
+      "effects": [],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "lava_coil",
@@ -59017,7 +59152,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 4 damage to a creature.",
       "effects": [
@@ -59026,7 +59160,9 @@
           "value": 4,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "flametongue_kavu",
@@ -59039,7 +59175,6 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
@@ -59052,7 +59187,9 @@
           "value": 4,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "mind_rot",
@@ -59063,7 +59200,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "The enemy discards 2 cards at random.",
       "effects": [
@@ -59071,7 +59207,9 @@
           "type": "enemy-discard",
           "count": 2
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "duress",
@@ -59082,7 +59220,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "The enemy discards a card at random.",
       "effects": [
@@ -59090,7 +59227,9 @@
           "type": "enemy-discard",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "repulse",
@@ -59101,7 +59240,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Return a creature to its owner's hand.\nDraw a card.",
       "effects": [
@@ -59113,7 +59251,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "icatian_javelineers",
@@ -59126,7 +59266,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [
@@ -59139,7 +59278,9 @@
           "value": 1,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "axebane_stag",
@@ -59152,12 +59293,13 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
       "description": "",
-      "effects": []
+      "effects": [],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "disenchant",
@@ -59168,7 +59310,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.",
       "effects": [
@@ -59176,7 +59317,9 @@
           "type": "destroy-art-ench",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "naturalize",
@@ -59187,7 +59330,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.",
       "effects": [
@@ -59195,7 +59337,9 @@
           "type": "destroy-art-ench",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "return_to_dust",
@@ -59206,7 +59350,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "Exile up to two enemy artifacts or enchantments.",
       "effects": [
@@ -59215,7 +59358,9 @@
           "count": 2,
           "exile": true
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "kor_sanctifiers",
@@ -59228,7 +59373,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kor Cleric",
       "keywords": [
@@ -59240,7 +59384,9 @@
           "type": "destroy-art-ench",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "oblivion_ring",
@@ -59251,7 +59397,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "When this enters, exile a creature an opponent controls until Oblivion Ring leaves play.",
       "effects": [
@@ -59259,7 +59404,9 @@
           "type": "exile-until-return",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "journey_to_nowhere",
@@ -59270,7 +59417,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "When this enters, exile a creature an opponent controls until it leaves play.",
       "effects": [
@@ -59278,7 +59424,9 @@
           "type": "exile-until-return",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "banishing_light",
@@ -59289,7 +59437,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "When this enters, exile a creature an opponent controls until Banishing Light leaves play.",
       "effects": [
@@ -59297,7 +59444,9 @@
           "type": "exile-until-return",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "blade_splicer",
@@ -59310,7 +59459,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Phyrexian Human",
       "keywords": [
@@ -59325,7 +59473,9 @@
           "attack": 3,
           "health": 3
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "fragmentize",
@@ -59336,7 +59486,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.",
       "effects": [
@@ -59344,7 +59493,9 @@
           "type": "destroy-art-ench",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "ajanis_welcome",
@@ -59355,7 +59506,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Whenever a creature you control enters, gain 1 life.",
       "ongoing": {
@@ -59367,7 +59517,9 @@
             "target": "self"
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "generous_gift",
@@ -59378,7 +59530,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy a creature an opponent controls.\nIts owner creates a 3/3 Elephant.",
       "effects": [
@@ -59394,7 +59545,9 @@
           "health": 3,
           "forEnemy": true
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "carrier_thrall",
@@ -59407,7 +59560,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Undead",
       "keywords": [
@@ -59422,7 +59574,9 @@
           "attack": 1,
           "health": 1
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "fleshbag_marauder",
@@ -59435,7 +59589,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Undead",
       "keywords": [
@@ -59446,7 +59599,9 @@
         {
           "type": "sacrifice-each"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "gray_merchant",
@@ -59459,7 +59614,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Undead",
       "keywords": [
@@ -59477,7 +59631,9 @@
           "value": 3,
           "target": "self"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "grave_titan",
@@ -59490,7 +59646,6 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 6,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Undead Giant",
       "keywords": [
@@ -59506,7 +59661,9 @@
           "attack": 2,
           "health": 2
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "fatal_push",
@@ -59517,7 +59674,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "Destroy a creature with 2 or less Attack.",
       "effects": [
@@ -59526,7 +59682,9 @@
           "target": "creature",
           "maxAttack": 2
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "impact_tremors",
@@ -59537,7 +59695,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Whenever a creature you control enters, each other player loses 1 life.",
       "ongoing": {
@@ -59549,7 +59706,9 @@
             "target": "enemy-heroes"
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "smash_to_smithereens",
@@ -59560,7 +59719,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.\nEach other player loses 3 life.",
       "effects": [
@@ -59573,7 +59731,9 @@
           "value": 3,
           "target": "enemy-heroes"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "returned_reveler",
@@ -59586,7 +59746,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Undead",
       "keywords": [
@@ -59599,7 +59758,9 @@
           "value": 3,
           "target": "all"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "death_baron",
@@ -59612,7 +59773,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Undead",
       "keywords": [],
@@ -59625,7 +59785,9 @@
         "keywords": [
           "deathtouch"
         ]
-      }
+      },
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "gifted_aetherborn",
@@ -59638,7 +59800,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "uncommon",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [
@@ -59646,7 +59807,9 @@
         "lifesteal"
       ],
       "description": "Deathtouch.\nLifesteal.",
-      "effects": []
+      "effects": [],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "shatter",
@@ -59657,7 +59820,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact.",
       "effects": [
@@ -59666,7 +59828,9 @@
           "count": 1,
           "only": "artifact"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "smelt",
@@ -59677,7 +59841,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact.",
       "effects": [
@@ -59686,7 +59849,9 @@
           "count": 1,
           "only": "artifact"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "bone_saw",
@@ -59793,7 +59958,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Search your deck for an Equipment and put it into your hand.",
       "effects": [
@@ -59802,7 +59966,9 @@
           "equipment": true,
           "to": "hand"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "stoneforge_mystic",
@@ -59815,7 +59981,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Kor Artificer",
       "keywords": [
@@ -59839,7 +60004,9 @@
           ],
           "text": "Put an Equipment from your hand into play."
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "puresteel_paladin",
@@ -59852,7 +60019,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [],
@@ -59866,7 +60032,9 @@
             "value": 1
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "kor_outfitter",
@@ -59879,7 +60047,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kor Soldier",
       "keywords": [
@@ -59891,7 +60058,9 @@
           "type": "attach-equip",
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "savannah_lions",
@@ -59904,11 +60073,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": "A 2/1 for one mana."
+      "description": "A 2/1 for one mana.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "counterspell",
@@ -59919,11 +60089,12 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "description": "Counter target spell.",
-      "effects": []
+      "effects": [],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "lightning_bolt",
@@ -59934,7 +60105,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 3 damage to any target.",
       "effects": [
@@ -59943,7 +60113,9 @@
           "value": 3,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "chrome_cat",
@@ -59956,7 +60128,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
@@ -59968,7 +60139,9 @@
           "type": "scry",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "reclamation_sage",
@@ -59981,7 +60154,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf Shaman",
       "keywords": [
@@ -59993,7 +60165,9 @@
           "type": "destroy-art-ench",
           "count": 1
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "natures_claim",
@@ -60004,7 +60178,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.\nIts controller gains 4 life.",
       "effects": [
@@ -60017,7 +60190,9 @@
           "value": 4,
           "target": "enemy-heroes"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "slice_in_twain",
@@ -60028,7 +60203,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Destroy an enemy artifact or enchantment.\nDraw a card.",
       "effects": [
@@ -60040,7 +60214,9 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "lotus_cobra",
@@ -60053,7 +60229,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Snake",
       "keywords": [],
@@ -60066,7 +60241,9 @@
             "value": 1
           }
         ]
-      }
+      },
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "revoke_existence",
@@ -60077,7 +60254,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Exile an enemy artifact or enchantment.",
       "effects": [
@@ -60086,7 +60262,9 @@
           "count": 1,
           "exile": true
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "bronze_walrus",
@@ -60120,13 +60298,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "notType": "creature"
       },
-      "description": "Counter target noncreature spell."
+      "description": "Counter target noncreature spell.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "dispel",
@@ -60137,13 +60316,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "type": "instant"
       },
-      "description": "Counter target instant spell."
+      "description": "Counter target instant spell.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "spell_snare",
@@ -60154,13 +60334,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "manaValue": 2
       },
-      "description": "Counter target spell with mana value 2."
+      "description": "Counter target spell with mana value 2.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "mana_leak",
@@ -60171,13 +60352,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "unlessPay": 3
       },
-      "description": "Counter target spell unless its controller pays 3."
+      "description": "Counter target spell unless its controller pays 3.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "force_spike",
@@ -60188,13 +60370,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "unlessPay": 1
       },
-      "description": "Counter target spell unless its controller pays 1."
+      "description": "Counter target spell unless its controller pays 1.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "spell_pierce",
@@ -60205,14 +60388,15 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "notType": "creature",
         "unlessPay": 2
       },
-      "description": "Counter target noncreature spell unless its controller pays 2."
+      "description": "Counter target noncreature spell unless its controller pays 2.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "remand",
@@ -60223,7 +60407,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
@@ -60235,7 +60418,9 @@
           "value": 1
         }
       ],
-      "description": "Counter target spell.\nReturn it to its owner's hand.\nDraw a card."
+      "description": "Counter target spell.\nReturn it to its owner's hand.\nDraw a card.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "memory_lapse",
@@ -60246,13 +60431,14 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
         "to": "top"
       },
-      "description": "Counter target spell.\nPut it on top of its owner's library instead of into the graveyard."
+      "description": "Counter target spell.\nPut it on top of its owner's library instead of into the graveyard.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "rhystic_study",
@@ -60263,7 +60449,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Whenever an opponent casts a spell, they must pay 1 or you draw a card.",
       "ongoing": {
@@ -60281,7 +60466,9 @@
             ]
           }
         ]
-      }
+      },
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "smothering_tithe",
@@ -60292,7 +60479,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Whenever an opponent draws a card, they must pay 2 or you create a Treasure token.",
       "ongoing": {
@@ -60309,7 +60495,9 @@
             ]
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "ghostly_prison",
@@ -60320,12 +60508,13 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "attackTax": {
         "amount": 2
       },
-      "description": "Creatures can't attack you unless their controller pays 2 for each attacking creature."
+      "description": "Creatures can't attack you unless their controller pays 2 for each attacking creature.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "thrill_of_possibility",
@@ -60336,7 +60525,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "addCost": {
         "discard": 1
@@ -60347,7 +60535,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "unexpected_windfall",
@@ -60358,7 +60548,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "addCost": {
         "discard": 1
@@ -60375,7 +60564,9 @@
         {
           "type": "enrich"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "shard_volley",
@@ -60386,7 +60577,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "addCost": {
         "sacrifice": "land"
@@ -60398,7 +60588,9 @@
           "value": 3,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "reckless_abandon",
@@ -60409,7 +60601,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "addCost": {
         "sacrifice": "creature"
@@ -60421,7 +60612,9 @@
           "value": 4,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "deadly_dispute",
@@ -60432,7 +60625,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "addCost": {
         "sacrifice": "artifact-or-creature"
@@ -60446,7 +60638,9 @@
         {
           "type": "enrich"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "fireblast",
@@ -60457,7 +60651,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "altCost": {
         "label": "Sacrifice two Mountains",
@@ -60473,7 +60666,9 @@
           "value": 4,
           "target": "any"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "force_of_will",
@@ -60484,7 +60679,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "counterSpell": true,
       "altCost": {
@@ -60495,7 +60689,9 @@
           "count": 1
         }
       },
-      "description": "You may pay 1 life & exile a blue card from your hand rather than pay this spell's cost.\nCounter target spell."
+      "description": "You may pay 1 life & exile a blue card from your hand rather than pay this spell's cost.\nCounter target spell.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "force_of_negation",
@@ -60506,7 +60702,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
@@ -60523,7 +60718,9 @@
           "count": 1
         }
       },
-      "description": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's cost.\nCounter target noncreature spell.\nExile it instead of putting it into a graveyard."
+      "description": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's cost.\nCounter target noncreature spell.\nExile it instead of putting it into a graveyard.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "invigorate",
@@ -60534,7 +60731,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "altCost": {
         "label": "An opponent gains 3 life",
@@ -60551,7 +60747,9 @@
           "health": 4,
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "burst_lightning",
@@ -60562,7 +60760,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Deal 2 damage to any target.\nKicker 4 — if kicked, deal 4 damage instead.",
       "effects": [
@@ -60581,7 +60778,9 @@
             "target": "any"
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "rite_of_replication",
@@ -60592,7 +60791,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Create a token copy of target creature.\nKicker 5 — if kicked, create five copies instead.",
       "effects": [
@@ -60616,7 +60814,9 @@
             "type": "copy-summon"
           }
         ]
-      }
+      },
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "baloth_gorger",
@@ -60629,7 +60829,6 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
@@ -60643,7 +60842,9 @@
             "health": 3
           }
         ]
-      }
+      },
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "goblin_bushwhacker",
@@ -60656,7 +60857,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Goblin Warrior",
       "keywords": [],
@@ -60675,7 +60875,9 @@
             "target": "friendly-creatures"
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "austere_command",
@@ -60686,7 +60888,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "chooseCount": 2,
       "description": "Choose two —\n> Destroy all artifacts.\n> Destroy all enchantments.\n> Destroy all creatures with mana value 3 or less.\n> Destroy all creatures with mana value 4 or greater.",
@@ -60731,7 +60932,9 @@
             }
           ]
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "farewell",
@@ -60742,7 +60945,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "chooseMin": 1,
       "chooseMax": 4,
@@ -60789,7 +60991,9 @@
             }
           ]
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "felidar_guardian",
@@ -60802,7 +61006,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 4,
-      "rarity": "uncommon",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
@@ -60815,7 +61018,9 @@
           "target": "friendly-creature",
           "excludeSelf": true
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "charming_prince",
@@ -60828,7 +61033,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Human Noble",
       "keywords": [
@@ -60866,7 +61070,9 @@
             }
           ]
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "prey_upon",
@@ -60877,7 +61083,6 @@
         "G"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "fight": true,
       "fightTarget": "enemy-creature",
@@ -60887,7 +61092,9 @@
           "type": "fight",
           "target": "friendly-creature"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "ghalta",
@@ -60900,7 +61107,6 @@
       "cardClass": "neutral",
       "attack": 12,
       "health": 12,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Elder Dinosaur",
       "keywords": [
@@ -60910,7 +61116,9 @@
         "per": "board-power",
         "amount": -1
       },
-      "description": "This costs 1 less to cast for each point of power among creatures you control.\nTrample."
+      "description": "This costs 1 less to cast for each point of power among creatures you control.\nTrample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "thalia_guardian",
@@ -60923,7 +61131,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [
@@ -60934,7 +61141,9 @@
         "amount": 1,
         "scope": "all"
       },
-      "description": "First strike.\nNoncreature spells cost 1 more to cast."
+      "description": "First strike.\nNoncreature spells cost 1 more to cast.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "goblin_warchief",
@@ -60947,7 +61156,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "uncommon",
       "set": "wubrg",
       "tribe": "Goblin Warrior",
       "keywords": [],
@@ -60963,7 +61171,9 @@
           "charge"
         ]
       },
-      "description": "Goblin spells you cast cost 1 less.\nGoblins you control have Haste (Charge)."
+      "description": "Goblin spells you cast cost 1 less.\nGoblins you control have Haste (Charge).",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "cryptic_command",
@@ -60974,7 +61184,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "chooseCount": 2,
       "description": "Choose two —\n> Counter target spell.\n> Return target permanent to its owner's hand.\n> Tap all creatures your opponents control.\n> Draw a card.",
@@ -61014,7 +61223,9 @@
             }
           ]
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "flux_channeler",
@@ -61027,7 +61238,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "uncommon",
       "set": "wubrg",
       "tribe": "Human Wizard",
       "keywords": [],
@@ -61039,7 +61249,9 @@
             "type": "proliferate"
           }
         ]
-      }
+      },
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "doomed_traveler",
@@ -61052,7 +61264,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [
@@ -61069,7 +61280,9 @@
           "tribe": "Spirit",
           "keywords": []
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "kor_hookmaster",
@@ -61082,7 +61295,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kor Soldier",
       "keywords": [
@@ -61094,7 +61306,9 @@
           "type": "freeze",
           "target": "creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "spectral_procession",
@@ -61105,7 +61319,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "Create three 1/1 Spirit creature tokens with Lifesteal.",
       "effects": [
@@ -61120,7 +61333,9 @@
             "lifesteal"
           ]
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "midnight_haunting",
@@ -61131,7 +61346,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Create two 1/1 Spirit creature tokens.",
       "effects": [
@@ -61144,7 +61358,9 @@
           "tribe": "Spirit",
           "keywords": []
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "cathars_crusade",
@@ -61155,7 +61371,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Whenever a creature you control enters, give your creatures +1/+1.",
       "ongoing": {
@@ -61168,7 +61383,9 @@
             "health": 1
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "ajanis_pridemate",
@@ -61181,7 +61398,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "uncommon",
       "set": "wubrg",
       "tribe": "Beast Soldier",
       "keywords": [],
@@ -61195,7 +61411,9 @@
             "value": 1
           }
         ]
-      }
+      },
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "kor_scythemaster",
@@ -61208,13 +61426,14 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kor Soldier",
       "keywords": [
         "first_strike"
       ],
-      "description": "First strike."
+      "description": "First strike.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "serra_avenger",
@@ -61227,11 +61446,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Angel",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "idyllic_tutor",
@@ -61242,7 +61462,6 @@
         "W"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "description": "Search your deck for an enchantment & put it into your hand.",
       "effects": [
@@ -61251,7 +61470,9 @@
           "cardType": "enchantment",
           "to": "hand"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "kor_skyfisher",
@@ -61264,7 +61485,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kor Soldier",
       "keywords": [
@@ -61276,7 +61496,9 @@
           "type": "bounce",
           "target": "permanent"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "wind_drake",
@@ -61289,11 +61511,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "storm_crow",
@@ -61306,11 +61529,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "faerie_miscreant",
@@ -61323,11 +61547,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Faerie Rogue",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "mulldrifter",
@@ -61340,7 +61565,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [
@@ -61352,7 +61576,9 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "boomerang",
@@ -61363,7 +61589,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Return target permanent to its owner's hand.",
       "effects": [
@@ -61371,7 +61596,9 @@
           "type": "bounce",
           "target": "permanent"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "into_the_roil",
@@ -61382,7 +61609,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "common",
       "set": "wubrg",
       "description": "Return target permanent to its owner's hand.\nKicker 2 - if kicked, draw a card.",
       "effects": [
@@ -61399,7 +61625,9 @@
             "value": 1
           }
         ]
-      }
+      },
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "trinket_mage",
@@ -61412,7 +61640,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Wizard",
       "keywords": [
@@ -61426,7 +61653,9 @@
           "maxCost": 1,
           "to": "hand"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "sower_of_temptation",
@@ -61439,7 +61668,6 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Faerie Wizard",
       "keywords": [
@@ -61451,7 +61679,9 @@
           "type": "mind-control",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "swan_song",
@@ -61462,7 +61692,6 @@
         "U"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "counterSpell": true,
       "counter": {
@@ -61480,7 +61709,9 @@
           "tribe": "Bird",
           "keywords": []
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "sage_owl",
@@ -61493,7 +61724,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird",
       "keywords": [
@@ -61505,7 +61735,9 @@
           "type": "scry",
           "value": 3
         }
-      ]
+      ],
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "ball_lightning",
@@ -61518,7 +61750,6 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 1,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [
@@ -61534,7 +61765,9 @@
             "value": 99
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "spark_elemental",
@@ -61547,7 +61780,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [
@@ -61563,7 +61795,9 @@
             "value": 99
           }
         ]
-      }
+      },
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "gamble",
@@ -61574,7 +61808,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "Search your deck for a card & put it into your hand, then discard a card at random.",
       "effects": [
@@ -61586,7 +61819,9 @@
           "type": "discard-random",
           "value": 1
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "pulverize",
@@ -61597,7 +61832,6 @@
         "R"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "altCost": {
         "label": "Sacrifice two Mountains",
@@ -61614,7 +61848,9 @@
           "count": "all",
           "only": "artifact"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "vampire_interloper",
@@ -61627,11 +61863,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire Scout",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "exsanguinate",
@@ -61642,7 +61879,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "uncommon",
       "set": "wubrg",
       "xSpell": true,
       "description": "Drain X: the enemy loses X life & you gain that much. (X is your leftover mana.)",
@@ -61657,7 +61893,9 @@
           "value": "X",
           "target": "self"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "mind_shatter",
@@ -61668,7 +61906,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "xSpell": true,
       "description": "The enemy discards X cards at random. (X is your leftover mana.)",
@@ -61678,7 +61915,9 @@
           "count": "X",
           "random": true
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bitterblossom",
@@ -61689,7 +61928,6 @@
         "B"
       ],
       "cardClass": "neutral",
-      "rarity": "rare",
       "set": "wubrg",
       "description": "At the start of your turn, lose 1 life & create a 1/1 Faerie Rogue creature token.",
       "ongoing": {
@@ -61710,7 +61948,9 @@
             "keywords": []
           }
         ]
-      }
+      },
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "chardalyn_dragon",
@@ -61723,11 +61963,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Dragon",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "questing_beast",
@@ -61740,14 +61981,15 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "mythic",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
         "deathtouch",
         "charge"
       ],
-      "description": "Deathtouch, Haste."
+      "description": "Deathtouch, Haste.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "reito_sentinel",
@@ -61760,7 +62002,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Construct",
       "keywords": [
@@ -61773,7 +62014,9 @@
           "type": "mill",
           "value": 3
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "elvish_herder",
@@ -61786,7 +62029,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf",
       "keywords": [],
@@ -61804,7 +62046,9 @@
           ],
           "text": "Give a creature Trample"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "goblin_sledder",
@@ -61817,7 +62061,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Goblin",
       "keywords": [],
@@ -61837,7 +62080,9 @@
           ],
           "text": "Sacrifice a Goblin: +1/+1"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "goblin_trashmaster",
@@ -61850,7 +62095,6 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "rare",
       "set": "wubrg",
       "tribe": "Goblin Warrior",
       "keywords": [],
@@ -61874,7 +62118,9 @@
           ],
           "text": "Sacrifice a Goblin: Destroy an artifact"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "viscera_seer",
@@ -61887,7 +62133,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire Wizard",
       "keywords": [],
@@ -61903,7 +62148,9 @@
           ],
           "text": "Sacrifice a creature: Scry 1"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "carrion_feeder",
@@ -61916,7 +62163,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie",
       "keywords": [],
@@ -61933,7 +62179,9 @@
           ],
           "text": "Sacrifice a creature: +1/+1 counter"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bloodthrone_vampire",
@@ -61946,7 +62194,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [],
@@ -61963,7 +62210,9 @@
           ],
           "text": "Sacrifice a creature: +2/+2"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "plagued_rusalka",
@@ -61976,7 +62225,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
@@ -61995,7 +62243,9 @@
           ],
           "text": "(1), Sacrifice a creature: -1/-1"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "cutthroat_contender",
@@ -62008,7 +62258,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire Warrior",
       "keywords": [],
@@ -62024,7 +62273,9 @@
           ],
           "text": "Pay 1 life: +1/+0"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "grimclaw_bats",
@@ -62037,7 +62288,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bat",
       "keywords": [],
@@ -62056,7 +62306,9 @@
           ],
           "text": "(1), Pay 1 life: +1/+1"
         }
-      ]
+      ],
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "scorched_rusalka",
@@ -62069,7 +62321,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
@@ -62087,7 +62338,9 @@
           ],
           "text": "(1), Sacrifice a creature: 1 damage"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "blazing_rootwalla",
@@ -62100,7 +62353,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Lizard",
       "keywords": [],
@@ -62116,7 +62368,9 @@
           ],
           "text": "(1): +2/+0"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "bold_impaler",
@@ -62129,7 +62383,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire Knight",
       "keywords": [],
@@ -62146,7 +62399,9 @@
           ],
           "text": "(3): +2/+0"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "bellows_lizard",
@@ -62159,7 +62414,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Lizard",
       "keywords": [],
@@ -62176,7 +62430,9 @@
           ],
           "text": "(2): +1/+0"
         }
-      ]
+      ],
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "starved_rusalka",
@@ -62189,7 +62445,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
@@ -62207,7 +62462,9 @@
           ],
           "text": "(1), Sacrifice a creature: Gain 1 life"
         }
-      ]
+      ],
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "martyred_rusalka",
@@ -62220,7 +62477,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Spirit",
       "keywords": [],
@@ -62237,7 +62493,9 @@
           ],
           "text": "(1), Sacrifice a creature: Freeze a creature"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "argothian_swine",
@@ -62250,13 +62508,14 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Boar",
       "keywords": [
         "trample"
       ],
-      "description": "Trample."
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "assault_zeppelid",
@@ -62269,13 +62528,14 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
         "trample"
       ],
-      "description": "Trample."
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "beast_in_show",
@@ -62288,13 +62548,14 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
         "trample"
       ],
-      "description": "Trample."
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "ambush_viper",
@@ -62307,13 +62568,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Snake",
       "keywords": [
         "deathtouch"
       ],
-      "description": "Deathtouch."
+      "description": "Deathtouch.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "archers_of_qarsi",
@@ -62326,13 +62588,14 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Snake Archer",
       "keywords": [
         "defender"
       ],
-      "description": "Defender."
+      "description": "Defender.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "bassara_tower_archer",
@@ -62345,13 +62608,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Archer",
       "keywords": [
         "elusive"
       ],
-      "description": "Hexproof."
+      "description": "Hexproof.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "alpine_grizzly",
@@ -62364,11 +62628,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "axebane_beast",
@@ -62381,11 +62646,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "centaur_courser",
@@ -62398,11 +62664,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Centaur Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "craw_wurm",
@@ -62415,11 +62682,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wurm",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "elvish_warrior",
@@ -62432,11 +62700,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "durkwood_boars",
@@ -62449,11 +62718,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Boar",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "feral_krushok",
@@ -62466,11 +62736,12 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "colossodon_yearling",
@@ -62483,11 +62754,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "cylian_elf",
@@ -62500,11 +62772,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf Scout",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "air_elemental",
@@ -62517,11 +62790,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "azure_drake",
@@ -62534,11 +62808,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "cloud_manta",
@@ -62551,11 +62826,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Fish",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "fighting_drake",
@@ -62568,11 +62844,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Drake",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "bay_falcon",
@@ -62585,11 +62862,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "faerie_invaders",
@@ -62602,11 +62880,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Faerie Rogue",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "giant_octopus",
@@ -62619,11 +62898,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Octopus",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "coral_commando",
@@ -62636,11 +62916,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Merfolk Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "amphin_cutthroat",
@@ -62653,11 +62934,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Salamander Rogue",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "horned_turtle",
@@ -62670,11 +62952,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Turtle",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "tolarian_scholar",
@@ -62687,11 +62970,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Wizard",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "ancient_crab",
@@ -62704,11 +62988,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Crab",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "maritime_guard",
@@ -62721,11 +63006,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Merfolk Soldier",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "abbey_griffin",
@@ -62738,11 +63024,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Griffin",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "aerial_responder",
@@ -62755,13 +63042,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Dwarf Soldier",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal"
+      "description": "Lifesteal",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "armored_pegasus",
@@ -62774,11 +63062,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "alabaster_kirin",
@@ -62791,11 +63080,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Kirin",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "ajanis_sunstriker",
@@ -62808,13 +63098,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast Cleric",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal."
+      "description": "Lifesteal.",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "alpine_watchdog",
@@ -62827,11 +63118,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "angel_of_light",
@@ -62844,11 +63136,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Angel",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "aven_fleetwing",
@@ -62861,13 +63154,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bird Soldier",
       "keywords": [
         "elusive"
       ],
-      "description": "Hexproof."
+      "description": "Hexproof.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "benthic_giant",
@@ -62880,13 +63174,14 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Giant",
       "keywords": [
         "elusive"
       ],
-      "description": "Hexproof."
+      "description": "Hexproof.",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "fortress_crab",
@@ -62899,11 +63194,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Crab",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "coral_merfolk",
@@ -62916,11 +63212,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Merfolk",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "naga_eternal",
@@ -62933,11 +63230,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Snake",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "lumengrid_warden",
@@ -62950,11 +63248,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Wizard",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "jhessian_lookout",
@@ -62967,11 +63266,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Scout",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "child_of_night",
@@ -62984,13 +63284,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal."
+      "description": "Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "barony_vampire",
@@ -63003,11 +63304,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bog_imp",
@@ -63020,11 +63322,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Imp",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "arrogant_vampire",
@@ -63037,11 +63340,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bartizan_bats",
@@ -63054,11 +63358,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bat",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "blood_glutton",
@@ -63071,13 +63376,14 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Vampire",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal."
+      "description": "Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "daggerdrome_imp",
@@ -63090,13 +63396,14 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Imp",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal."
+      "description": "Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "cursed_minotaur",
@@ -63109,11 +63416,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Minotaur",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "alley_strangler",
@@ -63126,11 +63434,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Aetherborn Rogue",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "carrion_screecher",
@@ -63143,11 +63452,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Bird",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "catacomb_crocodile",
@@ -63160,11 +63470,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 7,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Crocodile",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "cabal_evangel",
@@ -63177,11 +63488,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Cleric",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "canal_monitor",
@@ -63194,11 +63506,12 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Lizard",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "dakmor_scorpion",
@@ -63211,11 +63524,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Scorpion",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bane_alley_blackguard",
@@ -63228,11 +63542,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Rogue",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "bogstomper",
@@ -63245,11 +63560,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "charity_extractor",
@@ -63262,13 +63578,14 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Knight",
       "keywords": [
         "lifesteal"
       ],
-      "description": "Lifesteal."
+      "description": "Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "balduvian_barbarians",
@@ -63281,11 +63598,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Barbarian",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "boggart_brute",
@@ -63298,11 +63616,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Goblin Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "borderland_minotaur",
@@ -63315,11 +63634,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Minotaur Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "canyon_minotaur",
@@ -63332,11 +63652,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Minotaur Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "brazen_scourge",
@@ -63349,13 +63670,14 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Gremlin",
       "keywords": [
         "charge"
       ],
-      "description": "Haste."
+      "description": "Haste.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "breakneck_berserker",
@@ -63368,13 +63690,14 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Dwarf Berserker",
       "keywords": [
         "charge"
       ],
-      "description": "Haste."
+      "description": "Haste.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "cerodon_yearling",
@@ -63387,13 +63710,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
         "charge"
       ],
-      "description": "Haste."
+      "description": "Haste.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "charging_monstrosaur",
@@ -63406,14 +63730,15 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Dinosaur",
       "keywords": [
         "charge",
         "trample"
       ],
-      "description": "Haste, Trample."
+      "description": "Haste, Trample.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "cobblebrute",
@@ -63426,11 +63751,12 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "anaba_bodyguard",
@@ -63443,13 +63769,14 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Minotaur",
       "keywords": [
         "first_strike"
       ],
-      "description": "First strike."
+      "description": "First strike.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "axegrinder_giant",
@@ -63462,11 +63789,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Giant Warrior",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "bonebreaker_giant",
@@ -63479,11 +63807,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Giant",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "bull_cerodon",
@@ -63496,13 +63825,14 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [
         "charge"
       ],
-      "description": "Haste."
+      "description": "Haste.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "armored_wolf_rider",
@@ -63515,11 +63845,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf Knight",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "ashcoat_bear",
@@ -63532,11 +63863,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "balduvian_bears",
@@ -63549,11 +63881,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "barbary_apes",
@@ -63566,11 +63899,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Ape",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "barbtooth_wurm",
@@ -63583,11 +63917,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wurm",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "bear_cub",
@@ -63600,11 +63935,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "bitterbow_sharpshooters",
@@ -63617,11 +63953,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Jackal Archer",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "blanchwood_treefolk",
@@ -63634,11 +63971,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Treefolk",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "bounding_wolf",
@@ -63651,11 +63989,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wolf",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "brambleweft_behemoth",
@@ -63668,13 +64007,14 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [
         "trample"
       ],
-      "description": "Trample."
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "broodhunter_wurm",
@@ -63687,11 +64027,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wurm",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "brushstrider",
@@ -63704,11 +64045,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "canopy_gorger",
@@ -63721,11 +64063,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wurm",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "elvish_ranger",
@@ -63738,11 +64081,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 1,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elf Ranger",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "colossapede",
@@ -63755,11 +64099,12 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Insect",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "cowl_prowler",
@@ -63772,11 +64117,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wurm",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "fusion_elemental",
@@ -63789,11 +64135,12 @@
       "cardClass": "neutral",
       "attack": 8,
       "health": 8,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elemental",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "forest_bear",
@@ -63806,11 +64153,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "grizzly_bears",
@@ -63823,11 +64171,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Bear",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "catacomb_slug",
@@ -63840,11 +64189,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 6,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Slug",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "trained_armodon",
@@ -63857,11 +64207,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Elephant",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "ageless_guardian",
@@ -63874,11 +64225,12 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Spirit Soldier",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "alaborn_trooper",
@@ -63891,11 +64243,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "ancient_carp",
@@ -63908,11 +64261,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Fish",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "armored_cancrix",
@@ -63925,11 +64279,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Crab",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "armored_whirl_turtle",
@@ -63942,11 +64297,12 @@
       "cardClass": "neutral",
       "attack": 0,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Turtle",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Island",
+      "collectible": false
     },
     {
       "id": "douser_of_lights",
@@ -63959,11 +64315,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Horror",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "dreg_reaver",
@@ -63976,11 +64333,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Zombie Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Swamp",
+      "collectible": false
     },
     {
       "id": "barbarian_horde",
@@ -63993,11 +64351,12 @@
       "cardClass": "neutral",
       "attack": 3,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Barbarian Soldier",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "alpha_tyrranax",
@@ -64010,11 +64369,12 @@
       "cardClass": "neutral",
       "attack": 6,
       "health": 5,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Dinosaur Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "ferocious_zheng",
@@ -64027,11 +64387,12 @@
       "cardClass": "neutral",
       "attack": 4,
       "health": 4,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "garruk_s_gorehorn",
@@ -64044,11 +64405,12 @@
       "cardClass": "neutral",
       "attack": 7,
       "health": 3,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Beast",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Forest",
+      "collectible": false
     },
     {
       "id": "capital_guard",
@@ -64061,11 +64423,12 @@
       "cardClass": "neutral",
       "attack": 2,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [],
-      "description": ""
+      "description": "",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "blistering_barrier",
@@ -64078,13 +64441,14 @@
       "cardClass": "neutral",
       "attack": 5,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Wall",
       "keywords": [
         "defender"
       ],
-      "description": "Defender."
+      "description": "Defender.",
+      "landSet": "Mountain",
+      "collectible": false
     },
     {
       "id": "thraben_inspector",
@@ -64097,7 +64461,6 @@
       "cardClass": "neutral",
       "attack": 1,
       "health": 2,
-      "rarity": "common",
       "set": "wubrg",
       "tribe": "Human Soldier",
       "keywords": [
@@ -64108,7 +64471,9 @@
         {
           "type": "investigate"
         }
-      ]
+      ],
+      "landSet": "Plains",
+      "collectible": false
     },
     {
       "id": "sailor_of_means",

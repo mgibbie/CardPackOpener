@@ -23,19 +23,33 @@ const play = (st, id, target) => E.playCard(st, 0, st.players[0].hand.find(x => 
 
 // ---------- structure: flip + 15-card pool ----------
 ok('Abzan Citadel is colorless', !(byId.abzan_citadel.colors || []).length);
-ok('Abzan Citadel Discovers (not conjures)', byId.abzan_citadel.taps.some(t => t.effects.some(e => e.type === 'discover' && e.match === 'Abzan')));
+ok('Abzan Citadel Discovers from the Abzan landSet', byId.abzan_citadel.taps.some(t => t.effects.some(e => e.type === 'discover' && e.landSet === 'Abzan')));
 const abzan = raw.cards.filter(c => /abzan/i.test(c.name) && c.type !== 'land');
 ok('15 non-land Abzan cards exist', abzan.length === 15, abzan.length);
 ok('every pool card is W/B/G', abzan.every(c => JSON.stringify([...(c.colors || [])].sort()) === '["B","G","W"]'));
+ok('Abzan pool cards are uncollectible + no rarity + landSet Abzan', abzan.every(c => c.collectible === false && !c.rarity && c.landSet === 'Abzan'));
 
 // ---------- the themed discover offers Abzan cards, INCLUDING the colored ones ----------
 {
 	const st = game();
-	E.execEffects(st, 0, [{ type: 'discover', match: 'Abzan', pick: 3 }], null, null);
+	E.execEffects(st, 0, [{ type: 'discover', landSet: 'Abzan', pick: 3 }], null, null);
 	const pq = st.pickQueue[0];
 	ok('discover queued a pick', !!pq);
-	ok('discover offered 3 Abzan cards', pq && pq.ids.length === 3 && pq.ids.every(id => /abzan/i.test(byId[id]?.name || '')), pq?.ids);
-	ok('discover pool includes colored cards (would be excluded without match)', pq && pq.ids.some(id => (byId[id]?.colors || []).length));
+	ok('discover offered 3 Abzan cards', pq && pq.ids.length === 3 && pq.ids.every(id => byId[id]?.landSet === 'Abzan'), pq?.ids);
+	ok('discover pool includes the (uncollectible, colored) set members', pq && pq.ids.every(id => (byId[id]?.colors || []).length && byId[id]?.collectible === false));
+}
+
+// ---------- Basic Land Sets: each basic land generates its 70-card monocolor set ----------
+for (const [id, ls, col] of [['plains', 'Plains', 'W'], ['island', 'Island', 'U'], ['swamp', 'Swamp', 'B'], ['mountain', 'Mountain', 'R'], ['forest', 'Forest', 'G']]) {
+	const set = raw.cards.filter(c => c.landSet === ls);
+	ok(`${ls} set = 70 mono-${col}, uncollectible, no rarity`, set.length === 70 && set.every(c => c.collectible === false && !c.rarity && c.colors?.length === 1 && c.colors[0] === col), set.length);
+	ok(`${id} conjures from the ${ls} landSet`, byId[id].taps.some(t => t.effects.some(e => e.type === 'conjure' && e.landSet === ls)));
+}
+{
+	const st = game();
+	E.execEffects(st, 0, [{ type: 'conjure', landSet: 'Plains', count: 1 }], null, null);
+	const got = st.players[0].hand[0];
+	ok('a basic land conjures a card from its set', got && byId[got.id]?.landSet === 'Plains');
 }
 
 // ---------- the 7 newly-built cards work ----------

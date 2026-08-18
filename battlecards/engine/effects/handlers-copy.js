@@ -939,6 +939,9 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 			const diedDefs = () => [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature'); // Body Wrapper
 			const discoverCost = e.costFromMana ? availableMana(state.players[pi]) : e.cost; // Scrappy Scavenger: Cost = your remaining Mana
 			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
+				// an advanced land's fixed set (e.g. Abzan): draw ONLY its members, which are
+				// uncollectible + colored on purpose, so bypass the usual exclusions below
+				if (e.landSet) return d.landSet === e.landSet && !d.token;
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				// themed discover (e.g. an advanced land's "Discover an Abzan card"): match by
 				// name and ALLOW colored cards — those themed pools are intentionally colored.
@@ -1186,7 +1189,11 @@ const _h_conjure = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			const p = state.players[pi];
 			const defs = Object.values(state.cardsById).filter(d => d.type !== 'land');
 			let pool;
-			if (e.type === 'conjure') {
+			if (e.landSet) {
+				// a land's fixed set (Plains/Island/…/Abzan) — its members are uncollectible on
+				// purpose, so this pool draws from the tag, not by color/collectibility
+				pool = defs.filter(d => d.landSet === e.landSet && !d.token);
+			} else if (e.type === 'conjure') {
 				pool = defs.filter(d => d.colors?.includes(e.color));
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			} else {
