@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "109961d",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Add Advance + Time Travel keywords; reword the timeway locations",
+			"body": "Resolves the 'Advance' naming clash: the 4 Across-the-Timeways location\ncards (Past/Present Silvermoon + Gnomeregan) used \"Advance to the\npresent/future!\" for their time-progression (advance-location), which\nwould collide with the new dungeon Advance keyword. Reworded them to\n\"Time Travel to the present/future!\" (description + tap text), so:\n  - Advance is now unique to Abzan Runemark -> keyword: \"venture a dungeon\"\n  - Time Travel is unique to the 4 locations -> keyword: \"transform to the\n    next era\"\nBoth added to the glossary as separate keywords. Also tightened\nRunemark's text to lean on the tooltips: \"+2/+2, Taunt while you have\nCoven, and Inspire: Advance.\" (bolds exactly Taunt/Coven/Inspire/Advance).\n\nBumped the card-gallery cache-bust ?v 20260810 -> 20260818 (viewer.html\n+ viewer.js) so the gallery reloads keywords.js and shows the new\nCoven/Advance/Time Travel tooltips. Suite 206/206.",
+			"cards": []
+		},
+		{
 			"sha": "35f7f56",
 			"date": "2026-08-18",
 			"kind": "patch",
