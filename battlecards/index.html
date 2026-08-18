@@ -187,6 +187,18 @@
 		#mana-hud.tapped .mh-val { color: #cbb8e8; }
 		#mana-hud.empty .mh-val { color: #8a7fa8; }
 
+		/* dungeon venture panel: the current dungeon's flowchart with a "you are here" marker */
+		#dungeon-panel {
+			position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 28;
+			width: 208px; padding: 8px; text-align: center; user-select: none;
+			background: rgba(20,16,34,0.82); border: 1px solid #6a5f8a; border-radius: 12px;
+			box-shadow: 0 6px 22px rgba(0,0,0,0.6);
+		}
+		#dungeon-panel .dp-title { font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; color: #c9b8ff; margin-bottom: 6px; }
+		#dungeon-panel canvas { width: 100%; height: auto; border-radius: 8px; display: block; }
+		#dungeon-panel .dp-room { font-size: 11px; color: #9d8fd4; margin-top: 5px; }
+		@media (max-width: 760px) { #dungeon-panel { width: 128px; left: 6px; padding: 5px; } #dungeon-panel .dp-title { font-size: 9px; } }
+
 		#log {
 			position: fixed; right: 18px; top: 52px; width: 250px; font-size: 12.5px; color: #b9b0d4;
 			text-shadow: 0 1px 4px #000; pointer-events: none; line-height: 1.55;
@@ -311,6 +323,7 @@
 	<button id="planeswalk-btn" style="display:none">Planeswalk</button>
 	<button id="autopass-btn" title="When on, you auto-pass priority. Turn off to get a 4s window to respond at instant speed.">Auto-pass: ON</button>
 	<div id="mana-hud" class="hud"><span class="mh-icon">🔷</span><span class="mh-label">MANA</span><span class="mh-val" id="mana-hud-val">1/1</span><span id="mana-hud-identity" style="display:flex;gap:3px;align-items:center;margin-left:10px;" title="Your color identity"></span></div>
+	<div id="dungeon-panel" style="display:none;"><div class="dp-title"></div><div class="dp-card"></div><div class="dp-room"></div></div>
 	<div id="log" class="hud"></div>
 	<button id="log-btn" title="Full game log">📜 Log</button>
 	<div id="log-full"><div class="lf-head"><span>Game log</span><button class="lf-close" title="Close">✕</button></div><div class="lf-body"></div></div>

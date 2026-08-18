@@ -1303,6 +1303,24 @@ function updateManaHud(me) {
 	const idEl = $('mana-hud-identity'); if (idEl) idEl.innerHTML = identityPipsHtml(HUMAN);
 }
 
+// while you're venturing, show your dungeon's flowchart with a "you are here" marker
+let dungeonPanelKey = null;
+function updateDungeonPanel() {
+	const panel = $('dungeon-panel'); if (!panel) return;
+	const dg = state && !spectateMode ? state.players[HUMAN].dungeon : null;
+	if (!dg) { panel.style.display = 'none'; dungeonPanelKey = null; return; }
+	panel.style.display = 'block';
+	const key = dg.id + ':' + dg.room;
+	if (key === dungeonPanelKey) return; // only redraw when the room changes
+	dungeonPanelKey = key;
+	const card = state.cardsById[dg.id];
+	if (!card) { panel.style.display = 'none'; return; }
+	panel.querySelector('.dp-title').textContent = 'VENTURING';
+	panel.querySelector('.dp-card').replaceChildren(drawCardFace(card, { currentRoom: dg.room }));
+	const room = E.DUNGEONS[dg.id] && E.DUNGEONS[dg.id].rooms[dg.room];
+	panel.querySelector('.dp-room').textContent = room ? '▸ ' + room.name : '';
+}
+
 function updateHud() {
 	if (!state) return;
 	if (spectateMode || replayMode) { updateHudSpectate(); return; }
@@ -1313,6 +1331,7 @@ function updateHud() {
 	$('my-mana').textContent = `${E.availableMana(me)}/${me.mana.max}`;
 	$('my-deck').textContent = me.deck.length;
 	updateManaHud(me);
+	updateDungeonPanel();
 	const myGear = [];
 	if (me.weapon) myGear.push(`⚔ ${me.weapon.name} ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) myGear.push('❓ ' + me.secrets.map(s => s.name).join(', '));
