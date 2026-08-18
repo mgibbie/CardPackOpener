@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "0224100",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Land Sets: tag the 5x70 monocolor + 15 Abzan pools via landSet",
+			"body": "Introduces a `landSet` card tag as the single source of truth for what a\nland generates, separate from the broad color lists:\n- Basic Land Sets: the 70 monocolor cards of each color, tagged by their\n  basic land — Plains (W), Island (U), Swamp (B), Mountain (R), Forest (G).\n- Advanced Land Sets: the 15 Abzan cards -> landSet 'Abzan'.\nAll 365 set cards are now collectible:false with no rarity (obtainable\nonly via their land, not packs/deckbuilder).\n\nPool logic draws from the tag (and INCLUDES the now-uncollectible members):\n- `conjure`/`discover` handlers gain a `landSet` branch (handlers-copy.js).\n- The 5 basic lands conjure exactly their 70-card set (was: any card of\n  that color, mono AND multicolor); Abzan Citadel discovers landSet:'Abzan';\n  Abzan Strike conjures from landSet:'Abzan' (was conjure-named, which now\n  excludes uncollectible).\n\nabzan_pool_test.mjs +Basic-Land-Set coverage (each set = 70 mono,\nuncollectible, no rarity; land conjures from its set). Suite 206/206.",
+			"cards": []
+		},
+		{
 			"sha": "109961d",
 			"date": "2026-08-18",
 			"kind": "patch",
