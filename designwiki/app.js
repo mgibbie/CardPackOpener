@@ -754,6 +754,7 @@ async function cardSubsetView(kind, slug) {
 }
 
 // ---------- Contraptions (Sprocket / Assemble) ----------
+let contraptionSize = 'small';
 async function contraptionsView() {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
   let cards;
@@ -761,12 +762,19 @@ async function contraptionsView() {
   catch (e) { return content.replaceChildren(h('h1', null, 'Contraptions'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
   const list = cards.filter(c => c.contraption).sort((a, b) => String(a.name).localeCompare(String(b.name)));
   await CardArt.preloadArt(list.map(c => c.id));
+  const sizeBtn = sz => h('button', {
+    style: 'padding:4px 12px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #4a3f6b;'
+      + (contraptionSize === sz ? 'background:#6a5f8a;color:#fff;font-weight:700;' : 'background:#241b38;color:#c9b8ff;'),
+    onclick: () => { contraptionSize = sz; contraptionsView(); }
+  }, titleCase(sz));
   content.replaceChildren(
     h('h1', null, 'Contraptions ', h('span', { class: 'num' }, '(' + list.length + ')')),
     h('p', { class: 'muted' }, 'Gadgets loaded into your Sprocket — a row of 3 slots. The ',
       h('a', { href: '#/keyword/assemble' }, 'Assemble'),
       ' keyword hands you a random Contraption to place in a slot of your choice (overwriting whatever’s there). An indicator cycles 1 → 2 → 3 each of your turns, firing the Contraption in the slot it lands on — so each one re-fires every time the indicator comes back around.'),
-    h('div', { class: 'card-grid' }, list.map(cardTile)));
+    h('div', { style: 'display:flex;gap:6px;align-items:center;margin:0 0 12px;' },
+      h('span', { class: 'muted', style: 'font-size:13px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
+    h('div', { class: 'card-grid size-' + contraptionSize }, list.map(cardTile)));
 }
 
 // ---------- Advance Dungeons (the dungeons the Advance keyword ventures) ----------
