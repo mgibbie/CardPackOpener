@@ -12,7 +12,7 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', 
 
 const game = (seed = 6) => {
 	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'demonhunter', name: 'M', power: null }, { id: 'mage', name: 'N', power: null }]);
-	st.current = 0; for (const p of st.players) { p.hand = []; p.deck = []; p.board = []; }
+	st.current = 0; for (const p of st.players) { p.hand = []; p.deck = []; p.board = []; p.soulPool = []; } // soulPool reset: a default-deck Souleater could pre-seed it in createGame
 	st.players[0].heroClass = 'demonhunter'; st.players[0].mana.max = 10; st.players[0].mana.cur = 10;
 	return st;
 };

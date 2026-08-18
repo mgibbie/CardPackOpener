@@ -587,6 +587,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		coins: 0,
 		dungeon: null,          // Advance: { id, room } while in a dungeon, else null
 		completedDungeons: [],  // dungeon ids you've finished (some payoffs care)
+		sprocket: [null, null, null], // Contraption slots: slot 1 fires at your turn start, then all advance
 		diedThisTurn: 0,
 		diedThisTurnIds: [], // Kel'Thuzad: non-token creatures that died this turn
 		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
@@ -3580,9 +3581,59 @@ export function advance(state, pi) {
 	emit(state, { type: 'pickStart', player: pi, count: next.length });
 }
 
+// ---------- Sprocket / Contraptions ----------
+// A Sprocket is 3 ordered slots. Assemble gives a RANDOM Contraption that you
+// place into a slot of your choice (overwriting whatever's there). At the start of
+// each of your turns slot 1's Contraption fires once and is removed, then the slots
+// advance (slot 2 -> 1, slot 3 -> 2) — so a slot-1 pick fires next turn, slot 2 the
+// turn after, slot 3 the turn after that.
+export function contraptionPool(state) {
+	return Object.values(state.cardsById).filter(d => d.contraption);
+}
+
+// Assemble: roll a random Contraption, then let the player choose its slot
+export function assemble(state, pi) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const pool = contraptionPool(state);
+	if (!pool.length) return; // no Contraptions defined yet
+	const def = pool[Math.floor(state.rng() * pool.length)];
+	state.pickQueue.push({ player: pi, mode: 'assemble', contraptionId: def.id, ids: ['0', '1', '2'] });
+	emit(state, { type: 'pickStart', player: pi, count: 3 });
+}
+
+export function placeContraption(state, pi, slot, contraptionId) {
+	const p = state.players[pi];
+	if (!p.sprocket) p.sprocket = [null, null, null];
+	const def = state.cardsById[contraptionId];
+	if (!def || slot < 0 || slot > 2) return;
+	p.sprocket[slot] = instantiate(def, pi); // overwrites whatever occupied the slot
+	emit(state, { type: 'contraptionAssembled', player: pi, slot, card: p.sprocket[slot] });
+}
+
+// fire slot 1's Contraption (once), then advance the slots — called at turn start
+export function crankSprocket(state, pi) {
+	const p = state.players[pi];
+	if (!p || !p.sprocket || !p.sprocket.some(x => x)) return;
+	const s = p.sprocket;
+	const fired = s[0];
+	if (fired) {
+		emit(state, { type: 'contraptionFired', player: pi, card: fired });
+		const def = state.cardsById[fired.id];
+		execEffects(state, pi, (def && def.effects) || fired.effects || [], null, fired);
+		sweepDeaths(state);
+	}
+	s[0] = s[1]; s[1] = s[2]; s[2] = null;
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.mode === 'assemble') {
+		const slot = ['0', '1', '2'].includes(String(id)) ? Number(id) : 0;
+		placeContraption(state, pend.player, slot, pend.contraptionId);
+		return true;
+	}
 	if (pend.advance) {
 		const pi = pend.player, chosen = pend.ids.includes(id) ? id : pend.ids[0];
 		if (pend.advance === 'enter') enterRoom(state, pi, chosen, DUNGEONS[chosen] && DUNGEONS[chosen].start);
@@ -4717,6 +4768,8 @@ export function endTurn(state) {
 		const q = np.turnStartEffects; np.turnStartEffects = [];
 		for (const fx of q) { execEffects(state, state.current, fx, null, null); sweepDeaths(state); }
 	}
+	// Sprocket: fire the Contraption in slot 1, then advance the slots
+	crankSprocket(state, state.current);
 	// Remixed Rhapsody: its bonus effect rotates each of your turns while held
 	for (const c of np.hand) if (c.remix) c.remix.index = ((c.remix.index || 0) + 1);
 	// Smoldering cards: each of your turns they upgrade in hand and count down;

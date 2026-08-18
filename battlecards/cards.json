@@ -20311,6 +20311,133 @@
       "cardClass": "neutral"
     },
     {
+      "id": "assemble_a_contraption",
+      "name": "Assemble a Contraption",
+      "type": "sorcery",
+      "cost": 1,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "description": "Assemble a random Contraption.",
+      "effects": [
+        {
+          "type": "assemble"
+        }
+      ]
+    },
+    {
+      "id": "contraption_auto_cannon",
+      "name": "Auto-Cannon",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: deal 2 damage to the enemy hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "contraption_conveyor_belt",
+      "name": "Conveyor Belt",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: draw a card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "contraption_reinforcer",
+      "name": "Reinforcer",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: give your weakest creature +1/+1.",
+      "effects": [
+        {
+          "type": "bolster",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "contraption_cog_press",
+      "name": "Cog Press",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: summon a 1/1 Mech.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Cog",
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "id": "contraption_mana_battery",
+      "name": "Mana Battery",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: gain 1 Mana this turn.",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "contraption_plating_extruder",
+      "name": "Plating Extruder",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption: gain 3 Armor.",
+      "effects": [
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",

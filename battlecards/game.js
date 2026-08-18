@@ -858,6 +858,15 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(card.tapped ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
 			ent.target.scale = 0.42;
 		});
+		// Sprocket: up to 3 Contraption slots, a small row set to the right of the lands
+		(p.sprocket || []).forEach((card, i) => {
+			if (!card) return;
+			const ent = entityFor(card);
+			seen.add(card.uid);
+			ent.target.pos = toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi);
+			ent.target.quat = sliceQuat(FLAT, pi);
+			ent.target.scale = 0.32;
+		});
 		p.traps.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
@@ -1770,6 +1779,34 @@ function openPickModal() {
 			cell.innerHTML = `<div class="adapt-opt">${label}</div>`;
 			const btn = document.createElement('button');
 			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
+	if (pend.mode === 'assemble') {
+		// Assemble: you got a random Contraption — choose which Sprocket slot it goes in
+		const def = state.cardsById[pend.contraptionId];
+		const spr = state.players[HUMAN].sprocket || [null, null, null];
+		const when = ['next turn', 'in 2 turns', 'in 3 turns'];
+		modal.innerHTML = `<div class="wm-title">Assembled <b>${(def && def.name) || 'a Contraption'}</b> — choose a slot</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const slot = Number(id), occ = spr[slot];
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>Slot ${slot + 1}</b><br><span style="font-size:.85em">fires ${when[slot]}${occ ? `<br>replaces ${occ.name}` : ''}</span></div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Place';
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';

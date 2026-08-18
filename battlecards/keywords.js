@@ -57,6 +57,8 @@ const K = [
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
 	{ p: ['Coven'], t: 'Active while you control three or more creatures with different Attack values.' },
 	{ p: ['Advance'], t: 'Venture into a dungeon — enter one (your choice) or move to the next room, triggering its effect.' },
+	{ p: ['Assemble'], t: 'Add a random Contraption to a Sprocket slot of your choice. Slot 1 fires at the start of your next turn, then the slots advance (slot 2 → 1, slot 3 → 2).' },
+	{ p: ['Contraption'], t: 'A gadget loaded into your Sprocket. When it reaches slot 1 it activates once at your turn start, then it is spent.' },
 	{ p: ['Time Travel'], t: 'Transform this location into its next era (Past → Present → Future).' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
 	{ p: ['Counter target spell', 'Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
