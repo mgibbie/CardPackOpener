@@ -57,6 +57,7 @@ const K = [
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
 	{ p: ['Coven'], t: 'Active while you control three or more creatures with different Attack values.' },
 	{ p: ['Advance'], t: 'Venture into a dungeon — enter one (your choice) or move to the next room, triggering its effect.' },
+	{ p: ['Double Strike'], t: 'This creature deals its combat damage twice — it strikes first, then strikes again, so it can kill a blocker before taking any hit back.' },
 	{ p: ['Assemble'], t: 'Add a random Contraption to a Sprocket slot of your choice (overwriting). An indicator cycles 1 → 2 → 3 → 1 each of your turns, firing the Contraption in the slot it lands on.' },
 	{ p: ['Contraption'], t: 'A gadget loaded into your Sprocket. It stays in its slot and activates each time the indicator cycles onto it.' },
 	{ p: ['Time Travel'], t: 'Transform this location into its next era (Past → Present → Future).' },

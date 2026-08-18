@@ -5,7 +5,7 @@
 
 export const KW = {
 	TAUNT: 'taunt', CHARGE: 'charge', RUSH: 'rush', TRAMPLE: 'trample',
-	FIRST_STRIKE: 'first_strike', WINDFURY: 'windfury', DEFENDER: 'defender',
+	FIRST_STRIKE: 'first_strike', DOUBLE_STRIKE: 'double_strike', WINDFURY: 'windfury', DEFENDER: 'defender',
 	BATTLECRY: 'battlecry', DEATHRATTLE: 'deathrattle', LIFESTEAL: 'lifesteal',
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
@@ -3108,8 +3108,13 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		if (!defender) return false;
 		const defHpBefore = hp(defender);
 		const defBefore = defender.attack; // for Alley Armorsmith's retaliation damage
-		const aFirst = has(attacker, KW.FIRST_STRIKE) && !has(defender, KW.FIRST_STRIKE);
-		const dFirst = has(defender, KW.FIRST_STRIKE) && !has(attacker, KW.FIRST_STRIKE);
+		// double strike counts as first strike for ordering AND lands a second hit
+		const aFS = has(attacker, KW.FIRST_STRIKE) || has(attacker, KW.DOUBLE_STRIKE);
+		const dFS = has(defender, KW.FIRST_STRIKE) || has(defender, KW.DOUBLE_STRIKE);
+		const aFirst = aFS && !dFS;
+		const dFirst = dFS && !aFS;
+		const aDouble = has(attacker, KW.DOUBLE_STRIKE);
+		const dDouble = has(defender, KW.DOUBLE_STRIKE);
 		const strike = (src, dst) => {
 			const dealt = damageCreature(state, dst, src.attack * cmult, src);
 			if (has(src, KW.LIFESTEAL) && dealt > 0) healHero(state, src.controller, dealt);
@@ -3121,14 +3126,18 @@ export function resolveCombat(state, pi, attackerUid, target) {
 			}
 		};
 		if (aFirst) {
-			strike(attacker, defender);
+			strike(attacker, defender);                                  // first-strike hit
+			if (aDouble && !isDead(defender)) strike(attacker, defender); // double strike: second hit
 			if (!isDead(defender)) strike(defender, attacker);
 		} else if (dFirst) {
 			strike(defender, attacker);
+			if (dDouble && !isDead(attacker)) strike(defender, attacker);
 			if (!isDead(attacker)) strike(attacker, defender);
 		} else {
 			strike(attacker, defender);
 			strike(defender, attacker);
+			if (aDouble && !isDead(attacker) && !isDead(defender)) strike(attacker, defender);
+			if (dDouble && !isDead(defender) && !isDead(attacker)) strike(defender, attacker);
 		}
 		// Static: 50% chance to Paralyze whichever combatant survives against it
 		if (has(attacker, KW.STATIC)) maybeParalyze(state, defender);

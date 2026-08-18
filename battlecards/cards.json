@@ -20716,6 +20716,24 @@
       ]
     },
     {
+      "id": "contraption_turbo_thwacking_auto_hammer",
+      "name": "Turbo-Thwacking Auto-Hammer",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption (MTG Unstable). Give a friendly creature Double Strike.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "double_strike"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",
