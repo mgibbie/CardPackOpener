@@ -20781,6 +20781,32 @@
       "description": "An Advance dungeon. Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect; reach the final room for the payoff."
     },
     {
+      "id": "exuberant_conspirator",
+      "name": "Exuberant Conspirator",
+      "type": "creature",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "uncommon",
+      "cardClass": "neutral",
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "description": "Battlecry: Advance.\nDeathrattle: Planeshift.",
+      "effects": [
+        {
+          "type": "advance"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "planeshift"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",
