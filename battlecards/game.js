@@ -1739,14 +1739,14 @@ function openPickModal() {
 	const pend = state.pickQueue[0];
 	if (!pend || pend.player !== HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
-	if (pend.mode === 'venture') {
-		// Venture into the Dungeon: choose a dungeon to enter, or which branch room to advance to
-		const title = pend.venture === 'enter' ? 'Venture — choose a dungeon' : 'Venture — choose the next room';
+	if (pend.mode === 'advance') {
+		// Advance (Venture into the Dungeon): choose a dungeon to enter, or which branch room to take
+		const title = pend.advance === 'enter' ? 'Advance — choose a dungeon' : 'Advance — choose the next room';
 		modal.innerHTML = `<div class="wm-title">${title}</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		pend.ids.forEach(id => {
 			let label;
-			if (pend.venture === 'enter') { const d = E.DUNGEONS[id]; label = `<b>${(d && d.name) || id}</b>`; }
+			if (pend.advance === 'enter') { const d = E.DUNGEONS[id]; label = `<b>${(d && d.name) || id}</b>`; }
 			else { const r = E.DUNGEONS[pend.dungeonId] && E.DUNGEONS[pend.dungeonId].rooms[id]; label = `<b>${(r && r.name) || id}</b><br><span style="font-size:.85em">${(r && r.text) || ''}</span>`; }
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell';

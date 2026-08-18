@@ -21126,7 +21126,7 @@
         "B",
         "G"
       ],
-      "description": "Give a friendly creature +2/+2, Taunt while you have Coven (3+ creatures with different Attack), and Inspire: Advance (venture into the dungeon whenever you use a hero power).",
+      "description": "Give a friendly creature +2/+2, Taunt while you have Coven (3+ creatures with different Attack), and Inspire: Advance (advance through a dungeon whenever you use a hero power).",
       "effects": [
         {
           "type": "attach",
@@ -21140,7 +21140,7 @@
             "on": "hero-power-used",
             "effects": [
               {
-                "type": "venture"
+                "type": "advance"
               }
             ]
           },

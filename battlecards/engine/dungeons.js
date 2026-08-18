@@ -1,13 +1,13 @@
-// engine/dungeons.js — "Venture into the Dungeon" (the Advance mechanic).
+// engine/dungeons.js — the Advance mechanic (MTG's "Venture into the Dungeon").
 //
-// A player ventures through one dungeon at a time, one room per venture. Entering a room fires
+// A player advances through one dungeon at a time, one room per Advance. Entering a room fires
 // its effect; branching rooms (two exits) offer a choice; the last room is a payoff and completes
-// the dungeon (freeing you to venture into a new one). Room effects use the normal effect DSL, but
+// the dungeon (freeing you to advance into a new one). Room effects use the normal effect DSL, but
 // because rooms AUTO-TRIGGER (no play-time targeting), targeted "target creature" effects are
 // mapped to auto-resolving variants (bolster / broadcast / all-heroes). Data pulled from the three
 // Adventures in the Forgotten Realms dungeons (Scryfall oracle text); a few rooms are faithfully
 // adapted where the engine can't express the exact clause (noted per room).
-// PURE DATA — no imports (the venture/enterRoom logic lives in core.js, which has execEffects/emit).
+// PURE DATA — no imports (the advance/enterRoom logic lives in core.js, which has execEffects/emit).
 
 export const DUNGEONS = {
 	lost_mine: {

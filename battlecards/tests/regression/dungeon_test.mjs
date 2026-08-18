@@ -1,5 +1,5 @@
-// Venture into the Dungeon (the "Advance" mechanic). A player enters a chosen dungeon and
-// advances one room per venture; branch rooms offer a pick; the last room is a payoff and
+// The Advance mechanic (MTG's "Venture into the Dungeon"). A player enters a chosen dungeon and
+// advances one room per Advance; branch rooms offer a pick; the last room is a payoff and
 // completes the dungeon. Covers the 3 AFR dungeons end-to-end + Abzan Runemark's Inspire:Advance.
 import fs from 'fs';
 import * as E from '../../engine.js';
@@ -21,7 +21,7 @@ const putC = (st, pi, a = 2, h = 2) => { const c = E.instantiate({ id: '_c', nam
 const toHand = (st, id) => { const c = E.instantiate(byId[id], 0); c.zone = 'hand'; st.players[0].hand.push(c); return c; };
 const play = (st, id, t) => E.playCard(st, 0, st.players[0].hand.find(x => x.id === id).uid, t || null);
 // venture + resolve any queued dungeon/room pick with `choice`; single-next rooms auto-advance
-const adv = (st, pi, choice) => { E.venture(st, pi); if (st.pickQueue.length && st.pickQueue[0].venture && st.pickQueue[0].player === pi) E.resolvePick(st, choice); st.scryQueue.length = 0; };
+const adv = (st, pi, choice) => { E.advance(st, pi); if (st.pickQueue.length && st.pickQueue[0].advance && st.pickQueue[0].player === pi) E.resolvePick(st, choice); st.scryQueue.length = 0; };
 
 // ---------- data sanity ----------
 ok('3 dungeons exist', Object.keys(E.DUNGEONS).length === 3);
@@ -34,8 +34,8 @@ for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
 // ---------- enter flow ----------
 {
 	const st = game();
-	E.venture(st, 0);
-	ok('venture with no dungeon queues an enter pick (3 dungeons)', st.pickQueue[0]?.venture === 'enter' && st.pickQueue[0].ids.length === 3);
+	E.advance(st, 0);
+	ok('venture with no dungeon queues an enter pick (3 dungeons)', st.pickQueue[0]?.advance === 'enter' && st.pickQueue[0].ids.length === 3);
 	E.resolvePick(st, 'lost_mine');
 	ok('entered Lost Mine at its start room', st.players[0].dungeon?.id === 'lost_mine' && st.players[0].dungeon?.room === 'cave_entrance');
 	ok('Cave Entrance fired Scry 1', st.scryQueue.length === 1);
@@ -81,8 +81,8 @@ for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
 	adv(st, 0, null);               // -> mad_wizards_lair (draw 3) = final
 	ok('Mad Wizard\'s Lair drew 3', st.players[0].hand.length === h + 3);
 	ok('Mad Mage completed', st.players[0].dungeon === null && st.players[0].completedDungeons.includes('mad_mage'));
-	E.venture(st, 0);
-	ok('a fresh venture starts a NEW dungeon (enter pick again)', st.pickQueue[0]?.venture === 'enter');
+	E.advance(st, 0);
+	ok('a fresh venture starts a NEW dungeon (enter pick again)', st.pickQueue[0]?.advance === 'enter');
 }
 
 // ---------- Abzan Runemark: Inspire: Advance (venture on hero power) ----------
@@ -93,7 +93,7 @@ for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
 	play(st, 'abzan_runemark', { type: 'creature', uid: a.uid, player: 0 });
 	ok('Runemark attached an Inspire ongoing', a.ongoing?.on === 'hero-power-used');
 	E.fireOngoing(st, 0, 'hero-power-used', {}); // simulate using a hero power (Inspire)
-	ok('Inspire: Advance → the enchanted creature ventured', st.pickQueue.some(q => q.venture === 'enter'));
+	ok('Inspire: Advance → the enchanted creature ventured', st.pickQueue.some(q => q.advance === 'enter'));
 }
 
 console.log(`${pass}/${pass + fail} dungeon checks passed`);
