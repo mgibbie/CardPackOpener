@@ -212,7 +212,10 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 }
 
 export function gainArmor(state, pi, amount) {
-	state.players[pi].armor += amount;
+	// armor never drops below zero: a "lose N armor" decay (e.g. Frozen Buckler's
+	// -5 at your next turn-start, after the +10 was spent) or a gain tied to a
+	// debuffed-negative Attack must floor at 0, not underflow into invalid state
+	state.players[pi].armor = Math.max(0, state.players[pi].armor + amount);
 	if (amount !== 0) state.players[pi].armorChangedThisTurn = true; // Stoneskin Armorer
 	if (amount > 0 && state.players[pi].odynActive) { state.players[pi].heroTempAttack += amount; emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, state.players[pi]) }); } // Odyn: armor also grants Attack this turn
 	if (amount > 0) state.players[pi].armorGainedGame = (state.players[pi].armorGainedGame || 0) + amount; // Captain Galvangar

@@ -217,7 +217,7 @@ register('hero-attack', ({ state, pi, target, source, enemies, scaled, hm, pickE
 register('gain-armor-no-trigger', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Razorfen Rockstar payoff: add armor WITHOUT re-firing armor-gained (avoids self-loop)
 			const p = state.players[pi];
-			p.armor += e.value || 2;
+			p.armor = Math.max(0, p.armor + (e.value || 2));
 			p.armorGainedGame = (p.armorGainedGame || 0) + (e.value || 2);
 			emit(state, { type: 'armor', player: pi, amount: e.value || 2, armor: p.armor });
 });
