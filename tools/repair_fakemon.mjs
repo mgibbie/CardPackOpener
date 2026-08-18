@@ -52,8 +52,23 @@ for (const id of ids) {
 }
 for (const t in donors) donors[t].sort();
 
-// merge two donors' learnsets -> a fresh moveset (min level per move, sorted, capped 20).
-// `offset` rotates the donor pair so a colliding result can be nudged to a distinct one.
+// merging two donors piles both their level-1 moves onto L1; spread them into a rising
+// ladder so the learnset reads sensibly and low-level mons get a real progression. Keeps
+// ~3 starting moves at L1, then steps up (respecting any naturally higher-level move).
+function spreadLevels(learnset) {
+	const sorted = [...learnset].sort((a, b) => a[0] - b[0] || (a[1] < b[1] ? -1 : 1));
+	const out = []; let next = 4;
+	sorted.forEach(([lv, mv], i) => {
+		if (i < 3) { out.push([1, mv]); return; }        // starting moves
+		const nl = Math.max(lv, next);                    // at least its own level; strictly rising
+		out.push([nl, mv]);
+		next = nl + 2;
+	});
+	return out;
+}
+
+// merge two donors' learnsets -> a fresh moveset (min level per move, capped 20, then spread
+// across levels). `offset` rotates the donor pair so a colliding result can be nudged distinct.
 function combinedMoveset(fakeId, offset = 0) {
 	const ty = S[fakeId].types || ['Normal'];
 	const t1 = ty[0] || 'Normal', t2 = ty[1] || ty[0] || 'Normal';
@@ -65,7 +80,7 @@ function combinedMoveset(fakeId, offset = 0) {
 	for (const [lv, mv] of [...learn(a), ...learn(b)]) if (!min.has(mv) || min.get(mv) > lv) min.set(mv, lv);
 	let list = [...min.entries()].map(([mv, lv]) => [lv, mv]).sort((x, y) => x[0] - y[0] || (x[1] < y[1] ? -1 : 1));
 	if (!list.some(([lv]) => lv <= 1)) list.unshift([1, list[0][1]]); // guarantee a level-1 move
-	return list.slice(0, 20);
+	return spreadLevels(list.slice(0, 20));
 }
 // guarantee a repaired moveset has 2-3 STAB moves. If the two donors gave <2 moves of the
 // fakemon's own type(s) (common for Fairy — Gen 1-5 donors carry almost no Fairy moves),
