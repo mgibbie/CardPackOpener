@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "35f7f56",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Show Coven as a keyword (Inspire already was)",
+			"body": "Added a Coven glossary entry so it's bolded in the rules text with a\ntooltip, like other keywords. Inspire was already in the glossary;\nRunemark now surfaces Taunt, Inspire, and Coven. Skipped an 'Advance'\nentry — it'd collide with the Gnomeregan \"Advance to the present!\"\nlocation cards (a different mechanic).",
+			"cards": []
+		},
+		{
 			"sha": "779361f",
 			"date": "2026-08-18",
 			"kind": "patch",
