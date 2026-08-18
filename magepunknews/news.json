@@ -2,6 +2,103 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "7738244",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Remove Double Strike; Turbo-Thwacking grants Windfury instead",
+			"body": "Per request, Double Strike is not wanted in the game. Reverted the combat\nprimitive entirely (removed the DOUBLE_STRIKE keyword, restored resolveCombat's\noriginal first-strike-only logic, dropped the glossary entry, deleted\ndouble_strike_test.mjs). Turbo-Thwacking Auto-Hammer now grants Windfury (attack\ntwice this turn) — an existing keyword — reusing the same `grant` effect.\n\nsprocket_test.mjs: the Turbo-Thwacking check now asserts a Windfury grant.\nSuite 210 green; AI sim clean. Gallery ?v bumped.",
+			"cards": []
+		},
+		{
+			"sha": "e61dbad",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Double Strike combat primitive; port Turbo-Thwacking Auto-Hammer",
+			"body": "New hard-tier primitive: the DOUBLE_STRIKE keyword. A creature with double\nstrike deals its combat damage TWICE — it strikes first (first-strike timing)\nthen strikes again, so it can kill a defender before taking a hit back. Built\ninto the creature-combat block alongside the existing first-strike handling\n(double strike implies first-strike ordering + a second strike; the both-have-\nit edge is handled in the simultaneous branch). Existing first-strike behavior\nis unchanged.\n\nPorts the hard-tier contraption:\n- Turbo-Thwacking Auto-Hammer -> grant a friendly creature Double Strike\n  (reuses `grant`, which auto-blesses a random friendly when untargeted).\n\nkeywords.js: Double Strike glossary + gallery ?v bump. Test:\ndouble_strike_test.mjs (8 checks: two hits, kill-before-retaliation, survivor\ntakes one retaliation, first-strike regression, the contraption grant). Suite\n210 -> 211 green; AI sim clean. Contraption roster now 21.",
+			"cards": []
+		},
+		{
+			"sha": "4a081a7",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Add random-enemy-creature damage target; port Thud-for-Duds",
+			"body": "New engine primitive: `{type:'damage', target:'random-enemy', value:N, count?}`\nhits N random enemy creatures (distinct when count > 1) — added as a case in the\ndamage handler's target switch, mirroring freeze's random-enemy.\n\nPorts the last easy-ish contraption:\n- Thud-for-Duds -> deal 3 to a random enemy creature (was 2d6-difference).\n\nContraption roster now 20. sprocket_test.mjs: targeted check that the primitive\nlands 3 on an enemy creature, plus the fire-all sweep. Suite 210 green; AI sim clean.",
+			"cards": []
+		},
+		{
+			"sha": "8279470",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: port the medium batch (10 more, 19 total)",
+			"body": "Ported 10 more MTG (Unstable) contraptions that convert with a small\napproximation, all auto-resolving:\n\n- Boomflinger -> enemy hero loses 3\n- Dogsnail Engine -> gain 3 life\n- Rapid Prototyper -> summon a 2/2 Construct\n- Gift Horse -> summon two 1/1 Goblins\n- Faerie Aerie -> summon two 1/1 Faeries (drops the flying/draw/exile rider)\n- Genetic Recombinator -> +2/+2 to your two weakest (two bolsters)\n- Jamming Device -> freeze the enemy's creatures (approximates -1/-1)\n- Hypnotic Swirly Disc -> enemy mills 2\n- Record Store -> Scry 2\n- Hard Hat Area -> Assemble two random Contraptions\n\nSkipped Thud-for-Duds (damage has no random-enemy-creature auto target) and the\nhard tier (grant-ability / copy / block-forcing / tap-untap / graveyard / type-\nchanging). sprocket_test.mjs now fires EVERY contraption once to catch bad effect\nshapes (41 checks). Suite 210 green; 10-game AI sim clean.",
+			"cards": []
+		},
+		{
+			"sha": "a835d3e",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: port 9 clean MTG (Unstable) contraptions",
+			"body": "Replaced the 6 placeholders with 9 real MTG contraptions whose \"whenever you\ncrank\" effect auto-resolves (no targeting), matching how Magepunk contraptions\nfire. All 0-cost, uncollectible, contraption:true.\n\n- Division Table -> enemy hero loses 2\n- Insufferable Syphon -> enemy hero discards a card\n- Sap Sucker -> gain 1 mana this turn\n- Widget Contraption -> Assemble a random Contraption (thematic self-reference)\n- Arms Depot -> +2/+2 to your weakest creature (bolster)\n- Inflation Station -> +3/+3 to your weakest creature (bolster)\n- Gnomeball Machine -> summon two 1/1 Gnome Mechs\n- Dispatch Dispensary -> summon a 2/2 Rogue\n- Goblin Slingshot -> your creatures get +1/+0\n\nMTG targeted \"target creature\" buffs map to bolster (auto weakest); \"target\nplayer\" maps to the enemy hero. cards.json edited via localized text-splice\n(no reformat). sprocket_test.mjs updated to the new ids (22 checks). Suite 210\ngreen; 10-game AI sim clean (incl. Widget's assemble-on-crank chaining).",
+			"cards": []
+		},
+		{
+			"sha": "a4d3e58",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Sprocket: contraptions stay put; a cycling indicator fires them",
+			"body": "Reworked per feedback: Contraptions no longer shift between slots. They STAY\nin the slot you placed them, and a visible indicator cycles 1 -> 2 -> 3 -> 1\neach of your turns, firing whatever Contraption sits in the slot it lands on.\nSo a Contraption fires each time the indicator comes back around to it, and\nthe slot you choose sets how many ticks until the indicator first reaches it.\n\n- core.js: per-player sprocketPointer (0->1->2->0); crankSprocket fires the\n  pointed slot (Contraption persists) then advances the pointer; contraptionEta()\n  helper. Replaces the old fire-slot-1-then-shift model.\n- game.js: a gold ring indicator (makeRing) marks the human's active slot and\n  cycles with the pointer; Assemble modal shows each slot's real ETA + marks the\n  pointed slot. Contraptions render in fixed slots.\n- keywords.js: Assemble/Contraption tooltips updated to the indicator model.\n\nTest: sprocket_test.mjs reworked (21 checks: persistence, re-fire on cycle,\npointer cycling, ETA). Suite 210 green; AI sim clean. Bumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "6e35e6a",
+			"date": "2026-08-18",
+			"kind": "cards",
+			"title": "Sprocket + Contraptions: Assemble mechanic",
+			"body": "Adds the Sprocket (3 Contraption slots per player) and the Assemble keyword.\n\n- Assemble grants a RANDOM Contraption; you choose which slot it goes in\n  (overwriting whatever's there). Slot 1 fires at the start of your next turn,\n  slot 2 the turn after, slot 3 the turn after that.\n- At each of your turn-starts the Contraption in slot 1 activates once and is\n  removed, then the slots advance (2 -> 1, 3 -> 2).\n\nEngine (core.js): per-player `sprocket:[null,null,null]`; assemble() (random\nroll + slot pick), placeContraption() (overwrite), crankSprocket() wired into\nthe turn-start sequence; resolvePick 'assemble' branch. Snapshotted wholesale\nso it carries through serialize with no extra wiring.\nhandlers-misc.js: register('assemble'). keywords.js: Assemble + Contraption.\ngame.js: the Assemble slot-pick modal + a small 3-slot sprocket render.\ncards.json: 6 placeholder Contraptions (uncollectible) + a demo \"Assemble a\nContraption\" card. The real MTG-derived roster is a separate task.\n\nTests: sprocket_test.mjs (19). effect_registry count 1108 -> 1109. Fixed a\nlatent isolation gap in weapons_wave30 (reset soulPool in setup: the new\ncollectible card shifted default-deck RNG so a Souleater weapon landed in the\ndefault deck and pre-seeded soulPool in createGame). Suite 209 -> 210 green;\n10-game AI-vs-AI sim clean. Bumped gallery ?v for the new keywords.",
+			"cards": [
+				{
+					"id": "assemble_a_contraption",
+					"name": "Assemble a Contraption",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "548cc0b",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Advanced-land scarcity: each is globally unique",
+			"body": "An advanced land can exist at most once across the whole table. While any\nplayer controls it, it's removed from every other player's (and their own\nother slots') upgrade options; sacrificing/replacing/losing it frees it up\nagain. Basics stay unlimited for everyone.\n\n- core.js: new takenAdvancedLands(state) (non-basic land ids in any p.lands);\n  availableUpgrades excludes them. upgradeLand already re-validates through\n  availableUpgrades, so it's rejected at execution too. UI (openTapMenu) and\n  AI both read availableUpgrades — no extra wiring.\n\nTest: color_identity_test.mjs +6 scarcity checks (33 -> 39). Suite 209 green.",
+			"cards": []
+		},
+		{
+			"sha": "e84b010",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Treasure Token: sacrifice is now a 3-way choice",
+			"body": "Sacrificing a Treasure Token now lets you choose:\n  1. Gain 1 mana (the old behavior).\n  2. Color-boost a creature you control — pick one of the 5 colors, then a\n     creature, and roll that color's boost table onto it.\n  3. Discover a card of a color — pick one of the 5 colors, then take 1 of 3\n     cards of that color.\n\n- core.js: `sacrificeToken` routes `sac.choose:'treasure'` into a pick chain;\n  `resolvePick` gains a 'treasure' mode with stages main -> color -> (creature |\n  discover), mirroring the 'advance' chaining.\n- handlers-copy.js: the discover pool gains a `color` mode — any card of that\n  colour (colored cards are uncollectible by design, so those are NOT excluded).\n- game.js: `openPickModal` renders the treasure label picks per stage.\n- cards.json: treasure_token `sac` -> `{choose:'treasure'}` + new description.\n\nAI resolves via the existing generic pick path (takes the first option). Test:\ntreasure_token_test.mjs (16 checks). Suite 208 -> 209 green.",
+			"cards": []
+		},
+		{
+			"sha": "b8cfd02",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Fix armor underflow: floor at 0 in gainArmor",
+			"body": "validateGameState flagged \"p0 armor invalid (-N)\" in AI-vs-AI sims. Root\ncause: Frozen Buckler (\"Gain 10 Armor. At the start of your next turn, lose\n5 Armor.\") — if the +10 was spent below 5 (soaking damage) before the delayed\n{type:'armor', value:-5} fired, gainArmor did `armor += amount` with no floor,\nleaving armor negative and stuck. Any gain tied to a debuffed-negative Attack\n(gain-armor-eq-attack) could underflow the same way.\n\ngainArmor now floors: `armor = Math.max(0, armor + amount)`. Also floored the\none direct-write path (gain-armor-no-trigger) for the same invariant.\n\nTest: armor_floor_test.mjs (7 checks). Suite 207 -> 208 green. The 60-game\ndeterministic AI-vs-AI sim that previously hit the violation (seed 1049) now\nreports zero armor-invalid violations.",
+			"cards": []
+		},
+		{
+			"sha": "023a71b",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Color-identity land slots: blank -> basic -> advanced, in place",
+			"body": "A land slot now progresses blank -> basic -> advanced by UPGRADING in place,\ngated by a live color identity read from the boost taps of ALL your current\nlands (basic + advanced), not the `colors` field — so Abzan Citadel (colors:[]\nbut taps W/B/G) reads correctly as WBG.\n\nEngine (core.js):\n- landColors(def): the colors a land can produce (its boost taps) — the\n  identity signal.\n- colorIdentity: union of landColors() over every current land (was basics-only,\n  reading .colors).\n- availableLands: basics only (a blank slot can only ever become a basic).\n- availableUpgrades(landUid): advanced lands the slot can upgrade INTO — must\n  share a color with the land's CURRENT colors AND fit within your identity.\n- upgradeLand(landUid, advId): in-place upgrade, same 3-mana + each-opponent-a-Coin\n  cost as buyLand; inherits the tapped state (no tap-then-upgrade double mana).\n- buyLand restricted to basics; sacrificeLand unchanged (sheds identity, draws).\n\nUI (game.js): the land tap menu now lists \"Upgrade -> <Advanced Land>\" options;\ndevelop menu shows basics only; new actUpgrade + MP-relay 'upgrade' action.\n\nAI (ai.js): develops basics toward the colors its hand wants, then upgrades\nbasics into advanced lands (prefers ones matching those colors).\n\nTest: color_identity_test.mjs (33 checks). Suite 206 -> 207 green. Headless\nAI-vs-AI sim: games complete, upgrade path exercised, no land-related invariant\nviolations.",
+			"cards": []
+		},
+		{
 			"sha": "0224100",
 			"date": "2026-08-18",
 			"kind": "patch",
