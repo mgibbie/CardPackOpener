@@ -6,6 +6,7 @@
 // badge in the top-left corner.
 import * as THREE from 'three';
 import { richTokens } from './keywords.js';
+import { DUNGEONS } from './engine/dungeons.js';
 
 export const CARD_W = 2.5, CARD_H = 3.5, CARD_D = 0.02;
 
@@ -622,11 +623,93 @@ function drawRulesText(ctx, tokens, x, y, w, h) {
 }
 
 // opts: { attack, hp, maxHealth, durability, progress, goal, loyalty, count }
+// ---------- dungeon cards: a room flowchart, drawn from engine/dungeons.js ----------
+const DUNGEON_THEME = {
+	lost_mine: { bg1: '#2a1e12', bg2: '#402c17', node: '#6b4a24', nodeEdge: '#a9793d', edge: '#c99a55', title: '#f0c27a' },
+	tomb: { bg1: '#182018', bg2: '#26301f', node: '#3f5136', nodeEdge: '#5f7a4c', edge: '#8fbf6f', title: '#bfe39a' },
+	mad_mage: { bg1: '#1c1230', bg2: '#2b1b46', node: '#472d6a', nodeEdge: '#6a49a0', edge: '#b78fe6', title: '#d4b8ff' },
+};
+function fitText(ctx, s, maxW) {
+	s = String(s);
+	if (ctx.measureText(s).width <= maxW) return s;
+	let t = s;
+	while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+	return t + '…';
+}
+function wrapText(ctx, text, maxW, maxLines) {
+	const words = String(text).split(/\s+/), lines = [];
+	let line = '';
+	for (const w of words) {
+		const t = line ? line + ' ' + w : w;
+		if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+	}
+	if (line) lines.push(line);
+	if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = fitText(ctx, lines[maxLines - 1] + '…', maxW); }
+	return lines;
+}
+// current = the room id to highlight (in-game "you are here"); optional
+export function drawDungeonFace(ctx, card, W, H, current) {
+	const dg = DUNGEONS[card.id];
+	const th = DUNGEON_THEME[card.id] || DUNGEON_THEME.lost_mine;
+	const g = ctx.createLinearGradient(0, 0, 0, H);
+	g.addColorStop(0, th.bg1); g.addColorStop(1, th.bg2);
+	ctx.fillStyle = g; roundRect(ctx, 6, 6, W - 12, H - 12, 30); ctx.fill();
+	ctx.lineWidth = 6; ctx.strokeStyle = th.edge; roundRect(ctx, 6, 6, W - 12, H - 12, 30); ctx.stroke();
+	ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+	ctx.fillStyle = th.title; ctx.font = 'bold 29px Georgia';
+	ctx.fillText(fitText(ctx, (dg && dg.name) || card.name || 'Dungeon', W - 96), W / 2, 46);
+	ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+	ctx.fillText('Dungeon · Advance', W / 2, 70);
+	// "no cost" gem, top-left
+	ctx.beginPath(); ctx.arc(42, 44, 25, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill();
+	ctx.lineWidth = 3; ctx.strokeStyle = th.edge; ctx.stroke();
+	ctx.fillStyle = '#fff'; ctx.font = 'bold 27px Georgia'; ctx.fillText('0', 42, 53);
+	if (!dg) return;
+
+	// longest-path depth from the start = row; columns spread within a row
+	const ids = Object.keys(dg.rooms), depth = {};
+	for (const id of ids) depth[id] = 0;
+	for (let pass = 0, changed = true; changed && pass < ids.length + 1; pass++) {
+		changed = false;
+		for (const id of ids) for (const nx of (dg.rooms[id].next || [])) if (depth[nx] < depth[id] + 1) { depth[nx] = depth[id] + 1; changed = true; }
+	}
+	const rows = {}; for (const id of ids) (rows[depth[id]] = rows[depth[id]] || []).push(id);
+	const maxRow = Math.max(...Object.keys(rows).map(Number));
+	const topY = 92, rowH = (H - 22 - topY) / (maxRow + 1);
+	const pos = {};
+	for (let d = 0; d <= maxRow; d++) { const row = rows[d] || []; for (let i = 0; i < row.length; i++) pos[row[i]] = { cx: W * (i + 0.5) / row.length, cy: topY + rowH * (d + 0.5) }; }
+	const NW = Math.min(196, W / 3 - 12), NH = Math.min(rowH - 16, 96);
+
+	// edges (arrows)
+	ctx.lineWidth = 2.5;
+	for (const id of ids) { const p = pos[id]; for (const nx of (dg.rooms[id].next || [])) { const q = pos[nx]; if (!q) continue;
+		ctx.strokeStyle = th.edge; ctx.fillStyle = th.edge;
+		ctx.beginPath(); ctx.moveTo(p.cx, p.cy + NH / 2); ctx.lineTo(q.cx, q.cy - NH / 2); ctx.stroke();
+		const ang = Math.atan2((q.cy - NH / 2) - (p.cy + NH / 2), q.cx - p.cx), ax = q.cx, ay = q.cy - NH / 2;
+		ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 9 * Math.cos(ang - 0.4), ay - 9 * Math.sin(ang - 0.4)); ctx.lineTo(ax - 9 * Math.cos(ang + 0.4), ay - 9 * Math.sin(ang + 0.4)); ctx.closePath(); ctx.fill();
+	} }
+	// nodes
+	for (const id of ids) {
+		const p = pos[id], r = dg.rooms[id], x = p.cx - NW / 2, y = p.cy - NH / 2;
+		const isStart = id === dg.start, isPayoff = !(r.next || []).length, isHere = id === current;
+		ctx.fillStyle = isHere ? shade(th.node, 1.5) : th.node; roundRect(ctx, x, y, NW, NH, 10); ctx.fill();
+		ctx.lineWidth = isHere ? 4 : 2; ctx.strokeStyle = isHere ? '#fff' : isStart ? '#7CFC7C' : isPayoff ? '#ffd25f' : th.nodeEdge;
+		roundRect(ctx, x, y, NW, NH, 10); ctx.stroke();
+		if (isStart) { ctx.textAlign = 'left'; ctx.fillStyle = '#7CFC7C'; ctx.font = 'bold 9px Segoe UI'; ctx.fillText('START', x + 8, y + 13); }
+		if (isPayoff) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffd25f'; ctx.font = 'bold 13px Segoe UI'; ctx.fillText('★', x + NW - 7, y + 15); }
+		ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Segoe UI';
+		ctx.fillText(fitText(ctx, r.name, NW - 14), p.cx, y + 24);
+		ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = '10px Segoe UI';
+		wrapText(ctx, r.text, NW - 14, 3).forEach((ln, i) => ctx.fillText(ln, p.cx, y + 40 + i * 12));
+	}
+}
+
 export function drawCardFace(card, opts = {}) {
 	const W = 512, H = 716;
 	const c = document.createElement('canvas');
 	c.width = W; c.height = H;
 	const ctx = c.getContext('2d');
+	if (card.type === 'dungeon') { drawDungeonFace(ctx, card, W, H, opts.currentRoom); return c; }
 
 	const rarity = RARITY_COLORS[card.rarity] || RARITY_COLORS.common;
 	const typeCol = TYPE_COLORS[card.type] || '#444';

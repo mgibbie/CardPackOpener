@@ -20754,6 +20754,33 @@
       ]
     },
     {
+      "id": "lost_mine",
+      "name": "Lost Mine of Phandelver",
+      "type": "dungeon",
+      "cost": 0,
+      "collectible": false,
+      "cardClass": "neutral",
+      "description": "An Advance dungeon. Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect; reach the final room for the payoff."
+    },
+    {
+      "id": "tomb",
+      "name": "Tomb of Annihilation",
+      "type": "dungeon",
+      "cost": 0,
+      "collectible": false,
+      "cardClass": "neutral",
+      "description": "An Advance dungeon. Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect; reach the final room for the payoff."
+    },
+    {
+      "id": "mad_mage",
+      "name": "Dungeon of the Mad Mage",
+      "type": "dungeon",
+      "cost": 0,
+      "collectible": false,
+      "cardClass": "neutral",
+      "description": "An Advance dungeon. Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect; reach the final room for the payoff."
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",

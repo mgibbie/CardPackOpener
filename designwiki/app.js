@@ -774,27 +774,32 @@ let advDungeonPromise = null;
 function loadAdvDungeons() { if (!advDungeonPromise) advDungeonPromise = import('../battlecards/engine/dungeons.js' + CB); return advDungeonPromise; }
 async function dungeonsView() {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading dungeons…'));
-  let mod;
-  try { mod = await loadAdvDungeons(); }
+  let cards, mod;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); mod = await loadAdvDungeons(); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Advance Dungeons'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
   const DUNGEONS = mod.DUNGEONS || {};
-  const sections = Object.entries(DUNGEONS).map(([id, d]) => {
-    const rooms = Object.entries(d.rooms).map(([rid, r]) => {
+  const dcards = cards.filter(c => c.type === 'dungeon');
+  const sections = dcards.map(card => {
+    const d = DUNGEONS[card.id];
+    const face = CardArt.drawCardFace(card); // the flowchart card face (canvas)
+    Object.assign(face.style, { width: '340px', maxWidth: '100%', height: 'auto', borderRadius: '16px', boxShadow: '0 6px 22px rgba(0,0,0,0.5)' });
+    const rooms = d ? Object.entries(d.rooms).map(([rid, r]) => {
       const nexts = (r.next || []).map(nid => (d.rooms[nid] && d.rooms[nid].name) || nid);
       return h('div', { class: 'kw-def' },
         h('b', null, r.name + (rid === d.start ? ' — start' : '')),
         h('div', { class: 'kw-text' }, r.text || ''),
-        h('div', { class: 'muted', style: 'font-size:12px;margin-top:2px;' },
-          nexts.length ? '→ ' + nexts.join('  /  ') : '★ final room (payoff)'));
-    });
-    return h('div', null,
-      h('h2', null, d.name + ' ', h('span', { class: 'num' }, '(' + Object.keys(d.rooms).length + ' rooms)')),
-      h('div', { class: 'kw-defs' }, rooms));
+        h('div', { class: 'muted', style: 'font-size:12px;margin-top:2px;' }, nexts.length ? '→ ' + nexts.join('  /  ') : '★ final room (payoff)'));
+    }) : [];
+    return h('div', { style: 'display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin:0 0 30px;' },
+      face,
+      h('div', { style: 'flex:1;min-width:260px;' },
+        h('h2', null, card.name + ' ', h('span', { class: 'num' }, '(' + (d ? Object.keys(d.rooms).length : 0) + ' rooms)')),
+        h('div', { class: 'kw-defs' }, rooms)));
   });
   content.replaceChildren(
-    h('h1', null, 'Advance Dungeons ', h('span', { class: 'num' }, '(' + Object.keys(DUNGEONS).length + ')')),
+    h('h1', null, 'Advance Dungeons ', h('span', { class: 'num' }, '(' + dcards.length + ')')),
     h('p', { class: 'muted' }, 'The ', h('a', { href: '#/keyword/advance' }, 'Advance'),
-      ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff.'),
+      ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff. Each dungeon is a no-cost Dungeon card showing the full room flowchart.'),
     ...sections);
 }
 
