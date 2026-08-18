@@ -794,7 +794,7 @@ async function dungeonsView() {
   content.replaceChildren(
     h('h1', null, 'Advance Dungeons ', h('span', { class: 'num' }, '(' + Object.keys(DUNGEONS).length + ')')),
     h('p', { class: 'muted' }, 'The ', h('a', { href: '#/keyword/advance' }, 'Advance'),
-      ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff. Sourced from the D&D (Adventures in the Forgotten Realms) dungeons.'),
+      ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff.'),
     ...sections);
 }
 
