@@ -7995,12 +7995,13 @@
           ]
         },
         {
-          "text": "Conjure a Abzan card.",
+          "text": "Discover an Abzan card.",
           "effects": [
             {
-              "type": "conjure-named",
+              "type": "discover",
               "match": "Abzan",
-              "count": 1
+              "count": 1,
+              "pick": 3
             }
           ]
         }
@@ -21049,6 +21050,209 @@
         "W",
         "B",
         "G"
+      ]
+    },
+    {
+      "id": "abzan_advantage",
+      "name": "Abzan Advantage",
+      "cost": 2,
+      "type": "instant",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Destroy a random enemy enchantment. Give a friendly creature +1/+1.",
+      "effects": [
+        {
+          "type": "destroy-art-ench",
+          "only": "enchantment",
+          "scope": "enemy",
+          "count": 1
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "abzan_battlepriest",
+      "name": "Abzan Battlepriest",
+      "cost": 4,
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Cleric",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "2 mana: Give a creature +1/+1.",
+      "activated": [
+        {
+          "cost": 2,
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "creature"
+            }
+          ],
+          "text": "Give a creature +1/+1."
+        }
+      ]
+    },
+    {
+      "id": "abzan_runemark",
+      "name": "Abzan Runemark",
+      "cost": 3,
+      "type": "sorcery",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Give a friendly creature +2/+2 and Taunt.",
+      "effects": [
+        {
+          "type": "attach",
+          "attack": 2,
+          "health": 2,
+          "keywords": [
+            "taunt"
+          ],
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "abzan_sand_blessing",
+      "name": "Abzan Sand Blessing",
+      "cost": 2,
+      "type": "enchantment",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Your creatures have Taunt.",
+      "aura": {
+        "attack": 0,
+        "health": 0,
+        "keywords": [
+          "taunt"
+        ]
+      }
+    },
+    {
+      "id": "abzan_strike",
+      "name": "Abzan Strike",
+      "cost": 1,
+      "type": "instant",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Give a creature +1/+0 this turn. Draw a card. Add a random Abzan card to your hand.",
+      "effects": [
+        {
+          "type": "temp-buff",
+          "attack": 1,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "conjure-named",
+          "match": "Abzan",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "abzan_survivalist",
+      "name": "Abzan Survivalist",
+      "cost": 3,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Ward 4. Rush.\nSpend all remaining mana: deal that much damage to a creature.",
+      "keywords": [
+        "rush"
+      ],
+      "ward": {
+        "mana": 4
+      },
+      "activated": [
+        {
+          "cost": 0,
+          "effects": [
+            {
+              "type": "spend-all-mana-damage",
+              "target": "creature"
+            }
+          ],
+          "text": "Spend all remaining mana: deal that much damage to a creature."
+        }
+      ]
+    },
+    {
+      "id": "abzan_warlord",
+      "name": "Abzan Warlord",
+      "cost": 3,
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "cardClass": "magepunk",
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "description": "Battlecry: Draw two cards.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
       ]
     },
     {

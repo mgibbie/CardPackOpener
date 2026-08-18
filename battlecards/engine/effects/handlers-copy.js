@@ -940,7 +940,10 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 			const discoverCost = e.costFromMana ? availableMana(state.players[pi]) : e.cost; // Scrappy Scavenger: Cost = your remaining Mana
 			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
-				if (d.colors && d.colors.length) return false;
+				// themed discover (e.g. an advanced land's "Discover an Abzan card"): match by
+				// name and ALLOW colored cards — those themed pools are intentionally colored.
+				if (e.match && !(d.name || '').toLowerCase().includes(e.match.toLowerCase())) return false;
+				if (!e.match && d.colors && d.colors.length) return false;
 				if (e.cardType === 'spell' ? !isSpellType(d) : (e.cardType && e.cardType !== 'any' && d.type !== e.cardType)) return false;
 				if (e.tribe && !(d.tribe || '').includes(e.tribe)) return false;
 				if (discoverCost != null && (d.cost || 0) !== discoverCost) return false;
