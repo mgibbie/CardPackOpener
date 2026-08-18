@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "99066c0",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Fix add-token: generated Magnetic tokens, and honor count",
+			"body": "The add-token effect (tokens created into hand) instantiated an inline\ndef that dropped two fields:\n\n- Magnetic: the def passed keywords:['magnetic'] but the engine's flag\n  lives on `magnetic`, not in keywords, so the generated token came out\n  magnetic:false and could NOT merge. From the Scrapheap's Sparkbots\n  were the visible victim. Now the handler sets magnetic from either an\n  `e.magnetic` field or a 'magnetic' keyword (and strips the bogus\n  keyword), and carries magnetizeTribes.\n\n- count: the handler created exactly one token, ignoring e.count. So\n  \"Get three ... Sparkbots\" (From the Scrapheap) gave one, and \"Get\n  eight ... Bandits\" (The Badlands Bandits) gave one. Now it loops\n  e.count, stopping at hand cap, and applies withGift per token.\n\ndrone_deconstructor was already fine — it uses add-card on the real\nttn_sparkbot token (magnetic:true preserved).\n\nmagnetic_test.mjs +8 checks (generated-token coverage); suite 203/203.",
+			"cards": []
+		},
+		{
 			"sha": "4b79cbf",
 			"date": "2026-08-18",
 			"kind": "patch",
