@@ -20697,6 +20697,25 @@
       ]
     },
     {
+      "id": "contraption_thud_for_duds",
+      "name": "Thud-for-Duds",
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "description": "Contraption (MTG Unstable). Deal 3 damage to a random enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "random-enemy"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",

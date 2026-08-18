@@ -1556,6 +1556,15 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				case 'own-creatures': // Ticking Abomination
 					for (const c of [...state.players[pi].board]) damageCreature(state, c, v, null);
 					break;
+				case 'random-enemy': { // a random enemy creature (Thud-for-Duds); e.count for more
+					const pool = enemies.flatMap(o => state.players[o].board.filter(c => !isDead(c) && c.type !== 'location'));
+					for (let i = 0; i < (e.count || 1) && pool.length; i++) {
+						const idx = Math.floor(state.rng() * pool.length);
+						damageCreature(state, pool[idx], v, e.threadSource ? source : null);
+						pool.splice(idx, 1); // distinct targets when count > 1
+					}
+					break;
+				}
 				default: { // chosen target
 					const t = chosenCreature();
 					if (t && e.requireTargetTribe && !(t.tribe || '').length) break; // Bugsquasher: only typed minions

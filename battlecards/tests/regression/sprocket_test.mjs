@@ -12,6 +12,7 @@ const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.u
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
 byId._m = { id: '_m', name: 'M', type: 'creature', cost: 1, attack: 2, health: 3, rarity: 'common' };
 byId._f = { id: '_f', name: 'F', type: 'creature', cost: 1, attack: 2, health: 3, rarity: 'common' };
+byId._big = { id: '_big', name: 'Big', type: 'creature', cost: 1, attack: 2, health: 6, rarity: 'common' };
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL', l, x ?? ''); } };
 const ZAP = 'contraption_division_table'; // fires -> enemy hero loses 2 (a persistent fire counter)
@@ -89,6 +90,13 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
 // an empty sprocket cranks harmlessly (pointer still advances)
 { const st = game(); E.crankSprocket(st, 0);
   ok('empty sprocket crank: no crash, pointer advanced', st.players[0].sprocketPointer === 1 && st.players[0].sprocket.every(x => x === null)); }
+
+// the new random-enemy damage primitive (Thud-for-Duds) hits an enemy creature
+{ const st = game();
+  const foe = E.instantiate(byId._big, 1); foe.zone = 'board'; st.players[1].board.push(foe);
+  E.placeContraption(st, 0, 0, 'contraption_thud_for_duds');
+  E.crankSprocket(st, 0);
+  ok('Thud-for-Duds deals 3 to a random enemy creature', foe.damage === 3 && E.hp(foe) === 3, `dmg=${foe.damage} hp=${E.hp(foe)}`); }
 
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {
