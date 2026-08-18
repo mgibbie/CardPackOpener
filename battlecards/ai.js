@@ -267,8 +267,10 @@ export function step(state, pi = 1) {
 		}
 		if (E.tapLand(state, pi, l.uid, 0, target)) return true;
 	}
-	// 0b. develop a land when flush enough that it doesn't cost the turn
-	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3) {
+	// 0b. develop a land when flush enough that it doesn't cost the turn — but NOT while the
+	// hand is over the limit: a flooded hand should be spending mana dumping cards (or it'll
+	// discard them at end of turn), not ramping.
+	if (E.canBuyLand(state, pi) && E.availableMana(p) >= E.LAND_COST + 3 && p.lands.length < 3 && p.hand.length <= E.HAND_LIMIT) {
 		const pool = E.availableLands(state, pi);
 		if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
 	}

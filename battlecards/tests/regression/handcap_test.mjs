@@ -101,5 +101,18 @@ ok('handKeepValue ranks a 5/5 lifesteal 2-drop above a vanilla 1/1', AI.handKeep
 // and a real bomb outranks efficient cheap cards (kept on cleanup)
 ok('handKeepValue keeps a 10-cost bomb over a 2-cost body', AI.handKeepValue(byId.t_bomb) > AI.handKeepValue(byId.t_good_cheap));
 
+// --- the AI plays a flooded hand sensibly: develop the board, don't ramp/waste mana ---
+byId.t_c3 = { id: 't_c3', name: 'C3', type: 'creature', cost: 3, attack: 3, health: 3, rarity: 'common' };
+byId.t_c8 = { id: 't_c8', name: 'C8', type: 'creature', cost: 8, attack: 8, health: 8, rarity: 'common' };
+{
+	const st = game();                                // player 0, 10 mana, 0 lands
+	for (let i = 0; i < 18; i++) { const id = ['t_filler', 't_c3', 't_c8'][i % 3]; const c = E.instantiate(byId[id], 0); c.zone = 'hand'; st.players[0].hand.push(c); }
+	let g = 0; while (AI.step(st, 0) && g++ < 60) { }
+	ok('AI with a flooded hand develops the board (plays creatures)', st.players[0].board.filter(c => c.type === 'creature').length >= 2);
+	ok('AI does NOT ramp lands while its hand is over the limit', st.players[0].lands.length === 0);
+	ok('AI spends its mana on the hand (<=1 left)', E.availableMana(st.players[0]) <= 1);
+	ok('AI terminates (no large-hand stall)', g < 60);
+}
+
 console.log(`${pass}/${pass + fail} hand-cap checks passed`);
 process.exit(fail ? 1 : 0);
