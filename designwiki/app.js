@@ -769,7 +769,7 @@ async function contraptionsView() {
     h('div', { class: 'card-grid' }, list.map(cardTile)));
 }
 
-// ---------- Advance Dungeons (the AFR dungeons the Advance keyword ventures) ----------
+// ---------- Advance Dungeons (the dungeons the Advance keyword ventures) ----------
 let advDungeonPromise = null;
 function loadAdvDungeons() { if (!advDungeonPromise) advDungeonPromise = import('../battlecards/engine/dungeons.js' + CB); return advDungeonPromise; }
 async function dungeonsView() {
