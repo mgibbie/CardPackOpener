@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "b49784a",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Implement Coven, restore Abzan Runemark's conditional Taunt",
+			"body": "Coven = you control 3+ creatures with DISTINCT Attack values (three\ndifferent attacks, not three bodies — five 1/1s don't qualify; a 1/1,\n2/2, 3/3 do). It's a live on/off condition: the effect deactivates the\nmoment you no longer meet it.\n\nImplemented by extending the existing `condKeyword` toggle (already used\nby Southsea Deckhand's while:'weapon') with a while:'coven' branch, backed\nby a new hasCoven() helper (core.js) computed once per player each aura\nrecompute. `attach` now carries a `condKeyword`, so Abzan Runemark grants\n+2/+2 plus Taunt-while-Coven (previously dropped as an adaptation). The\naura recompute's delta-tracking gives the on/off toggle for free.\n\nabzan_pool_test.mjs +6 checks (hasCoven cases, Taunt gated by Coven,\nand the full break/restore toggle). Suite 205/205.",
+			"cards": []
+		},
+		{
 			"sha": "1a4649e",
 			"date": "2026-08-18",
 			"kind": "cards",
