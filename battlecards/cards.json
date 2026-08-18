@@ -21126,7 +21126,7 @@
         "B",
         "G"
       ],
-      "description": "Give a friendly creature +2/+2, Taunt while you have Coven (3+ creatures with different Attack), and Inspire: Advance (advance through a dungeon whenever you use a hero power).",
+      "description": "Give a friendly creature +2/+2, Taunt while you have Coven, and Inspire: Advance.",
       "effects": [
         {
           "type": "attach",
@@ -139097,10 +139097,10 @@
       "durability": 3,
       "rarity": "epic",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Deal 5 damage to a random creature an opponent controls. Advance to the present!",
+      "description": "Deal 5 damage to a random creature an opponent controls. Time Travel to the present!",
       "taps": [
         {
-          "text": "Deal 5 damage to a random enemy minion. Advance to the present!",
+          "text": "Deal 5 damage to a random enemy minion. Time Travel to the present!",
           "effects": [
             {
               "type": "damage-enemy-minion",
@@ -139124,10 +139124,10 @@
       "durability": 3,
       "rarity": "free",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Deal 5 damage to a random creature an opponent controls. Excess hits target opponent. Advance to the future!",
+      "description": "Deal 5 damage to a random creature an opponent controls. Excess hits target opponent. Time Travel to the future!",
       "taps": [
         {
-          "text": "Deal 5 damage to a random enemy minion. Excess hits target opponent. Advance to the future!",
+          "text": "Deal 5 damage to a random enemy minion. Excess hits target opponent. Time Travel to the future!",
           "effects": [
             {
               "type": "damage-enemy-minion",
@@ -139180,10 +139180,10 @@
       "durability": 3,
       "rarity": "epic",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Target creature gains +2/+1. Advance to the present!",
+      "description": "Target creature gains +2/+1. Time Travel to the present!",
       "taps": [
         {
-          "text": "Give a minion +2/+1. Advance to the present!",
+          "text": "Give a minion +2/+1. Time Travel to the present!",
           "effects": [
             {
               "type": "buff",
@@ -139208,10 +139208,10 @@
       "durability": 3,
       "rarity": "free",
       "set": "ACROSS_THE_TIMEWAYS",
-      "description": "Target creature gains +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
+      "description": "Target creature gains +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Time Travel to the future!",
       "taps": [
         {
-          "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Advance to the future!",
+          "text": "Give a minion +2/+1 and 'Deathrattle: Deal 2 damage to target opponent.' Time Travel to the future!",
           "effects": [
             {
               "type": "buff",
