@@ -2,27 +2,32 @@
 // random Contraption you place into a slot (overwriting); Contraptions STAY in their slot. At
 // each of your turn-starts the indicator's current slot fires (if it holds one), then the
 // indicator advances — so a Contraption fires each time the indicator cycles back to it, and
-// the slot you pick sets how many ticks until the indicator first reaches it.
+// the slot you pick sets how many ticks until the indicator first reaches it. Contraptions are
+// real MTG (Unstable) ports: 0-cost, uncollectible, auto-resolving.
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
-byId._c = { id: '_c', name: 'C', type: 'creature', cost: 1, attack: 2, health: 3, rarity: 'common' };
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL', l, x ?? ''); } };
+const ZAP = 'contraption_division_table'; // fires -> enemy hero loses 2 (a persistent fire counter)
+const MANA = 'contraption_sap_sucker';    // fires -> gain 1 mana
 
 const game = () => {
 	const st = E.createGame(byId, seededRng(9), null, 2, [{ id: 'mage', name: 'A', power: null }, { id: 'mage', name: 'B', power: null }]);
-	st.current = 0; for (const p of st.players) { p.hand = []; p.deck = ['_c', '_c', '_c', '_c', '_c', '_c']; p.board = []; p.life = 30; p.armor = 0; p.sprocket = [null, null, null]; p.sprocketPointer = 0; p.mana = { cur: 10, max: 10, bonus: 0 }; }
+	st.current = 0; for (const p of st.players) { p.hand = []; p.deck = []; p.board = []; p.life = 30; p.armor = 0; p.sprocket = [null, null, null]; p.sprocketPointer = 0; p.mana = { cur: 10, max: 10, bonus: 0 }; }
 	return st;
 };
+const foeLife = st => st.players[1].life;
 
 // state + pool
 { const p = game().players[0];
   ok('players start with 3 empty slots + pointer at 0', p.sprocket.length === 3 && p.sprocket.every(x => x === null) && p.sprocketPointer === 0); }
-ok('a Contraption pool exists', E.contraptionPool(game()).length >= 6);
+{ const pool = E.contraptionPool(game());
+  ok('a Contraption pool exists', pool.length >= 9);
+  ok('every Contraption is a 0-cost, uncollectible gadget with effects', pool.every(c => c.cost === 0 && c.collectible === false && c.contraption === true && Array.isArray(c.effects) && c.effects.length)); }
 ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.some(e => e.type === 'assemble'));
 
 // Assemble: random contraption + slot pick
@@ -36,37 +41,37 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
 
 // overwrite
 { const st = game();
-  E.placeContraption(st, 0, 0, 'contraption_mana_battery');
-  E.placeContraption(st, 0, 0, 'contraption_conveyor_belt');
-  ok('placing in an occupied slot OVERWRITES', st.players[0].sprocket[0].id === 'contraption_conveyor_belt'); }
+  E.placeContraption(st, 0, 0, MANA);
+  E.placeContraption(st, 0, 0, ZAP);
+  ok('placing in an occupied slot OVERWRITES', st.players[0].sprocket[0].id === ZAP); }
 
 // the pointed slot fires on the next crank, and the Contraption STAYS
 { const st = game();
-  E.placeContraption(st, 0, 0, 'contraption_conveyor_belt'); // draw 1, at the pointer (slot 0)
-  const h = st.players[0].hand.length;
+  E.placeContraption(st, 0, 0, ZAP); // enemy -2, at the pointer (slot 0)
+  const L = foeLife(st);
   E.crankSprocket(st, 0);
-  ok('pointed Contraption fires on crank (drew a card)', st.players[0].hand.length === h + 1);
-  ok('Contraption STAYS in its slot (persistent)', st.players[0].sprocket[0] && st.players[0].sprocket[0].id === 'contraption_conveyor_belt');
+  ok('pointed Contraption fires on crank (enemy -2)', foeLife(st) === L - 2, foeLife(st));
+  ok('Contraption STAYS in its slot (persistent)', st.players[0].sprocket[0] && st.players[0].sprocket[0].id === ZAP);
   ok('indicator advanced to the next slot', st.players[0].sprocketPointer === 1); }
 
 // re-fires each time the indicator cycles back (every 3 turns)
 { const st = game();
-  E.placeContraption(st, 0, 0, 'contraption_conveyor_belt');
-  const h = st.players[0].hand.length;
-  E.crankSprocket(st, 0); // ptr 0 fires (+1), -> 1
+  E.placeContraption(st, 0, 0, ZAP);
+  const L = foeLife(st);
+  E.crankSprocket(st, 0); // ptr 0 fires (-2), -> 1
   E.crankSprocket(st, 0); // ptr 1 empty, -> 2
   E.crankSprocket(st, 0); // ptr 2 empty, -> 0
-  ok('no extra fires while the indicator is on other slots', st.players[0].hand.length === h + 1);
+  ok('no extra fires while the indicator is on other slots', foeLife(st) === L - 2, foeLife(st));
   E.crankSprocket(st, 0); // ptr 0 again -> fires AGAIN
-  ok('re-fires when the indicator cycles back', st.players[0].hand.length === h + 2); }
+  ok('re-fires when the indicator cycles back', foeLife(st) === L - 4, foeLife(st)); }
 
 // slot choice delays via the pointer: index 1 (pointer at 0) fires on the 2nd crank
 { const st = game();
-  E.placeContraption(st, 0, 1, 'contraption_conveyor_belt');
-  const h = st.players[0].hand.length;
+  E.placeContraption(st, 0, 1, ZAP);
+  const L = foeLife(st);
   ok('ETA of slot index 1 with pointer 0 is 2 turns', E.contraptionEta(st.players[0], 1) === 2);
-  E.crankSprocket(st, 0); ok('slot 2: no fire on crank 1', st.players[0].hand.length === h);
-  E.crankSprocket(st, 0); ok('slot 2: fires on crank 2', st.players[0].hand.length === h + 1); }
+  E.crankSprocket(st, 0); ok('slot 2: no fire on crank 1', foeLife(st) === L);
+  E.crankSprocket(st, 0); ok('slot 2: fires on crank 2', foeLife(st) === L - 2); }
 
 // the indicator cycles 0 -> 1 -> 2 -> 0
 { const st = game();
@@ -74,10 +79,10 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.crankSprocket(st, 0); ok('pointer 1 -> 2', st.players[0].sprocketPointer === 2);
   E.crankSprocket(st, 0); ok('pointer 2 -> 0', st.players[0].sprocketPointer === 0); }
 
-// the fired effect actually runs (Mana Battery)
-{ const st = game(); E.placeContraption(st, 0, 0, 'contraption_mana_battery');
+// the fired effect actually runs (Sap Sucker grants mana)
+{ const st = game(); E.placeContraption(st, 0, 0, MANA);
   const m = E.availableMana(st.players[0]); E.crankSprocket(st, 0);
-  ok('Mana Battery grants 1 mana on fire', E.availableMana(st.players[0]) === m + 1); }
+  ok('Sap Sucker grants 1 mana on fire', E.availableMana(st.players[0]) === m + 1); }
 
 // an empty sprocket cranks harmlessly (pointer still advances)
 { const st = game(); E.crankSprocket(st, 0);
