@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "da31e39",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Venture into the Dungeon (the Advance mechanic) + Runemark's Inspire",
+			"body": "Advance = MTG's \"Venture into the Dungeon.\" Adds the three Adventures in\nthe Forgotten Realms dungeons (Lost Mine of Phandelver, Tomb of\nAnnihilation, Dungeon of the Mad Mage), pulled from Scryfall oracle text.\n\n- NEW engine/dungeons.js: pure DUNGEONS data (rooms -> effects + branches).\n  Room effects use the normal DSL; since rooms auto-trigger, targeted ones\n  use auto-resolving variants (bolster for +1/+1, freeze/all-heroes\n  broadcasts). A few clauses adapted where the DSL can't express them\n  (Tomb \"lose N unless…\" -> the discard/life half; Mad Mage \"exile top 2,\n  play\"/\"draw 3, cast free\" -> draw). The Atropal = 4/4 deathtouch.\n- venture()/enterRoom() live in core.js (needs execEffects/emit); DUNGEONS\n  is a no-import data module so the base module has no cycle. Per-player\n  `dungeon` + `completedDungeons` (snapshotted wholesale, so MP/replay\n  carry them). resolvePick routes venture picks.\n- On first venture the player PICKS a dungeon; branch rooms are a pick too.\n  Reuses the pick modal's label mode (like Adapt) — new mode:'venture'\n  branch in game.js; AI auto-resolves venture picks (ai.js).\n- Abzan Runemark's \"Inspire: Advance\": `attach` now carries an `ongoing`,\n  so the enchanted creature gets ongoing{on:'hero-power-used',\n  effects:[venture]} — it ventures each hero power (Inspire), alongside\n  its Coven:Taunt.\n\nNew dungeon_test.mjs (22 checks: all 3 dungeons walk to their payoff +\ncomplete, fresh venture starts anew, Runemark Inspire ventures). Registry\ncount 1107->1108. Suite 206/206; AI-vs-AI venture smoke: 0 validation\nviolations.",
+			"cards": []
+		},
+		{
 			"sha": "b49784a",
 			"date": "2026-08-18",
 			"kind": "patch",
