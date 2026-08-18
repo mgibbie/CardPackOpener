@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "2a63ec2",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "AI discards sensibly on end-of-turn cleanup (keep bombs, shed chaff)",
+			"body": "When over the hand limit, both discard resolvers (ai.js step -1a and\ngame.js resolveAIDiscards) dumped the most EXPENSIVE cards — a rule\ncarried over from Loot discards. For an over-15 cleanup that's backwards:\nit threw away finishers (a 12/12 Taunt, a 10/10 Deathrattle) to keep\nthirteen 1-drops.\n\nCleanup discards (pend.cleanup) now shed the least valuable cards via\nAI.cleanupDiscardUids / handKeepValue: value ≈ cost (impact proxy) + a\nstat/keyword bonus so a strong cheap card outranks a weak pricier one.\nLoot/other discards keep the old \"dump priciest\" behavior (unchanged).\n\nVerified: the same 18-card hand now discards three 1-cost chaff and keeps\nall three bombs. handcap_test.mjs +5 checks (16 total); suite 204/204.",
+			"cards": []
+		},
+		{
 			"sha": "44a5540",
 			"date": "2026-08-18",
 			"kind": "patch",
