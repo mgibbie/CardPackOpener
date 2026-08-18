@@ -55,6 +55,7 @@ const K = [
 	{ p: ['Spell Damage'], t: 'Your spells deal extra damage.' },
 	{ p: ['Magnetic'], t: 'Drop it onto a friendly Mech to merge its stats and text onto that Mech (some can Magnetize to other tribes too).' },
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
+	{ p: ['Coven'], t: 'Active while you control three or more creatures with different Attack values.' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
 	{ p: ['Counter target spell', 'Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
