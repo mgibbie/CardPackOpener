@@ -3,7 +3,7 @@
 // recomputeAuras / staticValue moved VERBATIM from engine.js. recomputeAuras
 // is delta-tracked and idempotent (pinned by trigger_order_test.mjs);
 // staticValue sums a static passive across every permanent row.
-import { isDead, emit, hp, has, KW, activePlaneRule, heraldMult } from '../engine.js';
+import { isDead, emit, hp, has, KW, activePlaneRule, heraldMult, hasCoven } from '../engine.js';
 
 export function recomputeAuras(state) {
 	// global auras ("ALL other Murlocs...") radiate across every board
@@ -16,6 +16,7 @@ export function recomputeAuras(state) {
 	for (const p of state.players) {
 		const sources = [...p.board, ...p.enchantments, ...p.emblems, ...p.artifacts]
 			.filter(c => c.aura && !c.aura.global && !(c.zone === 'board' && isDead(c)));
+		const covenActive = hasCoven(p); // 3+ distinct Attack values among your creatures (on/off)
 		p.board.forEach((c, idx) => {
 			if (c.type === 'location') return; // auras don't touch locations
 			if (c.dormantLeft > 0) return;     // nor dormant sleepers
@@ -95,9 +96,12 @@ export function recomputeAuras(state) {
 				}
 				aBonus += (c.selfScale.attack || 0) * n;
 			}
-			// Southsea Deckhand: keyword held only while a condition stands
-			if (c.condKeyword && (c.condKeyword.while !== 'weapon' || p.weapon)) {
-				granted.add(c.condKeyword.keyword);
+			// keyword held only while a condition stands: Southsea Deckhand ('weapon'),
+			// Abzan Runemark ('coven' — 3+ distinct Attack values among your creatures)
+			if (c.condKeyword) {
+				const w = c.condKeyword.while;
+				const met = w === 'weapon' ? !!p.weapon : w === 'coven' ? covenActive : true;
+				if (met) granted.add(c.condKeyword.keyword);
 			}
 			// "+N Attack while you have a weapon equipped"
 			if (c.condAttack && (c.condAttack.while !== 'weapon' || p.weapon)) {

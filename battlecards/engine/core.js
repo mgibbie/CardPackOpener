@@ -473,6 +473,14 @@ export function has(card, kw) {
 export function hp(card) {
 	return card.maxHealth - card.damage;
 }
+// Coven: you control 3+ creatures with DIFFERENT Attack values (three DISTINCT attacks, not
+// three bodies — five 1/1s don't qualify; a 1/1, 2/2, 3/3 do). A live on/off condition,
+// re-evaluated every aura recompute (see the `while:'coven'` condKeyword in auras.js).
+export function hasCoven(player) {
+	const attacks = new Set();
+	for (const c of player.board) if (c.type === 'creature' && !isDead(c)) attacks.add(c.attack);
+	return attacks.size >= 3;
+}
 
 // ---------- players ----------
 export function opponentsOf(state, pi) {

@@ -49,8 +49,21 @@ ok('every pool card is W/B/G', abzan.every(c => JSON.stringify([...(c.colors || 
 { const st = game(); toHand(st, 'abzan_battlepriest'); play(st, 'abzan_battlepriest'); const bp = st.players[0].board.find(c => c.id === 'abzan_battlepriest'); const a = putC(st, 0, 2, 2);
   E.activateAbility(st, 0, bp.uid, 0, { type: 'creature', uid: a.uid, player: 0 });
   ok('Battlepriest: activated +1/+1', a.attack === 3 && E.hp(a) === 3); }
-{ const st = game(); const a = putC(st, 0, 2, 2); toHand(st, 'abzan_runemark'); play(st, 'abzan_runemark', { type: 'creature', uid: a.uid, player: 0 });
-  ok('Runemark: +2/+2 & Taunt', a.attack === 4 && E.hp(a) === 4 && a.keywords.includes('taunt')); }
+{ const st = game(); const a = putC(st, 0, 2, 2); toHand(st, 'abzan_runemark'); play(st, 'abzan_runemark', { type: 'creature', uid: a.uid, player: 0 }); E.recomputeAuras(st);
+  ok('Runemark: +2/+2 applied', a.attack === 4 && E.hp(a) === 4);
+  ok('Runemark: NO Taunt without Coven (one creature = one distinct Attack)', !a.keywords.includes('taunt')); }
+
+// ---------- Coven (Runemark's conditional Taunt): 3+ DISTINCT Attack values, live on/off ----------
+ok('hasCoven: five 1/1s is NOT Coven', (() => { const st = game(); for (let i = 0; i < 5; i++) putC(st, 0, 1, 1); return !E.hasCoven(st.players[0]); })());
+ok('hasCoven: 1/1, 2/2, 3/3 IS Coven', (() => { const st = game(); putC(st, 0, 1, 1); putC(st, 0, 2, 2); putC(st, 0, 3, 3); return E.hasCoven(st.players[0]); })());
+{ const st = game();
+  const a = putC(st, 0, 3, 3), f1 = putC(st, 0, 1, 1), f2 = putC(st, 0, 2, 2); // attacks 3,1,2 → Coven
+  toHand(st, 'abzan_runemark'); play(st, 'abzan_runemark', { type: 'creature', uid: a.uid, player: 0 }); E.recomputeAuras(st);
+  ok('Coven active → Runemark grants Taunt', a.keywords.includes('taunt'));
+  st.players[0].board = st.players[0].board.filter(c => c !== f1 && c !== f2); E.recomputeAuras(st); // only a (one attack) → no Coven
+  ok('Coven broken → Taunt deactivates', !a.keywords.includes('taunt'));
+  putC(st, 0, 1, 1); putC(st, 0, 2, 2); E.recomputeAuras(st); // distinct attacks restored
+  ok('Coven restored → Taunt returns', a.keywords.includes('taunt')); }
 { const st = game(); const a = putC(st, 0, 2, 2); toHand(st, 'abzan_sand_blessing'); play(st, 'abzan_sand_blessing'); E.recomputeAuras(st);
   ok('Sand Blessing: anthem grants your creatures Taunt', E.has(a, 'taunt')); }
 { const st = game(); st.players[0].deck = ['_c']; const a = putC(st, 0, 2, 2); toHand(st, 'abzan_strike'); const h = st.players[0].hand.length;

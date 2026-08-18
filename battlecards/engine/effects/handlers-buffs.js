@@ -1448,6 +1448,9 @@ const _h_attach = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 					if (k === KW.DIVINE_SHIELD) t.shield = true;
 					if (k === KW.STEALTH) t.stealthed = true;
 				}
+				// conditional keyword (e.g. Abzan Runemark's Coven:Taunt) — held only while
+				// the condition stands; the aura recompute toggles it on/off.
+				if (e.condKeyword) t.condKeyword = { ...e.condKeyword };
 				if (source) t.attachments.push(source.name);
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}

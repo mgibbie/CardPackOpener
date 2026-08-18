@@ -21126,15 +21126,16 @@
         "B",
         "G"
       ],
-      "description": "Give a friendly creature +2/+2 and Taunt.",
+      "description": "Give a friendly creature +2/+2, and Taunt while you have Coven (you control 3+ creatures with different Attack).",
       "effects": [
         {
           "type": "attach",
           "attack": 2,
           "health": 2,
-          "keywords": [
-            "taunt"
-          ],
+          "condKeyword": {
+            "keyword": "taunt",
+            "while": "coven"
+          },
           "target": "friendly-creature"
         }
       ]
