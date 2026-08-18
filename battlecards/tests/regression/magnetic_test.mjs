@@ -4,6 +4,7 @@
 //   - `magnetizeTribes`: cards that "can Magnetize to <tribe> as well as Mechs"
 import fs from 'fs';
 import * as E from '../../engine.js';
+import * as AI from '../../ai.js';
 import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
@@ -81,6 +82,39 @@ ok('absorbent_parasite magnetizes to Beast', cardsById.absorbent_parasite?.magne
 	const mod = toHand(st, 0, 'annoy_o_module'); // Mech, magnetic, no magnetizeTribes
 	magnetizeOnto(st, 0, mod, pirate);
 	ok('annoy_o_module did NOT merge onto a Pirate', st.players[0].board.length === 2);
+}
+
+// ---------- the AI magnetizes onto its own Mechs ----------
+const runAI = st => { for (let i = 0; i < 10 && st.current === 0 && st.players[0].hand.length; i++) AI.step(st, 0); };
+
+// value case: a keyword-granting magnetic minion fuses onto the AI's Mech
+{
+	const st = game();
+	const mech = putMon(st, 0, { attack: 3, health: 4, tribe: 'Mech' }); mech.sick = true;
+	toHand(st, 0, 'annoy_o_module'); // magnetic: divine_shield + taunt
+	runAI(st);
+	ok('AI magnetized a keyword minion (board stayed 1)', st.players[0].board.length === 1);
+	ok('AI Mech gained the merged attack', st.players[0].board[0].attack === 3 + cardsById.annoy_o_module.attack);
+	ok('AI Mech gained Divine Shield', st.players[0].board[0].shield === true);
+}
+
+// body case: a vanilla stat-stick (no keyword) onto an unshielded Mech → develop a second body
+{
+	const st = game();
+	cardsById._mag_vanilla = { id: '_mag_vanilla', name: 'Vanilla Bot', type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Mech', magnetic: true, rarity: 'common', description: 'test' };
+	const mech = putMon(st, 0, { attack: 2, health: 2, tribe: 'Mech' }); mech.sick = true;
+	toHand(st, 0, '_mag_vanilla');
+	runAI(st);
+	ok('AI played a vanilla magnetic as a body (board grew to 2)', st.players[0].board.length === 2);
+}
+
+// no target: no friendly Mech → plays as a normal body
+{
+	const st = game();
+	const beast = putMon(st, 0, { attack: 2, health: 2, tribe: 'Beast' }); beast.sick = true;
+	toHand(st, 0, 'skaterbot');
+	runAI(st);
+	ok('AI played magnetic as a body with no Mech (board grew to 2)', st.players[0].board.length === 2);
 }
 
 console.log(`${pass}/${pass + fail} magnetic checks passed`);

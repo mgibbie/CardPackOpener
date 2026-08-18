@@ -112,6 +112,28 @@ function playableCards(state, pi) {
 	});
 }
 
+// Should the AI Magnetize this creature onto a friendly Mech instead of summoning a body?
+// The board cap is large (MAX_BOARD), so space is rarely the constraint — this is a value
+// call: fuse to stack a keyword/deathrattle/ongoing, or to load stats behind a Divine
+// Shield; otherwise develop a separate body (going wide is strong in this format).
+// Returns the target creature to merge onto, or null to play it normally.
+const MAGNET_KEYWORDS = ['divine_shield', 'taunt', 'lifesteal', 'windfury', 'rush', 'poisonous', 'venomous', 'deathtouch', 'stealth'];
+function magnetizeTarget(state, pi, card) {
+	if (!card.magnetic || card.type !== 'creature') return null;
+	const p = state.players[pi];
+	const tribes = card.magnetizeTribes?.length ? card.magnetizeTribes : ['Mech'];
+	const mechs = p.board.filter(c => !E.isDead(c) && c.type === 'creature' && tribes.some(tr => (c.tribe || '').includes(tr)));
+	if (!mechs.length) return null;
+	const boardFull = p.board.filter(c => !E.isDead(c) && c.type !== 'location').length >= E.MAX_BOARD;
+	const stacksValue = (card.keywords || []).some(k => MAGNET_KEYWORDS.includes(k)) || !!card.deathrattle?.length || !!card.ongoing;
+	const hasShieldMech = mechs.some(m => m.shield);
+	if (!(boardFull || stacksValue || hasShieldMech)) return null; // no clear gain → develop a body instead
+	// best carrier: behind a Divine Shield first, then a Taunt wall, then the biggest threat
+	return [...mechs].sort((a, b) => ((b.shield ? 1 : 0) - (a.shield ? 1 : 0))
+		|| ((E.has(b, E.KW.TAUNT) ? 1 : 0) - (E.has(a, E.KW.TAUNT) ? 1 : 0))
+		|| (b.attack - a.attack) || (E.hp(b) - E.hp(a)))[0];
+}
+
 // One AI action per call so the renderer can animate between steps.
 // Returns true if it acted, false when it wants to end the turn.
 export function step(state, pi = 1) {
@@ -237,7 +259,10 @@ export function step(state, pi = 1) {
 		playable.sort((a, b) => b.cost - a.cost);
 		const card = playable[0];
 		let choice = null, target = null;
-		if (card.choices) {
+		const magT = magnetizeTarget(state, pi, card);
+		if (magT) {
+			target = { type: 'creature', uid: magT.uid, player: pi }; // Magnetic: merge onto a friendly Mech
+		} else if (card.choices) {
 			// take the first branch that's targetless or has a live target
 			for (let i = 0; i < card.choices.length; i++) {
 				const spec = E.targetSpec(state, pi, card, i);
