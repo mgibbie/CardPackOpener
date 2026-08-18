@@ -780,6 +780,8 @@ async function contraptionsView() {
 // ---------- Advance Dungeons (the dungeons the Advance keyword ventures) ----------
 let advDungeonPromise = null;
 function loadAdvDungeons() { if (!advDungeonPromise) advDungeonPromise = import('../battlecards/engine/dungeons.js' + CB); return advDungeonPromise; }
+let dungeonSize = 'medium';
+const DUNGEON_WIDTHS = { small: 260, medium: 380 };
 async function dungeonsView() {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading dungeons…'));
   let cards, mod;
@@ -787,10 +789,16 @@ async function dungeonsView() {
   catch (e) { return content.replaceChildren(h('h1', null, 'Advance Dungeons'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
   const DUNGEONS = mod.DUNGEONS || {};
   const dcards = cards.filter(c => c.type === 'dungeon');
+  const faceW = DUNGEON_WIDTHS[dungeonSize] || 380;
+  const sizeBtn = sz => h('button', {
+    style: 'padding:4px 12px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #4a3f6b;'
+      + (dungeonSize === sz ? 'background:#6a5f8a;color:#fff;font-weight:700;' : 'background:#241b38;color:#c9b8ff;'),
+    onclick: () => { dungeonSize = sz; dungeonsView(); }
+  }, titleCase(sz));
   const sections = dcards.map(card => {
     const d = DUNGEONS[card.id];
     const face = CardArt.drawCardFace(card); // the flowchart card face (canvas)
-    Object.assign(face.style, { width: '340px', maxWidth: '100%', height: 'auto', borderRadius: '16px', boxShadow: '0 6px 22px rgba(0,0,0,0.5)' });
+    Object.assign(face.style, { width: faceW + 'px', maxWidth: '100%', height: 'auto', borderRadius: '16px', boxShadow: '0 6px 22px rgba(0,0,0,0.5)' });
     const rooms = d ? Object.entries(d.rooms).map(([rid, r]) => {
       const nexts = (r.next || []).map(nid => (d.rooms[nid] && d.rooms[nid].name) || nid);
       return h('div', { class: 'kw-def' },
@@ -808,6 +816,8 @@ async function dungeonsView() {
     h('h1', null, 'Advance Dungeons ', h('span', { class: 'num' }, '(' + dcards.length + ')')),
     h('p', { class: 'muted' }, 'The ', h('a', { href: '#/keyword/advance' }, 'Advance'),
       ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff. Each dungeon is a no-cost Dungeon card showing the full room flowchart.'),
+    h('div', { style: 'display:flex;gap:6px;align-items:center;margin:0 0 16px;' },
+      h('span', { class: 'muted', style: 'font-size:13px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
     ...sections);
 }
 
