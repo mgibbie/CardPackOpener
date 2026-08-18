@@ -21,6 +21,7 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 const playable = Object.values(byId).filter(d =>
 	!d.token && d.collectible !== false && d.type !== 'land' && !(d.colors && d.colors.length) && !d.companion && !d.commander);
 const deckOf = (offset) => Array.from({ length: 30 }, (_, i) => playable[(offset + i) % playable.length].id);
+const playableIds = new Set(playable.map(d => d.id)); // generated/shuffled-in cards aren't in here
 
 // deal an N-seat game the way the host does
 function dealHostGame(N, seed = 12345) {
@@ -50,7 +51,9 @@ function dealHostGame(N, seed = 12345) {
 	// each seat's remaining deck is drawn from its OWN injected list
 	for (let s = 0; s < 4; s++) {
 		const allowed = new Set(deckOf(s * 7));
-		const stray = state.players[s].deck.filter(id => !allowed.has(id));
+		// only flag deckbuildable cards: a start-of-game shuffle can add GENERATED cards
+		// (e.g. king_llane, not in any decklist) — that's not cross-seat contamination
+		const stray = state.players[s].deck.filter(id => !allowed.has(id) && playableIds.has(id));
 		ok(`seat ${s} deck came from its own decklist`, stray.length === 0, stray.slice(0, 4).join(','));
 	}
 }

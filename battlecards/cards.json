@@ -20734,6 +20734,26 @@
       ]
     },
     {
+      "id": "merciless_innovator",
+      "name": "Merciless Innovator",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "tribe": "Gnome",
+      "keywords": [
+        "battlecry"
+      ],
+      "description": "Battlecry: Assemble.",
+      "effects": [
+        {
+          "type": "assemble"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",
