@@ -19,6 +19,12 @@ const SB_PATH = path.join(DATA, 'species_battle.json');
 const AB_PATH = path.join(DATA, 'species_abilities.json');
 const S = JSON.parse(fs.readFileSync(SB_PATH, 'utf8'));
 const AB = JSON.parse(fs.readFileSync(AB_PATH, 'utf8'));
+const MV = JSON.parse(fs.readFileSync(path.join(DATA, 'moves_battle.json'), 'utf8'));
+const mvType = id => (MV[id] && MV[id].type) || '?';
+// damaging moves per type (sorted weak->strong), for guaranteeing STAB on a repaired moveset
+const stabByType = {};
+for (const id in MV) { const m = MV[id]; if (id.startsWith('_') || !m || !(m.power > 0) || m.category === 'Status' || !m.type) continue; (stabByType[m.type] = stabByType[m.type] || []).push([id, m.power]); }
+for (const t in stabByType) stabByType[t].sort((a, b) => a[1] - b[1]);
 
 // backup first (only once — never overwrite the pristine pre-repair copy on a re-run)
 for (const p of [SB_PATH, AB_PATH]) if (!fs.existsSync(p + '.pre_repair.bak')) try { fs.writeFileSync(p + '.pre_repair.bak', fs.readFileSync(p)); } catch (e) { console.warn('backup failed', e.message); }
@@ -61,6 +67,29 @@ function combinedMoveset(fakeId, offset = 0) {
 	if (!list.some(([lv]) => lv <= 1)) list.unshift([1, list[0][1]]); // guarantee a level-1 move
 	return list.slice(0, 20);
 }
+// guarantee a repaired moveset has 2-3 STAB moves. If the two donors gave <2 moves of the
+// fakemon's own type(s) (common for Fairy — Gen 1-5 donors carry almost no Fairy moves),
+// inject a weak/mid/strong spread of real STAB moves at sensible levels, without dropping any
+// STAB when re-capping to 20.
+function ensureStab(id, learnset) {
+	const ty = S[id].types || [];
+	const isStab = mv => ty.includes(mvType(mv));
+	const stab = learnset.filter(m => isStab(m[1])).length;
+	if (stab >= 2) return learnset;
+	const have = new Set(learnset.map(m => m[1]));
+	const cands = [];
+	for (const t of ty) for (const [mid, pow] of (stabByType[t] || [])) if (!have.has(mid) && !cands.some(c => c[0] === mid)) cands.push([mid, pow]);
+	if (!cands.length) return learnset;
+	cands.sort((a, b) => a[1] - b[1]);
+	const idxs = [...new Set([0, cands.length >> 1, cands.length - 1])].slice(0, 3 - stab); // weak / mid / strong
+	const lvl = pow => pow < 55 ? 8 : pow < 85 ? 22 : 40;
+	const inj = idxs.map(ix => [lvl(cands[ix][1]), cands[ix][0]]);
+	const min = new Map();
+	for (const [lv, mv] of [...learnset, ...inj]) if (!min.has(mv) || min.get(mv) > lv) min.set(mv, lv);
+	let out = [...min.entries()].map(([mv, lv]) => [lv, mv]).sort((a, b) => a[0] - b[0] || (a[1] < b[1] ? -1 : 1));
+	while (out.length > 20) { let di = -1; for (let i = out.length - 1; i >= 0; i--) if (!isStab(out[i][1])) { di = i; break; } if (di < 0) break; out.splice(di, 1); }
+	return out;
+}
 // replace the mismatched starter ability with the primary type's default (keep the rest)
 function fixedAbilities(id) {
 	const t = (S[id].types || []).map(x => x.toLowerCase());
@@ -84,7 +113,8 @@ for (const id of fakemon) {
 		let ls, s, off = 0;
 		do { ls = combinedMoveset(id, off); s = ls.map(m => m[1]).join(','); off++; } while (used.has(s) && off < 40);
 		if (off > 1) collisionRetries++;
-		S[id].learnset = ls; used.add(s); moveFixed++;
+		ls = ensureStab(id, ls); // top up to 2-3 STAB moves if the donors came up short
+		S[id].learnset = ls; used.add(ls.map(m => m[1]).join(',')); moveFixed++;
 	}
 	if (badAbility(id)) { AB[id] = fixedAbilities(id); abFixed++; }
 }
