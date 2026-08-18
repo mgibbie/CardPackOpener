@@ -20497,6 +20497,206 @@
       ]
     },
     {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_boomflinger",
+      "name": "Boomflinger",
+      "description": "Contraption (MTG Unstable). The enemy hero loses 3 life.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_dogsnail_engine",
+      "name": "Dogsnail Engine",
+      "description": "Contraption (MTG Unstable). Gain 3 life.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_rapid_prototyper",
+      "name": "Rapid Prototyper",
+      "description": "Contraption (MTG Unstable). Summon a 2/2 Construct.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Construct",
+          "tribe": "Mech"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_gift_horse",
+      "name": "Gift Horse",
+      "description": "Contraption (MTG Unstable). Summon two 1/1 Goblins.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Goblin",
+          "tribe": "Goblin"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_faerie_aerie",
+      "name": "Faerie Aerie",
+      "description": "Contraption (MTG Unstable). Summon two 1/1 Faeries.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Faerie Spy",
+          "tribe": "Faerie"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_genetic_recombinator",
+      "name": "Genetic Recombinator",
+      "description": "Contraption (MTG Unstable). Give your two weakest creatures +2/+2.",
+      "effects": [
+        {
+          "type": "bolster",
+          "value": 2
+        },
+        {
+          "type": "bolster",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_jamming_device",
+      "name": "Jamming Device",
+      "description": "Contraption (MTG Unstable). Freeze the enemy’s creatures.",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_hypnotic_swirly_disc",
+      "name": "Hypnotic Swirly Disc",
+      "description": "Contraption (MTG Unstable). The enemy mills 2 cards.",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_record_store",
+      "name": "Record Store",
+      "description": "Contraption (MTG Unstable). Scry 2.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "type": "contraption",
+      "cost": 0,
+      "token": true,
+      "collectible": false,
+      "contraption": true,
+      "cardClass": "neutral",
+      "tribe": "Contraption",
+      "id": "contraption_hard_hat_area",
+      "name": "Hard Hat Area",
+      "description": "Contraption (MTG Unstable). Assemble two random Contraptions.",
+      "effects": [
+        {
+          "type": "assemble"
+        },
+        {
+          "type": "assemble"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",

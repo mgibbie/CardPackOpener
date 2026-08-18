@@ -10,6 +10,8 @@ import { seededRng } from '../../engine/rng.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
+byId._m = { id: '_m', name: 'M', type: 'creature', cost: 1, attack: 2, health: 3, rarity: 'common' };
+byId._f = { id: '_f', name: 'F', type: 'creature', cost: 1, attack: 2, health: 3, rarity: 'common' };
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL', l, x ?? ''); } };
 const ZAP = 'contraption_division_table'; // fires -> enemy hero loses 2 (a persistent fire counter)
@@ -87,6 +89,17 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
 // an empty sprocket cranks harmlessly (pointer still advances)
 { const st = game(); E.crankSprocket(st, 0);
   ok('empty sprocket crank: no crash, pointer advanced', st.players[0].sprocketPointer === 1 && st.players[0].sprocket.every(x => x === null)); }
+
+// every ported Contraption fires without error (real MTG effects, all auto-resolving)
+{ for (const c of E.contraptionPool(game())) {
+    const st = game();
+    const mine = E.instantiate(byId._m, 0); mine.zone = 'board'; st.players[0].board.push(mine);
+    const foe = E.instantiate(byId._f, 1); foe.zone = 'board'; st.players[1].board.push(foe);
+    st.players[0].deck = ['_m', '_m', '_m']; st.players[1].deck = ['_f', '_f', '_f', '_f'];
+    E.placeContraption(st, 0, 0, c.id);
+    let threw = false; try { E.crankSprocket(st, 0); } catch (e) { threw = true; console.log('  FIRE ERROR', c.id, e.message); }
+    ok(`${c.id.replace('contraption_', '')} fires cleanly`, !threw);
+  } }
 
 console.log(`${pass}/${pass + fail} sprocket checks passed`);
 process.exit(fail ? 1 : 0);
