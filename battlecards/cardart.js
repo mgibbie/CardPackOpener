@@ -214,7 +214,11 @@ if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
 	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
 }
 
-const artIndexReady = fetch(ART_BASE + 'index.json')
+// cache-bust index.json with THIS module's ?v (the gallery/wiki import cardart.js with
+// a version query) so a release refreshes the art index — otherwise a returning visitor
+// keeps a stale index that omits newly-added art ids and shows procedural faces for them
+const _artCb = (() => { try { return new URL(import.meta.url).search; } catch (e) { return ''; } })();
+const artIndexReady = fetch(ART_BASE + 'index.json' + _artCb)
 	.then(r => (r.ok ? r.json() : Promise.reject()))
 	.catch(() => fetch(ART_DIR + 'index.json').then(r => (r.ok ? r.json() : []))) // fall back to the redirect path
 	.then(ids => { artIndex = new Set(ids); })
@@ -660,10 +664,6 @@ export function drawDungeonFace(ctx, card, W, H, current) {
 	ctx.fillText(fitText(ctx, (dg && dg.name) || card.name || 'Dungeon', W - 96), W / 2, 46);
 	ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
 	ctx.fillText('Dungeon · Advance', W / 2, 70);
-	// "no cost" gem, top-left
-	ctx.beginPath(); ctx.arc(42, 44, 25, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill();
-	ctx.lineWidth = 3; ctx.strokeStyle = th.edge; ctx.stroke();
-	ctx.fillStyle = '#fff'; ctx.font = 'bold 27px Georgia'; ctx.fillText('0', 42, 53);
 	if (!dg) return;
 
 	// longest-path depth from the start = row; columns spread within a row
