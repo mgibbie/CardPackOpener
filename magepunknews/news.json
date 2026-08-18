@@ -2,6 +2,114 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "1a4649e",
+			"date": "2026-08-18",
+			"kind": "cards",
+			"title": "Abzan: build the 7 missing pool cards + Citadel Discovers all 15",
+			"body": "Completes the Abzan advanced-land pool. Built the 7 cards named in the\nPlanned Card Dex but never designed, sourced from tools/data/all_cards.json\n(the paper/Magepunk scans): Advantage, Battlepriest, Runemark, Sand\nBlessing, Strike, Survivalist, Warlord — all W/B/G, cardClass magepunk.\n\nConverted Abzan Citadel's tap from a random conjure-named to a real\nDiscover (pick 1 of 3), and taught the `discover` effect a themed `match`\nmode that filters by name and ALLOWS colored cards (no existing discover\nuses `match`, so nothing else changes). The pool is dynamic name-match,\nso it now resolves to all 15 non-land Abzan cards.\n\nFaithful ports where the engine allows; three adaptations the DSL can't\nexpress as data: Runemark drops Coven/Inspire flavor (keeps +2/+2 &\nTaunt via `attach`); Sand Blessing keeps the \"your creatures have Taunt\"\nanthem but drops the \"5: destroy a Taunt/Windfury creature\" ability\n(needs an OR-keyword target + enchantment-activated support); Warlord\nkeeps Battlecry: draw 2 but drops the die->exile replacement (no\ndeath-replacement hook exists). Survivalist's \"X: deal X\" uses\nspend-all-mana-damage.\n\nNew abzan_pool_test.mjs (16 checks: flip, 15-card pool, themed discover\nincl. colored, each new card works). Suite 205/205. Art deploys to\nmagepunk-cardart separately.",
+			"cards": [
+				{
+					"id": "abzan_advantage",
+					"name": "Abzan Advantage",
+					"type": "instant",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_battlepriest",
+					"name": "Abzan Battlepriest",
+					"type": "creature",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 4,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_runemark",
+					"name": "Abzan Runemark",
+					"type": "sorcery",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_sand_blessing",
+					"name": "Abzan Sand Blessing",
+					"type": "enchantment",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 2,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_strike",
+					"name": "Abzan Strike",
+					"type": "instant",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 1,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_survivalist",
+					"name": "Abzan Survivalist",
+					"type": "creature",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				},
+				{
+					"id": "abzan_warlord",
+					"name": "Abzan Warlord",
+					"type": "creature",
+					"class": "magepunk",
+					"rarity": "common",
+					"cost": 3,
+					"colors": [
+						"W",
+						"B",
+						"G"
+					]
+				}
+			]
+		},
+		{
+			"sha": "630d38f",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Abzan: flip colors to the advanced-land structure",
+			"body": "The advanced-land pattern is a COLORLESS land that Discovers from a pool\nof themed, colored cards. Abzan was inverted: the Citadel carried W/B/G\nand its 8 pool cards were colorless. Flipped so Abzan Citadel is\ncolorless and the pool (Falconer, Charm, Ascendancy, Guide, Skycaptain,\nSteward, Fortification, Infantry) is the W/B/G wedge. The conjure-named\ntap matches by name, so discovery is unaffected.",
+			"cards": []
+		},
+		{
 			"sha": "2e42947",
 			"date": "2026-08-18",
 			"kind": "patch",
