@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "779361f",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Rename the dungeon mechanic 'venture' -> 'advance'",
+			"body": "The mechanic is called Advance (Runemark's \"Inspire: Advance\"), so the\neffect type, function, pick mode/flag, and event are renamed to match:\neffect 'venture'->'advance', function venture()->advance(), pickQueue\nmode:'venture'->mode:'advance' + the enter/room flag, resolvePick's\npend.venture->pend.advance, the 'ventureRoom' event->'advanceRoom', and\nthe UI modal title (\"Advance — choose a dungeon\"). \"Venture into the\nDungeon\" stays only as an MTG reference in comments. The real card\n\"Venture Co. Mercenary\" is untouched.\n\nSuite 206/206 (dungeon 22/22, registry still 1108).",
+			"cards": []
+		},
+		{
 			"sha": "da31e39",
 			"date": "2026-08-18",
 			"kind": "patch",
