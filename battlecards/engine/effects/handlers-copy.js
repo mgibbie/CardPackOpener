@@ -21,7 +21,7 @@ import { addHeroPower } from '../../engine.js';
 // verbatim, chain branches (and the switch's simpler `armor` twin, which
 // silently lacked the all-heroes variant) deleted.
 import {
-	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
+	emit, instantiate, MAX_HAND, HAND_LIMIT, endTurn, gainTokenCard, execEffects, summon,
 	installSecret, addCoin, damageHero, hp, availableMana, isDead,
 	opponentsOf, freezeCreature, STARTING_LIFE, KW, MAX_BASE_MANA, CTHUN_BASE, MAX_HERO_POWERS, BOOST_TABLES,
 	applyGift, schoolOf, recomputeAuras, sweepDeaths, counterStackEntry,
@@ -1009,7 +1009,7 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 				pool = e.cardClass === 'own' ? (p.heroClass ? pool.filter(d => (d.cardClass || 'neutral') === p.heroClass) : pool) : pool.filter(d => d.cardClass === e.cardClass); // Wandmaker: your class / Lyra: a specific class
 			}
 			// `copies`: pick ONE match and add that same card N times; else N distinct rolls
-			const cnt = e.fillHand ? Math.max(0, MAX_HAND - p.hand.length) // Well of Eternity: fill your hand
+			const cnt = e.fillHand ? Math.max(0, HAND_LIMIT - p.hand.length) // Well of Eternity: fill your hand (to the limit)
 				: e.countPer === 'spells-this-turn' ? (p.spellsPlayedThisTurn || 0) : (e.count || 1); // Mana Cyclone
 			const addTo = (own) => {
 				const op = state.players[own];

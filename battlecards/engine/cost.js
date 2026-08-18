@@ -12,7 +12,7 @@
 // cycle when engine.js becomes a pure re-export shim).
 import {
 	isDead, staticValue, activePlaneRule, isSpellType, schoolOf, kindredActive,
-	STARTING_LIFE, MAX_HAND,
+	STARTING_LIFE, HAND_LIMIT,
 } from '../engine.js';
 
 const costTypeMatches = (card, t) => t === 'all'
@@ -162,7 +162,7 @@ export function effectiveCost(state, pi, card) {
 			case 'healed-this-turn': met = !!p.healedThisTurn; break;
 			case 'holding-tribe': met = p.hand.some(x => x !== card && (x.tribe || '').includes(s.tribe)); break;
 			case 'no-creatures': met = !anyCreature(); break;
-			case 'hand-full': met = p.hand.length >= MAX_HAND; break;
+			case 'hand-full': met = p.hand.length >= HAND_LIMIT; break;
 			case 'dormant-creature': met = state.players.some(pl => pl.board.some(x => !isDead(x) && x.dormantLeft > 0)); break;
 			case 'frozen-character': met = state.players.some(pl => pl.board.some(x => !isDead(x) && x.frozen)); break;
 			case 'mana-ge': met = (p.mana?.max || 0) >= s.threshold; break;

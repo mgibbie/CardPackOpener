@@ -21,7 +21,7 @@ import { spendCorpses } from '../../engine.js';
 // verbatim, chain branches (and the switch's simpler `armor` twin, which
 // silently lacked the all-heroes variant) deleted.
 import {
-	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
+	emit, instantiate, MAX_HAND, HAND_LIMIT, endTurn, gainTokenCard, execEffects, summon,
 	installSecret, addCoin, damageHero, hp, availableMana, isDead,
 	opponentsOf, freezeCreature, STARTING_LIFE, KW, MAX_BASE_MANA, CTHUN_BASE, MAX_HERO_POWERS, BOOST_TABLES,
 	applyGift, schoolOf, recomputeAuras, sweepDeaths, counterStackEntry,
@@ -1114,7 +1114,7 @@ register('tolins', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (p.hand.length > before) {
 				const c = p.hand[p.hand.length - 1];
 				const def = state.cardsById[c.id];
-				const limit = e.count != null ? Math.min(MAX_HAND, p.hand.length + e.count) : MAX_HAND; // Thistle Tea: exactly `count` extra copies
+				const limit = e.count != null ? p.hand.length + e.count : HAND_LIMIT; // Thistle Tea: exactly `count` extra copies (uncapped mid-turn); no count = fill to the limit
 				while (def && p.hand.length < limit) {
 					const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp);
 					emit(state, { type: 'conjure', player: pi, card: cp, color: null });

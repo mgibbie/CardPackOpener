@@ -21,7 +21,7 @@ import { spendCorpses } from '../../engine.js';
 // verbatim, chain branches (and the switch's simpler `armor` twin, which
 // silently lacked the all-heroes variant) deleted.
 import {
-	emit, instantiate, MAX_HAND, endTurn, gainTokenCard, execEffects, summon,
+	emit, instantiate, MAX_HAND, HAND_LIMIT, endTurn, gainTokenCard, execEffects, summon,
 	installSecret, addCoin, damageHero, hp, availableMana, isDead,
 	opponentsOf, freezeCreature, STARTING_LIFE, KW, MAX_BASE_MANA, CTHUN_BASE, MAX_HERO_POWERS, BOOST_TABLES,
 	applyGift, schoolOf, recomputeAuras, sweepDeaths, counterStackEntry,
@@ -283,7 +283,7 @@ register('fill-hand-token', ({ state, pi, target, source, enemies, scaled, hm, p
 			// Halazzi, the Lynx: fill your hand with a token
 			const p = state.players[pi];
 			const def = state.cardsById[e.id];
-			while (def && p.hand.length < MAX_HAND) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
+			while (def && p.hand.length < HAND_LIMIT) { const cp = instantiate(def, pi); cp.zone = 'hand'; p.hand.push(cp); emit(state, { type: 'conjure', player: pi, card: cp, color: null }); }
 });
 
 

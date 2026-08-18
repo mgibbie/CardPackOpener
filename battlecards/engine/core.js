@@ -39,7 +39,12 @@ const FIREBREATHING_ABILITY = {
 // attacks against your other permanents onto this creature.
 
 export const MAX_BASE_MANA = 12;
-export const MAX_HAND = 15;
+export const HAND_LIMIT = 15;  // the real hand size — enforced at END OF TURN (discard down to this)
+export const MAX_HAND = 40;    // mid-turn safety ceiling for card generation. Per invariant I6,
+                               // overdraw/overgeneration is legal mid-turn and never burns; the hand is
+                               // trimmed to HAND_LIMIT at end of turn. This high ceiling only bounds
+                               // pathological loops — normal play never approaches it. (Fill-to-max
+                               // effects and the end-of-turn trim use HAND_LIMIT, not this.)
 export const MAX_SECRETS = 5;
 export const MAX_PLAYERS = 8;
 import { effectiveCost, heroPowerCost, discountIndex } from './cost.js';
@@ -4267,8 +4272,8 @@ export function endTurn(state) {
 	// which cards (human via the discard modal, AI dumps its priciest) — this is
 	// why overdraw never burns: the cap is enforced here at end of turn, not on
 	// draw. The queue resolves before the next player meaningfully acts.
-	if (p.hand.length > MAX_HAND) {
-		state.discardQueue.push({ player: pi, count: p.hand.length - MAX_HAND, cleanup: true });
+	if (p.hand.length > HAND_LIMIT) {
+		state.discardQueue.push({ player: pi, count: p.hand.length - HAND_LIMIT, cleanup: true });
 	}
 	// Doommaiden: the stolen card goes back to the enemy deck if unplayed
 	{
@@ -4467,7 +4472,7 @@ export function endTurn(state) {
 	}
 	// Godfrey the Betrayer: overflow-discarded cards return (cheaper) while there's room
 	if (np.godfreyHeld && np.godfreyHeld.length) {
-		while (np.godfreyHeld.length && np.hand.length < MAX_HAND) {
+		while (np.godfreyHeld.length && np.hand.length < HAND_LIMIT) {
 			const c = np.godfreyHeld.shift();
 			c.zone = 'hand'; np.hand.push(c);
 			emit(state, { type: 'conjure', player: state.current, card: c, color: null });
