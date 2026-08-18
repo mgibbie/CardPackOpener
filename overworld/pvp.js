@@ -292,8 +292,10 @@ export class Pvp {
 		const bob = Math.sin(a.t * 2.1 + (near ? 0 : 1.7)) * 2.5 * u;
 		ctx.imageSmoothingEnabled = false;
 		// Fit each sprite into the 96px standard box so mons draw at a consistent size
-		// regardless of export resolution (see battle.js drawSide for the full rationale).
-		const norm = 96 / Math.max(img.width, img.height);
+		// regardless of export resolution, then apply the species' battleScale for authentic
+		// relative sizing (see battle.js drawSide). scaleBySprite is set by main.js on boot.
+		const bScale = m.battleScale ?? this.scaleBySprite?.get(m.sprite) ?? 1;
+		const norm = (96 / Math.max(img.width, img.height)) * bScale;
 		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
 		ctx.drawImage(img, pose.x - w / 2, pose.y + bob - h + 10 * u, w, h);
 	}

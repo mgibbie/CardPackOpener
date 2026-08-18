@@ -4364,6 +4364,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await npcs.init();
 	await encounters.init();
 	await battle.init();
+	// hand PvP a sprite->battleScale lookup (its mons come over the wire without a species
+	// handle, but they carry the sprite filename, which maps 1:1 to the species)
+	pvp.scaleBySprite = new Map(Object.values(battle.data.species).filter(s => s.sprite).map(s => [s.sprite, s.battleScale || 1]));
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	await services.init();

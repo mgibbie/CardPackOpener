@@ -26,7 +26,7 @@ for (const id of speciesIds) {
 	const s = S[id];
 	pokemon[id] = {
 		id, num: s.num || 0, name: s.name || abName(id), sprite: s.sprite || '',
-		types: s.types || [], baseStats: s.baseStats || {},
+		types: s.types || [], baseStats: s.baseStats || {}, battleScale: s.battleScale || 1,
 		abilities: (Array.isArray(AB[id]) ? AB[id] : []).map(abName),
 		levelUpLearnset: s.learnset || [],
 		learnset: (EX[id] && EX[id].learn) || [],

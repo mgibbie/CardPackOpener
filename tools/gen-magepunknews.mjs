@@ -18,7 +18,7 @@ const git = (...args) => execFileSync('git', args, { maxBuffer: 1 << 28, encodin
 // battlecards files that count as gameplay for patch notes (not art/UI chrome).
 // Includes every run mode's data layer — duels/heist/tombs work often lands in
 // those files alone, and used to be missed entirely.
-const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|mpmode|cards\.json|classes\.json)|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki)\.mjs)/;
+const GAME_FILES = /^(battlecards\/(engine|keywords|game|ai|deck|packs|collection|dungeon|duels|heist|tombs|mpmode|cards\.json|classes\.json)|overworld\/[\w-]+\.js|tools\/(gen_frem_night|gen_johto_daynight|repair_fakemon|deploy_fakemon_trainers|gen_designwiki|gen_battlescale)\.mjs)/;
 
 const cardsAt = sha => {
 	try {

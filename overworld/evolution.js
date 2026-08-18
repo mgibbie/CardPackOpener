@@ -48,7 +48,10 @@ export class Evolution {
 			getImage(`data/pokemon/${data.species[item.mon.speciesId]?.sprite}`).catch(() => null),
 			getImage(`data/pokemon/${sp.sprite}`).catch(() => null),
 		]);
-		this.cur = { ...item, sp, data, oldImg, newImg, phase: 'intro', t: 0 };
+		this.cur = { ...item, sp, data, oldImg, newImg,
+			oldScale: data.species[item.mon.speciesId]?.battleScale || 1,
+			newScale: sp.battleScale || 1,
+			phase: 'intro', t: 0 };
 	}
 
 	apply() {
@@ -101,12 +104,15 @@ export class Evolution {
 			white = true;
 		}
 		if (img) {
-			const s = 64;
-			// fit the sprite into a 64px box (contain) so tall/large exports don't overflow
-			// the view; center horizontally and bottom-align within the box
-			const nz = s / Math.max(img.width, img.height);
-			const dw = img.width * nz, dh = img.height * nz;
-			const x = VIEW_W / 2 - dw / 2, y = 30 + (s - dh);
+			// fit into a 64px box (contain), then apply the species' battleScale so the mon
+			// visibly grows/shrinks across the evolution. Bottom-anchor at a fixed feet line
+			// and clamp so a big mon (up to 1.9x) never pokes above the top of the small view.
+			const bScale = img === c.newImg ? c.newScale : c.oldScale;
+			const baseline = VIEW_H - 62, topMargin = 8;
+			let nz = (64 / Math.max(img.width, img.height)) * bScale;
+			let dw = img.width * nz, dh = img.height * nz;
+			if (baseline - dh < topMargin) { const k = (baseline - topMargin) / dh; dw *= k; dh *= k; }
+			const x = VIEW_W / 2 - dw / 2, y = baseline - dh;
 			if (white) {
 				ctx.globalAlpha = 0.6 + 0.4 * Math.sin(c.t * 20);
 			}

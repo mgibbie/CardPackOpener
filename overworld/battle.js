@@ -3111,8 +3111,10 @@ export class Battle {
 		// native sizes (~12px crops up to 256px Gen-9 art); a fixed scale on raw dims made
 		// big-canvas mons render ~2.7x too large and tiny crops render as dots. Fitting each
 		// sprite into a 96-box (contain) draws every mon at a consistent battle size, and
-		// keeps bottom-anchoring consistent so feet sit on the platform.
-		const norm = 96 / Math.max(img.width, img.height);
+		// keeps bottom-anchoring consistent so feet sit on the platform. `battleScale` then
+		// restores authentic relative size per species (Diglett small, Wailord huge); absent = 1.
+		const bScale = this.data.species[mon.speciesId]?.battleScale || 1;
+		const norm = (96 / Math.max(img.width, img.height)) * bScale;
 		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
 		ctx.drawImage(img, pose.x + pose.dx - w / 2, pose.y + pose.dy - h + 10 * u, w, h);
 		ctx.restore();
