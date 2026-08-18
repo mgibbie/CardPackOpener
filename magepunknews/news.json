@@ -2,6 +2,31 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "6ea53c6",
+			"date": "2026-08-18",
+			"kind": "cards",
+			"title": "Add Merciless Innovator (2/2 Gnome, Battlecry: Assemble)",
+			"body": "New common neutral creature: 2-cost 2/2 Gnome named Merciless Innovator with\n\"Battlecry: Assemble\" (assembles a random Contraption on play). Art wired\n(battlecards/art/merciless_innovator.jpg, 294x218; registered in art/index.json,\ndeployed via wrangler).\n\nAlso hardened ffa_duel_test: adding any collectible card shifts createGame's RNG\nstream, which changed a start-of-game shuffle in seat 0's deck (king_llane, a\nGENERATED card). The deck-contamination check now only flags real deckbuildable\nstrays, ignoring generated/shuffled-in cards. Suite 210 green.",
+			"cards": [
+				{
+					"id": "merciless_innovator",
+					"name": "Merciless Innovator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "73ad30d",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Color identity for players: show it in the HUD (display only)",
+			"body": "Surfaces each player's live color identity (the WUBRG colors their current\nlands can produce, per E.colorIdentity) as small colored dots:\n- the human's, in the always-visible mana readout (#mana-hud)\n- each opponent's, in their panel\n\nDisplay only, per request — no casting restriction; the identity still gates\nland upgrades + scarcity as before. Updated every HUD refresh, so pips appear\n/ disappear as lands are developed, upgraded, or sacrificed.",
+			"cards": []
+		},
+		{
 			"sha": "7738244",
 			"date": "2026-08-18",
 			"kind": "patch",

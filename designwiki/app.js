@@ -753,6 +753,51 @@ async function cardSubsetView(kind, slug) {
   renderMore();
 }
 
+// ---------- Contraptions (Sprocket / Assemble) ----------
+async function contraptionsView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Contraptions'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  const list = cards.filter(c => c.contraption).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt(list.map(c => c.id));
+  content.replaceChildren(
+    h('h1', null, 'Contraptions ', h('span', { class: 'num' }, '(' + list.length + ')')),
+    h('p', { class: 'muted' }, 'Gadgets loaded into your Sprocket — a row of 3 slots. The ',
+      h('a', { href: '#/keyword/assemble' }, 'Assemble'),
+      ' keyword hands you a random Contraption to place in a slot of your choice (overwriting whatever’s there). An indicator cycles 1 → 2 → 3 each of your turns, firing the Contraption in the slot it lands on — so each one re-fires every time the indicator comes back around. Ported from the MTG (Unstable) Contraptions.'),
+    h('div', { class: 'card-grid' }, list.map(cardTile)));
+}
+
+// ---------- Advance Dungeons (the AFR dungeons the Advance keyword ventures) ----------
+let advDungeonPromise = null;
+function loadAdvDungeons() { if (!advDungeonPromise) advDungeonPromise = import('../battlecards/engine/dungeons.js' + CB); return advDungeonPromise; }
+async function dungeonsView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading dungeons…'));
+  let mod;
+  try { mod = await loadAdvDungeons(); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Advance Dungeons'), h('p', { class: 'muted' }, 'Could not load the dungeon data.')); }
+  const DUNGEONS = mod.DUNGEONS || {};
+  const sections = Object.entries(DUNGEONS).map(([id, d]) => {
+    const rooms = Object.entries(d.rooms).map(([rid, r]) => {
+      const nexts = (r.next || []).map(nid => (d.rooms[nid] && d.rooms[nid].name) || nid);
+      return h('div', { class: 'kw-def' },
+        h('b', null, r.name + (rid === d.start ? ' — start' : '')),
+        h('div', { class: 'kw-text' }, r.text || ''),
+        h('div', { class: 'muted', style: 'font-size:12px;margin-top:2px;' },
+          nexts.length ? '→ ' + nexts.join('  /  ') : '★ final room (payoff)'));
+    });
+    return h('div', null,
+      h('h2', null, d.name + ' ', h('span', { class: 'num' }, '(' + Object.keys(d.rooms).length + ' rooms)')),
+      h('div', { class: 'kw-defs' }, rooms));
+  });
+  content.replaceChildren(
+    h('h1', null, 'Advance Dungeons ', h('span', { class: 'num' }, '(' + Object.keys(DUNGEONS).length + ')')),
+    h('p', { class: 'muted' }, 'The ', h('a', { href: '#/keyword/advance' }, 'Advance'),
+      ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff. Sourced from the D&D (Adventures in the Forgotten Realms) dungeons.'),
+    ...sections);
+}
+
 // ---------- Dungeon Run ----------
 // a hero-power blurb block shared by boss and starter-deck pages
 function powerBlock(power) {
@@ -1353,6 +1398,8 @@ function route() {
   if (section === 'tribe') return cardSubsetView('tribe', id);
   if (section === 'school') return cardSubsetView('school', id);
   if (section === 'type') return cardSubsetView('type', id);
+  if (section === 'contraptions') return contraptionsView();
+  if (section === 'dungeons') return dungeonsView();
   if (section === 'battlecards') return id ? designCardDetail(id) : battlecardsView();
   notFound();
 }
