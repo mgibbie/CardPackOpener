@@ -1114,7 +1114,7 @@ function buildPanels() {
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
-		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="gear"></div>`;
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
 		el.prepend(portraitBlock(pi, false));
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);
@@ -1284,6 +1284,15 @@ function updateHudSpectate() {
 }
 
 // bottom-left mana readout — always in the clear, unlike the 3D hero panel's
+// a player's live COLOR IDENTITY as small colored dots (the colors their current
+// lands can produce, per E.colorIdentity — basics anchor a color, advanced lands carry theirs)
+const COLOR_HEX = { W: '#f4ecc9', U: '#3b82d9', B: '#5b4a70', R: '#d9534f', G: '#4caf50' };
+function identityPipsHtml(pi) {
+	const id = E.colorIdentity(state, pi);
+	return ['W', 'U', 'B', 'R', 'G'].filter(c => id.has(c)).map(c =>
+		`<span title="${c} in your color identity" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${COLOR_HEX[c]};border:1px solid rgba(255,255,255,0.5);"></span>`).join('');
+}
+
 function updateManaHud(me) {
 	const el = $('mana-hud'); if (!el) return;
 	const cur = E.availableMana(me), max = me.mana.max;
@@ -1291,6 +1300,7 @@ function updateManaHud(me) {
 	el.style.display = 'flex';
 	el.classList.toggle('empty', cur === 0);
 	el.classList.toggle('tapped', cur > 0 && cur < max);
+	const idEl = $('mana-hud-identity'); if (idEl) idEl.innerHTML = identityPipsHtml(HUMAN);
 }
 
 function updateHud() {
@@ -1337,6 +1347,7 @@ function updateHud() {
 		if (p.fatigue) gear.push(`☠ ${p.fatigue}`);
 		if (p.corpses && p.heroClass === 'death_knight') gear.push(`⚰ ${p.corpses}`);
 		el.querySelector('.gear').innerHTML = gear.join(' · ');
+		const idEl = el.querySelector('.identity'); if (idEl) idEl.innerHTML = identityPipsHtml(pi);
 		el.classList.toggle('dead', p.eliminated);
 		el.classList.toggle('turn', state.current === pi && !state.over);
 	}
