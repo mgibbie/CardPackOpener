@@ -93,5 +93,28 @@ ok('Abzan Citadel colors field IS empty (colorless card, WBG identity)', !(byId.
   E.upgradeLand(st, 0, u, 'temple_of_nylea');
   ok('upgrade spent LAND_COST mana', E.availableMana(st.players[0]) === before - E.LAND_COST, `${before}->${E.availableMana(st.players[0])}`); }
 
+// ---------- scarcity: each advanced land is globally unique ----------
+{ const st = game();
+  const foe = E.instantiate(byId.temple_of_rhonas, 1); foe.zone = 'land'; st.players[1].lands.push(foe); // opponent controls Temple of Rhonas
+  E.buyLand(st, 0, 'forest'); const u = uidOf(st, 'forest');
+  const ups = E.availableUpgrades(st, 0, u);
+  ok('scarcity: an opponent-controlled Temple of Rhonas is NOT offered', !ups.some(d => d.id === 'temple_of_rhonas'));
+  ok('scarcity: the other G temple (Nylea) is still offered', ups.some(d => d.id === 'temple_of_nylea'));
+  ok('scarcity: upgradeLand into a taken land is rejected', !E.upgradeLand(st, 0, u, 'temple_of_rhonas'));
+  st.players[1].lands = []; // opponent loses it
+  ok('scarcity: once released it becomes available again', E.availableUpgrades(st, 0, u).some(d => d.id === 'temple_of_rhonas')); }
+
+// scarcity is self-inclusive: you can't build a second copy of one you already hold
+{ const st = game();
+  const own = E.instantiate(byId.temple_of_nylea, 0); own.zone = 'land'; st.players[0].lands.push(own);
+  E.buyLand(st, 0, 'forest'); const u = uidOf(st, 'forest');
+  ok('scarcity: no 2nd Temple of Nylea while you already control one', !E.availableUpgrades(st, 0, u).some(d => d.id === 'temple_of_nylea')); }
+
+// basics are exempt — many copies across players are fine
+{ const st = game();
+  const f0 = E.instantiate(byId.forest, 0); f0.zone = 'land'; st.players[0].lands.push(f0);
+  const f1 = E.instantiate(byId.forest, 1); f1.zone = 'land'; st.players[1].lands.push(f1);
+  ok('scarcity: basics are never "taken" (both players hold a Forest)', !E.takenAdvancedLands(st).has('forest')); }
+
 console.log(`${pass}/${pass + fail} color-identity checks passed`);
 process.exit(fail ? 1 : 0);

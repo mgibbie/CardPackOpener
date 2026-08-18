@@ -1314,16 +1314,27 @@ export function availableLands(state, pi) {
 	return landPool(state).filter(d => isBasicLand(d.id));
 }
 
+// advanced lands currently in play, in ANY player's land zone — each is globally
+// unique (scarcity rule), so while someone controls one it can't be upgraded into
+export function takenAdvancedLands(state) {
+	const taken = new Set();
+	for (const pl of state.players) for (const l of pl.lands) if (!isBasicLand(l.id)) taken.add(l.id);
+	return taken;
+}
+
 // advanced lands the slot holding `landUid` can upgrade INTO: must share a color
-// with that land's CURRENT colors AND every color it needs must be in your identity
+// with that land's CURRENT colors AND every color it needs must be in your identity,
+// AND not already exist anywhere on the table (advanced lands are globally unique)
 export function availableUpgrades(state, pi, landUid) {
 	const p = state.players[pi];
 	const cur = p.lands.find(l => l.uid === landUid);
 	if (!cur) return [];
 	const curCols = landColors(cur);
 	const identity = colorIdentity(state, pi);
+	const taken = takenAdvancedLands(state);
 	return landPool(state).filter(d => {
 		if (isBasicLand(d.id) || d.id === cur.id) return false; // upgrades only, never a lateral no-op
+		if (taken.has(d.id)) return false;                      // scarcity: only one of each exists at a time
 		const dc = landColors(d);
 		if (!dc.size) return false;                             // colorless advanced (none yet): later
 		let shares = false; for (const c of dc) if (curCols.has(c)) { shares = true; break; }
