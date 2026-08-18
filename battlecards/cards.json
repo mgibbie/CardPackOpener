@@ -20334,7 +20334,7 @@
       "tribe": "Contraption",
       "id": "contraption_division_table",
       "name": "Division Table",
-      "description": "Contraption (MTG Unstable). The enemy hero loses 2 life.",
+      "description": "Contraption. The enemy hero loses 2 life.",
       "effects": [
         {
           "type": "damage",
@@ -20353,7 +20353,7 @@
       "tribe": "Contraption",
       "id": "contraption_insufferable_syphon",
       "name": "Insufferable Syphon",
-      "description": "Contraption (MTG Unstable). The enemy hero discards a card.",
+      "description": "Contraption. The enemy hero discards a card.",
       "effects": [
         {
           "type": "enemy-discard",
@@ -20371,7 +20371,7 @@
       "tribe": "Contraption",
       "id": "contraption_sap_sucker",
       "name": "Sap Sucker",
-      "description": "Contraption (MTG Unstable). Gain 1 Mana this turn.",
+      "description": "Contraption. Gain 1 Mana this turn.",
       "effects": [
         {
           "type": "gain-mana",
@@ -20389,7 +20389,7 @@
       "tribe": "Contraption",
       "id": "contraption_widget",
       "name": "Widget Contraption",
-      "description": "Contraption (MTG Unstable). Assemble a random Contraption.",
+      "description": "Contraption. Assemble a random Contraption.",
       "effects": [
         {
           "type": "assemble"
@@ -20406,7 +20406,7 @@
       "tribe": "Contraption",
       "id": "contraption_arms_depot",
       "name": "Arms Depot",
-      "description": "Contraption (MTG Unstable). Give your weakest creature +2/+2.",
+      "description": "Contraption. Give your weakest creature +2/+2.",
       "effects": [
         {
           "type": "bolster",
@@ -20424,7 +20424,7 @@
       "tribe": "Contraption",
       "id": "contraption_inflation_station",
       "name": "Inflation Station",
-      "description": "Contraption (MTG Unstable). Give your weakest creature +3/+3.",
+      "description": "Contraption. Give your weakest creature +3/+3.",
       "effects": [
         {
           "type": "bolster",
@@ -20442,7 +20442,7 @@
       "tribe": "Contraption",
       "id": "contraption_gnomeball_machine",
       "name": "Gnomeball Machine",
-      "description": "Contraption (MTG Unstable). Summon two 1/1 Gnome Mechs.",
+      "description": "Contraption. Summon two 1/1 Gnome Mechs.",
       "effects": [
         {
           "type": "summon",
@@ -20464,7 +20464,7 @@
       "tribe": "Contraption",
       "id": "contraption_dispatch_dispensary",
       "name": "Dispatch Dispensary",
-      "description": "Contraption (MTG Unstable). Summon a 2/2 Rogue.",
+      "description": "Contraption. Summon a 2/2 Rogue.",
       "effects": [
         {
           "type": "summon",
@@ -20486,7 +20486,7 @@
       "tribe": "Contraption",
       "id": "contraption_goblin_slingshot",
       "name": "Goblin Slingshot",
-      "description": "Contraption (MTG Unstable). Your creatures get +1/+0.",
+      "description": "Contraption. Your creatures get +1/+0.",
       "effects": [
         {
           "type": "buff",
@@ -20506,7 +20506,7 @@
       "tribe": "Contraption",
       "id": "contraption_boomflinger",
       "name": "Boomflinger",
-      "description": "Contraption (MTG Unstable). The enemy hero loses 3 life.",
+      "description": "Contraption. The enemy hero loses 3 life.",
       "effects": [
         {
           "type": "damage",
@@ -20525,7 +20525,7 @@
       "tribe": "Contraption",
       "id": "contraption_dogsnail_engine",
       "name": "Dogsnail Engine",
-      "description": "Contraption (MTG Unstable). Gain 3 life.",
+      "description": "Contraption. Gain 3 life.",
       "effects": [
         {
           "type": "heal",
@@ -20544,7 +20544,7 @@
       "tribe": "Contraption",
       "id": "contraption_rapid_prototyper",
       "name": "Rapid Prototyper",
-      "description": "Contraption (MTG Unstable). Summon a 2/2 Construct.",
+      "description": "Contraption. Summon a 2/2 Construct.",
       "effects": [
         {
           "type": "summon",
@@ -20566,7 +20566,7 @@
       "tribe": "Contraption",
       "id": "contraption_gift_horse",
       "name": "Gift Horse",
-      "description": "Contraption (MTG Unstable). Summon two 1/1 Goblins.",
+      "description": "Contraption. Summon two 1/1 Goblins.",
       "effects": [
         {
           "type": "summon",
@@ -20588,7 +20588,7 @@
       "tribe": "Contraption",
       "id": "contraption_faerie_aerie",
       "name": "Faerie Aerie",
-      "description": "Contraption (MTG Unstable). Summon two 1/1 Faeries.",
+      "description": "Contraption. Summon two 1/1 Faeries.",
       "effects": [
         {
           "type": "summon",
@@ -20610,7 +20610,7 @@
       "tribe": "Contraption",
       "id": "contraption_genetic_recombinator",
       "name": "Genetic Recombinator",
-      "description": "Contraption (MTG Unstable). Give your two weakest creatures +2/+2.",
+      "description": "Contraption. Give your two weakest creatures +2/+2.",
       "effects": [
         {
           "type": "bolster",
@@ -20632,7 +20632,7 @@
       "tribe": "Contraption",
       "id": "contraption_jamming_device",
       "name": "Jamming Device",
-      "description": "Contraption (MTG Unstable). Freeze the enemy’s creatures.",
+      "description": "Contraption. Freeze the enemy’s creatures.",
       "effects": [
         {
           "type": "freeze",
@@ -20650,7 +20650,7 @@
       "tribe": "Contraption",
       "id": "contraption_hypnotic_swirly_disc",
       "name": "Hypnotic Swirly Disc",
-      "description": "Contraption (MTG Unstable). The enemy mills 2 cards.",
+      "description": "Contraption. The enemy mills 2 cards.",
       "effects": [
         {
           "type": "mill",
@@ -20668,7 +20668,7 @@
       "tribe": "Contraption",
       "id": "contraption_record_store",
       "name": "Record Store",
-      "description": "Contraption (MTG Unstable). Scry 2.",
+      "description": "Contraption. Scry 2.",
       "effects": [
         {
           "type": "scry",
@@ -20686,7 +20686,7 @@
       "tribe": "Contraption",
       "id": "contraption_hard_hat_area",
       "name": "Hard Hat Area",
-      "description": "Contraption (MTG Unstable). Assemble two random Contraptions.",
+      "description": "Contraption. Assemble two random Contraptions.",
       "effects": [
         {
           "type": "assemble"
@@ -20706,7 +20706,7 @@
       "contraption": true,
       "cardClass": "neutral",
       "tribe": "Contraption",
-      "description": "Contraption (MTG Unstable). Deal 3 damage to a random enemy creature.",
+      "description": "Contraption. Deal 3 damage to a random enemy creature.",
       "effects": [
         {
           "type": "damage",
@@ -20725,7 +20725,7 @@
       "contraption": true,
       "cardClass": "neutral",
       "tribe": "Contraption",
-      "description": "Contraption (MTG Unstable). Give a friendly creature Windfury.",
+      "description": "Contraption. Give a friendly creature Windfury.",
       "effects": [
         {
           "type": "grant",

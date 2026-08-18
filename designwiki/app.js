@@ -765,7 +765,7 @@ async function contraptionsView() {
     h('h1', null, 'Contraptions ', h('span', { class: 'num' }, '(' + list.length + ')')),
     h('p', { class: 'muted' }, 'Gadgets loaded into your Sprocket — a row of 3 slots. The ',
       h('a', { href: '#/keyword/assemble' }, 'Assemble'),
-      ' keyword hands you a random Contraption to place in a slot of your choice (overwriting whatever’s there). An indicator cycles 1 → 2 → 3 each of your turns, firing the Contraption in the slot it lands on — so each one re-fires every time the indicator comes back around. Ported from the MTG (Unstable) Contraptions.'),
+      ' keyword hands you a random Contraption to place in a slot of your choice (overwriting whatever’s there). An indicator cycles 1 → 2 → 3 each of your turns, firing the Contraption in the slot it lands on — so each one re-fires every time the indicator comes back around.'),
     h('div', { class: 'card-grid' }, list.map(cardTile)));
 }
 
