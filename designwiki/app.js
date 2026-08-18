@@ -378,8 +378,12 @@ function systemBucket(c) {
 const CARD_FILTER_DEFAULTS = {
   class: 'all', color: 'all', type: 'all', rarity: 'all', set: 'all', tribe: 'all',
   keyword: 'all', collectible: 'all', art: 'all', minCost: '', maxCost: '',
+  basicLandSet: 'all', advLandSet: 'all',
   sort: 'class-cost-name', size: 'medium'
 };
+// Land Sets: the cards a land generates, tagged via `landSet`. The 5 basics are named; the rest
+// (e.g. Abzan) are advanced. These are two browsable "lists of lists", separate from the colours.
+const BASIC_LAND_SETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
 let cardFilters = { ...CARD_FILTER_DEFAULTS };
 let cardGalleryToken = 0;
 
@@ -451,7 +455,7 @@ function activeCardFilterChips(cards, report) {
   const labels = {
     class: 'Class', color: 'Color', type: 'Type', rarity: 'Rarity', set: 'Set', tribe: 'Tribe/School',
     keyword: 'Keyword', collectible: 'Collection', art: 'Art', minCost: 'Min cost',
-    maxCost: 'Max cost', sort: 'Sort', size: 'Size'
+    maxCost: 'Max cost', basicLandSet: 'Basic Land Set', advLandSet: 'Advanced Land Set', sort: 'Sort', size: 'Size'
   };
   const chips = [];
   for (const [key, value] of Object.entries(cardFilters)) {
@@ -509,6 +513,9 @@ function renderCards(cards, report = {}) {
   const sets = uniqueSorted(cards.map(c => cardField(c, 'set', 'cardSet', 'expansion')));
   const tribes = uniqueSorted(cards.flatMap(tribesOf));
   const keywords = uniqueSorted(cards.flatMap(c => CardKw.keywordsFor(c).map(k => k.label)));
+  const basicLandSets = BASIC_LAND_SETS.filter(ls => cards.some(c => c.landSet === ls));
+  const advLandSets = [...new Set(cards.map(c => c.landSet).filter(Boolean))].filter(ls => !BASIC_LAND_SETS.includes(ls)).sort();
+  const landSetLabel = v => v + ' (' + cards.filter(c => c.landSet === v).length + ')';
 
   let list = cards.filter(c => {
     if (cardFilters.class !== 'all') {
@@ -521,6 +528,8 @@ function renderCards(cards, report = {}) {
     if (cardFilters.type !== 'all' && String(c.type) !== cardFilters.type) return false;
     if (cardFilters.rarity !== 'all' && String(c.rarity) !== cardFilters.rarity) return false;
     if (cardFilters.set !== 'all' && cardField(c, 'set', 'cardSet', 'expansion') !== cardFilters.set) return false;
+    if (cardFilters.basicLandSet !== 'all' && c.landSet !== cardFilters.basicLandSet) return false;
+    if (cardFilters.advLandSet !== 'all' && c.landSet !== cardFilters.advLandSet) return false;
     if (cardFilters.tribe !== 'all' && !tribesOf(c).includes(cardFilters.tribe)) return false;
     if (cardFilters.keyword !== 'all' && !CardKw.keywordsFor(c).some(k => k.label === cardFilters.keyword)) return false;
     const uncollectible = CardArt.isUncollectible(c);
@@ -555,6 +564,8 @@ function renderCards(cards, report = {}) {
       filterSelect('Type', 'type', types, cards, report),
       filterSelect('Rarity', 'rarity', rarities, cards, report),
       filterSelect('Set', 'set', sets, cards, report, titleCase),
+      filterSelect('Basic Land Set', 'basicLandSet', basicLandSets, cards, report, landSetLabel),
+      filterSelect('Advanced Land Set', 'advLandSet', advLandSets, cards, report, landSetLabel),
       filterSelect('Tribe / school', 'tribe', tribes, cards, report),
       filterSelect('Keyword', 'keyword', keywords, cards, report),
       filterSelect('Collection', 'collectible', ['collectible', 'uncollectible'], cards, report),

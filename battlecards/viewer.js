@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260818';
-import { keywordsFor, richHtml } from './keywords.js?v=20260818';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260818b';
+import { keywordsFor, richHtml } from './keywords.js?v=20260818b';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
 // cards.json fetch so a version bump refreshes code and data together
@@ -46,6 +46,11 @@ const SYSTEM_BUCKETS = [
 	['__plane__', 'Planes'], ['__excavate__', 'Excavate'], ['__appendage__', 'Appendages'],
 ];
 const SYSTEM_KEYS = new Set(SYSTEM_BUCKETS.map(b => b[0]));
+// Land Sets: cards a land generates, tagged via `landSet`. These filter by the tag (a card can
+// appear both here AND in its broad colour list). The 5 basics are named; anything else is advanced.
+const BASIC_LAND_SETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
+const lsKey = ls => '__ls_' + ls + '__';
+const isLandSetKey = k => typeof k === 'string' && k.startsWith('__ls_');
 // theme words an advanced land can conjure (matched against a card's name)
 let advThemes = null;
 function ensureAdvThemes(list) {
@@ -126,14 +131,15 @@ function applyFilters() {
 		}
 		const cc = canonClass(c.cardClass || 'neutral');
 		const sb = systemBucket(c);
-		if (SYSTEM_KEYS.has(filters.cls)) { if (sb !== filters.cls) return false; }
+		if (isLandSetKey(filters.cls)) { if (c.landSet !== filters.cls.slice(5, -2)) return false; } // Land Set: match the tag directly
+		else if (SYSTEM_KEYS.has(filters.cls)) { if (sb !== filters.cls) return false; }
 		else if (filters.cls === '__dual__') { if (sb || !cc.includes('__')) return false; }
 		else if (filters.cls && (sb || cc !== filters.cls)) return false;
 		if (filters.type && c.type !== filters.type) return false;
 		if (filters.rarity && (c.rarity || 'common') !== filters.rarity) return false;
 		if (filters.ownedOnly && !(collection[c.id] > 0)) return false;
 		// hide uncollectible by default — unless you've picked one of their buckets
-		if (!filters.showUncollectible && isUncollectible(c) && !SYSTEM_KEYS.has(filters.cls)) return false;
+		if (!filters.showUncollectible && isUncollectible(c) && !SYSTEM_KEYS.has(filters.cls) && !isLandSetKey(filters.cls)) return false;
 		return true;
 	});
 	$('count').textContent = `${filtered.length} of ${cards.length} cards`;
@@ -255,6 +261,17 @@ fetch('cards.json' + CB)
 			opt.textContent = label;
 			$('class-filter').appendChild(opt);
 		}
+		// Land Sets — two grouped lists-of-lists, by the `landSet` tag
+		const landSets = [...new Set(data.cards.map(c => c.landSet).filter(Boolean))];
+		const addLandGroup = (label, sets) => {
+			if (!sets.length) return;
+			const og = document.createElement('optgroup');
+			og.label = label;
+			for (const ls of sets) { const o = document.createElement('option'); o.value = lsKey(ls); o.textContent = ls; og.appendChild(o); }
+			$('class-filter').appendChild(og);
+		};
+		addLandGroup('Basic Land Sets', BASIC_LAND_SETS.filter(ls => landSets.includes(ls)));
+		addLandGroup('Advanced Land Sets', landSets.filter(ls => !BASIC_LAND_SETS.includes(ls)).sort());
 		const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };
 		cards = data.cards.slice().sort((a, b) =>
 			(a.cost ?? 0) - (b.cost ?? 0)
