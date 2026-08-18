@@ -3653,6 +3653,7 @@ export function grantKeywordToChoice(state, pi, keyword) {
 function applyPlayerAction(state, pi, idx, action, value) {
 	if (action === 'mill') execEffects(state, pi, [{ type: 'mill', value, player: idx }], null, null);
 	else if (action === 'discard') execEffects(state, pi, [{ type: 'enemy-discard', count: value, player: idx }], null, null);
+	else if (action === 'damage') damageHero(state, idx, value, pi);
 }
 export function targetOpponent(state, pi, action, value) {
 	const opps = opponentsOf(state, pi).filter(o => !state.players[o].eliminated);

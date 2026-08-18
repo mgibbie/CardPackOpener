@@ -133,6 +133,11 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.resolvePick(st, '2');
   ok('only the CHOSEN opponent (player 2) is milled', st.players[2].deck.length === 2 && st.players[1].deck.length === 4); }
 
+// Division Table: 1v1 auto-targets the opponent for 2 damage
+{ const st = game(); const L = st.players[1].life;
+  E.placeContraption(st, 0, 0, 'contraption_division_table'); E.crankSprocket(st, 0);
+  ok('Division Table: opponent loses 2 life (1v1 auto-target)', st.players[1].life === L - 2, st.players[1].life); }
+
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {
     const st = game();

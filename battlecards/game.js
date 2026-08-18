@@ -1838,7 +1838,7 @@ function openPickModal() {
 	}
 	if (pend.mode === 'target-player') {
 		// a Contraption (Hypnotic Swirly Disc / Insufferable Syphon) targets a player YOU choose
-		const label = pend.action === 'mill' ? `mills ${pend.value}` : 'discards a card';
+		const label = pend.action === 'mill' ? `mills ${pend.value}` : pend.action === 'damage' ? `loses ${pend.value} life` : 'discards a card';
 		modal.innerHTML = `<div class="wm-title">Target player — who ${label}?</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		pend.ids.forEach(id => {

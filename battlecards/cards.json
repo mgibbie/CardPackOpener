@@ -20334,12 +20334,12 @@
       "tribe": "Contraption",
       "id": "contraption_division_table",
       "name": "Division Table",
-      "description": "Contraption. The enemy hero loses 2 life.",
+      "description": "Contraption: Target player loses 2 life.",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
+          "type": "target-player",
+          "action": "damage",
+          "value": 2
         }
       ]
     },
@@ -20407,7 +20407,7 @@
       "tribe": "Contraption",
       "id": "contraption_arms_depot",
       "name": "Arms Depot",
-      "description": "Contraption. Give your weakest creature +2/+2.",
+      "description": "Contraption: Bolster 2.",
       "effects": [
         {
           "type": "bolster",
@@ -20507,7 +20507,7 @@
       "tribe": "Contraption",
       "id": "contraption_boomflinger",
       "name": "Boomflinger",
-      "description": "Contraption. The enemy hero loses 3 life.",
+      "description": "Contraption: Each opponent loses 3 life.",
       "effects": [
         {
           "type": "damage",
