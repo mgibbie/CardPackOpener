@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "4e87407",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Fix Magnetic: 6 unflagged minions, tribe targets, and a drop hint",
+			"body": "The Magnetic keyword worked in the engine, but three things made it\n\"not work\" in practice:\n\n1. Six minions named \"Magnetic\" in their text but were missing the\n   `magnetic` flag, so the engine never merged them: skaterbot,\n   treetech_jungledrone, dinotomaton, gogogo_goram, diving_rig,\n   furious_furnace. Flag added.\n\n2. Cards that read \"can Magnetize to <tribe> as well as Mechs\" could\n   only merge onto Mechs. Added a `magnetizeTribes` field (default\n   Mech-only) wired through the engine merge check and the UI drop:\n   prosthetic_hand→Undead, windsoul_automaton→Totem, diving_rig→Pirate,\n   absorbent_parasite→Beast. Copy effects carry it too.\n\n3. Dragging a Magnetic card over a Mech gave no cue — the normal\n   \"release to play\" hint + a placement gap showed, so players dropped\n   into a gap and it played as a vanilla minion. Now the hint reads\n   \"release to Magnetize X onto Y\", the gap marker hides, and the\n   glossary says \"drop onto a friendly Mech\" (was the misleading\n   \"play it left of\").\n\nNew regression suite magnetic_test.mjs (19 checks); full engine suite\n203/203.",
+			"cards": []
+		},
+		{
 			"sha": "fd6796a",
 			"date": "2026-08-18",
 			"kind": "patch",
