@@ -1451,6 +1451,9 @@ const _h_attach = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 				// conditional keyword (e.g. Abzan Runemark's Coven:Taunt) — held only while
 				// the condition stands; the aura recompute toggles it on/off.
 				if (e.condKeyword) t.condKeyword = { ...e.condKeyword };
+				// attached ongoing trigger (e.g. Runemark's Inspire: Advance) — fires for the
+				// creature's controller on the event, like any built-in ongoing.
+				if (e.ongoing && !t.ongoing) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
 				if (source) t.attachments.push(source.name);
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
 			}

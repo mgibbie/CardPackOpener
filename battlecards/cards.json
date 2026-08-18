@@ -21126,7 +21126,7 @@
         "B",
         "G"
       ],
-      "description": "Give a friendly creature +2/+2, and Taunt while you have Coven (you control 3+ creatures with different Attack).",
+      "description": "Give a friendly creature +2/+2, Taunt while you have Coven (3+ creatures with different Attack), and Inspire: Advance (venture into the dungeon whenever you use a hero power).",
       "effects": [
         {
           "type": "attach",
@@ -21135,6 +21135,14 @@
           "condKeyword": {
             "keyword": "taunt",
             "while": "coven"
+          },
+          "ongoing": {
+            "on": "hero-power-used",
+            "effects": [
+              {
+                "type": "venture"
+              }
+            ]
           },
           "target": "friendly-creature"
         }

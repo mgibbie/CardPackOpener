@@ -54,6 +54,8 @@ import { damageCreature, damageHero, gainArmor, healHero } from './damage.js';
 import { isDead, sweepDeaths, runDeathrattle } from './death.js';
 import { execEffects, runSecretEffects } from './effects/exec.js';
 export { execEffects, runSecretEffects };
+import { DUNGEONS } from './dungeons.js'; // pure data (no imports) — venture logic lives here
+export { DUNGEONS };
 import { fireOngoing, fireCreatureTrigger, ongoingCondOk, fireSecrets, fireSecretsAll } from './triggers.js';
 export { fireOngoing, fireSecrets, fireSecretsAll };
 import { recomputeAuras, staticValue } from './auras.js';
@@ -583,6 +585,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		lastDraeneiId: null, // Astral Vigilant: the last Draenei you played
 		mana: { cur: 1, max: 1, bonus: 0 },
 		coins: 0,
+		dungeon: null,          // Venture: { id, room } while in a dungeon, else null
+		completedDungeons: [],  // dungeon ids you've finished (some payoffs care)
 		diedThisTurn: 0,
 		diedThisTurnIds: [], // Kel'Thuzad: non-token creatures that died this turn
 		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
@@ -3474,9 +3478,51 @@ export function addHeroPower(state, pi, defOrId, opts = {}) {
 	return power;
 }
 
+// ---- Venture into the Dungeon (the Advance mechanic). DUNGEONS is pure data; the logic lives
+// here because it needs execEffects + emit. ----
+export function enterRoom(state, pi, dungeonId, roomId) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const dungeon = DUNGEONS[dungeonId];
+	const room = dungeon && dungeon.rooms[roomId];
+	if (!room) return;
+	p.dungeon = { id: dungeonId, room: roomId };
+	emit(state, { type: 'ventureRoom', player: pi, dungeon: dungeonId, room: roomId, name: room.name, text: room.text });
+	execEffects(state, pi, room.effects || [], null, null);
+	if (!room.next || room.next.length === 0) { // last room -> completed; a fresh venture starts anew
+		p.completedDungeons = p.completedDungeons || [];
+		if (!p.completedDungeons.includes(dungeonId)) p.completedDungeons.push(dungeonId);
+		p.dungeon = null;
+		emit(state, { type: 'dungeonCompleted', player: pi, dungeon: dungeonId });
+	}
+}
+export function venture(state, pi) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	if (!p.dungeon) { // enter: the player picks which dungeon
+		const ids = Object.keys(DUNGEONS);
+		state.pickQueue.push({ player: pi, mode: 'venture', venture: 'enter', ids });
+		emit(state, { type: 'pickStart', player: pi, count: ids.length });
+		return;
+	}
+	const dungeon = DUNGEONS[p.dungeon.id];
+	const room = dungeon && dungeon.rooms[p.dungeon.room];
+	const next = (room && room.next) || [];
+	if (next.length === 0) { p.dungeon = null; return; } // safety: a completed marker never persists
+	if (next.length === 1) { enterRoom(state, pi, p.dungeon.id, next[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'venture', venture: 'room', dungeonId: p.dungeon.id, ids: next });
+	emit(state, { type: 'pickStart', player: pi, count: next.length });
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
+	if (pend.venture) {
+		const pi = pend.player, chosen = pend.ids.includes(id) ? id : pend.ids[0];
+		if (pend.venture === 'enter') enterRoom(state, pi, chosen, DUNGEONS[chosen] && DUNGEONS[chosen].start);
+		else enterRoom(state, pi, pend.dungeonId, chosen);
+		return true;
+	}
 	if (pend.discover && state.players[pend.player]) {
 		state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
 		state.players[pend.player].discoveredGame = (state.players[pend.player].discoveredGame || 0) + 1; // Alien Encounters: cost per card Discovered this game

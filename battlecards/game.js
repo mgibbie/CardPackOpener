@@ -1739,6 +1739,34 @@ function openPickModal() {
 	const pend = state.pickQueue[0];
 	if (!pend || pend.player !== HUMAN) return;
 	const modal = $('scry-modal'); // reuse the scry chrome
+	if (pend.mode === 'venture') {
+		// Venture into the Dungeon: choose a dungeon to enter, or which branch room to advance to
+		const title = pend.venture === 'enter' ? 'Venture — choose a dungeon' : 'Venture — choose the next room';
+		modal.innerHTML = `<div class="wm-title">${title}</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			let label;
+			if (pend.venture === 'enter') { const d = E.DUNGEONS[id]; label = `<b>${(d && d.name) || id}</b>`; }
+			else { const r = E.DUNGEONS[pend.dungeonId] && E.DUNGEONS[pend.dungeonId].rooms[id]; label = `<b>${(r && r.name) || id}</b><br><span style="font-size:.85em">${(r && r.text) || ''}</span>`; }
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt">${label}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'adapt') {
 		// Adapt: three rolled upgrades (labels, not cards) — choose one
 		modal.innerHTML = `<div class="wm-title">Adapt — choose one</div><div class="scry-row"></div>`;
