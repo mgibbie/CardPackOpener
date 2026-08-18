@@ -942,6 +942,9 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 				// an advanced land's fixed set (e.g. Abzan): draw ONLY its members, which are
 				// uncollectible + colored on purpose, so bypass the usual exclusions below
 				if (e.landSet) return d.landSet === e.landSet && !d.token;
+				// color discover (Treasure Token): any card of the chosen color. Colored cards are
+				// uncollectible by design (land-generated, never deckbuilt), so DON'T exclude those.
+				if (e.color) return (d.colors || []).includes(e.color) && d.type !== 'land' && !d.token && !d.companion && !d.commander;
 				if (d.type === 'land' || d.token || d.collectible === false || d.companion || d.commander) return false;
 				// themed discover (e.g. an advanced land's "Discover an Abzan card"): match by
 				// name and ALLOW colored cards — those themed pools are intentionally colored.

@@ -1784,6 +1784,46 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'treasure') {
+		// Treasure Token sacrifice: choose one → (color) → (creature) — all label picks
+		const COLORS = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
+		let title, labelFor;
+		if (pend.stage === 'main') {
+			title = 'Treasure — choose one';
+			labelFor = id => ({
+				mana: '<b>Gain 1 mana</b>',
+				boost: `<b>Color boost a creature</b><br><span style="font-size:.85em">roll a color's table onto a creature you control</span>`,
+				discover: `<b>Discover a card of a color</b><br><span style="font-size:.85em">pick a color, then take 1 of 3</span>`,
+			})[id] || id;
+		} else if (pend.stage === 'color') {
+			title = pend.then === 'discover' ? 'Treasure — Discover which color?' : 'Treasure — boost which color?';
+			labelFor = id => `<b>${COLORS[id] || id}</b>`;
+		} else {
+			title = 'Treasure — boost which creature?';
+			labelFor = id => { const c = state.players[HUMAN].board.find(x => x.uid === id); return `<b>${(c && c.name) || '?'}</b>`; };
+		}
+		modal.innerHTML = `<div class="wm-title">${title}</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt">${labelFor(id)}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'adapt') {
 		// Adapt: three rolled upgrades (labels, not cards) — choose one
 		modal.innerHTML = `<div class="wm-title">Adapt — choose one</div><div class="scry-row"></div>`;

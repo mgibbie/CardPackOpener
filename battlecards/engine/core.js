@@ -941,7 +941,11 @@ export function sacrificeToken(state, pi, uid) {
 	p.artifacts = p.artifacts.filter(c => c !== card);
 	emit(state, { type: 'tokenSacrificed', player: pi, card });
 	fireOngoing(state, pi, 'token-sacrificed', { played: card }); // "whenever you sacrifice a Food"
-	if (card.sac.discard) {
+	if (card.sac.choose === 'treasure') {
+		// Treasure Token: choose gain 1 mana / color-boost a creature / Discover a card of a color
+		state.pickQueue.push({ player: pi, mode: 'treasure', stage: 'main', ids: ['mana', 'boost', 'discover'] });
+		emit(state, { type: 'pickStart', player: pi, count: 3 });
+	} else if (card.sac.discard) {
 		// the discard is the player's choice; rewards resolve after it
 		state.discardQueue.push({ player: pi, count: Math.min(card.sac.discard, p.hand.length), then: card.sac.effects });
 		emit(state, { type: 'lootStart', player: pi, count: card.sac.discard });
@@ -3572,6 +3576,39 @@ export function resolvePick(state, id) {
 		const pi = pend.player, chosen = pend.ids.includes(id) ? id : pend.ids[0];
 		if (pend.advance === 'enter') enterRoom(state, pi, chosen, DUNGEONS[chosen] && DUNGEONS[chosen].start);
 		else enterRoom(state, pi, pend.dungeonId, chosen);
+		return true;
+	}
+	// Treasure Token sacrifice: a small chain of choices
+	if (pend.mode === 'treasure') {
+		const pi = pend.player;
+		const COLORS = ['W', 'U', 'B', 'R', 'G'];
+		if (pend.stage === 'main') {
+			if (id === 'boost' || id === 'discover') {
+				state.pickQueue.push({ player: pi, mode: 'treasure', stage: 'color', then: id, ids: COLORS });
+				emit(state, { type: 'pickStart', player: pi, count: COLORS.length });
+			} else {
+				execEffects(state, pi, [{ type: 'gain-mana', value: 1 }], null, null); // 'mana' (default)
+			}
+			return true;
+		}
+		if (pend.stage === 'color') {
+			const color = COLORS.includes(id) ? id : COLORS[0];
+			if (pend.then === 'discover') {
+				execEffects(state, pi, [{ type: 'discover', color, pick: 3, count: 1 }], null, null);
+			} else { // boost: pick a friendly creature to receive the color boost
+				const creatures = state.players[pi].board.filter(c => c.type === 'creature' && !isDead(c));
+				if (creatures.length) {
+					state.pickQueue.push({ player: pi, mode: 'treasure', stage: 'boost-target', color, ids: creatures.map(c => c.uid) });
+					emit(state, { type: 'pickStart', player: pi, count: creatures.length });
+				}
+			}
+			return true;
+		}
+		if (pend.stage === 'boost-target') {
+			const t = state.players[pi].board.find(c => c.uid === id && !isDead(c));
+			if (t) execEffects(state, pi, [{ type: 'boost', color: pend.color }], { type: 'creature', uid: t.uid, player: pi }, null);
+			return true;
+		}
 		return true;
 	}
 	if (pend.discover && state.players[pend.player]) {

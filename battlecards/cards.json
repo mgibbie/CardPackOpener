@@ -20304,14 +20304,9 @@
       "token": true,
       "sac": {
         "cost": 0,
-        "effects": [
-          {
-            "type": "gain-mana",
-            "value": 1
-          }
-        ]
+        "choose": "treasure"
       },
-      "description": "Sacrifice: gain 1 mana.",
+      "description": "Sacrifice: choose — gain 1 mana; color-boost a creature you control; or Discover a card of a color.",
       "tribe": "Token",
       "cardClass": "neutral"
     },
