@@ -805,10 +805,12 @@ function openTapMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
+let sprocketRing = null; // gold ring marking the human's active Contraption slot
 function layoutTargets() {
 	if (!state) return;
 	const off = sliceOff();
 	const seen = new Set();
+	if (sprocketRing) sprocketRing.visible = false; // shown again below only if the human's sprocket is live
 	for (let pi = 0; pi < state.players.length; pi++) {
 		const p = state.players[pi];
 		// hand
@@ -858,15 +860,26 @@ function layoutTargets() {
 			ent.target.quat = sliceQuat(card.tapped ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
 			ent.target.scale = 0.42;
 		});
-		// Sprocket: up to 3 Contraption slots, a small row set to the right of the lands
-		(p.sprocket || []).forEach((card, i) => {
-			if (!card) return;
-			const ent = entityFor(card);
-			seen.add(card.uid);
-			ent.target.pos = toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
-			ent.target.scale = 0.32;
-		});
+		// Sprocket: Contraptions sit in fixed slots to the right of the lands; a ring
+		// indicator marks the slot that fires next (it cycles 1 -> 2 -> 3 each of your turns)
+		const spr = p.sprocket || [];
+		if (spr.some(x => x)) {
+			spr.forEach((card, i) => {
+				if (!card) return;
+				const ent = entityFor(card);
+				seen.add(card.uid);
+				ent.target.pos = toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi);
+				ent.target.quat = sliceQuat(FLAT, pi);
+				ent.target.scale = 0.32;
+			});
+			if (pi === HUMAN) {
+				if (!sprocketRing) sprocketRing = makeRing('#ffd25f');
+				const rp = toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi);
+				sprocketRing.position.set(rp.x, rp.y, rp.z);
+				sprocketRing.scale.setScalar(0.34);
+				sprocketRing.visible = true;
+			}
+		}
 		p.traps.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
@@ -1796,15 +1809,17 @@ function openPickModal() {
 	if (pend.mode === 'assemble') {
 		// Assemble: you got a random Contraption — choose which Sprocket slot it goes in
 		const def = state.cardsById[pend.contraptionId];
-		const spr = state.players[HUMAN].sprocket || [null, null, null];
-		const when = ['next turn', 'in 2 turns', 'in 3 turns'];
+		const me = state.players[HUMAN];
+		const spr = me.sprocket || [null, null, null];
 		modal.innerHTML = `<div class="wm-title">Assembled <b>${(def && def.name) || 'a Contraption'}</b> — choose a slot</div><div class="scry-row"></div>`;
 		const row = modal.querySelector('.scry-row');
 		pend.ids.forEach(id => {
 			const slot = Number(id), occ = spr[slot];
+			const eta = E.contraptionEta(me, slot);
+			const when = eta === 1 ? 'next turn' : `in ${eta} turns`;
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell';
-			cell.innerHTML = `<div class="adapt-opt"><b>Slot ${slot + 1}</b><br><span style="font-size:.85em">fires ${when[slot]}${occ ? `<br>replaces ${occ.name}` : ''}</span></div>`;
+			cell.innerHTML = `<div class="adapt-opt"><b>Slot ${slot + 1}</b>${slot === (me.sprocketPointer || 0) ? ' ◄' : ''}<br><span style="font-size:.85em">fires ${when}${occ ? `<br>replaces ${occ.name}` : ''}</span></div>`;
 			const btn = document.createElement('button');
 			btn.textContent = 'Place';
 			btn.addEventListener('pointerdown', e => {

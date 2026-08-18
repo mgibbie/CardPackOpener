@@ -587,7 +587,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		coins: 0,
 		dungeon: null,          // Advance: { id, room } while in a dungeon, else null
 		completedDungeons: [],  // dungeon ids you've finished (some payoffs care)
-		sprocket: [null, null, null], // Contraption slots: slot 1 fires at your turn start, then all advance
+		sprocket: [null, null, null], // Contraption slots (persistent); the indicator fires one per turn
+		sprocketPointer: 0,     // indicator: which slot fires at your next turn-start; cycles 0->1->2->0
 		diedThisTurn: 0,
 		diedThisTurnIds: [], // Kel'Thuzad: non-token creatures that died this turn
 		deathLogIds: [],     // Feugen/Stalagg: everything that died this game
@@ -3582,11 +3583,12 @@ export function advance(state, pi) {
 }
 
 // ---------- Sprocket / Contraptions ----------
-// A Sprocket is 3 ordered slots. Assemble gives a RANDOM Contraption that you
-// place into a slot of your choice (overwriting whatever's there). At the start of
-// each of your turns slot 1's Contraption fires once and is removed, then the slots
-// advance (slot 2 -> 1, slot 3 -> 2) — so a slot-1 pick fires next turn, slot 2 the
-// turn after, slot 3 the turn after that.
+// A Sprocket is 3 slots and an indicator that cycles 1 -> 2 -> 3 -> 1. Assemble gives
+// a RANDOM Contraption that you place into a slot of your choice (overwriting whatever's
+// there). Contraptions STAY in their slot. At each of your turn-starts the indicator's
+// current slot fires (if it holds a Contraption), then the indicator advances one slot —
+// so a Contraption fires each time the indicator comes back around to it (every 3 turns),
+// and the slot you pick sets how many ticks until the indicator first reaches it.
 export function contraptionPool(state) {
 	return Object.values(state.cardsById).filter(d => d.contraption);
 }
@@ -3611,19 +3613,26 @@ export function placeContraption(state, pi, slot, contraptionId) {
 	emit(state, { type: 'contraptionAssembled', player: pi, slot, card: p.sprocket[slot] });
 }
 
-// fire slot 1's Contraption (once), then advance the slots — called at turn start
+// fire the Contraption the indicator points at (it stays), then advance the
+// indicator 1 -> 2 -> 3 -> 1 — called at each of your turn-starts
 export function crankSprocket(state, pi) {
 	const p = state.players[pi];
-	if (!p || !p.sprocket || !p.sprocket.some(x => x)) return;
-	const s = p.sprocket;
-	const fired = s[0];
-	if (fired) {
-		emit(state, { type: 'contraptionFired', player: pi, card: fired });
-		const def = state.cardsById[fired.id];
-		execEffects(state, pi, (def && def.effects) || fired.effects || [], null, fired);
+	if (!p || !p.sprocket) return;
+	const ptr = p.sprocketPointer || 0;
+	const card = p.sprocket[ptr];
+	if (card) {
+		emit(state, { type: 'contraptionFired', player: pi, slot: ptr, card });
+		const def = state.cardsById[card.id];
+		execEffects(state, pi, (def && def.effects) || card.effects || [], null, card);
 		sweepDeaths(state);
 	}
-	s[0] = s[1]; s[1] = s[2]; s[2] = null;
+	p.sprocketPointer = (ptr + 1) % 3;
+}
+
+// turns until the indicator first reaches `slot` (1 = your next turn-start)
+export function contraptionEta(player, slot) {
+	const ptr = player.sprocketPointer || 0;
+	return ((slot - ptr + 3) % 3) + 1;
 }
 
 export function resolvePick(state, id) {
