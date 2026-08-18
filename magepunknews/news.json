@@ -2,6 +2,14 @@
 	"generated": "2026-08-18",
 	"entries": [
 		{
+			"sha": "44a5540",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Hand size: no mid-turn hard cap, discard to 15 at end of turn",
+			"body": "The hand rule is MTG-style (per invariant I6): you may hold more than 15\ncards DURING your turn — draw and card generation never burn — and the\nhand is trimmed to 15 only at end of turn. drawCards already honored\nthis, but ~85 card-generation guards (conjure/discover/copy/add-card/\nadd-token/...) silently dropped generated cards once the hand hit 15.\n\nRather than edit ~85 sites, split the constant:\n  - HAND_LIMIT = 15  — the real hand size, enforced at end of turn\n  - MAX_HAND   = 40  — a high mid-turn safety ceiling the generation\n                       guards reference; normal play never approaches it\n\nSo every `hand.length < MAX_HAND` generation guard now allows up to 40\n(effectively no cap), while the genuinely-15 sites were repointed at\nHAND_LIMIT: the end-of-turn cleanup trim (core.js), the `hand-full`\ncondition (cost.js), and the fill-to-limit effects — Well of Eternity\n(handlers-copy), Thistle Tea (handlers-misc), Halazzi/fill-hand-token\n(handlers-summon), and Godfrey. Thistle Tea's `count` copies are now\nuncapped mid-turn too.\n\nNew handcap_test.mjs (11 checks: generation/draw/add-token past 15 not\ndropped, fill still stops at 15, end-of-turn trims to 15). Suite 204/204.\nVerified in a real turn cycle: 18 cards held mid-turn -> 15 at end of\nturn, 0 state-validation violations.",
+			"cards": []
+		},
+		{
 			"sha": "99066c0",
 			"date": "2026-08-18",
 			"kind": "patch",
