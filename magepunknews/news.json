@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "7200290",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build blue temples: Thassa + Kefnet pools (30 mono-blue cards)",
+			"body": "Two mono-U advanced-land pools keyed by landSet:\"Thassa\"/\"Kefnet\".\n- Thassa (sea god): tempo/card-draw/scry, Elusive sea creatures, freeze, bounce.\n  12/15 are real Theros cards (God of the Sea, Bident, Kenessos, Ordeal, Bounty,\n  Devourer, Emissary, Intervention, Ire, Oracle, Rebuff, Tidal Wave) + 3 invented\n  (Mystic, Leviathan, Serpent).\n- Kefnet (knowledge god): heavy card-draw/scry, Elusive flyers, bounce/freeze.\n  3/15 real (God-Eternal Kefnet, Last Word, Cartouche of Knowledge) + 12 invented.\n\nBlue identity uses Elusive (evasion), scry, draw, freeze (enemy-creatures / single),\nbounce (enemy-creature) - all proven primitives. \"Counter target spell\" isn't an\neffect (counters are Secrets), so Rebuff/Rebuke/Last Word reflavored to bounce tempo.\nFixed both temple taps: conjure-named match -> discover landSet.\n\nNew suites thassa_pool_test.mjs + kefnet_pool_test.mjs (37 each); full suite 212 -> 214.",
+			"cards": []
+		},
+		{
 			"sha": "61629c9",
 			"date": "2026-08-19",
 			"kind": "patch",
