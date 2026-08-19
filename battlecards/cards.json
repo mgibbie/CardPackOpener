@@ -12769,12 +12769,11 @@
           ]
         },
         {
-          "text": "Conjure a Simic card.",
+          "text": "Discover a Simic card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Simic",
-              "count": 1
+              "type": "discover",
+              "landSet": "Simic"
             }
           ]
         }
@@ -12783,6 +12782,402 @@
         "G",
         "U"
       ]
+    },
+    {
+      "id": "simic_sky_swallower",
+      "name": "Simic Sky Swallower",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Leviathan",
+      "keywords": [
+        "elusive",
+        "trample"
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "momir_vig_simic_visionary",
+      "name": "Momir Vig, Simic Visionary",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_ragworm",
+      "name": "Simic Ragworm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Insect",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_basilisk",
+      "name": "Simic Basilisk",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch. Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Basilisk",
+      "keywords": [
+        "deathtouch",
+        "trample"
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_manipulator",
+      "name": "Simic Manipulator",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Mutant Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_guildmage",
+      "name": "Simic Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give a creature +1/+1. Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_fluxmage",
+      "name": "Simic Fluxmage",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_initiate",
+      "name": "Simic Initiate",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give a creature +1/+1.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_charm",
+      "name": "Simic Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_ascendancy",
+      "name": "Simic Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_growth_chamber",
+      "name": "Simic Growth Chamber",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Give a creature +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_keyrune",
+      "name": "Simic Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 3/3 Crab with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Crab",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_cluestone",
+      "name": "Simic Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_locket",
+      "name": "Simic Locket",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
+    },
+    {
+      "id": "simic_signet",
+      "name": "Simic Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false
     },
     {
       "id": "quandrix_campus",
