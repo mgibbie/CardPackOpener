@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "65c5a21",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Izzet (U/R) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color R/U cards keyed by landSet:\"Izzet\". Izzet identity =\nblue card-advantage/tempo + red burn: targeted burn (Charm, Guildmage, Ral, Command,\nElectroblast), board burn (Staticaster ping, Niv-Mizzet 4-to-all + draw), heavy card\ndraw (Chemister, Chronarch, Inventor, Melek, Cluestone, Locket), Elusive drakes/weirds\n(Niv-Mizzet, Melek, Inventor, Keyrune elemental), ramp (Signet, Locket).\n\nFixed the guildgate tap: conjure-named match:\"Izzet\" -> discover landSet:\"Izzet\".\nNew suite izzet_pool_test.mjs (37 checks; guildgate id + R/U dual-color patch).\nFull suite 227 -> 228.",
+			"cards": []
+		},
+		{
 			"sha": "3a00f8f",
 			"date": "2026-08-19",
 			"kind": "patch",
