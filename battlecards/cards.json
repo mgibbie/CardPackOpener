@@ -7451,12 +7451,11 @@
           ]
         },
         {
-          "text": "Conjure a Hazoret card.",
+          "text": "Discover a Hazoret card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Hazoret",
-              "count": 1
+              "type": "discover",
+              "landSet": "Hazoret"
             }
           ]
         }
@@ -7494,12 +7493,11 @@
           ]
         },
         {
-          "text": "Conjure a Purphoros card.",
+          "text": "Discover a Purphoros card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Purphoros",
-              "count": 1
+              "type": "discover",
+              "landSet": "Purphoros"
             }
           ]
         }
@@ -7507,6 +7505,708 @@
       "colors": [
         "R"
       ]
+    },
+    {
+      "id": "hazoret_the_fervent",
+      "name": "Hazoret the Fervent",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Charge. Battlecry: Deal 3 damage to a creature.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "champion_of_hazoret",
+      "name": "Champion of Hazoret",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_jackal",
+      "name": "Hazoret's Jackal",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Jackal",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_minotaur",
+      "name": "Hazoret's Minotaur",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Cleave.",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Minotaur",
+      "keywords": [
+        "cleave"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_cerodon",
+      "name": "Hazoret's Cerodon",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "First Strike. Charge.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Beast",
+      "keywords": [
+        "first_strike",
+        "charge"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_brawler",
+      "name": "Hazoret's Brawler",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A cheap, reckless bruiser.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Minotaur Berserker",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hymn_of_hazoret",
+      "name": "Hymn of Hazoret",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_favor",
+      "name": "Hazoret's Favor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Charge.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "charge"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_undying_fury",
+      "name": "Hazoret's Undying Fury",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Summon three 2/2 Warriors with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 2,
+          "name": "Warrior",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_cartouche",
+      "name": "Hazoret's Cartouche",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_zeal",
+      "name": "Hazoret's Zeal",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+1 and Charge.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "creature",
+          "grant": "charge"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_protection",
+      "name": "Hazoret's Protection",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +3/+3.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_armory",
+      "name": "Hazoret's Armory",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "hazorets_flameblade",
+      "name": "Hazoret's Flameblade",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A 3/2 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "spear_of_hazoret",
+      "name": "Spear of Hazoret",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A 3/3 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false
+    },
+    {
+      "id": "purphoros_god_of_the_forge",
+      "name": "Purphoros, God of the Forge",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Deal 2 damage to each opponent and all enemy creatures.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "bronze_blood_of_purphoros",
+      "name": "Bronze Blood of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Your creatures gain Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "purphoros_emissary",
+      "name": "Purphoros's Emissary",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Cleave.",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "cleave"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "manticore_of_purphoros",
+      "name": "Manticore of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Cleave. Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Manticore",
+      "keywords": [
+        "cleave",
+        "rush"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "oracle_of_purphoros",
+      "name": "Oracle of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "unicorn_of_purphoros",
+      "name": "Unicorn of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Charge.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Unicorn",
+      "keywords": [
+        "charge"
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "hammer_of_purphoros",
+      "name": "Hammer of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Your creatures gain Rush. Summon a 3/3 Golem.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Golem"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "ordeal_of_purphoros",
+      "name": "Ordeal of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2. Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "purphoros_intervention",
+      "name": "Purphoros's Intervention",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deal 6 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 6,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "rage_of_purphoros",
+      "name": "Rage of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "omen_of_purphoros",
+      "name": "Omen of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 2 damage to a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "temper_of_purphoros",
+      "name": "Temper of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Windfury.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "windfury"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "sparkjolt_of_purphoros",
+      "name": "Sparkjolt of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 2 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "flamecast_wheel_of_purphoros",
+      "name": "Flamecast Wheel of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 2 damage to any target.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
+    },
+    {
+      "id": "magmaforge_of_purphoros",
+      "name": "Magmaforge of Purphoros",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A 4/3 weapon.",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 3,
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false
     },
     {
       "id": "temple_of_nylea",
