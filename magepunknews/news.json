@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "3b5e254",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Temple of Heliod advanced-land pool (15 mono-white cards)",
+			"body": "15 uncollectible mono-W \"Heliod\" cards keyed by landSet:\"Heliod\", the way Abzan\nis built. Faithful adaptations of the Theros Heliod cards: gods (Divine Shield +\ntoken/lifesteal battlecries), anthems (Dictate, Spear), auras (Chosen, Punishment,\nOrdeal), tutors (Pilgrim, Intervention, Generosity), go-wide (Evangel), plus 3\ninvented white cards (Radiant Dawn, Warped Eclipse, Betrayal) to round out 15.\n\nFixed the temple's tap: switched conjure-named match:\"Heliod\" -> discover\nlandSet:\"Heliod\". The name-match conjure path filters out collectible:false cards\n(handlers-copy.js:1211), so the pool would have been invisible; the landSet branch\nintentionally includes uncollectible pool members. Now the land Discovers its pool.\n\nNew regression suite heliod_pool_test.mjs: pool is exactly 15, all mono-W/uncollectible,\neach plays without throwing and leaves valid state, and the temple discover offers only\nHeliod cards. Full suite 210 -> 211 green.",
+			"cards": []
+		},
+		{
 			"sha": "8619aaa",
 			"date": "2026-08-19",
 			"kind": "patch",
