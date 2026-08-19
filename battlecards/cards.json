@@ -20805,6 +20805,29 @@
       ]
     },
     {
+      "id": "offworld_vermin",
+      "name": "Offworld Vermin",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "cardClass": "neutral",
+      "tribe": "Alien Beast",
+      "keywords": [
+        "taunt",
+        "venomous",
+        "deathrattle"
+      ],
+      "description": "Taunt & Venomous.\nDeathrattle: Target creature gains Static.",
+      "deathrattle": [
+        {
+          "type": "grant-target",
+          "keyword": "static"
+        }
+      ]
+    },
+    {
       "id": "food_token",
       "name": "Food Token",
       "type": "artifact",
