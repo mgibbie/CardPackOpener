@@ -11335,12 +11335,11 @@
           ]
         },
         {
-          "text": "Conjure a Rakdos card.",
+          "text": "Discover a Rakdos card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Rakdos",
-              "count": 1
+              "type": "discover",
+              "landSet": "Rakdos"
             }
           ]
         }
@@ -11349,6 +11348,376 @@
         "B",
         "R"
       ]
+    },
+    {
+      "id": "rakdos_lord_of_riots",
+      "name": "Rakdos, Lord of Riots",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Charge. Lifesteal. Battlecry: Deal 3 damage to each opponent.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Demon",
+      "keywords": [
+        "charge",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_defiler",
+      "name": "Rakdos Defiler",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Demon",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_pit_dragon",
+      "name": "Rakdos Pit Dragon",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Charge. Cleave.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "cleave"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "exava_rakdos_blood_witch",
+      "name": "Exava, Rakdos Blood Witch",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Charge. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_firewheeler",
+      "name": "Rakdos Firewheeler",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Deal 2 damage to each opponent and 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Devil",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_guildmage",
+      "name": "Rakdos Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_drake",
+      "name": "Rakdos Drake",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Charge.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Drake",
+      "keywords": [
+        "elusive",
+        "charge"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_trumpeter",
+      "name": "Rakdos Trumpeter",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_shred_freak",
+      "name": "Rakdos Shred-Freak",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Devil Berserker",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_cackler",
+      "name": "Rakdos Cackler",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Devil",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_showstopper",
+      "name": "Rakdos Showstopper",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deal 3 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "all-creatures"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "anthem_of_rakdos",
+      "name": "Anthem of Rakdos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give your creatures +2/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_charm",
+      "name": "Rakdos Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_cluestone",
+      "name": "Rakdos Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
+    },
+    {
+      "id": "rakdos_riteknife",
+      "name": "Rakdos Riteknife",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A 3/2 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false
     },
     {
       "id": "immersturm_citadel",
