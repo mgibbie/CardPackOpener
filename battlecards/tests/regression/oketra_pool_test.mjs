@@ -75,5 +75,30 @@ for (const card of pool) {
 	ok('discover offers only Oketra cards', pend && pend.ids && pend.ids.every(id => byId[id] && byId[id].landSet === 'Oketra'), pend && pend.ids);
 }
 
+// ---- Oketra's Initiate: Deathrattle planeshifts the arena on death ----
+{
+	byId._big = { id: '_big', name: 'Big', type: 'creature', cost: 1, attack: 5, health: 5, rarity: 'common' };
+	const st = fresh();
+	const atk = E.instantiate(byId._big, 0); atk.zone = 'board'; atk.sick = false; st.players[0].board.push(atk);
+	const init = E.instantiate(byId.oketras_initiate, 1); init.zone = 'board'; init.sick = false; st.players[1].board.push(init);
+	E.recomputeAuras(st);
+	const before = st.plane;
+	E.attack(st, 0, atk.uid, { type: 'creature', uid: init.uid, player: 1 }); // 5/5 kills the 2/3 Taunt
+	ok('Initiate dies to combat', !st.players[1].board.some(x => x.id === 'oketras_initiate' && x.damage < x.maxHealth));
+	ok('Initiate Deathrattle planeshifts the arena', !!st.plane && st.plane !== before, st.plane);
+}
+
+// ---- Oketra's Truth: Discover, then add a second copy (2 total in hand) ----
+{
+	const st = fresh();
+	const c = E.instantiate(byId.oketras_truth, 0); c.zone = 'hand'; st.players[0].hand.push(c);
+	E.playCard(st, 0, c.uid, null);
+	const pend = st.pickQueue[0];
+	ok('Truth discover carries the duplicate flag', pend && pend.duplicate === true);
+	const pick = pend.ids[0];
+	E.resolvePick(st, pick);
+	ok('Truth yields 2 copies of the discovered card', st.players[0].hand.filter(x => x.id === pick).length === 2);
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

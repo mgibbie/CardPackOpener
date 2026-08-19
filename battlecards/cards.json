@@ -5466,13 +5466,19 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt.",
+      "description": "Taunt. Deathrattle: Planeshift.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Human Cleric",
       "keywords": [
-        "taunt"
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "planeshift"
+        }
       ],
       "colors": [
         "W"
@@ -5618,7 +5624,7 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures Reborn.",
+      "description": "Creatures you control gain Reborn.",
       "type": "sorcery",
       "effects": [
         {
@@ -5664,12 +5670,13 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Discover an Oketra Card.",
+      "description": "Discover an Oketra Card, then add two copies of it to your hand.",
       "type": "sorcery",
       "effects": [
         {
           "type": "discover",
-          "landSet": "Oketra"
+          "landSet": "Oketra",
+          "duplicate": true
         }
       ],
       "colors": [
