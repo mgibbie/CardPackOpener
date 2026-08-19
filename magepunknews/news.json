@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "95ca425",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build 4 two-color Theros temple pools: Ephara/Athreos/Iroas/Karametra",
+			"body": "First batch of the 11 two-color Theros god-temples (the white-paired ones). 60\nuncollectible dual-color cards keyed by landSet Ephara(W/U)/Athreos(W/B)/Iroas(R/W)/\nKarametra(G/W), Theros-flavored to each god:\n- Ephara (W/U): order + tempo - Divine Shield/Taunt/Elusive, draw/scry, bounce, Soldier tokens.\n- Athreos (W/B): passage/death - Lifesteal drain, Deathtouch, Reborn recursion, discard, removal.\n- Iroas (R/W): victory/combat - Rush/Charge/First Strike, buff+haste, weapons, burn, Divine Shield.\n- Karametra (G/W): harvest - Elephant/Saproling tokens, ramp (gain-mana), +1/+1, lifegain, big Taunt.\n\nFixed all 4 temple taps: conjure-named match -> discover landSet. Pool cards built via\nscratchpad/build_theros4.mjs (spliced before bant_citadel; re-serialize preserved the\nexisting 2-space format - clean +60-card diff). 4 new pool tests (37 each); suite 230 -> 234.",
+			"cards": []
+		},
+		{
 			"sha": "61867e1",
 			"date": "2026-08-19",
 			"kind": "patch",
