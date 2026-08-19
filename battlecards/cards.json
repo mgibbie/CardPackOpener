@@ -11713,12 +11713,11 @@
           ]
         },
         {
-          "text": "Conjure a Izzet card.",
+          "text": "Discover an Izzet card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Izzet",
-              "count": 1
+              "type": "discover",
+              "landSet": "Izzet"
             }
           ]
         }
@@ -11727,6 +11726,420 @@
         "R",
         "U"
       ]
+    },
+    {
+      "id": "niv_mizzet_supreme_izzet_firemind",
+      "name": "Niv-Mizzet, Supreme Izzet Firemind",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Deal 4 damage to all enemy creatures. Draw a card.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "ral_izzet_viceroy",
+      "name": "Ral, Izzet Viceroy",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Deal 3 damage to a creature. Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "melek_izzet_paragon",
+      "name": "Melek, Izzet Paragon",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Weird",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_chronarch",
+      "name": "Izzet Chronarch",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_inventor",
+      "name": "Izzet Inventor",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Vedalken Artificer",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_chemister",
+      "name": "Izzet Chemister",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Goblin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_guildmage",
+      "name": "Izzet Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_staticaster",
+      "name": "Izzet Staticaster",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_charm",
+      "name": "Izzet Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 2 damage to a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_command",
+      "name": "Izzet Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to a creature. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_electroblast",
+      "name": "Izzet Electroblast",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_keyrune",
+      "name": "Izzet Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 3/2 Elemental with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Elemental",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_locket",
+      "name": "Izzet Locket",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_signet",
+      "name": "Izzet Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
+    },
+    {
+      "id": "izzet_cluestone",
+      "name": "Izzet Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false
     },
     {
       "id": "prismari_campus",
