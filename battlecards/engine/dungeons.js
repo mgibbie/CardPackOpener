@@ -28,7 +28,7 @@ export const DUNGEONS = {
 			trapped_entry:           { name: 'Trapped Entry',           text: 'Each player loses 1 life.',       effects: [{ type: 'damage', value: 1, target: 'all-heroes' }], next: ['veils_of_fear', 'oubliette'] },
 			veils_of_fear:           { name: 'Veils of Fear',           text: 'Each player discards a card.',    effects: [{ type: 'discard-random', count: 1 }, { type: 'enemy-discard', value: 1 }], next: ['sandfall_cell'] }, // adapts "lose 2 unless discard"
 			sandfall_cell:           { name: 'Sandfall Cell',           text: 'Each player loses 2 life.',       effects: [{ type: 'damage', value: 2, target: 'all-heroes' }], next: ['cradle_of_the_death_god'] }, // adapts "lose 2 unless sacrifice"
-			oubliette:               { name: 'Oubliette',               text: 'Discard two cards.',              effects: [{ type: 'discard-random', count: 2 }], next: ['cradle_of_the_death_god'] }, // adapts "discard + sacrifice"
+			oubliette:               { name: 'Oubliette',               text: 'Discard two cards.',              effects: [{ type: 'discard-random', count: 2 }], next: ['sandfall_cell'] }, // both branches converge at Sandfall Cell -> one line into the final room
 			cradle_of_the_death_god: { name: 'Cradle of the Death God', text: 'Create The Atropal, a 4/4 with Deathtouch.', effects: [{ type: 'summon', count: 1, attack: 4, health: 4, name: 'The Atropal', tribe: 'God Horror', keywords: ['deathtouch'] }], next: [] },
 		},
 	},
