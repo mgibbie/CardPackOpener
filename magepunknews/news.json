@@ -2,6 +2,22 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "61629c9",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Oketra pool tweaks: Initiate Deathrattle, Truth duplicate, Invocation wording",
+			"body": "- Oketra's Initiate: add \"Deathrattle: Planeshift\" (deathrattle:[{planeshift}] +\n  deathrattle keyword) — on death it shifts the arena to a new plane.\n- Oketra's Truth: discover now carries duplicate:true, so you get 2 copies of the\n  discovered card.\n- Oketra's Invocation: reworded to \"Creatures you control gain Reborn.\"\n\noketra_pool_test.mjs +4 checks (Initiate dies to combat -> planeshift fires;\nTruth pend has duplicate flag -> 2 copies land in hand). Suite stays 212 green.",
+			"cards": []
+		},
+		{
+			"sha": "38e56b2",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Temple of Oketra advanced-land pool (15 mono-white cards)",
+			"body": "15 uncollectible mono-W \"Oketra\" cards keyed by landSet:\"Oketra\", same pattern as\nHeliod/Abzan. Amonkhet white-god identity: order, +1/+1 anthems, First Strike, go-wide\nsoldier/zombie/cat tokens, Reborn (embalm/eternalize), lifegain. Real cards adapted\n(God-Eternal Oketra, Attendant, Avenger, Last Mercy) + themed ones (Caracal=Regal\nCaracal, Cartouche=Cartouche of Solidarity, Trial=Trial of Solidarity) + invented\n(Invocation/Truth/Solidarity/Light Arrow/Initiate/Command/Charm/Vindication).\n\nUses only proven effect primitives (buff single & friendly-creatures w/ grant of\nfirst_strike/divine_shield/reborn, summon w/ keywords, heal, discover landSet, destroy\nw/ minAttack). Fixed the temple tap: conjure-named match -> discover landSet:\"Oketra\"\n(name-match conjure filters out collectible:false pool cards).\n\nNew regression suite oketra_pool_test.mjs (37 checks); full suite 211 -> 212 green.",
+			"cards": []
+		},
+		{
 			"sha": "3b5e254",
 			"date": "2026-08-19",
 			"kind": "patch",
