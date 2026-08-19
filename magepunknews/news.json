@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "9693b9b",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Gruul (R/G) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color G/R cards keyed by landSet:\"Gruul\". Gruul identity =\nred aggression/haste + green big-creatures/ramp: Trample beaters (Borborygmos 7/6,\nWar Plow, Nodorog, Ruric Thar, Ragebeast), Rush/riot haste (Spellbreaker, Scrapper,\nRuric Thar, Guildmage/War Chant grants), Fight (Ragebeast Battlecry), aggressive\nanthems (Beastmaster, War Chant), AoE (Borborygmos Battlecry 3 to all enemy creatures),\nramp (Signet, Locket), Trample beast tokens (Keyrune, Charm pump).\n\nFixed the guildgate tap: conjure-named match:\"Gruul\" -> discover landSet:\"Gruul\".\nNew suite gruul_pool_test.mjs (37 checks; guildgate id + G/R dual-color patch).\nFull suite 224 -> 225.",
+			"cards": []
+		},
+		{
 			"sha": "9f00847",
 			"date": "2026-08-19",
 			"kind": "patch",
