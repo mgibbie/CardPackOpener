@@ -218,9 +218,11 @@ if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
 // a version query) so a release refreshes the art index — otherwise a returning visitor
 // keeps a stale index that omits newly-added art ids and shows procedural faces for them
 const _artCb = (() => { try { return new URL(import.meta.url).search; } catch (e) { return ''; } })();
-const artIndexReady = fetch(ART_BASE + 'index.json' + _artCb)
+// {cache:'no-cache'} revalidates the index every load, so pages that import cardart.js
+// WITHOUT a ?v (news, in-game, packs) still pick up newly-added art ids, not a stale index
+const artIndexReady = fetch(ART_BASE + 'index.json' + _artCb, { cache: 'no-cache' })
 	.then(r => (r.ok ? r.json() : Promise.reject()))
-	.catch(() => fetch(ART_DIR + 'index.json').then(r => (r.ok ? r.json() : []))) // fall back to the redirect path
+	.catch(() => fetch(ART_DIR + 'index.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : []))) // fall back to the redirect path
 	.then(ids => { artIndex = new Set(ids); })
 	.catch(() => { artIndex = new Set(); });
 

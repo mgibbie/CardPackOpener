@@ -219,7 +219,7 @@ const tipImg = tip.querySelector('img');
 const faceCache = new Map(); // card id -> dataURL
 let poolPromise = null, artPromise = null, hoverId = null;
 
-const loadPool = () => poolPromise ||= fetch('../battlecards/cards.json')
+const loadPool = () => poolPromise ||= fetch('../battlecards/cards.json', { cache: 'no-cache' })
 	.then(r => r.json()).then(d => new Map((d.cards || []).map(c => [c.id, c])));
 const loadArt = () => artPromise ||= import('../battlecards/cardart.js');
 
