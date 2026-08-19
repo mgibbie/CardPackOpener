@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "31442a3",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build black temples: Erebos + Bontu pools (30 mono-black cards)",
+			"body": "Two mono-B advanced-land pools keyed by landSet:\"Erebos\"/\"Bontu\".\n- Erebos (god of the dead): drain, Deathtouch, Lifesteal, Reborn undeath, Zombie\n  tokens, discard, removal. 12/15 real Theros cards + Omen (invented) + reflavored\n  Scourgemark/Hymn.\n- Bontu (ambition/sacrifice): drain, board wipe (Last Reckoning = destroy-all),\n  destroy+value \"sacrifice\" spells, Deathtouch swarm, Lifesteal. 2 real (God-Eternal\n  Bontu, Last Reckoning) + 13 themed/invented.\n\nBlack identity: lifesteal (drain), deathtouch, reborn, deathrattle, damage to\nenemy-heroes (drain), destroy / destroy-all, enemy-discard, Zombie/Insect summons -\nall proven primitives. Fixed both temple taps: conjure-named match -> discover landSet.\n\nNew suites erebos_pool_test.mjs + bontu_pool_test.mjs (37 each); full suite 214 -> 216.",
+			"cards": []
+		},
+		{
 			"sha": "7200290",
 			"date": "2026-08-19",
 			"kind": "patch",
