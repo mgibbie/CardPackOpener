@@ -8237,12 +8237,11 @@
           ]
         },
         {
-          "text": "Conjure a Nylea card.",
+          "text": "Discover a Nylea card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Nylea",
-              "count": 1
+              "type": "discover",
+              "landSet": "Nylea"
             }
           ]
         }
@@ -8280,12 +8279,11 @@
           ]
         },
         {
-          "text": "Conjure a Rhonas card.",
+          "text": "Discover a Rhonas card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Rhonas",
-              "count": 1
+              "type": "discover",
+              "landSet": "Rhonas"
             }
           ]
         }
@@ -8293,6 +8291,756 @@
       "colors": [
         "G"
       ]
+    },
+    {
+      "id": "nylea_god_of_the_hunt",
+      "name": "Nylea, God of the Hunt",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Trample. Battlecry: Give your creatures +2/+2.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_colossus",
+      "name": "Nylea's Colossus",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Giant",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_forerunner",
+      "name": "Nylea's Forerunner",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_emissary",
+      "name": "Nylea's Emissary",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_disciple",
+      "name": "Nylea's Disciple",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Gain 5 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Centaur",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_huntmaster",
+      "name": "Nylea's Huntmaster",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Summon a 2/2 Beast.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cat",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Beast"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_grovedancer",
+      "name": "Nylea's Grovedancer",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Gain 2 mana this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Dryad",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_moss_viper",
+      "name": "Nylea's Moss Viper",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "bow_of_nylea",
+      "name": "Bow of Nylea",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "keen_eyes_of_nylea",
+      "name": "Keen Eyes of Nylea",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_intervention",
+      "name": "Nylea's Intervention",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Gain 3 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "nyleas_presence",
+      "name": "Nylea's Presence",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "ordeal_of_nylea",
+      "name": "Ordeal of Nylea",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2. Gain 2 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "chrysalis_of_nylea",
+      "name": "Chrysalis of Nylea",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon two 2/2 Beasts.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Beast"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "omen_of_nylea",
+      "name": "Omen of Nylea",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A friendly creature fights an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false
+    },
+    {
+      "id": "god_eternal_rhonas",
+      "name": "God-Eternal Rhonas",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Deathtouch. Trample. Battlecry: Give your creatures +2/+2.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Snake God",
+      "keywords": [
+        "deathtouch",
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_stalwart",
+      "name": "Rhonas's Stalwart",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_wurm",
+      "name": "Rhonas's Wurm",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Wurm",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_hydra",
+      "name": "Rhonas's Hydra",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Hydra",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "champion_of_rhonas",
+      "name": "Champion of Rhonas",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "devotee_of_rhonas",
+      "name": "Devotee of Rhonas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Gain 2 mana this turn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_cartouche",
+      "name": "Rhonas's Cartouche",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "benefaction_of_rhonas",
+      "name": "Benefaction of Rhonas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_last_stand",
+      "name": "Rhonas's Last Stand",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Summon two 4/4 Beasts with Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 4,
+          "health": 4,
+          "name": "Beast",
+          "keywords": [
+            "trample"
+          ]
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "strength_of_rhonas",
+      "name": "Strength of Rhonas",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +3/+3.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_menagerie",
+      "name": "Rhonas's Menagerie",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Summon a 6/6 Wurm with Trample. Gain 4 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 6,
+          "health": 6,
+          "name": "Wurm",
+          "keywords": [
+            "trample"
+          ]
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "trial_of_rhonas",
+      "name": "Trial of Rhonas",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "A friendly creature fights an enemy creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_hour_of_glory",
+      "name": "Rhonas's Hour of Glory",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_command",
+      "name": "Rhonas's Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Trample. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
+    },
+    {
+      "id": "rhonas_charm",
+      "name": "Rhonas's Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +4/+4.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 4,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "G"
+      ],
+      "landSet": "Rhonas",
+      "collectible": false
     },
     {
       "id": "azorius_guildgate",
