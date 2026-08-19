@@ -12497,12 +12497,11 @@
           ]
         },
         {
-          "text": "Conjure a Gruul card.",
+          "text": "Discover a Gruul card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Gruul",
-              "count": 1
+              "type": "discover",
+              "landSet": "Gruul"
             }
           ]
         }
@@ -12511,6 +12510,384 @@
         "G",
         "R"
       ]
+    },
+    {
+      "id": "borborygmos_gruul_king",
+      "name": "Borborygmos, Gruul King",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Trample. Battlecry: Deal 3 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Cyclops",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "ruric_thar_gruul_champion",
+      "name": "Ruric Thar, Gruul Champion",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Trample. Rush.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Ogre Warrior",
+      "keywords": [
+        "trample",
+        "rush"
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_ragebeast",
+      "name": "Gruul Ragebeast",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: A friendly creature fights an enemy creature.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_war_plow",
+      "name": "Gruul War Plow",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Construct",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_nodorog",
+      "name": "Gruul Nodorog",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_spellbreaker",
+      "name": "Gruul Spellbreaker",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Ogre Warrior",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_beastmaster",
+      "name": "Gruul Beastmaster",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_guildmage",
+      "name": "Gruul Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give a creature +2/+2 and Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_scrapper",
+      "name": "Gruul Scrapper",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_charm",
+      "name": "Gruul Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_war_chant",
+      "name": "Gruul War Chant",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +2/+1 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_keyrune",
+      "name": "Gruul Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 3/3 Beast with Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Beast",
+          "keywords": [
+            "trample"
+          ]
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_locket",
+      "name": "Gruul Locket",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_signet",
+      "name": "Gruul Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
+    },
+    {
+      "id": "gruul_cluestone",
+      "name": "Gruul Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false
     },
     {
       "id": "atarka_dragonspire",
