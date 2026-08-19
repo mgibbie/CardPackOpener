@@ -9736,12 +9736,11 @@
           ]
         },
         {
-          "text": "Conjure a Orzhov card.",
+          "text": "Discover an Orzhov card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Orzhov",
-              "count": 1
+              "type": "discover",
+              "landSet": "Orzhov"
             }
           ]
         }
@@ -9750,6 +9749,396 @@
         "B",
         "W"
       ]
+    },
+    {
+      "id": "obzedat_orzhov_ghost_council",
+      "name": "The Obzedat, Orzhov Ghost Council",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Lifesteal. Battlecry: Each opponent loses 3 life.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Spirit",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "kaya_orzhov_usurper",
+      "name": "Kaya, Orzhov Usurper",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Lifesteal. Battlecry: Destroy a creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "teysa_orzhov_scion",
+      "name": "Teysa, Orzhov Scion",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deathtouch. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Advisor",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_advisor",
+      "name": "Orzhov Advisor",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Human Advisor",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_ghost_drake",
+      "name": "Orzhov Ghost Drake",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spirit Drake",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_advokist",
+      "name": "Orzhov Advokist",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt. Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Advisor",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_racketeers",
+      "name": "Orzhov Racketeers",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt. Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_guildmage",
+      "name": "Orzhov Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Each opponent loses 2 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_pontiff",
+      "name": "Orzhov Pontiff",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_cleric",
+      "name": "Orzhov Cleric",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "lifesteal"
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_enforcer",
+      "name": "Orzhov Enforcer",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_gift",
+      "name": "Orzhov Gift",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Each opponent loses 3 life. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_charm",
+      "name": "Orzhov Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Destroy a creature with 3 or less Attack.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_keyrune",
+      "name": "Orzhov Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 2/2 Spirit with Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Spirit",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
+    },
+    {
+      "id": "orzhov_cluestone",
+      "name": "Orzhov Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false
     },
     {
       "id": "silverquill_campus",
