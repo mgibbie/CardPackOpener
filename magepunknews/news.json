@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "4b9dea1",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build green temples: Nylea + Rhonas pools (30 mono-green cards)",
+			"body": "Two mono-G advanced-land pools keyed by landSet:\"Nylea\"/\"Rhonas\" - completes all\n10 mono-color Theros/Amonkhet temples.\n- Nylea (the hunt): Trample beasts, +1/+1 anthems, ramp (gain-mana), beast tokens,\n  Deathtouch vipers, Fight removal (Omen), lifegain.\n- Rhonas (strength): huge Trample bodies (Wurm 8/8, Stalwart 7/7, Hydra), big +stats\n  buffs, Fight (Trial), a rare Destroy (Hour of Glory), ramp dorks. God = Deathtouch\n  + Trample + team +2/+2 anthem.\n\nGreen identity: trample/deathtouch keywords, buff (single + friendly-creatures anthem),\nfight (green removal), gain-mana ramp, big Beast/Wurm summons - all proven primitives\n(skipped adapt's pick-heavy UI). Fixed both temple taps: conjure-named -> discover landSet.\n\nNew suites nylea_pool_test.mjs + rhonas_pool_test.mjs (37 each); full suite 218 -> 220.",
+			"cards": []
+		},
+		{
 			"sha": "323f2b7",
 			"date": "2026-08-19",
 			"kind": "patch",
