@@ -138,6 +138,20 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.placeContraption(st, 0, 0, 'contraption_division_table'); E.crankSprocket(st, 0);
   ok('Division Table: opponent loses 2 life (1v1 auto-target)', st.players[1].life === L - 2, st.players[1].life); }
 
+// Inflation Station: a lone creature auto-gets +3/+3; with 2+ it opens a buff-target pick
+{ const st = game(); const c = E.instantiate(byId._m, 0); c.zone = 'board'; st.players[0].board.push(c);
+  const a0 = c.attack, h0 = E.hp(c);
+  E.placeContraption(st, 0, 0, 'contraption_inflation_station'); E.crankSprocket(st, 0);
+  ok('Inflation Station: lone creature auto-gets +3/+3', c.attack === a0 + 3 && E.hp(c) === h0 + 3, `${c.attack}/${E.hp(c)}`); }
+{ const st = game();
+  const a = E.instantiate(byId._m, 0); a.zone = 'board'; st.players[0].board.push(a);
+  const b = E.instantiate(byId._m, 0); b.zone = 'board'; st.players[0].board.push(b);
+  E.placeContraption(st, 0, 0, 'contraption_inflation_station'); E.crankSprocket(st, 0);
+  const pq = st.pickQueue[0];
+  ok('Inflation Station with 2 creatures opens a buff-target pick', pq && pq.mode === 'buff-target' && pq.attack === 3 && pq.health === 3, pq);
+  const bh = E.hp(b); E.resolvePick(st, b.uid);
+  ok('the CHOSEN creature gets +3/+3 (not both)', E.hp(b) === bh + 3 && b.attack === 5 && a.attack === 2); }
+
 // every ported Contraption fires without error (real MTG effects, all auto-resolving)
 { for (const c of E.contraptionPool(game())) {
     const st = game();

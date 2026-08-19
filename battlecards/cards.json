@@ -20425,11 +20425,12 @@
       "tribe": "Contraption",
       "id": "contraption_inflation_station",
       "name": "Inflation Station",
-      "description": "Contraption. Give your weakest creature +3/+3.",
+      "description": "Contraption: Target creature gains +3/+3.",
       "effects": [
         {
-          "type": "bolster",
-          "value": 3
+          "type": "buff-target",
+          "attack": 3,
+          "health": 3
         }
       ]
     },
@@ -20688,7 +20689,7 @@
       "tribe": "Contraption",
       "id": "contraption_hard_hat_area",
       "name": "Hard Hat Area",
-      "description": "Contraption. Assemble two random Contraptions.",
+      "description": "Contraption: Assemble twice.",
       "effects": [
         {
           "type": "assemble"

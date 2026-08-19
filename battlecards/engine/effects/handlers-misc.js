@@ -2,13 +2,14 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent } from '../../engine.js';
+import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice } from '../../engine.js';
 
 // Advance (MTG's "Venture into the Dungeon"): enter a dungeon or advance to the next room.
 register('advance', ({ state, pi }) => { advance(state, pi); });
 register('assemble', ({ state, pi }) => { assemble(state, pi); });
 register('grant-target', ({ state, pi }, e) => { grantKeywordToChoice(state, pi, e.keyword); });
 register('target-player', ({ state, pi }, e) => { targetOpponent(state, pi, e.action, e.value); });
+register('buff-target', ({ state, pi }, e) => { buffCreatureChoice(state, pi, e.attack || 0, e.health || 0); });
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'

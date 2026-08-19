@@ -3663,6 +3663,18 @@ export function targetOpponent(state, pi, action, value) {
 	emit(state, { type: 'pickStart', player: pi, count: opps.length });
 }
 
+// buff a friendly creature you CHOOSE by +attack/+health (Inflation Station): auto if 1, pick if 2+
+export function buffCreatureChoice(state, pi, attack, health) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const creatures = p.board.filter(c => c.type === 'creature' && !isDead(c));
+	if (!creatures.length) return;
+	const apply = c => { c.attack += attack; c.maxHealth += health; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); recomputeAuras(state); };
+	if (creatures.length === 1) { apply(creatures[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'buff-target', attack, health, ids: creatures.map(c => c.uid) });
+	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
+}
+
 export function resolvePick(state, id) {
 	const pend = state.pickQueue.shift();
 	if (!pend) return false;
@@ -3678,6 +3690,11 @@ export function resolvePick(state, id) {
 	}
 	if (pend.mode === 'target-player') {
 		applyPlayerAction(state, pend.player, Number(id), pend.action, pend.value);
+		return true;
+	}
+	if (pend.mode === 'buff-target') {
+		const c = state.players[pend.player].board.find(x => x.uid === id && !isDead(x));
+		if (c) { c.attack += pend.attack; c.maxHealth += pend.health; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); recomputeAuras(state); }
 		return true;
 	}
 	if (pend.advance) {
