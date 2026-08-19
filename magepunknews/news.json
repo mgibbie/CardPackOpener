@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "3d5b9ba",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Dimir (U/B) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color U/B cards keyed by landSet:\"Dimir\". Dimir identity =\nblue tempo/card-advantage + black death/disruption: Elusive \"unblockable\" infiltrators\n(Infiltrator, House Guard, Cutpurse, Spybug), hand disruption (Circu, Guildmage,\nCutpurse, Machinations = enemy-discard), Deathtouch assassins (Lazav, Doppelganger,\nKeyrune token), card selection (Informant scry+draw, Cluestone, Machinations), ramp\n(Signet, Locket), and small-creature removal (Charm = destroy maxAttack 3).\n\nFixed the guildgate tap: conjure-named match:\"Dimir\" -> discover landSet:\"Dimir\".\nNew suite dimir_pool_test.mjs (37 checks; guildgate id + U/B dual-color patch).\nFull suite 221 -> 222.",
+			"cards": []
+		},
+		{
 			"sha": "64eca28",
 			"date": "2026-08-19",
 			"kind": "patch",
