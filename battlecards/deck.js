@@ -656,7 +656,7 @@ fetch('classes.json').then(r => r.json()).then(({ classes }) => {
 	maybeInit();
 }).catch(() => {});
 
-fetch('cards.json').then(r => r.json()).then(async data => {
+fetch('cards.json', { cache: 'no-cache' }).then(r => r.json()).then(async data => {
 	const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, special: 5 };
 	cards = data.cards.filter(Col.collectible).slice().sort((a, b) =>
 		(a.cost ?? 0) - (b.cost ?? 0)

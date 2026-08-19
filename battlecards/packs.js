@@ -454,7 +454,7 @@ function animate() {
 animate();
 
 // ---------- boot ----------
-fetch('cards.json').then(r => r.json()).then(async data => {
+fetch('cards.json', { cache: 'no-cache' }).then(r => r.json()).then(async data => {
 	cards = data.cards;
 	for (const d of cards) cardsById[d.id] = d;
 	if (MP_ON) {

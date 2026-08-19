@@ -4556,7 +4556,7 @@ async function start() {
 	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
-	const data = await (await fetch('cards.json')).json();
+	const data = await (await fetch('cards.json', { cache: 'no-cache' })).json();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
 	Rec.cancel(); // a new game (or restart) discards any half-recorded tape
