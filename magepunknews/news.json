@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "3a00f8f",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Orzhov (W/B) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color B/W cards keyed by landSet:\"Orzhov\". Orzhov identity =\nwhite protection/lifegain + black death/drain: Lifesteal drain (Obzedat, Kaya, Teysa,\nAdvisor, Ghost Drake, Cleric, Keyrune Spirit), life-loss to face (Obzedat/Guildmage/\nGift Battlecry drains), removal (Kaya destroy, Charm destroy-small, Pontiff -1/-1 sweep),\nDeathtouch (Teysa, Enforcer), Taunt walls, discard (Racketeers), lifegain (Advokist).\n\nFixed the guildgate tap: conjure-named match:\"Orzhov\" -> discover landSet:\"Orzhov\".\nNew suite orzhov_pool_test.mjs (37 checks; guildgate id + B/W dual-color patch).\nFull suite 226 -> 227.",
+			"cards": []
+		},
+		{
 			"sha": "ad3ee84",
 			"date": "2026-08-19",
 			"kind": "patch",
