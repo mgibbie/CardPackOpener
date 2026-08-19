@@ -25222,20 +25222,6 @@
       "cardClass": "neutral"
     },
     {
-      "id": "assemble_a_contraption",
-      "name": "Assemble a Contraption",
-      "type": "sorcery",
-      "cost": 1,
-      "rarity": "common",
-      "cardClass": "neutral",
-      "description": "Assemble a random Contraption.",
-      "effects": [
-        {
-          "type": "assemble"
-        }
-      ]
-    },
-    {
       "type": "contraption",
       "cost": 0,
       "token": true,

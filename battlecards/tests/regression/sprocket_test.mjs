@@ -31,7 +31,6 @@ const foeLife = st => st.players[1].life;
 { const pool = E.contraptionPool(game());
   ok('a Contraption pool exists', pool.length >= 9);
   ok('every Contraption is a 0-cost, uncollectible gadget with effects', pool.every(c => c.cost === 0 && c.collectible === false && c.contraption === true && Array.isArray(c.effects) && c.effects.length)); }
-ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.some(e => e.type === 'assemble'));
 
 // Assemble: random contraption + slot pick
 { const st = game(); E.assemble(st, 0);
