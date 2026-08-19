@@ -5326,12 +5326,11 @@
           ]
         },
         {
-          "text": "Conjure a Oketra card.",
+          "text": "Discover an Oketra card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Oketra",
-              "count": 1
+              "type": "discover",
+              "landSet": "Oketra"
             }
           ]
         }
@@ -5339,6 +5338,393 @@
       "colors": [
         "W"
       ]
+    },
+    {
+      "id": "god_eternal_oketra",
+      "name": "God-Eternal Oketra",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Divine Shield. Battlecry: Summon two 4/4 Zombie Warriors with Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 4,
+          "health": 4,
+          "name": "Zombie Warrior",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_attendant",
+      "name": "Oketra's Attendant",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt. Reborn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Zombie Warrior",
+      "keywords": [
+        "taunt",
+        "reborn"
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_caracal",
+      "name": "Oketra's Caracal",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Lifesteal. Battlecry: Summon two 1/1 Cats with Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Cat",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Cat",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_avenger",
+      "name": "Oketra's Avenger",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Summon two 1/1 Warriors.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_initiate",
+      "name": "Oketra's Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_trial",
+      "name": "Oketra's Trial",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_solidarity",
+      "name": "Oketra's Solidarity",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +1/+1 and First Strike.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "first_strike"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_cartouche",
+      "name": "Oketra's Cartouche",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and First Strike. Summon a 1/1 Warrior.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "first_strike"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_charm",
+      "name": "Oketra's Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "divine_shield"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_command",
+      "name": "Oketra's Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon two 1/1 Warriors. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_invocation",
+      "name": "Oketra's Invocation",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures Reborn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "reborn"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_last_mercy",
+      "name": "Oketra's Last Mercy",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Gain 10 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 10,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_truth",
+      "name": "Oketra's Truth",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Discover an Oketra Card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "discover",
+          "landSet": "Oketra"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_light_arrow",
+      "name": "Oketra's Light Arrow",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Destroy a creature with 4 or more Attack.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "minAttack": 4
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
+    },
+    {
+      "id": "oketras_vindication",
+      "name": "Oketra's Vindication",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false
     },
     {
       "id": "temple_of_thassa",
