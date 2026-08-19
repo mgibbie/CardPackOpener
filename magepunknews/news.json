@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "59cc9fb",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Boros (R/W) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color R/W cards keyed by landSet:\"Boros\". Boros identity =\nred aggression/haste + white go-wide/combat: Rush/First Strike/Windfury aggressors\n(Elite, Recruit, Mastiff, Swiftblade, Challenger), Battlecry anthems + Rush grants\n(Razia, Battleshaper, Challenger mentor), soldier tokens (Garrison, Keyrune), burn\n(Charm 4-to-creature, Guildmage, Fury-Shield 3-to-face), Taunt/First Strike wall\n(Reckoner), Divine Shield angel (Razia).\n\nFixed the guildgate tap: conjure-named match:\"Boros\" -> discover landSet:\"Boros\".\nNew suite boros_pool_test.mjs (37 checks; guildgate id + R/W dual-color patch).\nFull suite 228 -> 229.",
+			"cards": []
+		},
+		{
 			"sha": "65c5a21",
 			"date": "2026-08-19",
 			"kind": "patch",
