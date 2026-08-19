@@ -2,6 +2,22 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "9f00847",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Golgari (B/G) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color B/G cards keyed by landSet:\"Golgari\". Golgari identity =\nblack death/recursion + green big-creatures: Deathtouch everywhere (Jarad, Vraska,\nSavra, Decoy, Longlegs, Guildmage-grant, Germination/Keyrune tokens), Trample beaters\n(Grave-Troll 6/6, Rotwurm, Raider, Jarad), Lifesteal drain (Savra, Rotwurm), Reborn\nrecursion (Findbroker), lifegain (Brownscale), removal (Vraska destroy, Charm -1/-1\nsweep = 1 to all enemy creatures), card draw.\n\nFixed the guildgate tap: conjure-named match:\"Golgari\" -> discover landSet:\"Golgari\".\nNew suite golgari_pool_test.mjs (37 checks; guildgate id + B/G dual-color patch).\nFull suite 223 -> 224.",
+			"cards": []
+		},
+		{
+			"sha": "cfa2e0c",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Delete the \"Assemble a Contraption\" demo card",
+			"body": "Removed the collectible neutral demo sorcery (assemble_a_contraption) per request;\nthe Assemble mechanic is still exercised via E.assemble() directly and the real\ncontraptions (Widget/Hard Hat Area). Dropped its now-stale sprocket_test assertion.\nNo art was associated. Suite stays 223 green.",
+			"cards": []
+		},
+		{
 			"sha": "d3cd1a4",
 			"date": "2026-08-19",
 			"kind": "patch",
