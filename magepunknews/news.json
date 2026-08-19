@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "d3cd1a4",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Rakdos (B/R) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color B/R cards keyed by landSet:\"Rakdos\". Rakdos identity =\nred aggression/burn + black sacrifice/drain: haste beaters (Cackler/Trumpeter/\nShred-Freak Rush, Exava/Pit Dragon/Lord Charge), Lifesteal demons (Lord of Riots,\nDefiler), burn (Charm, Guildmage, Firewheeler face+creature, Showstopper board wipe\n= damage all-creatures), aggressive anthem, a weapon (Riteknife), Cleave dragon.\n\nFixed the guildgate tap: conjure-named match:\"Rakdos\" -> discover landSet:\"Rakdos\".\nNew suite rakdos_pool_test.mjs (37 checks; guildgate id + B/R dual-color patch).\nFull suite 222 -> 223.",
+			"cards": []
+		},
+		{
 			"sha": "3d5b9ba",
 			"date": "2026-08-19",
 			"kind": "patch",
