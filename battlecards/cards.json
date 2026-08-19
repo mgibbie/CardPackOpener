@@ -12034,12 +12034,11 @@
           ]
         },
         {
-          "text": "Conjure a Phenax card.",
+          "text": "Discover a Phenax card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Phenax",
-              "count": 1
+              "type": "discover",
+              "landSet": "Phenax"
             }
           ]
         }
@@ -12659,12 +12658,11 @@
           ]
         },
         {
-          "text": "Conjure a Keranos card.",
+          "text": "Discover a Keranos card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Keranos",
-              "count": 1
+              "type": "discover",
+              "landSet": "Keranos"
             }
           ]
         }
@@ -13266,12 +13264,11 @@
           ]
         },
         {
-          "text": "Conjure a Kruphix card.",
+          "text": "Discover a Kruphix card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Kruphix",
-              "count": 1
+              "type": "discover",
+              "landSet": "Kruphix"
             }
           ]
         }
@@ -13847,12 +13844,11 @@
           ]
         },
         {
-          "text": "Conjure a Mogis card.",
+          "text": "Discover a Mogis card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Mogis",
-              "count": 1
+              "type": "discover",
+              "landSet": "Mogis"
             }
           ]
         }
@@ -16628,6 +16624,1580 @@
           "attack": 1,
           "health": 1,
           "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "phenax_god_of_deception",
+      "name": "Phenax, God of Deception",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Each opponent discards 2 cards.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "disciple_of_phenax",
+      "name": "Disciple of Phenax",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "phenax_charm",
+      "name": "Phenax Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "phenax_command",
+      "name": "Phenax’s Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Each opponent discards a card. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "phenax_deceit",
+      "name": "Phenax’s Deceit",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Freeze an enemy creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "phenax_blessing",
+      "name": "Phenax’s Blessing",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ]
+    },
+    {
+      "id": "phenax_treachery",
+      "name": "Phenax’s Treachery",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "golden_mask_of_phenax",
+      "name": "Golden Mask of Phenax",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Elusive. Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "spite_of_phenax",
+      "name": "Spite of Phenax",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dictate_of_phenax",
+      "name": "Dictate of Phenax",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "guardian_of_phenax",
+      "name": "Guardian of Phenax",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Taunt. Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Golem",
+      "keywords": [
+        "taunt",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "phenax_necromancer",
+      "name": "Phenax’s Necromancer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Reborn. Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Zombie Wizard",
+      "keywords": [
+        "reborn",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "hubris_of_phenax",
+      "name": "Hubris of Phenax",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Return a creature to its owner’s hand. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "black_oak_of_phenax",
+      "name": "Black Oak of Phenax",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Treefolk",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "phenax_escape",
+      "name": "Phenax’s Escape",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Phenax",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "keranos_god_of_storms",
+      "name": "Keranos, God of Storms",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Deal 3 damage to a creature and draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "bolt_of_keranos",
+      "name": "Bolt of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "stormcaller_of_keranos",
+      "name": "Stormcaller of Keranos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "oracle_of_keranos",
+      "name": "Oracle of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "epiphany_of_keranos",
+      "name": "Epiphany of Keranos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Draw 2 cards. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "wrath_of_keranos",
+      "name": "Wrath of Keranos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "visionary_of_keranos",
+      "name": "Visionary of Keranos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "divination_of_keranos",
+      "name": "Divination of Keranos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dictate_of_keranos",
+      "name": "Dictate of Keranos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "edict_of_keranos",
+      "name": "Edict of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "hymn_of_keranos",
+      "name": "Hymn of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "legend_of_keranos",
+      "name": "Legend of Keranos",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Deal 2 damage to all enemies.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "keranos_storm_herald",
+      "name": "Keranos Storm Herald",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Elusive. Charge.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "charge"
+      ]
+    },
+    {
+      "id": "knowledge_of_keranos",
+      "name": "Knowledge of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Scry 2. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "power_of_keranos",
+      "name": "Power of Keranos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Keranos",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Windfury.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "windfury"
+        }
+      ]
+    },
+    {
+      "id": "kruphix_god_of_horizons",
+      "name": "Kruphix, God of Horizons",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards and gain 2 mana this turn.",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "tribe": "God",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "courser_of_kruphix",
+      "name": "Courser of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain 3 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Centaur",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "dictate_of_kruphix",
+      "name": "Dictate of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "kruphix_insight",
+      "name": "Kruphix’s Insight",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "kydele_chosen_of_kruphix",
+      "name": "Kydele, Chosen of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "prophet_of_kruphix",
+      "name": "Prophet of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Battlecry: Gain 3 mana this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "kruphix_puzzlebox",
+      "name": "Kruphix Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Scry 3. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "kruphix_incarnation",
+      "name": "Kruphix’s Incarnation",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Elusive. Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "trample"
+      ]
+    },
+    {
+      "id": "kruphix_enigma",
+      "name": "Kruphix’s Enigma",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Draw a card. Give a creature +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "agent_of_kruphix",
+      "name": "Agent of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "kruphix_horizon_chimera",
+      "name": "Kruphix’s Horizon Chimera",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Chimera",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "kruphix_starfish",
+      "name": "Kruphix’s Starfish",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Starfish",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "sigil_of_kruphix",
+      "name": "Sigil of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Gain 3 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "cloak_of_kruphix",
+      "name": "Cloak of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "oracle_of_kruphix",
+      "name": "Oracle of Kruphix",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Kruphix",
+      "collectible": false,
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "mogis_god_of_slaughter",
+      "name": "Mogis, God of Slaughter",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Charge. Lifesteal. Battlecry: Deal 2 damage to each opponent.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "charge",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "fanatic_of_mogis",
+      "name": "Fanatic of Mogis",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Minotaur",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "mogis_favor",
+      "name": "Mogis’s Favor",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Give a creature +2/+1 and Charge.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "creature",
+          "grant": "charge"
+        }
+      ]
+    },
+    {
+      "id": "mogis_marauder",
+      "name": "Mogis’s Marauder",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Charge. Battlecry: Give your creatures Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Minotaur",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "mogis_warhound",
+      "name": "Mogis’s Warhound",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Hound",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "slaughter_priest_of_mogis",
+      "name": "Slaughter-Priest of Mogis",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "soulreaper_of_mogis",
+      "name": "Soulreaper of Mogis",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "spite_of_mogis",
+      "name": "Spite of Mogis",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "warchanter_of_mogis",
+      "name": "Warchanter of Mogis",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Minotaur",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "hymn_of_mogis",
+      "name": "Hymn of Mogis",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "red_eye_of_mogis",
+      "name": "Red Eye of Mogis",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "dictate_of_mogis",
+      "name": "Dictate of Mogis",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature. Each opponent loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "mogis_minotaur",
+      "name": "Mogis’s Minotaur",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Minotaur",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "mogis_berserker",
+      "name": "Mogis’s Berserker",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Minotaur Berserker",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "mogis_warleader",
+      "name": "Mogis’s Warleader",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Mogis",
+      "collectible": false,
+      "description": "Charge. Battlecry: Give your creatures +2/+1 and Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Minotaur",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
         }
       ]
     },
