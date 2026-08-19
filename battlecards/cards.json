@@ -9080,12 +9080,11 @@
           ]
         },
         {
-          "text": "Conjure a Azorius card.",
+          "text": "Discover an Azorius card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Azorius",
-              "count": 1
+              "type": "discover",
+              "landSet": "Azorius"
             }
           ]
         }
@@ -9094,6 +9093,398 @@
         "U",
         "W"
       ]
+    },
+    {
+      "id": "isperia_azorius_sphinx",
+      "name": "Isperia, Azorius Sphinx",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Sphinx",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "lavinia_azorius_renegade",
+      "name": "Lavinia, Azorius Renegade",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "divine_shield"
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_guildmage",
+      "name": "Azorius Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_skyguard",
+      "name": "Azorius Skyguard",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Bird Soldier",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_arrester",
+      "name": "Azorius Arrester",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_herald",
+      "name": "Azorius Herald",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_justiciar",
+      "name": "Azorius Justiciar",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Taunt. Battlecry: Freeze all enemy creatures.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Advisor",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_knight",
+      "name": "Azorius Knight",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Divine Shield. Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Knight",
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_ploy",
+      "name": "Azorius Ploy",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature Elusive. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "creature",
+          "grant": "elusive"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_charm",
+      "name": "Azorius Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw a card. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_signet",
+      "name": "Azorius Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_cluestone",
+      "name": "Azorius Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_locket",
+      "name": "Azorius Locket",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_keyrune",
+      "name": "Azorius Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 2/2 Elemental with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Elemental",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
+    },
+    {
+      "id": "azorius_arbiter",
+      "name": "Azorius Arbiter",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Return an enemy creature to its owner's hand. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false
     },
     {
       "id": "istfell_citadel",
