@@ -180,6 +180,8 @@
 		<a href="#combat">Combat</a>
 		<a href="#lands">Lands &amp; Colors</a>
 		<a href="#planes">Planes</a>
+		<a href="#dungeons">Dungeons</a>
+		<a href="#contraptions">Contraptions</a>
 		<a href="#stack">The Stack</a>
 		<a href="#tokens">Tokens &amp; Systems</a>
 		<a href="#winning">Winning</a>
@@ -311,7 +313,9 @@
 
 		<ul>
 			<li>On your turn, pay <b>3 mana</b> to develop a land into one of your <b>5 land slots</b> &mdash; and every opponent receives <a href="/designwiki/#/cards/coin">The Coin</a> as compensation.</li>
-			<li>The five basics &mdash; Plains (W), Island (U), Swamp (B), Mountain (R), Forest (G) &mdash; set your <b>color identity</b>. Advanced lands unlock only when your basics cover their colors.</li>
+			<li>The five basics &mdash; Plains (W), Island (U), Swamp (B), Mountain (R), Forest (G) &mdash; anchor your <b>color identity</b>, which is the live set of colors <i>all</i> your current lands can produce. Sacrificing a land can shed a color.</li>
+			<li><b>Upgrading a slot:</b> a blank slot can only become a basic; from there, pay 3 again (opponents get a Coin) to upgrade it into any advanced land that shares a color with the slot's current land and whose colors are all in your identity. Upgrading widens the slot, and you can re-upgrade freely. Advanced lands <b>Discover</b> from their own themed pool.</li>
+			<li>Each <b>advanced land is globally unique</b> &mdash; while anyone controls a copy, no one else can upgrade into that same land until it's freed.</li>
 			<li><b>Tapping a basic</b>, choose one: <b>gain 1 mana</b>, give a friendly creature that color's <b>Boost</b>, or <b>Conjure</b> a random card of that color into your hand.</li>
 			<li>Lands and locations <b>double-tap</b>: after tapping they stay tapped through your next turn, untapping the turn after &mdash; so each is usable roughly every other turn.</li>
 			<li>Any land can be <b>sacrificed to draw a card</b>.</li>
@@ -349,6 +353,28 @@
 			<span class="co-title">Example plane rules</span><br>
 			Stronghold Furnace doubles all combat damage &middot; Alkabah makes 4-cost spells free &middot; Belenon stops things untapping. Browse every plane in the <a href="/designwiki/#/type/plane">Card Gallery</a>.
 		</div>
+	</section>
+
+	<section id="dungeons">
+		<h2>Dungeons &amp; Advance</h2>
+		<p class="lede">Some cards let you venture through a dungeon, one room at a time.</p>
+
+		<ul>
+			<li><a href="/designwiki/#/keyword/advance">Advance</a> ventures into a dungeon. Your first Advance lets you <b>pick which dungeon</b> to enter; each later Advance moves to the <b>next room</b> (where a room branches, you choose), triggering that room's effect.</li>
+			<li>There are <b>three dungeons</b>, each a short flowchart of rooms that ends in a <b>payoff</b> room. Reaching the payoff completes the dungeon and frees you to venture a new one on your next Advance.</li>
+			<li>While venturing, an on-board panel shows your dungeon's flowchart with a marker on your current room. Browse all three &mdash; every room and effect &mdash; on the <a href="/designwiki/#/dungeons">Advance Dungeons</a> page.</li>
+		</ul>
+	</section>
+
+	<section id="contraptions">
+		<h2>Contraptions &amp; the Sprocket</h2>
+		<p class="lede">Build a little machine that fires an effect every turn.</p>
+
+		<ul>
+			<li>Your <b>Sprocket</b> is a row of <b>3 slots</b> with an indicator that cycles <b>1 &rarr; 2 &rarr; 3 &rarr; 1</b>. At the start of each of your turns the indicator's current slot fires the <a href="/designwiki/#/keyword/contraption">Contraption</a> in it (if any), then advances one slot.</li>
+			<li><a href="/designwiki/#/keyword/assemble">Assemble</a> hands you a <b>random Contraption</b> and lets you choose which slot to place it in (overwriting whatever's there). Contraptions <b>stay put</b> and re-fire each time the indicator laps back to them.</li>
+			<li>The slot you choose sets how soon it fires &mdash; place it where the indicator points for next turn, or further along to delay it. See the whole roster on the <a href="/designwiki/#/contraptions">Contraptions</a> page.</li>
+		</ul>
 	</section>
 
 	<section id="stack">
@@ -441,8 +467,10 @@
 		<p class="lede">Every keyword in the game, straight from the engine's glossary. Click a keyword to see every card that uses it in the Design Wiki.</p>
 		<dl class="kw-grid">
 	<div class="kw"><dt><a href="/designwiki/#/keyword/adapt">Adapt</a></dt><dd>Roll a d10 three times (reroll repeats); choose one of the three upgrades to give the creature.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/advance">Advance</a></dt><dd>Venture into a dungeon — enter one (your choice) or move to the next room, triggering its effect.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/alliance">Alliance</a></dt><dd>Triggers each time you play another creature.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/arrival">Arrival</a> <span class="plane-tag">Plane</span></dt><dd>A plane's effect that triggers when it arrives (becomes the active plane).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/assemble">Assemble</a></dt><dd>Add a random Contraption to a Sprocket slot of your choice (overwriting). An indicator cycles 1 → 2 → 3 → 1 each of your turns, firing the Contraption in the slot it lands on.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/avenge">Avenge</a></dt><dd>Avenge N — its effect triggers after N of your creatures have died.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/battlecry">Battlecry</a></dt><dd>Triggers an effect when you play it from your hand.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/blink">Blink</a></dt><dd>Exile a creature, then immediately return it — resetting it and retriggering its Battlecry.</dd></div>
@@ -455,26 +483,29 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/combo">Combo</a></dt><dd>A bonus effect if you already played a card this turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/connect">Connect</a></dt><dd>Triggers when this deals combat damage to a player.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/constellation">Constellation</a></dt><dd>Triggers each time you play an Enchantment.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/contraption">Contraption</a></dt><dd>A gadget loaded into your Sprocket. It stays in its slot and activates each time the indicator cycles onto it.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/cook">Cook</a></dt><dd>Create a Food token (Sacrifice, pay 2: restore 3 Health).</dd></div>
-	<div class="kw"><dt><a href="/designwiki/#/keyword/cook">Cook</a></dt><dd>Make a Food token — sacrifice it and pay 2 to restore 3 Health to your hero.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/corrupt">Corrupt</a></dt><dd>While in your hand, upgrades once you play a card that costs more than it.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/countertargetspell">Counter target spell</a> <span class="alias">(also: Counter)</span></dt><dd>When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/coven">Coven</a></dt><dd>Active while you control three or more creatures with different Attack values.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/deathrattle">Deathrattle</a></dt><dd>Triggers an effect when it dies.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/deathtouch">Deathtouch</a></dt><dd>Any damage it deals to a creature destroys that creature.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/defender">Defender</a></dt><dd>May redirect attacks on your other permanents onto itself.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/departure">Departure</a> <span class="plane-tag">Plane</span></dt><dd>A plane's effect that triggers when it leaves play.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/discover">Discover</a></dt><dd>Choose one of three cards to add to your hand.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/divineshield">Divine Shield</a></dt><dd>Ignores the first damage it would take.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/dormant">Dormant</a></dt><dd>Enters asleep: it can’t attack or be targeted, and awakens (firing its effect) after a set number of your turns.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/dredge">Dredge</a></dt><dd>Look at the bottom 3 cards of your deck and put one on top (you don't draw it).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/echo">Echo</a></dt><dd>Leaves a temporary copy in your hand when played, so you can keep replaying it while you have mana.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/elusive">Elusive</a> <span class="alias">(also: Hexproof)</span></dt><dd>Can't be targeted by spells or Hero Powers.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/emerge">Emerge</a></dt><dd>Triggers from your hand the moment this card is drawn or discovered (not from your opening hand).</dd></div>
-	<div class="kw"><dt><a href="/designwiki/#/keyword/enrich">Enrich</a></dt><dd>Create a Treasure token (Sacrifice: gain 1 mana).</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/enrich">Enrich</a></dt><dd>Create a Treasure token (Sacrifice: choose — gain 1 mana, color-boost a creature, or Discover a card of a colour).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/ephemeral">Ephemeral</a></dt><dd>Destroyed at the end of the turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/excavate">Excavate</a></dt><dd>Dig up a treasure to your hand; each Excavate is one tier higher (Common → Legendary), then loops.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/finale">Finale</a></dt><dd>A bonus effect that happens if you spent all your remaining mana to play this card.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/firebreathing">Firebreathing</a></dt><dd>Spend 1 mana any number of times: +1 Attack until end of turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/firststrike">First Strike</a> <span class="alias">(also: Swift)</span></dt><dd>Deals its combat damage first.</dd></div>
+	<div class="kw"><dt>Forgetful</dt><dd>When it attacks, there is a 50% chance it hits the wrong target instead.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/freeze">Freeze</a> <span class="alias">(also: Frozen, Freezer)</span></dt><dd>A Frozen character skips its next attack.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/frenzy">Frenzy</a></dt><dd>A one-time effect the first time this survives taking damage.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/gaze">Gaze</a></dt><dd>Gaze N — look at the top N cards of your deck and reorder them (like Scry).</dd></div>
@@ -483,12 +514,11 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/impulsive">Impulsive</a></dt><dd>Must attack — it swings on its own before your turn ends.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/inspire">Inspire</a></dt><dd>Triggers after you use your Hero Power.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/investigate">Investigate</a></dt><dd>Create a Clue token (Sacrifice, pay 2: draw a card).</dd></div>
-	<div class="kw"><dt><a href="/designwiki/#/keyword/investigate">Investigate</a></dt><dd>Make a Clue token — sacrifice it and pay 2 to draw a card.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/joust">Joust</a></dt><dd>Reveal a random creature from your deck and from the target player's deck. You win the Joust if yours costs more (or they have no creature to reveal).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/landfall">Landfall</a></dt><dd>Triggers whenever a land you control enters (you develop a land).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/lifesteal">Lifesteal</a></dt><dd>Damage it deals also heals your hero.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/luck">Luck</a></dt><dd>Flip a coin: heads the effect happens, tails it fizzles.</dd></div>
-	<div class="kw"><dt><a href="/designwiki/#/keyword/magnetic">Magnetic</a></dt><dd>Play it left of a friendly Mech to fuse their stats and text.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/magnetic">Magnetic</a></dt><dd>Drop it onto a friendly Mech to merge its stats and text onto that Mech (some can Magnetize to other tribes too).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/manathirst">Manathirst</a></dt><dd>Manathirst N — a bonus effect that activates once your mana crystals this turn reach N (whether or not you have spent them).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/medic">Medic</a></dt><dd>Medic N — restores N Health to the creatures beside it at the end of your turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/mill">Mill</a></dt><dd>Mill N — put the top N cards of a deck into its graveyard.</dd></div>
@@ -496,12 +526,14 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/morbid">Morbid</a></dt><dd>Morbid N — its effect triggers each time N creatures have died.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/outcast">Outcast</a></dt><dd>A bonus if this was the left- or right-most card in your hand when you played it.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/overheal">Overheal</a></dt><dd>A bonus that triggers when this is healed above its maximum Health.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/overkill">Overkill</a></dt><dd>When this deals more than enough damage to kill a minion on your turn, the excess triggers a bonus effect.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/overload">Overload</a></dt><dd>Locks that much of your mana next turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/pacifist">Pacifist</a></dt><dd>Can't attack.</dd></div>
 	<div class="kw"><dt>Paralyzed <span class="alias">(also: Paralyze)</span></dt><dd>A Paralyzed creature's attacks fail 50% of the time (coin flip).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/piercing">Piercing</a></dt><dd>Its attacks ignore Taunt.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/planeshift">Planeshift</a></dt><dd>Shift the arena to a random plane (the old one departs, the new one arrives). The plane is shared — nobody controls it.</dd></div>
 	<div class="kw"><dt>Planeswalk</dt><dd>Roll the planar die (needs a planeswalker or Spark). First roll each turn is free, then +1 mana each. 6 = Planeshift, 5 = Chaos, 1-4 nothing.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/plunder">Plunder</a></dt><dd>Plunder N — draw the top N cards of an opponent's deck into your hand.</dd></div>
 	<div class="kw"><dt>Poisoned</dt><dd>At the end of its controller's turn, a Poisoned creature takes 2 damage. The condition stays until it's cleansed or dies.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/poisonous">Poisonous</a></dt><dd>A creature this damages becomes Poisoned: it loses 2 Health at the end of its controller's turn (until cleansed or destroyed).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/ponder">Ponder</a></dt><dd>Triggers whenever you draw an extra card (past your first draw of the turn), Scry, Dredge or Gaze.</dd></div>
@@ -515,6 +547,7 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/sanguine">Sanguine</a></dt><dd>Banks a Blood Token whenever it attacks or is attacked.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/scry">Scry</a></dt><dd>Scry N — look at the top N cards of your deck; keep them on top or send them to the bottom.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/secret">Secret</a></dt><dd>Stays hidden until its trigger fires on the opponent's turn.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/silence">Silence</a></dt><dd>Remove a minion’s card text, keywords, enchantments, and effects, leaving a plain minion.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/spark">Spark</a></dt><dd>Unlocks Planeswalk — you may now roll the planar die on your turn.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/spelldamage">Spell Damage</a></dt><dd>Your spells deal extra damage.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/spellburst">Spellburst</a></dt><dd>A one-time effect that triggers after you cast your next spell.</dd></div>
@@ -522,12 +555,13 @@
 	<div class="kw"><dt><a href="/designwiki/#/keyword/stealth">Stealth</a></dt><dd>Can't be attacked or targeted until it attacks.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/swing">Swing</a></dt><dd>Triggers when this attacks.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/taunt">Taunt</a></dt><dd>Enemies must attack this before your other creatures.</dd></div>
+	<div class="kw"><dt><a href="/designwiki/#/keyword/timetravel">Time Travel</a></dt><dd>Transform this location into its next era (Past → Present → Future).</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/tradeable">Tradeable</a></dt><dd>Drag it onto your deck to pay 1 and draw a card.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/trample">Trample</a></dt><dd>Excess lethal damage carries over to the hero.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/venomous">Venomous</a></dt><dd>Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/ward">Ward</a></dt><dd>Ward N — an opponent must pay N extra (mana or Life) to target this.</dd></div>
 	<div class="kw"><dt><a href="/designwiki/#/keyword/windfury">Windfury</a></dt><dd>Can attack twice each turn.</dd></div>
-</dl>
+	</dl>
 	</section>
 
 	</main>
