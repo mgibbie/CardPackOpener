@@ -1,6 +1,95 @@
 {
-	"generated": "2026-08-18",
+	"generated": "2026-08-19",
 	"entries": [
+		{
+			"sha": "8619aaa",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Keywords: fix stale Enrich tooltip; dedupe Investigate/Cook",
+			"body": "Investigate, Enrich, and Cook are already keyworded (engine effects + glossary).\nBut: Enrich's tooltip still described the old Treasure Token (\"Sacrifice: gain 1\nmana\") — updated to the current 3-way choice. And Investigate/Cook each had a\nduplicate glossary entry — removed the redundant ones (kept the tagged primary).\nBumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "0e0f0c8",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Keywords: add Overkill, Dormant, Silence, Forgetful tooltips",
+			"body": "Four engine-backed mechanics appeared on cards without a glossary entry (so no\nbold/tooltip in the gallery, wiki, or in-game face): Overkill (~10 cards),\nDormant (~66), Silence (~37), Forgetful (1). Added glossary entries; bumped\ngallery ?v so the tooltips refresh.",
+			"cards": []
+		},
+		{
+			"sha": "a5a08dc",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Packs / deck builder / game: revalidate cards.json on every load",
+			"body": "The packs page, deck builder, and in-game card DB fetched cards.json with no\ncache-bust, so a returning visitor could keep a stale copy and not see newly\nadded cards. Switched to fetch('cards.json', {cache:'no-cache'}) — the browser\nrevalidates against the server each load (304 if unchanged, fresh after a\ndeploy), so new cards appear instantly for everyone with no ?v to bump.",
+			"cards": []
+		},
+		{
+			"sha": "11a6cc1",
+			"date": "2026-08-18",
+			"kind": "cards",
+			"title": "Add Offworld Vermin (3/4 Alien Beast, Taunt/Venomous, Deathrattle: Static)",
+			"body": "New collectible common neutral creature: 3-cost 3/4 Alien Beast with Taunt,\nVenomous, and Deathrattle: grant a creature you control Static (reuses the\ngrant-target target-a-creature pick). All keywords already exist. Art wired\n(art/offworld_vermin.jpg, the 294x218 art-window crop; deployed via wrangler).\n\nVerified: 3/4 with the three keywords, Deathrattle grants Static. Suite 210 green.",
+			"cards": [
+				{
+					"id": "offworld_vermin",
+					"name": "Offworld Vermin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "8e9d760",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Tomb of Annihilation: one line into the final room",
+			"body": "Both branches now converge at Sandfall Cell before the payoff: Oubliette ->\nSandfall Cell (was -> Cradle). So only Sandfall Cell points at Cradle of the\nDeath God, and the flowchart shows a single line into the last room instead of\ntwo. Still 5 rooms; the dungeon walks to completion via either branch.\n\ndungeon_test 22/22 (it walks the Veils path, unaffected). Suite 210 green.\nBumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "e554519",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: Jamming Device text; Genetic Recombinator cross-swap",
+			"body": "- Jamming Device -> \"Contraption: Freeze all creatures you don't control\"\n  (text; it already freezes enemy-creatures).\n- Genetic Recombinator -> \"A random creature you control swaps stats with a\n  random creature you don't control\". New `swap-stats-cross` effect: swaps\n  attack/current-health between a random friendly and a random enemy creature\n  (auto, no-op if either side is empty).\n\nTests: sprocket_test +1 (5/1 friendly and 1/5 enemy swap to 1/5 and 5/1);\neffect count 1112 -> 1113. Suite 210 green; AI sim clean. Bumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "7c5b328",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: Hard Hat Area text; Inflation Station now targets",
+			"body": "- Hard Hat Area -> \"Contraption: Assemble twice.\" (text).\n- Inflation Station -> \"Contraption: Target creature gains +3/+3\", now targeted:\n  new `buff-target` effect {attack,health} -> buffCreatureChoice (core.js), a\n  lone creature auto-gets it, 2+ opens a buff-target pick; resolvePick branch +\n  game.js modal; AI resolves via the generic pick path.\n\nTests: sprocket_test +3 (lone-creature auto, 2-creature target pick, Division\n1v1); effect count 1111 -> 1112. Suite 210 green; AI sim clean. Bumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "8f8271d",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraption reword: Boomflinger / Division Table / Arms Depot",
+			"body": "- Boomflinger -> \"Each opponent loses 3 life\" (text; it already hits every\n  opponent via enemy-heroes).\n- Division Table -> \"Target player loses 2 life\", now genuinely targeted:\n  target-player gained a `damage` action (applyPlayerAction -> damageHero),\n  auto in 1v1, a pick in a free-for-all. Modal shows \"loses N life\".\n- Arms Depot -> \"Bolster 2\".\n\nTest: sprocket_test +1 (Division Table 1v1 auto-damage). Suite 210 green; AI\nsim clean. Bumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "750849e",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Hypnotic Swirly Disc + Insufferable Syphon: choose which player",
+			"body": "Both now genuinely target a player: auto in 1v1, a pick among opponents in a\nfree-for-all (matching the descriptions). New `target-player` effect\n{action:'mill'|'discard', value} -> targetOpponent() (core.js): 1 opponent\nauto-applies, 2+ opens a pick; resolvePick 'target-player' + a game.js modal;\nAI resolves via the generic pick path. mill/enemy-discard handlers gained an\n`e.player` option to hit a chosen player.\n\nTests: sprocket_test +4 (1v1 auto mill/discard, 3-player pick targets only the\nchosen opponent); effect count 1110 -> 1111. Suite 210 green; AI sim clean.\nBumped gallery ?v.",
+			"cards": []
+		},
+		{
+			"sha": "84b28e0",
+			"date": "2026-08-18",
+			"kind": "patch",
+			"title": "Contraptions: Turbo-Thwacking targets (not random); reword 4 descriptions",
+			"body": "- Turbo-Thwacking Auto-Hammer now lets YOU pick the creature that gains Windfury\n  instead of a random one. New `grant-target` effect: when a contraption fires it,\n  a lone creature auto-gets the keyword; with 2+ it opens a target pick\n  (grantKeywordToChoice + resolvePick 'grant-target' + a game.js pick modal; the\n  AI resolves via the generic pick path). Description -> \"Contraption: Target\n  creature you control gains Windfury.\"\n- Reworded: Widget \"Contraption: Assemble.\", Hypnotic Swirly Disc \"Contraption:\n  Target player mills 2.\", Insufferable Syphon \"Contraption: Target player\n  discards a card.\"\n\nTests: sprocket_test +1 (lone-creature auto vs 2-creature target pick);\neffect count 1109 -> 1110. Suite 210 green; AI sim clean. Bumped gallery ?v.",
+			"cards": []
+		},
 		{
 			"sha": "7d4a320",
 			"date": "2026-08-18",
