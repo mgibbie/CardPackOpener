@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "32b31e1",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Theros temple pools batch 2: Phenax/Keranos/Kruphix/Mogis",
+			"body": "60 uncollectible dual-color cards keyed by landSet Phenax(U/B)/Keranos(U/R)/\nKruphix(G/U)/Mogis(B/R), Theros-flavored to each god:\n- Phenax (U/B): deception - Elusive/Deathtouch, discard, freeze, bounce, removal, Reborn.\n- Keranos (U/R): storms - burn (targeted/AoE/face), draw/scry, Elusive, Windfury.\n- Kruphix (G/U): horizons - ramp (gain-mana), heavy draw/scry, big Elusive/Trample, +1/+1.\n- Mogis (B/R): slaughter - Rush/Charge haste, burn, Lifesteal drain, aggressive anthems.\n\nFixed 4 temple taps: conjure-named -> discover landSet. Built via build_theros4b.mjs\n(spliced before bant_citadel). 4 new pool tests (37 each); suite 234 -> 238.",
+			"cards": []
+		},
+		{
 			"sha": "95ca425",
 			"date": "2026-08-19",
 			"kind": "patch",
