@@ -4870,12 +4870,11 @@
           ]
         },
         {
-          "text": "Conjure a Heliod card.",
+          "text": "Discover a Heliod card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Heliod",
-              "count": 1
+              "type": "discover",
+              "landSet": "Heliod"
             }
           ]
         }
@@ -4883,6 +4882,420 @@
       "colors": [
         "W"
       ]
+    },
+    {
+      "id": "heliod_god_of_the_sun",
+      "name": "Heliod, God of the Sun",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Divine Shield. Battlecry: Summon two 2/1 Clerics with Taunt.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Cleric",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliod_sun_crowned",
+      "name": "Heliod, Sun-Crowned",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Divine Shield. Battlecry: Give a creature +2/+2 and Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "chosen_by_heliod",
+      "name": "Chosen by Heliod",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "dictate_of_heliod",
+      "name": "Dictate of Heliod",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "evangel_of_heliod",
+      "name": "Evangel of Heliod",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Summon three 1/1 Soldiers.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_emissary",
+      "name": "Heliod's Emissary",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_pilgrim",
+      "name": "Heliod's Pilgrim",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Discover a Heliod Card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "landSet": "Heliod"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_intervention",
+      "name": "Heliod's Intervention",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Gain 6 life. Discover a Heliod Card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 6,
+          "target": "self"
+        },
+        {
+          "type": "discover",
+          "landSet": "Heliod"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_punishment",
+      "name": "Heliod's Punishment",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature Pacifist (it can't attack).",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "pacifist",
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "ordeal_of_heliod",
+      "name": "Ordeal of Heliod",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +3/+3. Gain 5 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "spear_of_heliod",
+      "name": "Spear of Heliod",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Give your creatures +1/+1 and Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_generosity",
+      "name": "Heliod's Generosity",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon two 2/1 Clerics with Taunt. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Cleric",
+          "keywords": [
+            "taunt"
+          ]
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_radiant_dawn",
+      "name": "Heliod's Radiant Dawn",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 4 life. Summon two 1/1 Clerics with Taunt.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        },
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Cleric",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "heliods_warped_eclipse",
+      "name": "Heliod's Warped Eclipse",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Silence all enemy creatures. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
+    },
+    {
+      "id": "betrayal_of_heliod",
+      "name": "Betrayal of Heliod",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false
     },
     {
       "id": "temple_of_oketra",
