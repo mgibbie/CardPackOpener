@@ -6612,12 +6612,11 @@
           ]
         },
         {
-          "text": "Conjure a Erebos card.",
+          "text": "Discover an Erebos card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Erebos",
-              "count": 1
+              "type": "discover",
+              "landSet": "Erebos"
             }
           ]
         }
@@ -6655,12 +6654,11 @@
           ]
         },
         {
-          "text": "Conjure a Bontu card.",
+          "text": "Discover a Bontu card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Bontu",
-              "count": 1
+              "type": "discover",
+              "landSet": "Bontu"
             }
           ]
         }
@@ -6668,6 +6666,761 @@
       "colors": [
         "B"
       ]
+    },
+    {
+      "id": "erebos_god_of_the_dead",
+      "name": "Erebos, God of the Dead",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent. Draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "anikthea_hand_of_erebos",
+      "name": "Anikthea, Hand of Erebos",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Battlecry: Summon two 3/3 Zombies with Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Zombie God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Zombie",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "erebos_titan",
+      "name": "Erebos's Titan",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Reborn.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Giant",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "erebos_emissary",
+      "name": "Erebos's Emissary",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Snake",
+      "keywords": [
+        "lifesteal"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "agent_of_erebos",
+      "name": "Agent of Erebos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Zombie",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "dictate_of_erebos",
+      "name": "Dictate of Erebos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "erebos_intervention",
+      "name": "Erebos's Intervention",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Deal 4 damage to a creature. Gain 4 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "whip_of_erebos",
+      "name": "Whip of Erebos",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Your creatures gain Lifesteal. Summon a 3/3 Zombie.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "lifesteal"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Zombie"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "claim_of_erebos",
+      "name": "Claim of Erebos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 4/4 Zombie with Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Zombie",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "bleak_heart_of_erebos",
+      "name": "Bleak Heart of Erebos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Each opponent loses 3 life. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "boon_of_erebos",
+      "name": "Boon of Erebos",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "ordeal_of_erebos",
+      "name": "Ordeal of Erebos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2. Each opponent discards a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "omen_of_erebos",
+      "name": "Omen of Erebos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Zombie",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "scourgemark_of_erebos",
+      "name": "Scourgemark of Erebos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+2. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "hymn_of_erebos",
+      "name": "Hymn of Erebos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Each opponent discards 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false
+    },
+    {
+      "id": "god_eternal_bontu",
+      "name": "God-Eternal Bontu",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Lifesteal. Battlecry: Each opponent loses 4 life. Draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Zombie God",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontu_initiate",
+      "name": "Bontu Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontu_acolyte",
+      "name": "Bontu Acolyte",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "lifesteal"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_mummification",
+      "name": "Bontu's Mummification",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Reborn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Zombie",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "river_crocodile_of_bontu",
+      "name": "River Crocodile of Bontu",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Crocodile",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_last_reckoning",
+      "name": "Bontu's Last Reckoning",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "ambition_of_bontu",
+      "name": "Ambition of Bontu",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_cartouche",
+      "name": "Bontu's Cartouche",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_scarab_swarm",
+      "name": "Bontu's Scarab Swarm",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon three 1/1 Insects with Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Insect",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_painful_lesson",
+      "name": "Bontu's Painful Lesson",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw a card. Each opponent loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_maelstrom",
+      "name": "Bontu's Maelstrom",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Each opponent loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "sacrifice_to_bontu",
+      "name": "Sacrifice to Bontu",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Draw two cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "bontus_despark",
+      "name": "Bontu's Despark",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Destroy a creature with 4 or more Attack.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "minAttack": 4
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "barren_heart_of_bontu",
+      "name": "Barren Heart of Bontu",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Each opponent discards a card and loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
+    },
+    {
+      "id": "vindication_of_bontu",
+      "name": "Vindication of Bontu",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Destroy a creature. Each opponent discards a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false
     },
     {
       "id": "temple_of_hazoret",
