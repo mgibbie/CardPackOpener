@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "64eca28",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Azorius (W/U) guildgate pool - first two-color land (15 cards)",
+			"body": "15 uncollectible dual-color W/U cards keyed by landSet:\"Azorius\" - the first\ntwo-color guildgate pool (mono temples were the template; Abzan is the 3-color one).\nAzorius identity = white order/protection + blue tempo/card-advantage: Elusive flyers\n(Sphinx, Skyguard, Herald), detain via Freeze (Guildmage, Arrester, Justiciar mass),\nDivine Shield/Taunt walls (Lavinia, Knight), card draw + lifegain + ramp (Charm, Ploy,\nSignet, Cluestone, Locket), a token-maker (Keyrune), and a bounce+draw control finisher\n(Arbiter). All proven primitives from the white + blue palettes.\n\nFixed the guildgate tap: conjure-named match:\"Azorius\" -> discover landSet:\"Azorius\"\n(the guildgate already has W+U boost taps, so its color identity is unchanged).\n\nNew suite azorius_pool_test.mjs (37 checks; patched from the mono template for the\nguildgate id + dual-color W/U check). Full suite 220 -> 221.",
+			"cards": []
+		},
+		{
 			"sha": "4b9dea1",
 			"date": "2026-08-19",
 			"kind": "patch",
