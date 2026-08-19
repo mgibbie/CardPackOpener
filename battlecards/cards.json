@@ -13949,12 +13949,11 @@
           ]
         },
         {
-          "text": "Conjure a Pharika card.",
+          "text": "Discover a Pharika card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Pharika",
-              "count": 1
+              "type": "discover",
+              "landSet": "Pharika"
             }
           ]
         }
@@ -15013,12 +15012,11 @@
           ]
         },
         {
-          "text": "Conjure a Klothys card.",
+          "text": "Discover a Klothys card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Klothys",
-              "count": 1
+              "type": "discover",
+              "landSet": "Klothys"
             }
           ]
         }
@@ -15066,12 +15064,11 @@
           ]
         },
         {
-          "text": "Conjure a Xenagos card.",
+          "text": "Discover a Xenagos card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Xenagos",
-              "count": 1
+              "type": "discover",
+              "landSet": "Xenagos"
             }
           ]
         }
@@ -18198,6 +18195,1163 @@
           "health": 1,
           "target": "friendly-creatures",
           "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "pharika_god_of_affliction",
+      "name": "Pharika, God of Affliction",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch. Lifesteal. Battlecry: Summon a 1/1 Snake with Deathtouch.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "deathtouch",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Snake",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pharikas_chosen",
+      "name": "Pharika’s Chosen",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "pharikas_cure",
+      "name": "Pharika’s Cure",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Gain 5 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_disciple",
+      "name": "Pharika’s Disciple",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Taunt. Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "taunt",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "pharikas_libation",
+      "name": "Pharika’s Libation",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Each opponent discards a card. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_mender",
+      "name": "Pharika’s Mender",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Centaur",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_spawn",
+      "name": "Pharika’s Spawn",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "pharikas_gorgon",
+      "name": "Pharika’s Gorgon",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch. Taunt.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Gorgon",
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
+    },
+    {
+      "id": "pharikas_infusion",
+      "name": "Pharika’s Infusion",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_hydra",
+      "name": "Pharika’s Hydra",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Trample. Deathtouch.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Hydra",
+      "keywords": [
+        "trample",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "pharikas_heirophant",
+      "name": "Pharika’s Heirophant",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +1/+1 and Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_viper",
+      "name": "Pharika’s Viper",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Poisonous. Elusive.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Snake",
+      "keywords": [
+        "poisonous",
+        "elusive"
+      ]
+    },
+    {
+      "id": "pharikas_malady",
+      "name": "Pharika’s Malady",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deal 2 damage to all enemy creatures. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "pharikas_basilisk",
+      "name": "Pharika’s Basilisk",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch. Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Basilisk",
+      "keywords": [
+        "deathtouch",
+        "trample"
+      ]
+    },
+    {
+      "id": "pharikas_manticore",
+      "name": "Pharika’s Manticore",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Pharika",
+      "collectible": false,
+      "description": "Deathtouch. Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Manticore",
+      "keywords": [
+        "deathtouch",
+        "rush"
+      ]
+    },
+    {
+      "id": "xenagos_god_of_revels",
+      "name": "Xenagos, God of Revels",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Charge. Battlecry: Give your creatures +2/+2 and Rush.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "xenagos_fanatic",
+      "name": "Xenagos Fanatic",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Satyr",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "xenagos_reveler",
+      "name": "Xenagos Reveler",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Battlecry: Summon two 2/2 Satyrs.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Satyr",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Satyr"
+        }
+      ]
+    },
+    {
+      "id": "xenagos_ascendancy",
+      "name": "Xenagos Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Give your creatures +2/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "mischief_of_xenagos",
+      "name": "Mischief of Xenagos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "mayhem_of_xenagos",
+      "name": "Mayhem of Xenagos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Give your creatures +1/+1 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "xenagos_charm",
+      "name": "Xenagos Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Give a creature +3/+3.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "xenagos_command",
+      "name": "Xenagos Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Summon a 3/3 Satyr with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Satyr",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xenagos_temple_guardian",
+      "name": "Xenagos Temple Guardian",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Taunt. Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "trample"
+      ]
+    },
+    {
+      "id": "blessing_of_xenagos",
+      "name": "Blessing of Xenagos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "hymn_of_xenagos",
+      "name": "Hymn of Xenagos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "legend_of_xenagos",
+      "name": "Legend of Xenagos",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Trample. Charge.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "charge"
+      ]
+    },
+    {
+      "id": "xenagos_puzzlebox",
+      "name": "Xenagos Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Summon two 2/2 Beasts with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Beast",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xenagos_satyr",
+      "name": "Xenagos Satyr",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Satyr",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "xenagos_hoplite",
+      "name": "Xenagos Hoplite",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Xenagos",
+      "collectible": false,
+      "description": "Charge.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Satyr Soldier",
+      "keywords": [
+        "charge"
+      ]
+    },
+    {
+      "id": "klothys_god_of_destiny",
+      "name": "Klothys, God of Destiny",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Trample. Charge. Battlecry: Gain 2 mana this turn and draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "trample",
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "klothys_design",
+      "name": "Klothys’s Design",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Gain 3 mana this turn. Give a creature +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "klothys_charm",
+      "name": "Klothys Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "klothys_command",
+      "name": "Klothys Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Deal 2 damage to a creature. Gain 2 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "calix_servant_of_klothys",
+      "name": "Calix, Servant of Klothys",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Battlecry: A friendly creature fights an enemy creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "reckoning_of_klothys",
+      "name": "Reckoning of Klothys",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Each opponent loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "klothys_puzzlebox",
+      "name": "Klothys Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Summon a 3/3 Beast with Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Beast",
+          "keywords": [
+            "trample"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "klothys_runemark",
+      "name": "Klothys Runemark",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "hymn_of_klothys",
+      "name": "Hymn of Klothys",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "klothys_seal",
+      "name": "Klothys’s Seal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain 3 mana this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "klothys_fateweaver",
+      "name": "Klothys’s Fateweaver",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "triumph_of_klothys",
+      "name": "Triumph of Klothys",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Give your creatures +2/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "klothys_will",
+      "name": "Klothys’s Will",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "klothys_destiny_spinner",
+      "name": "Klothys’s Destiny Spinner",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "maelstrom_of_klothys",
+      "name": "Maelstrom of Klothys",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Klothys",
+      "collectible": false,
+      "description": "Deal 4 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
         }
       ]
     },
