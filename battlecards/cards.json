@@ -5762,12 +5762,11 @@
           ]
         },
         {
-          "text": "Conjure a Thassa card.",
+          "text": "Discover a Thassa card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Thassa",
-              "count": 1
+              "type": "discover",
+              "landSet": "Thassa"
             }
           ]
         }
@@ -5805,12 +5804,11 @@
           ]
         },
         {
-          "text": "Conjure a Kefnet card.",
+          "text": "Discover a Kefnet card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Kefnet",
-              "count": 1
+              "type": "discover",
+              "landSet": "Kefnet"
             }
           ]
         }
@@ -5818,6 +5816,772 @@
       "colors": [
         "U"
       ]
+    },
+    {
+      "id": "thassa_god_of_the_sea",
+      "name": "Thassa, God of the Sea",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_devourer",
+      "name": "Thassa's Devourer",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Octopus",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_emissary",
+      "name": "Thassa's Emissary",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "kenessos_priest_of_thassa",
+      "name": "Kenessos, Priest of Thassa",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Scry 3.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_oracle",
+      "name": "Thassa's Oracle",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Scry 3.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_mystic",
+      "name": "Thassa's Mystic",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_serpent",
+      "name": "Thassa's Serpent",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "tribe": "Serpent",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_leviathan",
+      "name": "Thassa's Leviathan",
+      "cardClass": "magepunk",
+      "cost": 8,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Freeze all enemy creatures.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Leviathan",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "bident_of_thassa",
+      "name": "Bident of Thassa",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Draw a card. Your creatures gain Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "ordeal_of_thassa",
+      "name": "Ordeal of Thassa",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +2/+2. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_bounty",
+      "name": "Thassa's Bounty",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Gain 3 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_intervention",
+      "name": "Thassa's Intervention",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Scry 2. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_ire",
+      "name": "Thassa's Ire",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "thassas_rebuff",
+      "name": "Thassa's Rebuff",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Return an enemy creature to its owner's hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "tidal_wave",
+      "name": "Tidal Wave",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Freeze all enemy creatures. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false
+    },
+    {
+      "id": "god_eternal_kefnet",
+      "name": "God-Eternal Kefnet",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_drake",
+      "name": "Kefnet's Drake",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Drake",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "mindful_ibis_of_kefnet",
+      "name": "Mindful Ibis of Kefnet",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_scribe",
+      "name": "Kefnet's Scribe",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "acolyte_of_kefnet",
+      "name": "Acolyte of Kefnet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_last_word",
+      "name": "Kefnet's Last Word",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Return an enemy creature to its owner's hand. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "cartouche_of_knowledge",
+      "name": "Cartouche of Knowledge",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Give a creature +1/+1 and Elusive. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "elusive"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_command",
+      "name": "Kefnet's Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw a card. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_charm",
+      "name": "Kefnet's Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw a card. Return an enemy creature to its owner's hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_flood",
+      "name": "Kefnet's Flood",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Freeze all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_boltbend",
+      "name": "Kefnet's Boltbend",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Freeze an enemy creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_puzzlebox",
+      "name": "Kefnet's Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Scry 3. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "cluestone_of_kefnet",
+      "name": "Cluestone of Kefnet",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_rebuke",
+      "name": "Kefnet's Rebuke",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Return an enemy creature to its owner's hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
+    },
+    {
+      "id": "kefnets_epiphany",
+      "name": "Kefnet's Epiphany",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Draw 3 cards. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false
     },
     {
       "id": "temple_of_erebos",
