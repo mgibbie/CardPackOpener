@@ -10319,12 +10319,11 @@
           ]
         },
         {
-          "text": "Conjure a Dimir card.",
+          "text": "Discover a Dimir card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Dimir",
-              "count": 1
+              "type": "discover",
+              "landSet": "Dimir"
             }
           ]
         }
@@ -10333,6 +10332,387 @@
         "B",
         "U"
       ]
+    },
+    {
+      "id": "circu_dimir_lobotomist",
+      "name": "Circu, Dimir Lobotomist",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Each opponent discards 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "lazav_dimir_mastermind",
+      "name": "Lazav, Dimir Mastermind",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Elusive. Deathtouch.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_cutpurse",
+      "name": "Dimir Cutpurse",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive. Battlecry: Each opponent discards a card. Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_guildmage",
+      "name": "Dimir Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_infiltrator",
+      "name": "Dimir Infiltrator",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_house_guard",
+      "name": "Dimir House Guard",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Skeleton",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_informant",
+      "name": "Dimir Informant",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Scry 2. Draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_doppelganger",
+      "name": "Dimir Doppelganger",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_spybug",
+      "name": "Dimir Spybug",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Insect",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_charm",
+      "name": "Dimir Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Destroy a creature with 3 or less Attack.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_cluestone",
+      "name": "Dimir Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_keyrune",
+      "name": "Dimir Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 2/2 Assassin with Elusive and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Assassin",
+          "keywords": [
+            "elusive",
+            "deathtouch"
+          ]
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_locket",
+      "name": "Dimir Locket",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_signet",
+      "name": "Dimir Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
+    },
+    {
+      "id": "dimir_machinations",
+      "name": "Dimir Machinations",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Scry 3. Each opponent discards a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false
     },
     {
       "id": "silumgar_dragonspire",
