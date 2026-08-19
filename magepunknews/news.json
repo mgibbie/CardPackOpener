@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "bdf2118",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Theros temple pools batch 3 (final): Pharika/Xenagos/Klothys",
+			"body": "45 uncollectible dual-color cards keyed by landSet Pharika(B/G)/Xenagos(R/G)/\nKlothys(R/G) - completes all 11 two-color Theros god-temples.\n- Pharika (B/G): affliction - Deathtouch/Poisonous snakes, Lifesteal drain, big beasts,\n  recursion, discard, board-clear + lifegain.\n- Xenagos (R/G): revels - Rush/Charge haste, Trample beasts, Satyr tokens, +stats/haste\n  anthems, huge trampler.\n- Klothys (R/G): destiny - ramp (gain-mana), Trample, Fight (Calix), burn, +1/+1 anthems.\n\nFixed 3 temple taps: conjure-named -> discover landSet. Built via build_theros3c.mjs.\n3 new pool tests (37 each); suite 238 -> 241. All 11 two-color Theros temples now built.",
+			"cards": []
+		},
+		{
 			"sha": "32b31e1",
 			"date": "2026-08-19",
 			"kind": "patch",
