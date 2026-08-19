@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "ad3ee84",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Selesnya (G/W) guildgate pool (15 cards)",
+			"body": "15 uncollectible dual-color G/W cards keyed by landSet:\"Selesnya\". Selesnya identity =\ngreen big-creatures/ramp + white go-wide/protection/lifegain: token swarm (Evangel,\nEulogist, Gardener, Charm, Keyrune Saprolings/Wolf), +1/+1 anthems (Guildmage, Bloom\nHulk, Emmara +DivineShield), Taunt/Divine Shield walls (Sentry, Guardian, Trostani),\nlifegain (Trostani), a board-ping archer (Sagittar), ramp (Signet, Locket), draw.\n\nFixed the guildgate tap: conjure-named match:\"Selesnya\" -> discover landSet:\"Selesnya\".\nNew suite selesnya_pool_test.mjs (37 checks; guildgate id + G/W dual-color patch).\nFull suite 225 -> 226.",
+			"cards": []
+		},
+		{
 			"sha": "9693b9b",
 			"date": "2026-08-19",
 			"kind": "patch",
