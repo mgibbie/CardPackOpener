@@ -133,6 +133,13 @@ ok('demo card carries the assemble effect', byId.assemble_a_contraption.effects.
   E.resolvePick(st, '2');
   ok('only the CHOSEN opponent (player 2) is milled', st.players[2].deck.length === 2 && st.players[1].deck.length === 4); }
 
+// Genetic Recombinator: a random friendly swaps stats with a random enemy
+{ const st = game();
+  const mine = E.instantiate({ id: '_x', name: 'X', type: 'creature', cost: 1, attack: 5, health: 1 }, 0); mine.zone = 'board'; st.players[0].board.push(mine);
+  const foe = E.instantiate({ id: '_y', name: 'Y', type: 'creature', cost: 1, attack: 1, health: 5 }, 1); foe.zone = 'board'; st.players[1].board.push(foe);
+  E.placeContraption(st, 0, 0, 'contraption_genetic_recombinator'); E.crankSprocket(st, 0);
+  ok('Genetic Recombinator swaps stats across the two sides', mine.attack === 1 && E.hp(mine) === 5 && foe.attack === 5 && E.hp(foe) === 1, `${mine.attack}/${E.hp(mine)} vs ${foe.attack}/${E.hp(foe)}`); }
+
 // Division Table: 1v1 auto-targets the opponent for 2 damage
 { const st = game(); const L = st.players[1].life;
   E.placeContraption(st, 0, 0, 'contraption_division_table'); E.crankSprocket(st, 0);

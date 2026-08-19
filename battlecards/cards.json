@@ -20612,15 +20612,10 @@
       "tribe": "Contraption",
       "id": "contraption_genetic_recombinator",
       "name": "Genetic Recombinator",
-      "description": "Contraption. Give your two weakest creatures +2/+2.",
+      "description": "Contraption: A random creature you control swaps stats with a random creature you don't control.",
       "effects": [
         {
-          "type": "bolster",
-          "value": 2
-        },
-        {
-          "type": "bolster",
-          "value": 2
+          "type": "swap-stats-cross"
         }
       ]
     },
@@ -20634,7 +20629,7 @@
       "tribe": "Contraption",
       "id": "contraption_jamming_device",
       "name": "Jamming Device",
-      "description": "Contraption. Freeze the enemy’s creatures.",
+      "description": "Contraption: Freeze all creatures you don't control.",
       "effects": [
         {
           "type": "freeze",

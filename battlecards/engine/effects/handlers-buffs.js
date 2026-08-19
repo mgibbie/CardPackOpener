@@ -407,6 +407,19 @@ register('swap-stats', ({ state, pi, target, source, enemies, scaled, hm, pickEn
 			}
 });
 
+// Genetic Recombinator: a random creature you control swaps stats with a random creature you don't
+register('swap-stats-cross', ({ state, pi, enemies }, e) => {
+	const mine = state.players[pi].board.filter(c => c.type === 'creature' && !isDead(c));
+	const theirs = enemies.flatMap(o => state.players[o].board.filter(c => c.type === 'creature' && !isDead(c)));
+	if (!mine.length || !theirs.length) return;
+	const a = mine[Math.floor(state.rng() * mine.length)], b = theirs[Math.floor(state.rng() * theirs.length)];
+	const aa = a.attack, ah = hp(a), ba = b.attack, bh = hp(b);
+	a.attack = ba; a.maxHealth = bh; a.damage = 0; a.tempAttack = 0; a.tempHealth = 0;
+	b.attack = aa; b.maxHealth = ah; b.damage = 0; b.tempAttack = 0; b.tempHealth = 0;
+	emit(state, { type: 'buff', uid: a.uid, attack: a.attack, hp: hp(a) });
+	emit(state, { type: 'buff', uid: b.uid, attack: b.attack, hp: hp(b) });
+});
+
 
 register('buff-deck-tribe', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Shan'do Wildclaw: give a tribe in your deck +X/+X (applied as they're drawn)
