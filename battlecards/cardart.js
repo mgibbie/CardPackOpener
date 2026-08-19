@@ -651,9 +651,11 @@ function wrapText(ctx, text, maxW, maxLines) {
 	if (lines.length > maxLines) { lines.length = maxLines; lines[maxLines - 1] = fitText(ctx, lines[maxLines - 1] + '…', maxW); }
 	return lines;
 }
-// current = the room id to highlight (in-game "you are here"); optional
-export function drawDungeonFace(ctx, card, W, H, current) {
-	const dg = DUNGEONS[card.id];
+// current = the room id to highlight (in-game "you are here"); optional.
+// dungeonsOverride lets a caller (the wiki) pass freshly-loaded data, bypassing
+// this module's cached static import of dungeons.js.
+export function drawDungeonFace(ctx, card, W, H, current, dungeonsOverride) {
+	const dg = (dungeonsOverride || DUNGEONS)[card.id];
 	const th = DUNGEON_THEME[card.id] || DUNGEON_THEME.lost_mine;
 	const g = ctx.createLinearGradient(0, 0, 0, H);
 	g.addColorStop(0, th.bg1); g.addColorStop(1, th.bg2);
@@ -709,7 +711,7 @@ export function drawCardFace(card, opts = {}) {
 	const c = document.createElement('canvas');
 	c.width = W; c.height = H;
 	const ctx = c.getContext('2d');
-	if (card.type === 'dungeon') { drawDungeonFace(ctx, card, W, H, opts.currentRoom); return c; }
+	if (card.type === 'dungeon') { drawDungeonFace(ctx, card, W, H, opts.currentRoom, opts.dungeons); return c; }
 
 	const rarity = RARITY_COLORS[card.rarity] || RARITY_COLORS.common;
 	const typeCol = TYPE_COLORS[card.type] || '#444';

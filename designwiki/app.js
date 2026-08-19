@@ -797,7 +797,7 @@ async function dungeonsView() {
   }, titleCase(sz));
   const sections = dcards.map(card => {
     const d = DUNGEONS[card.id];
-    const face = CardArt.drawCardFace(card); // the flowchart card face (canvas)
+    const face = CardArt.drawCardFace(card, { dungeons: DUNGEONS }); // pass fresh (cache-busted) dungeon data
     Object.assign(face.style, { width: faceW + 'px', maxWidth: '100%', height: 'auto', borderRadius: '16px', boxShadow: '0 6px 22px rgba(0,0,0,0.5)' });
     const rooms = d ? Object.entries(d.rooms).map(([rid, r]) => {
       const nexts = (r.next || []).map(nid => (d.rooms[nid] && d.rooms[nid].name) || nid);
