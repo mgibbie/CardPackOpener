@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "61867e1",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build Simic (G/U) guildgate pool (15 cards) - completes all 10 guildgates",
+			"body": "15 uncollectible dual-color G/U cards keyed by landSet:\"Simic\". Simic identity =\ngreen big-creatures/ramp/counters + blue card-advantage/evasion: +1/+1 \"graft/evolve\"\nbuffs (Ascendancy anthem, Charm, Initiate/Fluxmage/Guildmage/Manipulator/Growth Chamber),\nbig evasive/Trample bodies (Sky Swallower 6/6 Elusive+Trample, Ragworm, Basilisk\nDeathtouch, Keyrune Elusive Crab), card draw (Momir Vig, Guildmage, Cluestone, Locket),\nramp (Signet, Locket, Growth Chamber). All real Ravnica Simic cards.\n\nFixed the guildgate tap: conjure-named match:\"Simic\" -> discover landSet:\"Simic\".\nNew suite simic_pool_test.mjs (37 checks; guildgate id + G/U dual-color patch).\nFull suite 229 -> 230. ALL 10 two-color guildgates now built (150 guild cards).",
+			"cards": []
+		},
+		{
 			"sha": "59cc9fb",
 			"date": "2026-08-19",
 			"kind": "patch",
