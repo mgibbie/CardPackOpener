@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "323f2b7",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build red temples: Hazoret + Purphoros pools (30 mono-red cards)",
+			"body": "Two mono-R advanced-land pools keyed by landSet:\"Hazoret\"/\"Purphoros\".\n- Hazoret (zeal/warriors/haste): Rush/Charge/First Strike/Cleave bodies, haste-grant\n  buffs, warrior tokens, weapons (Flameblade, Spear), burn.\n- Purphoros (forge/burn): direct damage (targeted, AoE, face), Cleave/Rush creatures,\n  Rush-grant anthems, a Golem-maker, a weapon (Magmaforge). God = Battlecry burn both\n  the opponent and their board.\n\nRed identity: rush/charge/windfury/first_strike/cleave keywords, damage (creature/\nenemy-creatures/enemy-heroes/any), grant of haste via buff, weapon cards (attack+\ndurability) - all proven primitives. Fixed both temple taps: conjure-named -> discover landSet.\n\nNew suites hazoret_pool_test.mjs + purphoros_pool_test.mjs (37 each); full suite 216 -> 218.",
+			"cards": []
+		},
+		{
 			"sha": "31442a3",
 			"date": "2026-08-19",
 			"kind": "patch",
