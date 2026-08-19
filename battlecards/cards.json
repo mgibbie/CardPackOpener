@@ -9630,12 +9630,11 @@
           ]
         },
         {
-          "text": "Conjure a Ephara card.",
+          "text": "Discover an Ephara card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Ephara",
-              "count": 1
+              "type": "discover",
+              "landSet": "Ephara"
             }
           ]
         }
@@ -9683,12 +9682,11 @@
           ]
         },
         {
-          "text": "Conjure a Athreos card.",
+          "text": "Discover an Athreos card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Athreos",
-              "count": 1
+              "type": "discover",
+              "landSet": "Athreos"
             }
           ]
         }
@@ -10821,12 +10819,11 @@
           ]
         },
         {
-          "text": "Conjure a Iroas card.",
+          "text": "Discover an Iroas card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Iroas",
-              "count": 1
+              "type": "discover",
+              "landSet": "Iroas"
             }
           ]
         }
@@ -11446,12 +11443,11 @@
           ]
         },
         {
-          "text": "Conjure a Karametra card.",
+          "text": "Discover a Karametra card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Karametra",
-              "count": 1
+              "type": "discover",
+              "landSet": "Karametra"
             }
           ]
         }
@@ -15087,6 +15083,1552 @@
       "colors": [
         "G",
         "R"
+      ]
+    },
+    {
+      "id": "ephara_god_of_the_polis",
+      "name": "Ephara, God of the Polis",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Divine Shield. Battlecry: Draw a card and summon a 1/1 Soldier.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "God",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier"
+        }
+      ]
+    },
+    {
+      "id": "epharas_dispersal",
+      "name": "Ephara’s Dispersal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "epharas_enlightenment",
+      "name": "Ephara’s Enlightenment",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "epharas_radiance",
+      "name": "Ephara’s Radiance",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Deal 1 damage to all enemy creatures. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "epharas_warden",
+      "name": "Ephara’s Warden",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Taunt. Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "elusive"
+      ]
+    },
+    {
+      "id": "epharas_sage",
+      "name": "Ephara’s Sage",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "epharas_stern_dismissal",
+      "name": "Ephara’s Stern Dismissal",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Return a creature to its owner’s hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "epharas_prayer_of_shelter",
+      "name": "Ephara’s Prayer of Shelter",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Give your creatures Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "epharas_command",
+      "name": "Ephara’s Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Draw a card and summon a 2/2 Soldier.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Soldier"
+        }
+      ]
+    },
+    {
+      "id": "epharas_charm",
+      "name": "Ephara’s Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Divine Shield. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "divine_shield"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "epharas_fortifier",
+      "name": "Ephara’s Fortifier",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "epharas_temple_grounds",
+      "name": "Ephara’s Temple Grounds",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Summon two 2/2 Soldiers.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Soldier"
+        }
+      ]
+    },
+    {
+      "id": "epharas_city_blessing",
+      "name": "Ephara’s City Blessing",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "epharas_godfire",
+      "name": "Ephara’s Godfire",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Destroy a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "epharas_scroll",
+      "name": "Ephara’s Scroll",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ephara",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "athreos_god_of_passage",
+      "name": "Athreos, God of Passage",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Each opponent loses 2 life.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "veil_of_athreos",
+      "name": "Veil of Athreos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Reborn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "shroud_of_athreos",
+      "name": "Shroud of Athreos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "scholar_of_athreos",
+      "name": "Scholar of Athreos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "kunoros_hound_of_athreos",
+      "name": "Kunoros, Hound of Athreos",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Deathtouch. Lifesteal. Taunt.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Hound",
+      "keywords": [
+        "deathtouch",
+        "lifesteal",
+        "taunt"
+      ]
+    },
+    {
+      "id": "aegis_of_athreos",
+      "name": "Aegis of Athreos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Give your creatures Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "silence_of_athreos",
+      "name": "Silence of Athreos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Silence an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "athreos_soultender",
+      "name": "Athreos Soultender",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Taunt. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "athreos_guardian",
+      "name": "Athreos Guardian",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Taunt. Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Golem",
+      "keywords": [
+        "taunt",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "athreos_sentry",
+      "name": "Athreos Sentry",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Skeleton",
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "staff_of_athreos",
+      "name": "Staff of Athreos",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Each opponent loses 3 life. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "mask_of_athreos",
+      "name": "Mask of Athreos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Give a creature Reborn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "creature",
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "athreos_skeletal_griffin",
+      "name": "Athreos’s Skeletal Griffin",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Elusive. Reborn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Skeleton Griffin",
+      "keywords": [
+        "elusive",
+        "reborn"
+      ]
+    },
+    {
+      "id": "oracle_of_athreos",
+      "name": "Oracle of Athreos",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "kroxa_freed_by_athreos",
+      "name": "Kroxa, Freed by Athreos",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Athreos",
+      "collectible": false,
+      "description": "Trample. Lifesteal. Battlecry: Each opponent discards a card and loses 2 life.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Titan",
+      "keywords": [
+        "trample",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "iroas_god_of_victory",
+      "name": "Iroas, God of Victory",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Charge. Battlecry: Give your creatures +1/+1 and Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "armory_of_iroas",
+      "name": "Armory of Iroas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "A 3/2 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2
+    },
+    {
+      "id": "favored_of_iroas",
+      "name": "Favored of Iroas",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Rush. First Strike.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "rush",
+        "first_strike"
+      ]
+    },
+    {
+      "id": "hero_of_iroas",
+      "name": "Hero of Iroas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "iroas_blessing",
+      "name": "Iroas’s Blessing",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "iroas_champion",
+      "name": "Iroas’s Champion",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Charge. First Strike.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "charge",
+        "first_strike"
+      ]
+    },
+    {
+      "id": "kalemne_disciple_of_iroas",
+      "name": "Kalemne, Disciple of Iroas",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Charge. Divine Shield. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Giant Soldier",
+      "keywords": [
+        "charge",
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "priest_of_iroas",
+      "name": "Priest of Iroas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "acolyte_of_iroas",
+      "name": "Acolyte of Iroas",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "triumph_of_iroas",
+      "name": "Triumph of Iroas",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Give your creatures +2/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "hymn_of_iroas",
+      "name": "Hymn of Iroas",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "will_of_iroas",
+      "name": "Will of Iroas",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "iroas_arena_athlete",
+      "name": "Iroas Arena Athlete",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "iroas_temple_guardian",
+      "name": "Iroas Temple Guardian",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "iroas_hoplite",
+      "name": "Iroas Hoplite",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Iroas",
+      "collectible": false,
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "karametra_god_of_harvests",
+      "name": "Karametra, God of Harvests",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Summon two 2/2 Elephants.",
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "tribe": "God",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Elephant"
+        }
+      ]
+    },
+    {
+      "id": "dictate_of_karametra",
+      "name": "Dictate of Karametra",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Gain 3 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "karametras_acolyte",
+      "name": "Karametra’s Acolyte",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Battlecry: Gain 3 mana this turn.",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "tribe": "Centaur Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "karametras_blessing",
+      "name": "Karametra’s Blessing",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Divine Shield.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "karametras_favor",
+      "name": "Karametra’s Favor",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Give a creature +1/+1. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "karametras_tutor",
+      "name": "Karametra’s Tutor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Battlecry: Discover a Karametra Card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "landSet": "Karametra"
+        }
+      ]
+    },
+    {
+      "id": "karametras_sable",
+      "name": "Karametra’s Sable",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "karametras_battle_priest",
+      "name": "Karametra’s Battle Priest",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "karametras_mystic",
+      "name": "Karametra’s Mystic",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Battlecry: Gain 2 mana this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "karametras_repeal",
+      "name": "Karametra’s Repeal",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Give a creature +3/+3.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "guardian_of_karametra",
+      "name": "Guardian of Karametra",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "karametras_bountiful_harvest",
+      "name": "Karametra’s Bountiful Harvest",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Summon three 1/1 Saprolings. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Saproling"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "legend_of_karametra",
+      "name": "Legend of Karametra",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Trample. Taunt.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample",
+        "taunt"
+      ]
+    },
+    {
+      "id": "scythe_of_karametra",
+      "name": "Scythe of Karametra",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "A 3/3 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3
+    },
+    {
+      "id": "veneration_of_karametra",
+      "name": "Veneration of Karametra",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Karametra",
+      "collectible": false,
+      "description": "Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
       ]
     },
     {
