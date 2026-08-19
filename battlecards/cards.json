@@ -10284,12 +10284,11 @@
           ]
         },
         {
-          "text": "Conjure a Boros card.",
+          "text": "Discover a Boros card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Boros",
-              "count": 1
+              "type": "discover",
+              "landSet": "Boros"
             }
           ]
         }
@@ -10298,6 +10297,385 @@
         "R",
         "W"
       ]
+    },
+    {
+      "id": "razia_boros_archangel",
+      "name": "Razia, Boros Archangel",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "description": "Charge. Divine Shield. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Angel",
+      "keywords": [
+        "charge",
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_battleshaper",
+      "name": "Boros Battleshaper",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_reckoner",
+      "name": "Boros Reckoner",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "Taunt. First Strike.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Minotaur Wizard",
+      "keywords": [
+        "taunt",
+        "first_strike"
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_challenger",
+      "name": "Boros Challenger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush. Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_guildmage",
+      "name": "Boros Guildmage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_mastiff",
+      "name": "Boros Mastiff",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dog",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_swiftblade",
+      "name": "Boros Swiftblade",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "First Strike. Windfury.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike",
+        "windfury"
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_elite",
+      "name": "Boros Elite",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_recruit",
+      "name": "Boros Recruit",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_charm",
+      "name": "Boros Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_fury_shield",
+      "name": "Boros Fury-Shield",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_garrison",
+      "name": "Boros Garrison",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon three 1/1 Soldiers.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier"
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_keyrune",
+      "name": "Boros Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Summon a 3/1 Soldier with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 1,
+          "name": "Soldier",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_signet",
+      "name": "Boros Signet",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Gain 3 mana this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
+    },
+    {
+      "id": "boros_cluestone",
+      "name": "Boros Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false
     },
     {
       "id": "axgard_citadel",
