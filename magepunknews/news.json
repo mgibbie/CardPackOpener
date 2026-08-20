@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "b7da38d",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Kaldheim Citadels: 10 two-color realm land pools (150 cards)",
+			"body": "Build 150 realm-themed pool cards across the 10 Kaldheim two-color lands\n(Istfell/Starnheim/Axgard/Bretagard/Karfell/Surtland/Immersturm/Skemfar/\nGnottvold/Littjara), each keyed by landSet + led by a realm legendary.\nFlip all 10 land taps conjure-named -> discover landSet. Add 10 pool tests\n(37 checks each). Suite 251 -> 261.",
+			"cards": []
+		},
+		{
 			"sha": "6c0cbeb",
 			"date": "2026-08-20",
 			"kind": "patch",
