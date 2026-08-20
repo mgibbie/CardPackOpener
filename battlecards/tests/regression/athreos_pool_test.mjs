@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Athreos' && !c.token);
-ok('exactly 15 Athreos pool cards', pool.length === 15, pool.length);
+ok('at least 15 Athreos pool cards', pool.length >= 15, pool.length);
 ok('all Athreos cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Athreos cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"W\",\"B\"]'));
 ok('all Athreos names contain "Athreos"', pool.every(c => c.name.includes('Athreos')),

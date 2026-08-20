@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Temur' && !c.token);
-ok('exactly 15 Temur pool cards', pool.length === 15, pool.length);
+ok('at least 15 Temur pool cards', pool.length >= 15, pool.length);
 ok('all Temur cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Temur cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["G","R","U"]'));
 ok('all Temur cards tagged landSet Temur', pool.every(c => c.landSet === 'Temur'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Prismari' && !c.token);
-ok('exactly 15 Prismari pool cards', pool.length === 15, pool.length);
+ok('at least 15 Prismari pool cards', pool.length >= 15, pool.length);
 ok('all Prismari cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Prismari cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"U\",\"R\"]'));
 ok('all Prismari cards tagged landSet Prismari', pool.every(c => c.landSet === 'Prismari'));

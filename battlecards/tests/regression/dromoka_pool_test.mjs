@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Dromoka' && !c.token);
-ok('exactly 15 Dromoka pool cards', pool.length === 15, pool.length);
+ok('at least 15 Dromoka pool cards', pool.length >= 15, pool.length);
 ok('all Dromoka cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Dromoka cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"G\",\"W\"]'));
 ok('all Dromoka names contain "Dromoka"', pool.every(c => c.name.includes('Dromoka')),

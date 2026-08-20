@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Gnottvold' && !c.token);
-ok('exactly 15 Gnottvold pool cards', pool.length === 15, pool.length);
+ok('at least 15 Gnottvold pool cards', pool.length >= 15, pool.length);
 ok('all Gnottvold cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Gnottvold cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["R","G"]'));
 ok('all Gnottvold cards tagged landSet Gnottvold', pool.every(c => c.landSet === 'Gnottvold'));

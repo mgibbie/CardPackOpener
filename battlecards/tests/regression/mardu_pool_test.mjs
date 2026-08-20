@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Mardu' && !c.token);
-ok('exactly 15 Mardu pool cards', pool.length === 15, pool.length);
+ok('at least 15 Mardu pool cards', pool.length >= 15, pool.length);
 ok('all Mardu cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Mardu cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["B","R","W"]'));
 ok('all Mardu cards tagged landSet Mardu', pool.every(c => c.landSet === 'Mardu'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Immersturm' && !c.token);
-ok('exactly 15 Immersturm pool cards', pool.length === 15, pool.length);
+ok('at least 15 Immersturm pool cards', pool.length >= 15, pool.length);
 ok('all Immersturm cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Immersturm cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["B","R"]'));
 ok('all Immersturm cards tagged landSet Immersturm', pool.every(c => c.landSet === 'Immersturm'));

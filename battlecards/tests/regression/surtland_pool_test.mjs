@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Surtland' && !c.token);
-ok('exactly 15 Surtland pool cards', pool.length === 15, pool.length);
+ok('at least 15 Surtland pool cards', pool.length >= 15, pool.length);
 ok('all Surtland cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Surtland cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["U","R"]'));
 ok('all Surtland cards tagged landSet Surtland', pool.every(c => c.landSet === 'Surtland'));

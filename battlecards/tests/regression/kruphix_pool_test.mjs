@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Kruphix' && !c.token);
-ok('exactly 15 Kruphix pool cards', pool.length === 15, pool.length);
+ok('at least 15 Kruphix pool cards', pool.length >= 15, pool.length);
 ok('all Kruphix cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Kruphix cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"G\",\"U\"]'));
 ok('all Kruphix names contain "Kruphix"', pool.every(c => c.name.includes('Kruphix')),

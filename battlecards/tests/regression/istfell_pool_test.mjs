@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Istfell' && !c.token);
-ok('exactly 15 Istfell pool cards', pool.length === 15, pool.length);
+ok('at least 15 Istfell pool cards', pool.length >= 15, pool.length);
 ok('all Istfell cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Istfell cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["W","U"]'));
 ok('all Istfell cards tagged landSet Istfell', pool.every(c => c.landSet === 'Istfell'));

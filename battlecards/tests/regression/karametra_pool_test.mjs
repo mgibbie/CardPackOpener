@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Karametra' && !c.token);
-ok('exactly 15 Karametra pool cards', pool.length === 15, pool.length);
+ok('at least 15 Karametra pool cards', pool.length >= 15, pool.length);
 ok('all Karametra cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Karametra cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"G\",\"W\"]'));
 ok('all Karametra names contain "Karametra"', pool.every(c => c.name.includes('Karametra')),

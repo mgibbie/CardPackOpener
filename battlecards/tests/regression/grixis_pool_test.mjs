@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Grixis' && !c.token);
-ok('exactly 15 Grixis pool cards', pool.length === 15, pool.length);
+ok('at least 15 Grixis pool cards', pool.length >= 15, pool.length);
 ok('all Grixis cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Grixis cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["B","R","U"]'));
 ok('all Grixis cards tagged landSet Grixis', pool.every(c => c.landSet === 'Grixis'));

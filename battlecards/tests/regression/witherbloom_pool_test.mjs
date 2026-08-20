@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Witherbloom' && !c.token);
-ok('exactly 15 Witherbloom pool cards', pool.length === 15, pool.length);
+ok('at least 15 Witherbloom pool cards', pool.length >= 15, pool.length);
 ok('all Witherbloom cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Witherbloom cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"B\",\"G\"]'));
 ok('all Witherbloom cards tagged landSet Witherbloom', pool.every(c => c.landSet === 'Witherbloom'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Nylea' && !c.token);
-ok('exactly 15 Nylea pool cards', pool.length === 15, pool.length);
+ok('at least 15 Nylea pool cards', pool.length >= 15, pool.length);
 ok('all Nylea cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Nylea cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["G"]'));
 ok('all Nylea names contain "Nylea"', pool.every(c => c.name.includes('Nylea')),

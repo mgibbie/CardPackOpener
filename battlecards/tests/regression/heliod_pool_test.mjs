@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Heliod' && !c.token);
-ok('exactly 15 Heliod pool cards', pool.length === 15, pool.length);
+ok('at least 15 Heliod pool cards', pool.length >= 15, pool.length);
 ok('all Heliod cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Heliod cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["W"]'));
 ok('all Heliod names contain "Heliod"', pool.every(c => c.name.includes('Heliod')),

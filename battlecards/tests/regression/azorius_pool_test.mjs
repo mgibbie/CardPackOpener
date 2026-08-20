@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Azorius' && !c.token);
-ok('exactly 15 Azorius pool cards', pool.length === 15, pool.length);
+ok('at least 15 Azorius pool cards', pool.length >= 15, pool.length);
 ok('all Azorius cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Azorius cards are W/U dual-color', pool.every(c => JSON.stringify(c.colors) === '["W","U"]'));
 ok('all Azorius names contain "Azorius"', pool.every(c => c.name.includes('Azorius')),

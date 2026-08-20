@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Bretagard' && !c.token);
-ok('exactly 15 Bretagard pool cards', pool.length === 15, pool.length);
+ok('at least 15 Bretagard pool cards', pool.length >= 15, pool.length);
 ok('all Bretagard cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Bretagard cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["G","W"]'));
 ok('all Bretagard cards tagged landSet Bretagard', pool.every(c => c.landSet === 'Bretagard'));

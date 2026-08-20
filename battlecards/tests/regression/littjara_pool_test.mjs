@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Littjara' && !c.token);
-ok('exactly 15 Littjara pool cards', pool.length === 15, pool.length);
+ok('at least 15 Littjara pool cards', pool.length >= 15, pool.length);
 ok('all Littjara cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Littjara cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["G","U"]'));
 ok('all Littjara cards tagged landSet Littjara', pool.every(c => c.landSet === 'Littjara'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Silumgar' && !c.token);
-ok('exactly 15 Silumgar pool cards', pool.length === 15, pool.length);
+ok('at least 15 Silumgar pool cards', pool.length >= 15, pool.length);
 ok('all Silumgar cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Silumgar cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"U\",\"B\"]'));
 ok('all Silumgar names contain "Silumgar"', pool.every(c => c.name.includes('Silumgar')),

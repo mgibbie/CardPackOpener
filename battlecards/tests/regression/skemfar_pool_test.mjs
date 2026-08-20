@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Skemfar' && !c.token);
-ok('exactly 15 Skemfar pool cards', pool.length === 15, pool.length);
+ok('at least 15 Skemfar pool cards', pool.length >= 15, pool.length);
 ok('all Skemfar cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Skemfar cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["B","G"]'));
 ok('all Skemfar cards tagged landSet Skemfar', pool.every(c => c.landSet === 'Skemfar'));

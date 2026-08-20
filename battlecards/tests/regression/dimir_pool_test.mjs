@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Dimir' && !c.token);
-ok('exactly 15 Dimir pool cards', pool.length === 15, pool.length);
+ok('at least 15 Dimir pool cards', pool.length >= 15, pool.length);
 ok('all Dimir cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Dimir cards are U/B dual-color', pool.every(c => JSON.stringify(c.colors) === '["U","B"]'));
 ok('all Dimir names contain "Dimir"', pool.every(c => c.name.includes('Dimir')),

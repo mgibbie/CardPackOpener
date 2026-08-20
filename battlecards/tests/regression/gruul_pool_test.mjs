@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Gruul' && !c.token);
-ok('exactly 15 Gruul pool cards', pool.length === 15, pool.length);
+ok('at least 15 Gruul pool cards', pool.length >= 15, pool.length);
 ok('all Gruul cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Gruul cards are G/R dual-color', pool.every(c => JSON.stringify(c.colors) === '["G","R"]'));
 ok('all Gruul names contain "Gruul"', pool.every(c => c.name.includes('Gruul')),

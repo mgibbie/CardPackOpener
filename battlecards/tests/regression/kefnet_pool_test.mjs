@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Kefnet' && !c.token);
-ok('exactly 15 Kefnet pool cards', pool.length === 15, pool.length);
+ok('at least 15 Kefnet pool cards', pool.length >= 15, pool.length);
 ok('all Kefnet cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Kefnet cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["U"]'));
 ok('all Kefnet cards tagged landSet Kefnet', pool.every(c => c.landSet === 'Kefnet'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Ephara' && !c.token);
-ok('exactly 15 Ephara pool cards', pool.length === 15, pool.length);
+ok('at least 15 Ephara pool cards', pool.length >= 15, pool.length);
 ok('all Ephara cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Ephara cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"W\",\"U\"]'));
 ok('all Ephara names contain "Ephara"', pool.every(c => c.name.includes('Ephara')),

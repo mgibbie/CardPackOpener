@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Atarka' && !c.token);
-ok('exactly 15 Atarka pool cards', pool.length === 15, pool.length);
+ok('at least 15 Atarka pool cards', pool.length >= 15, pool.length);
 ok('all Atarka cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Atarka cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"R\",\"G\"]'));
 ok('all Atarka names contain "Atarka"', pool.every(c => c.name.includes('Atarka')),

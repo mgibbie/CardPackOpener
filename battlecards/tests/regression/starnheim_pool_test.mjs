@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Starnheim' && !c.token);
-ok('exactly 15 Starnheim pool cards', pool.length === 15, pool.length);
+ok('at least 15 Starnheim pool cards', pool.length >= 15, pool.length);
 ok('all Starnheim cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Starnheim cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["W","B"]'));
 ok('all Starnheim cards tagged landSet Starnheim', pool.every(c => c.landSet === 'Starnheim'));

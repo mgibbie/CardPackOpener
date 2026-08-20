@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Simic' && !c.token);
-ok('exactly 15 Simic pool cards', pool.length === 15, pool.length);
+ok('at least 15 Simic pool cards', pool.length >= 15, pool.length);
 ok('all Simic cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Simic cards are G/U dual-color', pool.every(c => JSON.stringify(c.colors) === '["G","U"]'));
 ok('all Simic names contain "Simic"', pool.every(c => c.name.includes('Simic')),

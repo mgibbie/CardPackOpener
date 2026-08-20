@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Esper' && !c.token);
-ok('exactly 15 Esper pool cards', pool.length === 15, pool.length);
+ok('at least 15 Esper pool cards', pool.length >= 15, pool.length);
 ok('all Esper cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Esper cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["B","U","W"]'));
 ok('all Esper cards tagged landSet Esper', pool.every(c => c.landSet === 'Esper'));

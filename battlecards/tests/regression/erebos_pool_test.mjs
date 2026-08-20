@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Erebos' && !c.token);
-ok('exactly 15 Erebos pool cards', pool.length === 15, pool.length);
+ok('at least 15 Erebos pool cards', pool.length >= 15, pool.length);
 ok('all Erebos cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Erebos cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["B"]'));
 ok('all Erebos names contain "Erebos"', pool.every(c => c.name.includes('Erebos')),

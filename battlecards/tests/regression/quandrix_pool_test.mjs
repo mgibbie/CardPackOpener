@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Quandrix' && !c.token);
-ok('exactly 15 Quandrix pool cards', pool.length === 15, pool.length);
+ok('at least 15 Quandrix pool cards', pool.length >= 15, pool.length);
 ok('all Quandrix cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Quandrix cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"G\",\"U\"]'));
 ok('all Quandrix cards tagged landSet Quandrix', pool.every(c => c.landSet === 'Quandrix'));

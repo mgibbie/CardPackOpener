@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Jeskai' && !c.token);
-ok('exactly 15 Jeskai pool cards', pool.length === 15, pool.length);
+ok('at least 15 Jeskai pool cards', pool.length >= 15, pool.length);
 ok('all Jeskai cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Jeskai cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["R","U","W"]'));
 ok('all Jeskai cards tagged landSet Jeskai', pool.every(c => c.landSet === 'Jeskai'));

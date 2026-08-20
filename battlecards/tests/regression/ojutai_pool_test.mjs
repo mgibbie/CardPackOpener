@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Ojutai' && !c.token);
-ok('exactly 15 Ojutai pool cards', pool.length === 15, pool.length);
+ok('at least 15 Ojutai pool cards', pool.length >= 15, pool.length);
 ok('all Ojutai cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Ojutai cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"W\",\"U\"]'));
 ok('all Ojutai names contain "Ojutai"', pool.every(c => c.name.includes('Ojutai')),

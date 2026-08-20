@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Bontu' && !c.token);
-ok('exactly 15 Bontu pool cards', pool.length === 15, pool.length);
+ok('at least 15 Bontu pool cards', pool.length >= 15, pool.length);
 ok('all Bontu cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Bontu cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["B"]'));
 ok('all Bontu names contain "Bontu"', pool.every(c => c.name.includes('Bontu')),

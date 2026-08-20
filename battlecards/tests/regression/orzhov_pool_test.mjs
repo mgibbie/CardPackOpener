@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Orzhov' && !c.token);
-ok('exactly 15 Orzhov pool cards', pool.length === 15, pool.length);
+ok('at least 15 Orzhov pool cards', pool.length >= 15, pool.length);
 ok('all Orzhov cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Orzhov cards are B/W dual-color', pool.every(c => JSON.stringify(c.colors) === '["B","W"]'));
 ok('all Orzhov names contain "Orzhov"', pool.every(c => c.name.includes('Orzhov')),

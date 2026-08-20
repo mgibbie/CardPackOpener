@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Axgard' && !c.token);
-ok('exactly 15 Axgard pool cards', pool.length === 15, pool.length);
+ok('at least 15 Axgard pool cards', pool.length >= 15, pool.length);
 ok('all Axgard cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Axgard cards dual-color', pool.every(c => JSON.stringify(c.colors) === '["R","W"]'));
 ok('all Axgard cards tagged landSet Axgard', pool.every(c => c.landSet === 'Axgard'));

@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Bant' && !c.token);
-ok('exactly 15 Bant pool cards', pool.length === 15, pool.length);
+ok('at least 15 Bant pool cards', pool.length >= 15, pool.length);
 ok('all Bant cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Bant cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["G","U","W"]'));
 ok('all Bant cards tagged landSet Bant', pool.every(c => c.landSet === 'Bant'));

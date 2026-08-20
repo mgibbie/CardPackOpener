@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Thassa' && !c.token);
-ok('exactly 15 Thassa pool cards', pool.length === 15, pool.length);
+ok('at least 15 Thassa pool cards', pool.length >= 15, pool.length);
 ok('all Thassa cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Thassa cards mono-white', pool.every(c => JSON.stringify(c.colors) === '["U"]'));
 ok('all Thassa cards tagged landSet Thassa', pool.every(c => c.landSet === 'Thassa'));

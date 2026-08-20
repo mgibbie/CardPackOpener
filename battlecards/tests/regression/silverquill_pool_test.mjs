@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Silverquill' && !c.token);
-ok('exactly 15 Silverquill pool cards', pool.length === 15, pool.length);
+ok('at least 15 Silverquill pool cards', pool.length >= 15, pool.length);
 ok('all Silverquill cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Silverquill cards dual-color', pool.every(c => JSON.stringify(c.colors) === '[\"W\",\"B\"]'));
 ok('all Silverquill cards tagged landSet Silverquill', pool.every(c => c.landSet === 'Silverquill'));

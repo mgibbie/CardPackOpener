@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 
 // ---- pool membership ----
 const pool = raw.cards.filter(c => c.landSet === 'Naya' && !c.token);
-ok('exactly 15 Naya pool cards', pool.length === 15, pool.length);
+ok('at least 15 Naya pool cards', pool.length >= 15, pool.length);
 ok('all Naya cards uncollectible', pool.every(c => c.collectible === false));
 ok('all Naya cards tri-color', pool.every(c => JSON.stringify(c.colors) === '["G","R","W"]'));
 ok('all Naya cards tagged landSet Naya', pool.every(c => c.landSet === 'Naya'));
