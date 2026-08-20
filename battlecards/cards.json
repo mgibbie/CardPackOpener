@@ -6181,7 +6181,7 @@
     },
     {
       "id": "tidal_wave",
-      "name": "Tidal Wave",
+      "name": "Thassa Tidal Wave",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -6369,7 +6369,7 @@
     },
     {
       "id": "cartouche_of_knowledge",
-      "name": "Cartouche of Knowledge",
+      "name": "Kefnet Cartouche of Knowledge",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -19574,7 +19574,7 @@
     },
     {
       "id": "killian_ink_duelist",
-      "name": "Killian, Ink Duelist",
+      "name": "Silverquill Killian, Ink Duelist",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -20808,7 +20808,7 @@
     },
     {
       "id": "kianne_dean_of_substance",
-      "name": "Kianne, Dean of Substance",
+      "name": "Quandrix Kianne, Dean of Substance",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -23365,7 +23365,7 @@
     },
     {
       "id": "ranar_the_everwatchful",
-      "name": "Ranar the Ever-Watchful",
+      "name": "Istfell Ranar the Ever-Watchful",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -23400,7 +23400,7 @@
     },
     {
       "id": "ascendant_spirit",
-      "name": "Ascendant Spirit",
+      "name": "Istfell Ascendant Spirit",
       "cardClass": "magepunk",
       "cost": 1,
       "rarity": "common",
@@ -23422,7 +23422,7 @@
     },
     {
       "id": "battlefield_raptor",
-      "name": "Battlefield Raptor",
+      "name": "Istfell Battlefield Raptor",
       "cardClass": "magepunk",
       "cost": 1,
       "rarity": "common",
@@ -23445,7 +23445,7 @@
     },
     {
       "id": "augury_raven",
-      "name": "Augury Raven",
+      "name": "Istfell Augury Raven",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -23474,7 +23474,7 @@
     },
     {
       "id": "mistwalker",
-      "name": "Mistwalker",
+      "name": "Istfell Mistwalker",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23496,7 +23496,7 @@
     },
     {
       "id": "behold_the_multiverse",
-      "name": "Behold the Multiverse",
+      "name": "Istfell Behold the Multiverse",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -23522,7 +23522,7 @@
     },
     {
       "id": "saw_it_coming",
-      "name": "Saw It Coming",
+      "name": "Istfell Saw It Coming",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -23548,7 +23548,7 @@
     },
     {
       "id": "depart_the_realm",
-      "name": "Depart the Realm",
+      "name": "Istfell Depart the Realm",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23574,7 +23574,7 @@
     },
     {
       "id": "iron_verdict",
-      "name": "Iron Verdict",
+      "name": "Istfell Iron Verdict",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23597,7 +23597,7 @@
     },
     {
       "id": "rally_the_ranks",
-      "name": "Rally the Ranks",
+      "name": "Istfell Rally the Ranks",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23753,7 +23753,7 @@
     },
     {
       "id": "firja_judge_of_valor",
-      "name": "Firja, Judge of Valor",
+      "name": "Starnheim Firja, Judge of Valor",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -23786,7 +23786,7 @@
     },
     {
       "id": "righteous_valkyrie",
-      "name": "Righteous Valkyrie",
+      "name": "Starnheim Righteous Valkyrie",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "rare",
@@ -23846,7 +23846,7 @@
     },
     {
       "id": "valkyrie_harbinger",
-      "name": "Valkyrie Harbinger",
+      "name": "Starnheim Valkyrie Harbinger",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -23903,7 +23903,7 @@
     },
     {
       "id": "firjas_retribution",
-      "name": "Firja’s Retribution",
+      "name": "Starnheim Firja’s Retribution",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -23935,7 +23935,7 @@
     },
     {
       "id": "doomskar",
-      "name": "Doomskar",
+      "name": "Starnheim Doomskar",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -23958,7 +23958,7 @@
     },
     {
       "id": "angelfire_ignition",
-      "name": "Angelfire Ignition",
+      "name": "Starnheim Angelfire Ignition",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -23983,7 +23983,7 @@
     },
     {
       "id": "search_for_glory",
-      "name": "Search for Glory",
+      "name": "Starnheim Search for Glory",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -24037,7 +24037,7 @@
     },
     {
       "id": "valkyrie_reaper",
-      "name": "Valkyrie Reaper",
+      "name": "Starnheim Valkyrie Reaper",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -24090,7 +24090,7 @@
     },
     {
       "id": "honored_dead",
-      "name": "Honored Dead",
+      "name": "Starnheim Honored Dead",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -24179,7 +24179,7 @@
     },
     {
       "id": "magda_brazen_outlaw",
-      "name": "Magda, Brazen Outlaw",
+      "name": "Axgard Magda, Brazen Outlaw",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "legendary",
@@ -24262,7 +24262,7 @@
     },
     {
       "id": "dwarven_reinforcements",
-      "name": "Dwarven Reinforcements",
+      "name": "Axgard Dwarven Reinforcements",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "common",
@@ -24290,7 +24290,7 @@
     },
     {
       "id": "dwarven_hammer",
-      "name": "Dwarven Hammer",
+      "name": "Axgard Dwarven Hammer",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -24339,7 +24339,7 @@
     },
     {
       "id": "demon_bolt",
-      "name": "Demon Bolt",
+      "name": "Axgard Demon Bolt",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -24362,7 +24362,7 @@
     },
     {
       "id": "frost_bite",
-      "name": "Frost Bite",
+      "name": "Axgard Frost Bite",
       "cardClass": "magepunk",
       "cost": 1,
       "rarity": "common",
@@ -24385,7 +24385,7 @@
     },
     {
       "id": "rune_of_might",
-      "name": "Rune of Might",
+      "name": "Axgard Rune of Might",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -24436,7 +24436,7 @@
     },
     {
       "id": "forge_devil",
-      "name": "Forge Devil",
+      "name": "Axgard Forge Devil",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -24776,7 +24776,7 @@
     },
     {
       "id": "elderleaf_mentor",
-      "name": "Elderleaf Mentor",
+      "name": "Bretagard Elderleaf Mentor",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -24807,7 +24807,7 @@
     },
     {
       "id": "boreal_outrider",
-      "name": "Boreal Outrider",
+      "name": "Bretagard Boreal Outrider",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -25007,7 +25007,7 @@
     },
     {
       "id": "egon_god_of_death",
-      "name": "Egon, God of Death",
+      "name": "Karfell Egon, God of Death",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -25040,7 +25040,7 @@
     },
     {
       "id": "draugr_necromancer",
-      "name": "Draugr Necromancer",
+      "name": "Karfell Draugr Necromancer",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -25096,7 +25096,7 @@
     },
     {
       "id": "grim_draugr",
-      "name": "Grim Draugr",
+      "name": "Karfell Grim Draugr",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -25118,7 +25118,7 @@
     },
     {
       "id": "priest_of_the_haunted_edge",
-      "name": "Priest of the Haunted Edge",
+      "name": "Karfell Priest of the Haunted Edge",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25169,7 +25169,7 @@
     },
     {
       "id": "poison_the_cup",
-      "name": "Poison the Cup",
+      "name": "Karfell Poison the Cup",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -25317,7 +25317,7 @@
     },
     {
       "id": "raise_the_draugr",
-      "name": "Raise the Draugr",
+      "name": "Karfell Raise the Draugr",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25405,7 +25405,7 @@
     },
     {
       "id": "surtr_fire_giant",
-      "name": "Surtr, Fire Giant",
+      "name": "Surtland Surtr, Fire Giant",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -25434,7 +25434,7 @@
     },
     {
       "id": "calamity_bearer",
-      "name": "Calamity Bearer",
+      "name": "Surtland Calamity Bearer",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -25463,7 +25463,7 @@
     },
     {
       "id": "cinderheart_giant",
-      "name": "Cinderheart Giant",
+      "name": "Surtland Cinderheart Giant",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -25492,7 +25492,7 @@
     },
     {
       "id": "dragonkin_berserker",
-      "name": "Dragonkin Berserker",
+      "name": "Surtland Dragonkin Berserker",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25543,7 +25543,7 @@
     },
     {
       "id": "crush_the_weak",
-      "name": "Crush the Weak",
+      "name": "Surtland Crush the Weak",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -25589,7 +25589,7 @@
     },
     {
       "id": "behold_the_cosmos",
-      "name": "Behold the Cosmos",
+      "name": "Surtland Behold the Cosmos",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -25638,7 +25638,7 @@
     },
     {
       "id": "frost_giant",
-      "name": "Frost Giant",
+      "name": "Surtland Frost Giant",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -25751,7 +25751,7 @@
     },
     {
       "id": "flame_of_surtr",
-      "name": "Flame of Surtr",
+      "name": "Surtland Flame of Surtr",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -25809,7 +25809,7 @@
     },
     {
       "id": "kardur_doomscourge",
-      "name": "Kardur, Doomscourge",
+      "name": "Immersturm Kardur, Doomscourge",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -25862,7 +25862,7 @@
     },
     {
       "id": "bloodsky_berserker",
-      "name": "Bloodsky Berserker",
+      "name": "Immersturm Bloodsky Berserker",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25914,7 +25914,7 @@
     },
     {
       "id": "demonic_gifts",
-      "name": "Demonic Gifts",
+      "name": "Immersturm Demonic Gifts",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25939,7 +25939,7 @@
     },
     {
       "id": "kardurs_vicious_return",
-      "name": "Kardur’s Vicious Return",
+      "name": "Immersturm Kardur’s Vicious Return",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -25972,7 +25972,7 @@
     },
     {
       "id": "weigh_down",
-      "name": "Weigh Down",
+      "name": "Immersturm Weigh Down",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -26069,7 +26069,7 @@
     },
     {
       "id": "blood_offering",
-      "name": "Blood Offering",
+      "name": "Immersturm Blood Offering",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -26227,7 +26227,7 @@
     },
     {
       "id": "elvish_warmaster",
-      "name": "Elvish Warmaster",
+      "name": "Skemfar Elvish Warmaster",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "rare",
@@ -26264,7 +26264,7 @@
     },
     {
       "id": "elderfang_disciple",
-      "name": "Elderfang Disciple",
+      "name": "Skemfar Elderfang Disciple",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -26359,7 +26359,7 @@
     },
     {
       "id": "sarulf_realm_eater",
-      "name": "Sarulf, Realm Eater",
+      "name": "Skemfar Sarulf, Realm Eater",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -26388,7 +26388,7 @@
     },
     {
       "id": "harald_unites_the_elves",
-      "name": "Harald Unites the Elves",
+      "name": "Skemfar Harald Unites the Elves",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -26438,7 +26438,7 @@
     },
     {
       "id": "gladewalker_ritualist",
-      "name": "Gladewalker Ritualist",
+      "name": "Skemfar Gladewalker Ritualist",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -26539,7 +26539,7 @@
     },
     {
       "id": "elfhame_wurm",
-      "name": "Elfhame Wurm",
+      "name": "Skemfar Elfhame Wurm",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -26618,7 +26618,7 @@
     },
     {
       "id": "arni_brokenbrow",
-      "name": "Arni Brokenbrow",
+      "name": "Gnottvold Arni Brokenbrow",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -26649,7 +26649,7 @@
     },
     {
       "id": "battle_mammoth",
-      "name": "Battle Mammoth",
+      "name": "Gnottvold Battle Mammoth",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -26671,7 +26671,7 @@
     },
     {
       "id": "ravenous_lindwurm",
-      "name": "Ravenous Lindwurm",
+      "name": "Gnottvold Ravenous Lindwurm",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "common",
@@ -26700,7 +26700,7 @@
     },
     {
       "id": "sarulfs_packmate",
-      "name": "Sarulf’s Packmate",
+      "name": "Gnottvold Sarulf’s Packmate",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -26728,7 +26728,7 @@
     },
     {
       "id": "grizzled_outrider",
-      "name": "Grizzled Outrider",
+      "name": "Gnottvold Grizzled Outrider",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "common",
@@ -27017,7 +27017,7 @@
     },
     {
       "id": "alrund_god_of_the_cosmos",
-      "name": "Alrund, God of the Cosmos",
+      "name": "Littjara Alrund, God of the Cosmos",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -27045,7 +27045,7 @@
     },
     {
       "id": "cosima_god_of_the_voyage",
-      "name": "Cosima, God of the Voyage",
+      "name": "Littjara Cosima, God of the Voyage",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "rare",
@@ -27077,7 +27077,7 @@
     },
     {
       "id": "icebreaker_kraken",
-      "name": "Icebreaker Kraken",
+      "name": "Littjara Icebreaker Kraken",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -27105,7 +27105,7 @@
     },
     {
       "id": "masked_vandal",
-      "name": "Masked Vandal",
+      "name": "Littjara Masked Vandal",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -27161,7 +27161,7 @@
     },
     {
       "id": "kelpie_guide",
-      "name": "Kelpie Guide",
+      "name": "Littjara Kelpie Guide",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -27189,7 +27189,7 @@
     },
     {
       "id": "sculptor_of_winter",
-      "name": "Sculptor of Winter",
+      "name": "Littjara Sculptor of Winter",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -27269,7 +27269,7 @@
     },
     {
       "id": "ravenform",
-      "name": "Ravenform",
+      "name": "Littjara Ravenform",
       "cardClass": "magepunk",
       "cost": 1,
       "rarity": "common",
@@ -27429,7 +27429,7 @@
     },
     {
       "id": "bant_rafiq",
-      "name": "Rafiq of the Many",
+      "name": "Bant Rafiq of the Many",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -27462,7 +27462,7 @@
     },
     {
       "id": "bant_jenara",
-      "name": "Jenara, Asura of War",
+      "name": "Bant Jenara, Asura of War",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -27494,7 +27494,7 @@
     },
     {
       "id": "bant_rhox_war_monk",
-      "name": "Rhox War Monk",
+      "name": "Bant Rhox War Monk",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -27517,7 +27517,7 @@
     },
     {
       "id": "bant_battlegrace_angel",
-      "name": "Battlegrace Angel",
+      "name": "Bant Battlegrace Angel",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -27541,7 +27541,7 @@
     },
     {
       "id": "bant_mystic_snake",
-      "name": "Mystic Snake",
+      "name": "Bant Mystic Snake",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -27593,7 +27593,7 @@
     },
     {
       "id": "bant_sovereigns",
-      "name": "Sovereigns of Lost Alara",
+      "name": "Bant Sovereigns of Lost Alara",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -27704,7 +27704,7 @@
     },
     {
       "id": "bant_exalted_angel",
-      "name": "Exalted Angel",
+      "name": "Bant Exalted Angel",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -27751,7 +27751,7 @@
     },
     {
       "id": "bant_finest_hour",
-      "name": "Finest Hour",
+      "name": "Bant Finest Hour",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -27777,7 +27777,7 @@
     },
     {
       "id": "bant_wargate",
-      "name": "Wargate",
+      "name": "Bant Wargate",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -27838,7 +27838,7 @@
     },
     {
       "id": "esper_sharuum",
-      "name": "Sharuum the Hegemon",
+      "name": "Esper Sharuum the Hegemon",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -27868,7 +27868,7 @@
     },
     {
       "id": "esper_sphinx_steel_wind",
-      "name": "Sphinx of the Steel Wind",
+      "name": "Esper Sphinx of the Steel Wind",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -27893,7 +27893,7 @@
     },
     {
       "id": "esper_ethersworn_adjudicator",
-      "name": "Ethersworn Adjudicator",
+      "name": "Esper Ethersworn Adjudicator",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -27923,7 +27923,7 @@
     },
     {
       "id": "esper_tidehollow_sculler",
-      "name": "Tidehollow Sculler",
+      "name": "Esper Tidehollow Sculler",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -27975,7 +27975,7 @@
     },
     {
       "id": "esper_master_of_etherium",
-      "name": "Master of Etherium",
+      "name": "Esper Master of Etherium",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -28006,7 +28006,7 @@
     },
     {
       "id": "esper_sanctum_gargoyle",
-      "name": "Sanctum Gargoyle",
+      "name": "Esper Sanctum Gargoyle",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -28029,7 +28029,7 @@
     },
     {
       "id": "esper_cast_down",
-      "name": "Cast Down",
+      "name": "Esper Cast Down",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -28192,7 +28192,7 @@
     },
     {
       "id": "esper_hegemons_decree",
-      "name": "Hegemon’s Decree",
+      "name": "Esper Hegemon’s Decree",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -28252,7 +28252,7 @@
     },
     {
       "id": "jeskai_narset",
-      "name": "Narset, Enlightened Master",
+      "name": "Jeskai Narset, Enlightened Master",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -28283,7 +28283,7 @@
     },
     {
       "id": "jeskai_mantis_rider",
-      "name": "Mantis Rider",
+      "name": "Jeskai Mantis Rider",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -28307,7 +28307,7 @@
     },
     {
       "id": "jeskai_monastery_mentor",
-      "name": "Monastery Mentor",
+      "name": "Jeskai Monastery Mentor",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -28342,7 +28342,7 @@
     },
     {
       "id": "jeskai_seeker_of_the_way",
-      "name": "Seeker of the Way",
+      "name": "Jeskai Seeker of the Way",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -28442,7 +28442,7 @@
     },
     {
       "id": "jeskai_sage_eye_avengers",
-      "name": "Sage-Eye Avengers",
+      "name": "Jeskai Sage-Eye Avengers",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -28502,7 +28502,7 @@
     },
     {
       "id": "jeskai_master_of_pearls",
-      "name": "Master of Pearls",
+      "name": "Jeskai Master of Pearls",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -28683,7 +28683,7 @@
     },
     {
       "id": "mardu_alesha",
-      "name": "Alesha, Who Smiles at Death",
+      "name": "Mardu Alesha, Who Smiles at Death",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -28716,7 +28716,7 @@
     },
     {
       "id": "mardu_butcher_of_the_horde",
-      "name": "Butcher of the Horde",
+      "name": "Mardu Butcher of the Horde",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -28740,7 +28740,7 @@
     },
     {
       "id": "mardu_zurgo",
-      "name": "Zurgo Helmsmasher",
+      "name": "Mardu Zurgo Helmsmasher",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -28875,7 +28875,7 @@
     },
     {
       "id": "mardu_crackling_doom",
-      "name": "Crackling Doom",
+      "name": "Mardu Crackling Doom",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "rare",
@@ -28903,7 +28903,7 @@
     },
     {
       "id": "mardu_ponyback_brigade",
-      "name": "Ponyback Brigade",
+      "name": "Mardu Ponyback Brigade",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "common",
@@ -28935,7 +28935,7 @@
     },
     {
       "id": "mardu_kambal",
-      "name": "Kambal, Consul of Allocation",
+      "name": "Mardu Kambal, Consul of Allocation",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -29117,7 +29117,7 @@
     },
     {
       "id": "naya_mayael",
-      "name": "Mayael the Anima",
+      "name": "Naya Mayael the Anima",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -29152,7 +29152,7 @@
     },
     {
       "id": "naya_woolly_thoctar",
-      "name": "Woolly Thoctar",
+      "name": "Naya Woolly Thoctar",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -29172,7 +29172,7 @@
     },
     {
       "id": "naya_knight_of_new_alara",
-      "name": "Knight of New Alara",
+      "name": "Naya Knight of New Alara",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -29203,7 +29203,7 @@
     },
     {
       "id": "naya_rhox_charger",
-      "name": "Rhox Charger",
+      "name": "Naya Rhox Charger",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -29226,7 +29226,7 @@
     },
     {
       "id": "naya_bloodbraid_elf",
-      "name": "Bloodbraid Elf",
+      "name": "Naya Bloodbraid Elf",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "common",
@@ -29280,7 +29280,7 @@
     },
     {
       "id": "naya_wild_nacatl",
-      "name": "Wild Nacatl",
+      "name": "Naya Wild Nacatl",
       "cardClass": "magepunk",
       "cost": 1,
       "rarity": "common",
@@ -29303,7 +29303,7 @@
     },
     {
       "id": "naya_gahiji",
-      "name": "Gahiji, Honored One",
+      "name": "Naya Gahiji, Honored One",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -29397,7 +29397,7 @@
     },
     {
       "id": "naya_titanic_ultimatum",
-      "name": "Titanic Ultimatum",
+      "name": "Naya Titanic Ultimatum",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -29535,7 +29535,7 @@
     },
     {
       "id": "grixis_nicol_bolas",
-      "name": "Nicol Bolas, the Ravager",
+      "name": "Grixis Nicol Bolas, the Ravager",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -29570,7 +29570,7 @@
     },
     {
       "id": "grixis_thraximundar",
-      "name": "Thraximundar",
+      "name": "Grixis Thraximundar",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -29593,7 +29593,7 @@
     },
     {
       "id": "grixis_sedris",
-      "name": "Sedris, the Traitor King",
+      "name": "Grixis Sedris, the Traitor King",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -29626,7 +29626,7 @@
     },
     {
       "id": "grixis_sedraxis_specter",
-      "name": "Sedraxis Specter",
+      "name": "Grixis Sedraxis Specter",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -29681,7 +29681,7 @@
     },
     {
       "id": "grixis_blood_tyrant",
-      "name": "Blood Tyrant",
+      "name": "Grixis Blood Tyrant",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -29704,7 +29704,7 @@
     },
     {
       "id": "grixis_vithian_stinger",
-      "name": "Vithian Stinger",
+      "name": "Grixis Vithian Stinger",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -29734,7 +29734,7 @@
     },
     {
       "id": "grixis_kederekt_leviathan",
-      "name": "Kederekt Leviathan",
+      "name": "Grixis Kederekt Leviathan",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -29786,7 +29786,7 @@
     },
     {
       "id": "grixis_cruel_ultimatum",
-      "name": "Cruel Ultimatum",
+      "name": "Grixis Cruel Ultimatum",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -29873,7 +29873,7 @@
     },
     {
       "id": "grixis_deny_reality",
-      "name": "Deny Reality",
+      "name": "Grixis Deny Reality",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -29990,7 +29990,7 @@
     },
     {
       "id": "jund_kresh",
-      "name": "Kresh the Bloodbraided",
+      "name": "Jund Kresh the Bloodbraided",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -30022,7 +30022,7 @@
     },
     {
       "id": "jund_sprouting_thrinax",
-      "name": "Sprouting Thrinax",
+      "name": "Jund Sprouting Thrinax",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -30068,7 +30068,7 @@
     },
     {
       "id": "jund_bituminous_blast",
-      "name": "Bituminous Blast",
+      "name": "Jund Bituminous Blast",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -30120,7 +30120,7 @@
     },
     {
       "id": "jund_deathbringer_thoctar",
-      "name": "Deathbringer Thoctar",
+      "name": "Jund Deathbringer Thoctar",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "common",
@@ -30150,7 +30150,7 @@
     },
     {
       "id": "jund_prossh",
-      "name": "Prossh, Skyraider of Kher",
+      "name": "Jund Prossh, Skyraider of Kher",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -30371,7 +30371,7 @@
     },
     {
       "id": "sultai_sidisi",
-      "name": "Sidisi, Brood Tyrant",
+      "name": "Sultai Sidisi, Brood Tyrant",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -30407,7 +30407,7 @@
     },
     {
       "id": "sultai_sagu_mauler",
-      "name": "Sagu Mauler",
+      "name": "Sultai Sagu Mauler",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -30431,7 +30431,7 @@
     },
     {
       "id": "sultai_rakshasa_deathdealer",
-      "name": "Rakshasa Deathdealer",
+      "name": "Sultai Rakshasa Deathdealer",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -30454,7 +30454,7 @@
     },
     {
       "id": "sultai_necropolis_fiend",
-      "name": "Necropolis Fiend",
+      "name": "Sultai Necropolis Fiend",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "rare",
@@ -30512,7 +30512,7 @@
     },
     {
       "id": "sultai_icefeather_aven",
-      "name": "Icefeather Aven",
+      "name": "Sultai Icefeather Aven",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -30542,7 +30542,7 @@
     },
     {
       "id": "sultai_villainous_wealth",
-      "name": "Villainous Wealth",
+      "name": "Sultai Villainous Wealth",
       "cardClass": "magepunk",
       "cost": 7,
       "rarity": "rare",
@@ -30569,7 +30569,7 @@
     },
     {
       "id": "sultai_kheru_lich_lord",
-      "name": "Kheru Lich Lord",
+      "name": "Sultai Kheru Lich Lord",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -30602,7 +30602,7 @@
     },
     {
       "id": "sultai_winged_coatl",
-      "name": "Winged Coatl",
+      "name": "Sultai Winged Coatl",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -30799,7 +30799,7 @@
     },
     {
       "id": "temur_surrak",
-      "name": "Surrak Dragonclaw",
+      "name": "Temur Surrak Dragonclaw",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -30830,7 +30830,7 @@
     },
     {
       "id": "temur_savage_knuckleblade",
-      "name": "Savage Knuckleblade",
+      "name": "Temur Savage Knuckleblade",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -30853,7 +30853,7 @@
     },
     {
       "id": "temur_yasova",
-      "name": "Yasova Dragonclaw",
+      "name": "Temur Yasova Dragonclaw",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -30876,7 +30876,7 @@
     },
     {
       "id": "temur_avalanche_tusker",
-      "name": "Avalanche Tusker",
+      "name": "Temur Avalanche Tusker",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -30952,7 +30952,7 @@
     },
     {
       "id": "temur_glacial_stalker",
-      "name": "Glacial Stalker",
+      "name": "Temur Glacial Stalker",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
@@ -30972,7 +30972,7 @@
     },
     {
       "id": "temur_woolly_loxodon",
-      "name": "Woolly Loxodon",
+      "name": "Temur Woolly Loxodon",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "common",
