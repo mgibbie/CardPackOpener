@@ -223935,6 +223935,67 @@
         }
       ],
       "description": "Destroy 3 random enemy creatures."
+    },
+    {
+      "id": "netherese_puzzle_ward",
+      "name": "Netherese Puzzle-Ward",
+      "type": "enchantment",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "epic",
+      "set": "paper",
+      "ongoings": [
+        {
+          "on": "turn-start",
+          "effects": [
+            {
+              "type": "roll-scry",
+              "sides": 6
+            }
+          ]
+        },
+        {
+          "on": "die-rolled-max",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Focus Beam - At the start of your turn, roll a d6. Scry X, where X is the result.\nPerfect Illumination - After you roll a die's highest natural result, draw a card."
+    },
+    {
+      "id": "thorough_investigation",
+      "name": "Thorough Investigation",
+      "type": "enchantment",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "ongoings": [
+        {
+          "on": "friendly-attacks",
+          "effects": [
+            {
+              "type": "investigate"
+            }
+          ]
+        },
+        {
+          "on": "token-sacrificed",
+          "if": {
+            "cardId": "clue_token"
+          },
+          "effects": [
+            {
+              "type": "advance"
+            }
+          ]
+        }
+      ],
+      "description": "Creatures you control have \"Swing: Investigate.\"\nWhenever you sacrifice a Clue token, you may Advance."
     }
   ]
 }

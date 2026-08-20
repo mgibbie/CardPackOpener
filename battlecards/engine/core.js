@@ -4332,6 +4332,18 @@ export function canPlaneswalk(state, pi) {
 	return availableMana(p) >= (p.planarRollsThisTurn || 0);
 }
 
+// Roll a die (default d6) for player pi. Emits a `dieRolled` event and fires the
+// `die-rolled` ongoing trigger; on the die's highest natural face it also fires
+// `die-rolled-max`, so cards like Netherese Puzzle-Ward's "Perfect Illumination"
+// can react to any die you roll. Returns the natural result.
+export function rollDie(state, pi, sides = 6) {
+	const value = 1 + Math.floor(state.rng() * sides);
+	emit(state, { type: 'dieRolled', player: pi, value, sides });
+	fireOngoing(state, pi, 'die-rolled', { dieValue: value, dieSides: sides });
+	if (value === sides) fireOngoing(state, pi, 'die-rolled-max', { dieValue: value, dieSides: sides });
+	return value;
+}
+
 export function planarRollCost(state, pi) { return state.players[pi].planarRollsThisTurn || 0; }
 
 export function planeswalk(state, pi) {
@@ -4340,7 +4352,7 @@ export function planeswalk(state, pi) {
 	const cost = p.planarRollsThisTurn || 0;
 	spendMana(p, cost);
 	p.planarRollsThisTurn = cost + 1;
-	const roll = 1 + Math.floor(state.rng() * 6);
+	const roll = rollDie(state, pi, 6);
 	emit(state, { type: 'planarRoll', player: pi, roll, cost });
 	if (roll === 5) { const pd = state.plane ? state.cardsById[state.plane] : null; if (pd && pd.chaos) execEffects(state, pi, pd.chaos, null, null); }
 	else if (roll === 6) { execEffects(state, pi, [{ type: 'planeshift' }], null, null); }

@@ -3,6 +3,7 @@
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
+import { validateGameState } from '../../engine/validate.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
@@ -25,9 +26,12 @@ for (const id of ['trick_totem', 'grand_archivist', 'dragonhatcher', 'y_shaarj_r
 {
 	const st = game(); put(st, 0, 'trick_totem'); st.players[1].life = 30;
 	const before = JSON.stringify(st.players.map(p => [p.life, p.board.length]));
-	E.endTurn(st);
-	// hard to assert the exact random spell, but the game must stay coherent and something usually happened
-	ok('Trick Totem: no crash casting a random <=3 spell', !st.over && st.players[0].board.some(b => b.id === 'trick_totem'));
+	let threw = null; try { E.endTurn(st); } catch (e) { threw = e; }
+	// Hard to assert the exact random spell — and a random <=3 spell may legitimately
+	// transform or clear the 0/3 totem itself. So assert the turn resolved coherently
+	// (no throw, game not over, valid state), NOT that the totem survived. (Which spell
+	// is picked is seed-sensitive: adding collectible cards perturbs the random draw.)
+	ok('Trick Totem: no crash casting a random <=3 spell', !threw && !st.over && (validateGameState(st) || []).length === 0, threw && threw.message);
 }
 // Grand Archivist: end of turn, cast a spell from your deck
 {

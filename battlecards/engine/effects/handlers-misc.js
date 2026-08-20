@@ -2,10 +2,15 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice } from '../../engine.js';
+import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie } from '../../engine.js';
 
 // Advance (MTG's "Venture into the Dungeon"): enter a dungeon or advance to the next room.
 register('advance', ({ state, pi }) => { advance(state, pi); });
+// Focus Beam (Netherese Puzzle-Ward): roll a die (default d6), then Scry that many.
+register('roll-scry', ({ state, pi, target, source }, e) => {
+	const value = rollDie(state, pi, e.sides || 6);
+	if (value > 0) execEffects(state, pi, [{ type: 'scry', value }], target, source);
+});
 register('assemble', ({ state, pi }) => { assemble(state, pi); });
 register('grant-target', ({ state, pi }, e) => { grantKeywordToChoice(state, pi, e.keyword); });
 register('target-player', ({ state, pi }, e) => { targetOpponent(state, pi, e.action, e.value); });

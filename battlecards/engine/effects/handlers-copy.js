@@ -2,7 +2,7 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { addHeroPower } from '../../engine.js';
+import { addHeroPower, rollDie } from '../../engine.js';
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //
 // Dispatch-order rule (behavior-preserving migration): inside execEffects'
@@ -168,7 +168,7 @@ register('underbelly-discover', ({ state, pi, target, source, enemies, scaled, h
 
 register('roll-dice-discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Snake Eyes: roll two dice, Discover a card of each rolled Cost (doubles = an extra)
-			const r1 = 1 + Math.floor(state.rng() * 6), r2 = 1 + Math.floor(state.rng() * 6);
+			const r1 = rollDie(state, pi, 6), r2 = rollDie(state, pi, 6);
 			execEffects(state, pi, [{ type: 'discover', cost: r1 }, { type: 'discover', cost: r2 }], null, source);
 			if (r1 === r2) execEffects(state, pi, [{ type: 'discover', cost: r1 }], null, source);
 } });
