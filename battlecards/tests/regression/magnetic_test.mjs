@@ -123,9 +123,14 @@ ok('absorbent_parasite magnetizes to Beast', cardsById.absorbent_parasite?.magne
 // ---------- the AI magnetizes onto its own Mechs ----------
 const runAI = st => { for (let i = 0; i < 10 && st.current === 0 && st.players[0].hand.length; i++) AI.step(st, 0); };
 
+// Cap mana just above the card cost so the AI doesn't spend the scenario ramping (with
+// LAND_COST+3 spare mana and no lands it would develop basics instead of casting) — this
+// isolates the magnetize/body DECISION, which is what these three cases exercise.
+const noRampMana = st => { st.players[0].mana.cur = st.players[0].mana.max = 5; };
+
 // value case: a keyword-granting magnetic minion fuses onto the AI's Mech
 {
-	const st = game();
+	const st = game(); noRampMana(st);
 	const mech = putMon(st, 0, { attack: 3, health: 4, tribe: 'Mech' }); mech.sick = true;
 	toHand(st, 0, 'annoy_o_module'); // magnetic: divine_shield + taunt
 	runAI(st);
@@ -136,7 +141,7 @@ const runAI = st => { for (let i = 0; i < 10 && st.current === 0 && st.players[0
 
 // body case: a vanilla stat-stick (no keyword) onto an unshielded Mech → develop a second body
 {
-	const st = game();
+	const st = game(); noRampMana(st);
 	cardsById._mag_vanilla = { id: '_mag_vanilla', name: 'Vanilla Bot', type: 'creature', cost: 2, attack: 2, health: 2, tribe: 'Mech', magnetic: true, rarity: 'common', description: 'test' };
 	const mech = putMon(st, 0, { attack: 2, health: 2, tribe: 'Mech' }); mech.sick = true;
 	toHand(st, 0, '_mag_vanilla');
@@ -146,7 +151,7 @@ const runAI = st => { for (let i = 0; i < 10 && st.current === 0 && st.players[0
 
 // no target: no friendly Mech → plays as a normal body
 {
-	const st = game();
+	const st = game(); noRampMana(st);
 	const beast = putMon(st, 0, { attack: 2, health: 2, tribe: 'Beast' }); beast.sick = true;
 	toHand(st, 0, 'skaterbot');
 	runAI(st);

@@ -222,7 +222,7 @@ export function step(state, pi = 1) {
 		if (spec && spec.required) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(Math.random() * legal.length)];
+			target = legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapArtifact(state, pi, a.uid, target)) return true;
 	}
@@ -249,7 +249,7 @@ export function step(state, pi = 1) {
 		if (spec) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(Math.random() * legal.length)];
+			target = legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapLand(state, pi, l.uid, idx, target)) return true;
 	}
@@ -264,7 +264,7 @@ export function step(state, pi = 1) {
 		if (spec) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(Math.random() * legal.length)];
+			target = legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapLand(state, pi, l.uid, 0, target)) return true;
 	}
@@ -282,14 +282,14 @@ export function step(state, pi = 1) {
 			if (!ups.length) continue;
 			const pref = ups.filter(d => [...E.landColors(d)].some(c => want.has(c)));
 			const from = pref.length ? pref : ups;
-			if (E.upgradeLand(state, pi, l.uid, from[Math.floor(Math.random() * from.length)].id)) return true;
+			if (E.upgradeLand(state, pi, l.uid, from[Math.floor(state.rng() * from.length)].id)) return true;
 		}
 		// otherwise develop a basic — favor a color the hand wants but the board can't make yet
 		if (E.canBuyLand(state, pi) && p.lands.length < 3) {
 			const basics = E.availableLands(state, pi);
 			const need = basics.filter(d => [...E.landColors(d)].some(c => want.has(c) && !have.has(c)));
 			const pool = need.length ? need : basics;
-			if (pool.length && E.buyLand(state, pi, pool[Math.floor(Math.random() * pool.length)].id)) return true;
+			if (pool.length && E.buyLand(state, pi, pool[Math.floor(state.rng() * pool.length)].id)) return true;
 		}
 	}
 
