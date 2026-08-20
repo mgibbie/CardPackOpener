@@ -9524,12 +9524,11 @@
           ]
         },
         {
-          "text": "Conjure a Istfell card.",
+          "text": "Discover a Istfell card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Istfell",
-              "count": 1
+              "type": "discover",
+              "landSet": "Istfell"
             }
           ]
         }
@@ -10227,12 +10226,11 @@
           ]
         },
         {
-          "text": "Conjure a Starnheim card.",
+          "text": "Discover a Starnheim card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Starnheim",
-              "count": 1
+              "type": "discover",
+              "landSet": "Starnheim"
             }
           ]
         }
@@ -10711,12 +10709,11 @@
           ]
         },
         {
-          "text": "Conjure a Axgard card.",
+          "text": "Discover a Axgard card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Axgard",
-              "count": 1
+              "type": "discover",
+              "landSet": "Axgard"
             }
           ]
         }
@@ -11386,12 +11383,11 @@
           ]
         },
         {
-          "text": "Conjure a Bretagard card.",
+          "text": "Discover a Bretagard card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Bretagard",
-              "count": 1
+              "type": "discover",
+              "landSet": "Bretagard"
             }
           ]
         }
@@ -11976,12 +11972,11 @@
           ]
         },
         {
-          "text": "Conjure a Karfell card.",
+          "text": "Discover a Karfell card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Karfell",
-              "count": 1
+              "type": "discover",
+              "landSet": "Karfell"
             }
           ]
         }
@@ -12599,12 +12594,11 @@
           ]
         },
         {
-          "text": "Conjure a Surtland card.",
+          "text": "Discover a Surtland card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Surtland",
-              "count": 1
+              "type": "discover",
+              "landSet": "Surtland"
             }
           ]
         }
@@ -12704,12 +12698,11 @@
           ]
         },
         {
-          "text": "Conjure a Littjara card.",
+          "text": "Discover a Littjara card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Littjara",
-              "count": 1
+              "type": "discover",
+              "landSet": "Littjara"
             }
           ]
         }
@@ -13731,12 +13724,11 @@
           ]
         },
         {
-          "text": "Conjure a Immersturm card.",
+          "text": "Discover a Immersturm card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Immersturm",
-              "count": 1
+              "type": "discover",
+              "landSet": "Immersturm"
             }
           ]
         }
@@ -13992,12 +13984,11 @@
           ]
         },
         {
-          "text": "Conjure a Skemfar card.",
+          "text": "Discover a Skemfar card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Skemfar",
-              "count": 1
+              "type": "discover",
+              "landSet": "Skemfar"
             }
           ]
         }
@@ -14949,12 +14940,11 @@
           ]
         },
         {
-          "text": "Conjure a Gnottvold card.",
+          "text": "Discover a Gnottvold card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Gnottvold",
-              "count": 1
+              "type": "discover",
+              "landSet": "Gnottvold"
             }
           ]
         }
@@ -23371,6 +23361,4070 @@
       "keywords": [
         "trample",
         "charge"
+      ]
+    },
+    {
+      "id": "ranar_the_everwatchful",
+      "name": "Ranar the Ever-Watchful",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Summon a 1/1 Spirit with Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Spirit",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ascendant_spirit",
+      "name": "Ascendant Spirit",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Divine Shield.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "battlefield_raptor",
+      "name": "Battlefield Raptor",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive. First Strike.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "first_strike"
+      ]
+    },
+    {
+      "id": "augury_raven",
+      "name": "Augury Raven",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "mistwalker",
+      "name": "Mistwalker",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "behold_the_multiverse",
+      "name": "Behold the Multiverse",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Scry 2. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "saw_it_coming",
+      "name": "Saw It Coming",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "depart_the_realm",
+      "name": "Depart the Realm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "iron_verdict",
+      "name": "Iron Verdict",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rally_the_ranks",
+      "name": "Rally the Ranks",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "istfell_wraith",
+      "name": "Istfell Wraith",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive. Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
+    },
+    {
+      "id": "istfell_seer",
+      "name": "Istfell Seer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "istfell_valkyrie",
+      "name": "Istfell Valkyrie",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Elusive. Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Angel",
+      "keywords": [
+        "elusive",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "fog_of_istfell",
+      "name": "Fog of Istfell",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Freeze all enemy creatures. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "istfell_monument",
+      "name": "Istfell Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false,
+      "description": "Summon two 2/2 Spirits with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Spirit",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "firja_judge_of_valor",
+      "name": "Firja, Judge of Valor",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Draw a card. Each opponent discards a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Angel Cleric",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "righteous_valkyrie",
+      "name": "Righteous Valkyrie",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Gain 3 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Angel Cleric",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "starnheim_aspirant",
+      "name": "Starnheim Aspirant",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "valkyrie_harbinger",
+      "name": "Valkyrie Harbinger",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Summon a 4/4 Angel with Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Angel",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Angel",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "starnheim_courser",
+      "name": "Starnheim Courser",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Reborn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Angel",
+      "keywords": [
+        "reborn"
+      ]
+    },
+    {
+      "id": "firjas_retribution",
+      "name": "Firja’s Retribution",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Destroy a creature. Summon a 2/2 Angel with Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Angel",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doomskar",
+      "name": "Doomskar",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Deal 5 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "angelfire_ignition",
+      "name": "Angelfire Ignition",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "search_for_glory",
+      "name": "Search for Glory",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Scry 2 and draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "starnheim_unleashed",
+      "name": "Starnheim Unleashed",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Summon two 4/4 Angels with Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 4,
+          "health": 4,
+          "name": "Angel",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "valkyrie_reaper",
+      "name": "Valkyrie Reaper",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Lifesteal. Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Angel",
+      "keywords": [
+        "lifesteal",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "starnheim_cleric",
+      "name": "Starnheim Cleric",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain 2 life.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "honored_dead",
+      "name": "Honored Dead",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Reborn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Zombie",
+      "keywords": [
+        "reborn"
+      ]
+    },
+    {
+      "id": "starnheim_drainmage",
+      "name": "Starnheim Drainmage",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to each opponent and gain 2 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "starnheim_monument",
+      "name": "Starnheim Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false,
+      "description": "Summon a 2/2 Angel with Lifesteal. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Angel",
+          "keywords": [
+            "lifesteal"
+          ]
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "magda_brazen_outlaw",
+      "name": "Magda, Brazen Outlaw",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+0.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dwarf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "axgard_cavalry",
+      "name": "Axgard Cavalry",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "axgard_braggart",
+      "name": "Axgard Braggart",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "dwarven_reinforcements",
+      "name": "Dwarven Reinforcements",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Summon two 2/1 Dwarves with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Dwarf",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dwarven_hammer",
+      "name": "Dwarven Hammer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "A 3/2 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2
+    },
+    {
+      "id": "axgard_forgemaster",
+      "name": "Axgard Forgemaster",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +2/+2 and Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Dwarf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "divine_shield"
+        }
+      ]
+    },
+    {
+      "id": "demon_bolt",
+      "name": "Demon Bolt",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "frost_bite",
+      "name": "Frost Bite",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Deal 2 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "rune_of_might",
+      "name": "Rune of Might",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Trample. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "trample"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "axgard_smith",
+      "name": "Axgard Smith",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Divine Shield.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dwarf",
+      "keywords": [
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "forge_devil",
+      "name": "Forge Devil",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Battlecry: Deal 1 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Devil",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "axgard_veteran",
+      "name": "Axgard Veteran",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "axgard_warsmith",
+      "name": "Axgard Warsmith",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Dwarf",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "axgard_flamewright",
+      "name": "Axgard Flamewright",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Dwarf Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "axgard_monument",
+      "name": "Axgard Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false,
+      "description": "Summon a 3/2 Dwarf with Rush. Each opponent loses 1 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Dwarf",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "maja_bretagard_protector",
+      "name": "Maja, Bretagard Protector",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Human and give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Human"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "battle_for_bretagard",
+      "name": "Battle for Bretagard",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Summon two 2/2 Humans and give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Human"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_stronghold_guard",
+      "name": "Bretagard Stronghold Guard",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "bretagard_valkyrie",
+      "name": "Bretagard Valkyrie",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Divine Shield. Taunt.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Angel",
+      "keywords": [
+        "divine_shield",
+        "taunt"
+      ]
+    },
+    {
+      "id": "bretagard_elder",
+      "name": "Bretagard Elder",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_militia",
+      "name": "Bretagard Militia",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Human.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Human"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_bannerman",
+      "name": "Bretagard Bannerman",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1 and Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "elderleaf_mentor",
+      "name": "Elderleaf Mentor",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Elf.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Elf"
+        }
+      ]
+    },
+    {
+      "id": "boreal_outrider",
+      "name": "Boreal Outrider",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_healer",
+      "name": "Bretagard Healer",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain 3 life.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Cleric",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_champion",
+      "name": "Bretagard Champion",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_shieldmate",
+      "name": "Bretagard Shieldmate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Divine Shield.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "bretagard_druid",
+      "name": "Bretagard Druid",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn and gain 2 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "rally_the_bretagard",
+      "name": "Rally the Bretagard",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Give your creatures +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "bretagard_monument",
+      "name": "Bretagard Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false,
+      "description": "Summon two 2/2 Humans. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Human"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "egon_god_of_death",
+      "name": "Egon, God of Death",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Deathtouch. Battlecry: Draw a card. Each opponent discards a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "draugr_necromancer",
+      "name": "Draugr Necromancer",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Zombie",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "karfell_kennelmaster",
+      "name": "Karfell Kennel-Master",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Battlecry: Summon a 2/2 Zombie with Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Zombie",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grim_draugr",
+      "name": "Grim Draugr",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Zombie",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "priest_of_the_haunted_edge",
+      "name": "Priest of the Haunted Edge",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Elf Cleric",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "karfell_harbinger",
+      "name": "Karfell Harbinger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Zombie Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "poison_the_cup",
+      "name": "Poison the Cup",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Destroy a creature. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "karfell_curse",
+      "name": "Karfell Curse",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "deathknell_of_karfell",
+      "name": "Deathknell of Karfell",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "karfell_assassin",
+      "name": "Karfell Assassin",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Elusive. Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "undead_of_karfell",
+      "name": "Undead of Karfell",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Zombie",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "karfell_mistcaller",
+      "name": "Karfell Mistcaller",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "raise_the_draugr",
+      "name": "Raise the Draugr",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Zombie",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "karfell_doomspeaker",
+      "name": "Karfell Doomspeaker",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Battlecry: Each opponent discards 2 cards.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Zombie Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "karfell_monument",
+      "name": "Karfell Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false,
+      "description": "Summon two 2/2 Zombies with Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Zombie",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "surtr_fire_giant",
+      "name": "Surtr, Fire Giant",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Battlecry: Deal 4 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "calamity_bearer",
+      "name": "Calamity Bearer",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "cinderheart_giant",
+      "name": "Cinderheart Giant",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to all creatures.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "dragonkin_berserker",
+      "name": "Dragonkin Berserker",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dragon Berserker",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "surtland_pyromancer",
+      "name": "Surtland Pyromancer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Giant Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "crush_the_weak",
+      "name": "Crush the Weak",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Deal 2 damage to all creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "all-creatures"
+        }
+      ]
+    },
+    {
+      "id": "surtland_firebolt",
+      "name": "Surtland Firebolt",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "behold_the_cosmos",
+      "name": "Behold the Cosmos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Scry 2. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "surtland_conflagration",
+      "name": "Surtland Conflagration",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "frost_giant",
+      "name": "Frost Giant",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "surtland_stormcaller",
+      "name": "Surtland Stormcaller",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Giant Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "surtland_emberwurm",
+      "name": "Surtland Emberwurm",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Wurm",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "surtland_seer",
+      "name": "Surtland Seer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "flame_of_surtr",
+      "name": "Flame of Surtr",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Deal 5 damage to a creature and 1 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "surtland_monument",
+      "name": "Surtland Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
+      "collectible": false,
+      "description": "Summon a 3/3 Giant. Deal 2 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Giant"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "kardur_doomscourge",
+      "name": "Kardur, Doomscourge",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Deal 2 damage to each opponent.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Demon",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "immersturm_predator",
+      "name": "Immersturm Predator",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Lifesteal. Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "lifesteal",
+        "rush"
+      ]
+    },
+    {
+      "id": "bloodsky_berserker",
+      "name": "Bloodsky Berserker",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Berserker",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "immersturm_devil",
+      "name": "Immersturm Devil",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Devil",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "demonic_gifts",
+      "name": "Demonic Gifts",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Give a creature +2/+0 and Reborn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "creature",
+          "grant": "reborn"
+        }
+      ]
+    },
+    {
+      "id": "kardurs_vicious_return",
+      "name": "Kardur’s Vicious Return",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Summon two 2/2 Devils with Rush. Deal 2 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Devil",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "weigh_down",
+      "name": "Weigh Down",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "immersturm_raider",
+      "name": "Immersturm Raider",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "immersturm_demon",
+      "name": "Immersturm Demon",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Rush. Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Demon",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "immersturm_firebrand",
+      "name": "Immersturm Firebrand",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Charge.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Devil",
+      "keywords": [
+        "charge"
+      ]
+    },
+    {
+      "id": "blood_offering",
+      "name": "Blood Offering",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent and gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "immersturm_hellkite",
+      "name": "Immersturm Hellkite",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Charge. Lifesteal.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "immersturm_cultist",
+      "name": "Immersturm Cultist",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "raze_immersturm",
+      "name": "Raze Immersturm",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "immersturm_monument",
+      "name": "Immersturm Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false,
+      "description": "Summon a 3/2 Devil with Rush. Each opponent loses 1 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Devil",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "harald_king_of_skemfar",
+      "name": "Harald, King of Skemfar",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Deathtouch. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "elvish_warmaster",
+      "name": "Elvish Warmaster",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Elf and give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Elf"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "elderfang_disciple",
+      "name": "Elderfang Disciple",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "skemfar_avenger",
+      "name": "Skemfar Avenger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Deathtouch. Battlecry: Scry 1 and draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "skemfar_shadowsage",
+      "name": "Skemfar Shadowsage",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to each opponent and gain 2 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "sarulf_realm_eater",
+      "name": "Sarulf, Realm Eater",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Wolf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "harald_unites_the_elves",
+      "name": "Harald Unites the Elves",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. A friendly creature fights an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "struggle_for_skemfar",
+      "name": "Struggle for Skemfar",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "A friendly creature fights an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "gladewalker_ritualist",
+      "name": "Gladewalker Ritualist",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "skemfar_druid",
+      "name": "Skemfar Druid",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "skemfar_deathspeaker",
+      "name": "Skemfar Deathspeaker",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Deathtouch. Reborn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf Cleric",
+      "keywords": [
+        "deathtouch",
+        "reborn"
+      ]
+    },
+    {
+      "id": "skemfar_hunter",
+      "name": "Skemfar Hunter",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "elfhame_wurm",
+      "name": "Elfhame Wurm",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Wurm",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "venom_of_skemfar",
+      "name": "Venom of Skemfar",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Deathtouch. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "skemfar_monument",
+      "name": "Skemfar Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false,
+      "description": "Summon two 2/2 Elves with Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arni_brokenbrow",
+      "name": "Arni Brokenbrow",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Rush. Battlecry: Give a creature +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Berserker",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "battle_mammoth",
+      "name": "Battle Mammoth",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Elephant",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "ravenous_lindwurm",
+      "name": "Ravenous Lindwurm",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Wurm",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "sarulfs_packmate",
+      "name": "Sarulf’s Packmate",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Wolf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "grizzled_outrider",
+      "name": "Grizzled Outrider",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elf Warrior",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "gnottvold_troll",
+      "name": "Gnottvold Troll",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Trample. Reborn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Troll",
+      "keywords": [
+        "trample",
+        "reborn"
+      ]
+    },
+    {
+      "id": "gnottvold_recluse",
+      "name": "Gnottvold Recluse",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Troll",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "gnottvold_rampage",
+      "name": "Gnottvold Rampage",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "gnottvold_hunt",
+      "name": "Gnottvold Hunt",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Give a creature +1/+1. A friendly creature fights an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        },
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "troll_of_gnottvold",
+      "name": "Troll of Gnottvold",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Trample. Charge.",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Troll",
+      "keywords": [
+        "trample",
+        "charge"
+      ]
+    },
+    {
+      "id": "gnottvold_firebeast",
+      "name": "Gnottvold Firebeast",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Rush. Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "gnottvold_shaman",
+      "name": "Gnottvold Shaman",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf Shaman",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "gnottvold_boulder",
+      "name": "Gnottvold Boulder",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "gnottvold_beastcaller",
+      "name": "Gnottvold Beastcaller",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "gnottvold_monument",
+      "name": "Gnottvold Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Gnottvold",
+      "collectible": false,
+      "description": "Summon a 3/3 Beast with Trample. Deal 2 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Beast",
+          "keywords": [
+            "trample"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "alrund_god_of_the_cosmos",
+      "name": "Alrund, God of the Cosmos",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "cosima_god_of_the_voyage",
+      "name": "Cosima, God of the Voyage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Draw a card and Scry 1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "icebreaker_kraken",
+      "name": "Icebreaker Kraken",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Freeze all enemy creatures.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Kraken",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "masked_vandal",
+      "name": "Masked Vandal",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Return an enemy creature to its owner’s hand.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "littjara_kinseekers",
+      "name": "Littjara Kinseekers",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "kelpie_guide",
+      "name": "Kelpie Guide",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Horse Fish",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "sculptor_of_winter",
+      "name": "Sculptor of Winter",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "littjara_epiphany",
+      "name": "Littjara Epiphany",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Draw 3 cards. Scry 2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "littjara_reflection",
+      "name": "Littjara Reflection",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ravenform",
+      "name": "Ravenform",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "changeling_of_littjara",
+      "name": "Changeling of Littjara",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "littjara_mirrorlake",
+      "name": "Littjara Mirrorlake",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "littjara_treefolk",
+      "name": "Littjara Treefolk",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Treefolk Shapeshifter",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "littjara_shifter",
+      "name": "Littjara Shifter",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "littjara_monument",
+      "name": "Littjara Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false,
+      "description": "Summon two 2/2 Shapeshifters with Elusive. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Shapeshifter",
+          "keywords": [
+            "elusive"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
