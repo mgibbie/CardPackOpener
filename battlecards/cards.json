@@ -4832,9 +4832,9 @@
           "text": "Conjure a Colorless card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Colorless",
-              "count": 1
+              "type": "conjure",
+              "count": 1,
+              "landSet": "Wastes"
             }
           ]
         }
@@ -31200,6 +31200,1429 @@
           "target": "creature"
         }
       ]
+    },
+    {
+      "id": "wastes_kozilek",
+      "name": "Kozilek, the Great Distortion",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 8,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 10,
+      "health": 10,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Trample. Battlecry: Draw 2 cards."
+    },
+    {
+      "id": "wastes_ulamog",
+      "name": "Ulamog, the Ceaseless Hunger",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 9,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 10,
+      "health": 10,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Trample. Battlecry: Destroy a creature."
+    },
+    {
+      "id": "wastes_emrakul",
+      "name": "Emrakul, the Aeons Torn",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 10,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 12,
+      "health": 12,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample",
+        "elusive"
+      ],
+      "description": "Trample. Elusive."
+    },
+    {
+      "id": "wastes_thought_knot_seer",
+      "name": "Thought-Knot Seer",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Each opponent discards a card."
+    },
+    {
+      "id": "wastes_reality_smasher",
+      "name": "Reality Smasher",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample",
+        "rush"
+      ],
+      "description": "Trample. Rush."
+    },
+    {
+      "id": "wastes_matter_reshaper",
+      "name": "Matter Reshaper",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw a card."
+    },
+    {
+      "id": "wastes_endless_one",
+      "name": "Endless One",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Eldrazi",
+      "description": "A 4/4 for four."
+    },
+    {
+      "id": "wastes_hangarback_walker",
+      "name": "Hangarback Walker",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Thopter",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "description": "Battlecry: Summon two 1/1 Thopters with Elusive."
+    },
+    {
+      "id": "wastes_walking_ballista",
+      "name": "Walking Ballista",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to a creature."
+    },
+    {
+      "id": "wastes_eldrazi_mimic",
+      "name": "Eldrazi Mimic",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Eldrazi",
+      "description": "A 2/1 for two."
+    },
+    {
+      "id": "wastes_endbringer",
+      "name": "Endbringer",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to a creature and draw a card."
+    },
+    {
+      "id": "wastes_world_breaker",
+      "name": "World Breaker",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 7,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Trample. Battlecry: Destroy a creature."
+    },
+    {
+      "id": "wastes_oblivion_sower",
+      "name": "Oblivion Sower",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 6,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 8,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_void_winnower",
+      "name": "Void Winnower",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 9,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 11,
+      "health": 9,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "wastes_ruin_processor",
+      "name": "Ruin Processor",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 7,
+      "health": 8,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Gain 5 life."
+    },
+    {
+      "id": "wastes_bane_of_bala_ged",
+      "name": "Bane of Bala Ged",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 7,
+      "health": 5,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "wastes_breaker_of_armies",
+      "name": "Breaker of Armies",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 8,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 10,
+      "health": 8,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "taunt"
+      ],
+      "description": "Taunt."
+    },
+    {
+      "id": "wastes_vile_aggregate",
+      "name": "Vile Aggregate",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Eldrazi",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "wastes_conduit_of_ruin",
+      "name": "Conduit of Ruin",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Eldrazi",
+      "description": "A 3/4 for five."
+    },
+    {
+      "id": "wastes_deceiver_of_form",
+      "name": "Deceiver of Form",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Eldrazi",
+      "description": "A 5/5 for seven."
+    },
+    {
+      "id": "wastes_wurmcoil_engine",
+      "name": "Wurmcoil Engine",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 6,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Construct",
+      "keywords": [
+        "lifesteal",
+        "deathtouch"
+      ],
+      "description": "Lifesteal. Deathtouch."
+    },
+    {
+      "id": "wastes_solemn_simulacrum",
+      "name": "Solemn Simulacrum",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Golem",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Gain a Mana Crystal this turn."
+    },
+    {
+      "id": "wastes_steel_overseer",
+      "name": "Steel Overseer",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Give your creatures +1/+1."
+    },
+    {
+      "id": "wastes_ornithopter",
+      "name": "Ornithopter",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 0,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 0,
+      "health": 2,
+      "tribe": "Thopter",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive."
+    },
+    {
+      "id": "wastes_juggernaut",
+      "name": "Juggernaut",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Construct",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush."
+    },
+    {
+      "id": "wastes_phyrexian_metamorph",
+      "name": "Phyrexian Metamorph",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Construct",
+      "description": "A 3/3 for three."
+    },
+    {
+      "id": "wastes_lodestone_golem",
+      "name": "Lodestone Golem",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Golem",
+      "description": "A 5/3 for four."
+    },
+    {
+      "id": "wastes_meteor_golem",
+      "name": "Meteor Golem",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Golem",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Destroy a creature."
+    },
+    {
+      "id": "wastes_metalwork_colossus",
+      "name": "Metalwork Colossus",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 8,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 10,
+      "health": 10,
+      "tribe": "Construct",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "id": "wastes_triskelion",
+      "name": "Triskelion",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 6,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to a creature."
+    },
+    {
+      "id": "wastes_myr_battlesphere",
+      "name": "Myr Battlesphere",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 4,
+      "health": 7,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 4,
+          "attack": 1,
+          "health": 1,
+          "name": "Myr"
+        }
+      ],
+      "description": "Battlecry: Summon four 1/1 Myr."
+    },
+    {
+      "id": "wastes_steel_hellkite",
+      "name": "Steel Hellkite",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "rush"
+      ],
+      "description": "Elusive. Rush."
+    },
+    {
+      "id": "wastes_duplicant",
+      "name": "Duplicant",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 6,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Destroy a creature."
+    },
+    {
+      "id": "wastes_filigree_familiar",
+      "name": "Filigree Familiar",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Fox",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Gain 2 life."
+    },
+    {
+      "id": "wastes_pilgrims_eye",
+      "name": "Pilgrim’s Eye",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Thopter",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Elusive. Battlecry: Gain a Mana Crystal this turn."
+    },
+    {
+      "id": "wastes_palladium_myr",
+      "name": "Palladium Myr",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Myr",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_burnished_hart",
+      "name": "Burnished Hart",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_bottle_gnomes",
+      "name": "Bottle Gnomes",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Construct",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "description": "Taunt. Battlecry: Gain 3 life."
+    },
+    {
+      "id": "wastes_scuttling_doom_engine",
+      "name": "Scuttling Doom Engine",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 6,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to each opponent."
+    },
+    {
+      "id": "wastes_precursor_golem",
+      "name": "Precursor Golem",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Golem",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Golem"
+        }
+      ],
+      "description": "Battlecry: Summon two 3/3 Golems."
+    },
+    {
+      "id": "wastes_bonesplitter",
+      "name": "Bonesplitter",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 1,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "description": "A 2/3 weapon."
+    },
+    {
+      "id": "wastes_skullclamp",
+      "name": "Skullclamp",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 1,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 1,
+      "durability": 4,
+      "description": "A 1/4 weapon."
+    },
+    {
+      "id": "wastes_sword_of_fire_and_ice",
+      "name": "Sword of Fire and Ice",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 2,
+      "durability": 4,
+      "description": "A 2/4 weapon."
+    },
+    {
+      "id": "wastes_batterskull",
+      "name": "Batterskull",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 4,
+      "durability": 4,
+      "description": "A 4/4 weapon."
+    },
+    {
+      "id": "wastes_loxodon_warhammer",
+      "name": "Loxodon Warhammer",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 3,
+      "durability": 3,
+      "description": "A 3/3 weapon."
+    },
+    {
+      "id": "wastes_vulshok_morningstar",
+      "name": "Vulshok Morningstar",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "description": "A 2/3 weapon."
+    },
+    {
+      "id": "wastes_grafted_wargear",
+      "name": "Grafted Wargear",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "description": "A 3/2 weapon."
+    },
+    {
+      "id": "wastes_lightning_greaves",
+      "name": "Lightning Greaves",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 1,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ],
+      "description": "Give a creature Rush."
+    },
+    {
+      "id": "wastes_swiftfoot_boots",
+      "name": "Swiftfoot Boots",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 1,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "creature",
+          "grant": "elusive"
+        }
+      ],
+      "description": "Give a creature Elusive."
+    },
+    {
+      "id": "wastes_whispersilk_cloak",
+      "name": "Whispersilk Cloak",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "creature",
+          "grant": "elusive"
+        }
+      ],
+      "description": "Give a creature +1/+0 and Elusive."
+    },
+    {
+      "id": "wastes_sol_ring",
+      "name": "Sol Ring",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 1,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_mind_stone",
+      "name": "Mind Stone",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Gain a Mana Crystal this turn. Scry 1."
+    },
+    {
+      "id": "wastes_hedron_archive",
+      "name": "Hedron Archive",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Gain 2 Mana Crystals this turn. Draw a card."
+    },
+    {
+      "id": "wastes_everflowing_chalice",
+      "name": "Everflowing Chalice",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_thran_dynamo",
+      "name": "Thran Dynamo",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ],
+      "description": "Gain 3 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_worn_powerstone",
+      "name": "Worn Powerstone",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_coldsteel_heart",
+      "name": "Coldsteel Heart",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Gain a Mana Crystal this turn."
+    },
+    {
+      "id": "wastes_prismatic_lens",
+      "name": "Prismatic Lens",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Gain a Mana Crystal this turn. Scry 1."
+    },
+    {
+      "id": "wastes_ur_golems_eye",
+      "name": "Ur-Golem’s Eye",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Gain 2 Mana Crystals this turn."
+    },
+    {
+      "id": "wastes_star_compass",
+      "name": "Star Compass",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Gain a Mana Crystal this turn."
+    },
+    {
+      "id": "wastes_all_is_dust",
+      "name": "All Is Dust",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "all-creatures"
+        }
+      ],
+      "description": "Deal 8 damage to all creatures."
+    },
+    {
+      "id": "wastes_spatial_contortion",
+      "name": "Spatial Contortion",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 2 damage to a creature."
+    },
+    {
+      "id": "wastes_warping_wail",
+      "name": "Warping Wail",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 2,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ],
+      "description": "Deal 3 damage to a creature."
+    },
+    {
+      "id": "wastes_titans_presence",
+      "name": "Titan’s Presence",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Destroy a creature."
+    },
+    {
+      "id": "wastes_scour_from_existence",
+      "name": "Scour from Existence",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 7,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ],
+      "description": "Destroy a creature."
+    },
+    {
+      "id": "wastes_minds_eye",
+      "name": "Mind’s Eye",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Draw 2 cards."
+    },
+    {
+      "id": "wastes_endless_atlas",
+      "name": "Endless Atlas",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Draw 2 cards."
+    },
+    {
+      "id": "wastes_skittering_invasion",
+      "name": "Skittering Invasion",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 4,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Eldrazi Spawn"
+        }
+      ],
+      "description": "Summon three 1/1 Eldrazi Spawn."
+    },
+    {
+      "id": "wastes_eldrazi_monument",
+      "name": "Eldrazi Monument",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 5,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        }
+      ],
+      "description": "Give your creatures +1/+1 and Elusive."
+    },
+    {
+      "id": "wastes_spawning_bed",
+      "name": "Spawning Bed",
+      "colors": [],
+      "cardClass": "neutral",
+      "cost": 3,
+      "set": "paper",
+      "landSet": "Wastes",
+      "collectible": false,
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Eldrazi Scion"
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Summon two 1/1 Eldrazi Scions. Gain a Mana Crystal this turn."
     },
     {
       "id": "bant_citadel",
