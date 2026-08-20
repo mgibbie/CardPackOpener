@@ -9577,12 +9577,11 @@
           ]
         },
         {
-          "text": "Conjure a Ojutai card.",
+          "text": "Discover an Ojutai card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Ojutai",
-              "count": 1
+              "type": "discover",
+              "landSet": "Ojutai"
             }
           ]
         }
@@ -11335,12 +11334,11 @@
           ]
         },
         {
-          "text": "Conjure a Dromoka card.",
+          "text": "Discover a Dromoka card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Dromoka",
-              "count": 1
+              "type": "discover",
+              "landSet": "Dromoka"
             }
           ]
         }
@@ -11926,12 +11924,11 @@
           ]
         },
         {
-          "text": "Conjure a Silumgar card.",
+          "text": "Discover a Silumgar card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Silumgar",
-              "count": 1
+              "type": "discover",
+              "landSet": "Silumgar"
             }
           ]
         }
@@ -13787,12 +13784,11 @@
           ]
         },
         {
-          "text": "Conjure a Kolaghan card.",
+          "text": "Discover a Kolaghan card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Kolaghan",
-              "count": 1
+              "type": "discover",
+              "landSet": "Kolaghan"
             }
           ]
         }
@@ -14901,12 +14897,11 @@
           ]
         },
         {
-          "text": "Conjure a Atarka card.",
+          "text": "Discover an Atarka card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Atarka",
-              "count": 1
+              "type": "discover",
+              "landSet": "Atarka"
             }
           ]
         }
@@ -21404,6 +21399,1978 @@
           "target": "friendly-creatures",
           "grant": "rush"
         }
+      ]
+    },
+    {
+      "id": "dragonlord_ojutai",
+      "name": "Dragonlord Ojutai",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive. Divine Shield. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ishai_ojutai_dragonspeaker",
+      "name": "Ishai, Ojutai Dragonspeaker",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Bird Monk",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ojutai_exemplars",
+      "name": "Ojutai Exemplars",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Monk",
+      "keywords": [
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "ojutai_interceptor",
+      "name": "Ojutai Interceptor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive. Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
+    },
+    {
+      "id": "ojutai_monument",
+      "name": "Ojutai Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Summon a 2/2 Bird with Elusive. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Bird",
+          "keywords": [
+            "elusive"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ojutai_breath",
+      "name": "Ojutai’s Breath",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Freeze an enemy creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ojutai_command",
+      "name": "Ojutai’s Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain 4 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "ojutai_soul_of_winter",
+      "name": "Ojutai Soul of Winter",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Battlecry: Freeze all enemy creatures.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ojutai_summons",
+      "name": "Ojutai’s Summons",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Summon two 3/3 Birds with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Bird",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orator_of_ojutai",
+      "name": "Orator of Ojutai",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "tribe": "Bird Cleric",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "student_of_ojutai",
+      "name": "Student of Ojutai",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Battlecry: Gain 3 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Monk",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "taigam_ojutai_master",
+      "name": "Taigam, Ojutai Master",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Monk",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ojutai_spellfist",
+      "name": "Ojutai Spellfist",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Monk",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ojutai_zephyr_scribe",
+      "name": "Ojutai Zephyr Scribe",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ojutai_breezedancer",
+      "name": "Ojutai Breezedancer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Ojutai",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Djinn Monk",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "dragonlord_dromoka",
+      "name": "Dragonlord Dromoka",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Taunt. Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "taunt",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_champion",
+      "name": "Dromoka’s Champion",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_command",
+      "name": "Dromoka’s Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. A friendly creature fights an enemy creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "fight",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_gift",
+      "name": "Dromoka’s Gift",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Taunt.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_radiance",
+      "name": "Dromoka’s Radiance",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_ascendancy",
+      "name": "Dromoka Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_captain",
+      "name": "Dromoka Captain",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "dromoka_dunecaster",
+      "name": "Dromoka Dunecaster",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_monument",
+      "name": "Dromoka Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Summon two 2/2 Warriors.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Warrior"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_nobledrake",
+      "name": "Dromoka Nobledrake",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Elusive. Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Drake",
+      "keywords": [
+        "elusive",
+        "trample"
+      ]
+    },
+    {
+      "id": "dromoka_ravager",
+      "name": "Dromoka Ravager",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "dromoka_scalelord",
+      "name": "Dromoka Scalelord",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Trample. Battlecry: Give your creatures +1/+1 and Taunt.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_sunscorcher",
+      "name": "Dromoka Sunscorcher",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_warrior",
+      "name": "Dromoka Warrior",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "herald_of_dromoka",
+      "name": "Herald of Dromoka",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Taunt. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "dragonlord_silumgar",
+      "name": "Dragonlord Silumgar",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive. Deathtouch. Battlecry: Destroy a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "hand_of_silumgar",
+      "name": "Hand of Silumgar",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "silumgar_assassin",
+      "name": "Silumgar Assassin",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive. Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "silumgar_butcher",
+      "name": "Silumgar Butcher",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Zombie",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silumgar_monument",
+      "name": "Silumgar Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Zombie",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silumgar_scavenger",
+      "name": "Silumgar Scavenger",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Zombie",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "silumgar_command",
+      "name": "Silumgar’s Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Destroy a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silumgar_sorcerer",
+      "name": "Silumgar Sorcerer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Freeze an enemy creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "silumgar_spell_eater",
+      "name": "Silumgar Spell-Eater",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Snake",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silumgar_scorn",
+      "name": "Silumgar’s Scorn",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Return an enemy creature to its owner’s hand.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "silumgar_whelp",
+      "name": "Silumgar Whelp",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "silumgar_scholar",
+      "name": "Silumgar Scholar",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silumgar_scalelord",
+      "name": "Silumgar Scalelord",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Freeze all enemy creatures.",
+      "type": "creature",
+      "attack": 5,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "silumgar_deathfang",
+      "name": "Silumgar Deathfang",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Deathtouch. Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "deathtouch",
+        "trample"
+      ]
+    },
+    {
+      "id": "silumgar_pact",
+      "name": "Silumgar’s Pact",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Silumgar",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "dragonlord_kolaghan",
+      "name": "Dragonlord Kolaghan",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Charge. Lifesteal. Battlecry: Give your creatures Rush.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_command",
+      "name": "Kolaghan’s Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Deal 2 damage to a creature. Each opponent discards a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_aspirant",
+      "name": "Kolaghan Aspirant",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush. First Strike.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush",
+        "first_strike"
+      ]
+    },
+    {
+      "id": "kolaghan_forerunner",
+      "name": "Kolaghan Forerunner",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Charge. Battlecry: Give your creatures Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_monument",
+      "name": "Kolaghan Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Summon a 3/2 Warrior with Rush. Each opponent loses 1 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Warrior",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_skirmisher",
+      "name": "Kolaghan Skirmisher",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "kolaghan_stormsinger",
+      "name": "Kolaghan Stormsinger",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush. Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Shaman",
+      "keywords": [
+        "rush",
+        "elusive"
+      ]
+    },
+    {
+      "id": "kolaghan_warmonger",
+      "name": "Kolaghan Warmonger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Orc Warrior",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "fury_of_kolaghan",
+      "name": "Fury of Kolaghan",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_rager",
+      "name": "Kolaghan’s Rager",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 1,
+      "tribe": "Zombie",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "kolaghan_fanatic",
+      "name": "Kolaghan’s Fanatic",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "kolaghan_scaleguard",
+      "name": "Kolaghan’s Scaleguard",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Charge.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "charge"
+      ]
+    },
+    {
+      "id": "kolaghan_warkite",
+      "name": "Kolaghan’s Warkite",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Elusive. Charge.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "charge"
+      ]
+    },
+    {
+      "id": "kolaghan_thunder_regent",
+      "name": "Kolaghan’s Thunder Regent",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Charge. Battlecry: Deal 3 damage to a creature.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "kolaghan_lightning_shrieker",
+      "name": "Kolaghan’s Lightning Shrieker",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Kolaghan",
+      "collectible": false,
+      "description": "Charge. Elusive.",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "elusive"
+      ]
+    },
+    {
+      "id": "dragonlord_atarka",
+      "name": "Dragonlord Atarka",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample. Charge. Battlecry: Deal 4 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 7,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "trample",
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "atarka_command",
+      "name": "Atarka’s Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent. Give a creature +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "atarka_descending_armada",
+      "name": "Atarka’s Descending Armada",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Summon two 3/3 Dragons with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Dragon",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "atarka_foodthrall",
+      "name": "Atarka’s Foodthrall",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Zombie",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "atarka_lava_ritual",
+      "name": "Atarka’s Lava Ritual",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "atarka_arynx",
+      "name": "Atarka Arynx",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 3,
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "atarka_beastbreaker",
+      "name": "Atarka Beastbreaker",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Battlecry: Give a creature +2/+2.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "atarka_harbinger",
+      "name": "Atarka Harbinger",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "atarka_herdchaster",
+      "name": "Atarka Herdchaster",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample. Taunt.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "taunt"
+      ]
+    },
+    {
+      "id": "atarka_maniac",
+      "name": "Atarka Maniac",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Goblin",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "atarka_monument",
+      "name": "Atarka Monument",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Summon a 3/3 Beast with Trample. Deal 2 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Beast",
+          "keywords": [
+            "trample"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "atarka_pummeler",
+      "name": "Atarka Pummeler",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "atarka_pyrosurfer",
+      "name": "Atarka Pyrosurfer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Charge. Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Efreet",
+      "keywords": [
+        "charge",
+        "elusive"
+      ]
+    },
+    {
+      "id": "atarka_woodwalker",
+      "name": "Atarka Woodwalker",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "atarka_behemoth",
+      "name": "Atarka Behemoth",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "G"
+      ],
+      "landSet": "Atarka",
+      "collectible": false,
+      "description": "Trample. Charge.",
+      "type": "creature",
+      "attack": 8,
+      "health": 8,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "charge"
       ]
     },
     {
