@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "780f0c6",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "New Capenna + Ikoria triome pools (+150 cards, 10 families)",
+			"body": "Build the 5 New Capenna shard-families (Brokers/Obscura/Maestros/Riveteers/\nCabaretti) + 5 Ikoria wedge-triomes (Indatha/Ketria/Raugrin/Savai/Zagoth)\nfrom the plan, 15 each, designed to family identity (crime-family crews;\nRaugrin dinos, Savai cats, Zagoth snakes, Indatha nightmares). Flip all 10\nland taps conjure-named -> discover landSet. Add 10 pool tests. Suite 272->282.",
+			"cards": []
+		},
+		{
 			"sha": "33637c0",
 			"date": "2026-08-20",
 			"kind": "patch",
