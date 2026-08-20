@@ -23496,7 +23496,7 @@
     },
     {
       "id": "behold_the_multiverse",
-      "name": "Istfell Behold the Multiverse",
+      "name": "Istfell Revelation",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -23522,7 +23522,7 @@
     },
     {
       "id": "saw_it_coming",
-      "name": "Istfell Saw It Coming",
+      "name": "Istfell Foresight",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -23548,7 +23548,7 @@
     },
     {
       "id": "depart_the_realm",
-      "name": "Istfell Depart the Realm",
+      "name": "Istfell Banishment",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23597,7 +23597,7 @@
     },
     {
       "id": "rally_the_ranks",
-      "name": "Istfell Rally the Ranks",
+      "name": "Istfell Rally",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -23983,7 +23983,7 @@
     },
     {
       "id": "search_for_glory",
-      "name": "Starnheim Search for Glory",
+      "name": "Starnheim Devotion",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -25169,7 +25169,7 @@
     },
     {
       "id": "poison_the_cup",
-      "name": "Karfell Poison the Cup",
+      "name": "Karfell Poisoning",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -25317,7 +25317,7 @@
     },
     {
       "id": "raise_the_draugr",
-      "name": "Karfell Raise the Draugr",
+      "name": "Karfell Reanimation",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -25543,7 +25543,7 @@
     },
     {
       "id": "crush_the_weak",
-      "name": "Surtland Crush the Weak",
+      "name": "Surtland Eruption",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
@@ -25589,7 +25589,7 @@
     },
     {
       "id": "behold_the_cosmos",
-      "name": "Surtland Behold the Cosmos",
+      "name": "Surtland Revelation",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
@@ -25972,7 +25972,7 @@
     },
     {
       "id": "weigh_down",
-      "name": "Immersturm Weigh Down",
+      "name": "Immersturm Execution",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -26388,7 +26388,7 @@
     },
     {
       "id": "harald_unites_the_elves",
-      "name": "Skemfar Harald Unites the Elves",
+      "name": "Skemfar Uprising",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "rare",
@@ -28029,7 +28029,7 @@
     },
     {
       "id": "esper_cast_down",
-      "name": "Esper Cast Down",
+      "name": "Esper Execution",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -29873,7 +29873,7 @@
     },
     {
       "id": "grixis_deny_reality",
-      "name": "Grixis Deny Reality",
+      "name": "Grixis Denial",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "common",
