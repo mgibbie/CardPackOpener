@@ -10176,12 +10176,11 @@
           ]
         },
         {
-          "text": "Conjure a Silverquill card.",
+          "text": "Discover a Silverquill card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Silverquill",
-              "count": 1
+              "type": "discover",
+              "landSet": "Silverquill"
             }
           ]
         }
@@ -10766,12 +10765,11 @@
           ]
         },
         {
-          "text": "Conjure a Lorehold card.",
+          "text": "Discover a Lorehold card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Lorehold",
-              "count": 1
+              "type": "discover",
+              "landSet": "Lorehold"
             }
           ]
         }
@@ -12552,12 +12550,11 @@
           ]
         },
         {
-          "text": "Conjure a Prismari card.",
+          "text": "Discover a Prismari card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Prismari",
-              "count": 1
+              "type": "discover",
+              "landSet": "Prismari"
             }
           ]
         }
@@ -13211,12 +13208,11 @@
           ]
         },
         {
-          "text": "Conjure a Quandrix card.",
+          "text": "Discover a Quandrix card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Quandrix",
-              "count": 1
+              "type": "discover",
+              "landSet": "Quandrix"
             }
           ]
         }
@@ -13896,12 +13892,11 @@
           ]
         },
         {
-          "text": "Conjure a Witherbloom card.",
+          "text": "Discover a Witherbloom card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Witherbloom",
-              "count": 1
+              "type": "discover",
+              "landSet": "Witherbloom"
             }
           ]
         }
@@ -19352,6 +19347,2062 @@
           "type": "damage",
           "value": 4,
           "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "shadrix_silverquill",
+      "name": "Shadrix Silverquill",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Summon two 2/1 Inklings with Elusive; each opponent loses 2 life.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Inkling",
+          "keywords": [
+            "elusive"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_apprentice",
+      "name": "Silverquill Apprentice",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silverquill_pledgemage",
+      "name": "Silverquill Pledgemage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "felisa_fang_of_silverquill",
+      "name": "Felisa, Fang of Silverquill",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Summon two 1/1 Inklings with Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Inkling",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "silverquill_command",
+      "name": "Silverquill Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Each opponent loses 3 life. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silverquill_silencer",
+      "name": "Silverquill Silencer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Battlecry: Silence an enemy creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_grand_inkling",
+      "name": "Silverquill Grand Inkling",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Inkling",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_elocution",
+      "name": "Silverquill Elocution",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Give your creatures +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "killian_ink_duelist",
+      "name": "Killian, Ink Duelist",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_finale",
+      "name": "Silverquill Finale",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Each opponent loses 4 life. Gain 4 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_fracture",
+      "name": "Silverquill Fracture",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_laureate",
+      "name": "Silverquill Laureate",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "silverquill_charm",
+      "name": "Silverquill Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "silverquill_vanishverse",
+      "name": "Silverquill Vanishverse",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Destroy a creature with 3 or less Attack.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        }
+      ]
+    },
+    {
+      "id": "silverquill_spite",
+      "name": "Silverquill Spite",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Silverquill",
+      "collectible": false,
+      "description": "Each opponent discards a card and loses 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "galazeth_prismari",
+      "name": "Galazeth Prismari",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Deal 3 damage to a creature and draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_apprentice",
+      "name": "Prismari Apprentice",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_star_student",
+      "name": "Prismari Star Student",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "prismari_laureate",
+      "name": "Prismari Laureate",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_command",
+      "name": "Prismari Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Deal 4 damage to a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_charm",
+      "name": "Prismari Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "prismari_cluestone",
+      "name": "Prismari Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "prismari_keyrune",
+      "name": "Prismari Keyrune",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Summon a 3/2 Elemental with Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Elemental",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prismari_puzzlebox",
+      "name": "Prismari Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Scry 3. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "prismari_pledgemage",
+      "name": "Prismari Pledgemage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Deal 1 damage to all enemy creatures.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "prismari_summoning",
+      "name": "Prismari Summoning",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Summon two 3/3 Elementals.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Elemental"
+        }
+      ]
+    },
+    {
+      "id": "prismari_sage",
+      "name": "Prismari Sage",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_iteration",
+      "name": "Prismari Iteration",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Draw 2 cards. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "prismari_expression",
+      "name": "Prismari Expression",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "prismari_inspiration",
+      "name": "Prismari Inspiration",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Prismari",
+      "collectible": false,
+      "description": "Gain 2 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "beledros_witherbloom",
+      "name": "Beledros Witherbloom",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Taunt. Deathtouch. Battlecry: Each opponent loses 3 life; gain 3 life.",
+      "type": "creature",
+      "attack": 6,
+      "health": 8,
+      "tribe": "Demon",
+      "keywords": [
+        "taunt",
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_apprentice",
+      "name": "Witherbloom Apprentice",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Battlecry: Each opponent loses 1 life; gain 1 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 1,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_command",
+      "name": "Witherbloom Command",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Destroy a creature with 3 or less Attack. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "maxAttack": 3
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_pledgemage",
+      "name": "Witherbloom Pledgemage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Taunt. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "witherbloom_charm",
+      "name": "Witherbloom Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_laureate",
+      "name": "Witherbloom Laureate",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Deathtouch. Battlecry: Gain 3 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_bogbeast",
+      "name": "Witherbloom Bogbeast",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Trample. Lifesteal.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "witherbloom_wrangler",
+      "name": "Witherbloom Wrangler",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Deathtouch. Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "deathtouch",
+        "rush"
+      ]
+    },
+    {
+      "id": "witherbloom_tangletrap",
+      "name": "Witherbloom Tangletrap",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Deal 2 damage to all enemy creatures.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_witch",
+      "name": "Witherbloom Witch",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Battlecry: Summon two 1/1 Pests with Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Witch",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Pest",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_librarian",
+      "name": "Witherbloom Librarian",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Battlecry: Draw a card and gain 2 life.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_potionmaster",
+      "name": "Witherbloom Potionmaster",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Lifesteal. Battlecry: Each opponent loses 2 life.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_concoction",
+      "name": "Witherbloom Concoction",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Draw a card. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "witherbloom_bayou_dog",
+      "name": "Witherbloom Bayou Dog",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Dog",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "witherbloom_vineclinger",
+      "name": "Witherbloom Vineclinger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Witherbloom",
+      "collectible": false,
+      "description": "Deathtouch. Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Plant",
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
+    },
+    {
+      "id": "tanazir_quandrix",
+      "name": "Tanazir Quandrix",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Elusive. Trample. Battlecry: Give your creatures +2/+2.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Hydra",
+      "keywords": [
+        "elusive",
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "zimone_quandrix_prodigy",
+      "name": "Zimone, Quandrix Prodigy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "quandrix_pledgemage",
+      "name": "Quandrix Pledgemage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Give a creature +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "quandrix_apprentice",
+      "name": "Quandrix Apprentice",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "quandrix_command",
+      "name": "Quandrix Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Draw 2 cards. Give a creature +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "quandrix_charm",
+      "name": "Quandrix Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "quandrix_ascendancy",
+      "name": "Quandrix Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "quandrix_cultivator",
+      "name": "Quandrix Cultivator",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Battlecry: Gain 3 mana this turn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "kianne_dean_of_substance",
+      "name": "Kianne, Dean of Substance",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Elf Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "quandrix_aether_helix",
+      "name": "Quandrix Aether Helix",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Summon a 5/5 Fractal with Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Fractal",
+          "keywords": [
+            "trample"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quandrix_fractal_summoning",
+      "name": "Quandrix Fractal Summoning",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Summon two 3/3 Fractals.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Fractal"
+        }
+      ]
+    },
+    {
+      "id": "quandrix_manifestation",
+      "name": "Quandrix Manifestation",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Gain 3 mana this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "quandrix_duplication",
+      "name": "Quandrix Duplication",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Give your creatures +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "quandrix_sage",
+      "name": "Quandrix Sage",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Battlecry: Scry 2 and draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "quandrix_fractal_thesis",
+      "name": "Quandrix Fractal Thesis",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Quandrix",
+      "collectible": false,
+      "description": "Elusive. Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Fractal",
+      "keywords": [
+        "elusive",
+        "trample"
+      ]
+    },
+    {
+      "id": "velomachus_lorehold",
+      "name": "Velomachus Lorehold",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Charge. Elusive. Battlecry: Give your creatures +1/+1 and Rush.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Dragon Spirit",
+      "keywords": [
+        "charge",
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_apprentice",
+      "name": "Lorehold Apprentice",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Battlecry: Deal 1 damage to a creature.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_command",
+      "name": "Lorehold Command",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Deal 2 damage to a creature. Give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_charm",
+      "name": "Lorehold Charm",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_hymn",
+      "name": "Lorehold Hymn",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_excavation",
+      "name": "Lorehold Excavation",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Summon two 2/2 Spirits.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Spirit"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_pledgemage",
+      "name": "Lorehold Pledgemage",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Rush. First Strike.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "rush",
+        "first_strike"
+      ]
+    },
+    {
+      "id": "lorehold_dungeoneer",
+      "name": "Lorehold Dungeoneer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "lorehold_historian",
+      "name": "Lorehold Historian",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Battlecry: Gain 4 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spirit Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_stonebinder",
+      "name": "Lorehold Stonebinder",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "lorehold_trailblazer",
+      "name": "Lorehold Trailblazer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Charge.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "charge"
+      ]
+    },
+    {
+      "id": "lorehold_pastcaller",
+      "name": "Lorehold Pastcaller",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Summon a 3/3 Spirit.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Spirit"
+        }
+      ]
+    },
+    {
+      "id": "lorehold_librarian",
+      "name": "Lorehold Librarian",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "lorehold_guardian",
+      "name": "Lorehold Guardian",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Spirit",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "lorehold_chronomancer",
+      "name": "Lorehold Chronomancer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Lorehold",
+      "collectible": false,
+      "description": "Give your creatures +2/+1 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
         }
       ]
     },
