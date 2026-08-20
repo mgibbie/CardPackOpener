@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "33637c0",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Fix flaky magnetic_test: seed the AI's RNG + isolate the scenario",
+			"body": "Root cause: ai.js picked targets/lands with Math.random() instead of the\ngame's seeded state.rng, so AI-driven tests were non-deterministic even\nunder a seeded game. Switch all 5 AI random draws to state.rng() (also makes\nseeded games/replays reproducible). Then cap the 3 magnetic AI scenarios at\n5 mana so the AI casts the test minion instead of spending the turn ramping\n(10 mana + 0 lands tripped the develop-land path). magnetic_test now 32/32\ndeterministically; full suite 272/272 stable across runs.",
+			"cards": []
+		},
+		{
 			"sha": "39b383e",
 			"date": "2026-08-20",
 			"kind": "patch",
