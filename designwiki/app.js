@@ -383,7 +383,7 @@ const CARD_FILTER_DEFAULTS = {
 };
 // Land Sets: the cards a land generates, tagged via `landSet`. The 5 basics are named; the rest
 // (e.g. Abzan) are advanced. These are two browsable "lists of lists", separate from the colours.
-const BASIC_LAND_SETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'];
+const BASIC_LAND_SETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'];
 let cardFilters = { ...CARD_FILTER_DEFAULTS };
 let cardGalleryToken = 0;
 
