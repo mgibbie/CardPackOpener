@@ -272,7 +272,7 @@ export function step(state, pi = 1) {
 	// hand is over the limit: a flooded hand should be spending mana dumping cards (or it'll
 	// discard them at end of turn), not ramping.
 	if (E.availableMana(p) >= E.LAND_COST + 3 && p.hand.length <= E.HAND_LIMIT && !state.over && state.current === pi) {
-		const BASICS = ['plains', 'island', 'swamp', 'mountain', 'forest'];
+		const BASICS = ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'];
 		const want = new Set(p.hand.flatMap(c => c.colors || [])); // colors this hand actually wants to cast
 		const have = E.colorIdentity(state, pi);
 		// upgrade a BASIC slot toward an advanced land (its pool + fixing) — prefer one the hand wants

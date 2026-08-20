@@ -1295,7 +1295,7 @@ export function landPool(state) {
 // identity is the LIVE union of the colors ALL your current lands can produce —
 // read from their boost taps (NOT the `colors` field, so Abzan Citadel, which is
 // colors:[] but taps for W/B/G, still reads as WBG). Sacrificing a land sheds it.
-const BASIC_LANDS = ['plains', 'island', 'swamp', 'mountain', 'forest'];
+const BASIC_LANDS = ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'];
 const isBasicLand = id => BASIC_LANDS.includes(id);
 
 // the colors a land can produce = the colors of its boost taps
@@ -1311,7 +1311,9 @@ export function colorIdentity(state, pi) {
 	return id;
 }
 
-// a blank slot can only ever become a BASIC (Wastes/colorless comes later)
+// a blank slot can only ever become a BASIC — the 5 colored basics plus colorless Wastes
+// (Wastes taps for 1 damage instead of a color boost, so it adds no color identity; a Wastes
+// slot therefore has no color anchor to upgrade into an advanced land)
 export function availableLands(state, pi) {
 	return landPool(state).filter(d => isBasicLand(d.id));
 }
