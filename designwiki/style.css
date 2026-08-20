@@ -225,6 +225,12 @@ img.sprite {
 .lp-tile .lp-name { font-weight: 650; font-size: 14.5px; line-height: 1.25; }
 .lp-tile .lp-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .lp-count { color: #76819c; font-size: 12px; font-weight: 500; white-space: nowrap; }
+/* ---- Lorequest character-deck tiles ---- */
+.lq-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; text-decoration: none; color: #1c2230; }
+.lq-tile .lq-name { font-weight: 650; font-size: 13px; text-align: center; line-height: 1.2; }
+.lq-tile .lq-sub { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+.lq-cls { color: #76819c; text-transform: capitalize; white-space: nowrap; }
+.lp-detail-meta .lq-cls { font-size: 13px; }
 .lp-tile.tier-basic { border-left: 3px solid #9aa7bd; }
 .lp-tile.tier-mono  { border-left: 3px solid #6ba3d6; }
 .lp-tile.tier-two   { border-left: 3px solid #9b72c8; }

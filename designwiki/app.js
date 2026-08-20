@@ -298,6 +298,12 @@ function loadDuels() {
   if (!duelsPromise) duelsPromise = import('../battlecards/duels.js' + CB);
   return duelsPromise;
 }
+// Lorequest data (planeswalker + boss rosters, class-of map, deck helpers)
+let lorequestPromise = null;
+function loadLorequest() {
+  if (!lorequestPromise) lorequestPromise = import('../battlecards/lorequest.js' + CB);
+  return lorequestPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -1459,6 +1465,86 @@ async function landPoolDetail(id) {
       : h('p', { class: 'muted' }, 'This land has no pool cards yet.'));
 }
 
+// ---- Lorequest character decks: 37 base decks (16 planeswalkers + 21 bosses),
+// each 15 uncollectible cards run as 2 copies (a 30-card deck). Data mirrors the
+// loreDeck tag in cards.json + the rosters/class map in battlecards/lorequest.js.
+const lqSlug = ch => ch.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+function lqDeckCards(cards, ch) {
+  return cards.filter(c => c.loreDeck === ch && !c.token)
+    .sort((a, b) => (b.id.endsWith('_sig') - a.id.endsWith('_sig'))
+      || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+}
+const lqSig = deck => deck.find(c => c.id.endsWith('_sig')) || deck.find(c => c.rarity === 'legendary') || deck[0];
+function lqColors(deck) {
+  const s = new Set();
+  for (const c of deck) for (const col of colorsOf(c)) s.add(col);
+  return COLOR_PIP_ORDER.filter(x => s.has(x));
+}
+function lqTile(ch, deck, clsName) {
+  const canvas = CardArt.drawCardFace(lqSig(deck));
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
+  return h('a', { class: 'wiki-card lq-tile', href: '#/lore-decks/' + lqSlug(ch), title: ch },
+    img,
+    h('div', { class: 'lq-name' }, ch),
+    h('div', { class: 'lq-sub' }, colorPips(lqColors(deck)), h('span', { class: 'lq-cls' }, clsName)));
+}
+async function lorequestView() {
+  content.replaceChildren(h('h1', null, 'Lorequest Decks'), h('p', { class: 'muted' }, 'Loading decks…'));
+  let LQ, classes, cards;
+  try { [LQ, classes, cards] = await Promise.all([loadLorequest(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest Decks'), h('p', { class: 'muted' }, 'Could not load the Lorequest data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'lore-decks') return;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase((id || '').replace(/_/g, ' '));
+  const decks = {}; for (const ch of [...LQ.PLANESWALKERS, ...LQ.BOSSES]) decks[ch] = lqDeckCards(cards, ch);
+  await CardArt.preloadArt(Object.values(decks).map(d => lqSig(d)?.id).filter(Boolean));
+  const group = (title, blurb, names) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
+      h('p', { class: 'muted' }, blurb)),
+    h('div', { class: 'card-grid size-small' },
+      ...names.map(ch => lqTile(ch, decks[ch], clsName(LQ.classOf(ch))))));
+  const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Lorequest Decks'),
+        h('p', { class: 'muted' }, 'The single-player ', h('a', { href: '#/duels' }, 'Duels'),
+          ' variant. Pick 1 of 3 planeswalker decks, then climb to 12 wins (or 3 losses) — the other planeswalkers are your first eight fights, then the Eldrazi & legendary bosses. Each is a 15-card base deck run as 2 copies (a 30-card deck). Tap one to see its cards.')),
+      h('div', { class: 'result-count' }, (LQ.PLANESWALKERS.length + LQ.BOSSES.length), h('span', null, ' decks · ' + totalCards + ' cards'))),
+    group('Planeswalkers', 'The 16 starter decks — one of three is offered at the start of a run; the rest are your first eight opponents.', LQ.PLANESWALKERS),
+    group('Eldrazi & Legendary Bosses', 'The 21 end-game commanders — your opponents from battle 9 onward, once the planeswalker gauntlet is cleared.', LQ.BOSSES));
+}
+async function lorequestDeckDetail(slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let LQ, classes, cards;
+  try { [LQ, classes, cards] = await Promise.all([loadLorequest(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest Deck'), h('p', { class: 'muted' }, 'Could not load the Lorequest data.')); }
+  const all = [...LQ.PLANESWALKERS, ...LQ.BOSSES];
+  const ch = all.find(x => lqSlug(x) === slug);
+  if (!ch) return content.replaceChildren(h('h1', null, 'Deck not found'),
+    h('p', null, h('a', { href: '#/lore-decks' }, '← Back to Lorequest Decks')));
+  const deck = lqDeckCards(cards, ch);
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'lore-decks') return;
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  await CardArt.preloadArt(deck.map(c => c.id));
+  const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const clsName = (classes.find(c => c.id === LQ.classOf(ch))?.name) || titleCase(LQ.classOf(ch).replace(/_/g, ' '));
+  const isBoss = LQ.BOSSES.includes(ch);
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/lore-decks' }, '← All Lorequest Decks')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, ch),
+        h('div', { class: 'lp-detail-meta' }, colorPips(lqColors(deck)),
+          h('span', { class: 'lq-cls' }, clsName),
+          h('span', { class: 'lp-count' }, deck.length + ' cards · 2 copies each = 30-card deck')),
+        h('p', { class: 'muted' }, isBoss
+          ? `An Eldrazi / legendary boss commander — faced from battle 9 onward once the planeswalker gauntlet is cleared. Its hero power and loot buckets come from the ${clsName} class.`
+          : `A planeswalker starter deck — one of three offered at the start of a run, and one of your first eight opponents. Its hero power and loot buckets come from the ${clsName} class.`))),
+    h('h2', null, 'Base Deck ', h('span', { class: 'num' }, '(15 cards)')),
+    await deckGrid(deck.map(c => c.id), byId));
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1479,6 +1565,7 @@ function route() {
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();
+  if (section === 'lore-decks') return id ? lorequestDeckDetail(id) : lorequestView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
