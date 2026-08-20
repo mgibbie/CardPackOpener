@@ -38166,6 +38166,4089 @@
       ]
     },
     {
+      "id": "brokers_ascendancy",
+      "name": "Brokers Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Give your creatures +1/+1 and Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "brokers_catering",
+      "name": "Brokers Catering",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Gain 4 life. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "brokers_charm",
+      "name": "Brokers Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Give a creature +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "brokers_chauffeur",
+      "name": "Brokers Chauffeur",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Scry 1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "brokers_confluence",
+      "name": "Brokers Confluence",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain 3 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "brokers_consigliere",
+      "name": "Brokers Consigliere",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Advisor",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "brokers_duelist",
+      "name": "Brokers Duelist",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "First Strike.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "brokers_emancipator",
+      "name": "Brokers Emancipator",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Elusive. Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
+    },
+    {
+      "id": "brokers_initiate",
+      "name": "Brokers Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Gain 2 life.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "brokers_reconnaissance",
+      "name": "Brokers Reconnaissance",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Scry 2 and draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "brokers_regulator",
+      "name": "Brokers Regulator",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Battlecry: Return an enemy creature to its owner’s hand.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "brokers_resourcefulness",
+      "name": "Brokers Resourcefulness",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "brokers_verdict",
+      "name": "Brokers Verdict",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "brokers_veteran",
+      "name": "Brokers Veteran",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "falco_spara_brokers_pactweaver",
+      "name": "Falco Spara, Brokers Pactweaver",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "G"
+      ],
+      "landSet": "Brokers",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Bird Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "kamiz_obscura_spymaster",
+      "name": "Kamiz, Obscura Spymaster",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Sphinx",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "obscura_ascendancy",
+      "name": "Obscura Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Give your creatures +1/+1. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "obscura_charm",
+      "name": "Obscura Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "obscura_confluence",
+      "name": "Obscura Confluence",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "obscura_crown_of_intrigue",
+      "name": "Obscura Crown of Intrigue",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Give your creatures +1/+0 and Elusive.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "obscura_editor",
+      "name": "Obscura Editor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Scry 2.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "obscura_guidance",
+      "name": "Obscura Guidance",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Draw a card. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "obscura_informant",
+      "name": "Obscura Informant",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "obscura_initiate",
+      "name": "Obscura Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Taunt. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "obscura_interceptor",
+      "name": "Obscura Interceptor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
+    },
+    {
+      "id": "obscura_sentinel",
+      "name": "Obscura Sentinel",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Taunt. Divine Shield.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "obscura_silencer",
+      "name": "Obscura Silencer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Deathtouch. Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "deathtouch",
+        "elusive"
+      ]
+    },
+    {
+      "id": "obscura_sleuth",
+      "name": "Obscura Sleuth",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "raffine_obscura_schemer",
+      "name": "Raffine, Obscura Schemer",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Give your creatures +1/+1 and Elusive.",
+      "type": "creature",
+      "attack": 1,
+      "health": 4,
+      "tribe": "Sphinx Cleric",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        }
+      ]
+    },
+    {
+      "id": "tivit_obscura_secretseller",
+      "name": "Tivit, Obscura Secretseller",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "B"
+      ],
+      "landSet": "Obscura",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Summon two 1/1 Thopters with Elusive and draw a card.",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Sphinx",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Thopter",
+          "keywords": [
+            "elusive"
+          ]
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "maestros_invitation",
+      "name": "Maestros Invitation",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Destroy a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "maestros_ascendancy",
+      "name": "Maestros Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Deal 2 damage to all enemy creatures. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "maestros_charm",
+      "name": "Maestros Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "maestros_confluence",
+      "name": "Maestros Confluence",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Each opponent discards a card. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "maestros_command",
+      "name": "Maestros Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Destroy a creature. Deal 2 damage to each opponent.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "maestros_diabolist",
+      "name": "Maestros Diabolist",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Devil Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "maestros_initiate",
+      "name": "Maestros Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "maestros_crescendo",
+      "name": "Maestros Crescendo",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Deal 3 damage to each opponent and gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "maestros_performance",
+      "name": "Maestros Performance",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Each opponent discards a card. Draw 2 cards.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "xander_maestros_lord",
+      "name": "Xander, Maestros Lord",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Each opponent discards a card and deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Vampire Noble",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "anhelo_maestros_leader",
+      "name": "Anhelo, Maestros Leader",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Elusive. Deathtouch. Battlecry: Each opponent discards a card.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Assassin",
+      "keywords": [
+        "elusive",
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "maestros_sigil",
+      "name": "Maestros Sigil",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Give a creature +2/+0 and Lifesteal.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "creature",
+          "grant": "lifesteal"
+        }
+      ]
+    },
+    {
+      "id": "maestros_mask",
+      "name": "Maestros Mask",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "A 2/3 weapon.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3
+    },
+    {
+      "id": "maestros_ceremony",
+      "name": "Maestros Ceremony",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Summon a 3/3 Vampire with Lifesteal. Each opponent loses 1 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Vampire",
+          "keywords": [
+            "lifesteal"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
+    },
+    {
+      "id": "maestros_art_collector",
+      "name": "Maestros Art Collector",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "R"
+      ],
+      "landSet": "Maestros",
+      "collectible": false,
+      "description": "Elusive. Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "riveteers_initiate",
+      "name": "Riveteers Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "riveteers_decoy",
+      "name": "Riveteers Decoy",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "riveteers_charm",
+      "name": "Riveteers Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "riveteers_confluence",
+      "name": "Riveteers Confluence",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "riveteers_ascendancy",
+      "name": "Riveteers Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Give your creatures +1/+1 and Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "riveteers_provocateur",
+      "name": "Riveteers Provocateur",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Rogue",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "riveteers_requisitioner",
+      "name": "Riveteers Requisitioner",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush. Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ziatora_riveteers_incinerator",
+      "name": "Ziatora, Riveteers Incinerator",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Charge. Battlecry: Deal 4 damage to a creature.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "henzie_torre_riveteers_thief",
+      "name": "Henzie Torre, Riveteers Thief",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush. Battlecry: Give your creatures +1/+0 and Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "ognis_riveteers_warrior",
+      "name": "Ognis, Riveteers Warrior",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush. Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Devil",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "riveteers_bruiser",
+      "name": "Riveteers Bruiser",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Ogre",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "riveteers_enforcer",
+      "name": "Riveteers Enforcer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Warrior",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "riveteers_vigilante",
+      "name": "Riveteers Vigilante",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "riveteers_command",
+      "name": "Riveteers Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Summon a 3/2 Devil with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Devil",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "riveteers_beatstick",
+      "name": "Riveteers Beatstick",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "G"
+      ],
+      "landSet": "Riveteers",
+      "collectible": false,
+      "description": "A 3/2 weapon.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2
+    },
+    {
+      "id": "cabaretti_charm",
+      "name": "Cabaretti Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_ascendancy",
+      "name": "Cabaretti Ascendancy",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Summon two 2/2 Cats and give your creatures +1/+1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Cat"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_confluence",
+      "name": "Cabaretti Confluence",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Summon two 2/2 Cats, give your creatures +1/+1, and gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Cat"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_initiate",
+      "name": "Cabaretti Initiate",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Human.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Human"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_revels",
+      "name": "Cabaretti Revels",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Summon three 1/1 Cats.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Cat"
+        }
+      ]
+    },
+    {
+      "id": "rocco_cabaretti_caterer",
+      "name": "Rocco, Cabaretti Caterer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Summon two 1/1 Cats and gain 2 life.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Cat"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "jetmir_cabaretti_boss",
+      "name": "Jetmir, Cabaretti Boss",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +2/+2 and Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cat Noble",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_fixer",
+      "name": "Cabaretti Fixer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "kitt_kanto_cabaretti_diva",
+      "name": "Kitt Kanto, Cabaretti Diva",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "rush"
+        }
+      ]
+    },
+    {
+      "id": "jinnie_faye_cabaretti_heir",
+      "name": "Jinnie Faye, Cabaretti Heir",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Summon two 1/1 Cats.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Cat"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_thespian",
+      "name": "Cabaretti Thespian",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Summon a 1/1 Human.",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Human"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_arming_gala",
+      "name": "Cabaretti Arming Gala",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Give your creatures +2/+2.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_bard",
+      "name": "Cabaretti Bard",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_hymn",
+      "name": "Cabaretti Hymn",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Summon two 2/2 Cats.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Cat"
+        }
+      ]
+    },
+    {
+      "id": "cabaretti_command",
+      "name": "Cabaretti Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "R",
+        "G"
+      ],
+      "landSet": "Cabaretti",
+      "collectible": false,
+      "description": "Summon two 2/2 Cats, give your creatures +1/+1, and gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Cat"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "indatha_crystal",
+      "name": "Indatha Crystal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "indatha_charm",
+      "name": "Indatha Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Destroy a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "indatha_command",
+      "name": "Indatha Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Destroy a creature. Gain 3 life. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "indatha_runemark",
+      "name": "Indatha Runemark",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Deathtouch.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        }
+      ]
+    },
+    {
+      "id": "indatha_cluestone",
+      "name": "Indatha Cluestone",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Scry 1.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "indatha_puzzlebox",
+      "name": "Indatha Puzzlebox",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "nethroi_indatha_deathdweller",
+      "name": "Nethroi, Indatha Deathdweller",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Lifesteal. Deathtouch. Battlecry: Summon two 2/2 Nightmares with Deathtouch.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Cat Nightmare",
+      "keywords": [
+        "lifesteal",
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Nightmare",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "indatha_mythos",
+      "name": "Indatha Mythos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Destroy a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "indatha_felidar",
+      "name": "Indatha Felidar",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Lifesteal.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Cat",
+      "keywords": [
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "indatha_nightmare_serval",
+      "name": "Indatha Nightmare Serval",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Cat Nightmare",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "indatha_nightmare_pangolin",
+      "name": "Indatha Nightmare Pangolin",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Deathtouch. Taunt.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Beast Nightmare",
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
+    },
+    {
+      "id": "indatha_dreamstalker",
+      "name": "Indatha Dreamstalker",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Deathtouch. Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Nightmare",
+      "keywords": [
+        "deathtouch",
+        "elusive"
+      ]
+    },
+    {
+      "id": "indatha_horror_wolf",
+      "name": "Indatha Horror Wolf",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Wolf Nightmare",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "indatha_batbird",
+      "name": "Indatha Batbird",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Bat Bird",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "indatha_nightcat",
+      "name": "Indatha Nightcat",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "G"
+      ],
+      "landSet": "Indatha",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Cat Nightmare",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "illuna_ketria_wish_giver",
+      "name": "Illuna, Ketria Wish-Giver",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Trample. Charge. Battlecry: Deal 3 damage to a creature.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dragon Beast",
+      "keywords": [
+        "trample",
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "ketria_crystal",
+      "name": "Ketria Crystal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_boon",
+      "name": "Ketria Boon",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Give a creature +3/+3 and Trample.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "creature",
+          "grant": "trample"
+        }
+      ]
+    },
+    {
+      "id": "ketria_mythos",
+      "name": "Ketria Mythos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain a Mana Crystal this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_quartzwood_elemental",
+      "name": "Ketria Quartzwood Elemental",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "ketria_bond",
+      "name": "Ketria Bond",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Give a creature +2/+2. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_gimmerbell",
+      "name": "Ketria Gimmerbell",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "naireh_ketria_elementalist",
+      "name": "Naireh, Ketria Elementalist",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Battlecry: Deal 3 damage to a creature and gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Shaman",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_crystal_elemental",
+      "name": "Ketria Crystal Elemental",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "ketria_imperiosaur",
+      "name": "Ketria Imperiosaur",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "A 6/5 for four.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Dinosaur"
+    },
+    {
+      "id": "ketria_avarax",
+      "name": "Ketria Avarax",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "ketria_crystal_hymn",
+      "name": "Ketria Crystal Hymn",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Gain 2 Mana Crystals this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_crystal_gatherer",
+      "name": "Ketria Crystal Gatherer",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ketria_rivergem_mephit",
+      "name": "Ketria Rivergem Mephit",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "ketria_gemstone_amalgam",
+      "name": "Ketria Gemstone Amalgam",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R",
+        "G"
+      ],
+      "landSet": "Ketria",
+      "collectible": false,
+      "description": "Trample. Battlecry: Scry 1 and draw a card.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Elemental",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "raugrin_crystal",
+      "name": "Raugrin Crystal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "vadrok_raugrin_apex",
+      "name": "Vadrok, Raugrin Apex",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Elusive. First Strike. Battlecry: Deal 3 damage to a creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "elusive",
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "raugrin_mythos",
+      "name": "Raugrin Mythos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "raugrin_raptor",
+      "name": "Raugrin Raptor",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "raugrin_imperiosaur",
+      "name": "Raugrin Imperiosaur",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "A 6/5 for four.",
+      "type": "creature",
+      "attack": 6,
+      "health": 5,
+      "tribe": "Dinosaur"
+    },
+    {
+      "id": "raugrin_spinosaur",
+      "name": "Raugrin Spinosaur",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "raugrin_vantasaur",
+      "name": "Raugrin Vantasaur",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "raugrin_baryonyx",
+      "name": "Raugrin Baryonyx",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Battlecry: Deal 2 damage to a creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "raugrin_titanosaur",
+      "name": "Raugrin Titanosaur",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 7,
+      "health": 7,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "raugrin_plesiosaur",
+      "name": "Raugrin Plesiosaur",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "raugrin_pterosaur",
+      "name": "Raugrin Pterosaur",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Elusive.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "raugrin_ankylosaur",
+      "name": "Raugrin Ankylosaur",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 2,
+      "health": 6,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "raugrin_gargantuasaur",
+      "name": "Raugrin Gargantuasaur",
+      "cardClass": "magepunk",
+      "cost": 6,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "raugrin_triceratops",
+      "name": "Raugrin Triceratops",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dinosaur",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "raugrin_dinomancer",
+      "name": "Raugrin Dinomancer",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U",
+        "R"
+      ],
+      "landSet": "Raugrin",
+      "collectible": false,
+      "description": "Battlecry: Summon a 3/3 Dinosaur with Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Shaman",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Dinosaur",
+          "keywords": [
+            "trample"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "savai_crystal",
+      "name": "Savai Crystal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "savai_sabertooth",
+      "name": "Savai Sabertooth",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "savai_thundermane",
+      "name": "Savai Thundermane",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cat",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "snapdax_savai_apex_hunter",
+      "name": "Snapdax, Savai Apex Hunter",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush. First Strike. Battlecry: Deal 3 damage to a creature.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cat Dinosaur",
+      "keywords": [
+        "rush",
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "savai_mythos",
+      "name": "Savai Mythos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Gain 2 life.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "savai_egg",
+      "name": "Savai Egg",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Taunt.",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Egg",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "savai_charm",
+      "name": "Savai Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
+      ]
+    },
+    {
+      "id": "savai_command",
+      "name": "Savai Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Deal 3 damage to a creature. Summon a 3/2 Cat with Rush.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Cat",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "savai_tiger",
+      "name": "Savai Tiger",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "savai_jaguar",
+      "name": "Savai Jaguar",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "savai_panther",
+      "name": "Savai Panther",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush. Lifesteal.",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Cat",
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "savai_ocelot",
+      "name": "Savai Ocelot",
+      "cardClass": "magepunk",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Rush.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
+    },
+    {
+      "id": "savai_winged_antelope",
+      "name": "Savai Winged Antelope",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "savai_bonder",
+      "name": "Savai Bonder",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "savai_leopard_bat",
+      "name": "Savai Leopard Bat",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B",
+        "R"
+      ],
+      "landSet": "Savai",
+      "collectible": false,
+      "description": "Elusive. Lifesteal.",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Cat Bat",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "zagoth_crystal",
+      "name": "Zagoth Crystal",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zagoth_viper",
+      "name": "Zagoth Viper",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Deathtouch.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "zagoth_nightmare",
+      "name": "Zagoth Nightmare",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Deathtouch. Elusive.",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "Nightmare",
+      "keywords": [
+        "deathtouch",
+        "elusive"
+      ]
+    },
+    {
+      "id": "zagoth_mamba",
+      "name": "Zagoth Mamba",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Deathtouch. Elusive.",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Snake",
+      "keywords": [
+        "deathtouch",
+        "elusive"
+      ]
+    },
+    {
+      "id": "zagoth_mythos",
+      "name": "Zagoth Mythos",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Draw 2 cards. Gain a Mana Crystal this turn.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "brokkos_zagoth_eternal_apex",
+      "name": "Brokkos, Zagoth’s Eternal Apex",
+      "cardClass": "magepunk",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Trample. Reborn.",
+      "type": "creature",
+      "attack": 6,
+      "health": 6,
+      "tribe": "Beast Nightmare",
+      "keywords": [
+        "trample",
+        "reborn"
+      ]
+    },
+    {
+      "id": "zagoth_boar",
+      "name": "Zagoth Boar",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Boar",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "zagoth_poacher",
+      "name": "Zagoth Poacher",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Battlecry: Draw a card.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zagoth_boot_nipper",
+      "name": "Zagoth Boot Nipper",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Deathtouch. Taunt.",
+      "type": "creature",
+      "attack": 1,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
+    },
+    {
+      "id": "zagoth_elk",
+      "name": "Zagoth Elk",
+      "cardClass": "magepunk",
+      "cost": 4,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Elk",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "zagoth_rhino",
+      "name": "Zagoth Rhino",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Trample.",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Rhino",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "zagoth_hymn",
+      "name": "Zagoth Hymn",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Each opponent discards 2 cards. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zagoth_charm",
+      "name": "Zagoth Charm",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Give a creature +1/+1 and Deathtouch. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "creature",
+          "grant": "deathtouch"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zagoth_command",
+      "name": "Zagoth Command",
+      "cardClass": "magepunk",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Destroy a creature. Gain a Mana Crystal this turn. Draw a card.",
+      "type": "sorcery",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "zagoth_nantuko",
+      "name": "Zagoth Nantuko",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B",
+        "G"
+      ],
+      "landSet": "Zagoth",
+      "collectible": false,
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Insect Druid",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
       "id": "bant_citadel",
       "name": "Bant Citadel",
       "cardClass": "magepunk",
@@ -38276,12 +42359,13 @@
           ]
         },
         {
-          "text": "Conjure a Brokers card.",
+          "text": "Discover a Brokers card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Brokers",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Brokers"
             }
           ]
         }
@@ -38403,12 +42487,13 @@
           ]
         },
         {
-          "text": "Conjure a Obscura card.",
+          "text": "Discover an Obscura card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Obscura",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Obscura"
             }
           ]
         }
@@ -38530,12 +42615,13 @@
           ]
         },
         {
-          "text": "Conjure a Raugrin card.",
+          "text": "Discover a Raugrin card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Raugrin",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Raugrin"
             }
           ]
         }
@@ -38657,12 +42743,13 @@
           ]
         },
         {
-          "text": "Conjure a Savai card.",
+          "text": "Discover a Savai card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Savai",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Savai"
             }
           ]
         }
@@ -38779,12 +42866,13 @@
           ]
         },
         {
-          "text": "Conjure a Indatha card.",
+          "text": "Discover an Indatha card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Indatha",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Indatha"
             }
           ]
         }
@@ -38906,12 +42994,13 @@
           ]
         },
         {
-          "text": "Conjure a Cabaretti card.",
+          "text": "Discover a Cabaretti card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Cabaretti",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Cabaretti"
             }
           ]
         }
@@ -39033,12 +43122,13 @@
           ]
         },
         {
-          "text": "Conjure a Maestros card.",
+          "text": "Discover a Maestros card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Maestros",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Maestros"
             }
           ]
         }
@@ -39096,12 +43186,13 @@
           ]
         },
         {
-          "text": "Conjure a Zagoth card.",
+          "text": "Discover a Zagoth card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Zagoth",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Zagoth"
             }
           ]
         }
@@ -39287,12 +43378,13 @@
           ]
         },
         {
-          "text": "Conjure a Ketria card.",
+          "text": "Discover a Ketria card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Ketria",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Ketria"
             }
           ]
         }
@@ -39350,12 +43442,13 @@
           ]
         },
         {
-          "text": "Conjure a Riveteers card.",
+          "text": "Discover a Riveteers card.",
           "effects": [
             {
-              "type": "conjure-named",
-              "match": "Riveteers",
-              "count": 1
+              "type": "discover",
+              "count": 1,
+              "pick": 3,
+              "landSet": "Riveteers"
             }
           ]
         }
