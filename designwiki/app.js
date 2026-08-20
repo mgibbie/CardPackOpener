@@ -1488,6 +1488,24 @@ function lqTile(ch, deck, clsName) {
     h('div', { class: 'lq-name' }, ch),
     h('div', { class: 'lq-sub' }, colorPips(lqColors(deck)), h('span', { class: 'lq-cls' }, clsName)));
 }
+// a Small/Medium/Large control that resizes a card-grid in place, remembered across visits
+const LQ_SIZE_KEY = 'magepunk_wiki_cardsize';
+function cardSizeControl(grid) {
+  const sizes = [['small', 'S'], ['medium', 'M'], ['large', 'L']];
+  let cur = localStorage.getItem(LQ_SIZE_KEY) || 'medium';
+  if (!sizes.some(s => s[0] === cur)) cur = 'medium';
+  const apply = s => { grid.className = 'card-grid size-' + s; };
+  apply(cur);
+  const btns = {};
+  const bar = h('div', { class: 'lq-sizebar' }, ...sizes.map(([s, lbl]) => {
+    const b = h('button', {
+      class: 'lq-sizebtn' + (s === cur ? ' active' : ''), title: s + ' cards',
+      onclick: () => { cur = s; try { localStorage.setItem(LQ_SIZE_KEY, s); } catch (e) {} apply(s); for (const k in btns) btns[k].classList.toggle('active', k === s); }
+    }, lbl);
+    btns[s] = b; return b;
+  }));
+  return h('div', { class: 'lq-sizectl' }, h('span', { class: 'muted' }, 'Card size'), bar);
+}
 async function lorequestView() {
   content.replaceChildren(h('h1', null, 'Lorequest Decks'), h('p', { class: 'muted' }, 'Loading decks…'));
   let LQ, classes, cards;
@@ -1527,6 +1545,7 @@ async function lorequestDeckDetail(slug) {
   const byId = {}; for (const c of cards) byId[c.id] = c;
   await CardArt.preloadArt(deck.map(c => c.id));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === LQ.classOf(ch))?.name) || titleCase(LQ.classOf(ch).replace(/_/g, ' '));
   const isBoss = LQ.BOSSES.includes(ch);
   content.replaceChildren(
@@ -1542,7 +1561,7 @@ async function lorequestDeckDetail(slug) {
           ? `An Eldrazi / legendary boss commander — faced from battle 9 onward once the planeswalker gauntlet is cleared. Its hero power and loot buckets come from the ${clsName} class.`
           : `A planeswalker starter deck — one of three offered at the start of a run, and one of your first eight opponents. Its hero power and loot buckets come from the ${clsName} class.`))),
     h('h2', null, 'Base Deck ', h('span', { class: 'num' }, '(15 cards)')),
-    await deckGrid(deck.map(c => c.id), byId));
+    cardSizeControl(grid), grid);
 }
 
 function route() {
