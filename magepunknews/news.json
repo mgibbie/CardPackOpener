@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "7d1a502",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Wastes basic-land pool: 70 colorless cards + damage tap",
+			"body": "Build 70 colorless (Eldrazi/artifact/equipment/mana-rock/utility) pool\ncards tagged landSet:Wastes (cardClass neutral, colors:[], no rarity,\ncollectible:false, wastes-prefixed ids + collision guard). Fix the Wastes\nconjure tap conjure-named Colorless -> conjure landSet:Wastes. The Wastes\nland's 'deal 1 damage to any target' tap (replacing the color boost) was\nalready present. Add wastes_pool_test.mjs. Suite 270 -> 271.",
+			"cards": []
+		},
+		{
 			"sha": "0977cdd",
 			"date": "2026-08-20",
 			"kind": "patch",
