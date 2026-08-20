@@ -2,6 +2,22 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "d85a5f7",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Lorequest run module (Phase B): lorequest.js + game.js wiring",
+			"body": "Single-player Duels variant. NEW battlecards/lorequest.js: 37 characters\n(16 planeswalkers + 21 bosses) with class map, deckOf (2x15=30), starterChoices\n(1 of 3 planeswalkers), enemyRosterFor (PW battles 1-8, bosses 9+), WIN-parity\nenemyLoot + generateEnemy, 12W/3L. Wire game.js at all Duels hook points\n(?lorequest=1 route + menu button, flags/keys/save, hero-power slot, mulligan\ngate, game-over hook, concede, labels, boot block, run block) — pick-1-of-3-deck\noverlay instead of draft, class-default hero powers, loot on WIN only (bucket +\nmilestone treasure), enemies at exact win-parity. Add lorequest_run_test.mjs.\nSuite 283->284.",
+			"cards": []
+		},
+		{
+			"sha": "fea83b2",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Lorequest decks: build 555 base-deck cards with loreDeck tag (Phase A)",
+			"body": "37 named-character base decks (16 planeswalkers + 21 Eldrazi/boss commanders),\n15 cards each -> 30-card decks at 2 copies. Designed to each character's color/\ntheme (Ajani W lifegain, Chandra R burn, Nissa G ramp, Sorin B vampires,\nKozilek/Ulamog/Emrakul colorless Eldrazi, Nicol Bolas UBR, etc.), tagged\nloreDeck:<name>, collectible:false. Class assignments (paladin/mage/warlock/...)\nper character will live in the lorequest run module (Phase B). Add\nlorequest_decks_test.mjs (plays all 555, validates 15-per-deck + legendary sig).\nSuite 282->283.",
+			"cards": []
+		},
+		{
 			"sha": "780f0c6",
 			"date": "2026-08-20",
 			"kind": "patch",
