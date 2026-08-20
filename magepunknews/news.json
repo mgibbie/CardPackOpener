@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "0977cdd",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "3-color triomes: 9 wedge/shard land pools (135 cards)",
+			"body": "Build 135 shard/wedge-themed pool cards across the 9 remaining 3-color\nlands (Bant/Esper/Jeskai/Mardu/Naya/Grixis/Sultai/Temur/Jund), each led by\na real Alara/Tarkir legendary; ids shard-prefixed to avoid collision with\nexisting imports (real names kept for art). Flip all 9 land taps\nconjure-named -> discover landSet. Add 9 pool tests. Suite 261 -> 270.\nAbzan was the pre-existing template. All land families now built.",
+			"cards": []
+		},
+		{
 			"sha": "b7da38d",
 			"date": "2026-08-20",
 			"kind": "patch",
