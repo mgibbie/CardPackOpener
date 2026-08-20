@@ -2,6 +2,54 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "39b383e",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Fill triome pools from the plan (+96 cards)",
+			"body": "Add the planned-but-missing cards to the 9 triome pools (Bant..Jund now\n23-28 each), designed to each shard's identity, shard-prefixed ids +\ncollision guard, all carry the set word. Skipped 2 near-dup legends already\npresent as pool leaders (Sidisi/Surrak) and the 6 'stragglers' which were\nspelling/rename false-positives already in-game. Suite green (magnetic flake).",
+			"cards": []
+		},
+		{
+			"sha": "7320b69",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Fill Kaldheim Citadel pools from the plan (+113 cards)",
+			"body": "Add the 113 planned-but-missing cards to the 10 Kaldheim realm pools\n(Istfell..Littjara now 23-29 each) — designed to each realm's identity, all\ncarry the realm word, shard-safe ids + collision guard. Pools are now a\n15-card MINIMUM, not a cap: relax all *_pool_test.mjs 'exactly 15' -> '>=15'.\nNaming guard green; suite green (magnetic_test is a pre-existing RNG flake).",
+			"cards": []
+		},
+		{
+			"sha": "c96e7f6",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Smooth prefixed legendary pool names to 'Name, Title of Set' form",
+			"body": "The 16 legendaries that got a bolted-on set prefix now read naturally with\nthe set as a locative: Surtland Surtr, Fire Giant -> Surtr of Surtland;\nGrixis Nicol Bolas, the Ravager -> Nicol Bolas, Ravager of Grixis; Esper\nSharuum the Hegemon -> Sharuum, Hegemon of Esper; Mardu Alesha -> Alesha,\nKhan of Mardu; etc. Already-natural legends (Dragonlords, gods, guild\nleaders, Strixhaven deans) untouched. Naming guard green; suite 272/272.",
+			"cards": []
+		},
+		{
+			"sha": "24a66ee",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Reword awkward verb-phrase pool names to natural noun forms",
+			"body": "The set-word prefix read naturally on noun names (creatures, X Charm/Command)\nbut was ungrammatical on verb-phrase spells. Reworded 13: e.g. Esper Cast Down\n-> Esper Execution, Istfell Saw It Coming -> Istfell Foresight, Grixis Deny\nReality -> Grixis Denial, Surtland Crush the Weak -> Surtland Eruption,\nKarfell Poison the Cup -> Karfell Poisoning. All keep the set word; naming\nguard still green. Suite 272/272 (magnetic_test flake ignored). Bump ?v.",
+			"cards": []
+		},
+		{
+			"sha": "e8ef871",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Restore advanced-land pool naming rule: set-word in every card title",
+			"body": "Every card in an advanced land's 15-card pool must carry the pool/set word\nin its name (e.g. every Esper card contains 'Esper'). Real-MTG-named pools\n(Kaldheim citadels, triomes, Esper) had drifted — 135/915 names lacked it.\nPrefixed the set word onto those 135 names (art is keyed by id, unaffected).\nAdd land_pool_naming_test.mjs to guard against future drift. Suite 271->272.\nBump gallery cache-busts so the renamed cards.json is re-fetched.",
+			"cards": []
+		},
+		{
+			"sha": "2eefa0e",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Enable Wastes as a selectable basic land (human + AI)",
+			"body": "Add 'wastes' to BASIC_LANDS (engine/core.js) so the land shop / availableLands\noffers it, and to the AI's local BASICS list (ai.js). Wastes adds no color\nidentity (its 2nd tap is 1 damage, not a color boost), so a Wastes slot has\nno color anchor and can't upgrade into an advanced land — verified: buyable,\n0 identity, 0 upgrades, not treated as a scarce advanced land. Suite 271/271.",
+			"cards": []
+		},
+		{
 			"sha": "7d1a502",
 			"date": "2026-08-20",
 			"kind": "patch",
