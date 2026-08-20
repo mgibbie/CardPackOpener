@@ -1,6 +1,14 @@
 {
-	"generated": "2026-08-19",
+	"generated": "2026-08-20",
 	"entries": [
+		{
+			"sha": "6c0cbeb",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Build 5 Tarkir Dragonspire pools: Ojutai/Dromoka/Silumgar/Kolaghan/Atarka",
+			"body": "75 uncollectible dual-color cards keyed by landSet Ojutai(W/U)/Dromoka(G/W)/\nSilumgar(U/B)/Kolaghan(B/R)/Atarka(R/G) - the 5 Tarkir dragon-clan two-color lands:\n- Ojutai (W/U): wisdom/dragons - Elusive flyers, draw/scry, Divine Shield, Freeze, control.\n- Dromoka (G/W): endurance - big Trample, +1/+1 anthems, lifegain, Taunt, Warrior tokens, fight.\n- Silumgar (U/B): control - Deathtouch, Elusive, discard, bounce, freeze, destroy.\n- Kolaghan (B/R): speed - Rush/Charge haste, burn, Lifesteal, Rush-grant anthems.\n- Atarka (R/G): ferocity - big Trample beasts, haste, burn (targeted/AoE/face), +stats.\n\nFixed 5 dragonspire taps: conjure-named -> discover landSet. Built via build_dragonspires.mjs.\n5 new pool tests (37 each; dragonspire land id + dual-color patch). Suite 246 -> 251.",
+			"cards": []
+		},
 		{
 			"sha": "c160ba7",
 			"date": "2026-08-19",
