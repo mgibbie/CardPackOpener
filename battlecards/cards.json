@@ -23365,7 +23365,7 @@
     },
     {
       "id": "ranar_the_everwatchful",
-      "name": "Istfell Ranar the Ever-Watchful",
+      "name": "Ranar, Ever-Watchful of Istfell",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -23753,7 +23753,7 @@
     },
     {
       "id": "firja_judge_of_valor",
-      "name": "Starnheim Firja, Judge of Valor",
+      "name": "Firja, Judge of Starnheim",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -24179,7 +24179,7 @@
     },
     {
       "id": "magda_brazen_outlaw",
-      "name": "Axgard Magda, Brazen Outlaw",
+      "name": "Magda, Brazen Outlaw of Axgard",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "legendary",
@@ -25007,7 +25007,7 @@
     },
     {
       "id": "egon_god_of_death",
-      "name": "Karfell Egon, God of Death",
+      "name": "Egon, King of Karfell",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -25405,7 +25405,7 @@
     },
     {
       "id": "surtr_fire_giant",
-      "name": "Surtland Surtr, Fire Giant",
+      "name": "Surtr of Surtland",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -25809,7 +25809,7 @@
     },
     {
       "id": "kardur_doomscourge",
-      "name": "Immersturm Kardur, Doomscourge",
+      "name": "Kardur, Doomscourge of Immersturm",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -26618,7 +26618,7 @@
     },
     {
       "id": "arni_brokenbrow",
-      "name": "Gnottvold Arni Brokenbrow",
+      "name": "Arni Brokenbrow of Gnottvold",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -27017,7 +27017,7 @@
     },
     {
       "id": "alrund_god_of_the_cosmos",
-      "name": "Littjara Alrund, God of the Cosmos",
+      "name": "Alrund, Seer of Littjara",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -27429,7 +27429,7 @@
     },
     {
       "id": "bant_rafiq",
-      "name": "Bant Rafiq of the Many",
+      "name": "Rafiq, Blade of Bant",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -27838,7 +27838,7 @@
     },
     {
       "id": "esper_sharuum",
-      "name": "Esper Sharuum the Hegemon",
+      "name": "Sharuum, Hegemon of Esper",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -28252,7 +28252,7 @@
     },
     {
       "id": "jeskai_narset",
-      "name": "Jeskai Narset, Enlightened Master",
+      "name": "Narset, Master of Jeskai",
       "cardClass": "magepunk",
       "cost": 6,
       "rarity": "legendary",
@@ -28683,7 +28683,7 @@
     },
     {
       "id": "mardu_alesha",
-      "name": "Mardu Alesha, Who Smiles at Death",
+      "name": "Alesha, Khan of Mardu",
       "cardClass": "magepunk",
       "cost": 3,
       "rarity": "legendary",
@@ -29117,7 +29117,7 @@
     },
     {
       "id": "naya_mayael",
-      "name": "Naya Mayael the Anima",
+      "name": "Mayael, Anima of Naya",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -29535,7 +29535,7 @@
     },
     {
       "id": "grixis_nicol_bolas",
-      "name": "Grixis Nicol Bolas, the Ravager",
+      "name": "Nicol Bolas, Ravager of Grixis",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
@@ -30371,7 +30371,7 @@
     },
     {
       "id": "sultai_sidisi",
-      "name": "Sultai Sidisi, Brood Tyrant",
+      "name": "Sidisi, Brood Tyrant of Sultai",
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "legendary",
@@ -30799,7 +30799,7 @@
     },
     {
       "id": "temur_surrak",
-      "name": "Temur Surrak Dragonclaw",
+      "name": "Surrak Dragonclaw of Temur",
       "cardClass": "magepunk",
       "cost": 5,
       "rarity": "legendary",
