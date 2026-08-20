@@ -8,6 +8,7 @@ import * as Dungeon from './dungeon.js';
 import * as Heist from './heist.js';
 import * as Tombs from './tombs.js';
 import * as Duels from './duels.js';
+import * as Lorequest from './lorequest.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
 import { safeLoad, safeSave } from './safestore.js';
@@ -69,9 +70,11 @@ const DUELS_KEY = 'magepunk_duels_v1';
 const duelsRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && new URLSearchParams(location.search).has('duels');
 const ARENA_KEY = 'magepunk_arena_v1';
 const arenaRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && new URLSearchParams(location.search).has('arena');
+const LOREQUEST_KEY = 'magepunk_lorequest_v1';
+const lorequestRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && new URLSearchParams(location.search).has('lorequest');
 let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) playerCount = 2;
+if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode) playerCount = 2;
 
 // ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
 // read-only from the snapshots they publish — no input, no AI.
@@ -117,6 +120,9 @@ const clearDuels = () => localStorage.removeItem(DUELS_KEY);
 const loadArena = () => safeLoad(ARENA_KEY, null);
 const saveArena = run => safeSave(ARENA_KEY, run);
 const clearArena = () => localStorage.removeItem(ARENA_KEY);
+const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
+const saveLorequest = run => safeSave(LOREQUEST_KEY, run);
+const clearLorequest = () => localStorage.removeItem(LOREQUEST_KEY);
 
 const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
@@ -1049,7 +1055,7 @@ function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi)
 function classPowerOf(pi) {
 	const p = state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
-		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
+		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena/lorequest alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
 }
 
 function activateHeroPower(card, ev) {
@@ -2042,7 +2048,7 @@ let mulliganModalOpen = false;
 let mulliganPicks = null;
 // mulligan is a Quick Match / AI / duel feature; the PvE run modes keep their
 // tuned openings (boss decks, treasures) untouched.
-const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode;
+const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode;
 function maybeOfferMulligan() {
 	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
 	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
@@ -2655,6 +2661,9 @@ function nextEvent() {
 			} else if (duelsRunMode) {
 				const run = loadDuels();
 				if (run?.active) setTimeout(() => { (won ? duelsVictory : duelsDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
+			} else if (lorequestRunMode) {
+				const run = loadLorequest();
+				if (run?.active) setTimeout(() => { (won ? lorequestVictory : lorequestDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (arenaRunMode) {
 				const run = loadArena();
 				if (run?.active) setTimeout(() => { (won ? arenaVictory : arenaDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
@@ -3515,11 +3524,11 @@ $('restart').addEventListener('click', () => start());
 $('concede').addEventListener('click', () => {
 	if (!state || state.over) return;
 	// run modes keep their own copy (a conceded run clears the save + pays no pack)
-	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode) {
-		const run = arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
+	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode) {
+		const run = lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 		el.appendChild(overlayButton('Concede the run', () => {
-			if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
+			if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 			state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
 			done.appendChild(overlayButton('New Run', () => location.reload()));
@@ -3786,7 +3795,7 @@ function startPublishLoop() {
 	// the mode drives the friends-list "in a … run" label + the Watch button
 	const mode = duel.on ? 'pvp'
 		: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : 'battle';
+			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : 'battle';
 	const label = () => {
 		if (duel.on) return 'Card Duel';
 		if (dungeonBossId) return `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
@@ -3794,6 +3803,7 @@ function startPublishLoop() {
 		if (tombsRunMode) { const r = loadTombs(); return r ? `Fight ${r.level}/8` : 'Tombs'; }
 		if (duelsRunMode) { const r = loadDuels(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Duels'; }
 		if (arenaRunMode) { const r = loadArena(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Arena'; }
+		if (lorequestRunMode) { const r = loadLorequest(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Lorequest'; }
 		return 'Card Battle';
 	};
 	let publishedOver = false; // pushed the final (over) board once, then go quiet
@@ -4590,6 +4600,7 @@ async function start() {
 		if (mode === 'heist') { location.href = '?heist=1'; return; }
 		if (mode === 'tombs') { location.href = '?tombs=1'; return; }
 		if (mode === 'duels') { location.href = '?duels=1'; return; }
+		if (mode === 'lorequest') { location.href = '?lorequest=1'; return; }
 		menuChosen = true;
 	}
 	if (dungeonRunMode) {
@@ -4673,6 +4684,18 @@ async function start() {
 			saveDuels(run);
 		}
 		bootDuelsEncounter(cardsById, run);
+	} else if (lorequestRunMode) {
+		lorequestCardsById = cardsById; // pre-state overlays need the card defs
+		let run = loadLorequest();
+		if (run && run.active && !(await resumeLorequestOverlay(run))) { clearLorequest(); run = null; }
+		if (!run || !run.active) {
+			const characterId = await pickLorequestDeckOverlay(cardsById);
+			const deck = Lorequest.deckOf(cardsById, characterId);
+			run = { active: true, characterId, cls: Lorequest.classOf(characterId), deck, wins: 0, losses: 0,
+				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
+			saveLorequest(run);
+		}
+		bootLorequestEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
@@ -5049,6 +5072,8 @@ function mainMenu() {
 			() => resolve('tombs')));
 		col.appendChild(big('DUELS', 'eleven heroes — draft a deck, then run it to 12 wins or 3 losses against rivals at your power',
 			() => resolve('duels')));
+		col.appendChild(big('LOREQUEST', 'pick 1 of 3 planeswalker decks — battle planeswalkers then Eldrazi & legendary bosses to 12 wins or 3 losses',
+			() => resolve('lorequest')));
 		el.appendChild(col);
 	});
 }
@@ -5073,7 +5098,7 @@ async function dungeonStarterDeck(clsId) {
 
 // a finished run pays out one pack, win or lose
 // which run mode is this? (drives the per-mode achievement counters server-side)
-const runModeName = () => arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
+const runModeName = () => lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
 	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
 async function mpRunReward(el, result) {
 	if (!MP_ON) return;
@@ -6003,6 +6028,150 @@ function duelsRunOver(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero.name} bows out at ${run.wins || 0} wins.`);
 	clearDuels();
+	mpRunReward(el, 'loss');
+	el.appendChild(overlayButton('New Run', () => location.reload()));
+}
+
+// ---------- Lorequest run ----------
+// Pick 1 of 3 planeswalker 30-card decks, then climb to 12 wins / 3 losses. Battles 1-8 are
+// vs other planeswalkers, 9+ vs the Eldrazi & legendary bosses. Every WIN loots a bucket
+// (+ a treasure at milestones); the generated enemy is kept at exact WIN-parity. Hero powers
+// are each character's class default (Ajani=paladin, Chandra=mage, ...).
+let lorequestCardsById = null;
+
+function resumeLorequestOverlay(run) {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('LOREQUEST IN PROGRESS',
+			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+// pick 1 of 3 planeswalker starter decks (shows the deck's signature card)
+function pickLorequestDeckOverlay(cardsById) {
+	return new Promise(resolve => {
+		const choices = Lorequest.starterChoices(Math.random, 3);
+		const el = dungeonOverlay('CHOOSE YOUR PLANESWALKER', 'Pick a 30-card starter deck (2 copies of each of its 15 cards).');
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (const ch of choices) {
+			const cls = Lorequest.classOf(ch);
+			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const sig = Object.values(cardsById).find(d => d.loreDeck === ch && d.rarity === 'legendary');
+			const box = document.createElement('div');
+			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:200px;';
+			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`;
+			if (sig) box.appendChild(miniFace(sig, 130));
+			box.appendChild(overlayButton('Play this deck', () => { hideDungeonOverlay(); resolve(ch); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	});
+}
+
+// roll the next enemy: roster by `games` (planeswalkers < 8, then bosses), deck at `wins`-parity
+function genLorequestEnemy(cardsById, games, wins, avoidId, selfId) {
+	const character = Lorequest.randomEnemy(games, Math.random, avoidId, selfId);
+	return Lorequest.generateEnemy(cardsById, character, wins, Math.random);
+}
+
+// the class def used to seat a Lorequest character — its class power, but displayed under the character's name
+function lorequestSeat(character) {
+	const cls = Lorequest.classOf(character);
+	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	return { ...def, id: cls, name: character };
+}
+
+function bootLorequestEncounter(cardsById, run) {
+	lorequestCardsById = cardsById;
+	const games = (run.wins || 0) + (run.losses || 0);
+	const enemy = run.enemy || (run.enemy = genLorequestEnemy(cardsById, games, run.wins || 0, null, run.characterId));
+	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const picks = [lorequestSeat(run.characterId), lorequestSeat(enemy.name)];
+	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state.classPicks = picks;
+	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
+	E.resetDeckAndHand(state, 1, [...enemy.deck]);
+	E.drawCards(state, 1, 4);
+	E.stripLoadouts(state);
+	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
+	log(`Lorequest - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${tier}).`);
+	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
+}
+
+function lorequestVictory(run) { afterLorequestGame(run, true); }
+function lorequestDefeat(run) { afterLorequestGame(run, false); }
+
+// one game resolved: bank it, end at 12 wins / 3 losses; loot only on a WIN, else straight to the next fight
+function afterLorequestGame(run, won) {
+	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	saveLorequest(run);
+	if (run.wins >= Lorequest.WINS_TO_CLEAR) { lorequestRunComplete(run); return; }
+	if (run.losses >= Lorequest.LOSSES_TO_END) { lorequestRunOver(run); return; }
+	if (won) lorequestLoot(run); else advanceLorequest(run);
+}
+
+// win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck
+function lorequestLoot(run) {
+	const cls = [run.cls];
+	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
+	const offered = Duels.offerBuckets(lorequestCardsById, cls, Math.random, 3);
+	const row = document.createElement('div');
+	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+	for (const bucket of offered) {
+		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, Math.random, 3);
+		const box = document.createElement('div');
+		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
+		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(document.createElement('br'));
+		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterLorequestBucket(run); }));
+		row.appendChild(box);
+	}
+	el.appendChild(row);
+}
+
+// milestone wins (2/5/8/11) also grant a treasure card, then the next fight
+function afterLorequestBucket(run) {
+	if (Lorequest.TREASURE_WINS.includes(run.wins)) {
+		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
+		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'DUELS' && !run.deck.includes(d.id));
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (let i = 0; i < 3 && options.length; i++) {
+			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.appendChild(miniFace(d));
+			box.appendChild(document.createElement('br'));
+			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceLorequest(run); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	} else advanceLorequest(run);
+}
+
+function advanceLorequest(run) {
+	const games = (run.wins || 0) + (run.losses || 0);
+	run.enemy = genLorequestEnemy(state.cardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
+	saveLorequest(run);
+	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${tier})`);
+	el.appendChild(overlayButton('Fight!', () => location.reload()));
+}
+
+function lorequestRunComplete(run) {
+	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${run.characterId} takes 12 wins with a ${run.deck.length}-card deck.`);
+	Col.earnGold(1000);
+	mpRunReward(el, 'win');
+	clearLorequest();
+	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
+}
+
+function lorequestRunOver(run) {
+	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${run.characterId} bows out at ${run.wins || 0} wins.`);
+	clearLorequest();
 	mpRunReward(el, 'loss');
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
