@@ -221,6 +221,11 @@
 				<div class="glyph">🎲</div>
 				<div><h3>Duels <span class="arrow">→</span></h3><p>Bring a starter deck, then upgrade it with treasures as you win.</p></div>
 			</a>
+			<a class="tile" href="index.html?lorequest=1" data-run="magepunk_lorequest_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">📖</div>
+				<div><h3>Lorequest <span class="arrow">→</span></h3><p>Pick 1 of 3 planeswalker decks, then climb past planeswalkers to Eldrazi &amp; legendary bosses.</p></div>
+			</a>
 			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1">
 				<span class="resume">▸ Resume</span>
 				<div class="glyph">⚔️</div>
@@ -488,8 +493,8 @@
 	<script type="module">
 	import * as MP from './mpmode.js';
 	import { openProfile } from './profile.js';
-	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
-	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	async function refreshLive() {
 		if (!MP.hasToken()) return;
