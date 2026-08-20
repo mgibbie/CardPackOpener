@@ -341,6 +341,25 @@ const categoryColorsOf = c => c.type === 'land' ? [] : colorsOf(c);
 const displayColorsOf = c => c.type === 'land' ? ['C'] : colorsOf(c);
 const colorName = code => COLOR_NAMES[code] || code;
 const colorChip = (code, card) => h('a', { class: 'tag-chip color', href: card?.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
+// small WUBRG(C) mana pips for the Land Pools views
+const COLOR_PIP_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'];
+function colorPips(cols) {
+  const use = COLOR_PIP_ORDER.filter(c => (cols || []).includes(c));
+  return h('span', { class: 'lp-pips' }, ...(use.length ? use : ['C']).map(c => h('span', { class: 'pip pip-' + c, title: colorName(c) })));
+}
+// derive a land's pool set + colour identity + tier from its taps
+function landInfo(c, allCards) {
+  let landSet = null;
+  const cols = [];
+  for (const t of (c.taps || [])) for (const e of (t.effects || [])) {
+    if (e.landSet) landSet = e.landSet;
+    if (e.type === 'boost' && e.color && !cols.includes(e.color)) cols.push(e.color);
+  }
+  const count = landSet ? allCards.filter(x => x.landSet === landSet && !x.token).length : 0;
+  const isBasic = BASIC_LAND_SETS.includes(landSet);
+  const tier = isBasic ? 'basic' : cols.length >= 3 ? 'three' : cols.length === 2 ? 'two' : cols.length === 1 ? 'mono' : 'colorless';
+  return { id: c.id, name: c.name, landSet, colors: COLOR_PIP_ORDER.filter(x => cols.includes(x)), count, tier };
+}
 // theme words an advanced land can conjure (matched against a card's name) — once
 let advThemes = null;
 function ensureAdvThemes(cards) {
@@ -1375,6 +1394,71 @@ function home() {
     h('p', { class: 'muted' }, 'To change content, edit the JSON files in designwiki/data/ in the repository.'));
 }
 
+// ---- Land Pools: a tier-grouped index of every land + its themed card set ----
+const LAND_TIERS = [
+  ['basic', 'Basic Land Sets', 'Colorless & mono basics — each taps to conjure a random card from a 70-card set.'],
+  ['mono', 'Mono-Color Temples', 'One colour each — tap to Discover 1 of 3 from a 15-card pool.'],
+  ['two', 'Two-Color Lands', 'Guildgates, Theros god-temples, Tarkir Dragonspires, Strixhaven Campuses & Kaldheim Citadels.'],
+  ['three', 'Three-Color Triomes', 'Alara shards & Tarkir wedges — a 15-card three-colour pool each.'],
+  ['colorless', 'Colorless Advanced Lands', '']
+];
+function landTile(l) {
+  return h('a', { class: 'lp-tile tier-' + l.tier, href: '#/land-pools/' + l.id },
+    h('span', { class: 'lp-name' }, l.name),
+    h('span', { class: 'lp-meta' }, colorPips(l.colors), h('span', { class: 'lp-count' }, l.count + ' cards')));
+}
+async function landPoolsView() {
+  content.replaceChildren(h('h1', null, 'Land Pools'), h('p', { class: 'muted' }, 'Loading lands…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart().then(() => null)]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Land Pools'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'land-pools') return;
+  const lands = cards.filter(c => c.type === 'land').map(c => landInfo(c, cards)).filter(l => l.landSet && l.count);
+  const totalCards = lands.reduce((n, l) => n + l.count, 0);
+  const sections = [];
+  for (const [key, title, blurb] of LAND_TIERS) {
+    const group = lands.filter(l => l.tier === key).sort((a, b) => a.name.localeCompare(b.name));
+    if (!group.length) continue;
+    sections.push(h('section', { class: 'lp-tier' },
+      h('div', { class: 'lp-tier-head' },
+        h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + group.length + ')')),
+        blurb ? h('p', { class: 'muted' }, blurb) : null),
+      h('div', { class: 'lp-grid' }, ...group.map(landTile))));
+  }
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Land Pools'),
+        h('p', { class: 'muted' }, 'Every land taps into its own themed card set. Tap a land to browse its pool.')),
+      h('div', { class: 'result-count' }, lands.length, h('span', null, ' lands · ' + totalCards.toLocaleString() + ' cards'))),
+    ...sections);
+}
+async function landPoolDetail(id) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading pool…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Land Pool'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  const land = cards.find(c => c.id === id && c.type === 'land');
+  if (!land) return content.replaceChildren(h('h1', null, 'Land not found'),
+    h('p', null, h('a', { href: '#/land-pools' }, '← Back to Land Pools')));
+  const info = landInfo(land, cards);
+  const pool = cards.filter(c => c.landSet === info.landSet && !c.token)
+    .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'land-pools') return;
+  await CardArt.preloadArt([land.id, ...pool.map(c => c.id)]);
+  const face = CardArt.drawCardFace(land); face.className = 'wiki-face-big';
+  const tapLines = (land.description || '').split('\n').filter(Boolean);
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/land-pools' }, '← All Land Pools')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, land.name),
+        h('div', { class: 'lp-detail-meta' }, colorPips(info.colors), h('span', { class: 'lp-count' }, pool.length + ' cards in pool')),
+        h('ul', { class: 'lp-taps' }, ...tapLines.map(t => h('li', null, t))))),
+    pool.length ? h('div', { class: 'card-grid size-medium' }, ...pool.map(cardTile))
+      : h('p', { class: 'muted' }, 'This land has no pool cards yet.'));
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1394,6 +1478,7 @@ function route() {
   if (section === 'unlearned') return unlearnedView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
+  if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
@@ -1444,6 +1529,18 @@ searchEl.addEventListener('input', () => {
   }
 });
 window.addEventListener('hashchange', route);
+
+// ---- mobile nav drawer: hamburger toggles an off-canvas sidebar ----
+(function wireNavDrawer() {
+  const toggle = document.getElementById('navToggle');
+  const scrim = document.getElementById('navScrim');
+  const sidebar = document.getElementById('sidebar');
+  const setNav = open => document.body.classList.toggle('nav-open', open);
+  if (toggle) toggle.addEventListener('click', () => setNav(!document.body.classList.contains('nav-open')));
+  if (scrim) scrim.addEventListener('click', () => setNav(false));
+  if (sidebar) sidebar.addEventListener('click', e => { if (e.target.closest('a')) setNav(false); });
+  window.addEventListener('hashchange', () => setNav(false));
+})();
 
 (async function init() {
   try {

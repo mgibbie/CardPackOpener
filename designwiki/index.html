@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk66 Wiki</title>
-  <link rel="stylesheet" href="style.css?v=20260817">
+  <link rel="stylesheet" href="style.css?v=20260820a">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
        which imports three; map it so the dynamic import resolves -->
   <script type="importmap">
@@ -13,10 +13,12 @@
 </head>
 <body>
   <header>
+    <button id="navToggle" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
     <a class="brand" href="#/">Magepunk66 Wiki</a>
     <input id="search" type="search" placeholder="Search Pokémon, moves, abilities…" autocomplete="off">
     <span id="status"></span>
   </header>
+  <div id="navScrim" aria-hidden="true"></div>
   <div class="layout">
     <nav id="sidebar">
       <a href="#/pokemon">Pokédex</a>
@@ -33,6 +35,7 @@
       <a href="#/region/hoenn" class="sub">Hoenn</a>
       <div class="nav-group">Battlecards</div>
       <a href="#/cards" class="sub">Card Gallery</a>
+      <a href="#/land-pools" class="sub">Land Pools</a>
       <a href="#/contraptions" class="sub">Contraptions</a>
       <a href="#/dungeons" class="sub">Advance Dungeons</a>
       <a href="#/missing-art" class="sub">⚠ Missing Art</a>
@@ -46,6 +49,6 @@
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20260874"></script>
+  <script src="app.js?v=20260875"></script>
 </body>
 </html>
