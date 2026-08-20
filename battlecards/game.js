@@ -6326,7 +6326,7 @@ let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = nul
 
 function deriveReplayMeta() {
 	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
+		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
 	const heroes = (state && state.players || []).map((p, i) => ({
 		classId: (state.classPicks && state.classPicks[i] && state.classPicks[i].id) || p.heroClass || null,
 		name: nameOf(i),

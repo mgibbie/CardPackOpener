@@ -35,6 +35,7 @@ ok('a heist run shows "a Heist run"', /Heist run/i.test(friendActivity({ status:
 ok('a tombs run shows "a Tombs run"', /Tombs run/i.test(friendActivity({ status: 'card:tombs', region: 'Fight 2/8' }).label));
 ok('a duels run shows "a Duels run"', /Duels run/i.test(friendActivity({ status: 'card:duels', region: '5W / 2L' }).label));
 ok('an ARENA run shows "an Arena run" (was the gap)', /Arena run/i.test(friendActivity({ status: 'card:arena', region: '3W / 0L' }).label));
+ok('a LOREQUEST run shows "a Lorequest run"', /Lorequest run/i.test(friendActivity({ status: 'card:lorequest', region: '5W / 2L' }).label));
 ok('a pvp duel shows "a card duel"', /card duel/i.test(friendActivity({ status: 'card:pvp', region: 'Card Duel' }).label));
 ok('the generic "Card Duel" region is NOT appended (avoids "duel · Card Duel")', !/·/.test(friendActivity({ status: 'card:pvp', region: 'Card Duel' }).label));
 ok('a plain card battle shows "a card battle"', /card battle/i.test(friendActivity({ status: 'card:battle', region: 'Card Battle' }).label));

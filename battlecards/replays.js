@@ -4,8 +4,8 @@
 import * as Rec from './replayrec.js';
 
 const $ = id => document.getElementById(id);
-const MODE_ICON = { solo: '⚔️', ai: '🤖', multiplayer: '🌐', dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️' };
-const MODE_NAME = { solo: 'Quick Match', ai: 'Ranked AI', multiplayer: 'PvP Duel', dungeon: 'Dungeon', heist: 'Heist', tombs: 'Tombs', duels: 'Duels', arena: 'Arena' };
+const MODE_ICON = { solo: '⚔️', ai: '🤖', multiplayer: '🌐', dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖' };
+const MODE_NAME = { solo: 'Quick Match', ai: 'Ranked AI', multiplayer: 'PvP Duel', dungeon: 'Dungeon', heist: 'Heist', tombs: 'Tombs', duels: 'Duels', arena: 'Arena', lorequest: 'Lorequest' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function status(msg) { $('status').textContent = msg || ''; clearTimeout(status._t); if (msg) status._t = setTimeout(() => { if ($('status').textContent === msg) $('status').textContent = ''; }, 3000); }
