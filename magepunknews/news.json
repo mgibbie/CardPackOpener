@@ -2,6 +2,14 @@
 	"generated": "2026-08-19",
 	"entries": [
 		{
+			"sha": "c160ba7",
+			"date": "2026-08-19",
+			"kind": "patch",
+			"title": "Build 5 Strixhaven Campus pools: Silverquill/Prismari/Witherbloom/Quandrix/Lorehold",
+			"body": "75 uncollectible dual-color cards keyed by landSet Silverquill(W/B)/Prismari(U/R)/\nWitherbloom(B/G)/Quandrix(G/U)/Lorehold(R/W) - the 5 Strixhaven college two-color lands,\nthemed to each college:\n- Silverquill (W/B): eloquence/inklings - lifedrain, Inkling(Elusive) tokens, +1/+1, silence, removal.\n- Prismari (U/R): elemental art - burn (targeted/AoE), draw/scry, Elusive elementals, ramp.\n- Witherbloom (B/G): life & death - Deathtouch, drain/lifegain, Pest tokens, big beasts, removal.\n- Quandrix (G/U): fractals - ramp, +1/+1, Fractal tokens, heavy draw/scry, big Elusive/Trample.\n- Lorehold (R/W): history/spirits - go-wide Spirit tokens, Rush/Charge, buffs, Divine Shield, burn.\n\nFixed 5 campus taps: conjure-named -> discover landSet. Built via build_strixhaven.mjs.\n5 new pool tests (37 each) - NOTE: campus tests need land id `<x>_campus` (not temple_of_)\n+ landSet-tag check (Killian/Kianne use real names, not the college). Suite 241 -> 246.",
+			"cards": []
+		},
+		{
 			"sha": "bdf2118",
 			"date": "2026-08-19",
 			"kind": "patch",
