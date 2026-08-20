@@ -2,6 +2,14 @@
 	"generated": "2026-08-20",
 	"entries": [
 		{
+			"sha": "f231ebe",
+			"date": "2026-08-20",
+			"kind": "patch",
+			"title": "Spectate parity for Lorequest runs",
+			"body": "The spectate pipeline (publish-cardstate -> presence card:<mode> ->\nlive-friends -> Watch -> ?spectate) is already mode-agnostic and\nstartPublishLoop runs for Lorequest, but four label maps + the replay\ntag omitted 'lorequest', so it showed the generic \"a card game\" and\nmis-tagged replays as 'solo'. Add lorequest to:\n- site/topbar.js CARD_MODE_LABEL (friends-list \"in a Lorequest run\") +\n  the bc:<mode> context list (also add the missing arena)\n- battlecards/profile.js CARD_MODE (profile presence label)\n- battlecards/replays.js MODE_ICON/MODE_NAME (replay list 📖 Lorequest)\n- game.js deriveReplayMeta (tag Lorequest replays 'lorequest', not 'solo')\n- friends_activity_test.mjs: assert a Lorequest run is live + labeled\n(start.html Live-Now maps were done in 15aa219b.) Suite 284/284.",
+			"cards": []
+		},
+		{
 			"sha": "d85a5f7",
 			"date": "2026-08-20",
 			"kind": "patch",
