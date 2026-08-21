@@ -228725,6 +228725,63 @@
         ]
       },
       "description": "Battlecry: Flicker a creature.\nAdventure — Fey Subterfuge (5): Bounce target creature."
+    },
+    {
+      "id": "cirdan_the_shipwright",
+      "name": "Cirdan the Shipwright",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elf Noble",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "aura": {
+        "position": "ends",
+        "keywords": [
+          "taunt"
+        ]
+      },
+      "effects": [
+        {
+          "type": "draw-all",
+          "value": 1
+        }
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw-all",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Castellan & Hexproof.\nBattlecry & Swing: Each player draws a card."
+    },
+    {
+      "id": "galea_kindler_of_hope",
+      "name": "Galea, Kindler of Hope",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elf Knight",
+      "aura": {
+        "position": "ends",
+        "keywords": [
+          "taunt"
+        ]
+      },
+      "description": "Castellan."
     }
   ]
 }

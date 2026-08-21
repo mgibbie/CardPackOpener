@@ -107,6 +107,7 @@ ok('every anomaly has name + text', Object.values(H.ANOMALIES).every(a => a.name
 	const FREE = { id: 't_free', name: 'T Free', type: 'sorcery', cost: 0, rarity: 'common', effects: [{ type: 'armor', value: 1 }] };
 	state.cardsById.t_free = FREE;
 	state.current = 0;
+	state.players[1].hand = []; // opponent can't respond -> the spells auto-resolve (robust to the boot's random hand)
 	for (let i = 0; i < 3; i++) { const c = giveHand(state, 0, FREE); E.playCard(state, 0, c.uid, null); }
 	ok('Dragon Soul: spells counted to 3', state.players[0].spellsPlayedThisTurn === 3, state.players[0].spellsPlayedThisTurn);
 	const drag = state.players[0].board.find(m => m.name === 'Dragon' && m.attack === 5);
