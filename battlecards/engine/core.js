@@ -2259,6 +2259,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// opponents' ongoing reactions to you playing a creature (Holomancer / Harbinger Celestia)
 			if (p.board.includes(card) && !isDead(card)) for (const o of opponentsOf(state, pi)) fireOngoing(state, o, 'enemy-creature-played', { minion: card });
 			if (p.board.includes(card) && !isDead(card)) fireOngoing(state, pi, 'creature-played', { minion: card });
+			if (p.board.includes(card) && !isDead(card) && (card.tribe || '').includes('Mech')) fireOngoing(state, pi, 'artifact-played', { played: card }); // Metallurgy: mechs count as artifacts
 				if (p.board.includes(card) && !isDead(card) && p.stampedeTurn === state.turnNumber && (card.tribe || '').includes('Beast')) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', tribe: 'Beast' }], null, null); // Stampede: each Beast played this turn adds a random Beast
 				if ((card.tribe || '').includes('Draenei')) p.lastDraeneiId = card.id; // Astral Vigilant
 				if (draeneiImmediateAttack && p.board.includes(card) && !isDead(card)) { // Expedition Sergeant: the buffed Draenei attacks a random enemy at once
@@ -2348,6 +2349,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		recomputeAuras(state);
 		if (card.effects) execEffects(state, pi, card.effects, target, card); // permanent battlecries
 		if (card.type === 'enchantment') fireOngoing(state, pi, 'enchantment-played', { played: card });
+		else fireOngoing(state, pi, 'artifact-played', { played: card }); // Metallurgy: "when you play an artifact or mech"
 		if (card.equip) fireOngoing(state, pi, 'equipment-entered', { equip: card }); // Puresteel Paladin
 	} else if (card.type === 'planeswalker') {
 		card.zone = 'planeswalker';

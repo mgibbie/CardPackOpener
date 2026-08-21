@@ -226047,6 +226047,207 @@
         }
       ],
       "description": "Battlecry: Destroy an enemy Artifact or Enchantment.\n5: Create a 1/1 Mech."
+    },
+    {
+      "id": "netherese_dungeoneer",
+      "name": "Netherese Dungeoneer",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Human Explorer",
+      "ongoings": [
+        {
+          "on": "artifact-played",
+          "effects": [
+            {
+              "type": "advance"
+            }
+          ]
+        },
+        {
+          "on": "enchantment-played",
+          "effects": [
+            {
+              "type": "scry",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "description": "Metallurgy: Advance.\nConstellation: Scry 2."
+    },
+    {
+      "id": "fugitive_codebreaker",
+      "name": "Fugitive Codebreaker",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 1,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Goblin Rogue",
+      "keywords": [
+        "charge"
+      ],
+      "ongoings": [
+        {
+          "on": "artifact-played",
+          "effects": [
+            {
+              "type": "luck",
+              "effects": [
+                {
+                  "type": "discover",
+                  "cardType": "spell",
+                  "cost": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "effects": [
+            {
+              "type": "temp-buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ],
+      "description": "Charge & Prowess.\nMetallurgy: Luck: Discover a spell that costs (1)."
+    },
+    {
+      "id": "mystic_seraph",
+      "name": "Mystic Seraph",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Spirit Angel Faerie",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "add-counters",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever you gain Life, gain +1/+1."
+    },
+    {
+      "id": "terragoros",
+      "name": "Terragoros",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Golem Warrior",
+      "keywords": [
+        "sanguine"
+      ],
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "buff-friendly-tribe",
+            "tribe": "Totem",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Sanguine.\nMetallurgy: Each Totem you control gains +2 Attack."
+    },
+    {
+      "id": "quagorox",
+      "name": "Quagorox",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Eldrazi",
+      "keywords": [
+        "sanguine"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "activated": [
+        {
+          "cost": 4,
+          "effects": [
+            {
+              "type": "cook"
+            },
+            {
+              "type": "loot",
+              "value": 1
+            }
+          ],
+          "text": "Cook & Loot."
+        }
+      ],
+      "description": "Sanguine & Prowess.\n4: Cook & Loot."
+    },
+    {
+      "id": "sangor_dark_prince_of_neon_shadows",
+      "name": "Sangor, Dark Prince of Neon Shadows",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Undead Elemental God",
+      "keywords": [
+        "sanguine",
+        "rush"
+      ],
+      "ongoings": [
+        {
+          "on": "self-attacks",
+          "effects": [
+            {
+              "type": "planeshift"
+            }
+          ]
+        },
+        {
+          "on": "self-hit-player",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        }
+      ],
+      "description": "Sanguine & Rush.\nSwing: Planeshift.\nConnect: Enrich."
     }
   ]
 }
