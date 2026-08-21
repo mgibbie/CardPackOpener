@@ -227444,6 +227444,90 @@
         }
       ],
       "description": "Battlecry: Target opponent skips their next turn.\nDeathrattle: Planeshift."
+    },
+    {
+      "id": "platinum_emperion",
+      "name": "Platinum Emperion",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Mech Golem",
+      "static": {
+        "type": "life-locked",
+        "value": 1
+      },
+      "description": "You can't gain or lose Life."
+    },
+    {
+      "id": "gravelskin_shinobi",
+      "name": "Gravelskin Shinobi",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Elemental Ninja",
+      "keywords": [
+        "trample",
+        "rush"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "exile-graveyard-random"
+          }
+        ]
+      },
+      "description": "Trample & Rush.\nSwing: Exile a card from a graveyard."
+    },
+    {
+      "id": "sobekthos_the_mercurial",
+      "name": "Sobekthos, the Mercurial",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 9,
+      "attack": 9,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Horror God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "target": "friendly-others",
+          "effects": [
+            {
+              "type": "plunder",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-deathrattle-minion",
+            "effects": [
+              {
+                "type": "plunder",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Your other creatures have \"Deathrattle: Plunder.\""
     }
   ]
 }

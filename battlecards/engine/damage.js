@@ -123,6 +123,7 @@ export function damageCreature(state, target, amount, source) {
 export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (amount <= 0) return 0;
 	const p = state.players[pi];
+	if (staticValue(p, 'life-locked') > 0) return 0; // Platinum Emperion: you can't lose Life
 	if (p.weapon?.doubleHeroDamage) amount *= 2; // Cursed Blade: double all damage dealt to your hero
 	if (p.heroDamageCapUntilTurn != null && state.turnNumber < p.heroDamageCapUntilTurn && amount > (p.heroDamageCap || 1)) amount = p.heroDamageCap || 1; // Solid Alibi: only 1 damage at a time until your next turn
 	if (p.weapon?.absorbHeroDamageToWeapon && amount > 0) { // Bulwark of Azzinoth: the weapon loses 1 Durability instead
@@ -243,6 +244,7 @@ function warptoothCheck(state, pi) {
 
 export function healHero(state, pi, amount) {
 	const p = state.players[pi];
+	if (staticValue(p, 'life-locked') > 0) return; // Platinum Emperion: you can't gain Life
 	if (p.healLockUntilTurn != null && state.turnNumber < p.healLockUntilTurn) return; // Crater Gator: can't be healed
 	const before = p.life;
 	// MTG-style: starting life is not a ceiling — a hero can be healed above it.

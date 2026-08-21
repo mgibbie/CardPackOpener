@@ -634,6 +634,18 @@ register('exile', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 } });
 
 
+register('exile-graveyard-random', ({ state, pi }, e) => { {
+			// Gravelskin Shinobi: exile a random card from a graveyard (any player's)
+			const pool = [];
+			for (const pl of state.players) for (const c of pl.graveyard) pool.push([pl, c]);
+			if (!pool.length) return;
+			const [pl, c] = pool[Math.floor(state.rng() * pool.length)];
+			pl.graveyard = pl.graveyard.filter(x => x !== c);
+			c.zone = 'exile'; pl.exile.push(c);
+			emit(state, { type: 'exiled', uid: c.uid, player: pl === state.players[pi] ? pi : state.players.indexOf(pl), name: c.name });
+} });
+
+
 register('destroy-played-last-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Chrono-Lord Epoch: destroy enemy minions played last turn
 			for (const o of enemies) {

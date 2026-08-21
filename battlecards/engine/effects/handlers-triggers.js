@@ -1702,6 +1702,20 @@ registerTrigger('summon-dead-copy-no-keyword', (state, pi, e, ctx, triggering) =
 });
 
 
+registerTrigger('grant-deathrattle-minion', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Sobekthos: grant a Deathrattle to the creature that was just played (ctx.minion)
+				const m = ctx.minion;
+				if (m && !isDead(m) && m.type === 'creature') {
+					m.deathrattle = (m.deathrattle || []).concat(JSON.parse(JSON.stringify(e.effects)));
+					if (!m.keywords.includes('deathrattle')) m.keywords.push('deathrattle');
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('add-dead-copy', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Veteran Ghoulcaller: add a copy of the creature that just died to your hand
