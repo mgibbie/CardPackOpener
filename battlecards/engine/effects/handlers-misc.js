@@ -59,6 +59,55 @@ register('enrich', ({ state, pi, target, source, enemies, scaled }, e) => {
 			gainTokenCard(state, pi, 'treasure_token');
 });
 
+// "Add a random <filter> card to your hand" — a filtered random generator (paper:
+// Bearded Reedling / Whiteflame Spellweaver / Icewind Deathlord / Upbeat Frontdrake).
+// Filters: cardType ('creature'|'spell'|'weapon'|'artifact'|…), tribe, cardClass, rarity,
+// school|schools[], maxCost, cost, otherClass, count. Colored/land/token cards are excluded.
+register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) => {
+			const p = state.players[pi];
+			const heroClass = p.heroClass || null;
+			const schools = e.schools || (e.school ? [e.school] : null);
+			const pool = Object.values(state.cardsById).filter(d => d && !d.token && d.collectible !== false
+				&& !(d.colors && d.colors.length) && !d.choices && d.type !== 'land'
+				&& (e.cardType == null ? true : e.cardType === 'spell' ? isSpellType(d) : d.type === e.cardType)
+				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
+				&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass)
+				&& (e.rarity == null || (d.rarity || 'common') === e.rarity)
+				&& (!schools || schools.includes(schoolOf(d)))
+				&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
+				&& (e.cost == null || (d.cost || 0) === e.cost)
+				&& (!e.otherClass || ((d.cardClass || 'neutral') !== 'neutral' && !(d.cardClass || '').split('__').includes(heroClass || ''))));
+			for (let n = 0; n < (e.count || 1); n++) {
+				if (p.hand.length >= MAX_HAND || !pool.length) break;
+				const def = pool[Math.floor(state.rng() * pool.length)];
+				const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+});
+
+// "Destroy target Artifact / Enchantment / Location" — the engine's `destroy` only hits
+// creatures, and these are mostly auto-resolving Deathrattles, so this removes a RANDOM
+// matching enemy non-creature permanent (paper: Heartblossom/Green Eyes/Cindervoid).
+register('destroy-permanent', ({ state, pi, target, source, enemies, scaled }, e) => {
+			const which = e.which || 'both'; // 'artifact' | 'enchantment' | 'location' | 'both'
+			const owners = e.mine ? [pi] : opponentsOf(state, pi);
+			const cands = [];
+			for (const o of owners) {
+				const pp = state.players[o];
+				if (which === 'artifact' || which === 'both') for (const c of pp.artifacts) cands.push([o, c, 'artifacts']);
+				if (which === 'enchantment' || which === 'both') for (const c of pp.enchantments) cands.push([o, c, 'enchantments']);
+				if (which === 'location') for (const c of pp.board) if (c.type === 'location') cands.push([o, c, 'board']);
+			}
+			for (let k = 0; k < (e.count || 1) && cands.length; k++) {
+				const idx = Math.floor(state.rng() * cands.length);
+				const [o, c, zone] = cands.splice(idx, 1)[0];
+				const pp = state.players[o];
+				pp[zone] = pp[zone].filter(x => x !== c);
+				emit(state, { type: 'destroy', uid: c.uid });
+			}
+			recomputeAuras(state); // attached equipment / enchantment auras lapse on destroy
+});
+
 
 register('leyline-double', ({ state, pi, target, source, enemies, scaled }, e) => {
 			state.players[pi].leylineDouble = true; // Surge Needle

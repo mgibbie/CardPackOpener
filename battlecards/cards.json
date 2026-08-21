@@ -225543,6 +225543,210 @@
         }
       ],
       "description": "Battlecry: Return a creature from your graveyard to your hand."
+    },
+    {
+      "id": "bearded_reedling",
+      "name": "Bearded Reedling",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 1,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "add-random-card",
+          "cardType": "creature",
+          "cardClass": "neutral",
+          "rarity": "common"
+        }
+      ],
+      "description": "Battlecry: Add a random neutral common creature to your hand."
+    },
+    {
+      "id": "whiteflame_spellweaver",
+      "name": "Whiteflame Spellweaver",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Mandran Sorcerer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "add-random-card",
+          "schools": [
+            "Fire",
+            "Frost"
+          ],
+          "otherClass": true
+        }
+      ],
+      "description": "Battlecry: Add a random Fire or Frost card from another class to your hand."
+    },
+    {
+      "id": "heartblossom_snapdragon",
+      "name": "Heartblossom Snapdragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 5,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Plant Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-permanent",
+          "which": "both"
+        }
+      ],
+      "description": "Battlecry: Excavate.\nDeathrattle: Destroy an enemy Artifact or Enchantment."
+    },
+    {
+      "id": "green_eyes_red_dragon",
+      "name": "Green Eyes Red Dragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        },
+        {
+          "type": "excavate"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "destroy-permanent",
+          "which": "both"
+        }
+      ],
+      "description": "Battlecry: Excavate twice.\nDeathrattle: Destroy an enemy Artifact or Enchantment."
+    },
+    {
+      "id": "cindervoid_raider",
+      "name": "Cindervoid Raider",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Mandran Pirate Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-permanent",
+          "which": "artifact"
+        }
+      ],
+      "description": "Battlecry: Destroy an enemy Artifact."
+    },
+    {
+      "id": "icewind_deathlord",
+      "name": "Icewind Deathlord",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 2,
+      "health": 8,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Undead Dwarf",
+      "keywords": [
+        "battlecry",
+        "taunt"
+      ],
+      "effects": [
+        {
+          "type": "luck",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "cardType": "spell",
+              "school": "Frost"
+            }
+          ]
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "discover",
+                "cardType": "spell",
+                "school": "Nature"
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Taunt.\nBattlecry: Luck: Add a random Frost spell to your hand.\nInspire: Luck: Discover a Nature spell."
+    },
+    {
+      "id": "upbeat_frontdrake",
+      "name": "Upbeat Frontdrake",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Dragon Bard",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "add-random-card",
+                "cardType": "creature",
+                "tribe": "Dragon",
+                "maxCost": 5
+              }
+            ]
+          }
+        ]
+      },
+      "description": "At the end of your turn, Luck: Add a random Dragon that costs (5) or less to your hand."
     }
   ]
 }
