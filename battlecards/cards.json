@@ -228877,6 +228877,30 @@
         ]
       },
       "description": "Whenever you draw your second card each turn, create a 1/1 Illusion with \"+1/+0 for each other Illusion you control.\""
+    },
+    {
+      "id": "rampage_condenser",
+      "name": "Rampage Condenser",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "any"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Deal 3 damage to any target, then draw a card."
+      },
+      "description": "{T}: Deal 3 damage to any target, then draw a card."
     }
   ]
 }
