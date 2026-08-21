@@ -111,6 +111,18 @@ register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) 
 // "Destroy target Artifact / Enchantment / Location" — the engine's `destroy` only hits
 // creatures, and these are mostly auto-resolving Deathrattles, so this removes a RANDOM
 // matching enemy non-creature permanent (paper: Heartblossom/Green Eyes/Cindervoid).
+register('destroy-walker', ({ state, pi, enemies }, e) => {
+			// Octowunder (Metallurgy): destroy a random enemy planeswalker
+			for (const o of (enemies || opponentsOf(state, pi))) {
+				const pl = state.players[o];
+				if (pl.planeswalkers && pl.planeswalkers.length) {
+					const w = pl.planeswalkers[Math.floor(state.rng() * pl.planeswalkers.length)];
+					pl.planeswalkers = pl.planeswalkers.filter(x => x !== w);
+					emit(state, { type: 'destroy', uid: w.uid });
+					return;
+				}
+			}
+});
 register('destroy-permanent', ({ state, pi, target, source, enemies, scaled }, e) => {
 			const which = e.which || 'both'; // 'artifact' | 'enchantment' | 'location' | 'both' | 'any'
 			const owners = e.mine ? [pi] : opponentsOf(state, pi);

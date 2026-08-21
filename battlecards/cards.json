@@ -227908,6 +227908,113 @@
         "windfury"
       ],
       "description": "Swift, Impulsive & Windfury."
+    },
+    {
+      "id": "heartblossom",
+      "name": "Heartblossom",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Nature",
+      "choices": [
+        {
+          "text": "A friendly creature gains +2/+2; deal 2 to a random enemy creature.",
+          "effects": [
+            {
+              "type": "buff",
+              "target": "friendly-creature",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "random-enemy"
+            }
+          ]
+        },
+        {
+          "text": "A friendly creature gains +2/+2; draw a card.",
+          "effects": [
+            {
+              "type": "buff",
+              "target": "friendly-creature",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Deal 2 to a random enemy creature; draw a card.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "random-enemy"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Choose two — A friendly creature gains +2/+2; Deal 2 damage to a random enemy creature; Draw a card."
+    },
+    {
+      "id": "octowunder",
+      "name": "Octowunder",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Elemental Beast",
+      "keywords": [
+        "chromatic"
+      ],
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "destroy-walker"
+          }
+        ]
+      },
+      "description": "Chromatic.\nMetallurgy: Destroy an enemy Planeswalker."
+    },
+    {
+      "id": "opal_drake",
+      "name": "Opal Drake",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 4,
+      "health": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Faerie Dragon",
+      "keywords": [
+        "chromatic",
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "enrich"
+          }
+        ]
+      },
+      "description": "Chromatic & Hexproof.\nConnect: Enrich."
     }
   ]
 }

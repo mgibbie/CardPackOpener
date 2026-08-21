@@ -34,6 +34,7 @@ const beastId = raw.cards.find(c => (c.tribe || '').includes('Beast') && c.type 
 // ---- Rothga: reveal a Phyrexian -> the NEXT Beast played gains +4/+4 ----
 {
 	const st = game();
+	st.players[0].hand = []; // Rothga checks holdingTribe:Phyrexian in HAND; clear the random opening hand (robust to card-pool changes)
 	// no Phyrexian in hand -> no reward
 	const r1 = playFromHand(st, 'rothga_bonded_engulfer');
 	ok('Rothga has Trample', r1 && r1.keywords.includes('trample'));
