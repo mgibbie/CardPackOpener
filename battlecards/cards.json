@@ -228085,6 +228085,93 @@
         "deathtouch"
       ],
       "description": "Charge & Deathtouch."
+    },
+    {
+      "id": "triton_fortune_hunter",
+      "name": "Triton Fortune Hunter",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Merfolk Soldier",
+      "ongoing": {
+        "on": "targeted-by-spell",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever this creature is targeted by a spell, draw a card."
+    },
+    {
+      "id": "lincale_calm_researcher",
+      "name": "Lincale, Calm Researcher",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Lizardfolk Citizen",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "dredge"
+        },
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "ongoings": [
+        {
+          "on": "ponder",
+          "effects": [
+            {
+              "type": "tutor",
+              "cardType": "enchantment"
+            }
+          ]
+        },
+        {
+          "on": "council",
+          "effects": [
+            {
+              "type": "heal",
+              "target": "self",
+              "value": 10
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Dredge & a creature gains +2/+2.\nPonder: Draw an Aura.\nCouncil: Gain 10 Life."
+    },
+    {
+      "id": "doomstar_ulka",
+      "name": "Doomstar Ulka",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elemental Beast",
+      "keywords": [
+        "rush",
+        "static"
+      ],
+      "description": "Rush & Static."
     }
   ]
 }

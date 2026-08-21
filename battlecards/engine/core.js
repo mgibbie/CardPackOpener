@@ -1789,7 +1789,7 @@ function resolveAddCostSpell(state, pi, card, target, choice) {
 	runSpell(state, pi, card, target, choice);
 	if (card.honorableKill && state.exactKills > 0) execEffects(state, pi, card.honorableKill, target, card);
 	fireOngoing(state, pi, 'spell-played', { played: card });
-	if (target && target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: findCreature(state, target.uid) }); // Sethekk Veilweaver / Stormwind Avenger
+	if (target && target.type === 'creature') { const _tc = findCreature(state, target.uid); fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: _tc }); if (_tc) fireCreatureTrigger(state, _tc, 'targeted-by-spell', { spell: card }); } // Sethekk Veilweaver / Stormwind Avenger; Triton Fortune Hunter reacts to being targeted (either side)
 	firePlaneTrigger(state, 'spell-cast', pi);
 	for (let s2 = 0; s2 < state.players.length; s2++) {
 		fireOngoing(state, s2, 'any-spell-played', { spell: card, caster: pi });
@@ -2624,7 +2624,7 @@ function resolveStackedSpell(state, entry) {
 		fireOngoing(state, pi, 'spell-played', { played: card });
 		if (card.combo) fireOngoing(state, pi, 'battlecry-or-combo-played', { played: card }); // Field Contact
 		if (card._outcast || card._handEdge) fireOngoing(state, pi, 'edge-card-played', { played: card }); // Razorglaive Sentinel / Altruis
-		if (ctx.target && ctx.target.type === 'creature') fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: findCreature(state, ctx.target.uid) }); // Sethekk Veilweaver / Stormwind Avenger
+		if (ctx.target && ctx.target.type === 'creature') { const _tc = findCreature(state, ctx.target.uid); fireOngoing(state, pi, 'spell-cast-on-creature', { played: card, targetCreature: _tc }); if (_tc) fireCreatureTrigger(state, _tc, 'targeted-by-spell', { spell: card }); } // Sethekk Veilweaver / Stormwind Avenger; Triton Fortune Hunter reacts to being targeted (either side)
 		if (card.choices) fireOngoing(state, pi, 'choose-spell-played', { played: card }); // Keeper Stalladris
 		firePlaneTrigger(state, 'spell-cast', pi); // Minamo / Elysaria
 		for (let s2 = 0; s2 < state.players.length; s2++) {
