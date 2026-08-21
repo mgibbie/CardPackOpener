@@ -228332,6 +228332,236 @@
         }
       ],
       "description": "Deathrattle: Return an Aura from your graveyard to your hand."
+    },
+    {
+      "id": "first_excavation",
+      "name": "First Excavation",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "common",
+      "set": "paper",
+      "choices": [
+        {
+          "text": "Create a tapped Powerstone (gain a coin).",
+          "effects": [
+            {
+              "type": "gain-coin"
+            }
+          ]
+        },
+        {
+          "text": "Create a tapped Relic (a Treasure).",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "text": "Discover a Common card.",
+          "effects": [
+            {
+              "type": "discover",
+              "rarity": "common"
+            }
+          ]
+        },
+        {
+          "text": "Add a random Common card to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "rarity": "common"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Common card; or Add a random Common Excavation treasure to your hand."
+    },
+    {
+      "id": "second_excavation",
+      "name": "Second Excavation",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "uncommon",
+      "set": "paper",
+      "choices": [
+        {
+          "text": "Create a tapped Powerstone (gain a coin).",
+          "effects": [
+            {
+              "type": "gain-coin"
+            }
+          ]
+        },
+        {
+          "text": "Create a tapped Relic (a Treasure).",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "text": "Discover a Uncommon card.",
+          "effects": [
+            {
+              "type": "discover",
+              "rarity": "uncommon"
+            }
+          ]
+        },
+        {
+          "text": "Add a random Uncommon card to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "rarity": "uncommon"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Uncommon card; or Add a random Uncommon Excavation treasure to your hand."
+    },
+    {
+      "id": "third_excavation",
+      "name": "Third Excavation",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "rare",
+      "set": "paper",
+      "choices": [
+        {
+          "text": "Create a tapped Powerstone (gain a coin).",
+          "effects": [
+            {
+              "type": "gain-coin"
+            }
+          ]
+        },
+        {
+          "text": "Create a tapped Relic (a Treasure).",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "text": "Discover a Rare card.",
+          "effects": [
+            {
+              "type": "discover",
+              "rarity": "rare"
+            }
+          ]
+        },
+        {
+          "text": "Add a random Rare card to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "rarity": "rare"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Rare card; or Add a random Rare Excavation treasure to your hand."
+    },
+    {
+      "id": "fourth_excavation",
+      "name": "Fourth Excavation",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "epic",
+      "set": "paper",
+      "choices": [
+        {
+          "text": "Create a tapped Powerstone (gain a coin).",
+          "effects": [
+            {
+              "type": "gain-coin"
+            }
+          ]
+        },
+        {
+          "text": "Create a tapped Relic (a Treasure).",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "text": "Discover a Epic card.",
+          "effects": [
+            {
+              "type": "discover",
+              "rarity": "epic"
+            }
+          ]
+        },
+        {
+          "text": "Add a random Epic card to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "rarity": "epic"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Epic card; or Add a random Epic Excavation treasure to your hand."
+    },
+    {
+      "id": "final_excavation",
+      "name": "Final Excavation",
+      "type": "instant",
+      "cardClass": "neutral",
+      "cost": 0,
+      "rarity": "legendary",
+      "set": "paper",
+      "choices": [
+        {
+          "text": "Create a tapped Powerstone (gain a coin).",
+          "effects": [
+            {
+              "type": "gain-coin"
+            }
+          ]
+        },
+        {
+          "text": "Create a tapped Relic (a Treasure).",
+          "effects": [
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "text": "Discover a Legendary card.",
+          "effects": [
+            {
+              "type": "discover",
+              "rarity": "legendary"
+            }
+          ]
+        },
+        {
+          "text": "Add a random Legendary card to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "rarity": "legendary"
+            }
+          ]
+        }
+      ],
+      "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Legendary card; or Add a random Legendary Excavation treasure to your hand."
     }
   ]
 }
