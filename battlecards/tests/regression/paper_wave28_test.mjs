@@ -38,12 +38,13 @@ const toHand = (st, pi, id) => { const c = E.instantiate(byId[id], pi); c.zone =
   ok('Undercity does nothing without another creature (enemy survives)', st.players[1].board.some(c => c.uid === foe.uid), st.players[1].board.map(c => c.id)); }
 
 // The Meep — sacrifice a friendly; your other creatures gain +MV/+MV this turn
-{ const st = game(); const meep = put(st, 0, 'the_meep'); const fodder = put(st, 0, '_c4'); const ally = put(st, 0, '_v'); // fodder is cost 4 -> +4/+4
+// (exactly one fodder creature, so the random sacrifice is forced onto it)
+{ const st = game(); const meep = put(st, 0, 'the_meep'); const fodder = put(st, 0, '_c4'); // fodder is cost 4 -> +4/+4
   E.execEffects(st, 0, meep.ongoing.effects, null, meep); // fire the Swing effect
-  ok('The Meep sacrifices another friendly creature', !st.players[0].board.some(c => c.uid === fodder.uid) || st.players[0].board.filter(c => c.uid === fodder.uid).every(c => c.zone !== 'board'), st.players[0].board.map(c => c.id));
-  const a = st.players[0].board.find(c => c.uid === ally.uid);
-  ok('the team gains +MV/+MV (the sacrificed 4-cost -> +4/+4)', a && a.attack === 6 && a.maxHealth === 6, a && [a.attack, a.maxHealth]);
-  ok('the buff is temporary (tempAttack tracked)', a && a.tempAttack === 4, a && a.tempAttack); }
+  ok('The Meep sacrifices the only other friendly creature', !st.players[0].board.some(c => c.uid === fodder.uid), st.players[0].board.map(c => c.id));
+  const m = st.players[0].board.find(c => c.uid === meep.uid); // The Meep (0/4) itself gets the +4/+4
+  ok('your other creatures gain +MV/+MV (the sacrificed 4-cost -> +4/+4)', m && m.attack === 4 && m.maxHealth === 8, m && [m.attack, m.maxHealth]);
+  ok('the buff is temporary (tempAttack tracked)', m && m.tempAttack === 4, m && m.tempAttack); }
 
 // play-without-throw + valid-state sweep
 for (const id of WAVE) {

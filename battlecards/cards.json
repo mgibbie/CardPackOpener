@@ -228618,6 +228618,59 @@
         ]
       },
       "description": "Swing: Sacrifice another creature. Your creatures gain +X/+X until end of turn, where X is its Mana Value."
+    },
+    {
+      "id": "feywild_otter",
+      "name": "Feywild Otter",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "prowess",
+        "lifesteal"
+      ],
+      "adventure": {
+        "name": "Grove's Bounty",
+        "cost": 2,
+        "type": "sorcery",
+        "effects": [
+          {
+            "type": "buff",
+            "target": "creature",
+            "attack": 2,
+            "health": 2,
+            "grant": "taunt"
+          }
+        ]
+      },
+      "description": "Prowess & Lifesteal.\nAdventure — Grove's Bounty (2): Target creature gains +2/+2 & Taunt."
+    },
+    {
+      "id": "liquid_dragon",
+      "name": "Liquid Dragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 0,
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon",
+      "xSpell": true,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "stats-equal-x"
+        }
+      ],
+      "description": "Liquid. (Costs X — all your remaining Mana — and enters as an X/X.)"
     }
   ]
 }

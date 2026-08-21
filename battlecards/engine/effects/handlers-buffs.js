@@ -959,6 +959,19 @@ register('adjacent-buff', ({ state, pi, target, source, enemies, scaled, hm, pic
 } });
 
 
+register('stats-equal-x', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Liquid Dragon: an X-cost creature (xSpell) enters as an X/X
+			if (source && source.zone === 'board' && !isDead(source)) {
+				const x = source.xValue || 0;
+				source.attack = x;
+				source.maxHealth = Math.max(1, x);
+				source.health = source.maxHealth;
+				source.damage = 0;
+				emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) });
+			}
+} });
+
+
 register('buff-target-and-adjacent', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Glowing Glyph: buff the chosen creature AND its board-neighbors
 			const t = chosenCreature();
