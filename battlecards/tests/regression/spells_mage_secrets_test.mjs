@@ -57,7 +57,9 @@ for (const id of ['explosive_runes', 'frozen_clone', 'duplicate', 'effigy', 'fla
 	st.current = 1;
 	const boardBefore = st.players[0].board.filter(c => c.type === 'creature').length;
 	m.damage = m.maxHealth; E.sweepDeaths(st);
-	const summoned = st.players[0].board.filter(c => c.type === 'creature' && c.id !== 't_friend');
+	// the original t_friend died and was swept — the board now holds Effigy's replacement.
+	// (Its random same-Cost pick may itself be a t_friend, which is legitimate, so don't filter by id.)
+	const summoned = st.players[0].board.filter(c => c.type === 'creature');
 	ok('Effigy summoned a replacement minion', summoned.length >= 1, st.players[0].board.map(c => c.id));
 	ok('the replacement costs 5 (same as the dead minion)', summoned.length && summoned.every(c => (cardsById[c.id]?.cost) === 5), summoned.map(c => cardsById[c.id]?.cost));
 }

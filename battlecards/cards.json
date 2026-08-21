@@ -226248,6 +226248,157 @@
         }
       ],
       "description": "Sanguine & Rush.\nSwing: Planeshift.\nConnect: Enrich."
+    },
+    {
+      "id": "magister_of_worth",
+      "name": "Magister of Worth",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Angel",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "vote",
+          "tie": 1,
+          "options": [
+            {
+              "label": "Grace",
+              "effects": [
+                {
+                  "type": "draw-all",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "label": "Condemnation",
+              "effects": [
+                {
+                  "type": "destroy-all",
+                  "others": true
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Each player votes for grace or condemnation. Grace: each player draws 2 cards. Condemnation (or a tie): destroy all other creatures."
+    },
+    {
+      "id": "vannifar_evolved_enigma",
+      "name": "Vannifar, Evolved Enigma",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elf Ooze Wizard",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "vote",
+          "tie": 0,
+          "options": [
+            {
+              "label": "Ascendance",
+              "effects": [
+                {
+                  "type": "draw-all",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "label": "Decay",
+              "effects": [
+                {
+                  "type": "destroy-all"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Deathrattle: Each player votes for Ascendance or Decay. Ascendance (or a tie): each player draws a card. Decay: destroy all creatures."
+    },
+    {
+      "id": "fexar_wandering_emissary",
+      "name": "Fexar, Wandering Emissary",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Tabaxi Warrior",
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "council",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "dredge"
+          }
+        ]
+      },
+      "description": "Rush.\nCouncil: Draw a card, then Dredge."
+    },
+    {
+      "id": "financial_fraudster",
+      "name": "Financial Fraudster",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Tabaxi Citizen",
+      "activated": [
+        {
+          "payLife": 2,
+          "effects": [
+            {
+              "type": "luck",
+              "effects": [
+                {
+                  "type": "gain-coin"
+                }
+              ]
+            }
+          ],
+          "text": "Pay 2 Life: Luck: Add a coin to your hand."
+        }
+      ],
+      "ongoing": {
+        "on": "council",
+        "effects": [
+          {
+            "type": "gain-coin"
+          },
+          {
+            "type": "gain-coin"
+          }
+        ]
+      },
+      "description": "Pay 2 Life: Luck: Add a coin to your hand.\nCouncil: Add two coins to your hand."
     }
   ]
 }

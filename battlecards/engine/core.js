@@ -3608,6 +3608,18 @@ export function assemble(state, pi) {
 	emit(state, { type: 'pickStart', player: pi, count: 3 });
 }
 
+// ---------- Voting (MTG "will of the council"): starting with pi, each player votes
+// among the options; the option with the most votes resolves (ties -> the `tie` option).
+// The controller picks their vote (pick modal / AI); every opponent opposes the
+// controller's choice (simple heuristic). Resolving a vote fires the `council` trigger.
+export function startVote(state, pi, options, tie = 0, source = null) {
+	const p = state.players[pi];
+	if (!p || p.eliminated || !options || !options.length) return;
+	state.pickQueue.push({ player: pi, mode: 'vote', ids: options.map((_, i) => String(i)),
+		voteOptions: options, voteTie: Math.min(tie, options.length - 1), voteSourceUid: source ? source.uid : null, title: 'Vote' });
+	emit(state, { type: 'voteOffer', player: pi, options: options.map(o => o.label) });
+}
+
 export function placeContraption(state, pi, slot, contraptionId) {
 	const p = state.players[pi];
 	if (!p.sprocket) p.sprocket = [null, null, null];
@@ -3744,6 +3756,23 @@ export function resolvePick(state, id) {
 		state.players[pend.player].discoveredThisTurn = (state.players[pend.player].discoveredThisTurn || 0) + 1; // Parallax Cannon: "if you've Discovered this turn"
 		state.players[pend.player].discoveredGame = (state.players[pend.player].discoveredGame || 0) + 1; // Alien Encounters: cost per card Discovered this game
 		questTick(state, 'discover', pend.player); // The Forbidden Sequence: "Discover 7 cards"
+	}
+	if (pend.mode === 'vote') {
+		const opts = pend.voteOptions, n = opts.length;
+		const myVote = pend.ids.includes(String(id)) ? Number(id) : 0;
+		const tally = new Array(n).fill(0);
+		tally[myVote]++; // the controller's own vote
+		for (const _o of opponentsOf(state, pend.player)) tally[(myVote + 1) % n]++; // opponents oppose
+		const max = Math.max(...tally);
+		const winners = tally.map((v, i) => (v === max ? i : -1)).filter(i => i >= 0);
+		const win = winners.length === 1 ? winners[0] : pend.voteTie;
+		const source = pend.voteSourceUid ? findCreature(state, pend.voteSourceUid) : null;
+		emit(state, { type: 'voteResult', player: pend.player, winner: opts[win].label, tally });
+		execEffects(state, pend.player, opts[win].effects || [], null, source);
+		for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) fireOngoing(state, s, 'council', {}); // Council triggers
+		sweepDeaths(state);
+		checkGameOver(state);
+		return true;
 	}
 	if (pend.mode === 'adapt') {
 		// apply the chosen adaptation to every still-living adapting creature
