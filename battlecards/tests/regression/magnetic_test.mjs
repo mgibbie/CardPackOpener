@@ -109,8 +109,9 @@ ok('absorbent_parasite magnetizes to Beast', cardsById.absorbent_parasite?.magne
 	ok("'magnetic' is not left as a bogus keyword", sparks.every(c => !c.keywords.includes('magnetic')));
 	const mech = putMon(st, 0, { attack: 2, health: 6, tribe: 'Mech' });
 	const before = st.players[0].board.length;
+	const sparkAtk = sparks[0].attack; // from_the_scrapheap's withGift can raise it above the base 1
 	magnetizeOnto(st, 0, sparks[0], mech);
-	ok('a generated Sparkbot merges onto a Mech', st.players[0].board.length === before && mech.attack === 3);
+	ok('a generated Sparkbot merges onto a Mech', st.players[0].board.length === before && mech.attack === 2 + sparkAtk);
 }
 // the_badlands_bandits: count:8 must produce eight tokens (was dropping to one)
 {

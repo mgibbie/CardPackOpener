@@ -225022,6 +225022,323 @@
         }
       ],
       "description": "Battlecry: Draw a card.\nReborn & Lifesteal."
+    },
+    {
+      "id": "mako_marauder",
+      "name": "Mako Marauder",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 0,
+      "attack": 1,
+      "health": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Warrior",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever you play a Beast, Scry 1."
+    },
+    {
+      "id": "zato_feywild_frog",
+      "name": "Zato, Feywild Frog",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Knight",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "ongoings": [
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "on": "spell-played",
+          "once": true,
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 0,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "description": "Spell Damage +1.\nFrenzy: Draw a card.\nSpellburst: Gain +2 Health."
+    },
+    {
+      "id": "helicoprion",
+      "name": "Helicoprion",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "description": "Spell Damage +1.\nDeathrattle: Give a friendly creature +3/+3."
+    },
+    {
+      "id": "tarot_forest_ritualist",
+      "name": "Tarot Forest Ritualist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Faerie Wizard Cultist",
+      "ongoings": [
+        {
+          "on": "enchantment-played",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "on": "turn-end",
+          "effects": [
+            {
+              "type": "luck",
+              "effects": [
+                {
+                  "type": "scry",
+                  "value": 4
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Constellation: Draw a card.\nAt the end of your turn, Luck: Scry 4."
+    },
+    {
+      "id": "expedition_supplier",
+      "name": "Expedition Supplier",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Warrior",
+      "keywords": [
+        "deathrattle"
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "investigate"
+        }
+      ],
+      "description": "Alliance: Give a friendly creature +1 Attack.\nDeathrattle: Investigate."
+    },
+    {
+      "id": "sefris_of_the_hidden_ways",
+      "name": "Sefris of the Hidden Ways",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Wizard",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "advance"
+          }
+        ]
+      },
+      "description": "Whenever a creature you control dies, Advance."
+    },
+    {
+      "id": "sandshaper_drake",
+      "name": "Sandshaper Drake",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Battlecry: Give a creature +1/+1 and summon a 2/2 Elemental with Taunt."
+    },
+    {
+      "id": "vrondiss_rage_of_ancients",
+      "name": "Vrondiss, Rage of Ancients",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon Barbarian",
+      "ongoing": {
+        "on": "self-damaged",
+        "survives": true,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 4,
+            "name": "Dragon Spirit",
+            "tribe": "Dragon Spirit"
+          }
+        ]
+      },
+      "description": "Whenever this creature survives damage, create a 5/4 Dragon Spirit."
+    },
+    {
+      "id": "millenium_dragon",
+      "name": "Millenium Dragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 10,
+      "attack": 18,
+      "health": 9,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "rush",
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "once": true,
+        "effects": [
+          {
+            "type": "return-from-graveyard",
+            "cardType": "creature",
+            "tribe": "Dragon"
+          },
+          {
+            "type": "return-from-graveyard",
+            "cardType": "creature",
+            "tribe": "Dragon"
+          }
+        ]
+      },
+      "description": "Rush & Divine Shield.\nSpellburst: Return two Dragons from your graveyard to your hand."
+    },
+    {
+      "id": "red_eyes_obsidian_dragon",
+      "name": "Red Eyes Obsidian Dragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 12,
+      "attack": 14,
+      "health": 14,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "gaze",
+          "value": 5
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "plunder",
+            "value": 1
+          }
+        ]
+      },
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 5,
+          "health": 5
+        }
+      ],
+      "description": "Battlecry: Gaze 5.\nInspire: Plunder.\nDeathrattle: Give a friendly creature +5/+5."
     }
   ]
 }

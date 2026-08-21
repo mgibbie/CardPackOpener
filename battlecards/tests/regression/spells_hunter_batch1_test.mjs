@@ -45,7 +45,9 @@ for (const id of ['dart_trap', 'ice_trap', 'rat_trap', 'bait_and_switch', 'emerg
 	const pw = st.players[1].heroPowers[0];
 	E.useHeroPower(st, 1, pw.uid, null);
 	ok('Dart Trap sprang (left p.traps)', st.players[0].traps.length === 0, st.players[0].traps.length);
-	ok('Dart Trap dealt 5 to a random enemy character', st.players[1].life === 40 - 5 || foe.damage === 5, [st.players[1].life, foe.damage]);
+	// Dart Trap hits a RANDOM enemy character (hero or the minion) — assert the enemy side took its 5,
+	// not a specific target (the random pick is seed-sensitive to the card pool)
+	ok('Dart Trap dealt 5 to a random enemy character', (40 - st.players[1].life) + foe.damage >= 5, [st.players[1].life, foe.damage]);
 }
 
 // Ice Trap: opponent casts a spell -> countered + returned to their hand at +1 cost

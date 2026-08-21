@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260854a';
-import { keywordsFor, richHtml } from './keywords.js?v=20260854a';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260855a';
+import { keywordsFor, richHtml } from './keywords.js?v=20260855a';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
 // cards.json fetch so a version bump refreshes code and data together
