@@ -1206,6 +1206,39 @@ register('destroy-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 } });
 
 
+register('destroy-parity', ({ state, pi, source, enemies }, e) => {
+			// Hex, Kellan's Shadow: destroy an enemy permanent (heads/even MV) or an
+			// enemy creature (tails/odd MV). The paper card lets you CHOOSE the target;
+			// here it auto-resolves to the enemy's costliest match — deterministic (no
+			// seed-drift) and also the strongest play. scope: 'creature' | 'permanent'.
+			const wantEven = e.parity !== 'odd';
+			const parityOk = c => (((c.cost || 0) % 2 === 0) === wantEven);
+			const owners = (enemies && enemies.length) ? enemies : opponentsOf(state, pi);
+			const cands = []; // [ownerPi, card, zoneKind]
+			for (const o of owners) {
+				const pl = state.players[o];
+				for (const c of pl.board) {
+					if (isDead(c)) continue;
+					if (c.type === 'creature') cands.push([o, c, 'creature']);
+					else if (c.type === 'location' && e.scope === 'permanent') cands.push([o, c, 'board']);
+				}
+				if (e.scope === 'permanent') {
+					for (const c of pl.artifacts) cands.push([o, c, 'artifacts']);
+					for (const c of pl.enchantments) cands.push([o, c, 'enchantments']);
+					for (const c of (pl.planeswalkers || [])) cands.push([o, c, 'planeswalkers']);
+					for (const c of (pl.lands || [])) cands.push([o, c, 'lands']);
+				}
+			}
+			const pool = cands.filter(([, c]) => parityOk(c));
+			if (!pool.length) return;
+			pool.sort(([, a], [, b]) => (b.cost || 0) - (a.cost || 0) || ((b.attack || 0) - (a.attack || 0)) || (a.uid - b.uid));
+			const [own, c, kind] = pool[0];
+			if (kind === 'creature') { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); sweepDeaths(state); }
+			else if (kind === 'artifacts' || kind === 'enchantments') { destroyPermanent(state, own, c); }
+			else { state.players[own][kind] = state.players[own][kind].filter(x => x !== c); emit(state, { type: 'destroy', uid: c.uid }); recomputeAuras(state); }
+});
+
+
 register('beatrix', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Commander Beatrix: ten copies of a 2-Cost minion join your deck
 			const p = state.players[pi];

@@ -2807,6 +2807,7 @@ function resolveEntry(state, entry) {
 	if (entry.kind === 'attack') { resolveCombat(state, pi, entry.attackerUid, entry.target); return; }
 	if (entry.kind === 'adventure') {
 		execEffects(state, pi, entry.effects, entry.target, entry.card);
+		fireOngoing(state, pi, 'adventure-cast', { played: entry.card }); // Hex, Kellan's Shadow
 		const p = state.players[pi]; // the card returns to hand; only the creature half remains
 		if (!p.eliminated && p.hand.length < MAX_HAND) {
 			entry.card.adventureSpent = true;

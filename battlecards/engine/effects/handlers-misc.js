@@ -362,8 +362,10 @@ register('saruun', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 
 
 register('luck', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// coin flip: heads runs the effects, tails fizzles
+			// coin flip: heads runs `effects`, tails runs `else` (or fizzles if none).
+			// Hex, Kellan's Shadow uses both halves (even-MV vs odd-MV removal).
 			if (state.rng() < 0.5) execEffects(state, pi, e.effects, target, source);
+			else if (e.else) execEffects(state, pi, e.else, target, source);
 			else emit(state, { type: 'luckFail', player: pi });
 });
 

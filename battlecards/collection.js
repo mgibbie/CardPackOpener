@@ -138,6 +138,19 @@ export function validateDeck(ids, cardsById, collection, classId, commander, com
 		const c = cardsById[companion];
 		if (!isCompanion(c)) return `That companion isn't valid.`;
 		if (!fitsClass(c, classId)) return `${c.name} isn't a ${classId} companion.`;
+		// Companion deckbuilding constraint (e.g. Hex, Kellan's Shadow: "at least 15
+		// artifacts that cost 3 or less"). req = { type?, maxCost?, minCost?, count, label? }.
+		const req = c.companionReq;
+		if (req) {
+			const n = ids.filter(id => {
+				const d = cardsById[id]; if (!d) return false;
+				if (req.type && d.type !== req.type) return false;
+				if (req.maxCost != null && (d.cost || 0) > req.maxCost) return false;
+				if (req.minCost != null && (d.cost || 0) < req.minCost) return false;
+				return true;
+			}).length;
+			if (n < (req.count || 0)) return `${c.name} needs ${req.count} ${req.label || 'qualifying cards'} in your deck (has ${n}).`;
+		}
 	}
 	return null; // valid
 }

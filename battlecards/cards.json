@@ -228901,6 +228901,85 @@
         "text": "Deal 3 damage to any target, then draw a card."
       },
       "description": "{T}: Deal 3 damage to any target, then draw a card."
+    },
+    {
+      "id": "hex_kellans_shadow",
+      "name": "Hex, Kellan's Shadow",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "companion": true,
+      "companionReq": {
+        "type": "artifact",
+        "maxCost": 3,
+        "count": 15,
+        "label": "artifacts that cost 3 or less"
+      },
+      "ongoings": [
+        {
+          "on": "spell-played",
+          "if": {
+            "school": "Shadow"
+          },
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "luck",
+              "effects": [
+                {
+                  "type": "destroy-parity",
+                  "parity": "even",
+                  "scope": "permanent"
+                }
+              ],
+              "else": [
+                {
+                  "type": "destroy-parity",
+                  "parity": "odd",
+                  "scope": "creature"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "on": "adventure-cast",
+          "effects": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "luck",
+              "effects": [
+                {
+                  "type": "destroy-parity",
+                  "parity": "even",
+                  "scope": "permanent"
+                }
+              ],
+              "else": [
+                {
+                  "type": "destroy-parity",
+                  "parity": "odd",
+                  "scope": "creature"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Companion. (Your deck must have at least 15 artifacts that cost 3 or less.)\nWhenever you cast an Adventure or Shadow spell, gain +2/+2 & flip a coin. If heads, destroy the enemy's costliest permanent with even mana value. If tails, destroy the enemy's costliest creature with odd mana value."
     }
   ]
 }
