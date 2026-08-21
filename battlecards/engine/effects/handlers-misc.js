@@ -79,6 +79,7 @@ register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) 
 				&& !(d.colors && d.colors.length) && !d.choices && d.type !== 'land'
 				&& (e.cardType == null ? true : e.cardType === 'spell' ? isSpellType(d) : d.type === e.cardType)
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
+				&& (!e.tribes || e.tribes.some(t => (d.tribe || '').includes(t))) // "a random Mech or Beast"
 				&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass)
 				&& (e.rarity == null || (d.rarity || 'common') === e.rarity)
 				&& (!e.nameIncludes || (d.name || '').includes(e.nameIncludes)) // e.g. "a random Potion"

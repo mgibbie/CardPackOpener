@@ -227066,6 +227066,233 @@
         ]
       },
       "description": "Battlecry: Add a random Potion to your hand.\nDeathrattle: Draw a card.\nAdventure — Lend a Ham (3): Exile a creature and gain Life equal to the number of Beasts you control."
+    },
+    {
+      "id": "sara_pyrosage",
+      "name": "Sara, Pyrosage",
+      "type": "planeswalker",
+      "cardClass": "neutral",
+      "cost": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "loyalty": 6,
+      "abilities": [
+        {
+          "cost": 1,
+          "text": "Deal 1 damage to target creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "cost": -4,
+          "text": "Deal 5 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "any"
+            }
+          ]
+        },
+        {
+          "cost": -10,
+          "text": "Deal 13 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 13,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "+1: Deal 1 damage to target creature.\n−4: Deal 5 damage to any target.\n−10: Deal 13 damage to any target."
+    },
+    {
+      "id": "torik_icewind_prodigy",
+      "name": "Torik, Icewind Prodigy",
+      "type": "planeswalker",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "loyalty": 3,
+      "abilities": [
+        {
+          "cost": 1,
+          "text": "Freeze target creature.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "cost": -3,
+          "text": "Planeshift, Excavate & Enrich.",
+          "effects": [
+            {
+              "type": "planeshift"
+            },
+            {
+              "type": "excavate"
+            },
+            {
+              "type": "enrich"
+            }
+          ]
+        },
+        {
+          "cost": -7,
+          "text": "Your opponent Mills 11 cards.",
+          "effects": [
+            {
+              "type": "mill",
+              "value": 11
+            }
+          ]
+        }
+      ],
+      "description": "+1: Freeze target creature.\n−3: Planeshift, Excavate & Enrich.\n−7: Target player Mills 11 cards."
+    },
+    {
+      "id": "zaxas_realmscourge",
+      "name": "Zaxas, Realmscourge",
+      "type": "planeswalker",
+      "cardClass": "neutral",
+      "cost": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "loyalty": 6,
+      "abilities": [
+        {
+          "cost": 1,
+          "text": "Create a 1/1 Dragon with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Dragon",
+              "tribe": "Dragon",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -3,
+          "text": "Destroy an enemy Artifact or Enchantment, Advance, Investigate & Planeshift.",
+          "effects": [
+            {
+              "type": "destroy-permanent",
+              "which": "both"
+            },
+            {
+              "type": "advance"
+            },
+            {
+              "type": "investigate"
+            },
+            {
+              "type": "planeshift"
+            }
+          ]
+        },
+        {
+          "cost": -9,
+          "text": "Destroy all creatures you don't control & destroy an enemy permanent.",
+          "effects": [
+            {
+              "type": "destroy-all",
+              "side": "enemy"
+            },
+            {
+              "type": "destroy-permanent",
+              "which": "any"
+            }
+          ]
+        }
+      ],
+      "description": "+1: Create a 1/1 Dragon with Taunt.\n−3: Exile an enemy Artifact/Enchantment, Advance, Investigate & Planeshift.\n−9: Destroy all creatures you don’t control & exile an enemy permanent."
+    },
+    {
+      "id": "ogrefist_boulder",
+      "name": "Ogrefist Boulder",
+      "type": "location",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "durability": 2,
+      "taps": [
+        {
+          "text": "Set a creature's stats to 6/7.",
+          "effects": [
+            {
+              "type": "set-target-stats",
+              "attack": 6,
+              "health": 7,
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Set target creature's stats to 6/7."
+    },
+    {
+      "id": "tarnation_station",
+      "name": "Tarnation Station",
+      "type": "location",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "durability": 2,
+      "taps": [
+        {
+          "text": "Flip a coin: Heads make a 2/2 Rush Mech; Tails add a random Mech or Beast.",
+          "effects": [
+            {
+              "type": "random-effects",
+              "options": [
+                [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "name": "Mech",
+                    "tribe": "Mech",
+                    "keywords": [
+                      "rush"
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "type": "add-random-card",
+                    "cardType": "creature",
+                    "tribes": [
+                      "Mech",
+                      "Beast"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Flip a coin: Heads: Create a 2/2 Mech with Rush. Tails: Add a random Mech or Beast to your hand."
     }
   ]
 }
