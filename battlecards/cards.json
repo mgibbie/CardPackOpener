@@ -225339,6 +225339,210 @@
         }
       ],
       "description": "Battlecry: Gaze 5.\nInspire: Plunder.\nDeathrattle: Give a friendly creature +5/+5."
+    },
+    {
+      "id": "vizzerdrix",
+      "name": "Vizzerdrix",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 7,
+      "attack": 6,
+      "health": 6,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast Demon Horror",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "excavate"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Battlecry: Excavate.\nDeathrattle: Scry 2."
+    },
+    {
+      "id": "turbo_toad",
+      "name": "Turbo Toad",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast Explorer",
+      "costMod": {
+        "cardType": "artifact",
+        "amount": -1,
+        "scope": "own"
+      },
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Your Artifacts cost (1) less.\nWhenever you summon a Beast, give it +1/+1."
+    },
+    {
+      "id": "crime_novelist",
+      "name": "Crime Novelist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 1,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Goblin Bard",
+      "ongoing": {
+        "on": "token-sacrificed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          },
+          {
+            "type": "gain-coin"
+          }
+        ]
+      },
+      "description": "Whenever you sacrifice a token, gain +1/+1 and a Coin."
+    },
+    {
+      "id": "thorncaller",
+      "name": "Thorncaller",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Cultist",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "add-card",
+          "id": "blood_gem"
+        }
+      ],
+      "description": "Deathrattle: Add a Blood Gem to your hand."
+    },
+    {
+      "id": "huatli_poet_of_unity",
+      "name": "Huatli, Poet of Unity",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Warrior Bard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tutor",
+          "cardType": "location",
+          "count": 1
+        }
+      ],
+      "description": "Battlecry: Draw a Location."
+    },
+    {
+      "id": "lightspeed_enthusiast",
+      "name": "Lightspeed Enthusiast",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 0,
+      "attack": 0,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Alien Bard",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "buff-self",
+                "attack": 1,
+                "health": 1
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Alliance: Luck: Gain +1/+1."
+    },
+    {
+      "id": "geistpack_alpha",
+      "name": "Geistpack Alpha",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 5,
+      "health": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Undead Spirit Beast",
+      "keywords": [
+        "trample",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "creature",
+          "count": 1
+        }
+      ],
+      "description": "Trample.\nDeathrattle: Tutor a creature."
+    },
+    {
+      "id": "balor_shadow_magistrate",
+      "name": "Balor, Shadow Magistrate",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Undead Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "creature"
+        }
+      ],
+      "description": "Battlecry: Return a creature from your graveyard to your hand."
     }
   ]
 }
