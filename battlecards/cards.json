@@ -226871,7 +226871,20 @@
           }
         ]
       },
-      "description": "Swing: Harvest."
+      "description": "Swing: Harvest.\nAdventure — Fertile Footsteps (3): Deal damage to any target equal to the number of lands you control.",
+      "adventure": {
+        "name": "Fertile Footsteps",
+        "cost": 3,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "damage",
+            "target": "any",
+            "value": 0,
+            "valuePer": "lands-you-control"
+          }
+        ]
+      }
     },
     {
       "id": "captivating_crossroads",
@@ -226897,6 +226910,162 @@
         }
       ],
       "description": "Bounce target creature & Harvest."
+    },
+    {
+      "id": "mosswood_dreadknight",
+      "name": "Mosswood Dreadknight",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Knight",
+      "keywords": [
+        "trample"
+      ],
+      "adventure": {
+        "name": "Dread Whispers",
+        "cost": 2,
+        "type": "sorcery",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "target": "own-hero",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Trample.\nAdventure — Dread Whispers (2): Draw a card & Lose 1 Life."
+    },
+    {
+      "id": "kellan_inquisitive_prodigy",
+      "name": "Kellan, Inquisitive Prodigy",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Faerie Detective",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "destroy-permanent",
+            "which": "artifact"
+          }
+        ]
+      },
+      "adventure": {
+        "name": "Tail the Suspect",
+        "cost": 2,
+        "type": "sorcery",
+        "effects": [
+          {
+            "type": "investigate"
+          }
+        ]
+      },
+      "description": "Taunt & Divine Shield.\nSwing: Destroy an enemy Artifact.\nAdventure — Tail the Suspect (2): Investigate."
+    },
+    {
+      "id": "accident_prone_apprentice",
+      "name": "Accident-Prone Apprentice",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Wizard",
+      "keywords": [
+        "impulsive"
+      ],
+      "ongoing": {
+        "on": "ponder",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "adventure": {
+        "name": "Anuran Error",
+        "cost": 2,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "add-card",
+            "id": "hex"
+          },
+          {
+            "type": "add-card",
+            "id": "hex"
+          }
+        ]
+      },
+      "description": "Impulsive.\nPonder: Gain +1/+1.\nAdventure — Anuran Error (2): Add two copies of Hex to your hand."
+    },
+    {
+      "id": "porcine_potioneer",
+      "name": "Porcine Potioneer",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 3,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Warlock",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "add-random-card",
+          "cardType": "spell",
+          "nameIncludes": "Potion"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "adventure": {
+        "name": "Lend a Ham",
+        "cost": 3,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "exile",
+            "target": "creature"
+          },
+          {
+            "type": "heal",
+            "target": "self",
+            "value": 0,
+            "valuePer": "beasts-you-control"
+          }
+        ]
+      },
+      "description": "Battlecry: Add a random Potion to your hand.\nDeathrattle: Draw a card.\nAdventure — Lend a Ham (3): Exile a creature and gain Life equal to the number of Beasts you control."
     }
   ]
 }

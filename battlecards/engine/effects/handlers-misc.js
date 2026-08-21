@@ -81,6 +81,7 @@ register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) 
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& (e.cardClass == null || (d.cardClass || 'neutral') === e.cardClass)
 				&& (e.rarity == null || (d.rarity || 'common') === e.rarity)
+				&& (!e.nameIncludes || (d.name || '').includes(e.nameIncludes)) // e.g. "a random Potion"
 				&& (!schools || schools.includes(schoolOf(d)))
 				&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.cost == null || (d.cost || 0) === e.cost)
