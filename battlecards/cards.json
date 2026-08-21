@@ -228782,6 +228782,54 @@
         ]
       },
       "description": "Castellan."
+    },
+    {
+      "id": "peculiar_spelldrake",
+      "name": "Peculiar Spelldrake",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 2,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Faerie Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discount-next-spell",
+          "forEnemy": true,
+          "value": 99
+        }
+      ],
+      "description": "Battlecry: Your opponent's next spell costs (0)."
+    },
+    {
+      "id": "prosper_tome_bound",
+      "name": "Prosper, Tome-Bound",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 1,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Tiefling Warlock",
+      "keywords": [
+        "deathtouch"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Deathtouch.\nAt the end of your turn, draw a card."
     }
   ]
 }

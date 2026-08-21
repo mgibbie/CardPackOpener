@@ -698,9 +698,11 @@ register('improve-tick', ({ state, source }, e) => {
 	if (source) source.improveCount = (source.improveCount || 0) + (e.value || 1);
 });
 
-register('discount-next-spell', ({ state, pi }, e) => {
-	// Jazz Bass: your next spell costs (N) less
-	state.players[pi].nextSpellDiscount = (state.players[pi].nextSpellDiscount || 0) + (e.value || 1);
+register('discount-next-spell', ({ state, pi, enemies }, e) => {
+	// Jazz Bass: your next spell costs (N) less. With forEnemy, a target opponent's next
+	// spell is discounted instead (Peculiar Spelldrake: value 99 -> effectively free).
+	const who = e.forEnemy ? ((enemies || opponentsOf(state, pi))[0]) : pi;
+	if (who != null) state.players[who].nextSpellDiscount = (state.players[who].nextSpellDiscount || 0) + (e.value || 1);
 });
 
 register('gain-spell-damage-turn', ({ state, pi }, e) => {
