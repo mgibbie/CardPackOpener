@@ -227840,6 +227840,74 @@
         ]
       },
       "description": "Adventure — Giant Secrets (4): If you control a Giant or a Faerie, draw 3 cards."
+    },
+    {
+      "id": "rampaging_ceratops",
+      "name": "Rampaging Ceratops",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "rush",
+        "slashing",
+        "piercing"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "destroy-permanent",
+            "which": "any"
+          }
+        ]
+      },
+      "description": "Rush & Slashing.\nFrenzy: Destroy an enemy permanent.\nIgnores Taunt."
+    },
+    {
+      "id": "keen_duelist",
+      "name": "Keen Duelist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "reveal-tax-draw"
+        }
+      ],
+      "description": "Battlecry: Each player reveals the top card of their deck, loses Life equal to its Mana Value, then draws it."
+    },
+    {
+      "id": "bonehoard_dracosaur",
+      "name": "Bonehoard Dracosaur",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast Dragon",
+      "keywords": [
+        "first_strike",
+        "impulsive",
+        "windfury"
+      ],
+      "description": "Swift, Impulsive & Windfury."
     }
   ]
 }

@@ -11,6 +11,7 @@ export const KW = {
 	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
 	IMMUNE: 'immune', // can't take damage; "destroy" effects don't kill it either (only sacrifice)
 	ELUSIVE: 'elusive', PIERCING: 'piercing',
+	SLASHING: 'slashing',   // deals double combat damage to players & planeswalkers
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
 	REBORN: 'reborn',       // first death returns it at 1 health
@@ -3094,7 +3095,8 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		for (let i = tp2.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [tp2.deck[i], tp2.deck[j]] = [tp2.deck[j], tp2.deck[i]]; }
 		emit(state, { type: 'blighted', player: target.player, count: attacker.attack * cmult });
 	} else if (target.type === 'hero') {
-		const dealt = damageHero(state, target.player, attacker.attack * cmult, pi, has(attacker, KW.PIERCING));
+		const slash = has(attacker, KW.SLASHING) ? 2 : 1; // Rampaging Ceratops: double to players
+		const dealt = damageHero(state, target.player, attacker.attack * cmult * slash, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 		// Connect: combat damage to a player
 		if (dealt > 0 && attacker.ongoing?.on === 'self-hit-player') {
@@ -3104,8 +3106,9 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// planeswalkers soak the hit with loyalty and never strike back
 		const w = findWalker(state, target.uid);
 		if (w) {
-			damageWalker(state, w, attacker.attack * cmult);
-			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult);
+			const slash = has(attacker, KW.SLASHING) ? 2 : 1; // Rampaging Ceratops: double to planeswalkers
+			damageWalker(state, w, attacker.attack * cmult * slash);
+			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult * slash);
 		}
 	} else {
 		const defender = findCreature(state, target.uid);

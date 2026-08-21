@@ -701,6 +701,18 @@ register('mill', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 } });
 
 
+register('reveal-tax-draw', ({ state, pi }, e) => { {
+			// Keen Duelist: each player draws the top card of their deck and loses Life equal to its Mana Value
+			for (let s = 0; s < state.players.length; s++) {
+				const pl = state.players[s];
+				if (pl.eliminated || !pl.deck.length) continue;
+				const before = pl.hand.length;
+				drawCards(state, s, 1);
+				if (pl.hand.length > before) { const c = pl.hand[pl.hand.length - 1]; damageHero(state, s, c.cost || 0, pi); }
+			}
+} });
+
+
 register('loot', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Loot: draw a card, then discard a card of your choice
 			// (the discard resolves asynchronously via resolveDiscard)

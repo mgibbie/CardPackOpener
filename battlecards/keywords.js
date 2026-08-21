@@ -27,6 +27,7 @@ const K = [
 	{ p: ['Trample'], t: 'Excess lethal damage carries over to the hero.', tag: 'trample' },
 	{ p: ['First Strike', 'Swift'], t: 'Deals its combat damage first.', tag: 'first_strike' },
 	{ p: ['Piercing'], t: 'Its attacks ignore Taunt.', tag: 'piercing' },
+	{ p: ['Slashing'], t: 'Deals double combat damage to players & planeswalkers.', tag: 'slashing' },
 	{ p: ['Cleave'], t: 'Combat damage also hits the creatures beside the target.', tag: 'cleave' },
 	{ p: ['Pacifist'], t: "Can't attack.", tag: 'pacifist' },
 	{ p: ['Defender'], t: 'May redirect attacks on your other permanents onto itself.', tag: 'defender' },
