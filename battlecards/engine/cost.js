@@ -262,6 +262,10 @@ export function effectiveCost(state, pi, card) {
 			s + (((state.cardsById[id]?.name) || '').includes(card.costReducePerPlayedName.substr) ? k : 0), 0);
 		c = Math.max(0, c - (card.costReducePerPlayedName.value || 1) * n);
 	}
+	if (card.costReducePerTribe) { // Millicent: (1) less per Spirit you control
+		const n = p.board.filter(x => x.type === 'creature' && (x.tribe || '').includes(card.costReducePerTribe.tribe)).length;
+		c = Math.max(0, c - (card.costReducePerTribe.value || 1) * n);
+	}
 	if (p.nextNameDiscount && (card.name || '').includes(p.nextNameDiscount.substr)) c = Math.max(0, c - p.nextNameDiscount.value); // Murloc Rafaam
 	if (p.mugMagic && card.type === 'creature' && (p.creaturesPlayedThisTurn || 0) === 0) c = Math.max(0, c - 2); // Mug's Magic: first minion each turn
 	if (card.temporary && p.nextTempDiscount > 0) c = Math.max(0, c - p.nextTempDiscount); // Spelunker

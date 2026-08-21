@@ -228226,6 +228226,112 @@
         ]
       },
       "description": "Battlecry: Another Beast you control fights an enemy creature.\nFrenzy: Deal 4 damage to a random enemy creature."
+    },
+    {
+      "id": "millicent_restless_revenant",
+      "name": "Millicent, Restless Revenant",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 7,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Spirit Soldier",
+      "keywords": [
+        "windfury"
+      ],
+      "costReducePerTribe": {
+        "tribe": "Spirit",
+        "value": 1
+      },
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spirit",
+            "tribe": "Spirit",
+            "keywords": [
+              "windfury"
+            ]
+          }
+        ]
+      },
+      "ongoings": [
+        {
+          "on": "friendly-creature-died",
+          "if": {
+            "tribe": "Spirit"
+          },
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Spirit",
+              "tribe": "Spirit",
+              "keywords": [
+                "windfury"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Costs (1) less for each Spirit you control.\nWindfury.\nWhenever this or another Spirit you control dies or hits a player, create a 1/1 Spirit with Windfury."
+    },
+    {
+      "id": "saloon_owner",
+      "name": "Saloon Owner",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Human Citizen Bard",
+      "activated": [
+        {
+          "cost": 3,
+          "effects": [
+            {
+              "type": "buff",
+              "target": "creature",
+              "attack": 2,
+              "health": 4
+            }
+          ],
+          "text": "Give a creature +2/+4."
+        }
+      ],
+      "description": "3: Give a creature +2/+4."
+    },
+    {
+      "id": "dunbarrow_revivalist",
+      "name": "Dunbarrow Revivalist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 1,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Human Warlock",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "enchantment"
+        }
+      ],
+      "description": "Deathrattle: Return an Aura from your graveyard to your hand."
     }
   ]
 }

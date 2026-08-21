@@ -47,7 +47,8 @@ ok('amirdrassil exists', cardsById.amirdrassil);
 	const handBefore = st.players[0].hand.length;
 	E.tapLand(st, 0, loc.uid, 0, null); // use 2 (improved)
 	ok('second use: +2 Armor (total 1 + 2 = 3)', st.players[0].armor === 3, st.players[0].armor);
-	ok('second use: drew 2 cards', st.players[0].hand.length === handBefore + 2, [handBefore, st.players[0].hand.length]);
+	// >= not === : the improved use also summons a random 2-Cost minion, whose Battlecry may itself draw
+	ok('second use: drew at least 2 cards', st.players[0].hand.length >= handBefore + 2, [handBefore, st.players[0].hand.length]);
 	ok('second use: refreshed 2 Mana Crystals', st.players[0].mana.cur === 2, st.players[0].mana.cur);
 	ok('second use: summoned a 2-Cost minion', cardsById[lastSummon(st).id].cost === 2, lastSummon(st) && cardsById[lastSummon(st).id].cost);
 }

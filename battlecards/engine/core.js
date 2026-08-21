@@ -398,6 +398,7 @@ export function instantiate(def, controller) {
 		costZeroIfBoardId: def.costZeroIfBoardId || null,   // Medivh the Hallowed: free if you control Karazhan
 		costZeroIfWeaponId: def.costZeroIfWeaponId || null, // Karazhan the Sanctum: free if wielding Atiesh
 		costReducePerPlayedName: def.costReducePerPlayedName ? { ...def.costReducePerPlayedName } : null, // Giant Rafaam
+		costReducePerTribe: def.costReducePerTribe ? { ...def.costReducePerTribe } : null, // Millicent: (1) less per Spirit you control
 		castTwice: !!def.castTwice, // Empowered Well of Eternity spells resolve twice
 		prepare: !!def.prepare, // JAIL: spend leftover mana to discount this card for a later turn
 		jailbirdReduce: !!def.jailbirdReduce, // Jailbird: cheaper whenever you Prepare while holding it
