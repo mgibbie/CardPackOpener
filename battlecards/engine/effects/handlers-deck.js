@@ -1548,7 +1548,10 @@ register('return-from-graveyard', ({ state, pi }, e) => {
 	if (p.hand.length >= MAX_HAND) return;
 	const match = c => e.equipOrWeapon
 		? (c.type === 'weapon' || (c.type === 'artifact' && c.equip))
-		: (!e.cardType || c.type === e.cardType) && (!e.tribe || (c.tribe || '').includes(e.tribe));
+		: (!e.cardType || (e.cardType === 'spell' ? isSpellType(c) : c.type === e.cardType))
+			&& (!e.tribe || (c.tribe || '').includes(e.tribe))
+			&& (!e.school || schoolOf(c) === e.school)
+			&& (e.maxCost == null || (c.cost || 0) <= e.maxCost);
 	const pool = p.graveyard.filter(match);
 	if (!pool.length) return;
 	const c = pool[Math.floor(state.rng() * pool.length)];

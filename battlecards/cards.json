@@ -225899,6 +225899,154 @@
         ]
       },
       "description": "Whenever you sacrifice a token, each opponent loses 2 Life."
+    },
+    {
+      "id": "poison_dart_frog",
+      "name": "Poison Dart Frog",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "deathtouch"
+      ],
+      "activated": [
+        {
+          "sacrifice": true,
+          "effects": [
+            {
+              "type": "destroy-permanent",
+              "which": "both"
+            }
+          ],
+          "text": "Destroy an enemy Artifact or Enchantment."
+        }
+      ],
+      "description": "Deathtouch.\nSacrifice this creature: Destroy an enemy Artifact or Enchantment."
+    },
+    {
+      "id": "thrashing_brontodon",
+      "name": "Thrashing Brontodon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 3,
+      "health": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast",
+      "activated": [
+        {
+          "sacrifice": true,
+          "effects": [
+            {
+              "type": "destroy-permanent",
+              "which": "both"
+            }
+          ],
+          "text": "Destroy an enemy Artifact or Enchantment."
+        }
+      ],
+      "description": "Sacrifice this creature: Destroy an enemy Artifact or Enchantment."
+    },
+    {
+      "id": "mockingjay",
+      "name": "Mockingjay",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 3,
+      "health": 1,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "spell",
+          "school": "Song"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "spell",
+          "school": "Song"
+        }
+      ],
+      "description": "Battlecry & Deathrattle: Return a Song spell from your graveyard to your hand."
+    },
+    {
+      "id": "shadowglade_sprites",
+      "name": "Shadowglade Sprites",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Faerie Rogue",
+      "activated": [
+        {
+          "cost": 3,
+          "effects": [
+            {
+              "type": "return-from-graveyard",
+              "cardType": "spell",
+              "school": "Shadow"
+            }
+          ],
+          "text": "Return a Shadow spell from your graveyard to your hand."
+        }
+      ],
+      "description": "3: Return a Shadow spell in your graveyard to your hand."
+    },
+    {
+      "id": "dedicated_dollmaker",
+      "name": "Dedicated Dollmaker",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Dwarf Artificer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-permanent",
+          "which": "both"
+        }
+      ],
+      "activated": [
+        {
+          "cost": 5,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Mech",
+              "tribe": "Mech"
+            }
+          ],
+          "text": "Create a 1/1 Mech."
+        }
+      ],
+      "description": "Battlecry: Destroy an enemy Artifact or Enchantment.\n5: Create a 1/1 Mech."
     }
   ]
 }
