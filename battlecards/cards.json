@@ -228015,6 +228015,76 @@
         ]
       },
       "description": "Chromatic & Hexproof.\nConnect: Enrich."
+    },
+    {
+      "id": "ramwin_sondheild",
+      "name": "Ramwin Sondheild",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Eldrazi Detective",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "disguise"
+          }
+        ]
+      },
+      "ongoings": [
+        {
+          "on": "creature-died",
+          "every": 4,
+          "effects": [
+            {
+              "type": "discover",
+              "tribe": "Eldrazi"
+            }
+          ]
+        }
+      ],
+      "description": "Swing: Disguise a creature.\nMorbid 4: Discover an Eldrazi."
+    },
+    {
+      "id": "world_pillar_fragment",
+      "name": "World Pillar Fragment",
+      "type": "sorcery",
+      "cardClass": "neutral",
+      "cost": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Nature",
+      "effects": [
+        {
+          "type": "discover",
+          "tribe": "Elemental",
+          "cardType": "creature",
+          "to": "board",
+          "keepOthersToHand": true
+        }
+      ],
+      "description": "Discover an Elemental & Summon it. Add the other two to your hand."
+    },
+    {
+      "id": "axebane_ferox",
+      "name": "Axebane Ferox",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "charge",
+        "deathtouch"
+      ],
+      "description": "Charge & Deathtouch."
     }
   ]
 }

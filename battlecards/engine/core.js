@@ -4005,6 +4005,13 @@ export function resolvePick(state, id) {
 		for (const oid of pend.ids) if (oid !== chosen && state.cardsById[oid]) p.deck.push(oid);
 		for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 	}
+	if (pend.keepOthersToHand) { // World Pillar Fragment: the un-chosen options go to your hand
+		for (const oid of pend.ids) if (oid !== chosen && state.cardsById[oid] && p.hand.length < MAX_HAND) {
+			const card = instantiate(state.cardsById[oid], pend.player);
+			card.zone = 'hand'; p.hand.push(card);
+			emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		}
+	}
 	if (pend.mode === 'gy') {
 		// pull the fallen card back (fresh copy — buffs don't survive the grave)
 		const gi = p.graveyard.findIndex(c => c.id === chosen);
