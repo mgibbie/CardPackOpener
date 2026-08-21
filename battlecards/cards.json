@@ -224499,6 +224499,259 @@
         }
       ],
       "description": "Hexproof.\n8: Create an 8/8 Beast Horror with Taunt."
+    },
+    {
+      "id": "nemesis_of_reason",
+      "name": "Nemesis of Reason",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 7,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Horror",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "mill",
+            "value": 10
+          }
+        ]
+      },
+      "description": "Swing: The enemy Mills 10 cards."
+    },
+    {
+      "id": "elvis_the_chronomancer",
+      "name": "Elvis, the Chronomancer",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Bard Wizard",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "dredge"
+          }
+        ]
+      },
+      "activated": [
+        {
+          "cost": 1,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Beast",
+              "tribe": "Beast"
+            }
+          ],
+          "text": "Create a 1/1 Beast."
+        }
+      ],
+      "description": "Inspire: Dredge.\n1: Create a 1/1 Beast creature token."
+    },
+    {
+      "id": "pouch_of_coins",
+      "name": "Pouch of Coins",
+      "type": "sorcery",
+      "cardClass": "neutral",
+      "cost": 1,
+      "rarity": "common",
+      "set": "paper",
+      "effects": [
+        {
+          "type": "gain-coin"
+        },
+        {
+          "type": "gain-coin"
+        }
+      ],
+      "description": "Add two coins to your hand."
+    },
+    {
+      "id": "emerald_proto_whelp",
+      "name": "Emerald Proto-Whelp",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 0,
+      "health": 4,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "tribe": "Faerie"
+        }
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Battlecry: Destroy target Faerie.\nAt the end of your turn, gain +1 Attack."
+    },
+    {
+      "id": "lynxfury_rager",
+      "name": "Lynxfury Rager",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Tabaxi Barbarian",
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      },
+      "description": "Frenzy: Gain +2/+2."
+    },
+    {
+      "id": "mistgrove_parliamentarian",
+      "name": "Mistgrove Parliamentarian",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Faerie Spirit Beast",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Inspire: Give a friendly creature +1/+1."
+    },
+    {
+      "id": "third_little_pig",
+      "name": "Third Little Pig",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Whenever you summon a Beast, give it +1/+1."
+    },
+    {
+      "id": "lushwater_scion",
+      "name": "Lushwater Scion",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 4,
+      "health": 2,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Murloc",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Murloc"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "After you summon a Murloc, give it +1/+1."
+    },
+    {
+      "id": "hakbal_of_the_surging_soul",
+      "name": "Hakbal of the Surging Soul",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Merfolk Scout",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "loot",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Swing: Loot."
+    },
+    {
+      "id": "nocturnal_gadgeteer",
+      "name": "Nocturnal Gadgeteer",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 3,
+      "health": 4,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Ropteran Rogue",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "dredge"
+          }
+        ]
+      },
+      "description": "Swing: Dredge."
     }
   ]
 }
