@@ -224752,6 +224752,276 @@
         ]
       },
       "description": "Swing: Dredge."
+    },
+    {
+      "id": "master_of_cruelties",
+      "name": "Master of Cruelties",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Demon Warrior",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 10,
+            "target": "all-heroes"
+          }
+        ]
+      },
+      "description": "Swing: Each player loses 10 Life."
+    },
+    {
+      "id": "queen_s_bay_paladin",
+      "name": "Queen's Bay Paladin",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Vampire Knight Paladin",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "return-from-graveyard",
+            "cardType": "creature",
+            "tribe": "Vampire"
+          }
+        ]
+      },
+      "description": "Swing: Return a Vampire from your graveyard to your hand."
+    },
+    {
+      "id": "admiral_brass_unsinkable",
+      "name": "Admiral Brass, Unsinkable",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Pirate",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mill",
+          "value": 4
+        }
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "return-from-graveyard",
+            "cardType": "creature",
+            "tribe": "Pirate"
+          }
+        ]
+      },
+      "description": "Battlecry: Mill 4.\nSwing: Return a Pirate from your graveyard to your hand."
+    },
+    {
+      "id": "maxo_glitch_agent",
+      "name": "Maxo, Glitch Agent",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 9,
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Spirit Mech",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "exile",
+          "target": "creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "mill",
+          "value": 6
+        }
+      ],
+      "description": "Battlecry: Exile target creature.\nDeathrattle: Mill 6 cards."
+    },
+    {
+      "id": "radiant_solar",
+      "name": "Radiant Solar",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 3,
+      "health": 6,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Angel",
+      "keywords": [
+        "battlecry",
+        "lifesteal",
+        "windfury"
+      ],
+      "effects": [
+        {
+          "type": "advance"
+        }
+      ],
+      "description": "Battlecry: Advance.\nLifesteal & Windfury."
+    },
+    {
+      "id": "wispdrinker_vampire",
+      "name": "Wispdrinker Vampire",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Vampire Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "creature",
+          "tribe": "Spirit"
+        }
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "heal",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Battlecry: Destroy a Spirit.\nAlliance: Gain 1 Life."
+    },
+    {
+      "id": "talion_s_throneguard",
+      "name": "Talion's Throneguard",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Faerie Wizard",
+      "keywords": [
+        "battlecry",
+        "windfury"
+      ],
+      "ward": 1,
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "creature"
+        }
+      ],
+      "description": "Ward 1 & Windfury.\nBattlecry: Bounce target creature."
+    },
+    {
+      "id": "crosis_the_purger",
+      "name": "Crosis, the Purger",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elemental Dragon",
+      "keywords": [
+        "windfury"
+      ],
+      "ward": 2,
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Ward 2 & Windfury.\nConnect: The enemy discards a card."
+    },
+    {
+      "id": "anuran_troubadour",
+      "name": "Anuran Troubadour",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 5,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast Bard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Frog"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "discover",
+            "cardType": "creature",
+            "tribe": "Otter"
+          }
+        ]
+      },
+      "description": "Battlecry: Discover a Frog.\nInspire: Discover an Otter."
+    },
+    {
+      "id": "fae_glyph_snapdragon",
+      "name": "Fae-Glyph Snapdragon",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Faerie Dragon",
+      "keywords": [
+        "battlecry",
+        "reborn",
+        "lifesteal"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw a card.\nReborn & Lifesteal."
     }
   ]
 }

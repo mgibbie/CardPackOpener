@@ -52,9 +52,11 @@ const play = (st, pi, id, t = null) => { const c = E.instantiate(byId[id], pi); 
   ok('Lynxfury Rager Frenzy grows +2/+2 after surviving damage', lynx.attack === a0 + 2 && lynx.maxHealth === h0 + 2, `${lynx.attack}/${lynx.maxHealth}`); }
 
 // Mistgrove Parliamentarian: Inspire buffs a friendly creature
-{ const st = game(); const ally = put(st, 0, '_beast'); put(st, 0, 'mistgrove_parliamentarian');
-  fireOngoing(st, 0, 'hero-power-used', {});
-  ok('Mistgrove Parliamentarian Inspire buffs a friendly creature', ally.attack > 1 || ally.maxHealth > 1, `${ally.attack}/${ally.maxHealth}`); }
+{ const st = game(); put(st, 0, '_beast'); put(st, 0, 'mistgrove_parliamentarian');
+  const sum = () => st.players[0].board.reduce((n, c) => n + c.attack + c.maxHealth, 0);
+  const before = sum(); fireOngoing(st, 0, 'hero-power-used', {});
+  // buff-random-friendly picks either creature — assert a +1/+1 landed on the board, not on a specific one
+  ok('Mistgrove Parliamentarian Inspire buffs a friendly creature', sum() === before + 2, sum() - before); }
 
 // Third Little Pig: summoning a Beast gives it +1/+1
 { const st = game(); put(st, 0, 'third_little_pig'); const b = play(st, 0, '_beast');
