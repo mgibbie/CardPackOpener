@@ -81,6 +81,8 @@ const CHOSEN = {
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
 	'transform-target-into-source': { 'friendly-creature': 'friendly-creature' },
 	'transform-same-cost': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // Tabaxi Transmogrifier
+	'buff-target-and-adjacent': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' }, // Glowing Glyph
+	'destroy-target-and-adjacent': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // Meteorhorn
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },

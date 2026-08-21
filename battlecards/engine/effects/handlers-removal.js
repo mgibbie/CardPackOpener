@@ -634,6 +634,34 @@ register('exile', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 } });
 
 
+register('destroy-target-and-adjacent', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Meteorhorn: destroy the chosen creature and the creatures flanking it
+			const t = chosenCreature();
+			if (!t) return;
+			const board = state.players[t.controller].board;
+			const idx = board.indexOf(t);
+			for (const c of [board[idx], board[idx - 1], board[idx + 1]]) {
+				if (c && !isDead(c) && c.type !== 'location') { c.damage = c.maxHealth; c.shield = false; emit(state, { type: 'destroy', uid: c.uid }); }
+			}
+} });
+
+
+register('exile-graveyards', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Bahamut the Grey: exile matching cards from every graveyard; optionally +X/+X to the source per card exiled
+			let n = 0;
+			for (const pl of state.players) {
+				const keep = [];
+				for (const c of pl.graveyard) {
+					if (!e.cardType || c.type === e.cardType) { c.zone = 'exile'; pl.exile.push(c); n++; }
+					else keep.push(c);
+				}
+				pl.graveyard = keep;
+			}
+			if (e.buffSelf && n > 0 && source && !isDead(source)) buffCreature(source, n, n);
+			emit(state, { type: 'exileGraveyards', player: pi, count: n });
+} });
+
+
 register('exile-graveyard-random', ({ state, pi }, e) => { {
 			// Gravelskin Shinobi: exile a random card from a graveyard (any player's)
 			const pool = [];

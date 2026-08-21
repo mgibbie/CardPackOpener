@@ -227654,6 +227654,81 @@
         }
       ],
       "description": "Lifesteal & Windfury.\nParty: Gain +3/+3. (If you control 4+ creature classes.)"
+    },
+    {
+      "id": "glowing_glyph",
+      "name": "Glowing Glyph",
+      "type": "sorcery",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Ancient",
+      "effects": [
+        {
+          "type": "buff-target-and-adjacent",
+          "target": "creature",
+          "attack": 1,
+          "health": 2
+        }
+      ],
+      "description": "Target creature & adjacent creatures gain +1/+2."
+    },
+    {
+      "id": "meteorhorn",
+      "name": "Meteorhorn",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 7,
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-target-and-adjacent",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Destroy a target creature and each creature adjacent to it."
+    },
+    {
+      "id": "bahamut_the_grey",
+      "name": "Bahamut the Grey",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 10,
+      "attack": 10,
+      "health": 10,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "exile-graveyards",
+          "cardType": "artifact",
+          "buffSelf": true
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ],
+      "description": "Battlecry: Exile all Artifacts in each player's graveyard & gain +1/+1 for each card exiled.\nDeathrattle: Scry 2 & Gain 5 Armor."
     }
   ]
 }

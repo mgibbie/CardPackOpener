@@ -959,6 +959,18 @@ register('adjacent-buff', ({ state, pi, target, source, enemies, scaled, hm, pic
 } });
 
 
+register('buff-target-and-adjacent', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Glowing Glyph: buff the chosen creature AND its board-neighbors
+			const t = chosenCreature();
+			if (!t) return;
+			const board = state.players[t.controller].board;
+			const idx = board.indexOf(t);
+			for (const c of [board[idx], board[idx - 1], board[idx + 1]]) {
+				if (c && !isDead(c) && c.type !== 'location') buffCreature(c, e.attack || 0, e.health || 0);
+			}
+} });
+
+
 register('buff-weapon-or-draw-weapon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Weapons Expert: if you have a weapon, give it +1/+1; otherwise draw a weapon
 			const p = state.players[pi];
