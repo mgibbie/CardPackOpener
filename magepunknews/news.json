@@ -1,6 +1,1659 @@
 {
-	"generated": "2026-08-20",
+	"generated": "2026-08-21",
 	"entries": [
+		{
+			"sha": "5208ace",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Companion mechanic for Hex, Kellan's Shadow (paper wave 35)",
+			"body": "Build the Companion subsystem end-to-end for Hex, Kellan's Shadow — the first\ncompanion with a real deckbuilding constraint AND the first carrying ongoing\ntriggers:\n\n- collection.js: validateDeck now enforces `companionReq` (Hex needs 15 artifacts\n  that cost 3 or less in the deck). Generic {type,maxCost,minCost,count,label}.\n- core.js: casting an Adventure now fires an `adventure-cast` ongoing hook.\n- handlers-misc.js: `luck` (coin flip) gains an `else` (tails) branch.\n- handlers-removal.js: new `destroy-parity` effect — destroy the enemy's costliest\n  permanent (even MV) or creature (odd MV); deterministic best-target auto-resolve.\n- cards.json: Hex = Companion, \"whenever you cast an Adventure or Shadow spell,\n  gain +2/+2 & flip a coin; heads destroy an even-MV permanent, tails an odd-MV\n  creature.\"\n\nTests: paper_wave35_test.mjs (23 checks) + registry bumped to 1135; focused Hex\nfuzz 400 games clean; full suite 321/321.",
+			"cards": [
+				{
+					"id": "hex_kellans_shadow",
+					"name": "Hex, Kellan's Shadow",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "ae80c78",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 34: Rampage Condenser (1 artifact, data-only)",
+			"body": "An artifact with a {T} ability (artifact tapAbility supports a target, like\ncreation_station). No new mechanic.\n\n- Rampage Condenser — {T}: Deal 3 damage to any target, then draw a card. (The\n  charge-counter economy, the reactive \"add a counter\" trigger, and the 5-cost\n  \"Luck: destroy an Even-MV creature\" ability are not modeled.)\n\npaper_wave34_test.mjs (8 checks; {T} hits a creature for 3 + draws, can hit face,\ntaps after use); full suite 320/320; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "rampage_condenser",
+					"name": "Rampage Condenser",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "553d351",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 33: Minn (self-scaling Illusions) + Xixira retrofit",
+			"body": "Engine (no new effect type; reuse existing infra):\n- staticValue + instantiate support a `statics` array (multiple passives on one card).\n- the damage handler's existing spell-lifesteal accounting (spellLS) now also fires\n  when the caster has a spell-lifesteal-<school> static.\n\nCards:\n- Minn, Wily Illusionist — whenever you draw your 2nd card each turn (on:'ponder'),\n  create a 1/1 Illusion token that has +1/+0 per other Illusion (selfScale, summoned\n  via summonId). The put-a-permanent-on-Illusion-death half is not modeled.\n- illusion_token (uncollectible token, selfScale tribe:Illusion).\n- Xixira, Mirror Realm Necroczar RETROFIT: statics = [spell-damage-Fire+2,\n  spell-lifesteal-Shadow+1], completing its previously-dropped \"Your Shadow spells\n  have Lifesteal\".\n\npaper_wave33_test.mjs (12 checks; two Illusions scale to 2/1; a Shadow spell heals\nits caster only with Xixira out); full suite 319/319; deep fuzz clean (180 games,\nincl. the spell-damage change).",
+			"cards": [
+				{
+					"id": "minn_wily_illusionist",
+					"name": "Minn, Wily Illusionist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "8c7a1e1",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 32: Peculiar Spelldrake + Prosper (2 cards)",
+			"body": "discount-next-spell gains a forEnemy param (a target opponent's next spell is\ndiscounted instead of yours). No new effect type (registry unchanged).\n\nCards:\n- Peculiar Spelldrake — Battlecry: your opponent's next spell costs 0 (discount 99).\n  (\"It has Flash\" is dropped.)\n- Prosper, Tome-Bound — Deathtouch; at the end of your turn, draw a card. (Mystic\n  Arcanum's impulse-exile is simplified to a draw; Pact Boon is dropped.)\n\npaper_wave32_test.mjs (11 checks); full suite 318/318; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "peculiar_spelldrake",
+					"name": "Peculiar Spelldrake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "prosper_tome_bound",
+					"name": "Prosper, Tome-Bound",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "a110b09",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 31: Cirdan + Galea (Castellan; 2 cards, data-only)",
+			"body": "Both use existing mechanics (aura position:'ends' = Castellan; draw-all), no new\neffect (registry unchanged).\n\nCards:\n- Cirdan the Shipwright — Castellan & Hexproof(elusive); Battlecry & Swing: each\n  player draws a card. (The secret player-vote — draws per vote, unvoted plays a\n  free permanent — is simplified to \"each player draws\".)\n- Galea, Kindler of Hope — Castellan. (Equip-cost-0 and the enchanted-creature aura\n  are not modeled.)\n\nAlso fixed a seed-drift: heist_anomalies (Dragon Soul) — the 2 new cards shifted the\nboot's random deck so the opponent's hand could \"respond\", stalling the stacked\nspells; clear player 1's hand so the 3 test spells auto-resolve.\n\npaper_wave31_test.mjs (12 checks; Castellan gives an end creature Taunt, not a\nmiddle one); full suite 317/317; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "cirdan_the_shipwright",
+					"name": "Cirdan the Shipwright",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "galea_kindler_of_hope",
+					"name": "Galea, Kindler of Hope",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "eb6d324",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 30: copy-enemy-location + Mothwood (2 cards)",
+			"body": "- New effect copy-enemy-location (registry 1133 -> 1134): add a copy of a random\n  enemy Location to your hand.\n\nCards:\n- Pathfinder Axejaw — Battlecry: add a copy of an enemy Location to your hand\n  (the \"target\" simplified to a random enemy Location).\n- Mothwood Mystic Owl — Battlecry: Flicker a creature (blink); Adventure \"Fey\n  Subterfuge\" (5): Bounce target creature. (The Adventure's second-target Hexproof\n  grant is dropped.)\n\npaper_wave30_test.mjs (13 checks); full suite 316/316; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "pathfinder_axejaw",
+					"name": "Pathfinder Axejaw",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "mothwood_mystic_owl",
+					"name": "Mothwood Mystic Owl",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "881f270",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 29: X-cost creature + Feywild Otter (2 cards)",
+			"body": "- New effect stats-equal-x (registry 1132 -> 1133): set the source creature's\n  Attack/Health to its xValue (used with xSpell, which drinks all remaining mana).\n\nCards:\n- Liquid Dragon — Liquid: an X-cost creature (xSpell) that enters as an X/X.\n- Feywild Otter — Prowess & Lifesteal; Adventure \"Grove's Bounty\" (2): target\n  creature gains +2/+2 & Taunt (its \"X\" simplified to a fixed 2; data-only, via\n  buff {grant:'taunt'}).\n\nAlso fixed a wave-28 seed-drift: The Meep test assumed a specific random creature\ngets sacrificed -> use exactly one fodder so the sacrifice is forced, and assert\nThe Meep itself gets the +MV/+MV.\n\npaper_wave29_test.mjs (13 checks; Liquid Dragon is 5/5 on 5 mana, 3/3 on 3);\nfull suite 315/315; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "feywild_otter",
+					"name": "Feywild Otter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "liquid_dragon",
+					"name": "Liquid Dragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				}
+			]
+		},
+		{
+			"sha": "43e6ecc",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 28: sacrifice-friendly (2 cards)",
+			"body": "New effect sacrifice-friendly (registry 1131 -> 1132): sacrifice another friendly\ncreature; with tempBuffTeam, your other creatures gain +MV/+MV (the sacrificed\ncreature's Mana Value) until end of turn.\n\nCards:\n- Undercity Eliminator — Battlecry: if you control another creature, sacrifice it\n  and exile an enemy creature (a conditional that carries the target so the\n  battlecry prompts; nothing happens without fodder). The \"or an artifact\" option\n  is simplified to a creature.\n- The Meep — Swing: sacrifice another creature; your creatures gain +X/+X until\n  end of turn (X = its Mana Value). The \"Ward: Lose 3 Life\" clause is dropped.\n\npaper_wave28_test.mjs (12 checks); full suite 314/314; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "undercity_eliminator",
+					"name": "Undercity Eliminator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "the_meep",
+					"name": "The Meep",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "6af9799",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 27: the five Excavation cards (data-only Choose One)",
+			"body": "The Excavations need no new mechanics — each is a 0-cost Choose One over existing\neffects: Powerstone -> gain-coin, Relic -> enrich (Treasure), Discover a <rarity>\ncard -> discover {rarity}, and \"a random <rarity> Excavation treasure\" ->\nadd-random-card {rarity}.\n\nCards (rarity ladder common -> legendary, and the Discover/add rarity matches):\nFirst / Second / Third / Fourth / Final Excavation.\n\npaper_wave27_test.mjs (60 checks; each excavation x each of its 4 branches plays\nwithout throwing + leaves valid state; gain-coin adds a coin CARD to hand); full\nsuite 313/313; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "first_excavation",
+					"name": "First Excavation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 0
+				},
+				{
+					"id": "second_excavation",
+					"name": "Second Excavation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 0
+				},
+				{
+					"id": "third_excavation",
+					"name": "Third Excavation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "fourth_excavation",
+					"name": "Fourth Excavation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 0
+				},
+				{
+					"id": "final_excavation",
+					"name": "Final Excavation",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				}
+			]
+		},
+		{
+			"sha": "c7abd9e",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 26: cost-per-tribe + Spirit tokens (3 cards)",
+			"body": "- New card field costReducePerTribe (cost.js + instantiate copy): (1) less per\n  matching tribe you control. A card field, not an effect type (registry unchanged).\n\nCards:\n- Millicent, Restless Revenant — costs (1) less per Spirit; Windfury; a Spirit dying\n  (friendly-creature-died if:Spirit) or Millicent hitting a player (self-hit-player)\n  makes a 1/1 Spirit with Windfury. (The \"other Spirits' combat damage\" half is dropped.)\n- Saloon Owner — activated (3): give a creature +2/+4. (The \"costs 1 if Quickdrawn\"\n  and Divine-Shield-target clauses are dropped.)\n- Dunbarrow Revivalist — Deathrattle: return an Aura (enchantment) from your\n  graveyard. (The \"create a Wicked Role Token\" Battlecry is dropped.)\n\nAlso relaxed a seed-drift failure: locations_wave8 (Amirdrassil summons a random\n2-Cost minion whose Battlecry can draw) -> assert it drew AT LEAST 2.\n\npaper_wave26_test.mjs (15 checks); full suite 312/312; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "millicent_restless_revenant",
+					"name": "Millicent, Restless Revenant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "saloon_owner",
+					"name": "Saloon Owner",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "dunbarrow_revivalist",
+					"name": "Dunbarrow Revivalist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "57b6fa4",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 25: target-vote (graveyard-vote) + fight (2 cards)",
+			"body": "Two new effects (registry 1129 -> 1131):\n- graveyard-vote: the last vote mechanic. startGraveyardVote queues a 'gy-vote'\n  pick over the controller's artifact/creature/enchantment graveyard cards;\n  resolvePick returns the chosen card + the opposing vote's card (in 2-player both\n  tie, so both return, matching Custodi's typical outcome). 1 eligible -> auto-return.\n  Full pick plumbing: startGraveyardVote/resolvePick branch (core.js) + openPickModal\n  'gy-vote' branch + gyVoteOffer event (game.js); AI/fuzz use the generic id pick.\n- fight-random-beast: a random other friendly Beast fights a random enemy creature.\n\nCards:\n- Custodi Squire — Battlecry: vote to return an artifact/creature/enchantment from\n  your graveyard.\n- Bloodrage Alpha — Battlecry: another Beast fights an enemy creature (targets\n  simplified to random); Frenzy: deal 4 to a random enemy creature.\n\npaper_wave25_test.mjs (11 checks); full suite 311/311; deep fuzz clean (150 games,\nexercising the gy-vote pick mode).",
+			"cards": [
+				{
+					"id": "custodi_squire",
+					"name": "Custodi Squire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "bloodrage_alpha",
+					"name": "Bloodrage Alpha",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "bc6fa39",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 24: targeted-by-spell + research legendaries (3 cards)",
+			"body": "- New event targeted-by-spell: when a spell targets a creature, fire a creature\n  trigger on that creature (both spell-resolution paths: line ~1792 and\n  resolveStackedSpell ~2627), so a targeted creature reacts even to the opponent's\n  spell. No new effect type (registry stays 1129).\n\nCards:\n- Triton Fortune Hunter — whenever it's targeted by a spell (either side), draw.\n- Lincale, Calm Researcher — Battlecry: Dredge & a creature gains +2/+2; Ponder:\n  tutor an Aura (cardType:'enchantment'); Council: gain 10 Life. (Council's\n  \"shuffle an Artifact if you do\" condition is simplified to the payoff.)\n- Doomstar Ulka — Rush & Static. (The \"Discard this card: resummon\" hand-ability\n  is not modeled.)\n\npaper_wave24_test.mjs (16 checks; Triton reacts to an enemy spell, not to a spell\non another creature); full suite 310/310; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "triton_fortune_hunter",
+					"name": "Triton Fortune Hunter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "lincale_calm_researcher",
+					"name": "Lincale, Calm Researcher",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "doomstar_ulka",
+					"name": "Doomstar Ulka",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "d4acb8f",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 23: discover-summon-keep + Morbid/disguise (3 cards)",
+			"body": "- discover gains a keepOthersToHand option (the un-chosen options go to your hand;\n  a param, no new effect type). Used with to:'board' to summon the pick.\n\nCards:\n- World Pillar Fragment — Discover an Elemental & Summon it; the other two go to\n  your hand.\n- Ramwin Sondheild — Swing: Disguise a creature (auto-picks a friendly); Morbid 4:\n  Discover an Eldrazi. (The \"each player\" + \"yours costs 2 less\" riders dropped.)\n- Axebane Ferox — Charge & Deathtouch. (The non-standard \"Ward: Destroy your Hero\n  Weapon\" clause is dropped.)\n\npaper_wave23_test.mjs (15 checks); full suite 309/309; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "ramwin_sondheild",
+					"name": "Ramwin Sondheild",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "world_pillar_fragment",
+					"name": "World Pillar Fragment",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "axebane_ferox",
+					"name": "Axebane Ferox",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "4c2fe77",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 22: Choose-two, Metallurgy destroy-walker, Chromatic (3 cards)",
+			"body": "- New effect destroy-walker (registry 1128 -> 1129): destroy a random enemy\n  planeswalker.\n- CHROMATIC keyword already existed (color boosts roll twice); reused here.\n\nCards:\n- Heartblossom — Choose two of three (a friendly +2/+2; deal 2 to a random enemy\n  creature; draw), modeled as Choose One where each branch does two of the three.\n- Octowunder — Chromatic; Metallurgy (on artifact/mech played): destroy an enemy\n  planeswalker.\n- Opal Drake — Chromatic & Hexproof(elusive); Connect: Enrich. (The \"Refract\"\n  counter-and-copy Adventure is not modeled.)\n\nAlso relaxed two seed-drift failures from the 3 new cards:\n- phyrexian_batch_test: clear the random opening hand before Rothga (it checks\n  holdingTribe:Phyrexian in hand).\n- spells_mage_unlock_test: Shifting Scroll's random Mage-spell pick can land on\n  itself; assert the card persists + the existing is-a-Mage-spell check.\n\npaper_wave22_test.mjs (17 checks); full suite 308/308; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "heartblossom",
+					"name": "Heartblossom",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "octowunder",
+					"name": "Octowunder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "opal_drake",
+					"name": "Opal Drake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "e4f769f",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 21: Slashing keyword + reveal-tax-draw (3 cards)",
+			"body": "- New keyword SLASHING: doubles a creature's combat damage to players &\n  planeswalkers (applied in resolveCombat's hero + walker branches) + a\n  keyword tooltip.\n- New effect reveal-tax-draw (registry 1127 -> 1128): each player draws the top\n  of their deck and loses Life equal to its Mana Value.\n\nCards:\n- Rampaging Ceratops — Rush, Slashing & Piercing (ignores Taunt); Frenzy: destroy\n  an enemy permanent.\n- Keen Duelist — Battlecry: each player draws their top card & loses Life equal to\n  its Mana Value.\n- Bonehoard Dracosaur — Swift (first_strike), Impulsive & Windfury. (The \"cast a\n  spell from exile\" trigger isn't modeled — no exile-cast event exists; Impulsive\n  here means \"must attack\".)\n\npaper_wave21_test.mjs (16 checks; Slashing doubles to face, a plain creature\ndoesn't); full suite 307/307; deep fuzz clean (180 games, incl. the combat change).",
+			"cards": [
+				{
+					"id": "rampaging_ceratops",
+					"name": "Rampaging Ceratops",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "keen_duelist",
+					"name": "Keen Duelist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "bonehoard_dracosaur",
+					"name": "Bonehoard Dracosaur",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "c126469",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 20: school-specific Spell Damage (3 cards)",
+			"body": "Per-school Spell Damage was half-wired (schoolSpellDmg map read at the 3 damage\nsites but never set — a dormant Duels feature). Added a STATIC path at all 3 sites:\n`staticValue(p, 'spell-damage-<School>')` when the source is a spell of that school,\nso it lapses when the creature leaves. No new effect type (registry unchanged).\n\nCards:\n- Shorigo, Eastern Wind — Hexproof(elusive)/Windfury; static spell-damage-Arcane +1;\n  playing a Samurai/Ninja buffs a friendly +2/+2 (two on:creature-played ongoings).\n- Xixira, Mirror Realm Necroczar — static spell-damage-Fire +2; activated (2):\n  grant a creature Taunt. (The \"Shadow spells have Lifesteal\" clause is not modeled.)\n- Stormkeld Curator — Adventure \"Giant Secrets\" (if you control a Giant/Faerie, draw\n  3). The attach-Auras Battlecry is dropped.\n\npaper_wave20_test.mjs (18 checks; Fire/Arcane spells get the bonus, other schools\ndon't); full suite 306/306; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "shorigo_eastern_wind",
+					"name": "Shorigo, Eastern Wind",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "xixira_mirror_realm_necroczar",
+					"name": "Xixira, Mirror Realm Necroczar",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "stormkeld_curator",
+					"name": "Stormkeld Curator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				}
+			]
+		},
+		{
+			"sha": "1b3d452",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 19: adjacency + graveyard exile (3 cards)",
+			"body": "Three new effect handlers (registry 1124 -> 1127) + their CHOSEN targeting entries:\n- buff-target-and-adjacent: buff the chosen creature and its board-neighbors.\n- destroy-target-and-adjacent: destroy the chosen creature and its neighbors.\n- exile-graveyards: exile matching cards (e.cardType) from every graveyard;\n  with buffSelf, the source gains +1/+1 per card exiled.\n\nCards:\n- Glowing Glyph — Sorcery: target creature & adjacent creatures gain +1/+2.\n- Meteorhorn — Battlecry: destroy a target creature and each creature adjacent to\n  it (the \"destroy adjacent to self\" clause dropped).\n- Bahamut the Grey — Battlecry: exile all Artifacts in each graveyard & gain +1/+1\n  per card; Deathrattle: Scry 2 & Gain 5 Armor.\n\npaper_wave19_test.mjs (19 checks); full suite 305/305; deep fuzz clean (150 games);\ncardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "glowing_glyph",
+					"name": "Glowing Glyph",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "meteorhorn",
+					"name": "Meteorhorn",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "bahamut_the_grey",
+					"name": "Bahamut the Grey",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				}
+			]
+		},
+		{
+			"sha": "8d0df3b",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 18: conditions & attrition (4 cards)",
+			"body": "Two new effect handlers (registry 1122 -> 1124) + two extensions to existing ones:\n- regenerate (effect): the source creature heals N of its own Health.\n- sac-land (effect): each player (or enemy/self via e.who) sacrifices a land.\n- destroy-random gains an optional tribe filter (| for a list, e.g.\n  'Demon|Devil|Phyrexian') and now skips locations.\n- conditional gains an `if.party` key (N+ distinct creature tribes on your board).\n\nCards:\n- Jubilant Jamfrog — Lifesteal & Poisonous; Battlecry: the opponent burns 3 off\n  their deck (mill); Regenerate 2 & Medic 1 at your turn-end (regenerate self-heal +\n  heal target:'self' for the hero).\n- Gitrog, Horror of Zhava — Deathrattle: each player sacrifices a land.\n- Cerise, Slayer of Fear — Swift (first_strike) & Lifesteal; at your turn-end, if\n  you control a Faerie or Angel, destroy an enemy Demon/Devil/Phyrexian.\n- Angel of Unity — Lifesteal & Windfury; Party: gain +3/+3 (4+ creature tribes).\n\nNote: the `conditional` effect runs `e.then`/`e.else`, NOT `e.effects`.\n\npaper_wave18_test.mjs (21 checks); full suite 304/304; deep fuzz clean (150 games).",
+			"cards": [
+				{
+					"id": "jubilant_jamfrog",
+					"name": "Jubilant Jamfrog",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "gitrog_horror_of_zhava",
+					"name": "Gitrog, Horror of Zhava",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "cerise_slayer_of_fear",
+					"name": "Cerise, Slayer of Fear",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "angel_of_unity",
+					"name": "Angel of Unity",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "a2e00e9",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 17: 3 utility cards (life-lock, graveyard-exile, aura Deathrattle)",
+			"body": "Three small reusable engine additions (registry 1121 -> 1122; grant-deathrattle-minion\nis a trigger handler, not counted):\n- life-lock: damageHero/healHero now no-op when the player has staticValue\n  'life-locked' > 0.\n- exile-graveyard-random (effect): exile a random card from any graveyard.\n- grant-deathrattle-minion (trigger): append a Deathrattle to ctx.minion (the\n  just-played creature), so a \"your creatures have Deathrattle: X\" aura can grant\n  it continuously on creature-played.\n\nCards:\n- Platinum Emperion — static life-locked: you can't gain or lose Life.\n- Gravelskin Shinobi — Trample & Rush; Swing: exile a card from a graveyard.\n- Sobekthos, the Mercurial — your other creatures have \"Deathrattle: Plunder\"\n  (Battlecry grants it to existing others; the on:creature-played ongoing grants\n  it to future ones via grant-deathrattle-minion).\n\npaper_wave17_test.mjs (17 checks); full suite 303/303; deep fuzz clean (201 games,\nincl. the global life-lock change); cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "platinum_emperion",
+					"name": "Platinum Emperion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "gravelskin_shinobi",
+					"name": "Gravelskin Shinobi",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "sobekthos_the_mercurial",
+					"name": "Sobekthos, the Mercurial",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 9
+				}
+			]
+		},
+		{
+			"sha": "0bdc083",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 16: granting triggered abilities + turn control (5 cards)",
+			"body": "Uses the existing grant-deathrattle / grant-ongoing effects, plus three tiny\nadditions (registry 1120 -> 1121; add-dead-copy is a trigger handler, not counted):\n- grant-ongoing gains multi-target support (friendly-others / friendly-creatures\n  + tribe), pushing to `ongoings` so an existing single `ongoing` isn't clobbered.\n- add-dead-copy (trigger handler): add a copy of ctx.dead to hand.\n- skip-enemy-turn (effect): increment a target opponent's p.skipTurns (turn-advance\n  already honors it).\n\nCards:\n- Antique Collector — Battlecry: every friendly creature gains \"Deathrattle: Excavate\".\n- Clavileño, First of the Blessed — Swing: your other Vampires gain \"Deathrattle:\n  create a 4/3 Windfury Demon\".\n- Merfolk Tunnel-Guide — Battlecry: other Merfolk get +1/+1 & \"Connect: Advance\".\n- Veteran Ghoulcaller — whenever an Undead dies, add a copy of it to your hand.\n- Eon Frolicker — Battlecry: the opponent skips their next turn; Deathrattle: Planeshift.\n\npaper_wave16_test.mjs (25 checks, incl. a real turn-cycle skip); full suite 302/302;\ndeep fuzz clean (151 games); cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "antique_collector",
+					"name": "Antique Collector",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "clavileno_first_of_the_blessed",
+					"name": "Clavileño, First of the Blessed",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "merfolk_tunnel_guide",
+					"name": "Merfolk Tunnel-Guide",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "veteran_ghoulcaller",
+					"name": "Veteran Ghoulcaller",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "eon_frolicker",
+					"name": "Eon Frolicker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "b7bf205",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 15: 3 planeswalkers + 2 locations (no new mechanics)",
+			"body": "Planeswalkers and locations are already engine-supported, so this is data plus\none tiny filter (add-random-card gains a `tribes[]` array, mirroring `schools[]`).\n\nPlaneswalkers ({type:'planeswalker', loyalty, abilities:[{cost,text,effects}]},\nactivated via useWalker):\n- Sara, Pyrosage — +1 deal 1 to a creature; -4 deal 5 to any; -10 deal 13 to any\n  (\"divided among any number\" simplified to a single target).\n- Torik, Icewind Prodigy — +1 Freeze a creature; -3 Planeshift/Excavate/Enrich;\n  -7 opponent Mills 11.\n- Zaxas, Realmscourge — +1 make a 1/1 Dragon (Taunt); -3 destroy an enemy\n  artifact/enchantment + Advance/Investigate/Planeshift; -9 destroy-all side:enemy\n  + destroy an enemy permanent.\n\nLocations ({type:'location', durability, taps:[{text,effects}]}, tapped via tapLand):\n- Ogrefist Boulder — set a creature's stats to 6/7 (set-target-stats).\n- Tarnation Station — random-effects coin flip: a 2/2 Rush Mech, or a random\n  Mech/Beast into hand.\n\npaper_wave15_test.mjs (25 checks); full suite 301/301; deep fuzz clean (151\ngames); cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "sara_pyrosage",
+					"name": "Sara, Pyrosage",
+					"type": "planeswalker",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "torik_icewind_prodigy",
+					"name": "Torik, Icewind Prodigy",
+					"type": "planeswalker",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "zaxas_realmscourge",
+					"name": "Zaxas, Realmscourge",
+					"type": "planeswalker",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "ogrefist_boulder",
+					"name": "Ogrefist Boulder",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "tarnation_station",
+					"name": "Tarnation Station",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "a2cb133",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 14: Adventure cards (4 new + Beanstalk completed)",
+			"body": "Adventure turns out to be fully engine-supported already (playAdventure /\ncanPlayAdventure / adventureSpec + the UI's openAdventureMenu + 3 existing\ncards). So this wave is data + two tiny param filters (no new effect types):\n- add-random-card gains a `nameIncludes` filter (Porcine's \"random Potion\").\n- valuePer 'lands-you-control' (Beanstalk's Fertile Footsteps: X = your lands).\n\nCards (creature half + spell \"adventure\" half; the card returns to hand after\ncasting the adventure, then plays as the creature):\n- Mosswood Dreadknight — Trample; Adventure Dread Whispers: draw 1 & lose 1 life\n  (the cast-from-graveyard-on-death clause dropped).\n- Kellan, Inquisitive Prodigy — Taunt/Divine Shield, Swing: destroy an enemy\n  Artifact; Adventure Tail the Suspect: Investigate (land-discount clause dropped).\n- Accident-Prone Apprentice — Impulsive, Ponder: +1/+1; Adventure Anuran Error:\n  add two copies of Hex.\n- Porcine Potioneer — Battlecry: add a random Potion, Deathrattle: draw; Adventure\n  Lend a Ham: exile a creature & gain life per Beast you control.\n- Beanstalk Giant (wave 13) — completed with its Fertile Footsteps Adventure.\n\npaper_wave14_test.mjs (26 checks); full suite 300/300; deep fuzz clean (151\ngames); cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "mosswood_dreadknight",
+					"name": "Mosswood Dreadknight",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "kellan_inquisitive_prodigy",
+					"name": "Kellan, Inquisitive Prodigy",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "accident_prone_apprentice",
+					"name": "Accident-Prone Apprentice",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "porcine_potioneer",
+					"name": "Porcine Potioneer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "20100c6",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 13: the Harvest keyword + 4 neutral cards",
+			"body": "Build Harvest (paper keyword): choose one of three — untap a land, make a 1/1\nPlant, or make a Food. Implemented as a self-controlled choose-one pick:\n- startHarvest() queues a 'harvest' pick; resolvePick('harvest') runs the chosen\n  option's effects (core.js).\n- new effects: `harvest` (queues the pick) and `untap-land` (untaps one tapped\n  land). registry 1118 -> 1120.\n- UI: openPickModal 'harvest' branch + a harvestOffer event that opens it for the\n  human (game.js).\n- AI: bestHarvestId / ai.js harvest branch — untap a land if any is tapped, else\n  make a Plant body. Fuzz drives it via the generic random-id pick path.\n\nCards: Flowersoul Guardian (Battlecry: Scry 1 & Harvest), Ruska Elk (Battlecry:\nHarvest), Beanstalk Giant (Swing: Harvest — the Adventure half is dropped, as\nAdventure is unbuilt), Captivating Crossroads (Location, 2 Durability — tap:\nBounce a creature & Harvest). Food is modeled as a food_token in the artifact/\nconsumable zone (not the hand), matching the engine's existing cook/token model.\n\npaper_wave13_test.mjs (21 checks); full suite 299/299; deep fuzz clean (151\ngames); cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "flowersoul_guardian",
+					"name": "Flowersoul Guardian",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "ruska_elk",
+					"name": "Ruska Elk",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "beanstalk_giant",
+					"name": "Beanstalk Giant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "captivating_crossroads",
+					"name": "Captivating Crossroads",
+					"type": "location",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "9f31040",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 12: 6 neutral cards (Eagill buff-trio, Luto, Tabaxi Transmogrifier, Duskana)",
+			"body": "Cards: Eagill / Morwynn Eagill / Gold Morwynn Eagill (Battlecry / Deathrattle /\nInspire — \"another random friendly + a random hand creature each +2/+3\"), Luto,\nExalted Rebel (grant Divine Shield + Hexproof to a target; Inspire: Plunder),\nTabaxi Transmogrifier (transform a target into a random equal-cost creature),\nDuskana, the Rage Mother (draw per 2/2 you control; Swing: 2/2 Beast; Frenzy:\ndestroy a non-creature permanent).\n\nSmall engine additions (registry 1117 -> 1118):\n- transform-same-cost effect (+ its CHOSEN targeting entry) — generic evolve-to-\n  equal-cost for the chosen creature on either board.\n- valuePer 'twotwo-you-control' (count of your full 2/2 creatures) for Duskana's draw.\n- destroy-permanent gains which:'any' (artifact | enchantment | location together).\n- Eagill's \"another creature\" uses buff-random-friendly {excludeSelf:true} so the\n  trigger path (Deathrattle/Inspire) excludes the source too — the effect handler\n  always excludes source, but the trigger handler only honors excludeSelf.\n\nDuskana keeps Swing in the single `ongoing` slot (self-attacks reads only that) and\nFrenzy in `ongoings` (self-damaged reads both). paper_wave12_test.mjs (33 checks);\nfull suite 298/298; deep fuzz clean; cardart deployed + cache-busts bumped.",
+			"cards": [
+				{
+					"id": "eagill",
+					"name": "Eagill",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "morwynn_eagill",
+					"name": "Morwynn Eagill",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "gold_morwynn_eagill",
+					"name": "Gold Morwynn Eagill",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "luto_exalted_rebel",
+					"name": "Luto, Exalted Rebel",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "tabaxi_transmogrifier",
+					"name": "Tabaxi Transmogrifier",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "duskana_the_rage_mother",
+					"name": "Duskana, the Rage Mother",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "4c05771",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper import wave 11: 6 neutral cards (Choose One, tutor-by-school, Planeshift+Plunder, Blood Gems, costMod)",
+			"body": "Add Drover of the Swine, Lemon Magician Girl, Zock/Galactic Wanderer,\nGiant Ambush Beetle, Esolen/Beastmaster Prodigy, Iron Hymn Soloist as\ncollectible neutrals (all reuse existing effect DSL — no new engine types).\n\n- paper_wave11_test.mjs: 25 assertions (mechanic checks + play-without-throw + validateGameState sweep)\n- ff4_test.mjs: relax the Blessing-of-the-Wind evolve assertion to intent. Its\n  constant rng (()=>0.4) picks pool[floor(0.4*len)]; the 6 new cost-6 cards\n  shifted that index onto Void Crusher, whose Inspire (fires on the same\n  hero-power event) self-destructs it. Now scan board+graveyard for the\n  transformed +1-cost creature, robust to which card the pick lands on.\n- cardart deployed (6 JPEGs) + gallery/designwiki cache-busts bumped.",
+			"cards": [
+				{
+					"id": "drover_of_the_swine",
+					"name": "Drover of the Swine",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "lemon_magician_girl",
+					"name": "Lemon Magician Girl",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "zock_galactic_wanderer",
+					"name": "Zock, Galactic Wanderer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "giant_ambush_beetle",
+					"name": "Giant Ambush Beetle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "esolen_beastmaster_prodigy",
+					"name": "Esolen, Beastmaster Prodigy",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "iron_hymn_soloist",
+					"name": "Iron Hymn Soloist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 7
+				}
+			]
+		},
+		{
+			"sha": "518585c",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Voting mechanic (will of the council) + 4 vote/Council cards",
+			"body": "Engine: a `vote` effect + startVote/resolvePick('vote') subsystem — starting\nwith the controller, each player votes among options; the most-voted option's\neffects resolve (ties -> the card's `tie` option). The controller picks\n(new openPickModal 'vote' branch / AI auto-votes); opponents oppose. Resolving\na vote fires a `council` ongoing trigger. Registry 1116 -> 1117.\n\nCards: Magister of Worth (grace: draw-all 2 / condemnation|tie: destroy-all\nothers), Vannifar (Deathrattle: Ascendance draw / Decay wipe), Fexar\n(Council: draw + Dredge), Financial Fraudster (Council: 2 coins + Pay-2-Life\nLuck coin). Council cards now work since Council = a vote trigger (per user).\nNew paper_vote_test.mjs (20 checks); relaxed a seed-drifted Effigy assertion.\nSuite 296/296, fuzz clean (140 games). ~83 neutral remain. Art -> CDN;\ngallery ?v ->20260861a, wiki ?v ->20260895.",
+			"cards": [
+				{
+					"id": "magister_of_worth",
+					"name": "Magister of Worth",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 6
+				},
+				{
+					"id": "vannifar_evolved_enigma",
+					"name": "Vannifar, Evolved Enigma",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "fexar_wandering_emissary",
+					"name": "Fexar, Wandering Emissary",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "financial_fraudster",
+					"name": "Financial Fraudster",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "a7ad45f",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 9: Metallurgy + 6 more neutral cards",
+			"body": "Engine: Metallurgy — fire an `artifact-played` ongoing event when you play\nan artifact OR a Mech creature (core.js play sites). No new effect types.\nDiscovered Sanguine + Prowess are already keywords (KW.SANGUINE fully wired;\nProwess = temp-buff-self on spell-played), and buff-friendly-tribe exists.\n\nCards: Netherese Dungeoneer (Metallurgy: Advance + Constellation: Scry),\nFugitive Codebreaker (Charge/Prowess + Metallurgy Luck-Discover), Mystic\nSeraph (gain life -> +1/+1, add-counters like Ajani's Pridemate), Terragoros\n(Sanguine + Metallurgy buff Totems), Quagorox (Sanguine/Prowess + Cook&Loot),\nSangor (Sanguine/Rush + Swing:Planeshift + Connect:Enrich). A couple of\nlegendaries dropped an unbuilt Chromatic/Regenerate clause. New\npaper_wave9_test.mjs (25 checks); suite 295/295, fuzz clean (140 games).\n~87 neutral remain. Art -> CDN; gallery ?v ->20260860a, wiki ?v ->20260894.",
+			"cards": [
+				{
+					"id": "netherese_dungeoneer",
+					"name": "Netherese Dungeoneer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "fugitive_codebreaker",
+					"name": "Fugitive Codebreaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "mystic_seraph",
+					"name": "Mystic Seraph",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "terragoros",
+					"name": "Terragoros",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "quagorox",
+					"name": "Quagorox",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "sangor_dark_prince_of_neon_shadows",
+					"name": "Sangor, Dark Prince of Neon Shadows",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "6b6ec4c",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 8: 5 more neutral cards",
+			"body": "Poison Dart Frog + Thrashing Brontodon (Sacrifice this creature -> destroy\nan enemy Artifact/Enchantment, via the existing activated `sacrifice:true`\ncost + destroy-permanent), Mockingjay (Battlecry & Deathrattle: return a\nSong spell), Shadowglade Sprites (activated: return a Shadow spell),\nDedicated Dollmaker (Battlecry: destroy noncreature + activated summon Mech).\nEngine: return-from-graveyard now supports cardType:'spell' + a `school`\nfilter + maxCost (Song and Shadow are real spell schools). No new effect\ntypes. New paper_wave8_test.mjs (22 checks); suite 294/294, fuzz clean.\n~93 neutral remain. Art -> CDN; gallery ?v ->20260859a, wiki ?v ->20260893.",
+			"cards": [
+				{
+					"id": "poison_dart_frog",
+					"name": "Poison Dart Frog",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "thrashing_brontodon",
+					"name": "Thrashing Brontodon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "mockingjay",
+					"name": "Mockingjay",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "shadowglade_sprites",
+					"name": "Shadowglade Sprites",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "dedicated_dollmaker",
+					"name": "Dedicated Dollmaker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "b1a421a",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 7: 6 more neutral cards",
+			"body": "Wayward Grimscale (attacked -> Venomous via grant-keyword-self on\nself-attacked), Unscrupulous Agent (enemy discard), Mirkwood Hexmage\n(Spell Damage + Deathrattle Discover an Elf), Town-Razer Tyrant\n(destroy-permanent location), Hungry Turtle (Swing: Cook + Food-sac heal),\nVengeful Tracker (token-sac -> burn each opponent). Used the new\ndestroy-permanent + existing cook/self-attacked/grant-keyword-self. A few\nclauses simplified where unsupported (Nature-specific spell damage; \"sacrifice\nthis creature\" cost; exile-from-hand -> discard). New paper_wave7_test.mjs\n(25 checks); suite 293/293, fuzz clean (120 games). ~98 neutral remain.\nArt -> CDN; gallery ?v ->20260858a, wiki ?v ->20260892.",
+			"cards": [
+				{
+					"id": "wayward_grimscale",
+					"name": "Wayward Grimscale",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "unscrupulous_agent",
+					"name": "Unscrupulous Agent",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "mirkwood_hexmage",
+					"name": "Mirkwood Hexmage",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "town_razer_tyrant",
+					"name": "Town-Razer Tyrant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hungry_turtle",
+					"name": "Hungry Turtle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "vengeful_tracker",
+					"name": "Vengeful Tracker",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				}
+			]
+		},
+		{
+			"sha": "0596314",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper mechanics: add-random-card + destroy-permanent (+ 7 cards)",
+			"body": "Two new engine effects to unlock trickier paper cards:\n- add-random-card: a filtered random-card generator (cardType, tribe,\n  cardClass, rarity, school|schools[], maxCost, cost, otherClass, count).\n- destroy-permanent: destroys a random enemy Artifact/Enchantment/Location\n  (which:'artifact'|'enchantment'|'location'|'both') — the engine's `destroy`\n  only hits creatures, and these are mostly auto-resolving Deathrattles.\nRegistry 1114 -> 1116.\n\nImported 7 cards using them (+ existing Excavate/Luck/Discover-by-school):\nBearded Reedling, Whiteflame Spellweaver, Heartblossom Snapdragon, Green\nEyes Red Dragon, Cindervoid Raider, Icewind Deathlord, Upbeat Frontdrake.\n(Council-based cards skipped per request; Council is undefined in the Paper\nRules anyway.) New paper_wave6_test.mjs (27 checks); suite 292/292, fuzz\nclean (140 games). ~104 neutral remain. Art -> CDN; gallery ?v ->20260857a,\nwiki ?v ->20260891.",
+			"cards": [
+				{
+					"id": "bearded_reedling",
+					"name": "Bearded Reedling",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "whiteflame_spellweaver",
+					"name": "Whiteflame Spellweaver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "heartblossom_snapdragon",
+					"name": "Heartblossom Snapdragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 6
+				},
+				{
+					"id": "green_eyes_red_dragon",
+					"name": "Green Eyes Red Dragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "cindervoid_raider",
+					"name": "Cindervoid Raider",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "icewind_deathlord",
+					"name": "Icewind Deathlord",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "upbeat_frontdrake",
+					"name": "Upbeat Frontdrake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 1
+				}
+			]
+		},
+		{
+			"sha": "e331bfb",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 5: 8 more neutral cards",
+			"body": "Vizzerdrix (Battlecry: Excavate + Deathrattle: Scry 2), Turbo Toad\n(Artifacts cost 1 less + Beast buff), Crime Novelist (token-sac -> +1/+1 &\nCoin), Thorncaller (Deathrattle: add a Blood Gem via add-card), Huatli\n(Battlecry: tutor a Location), Lightspeed Enthusiast (Alliance: Luck +1/+1),\nGeistpack Alpha (Trample + Deathrattle: tutor a creature), Balor (Battlecry:\nreturn a creature from graveyard). Confirmed: excavate, tutor by cardType\n(location/creature), add-card by id (blood_gem), costMod. The remaining pool\nis harder (destroy only hits creatures; no sac-land/Metallurgy/Council), so\na few clauses were simplified to supported forms. New paper_wave5_test.mjs\n(32 checks); suite 291/291, fuzz clean. ~111 neutral remain. Art -> CDN;\ngallery ?v ->20260856a, wiki ?v ->20260890.",
+			"cards": [
+				{
+					"id": "vizzerdrix",
+					"name": "Vizzerdrix",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 7
+				},
+				{
+					"id": "turbo_toad",
+					"name": "Turbo Toad",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "crime_novelist",
+					"name": "Crime Novelist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "thorncaller",
+					"name": "Thorncaller",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "huatli_poet_of_unity",
+					"name": "Huatli, Poet of Unity",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "lightspeed_enthusiast",
+					"name": "Lightspeed Enthusiast",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 0
+				},
+				{
+					"id": "geistpack_alpha",
+					"name": "Geistpack Alpha",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "balor_shadow_magistrate",
+					"name": "Balor, Shadow Magistrate",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "9815d14",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 4: 10 more neutral cards",
+			"body": "Fourth wave, spanning spell-damage bodies, multi-trigger legends, and big\ndragons: Mako Marauder (Beast -> Scry), Zato Feywild Frog (Spell Damage +\nFrenzy draw + Spellburst), Helicoprion (Spell Damage + Deathrattle buff),\nTarot Forest Ritualist (Constellation draw + turn-end Luck Scry), Expedition\nSupplier (Alliance buff + Deathrattle Investigate), Sefris (friendly death ->\nAdvance), Sandshaper Drake (buff target + summon Elemental), Vrondiss\n(survive damage -> summon), Millenium Dragon (Spellburst return 2 Dragons),\nRed Eyes Obsidian Dragon (Gaze + Inspire Plunder + Deathrattle buff).\nConfirmed: static spell-damage on a creature, Spellburst (spell-played+once),\nfriendly-creature-died, buff target:'creature' (vs buff-target which prompts\na pick). New paper_wave4_test.mjs (44 checks). Relaxed two seed-drift\nassertions (magnetic Sparkbot withGift; Dart Trap random target). Suite\n290/290, fuzz clean (120 games). ~119 neutral remain. Art -> CDN; gallery\n?v ->20260855a, wiki ?v ->20260889.",
+			"cards": [
+				{
+					"id": "mako_marauder",
+					"name": "Mako Marauder",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 0
+				},
+				{
+					"id": "zato_feywild_frog",
+					"name": "Zato, Feywild Frog",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "helicoprion",
+					"name": "Helicoprion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "tarot_forest_ritualist",
+					"name": "Tarot Forest Ritualist",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "expedition_supplier",
+					"name": "Expedition Supplier",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "sefris_of_the_hidden_ways",
+					"name": "Sefris of the Hidden Ways",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "sandshaper_drake",
+					"name": "Sandshaper Drake",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "vrondiss_rage_of_ancients",
+					"name": "Vrondiss, Rage of Ancients",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "millenium_dragon",
+					"name": "Millenium Dragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "red_eyes_obsidian_dragon",
+					"name": "Red Eyes Obsidian Dragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 12
+				}
+			]
+		},
+		{
+			"sha": "af2cca5",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 3: 10 more neutral cards",
+			"body": "Third wave on confirmed mechanics: Master of Cruelties (Swing: all-heroes\nlose 10), Queen's Bay Paladin (Swing: return a Vampire), Admiral Brass\n(Battlecry Mill 4 + Swing return Pirate), Maxo Glitch Agent (Battlecry\nexile + Deathrattle Mill 6), Radiant Solar (Battlecry: Advance +\nLifesteal/Windfury), Wispdrinker Vampire (destroy Spirit + Alliance heal),\nTalion's Throneguard (Ward 1 + Windfury + bounce), Crosis the Purger\n(Ward 2 + Connect: enemy discard), Anuran Troubadour (Discover Frog +\nInspire Discover Otter), Fae-Glyph Snapdragon (Reborn/Lifesteal + draw).\nConfirmed shapes: damage target:'all-heroes', bounce, Connect=self-hit-player,\nward is a numeric field. New paper_wave3_test.mjs (41 checks); relaxed\nwave-2 Mistgrove assertion (buff-random-friendly picks either creature) after\nwave-3 seed-drift. Suite 289/289, fuzz clean (120 games). ~129 neutral remain.\nArt -> CDN; gallery ?v ->20260854a, wiki ?v ->20260888.",
+			"cards": [
+				{
+					"id": "master_of_cruelties",
+					"name": "Master of Cruelties",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "queen_s_bay_paladin",
+					"name": "Queen's Bay Paladin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "admiral_brass_unsinkable",
+					"name": "Admiral Brass, Unsinkable",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "maxo_glitch_agent",
+					"name": "Maxo, Glitch Agent",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "radiant_solar",
+					"name": "Radiant Solar",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 6
+				},
+				{
+					"id": "wispdrinker_vampire",
+					"name": "Wispdrinker Vampire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "talion_s_throneguard",
+					"name": "Talion's Throneguard",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "crosis_the_purger",
+					"name": "Crosis, the Purger",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "anuran_troubadour",
+					"name": "Anuran Troubadour",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 6
+				},
+				{
+					"id": "fae_glyph_snapdragon",
+					"name": "Fae-Glyph Snapdragon",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "34a26fb",
+			"date": "2026-08-21",
+			"kind": "cards",
+			"title": "Paper rescan wave 2: 10 more neutral cards",
+			"body": "Second wave from the ~149 remaining neutral designs, all built on confirmed\nmechanics: Nemesis of Reason (Swing: Mill 10), Elvis the Chronomancer\n(Inspire: Dredge + activated summon), Pouch of Coins (add 2 coins),\nEmerald Proto-Whelp (Battlecry: destroy target Faerie via destroy+tribe;\nend-of-turn +1 Atk), Lynxfury Rager (Frenzy: +2/+2), Mistgrove\nParliamentarian (Inspire: buff a friendly), Third Little Pig / Lushwater\nScion (buff summoned Beasts/Murlocs), Hakbal (Swing: Loot), Nocturnal\nGadgeteer (Swing: Dredge). A few clauses simplified to supported forms\n(dropped Harvest/Windfury-grant/Connect where no engine support exists).\nNew paper_wave2_test.mjs (39 checks); suite 288/288, fuzz clean (120 games).\n~139 neutral remain. Art -> CDN; gallery ?v ->20260853a, wiki ?v ->20260887.",
+			"cards": [
+				{
+					"id": "nemesis_of_reason",
+					"name": "Nemesis of Reason",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "elvis_the_chronomancer",
+					"name": "Elvis, the Chronomancer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "pouch_of_coins",
+					"name": "Pouch of Coins",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "emerald_proto_whelp",
+					"name": "Emerald Proto-Whelp",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "lynxfury_rager",
+					"name": "Lynxfury Rager",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "mistgrove_parliamentarian",
+					"name": "Mistgrove Parliamentarian",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "third_little_pig",
+					"name": "Third Little Pig",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "lushwater_scion",
+					"name": "Lushwater Scion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hakbal_of_the_surging_soul",
+					"name": "Hakbal of the Surging Soul",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "nocturnal_gadgeteer",
+					"name": "Nocturnal Gadgeteer",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "f48ac8a",
+			"date": "2026-08-20",
+			"kind": "cards",
+			"title": "Paper rescan wave 1: 11 neutral creatures + engine hardening",
+			"body": "Re-segmented the 250 missing paper designs by class_line (not the\nmisleading frame): ~160 are NEUTRAL collectibles, not 20. Imported wave 1\nof 11 varied neutral creatures with confirmed mechanics: Tenacious Pup,\nLushwater Mercenary, Blazing Skyfin, Geode Tortoise, Deepholm Geode,\nBoo Beloved Hero, Balthor the Defiled, Gutmourn, Ishkanah Broodmother,\nEarthshaker Dreadmaw, Godsire (battlecries/deathrattles/auras/activated\nabilities/exile/conditional/scaled draws + heal).\n\nEngine: heal now honours valuePer (scaled heals like \"gain life per Beast\");\nadded a re-entrancy guard to velen-exiled-replay (a pre-existing infinite\nrecursion that seed-drift from the new cards surfaced in fuzz). Relaxed the\nWandering Monster assertion to \"hero not damaged\" (heal-above-40 is legal,\nso a random summon can heal past 40). New paper_wave1_test.mjs (44 checks);\nsuite 287/287, fuzz clean (120 games). Art -> CDN; gallery ?v ->20260852a,\ndesignwiki ?v ->20260886.",
+			"cards": [
+				{
+					"id": "tenacious_pup",
+					"name": "Tenacious Pup",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "uncommon",
+					"cost": 1
+				},
+				{
+					"id": "lushwater_mercenary",
+					"name": "Lushwater Mercenary",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "blazing_skyfin",
+					"name": "Blazing Skyfin",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "geode_tortoise",
+					"name": "Geode Tortoise",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 2
+				},
+				{
+					"id": "deepholm_geode",
+					"name": "Deepholm Geode",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "boo_beloved_hero",
+					"name": "Boo, Beloved Hero",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "balthor_the_defiled",
+					"name": "Balthor the Defiled",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "gutmourn_pactbound_servant",
+					"name": "Gutmourn, Pactbound Servant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ishkanah_broodmother",
+					"name": "Ishkanah, Broodmother",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "earthshaker_dreadmaw",
+					"name": "Earthshaker Dreadmaw",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "godsire",
+					"name": "Godsire",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				}
+			]
+		},
+		{
+			"sha": "e731f89",
+			"date": "2026-08-20",
+			"kind": "cards",
+			"title": "Paper rescan: import 8 colorless cards + equip spell-damage fix",
+			"body": "Rescanned the 1,144 paper designs vs the live pool (250 still missing;\nmost are colored -> land pools). Imported 8 clean colorless collectibles:\n- Equipment (type:artifact + equip{}): Soulstealer Axe, Robe of Stars,\n  Vulshok Wand.\n- Artifacts: Key to the Archive ({T}: Loot + Luck draw), Creation Station\n  ({T}: 2 dmg + Alliance:Investigate), Polygraph Orb (Battlecry Mill 4 +\n  Investigate x2, {T}: enemy discard), Jar of Astral Flora (Arcane-cast ->\n  Scry 2).\n- Bedraggled Toucan (Battlecry: return a Beast from graveyard; Deathrattle:\n  Dredge).\nAlso fixed Farscape Fiend's empty keywords[] (Lifesteal/Hexproof never\ngranted — the keyword-banner import bug).\n\nEngine: equipment can now grant Spell Damage via equip.spellDamage (counted\nin staticValue only while attached) — enables Vulshok Wand; and\nreturn-from-graveyard gained a tribe filter. Simplified a few artifacts to\nsupported forms (no {T}{T}/mana-cost artifact abilities; no punisher/\"unless\"\neffect; no \"Ancient\" school). New paper_artifacts_test.mjs (50 checks).\nSuite 286/286, fuzz clean. Art extracted from the card images -> CDN;\ngallery ?v 20260850a->20260851a, designwiki ?v ->20260885.",
+			"cards": [
+				{
+					"id": "soulstealer_axe",
+					"name": "Soulstealer Axe",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "robe_of_stars",
+					"name": "Robe of Stars",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "key_to_the_archive",
+					"name": "Key to the Archive",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "creation_station",
+					"name": "Creation Station",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "polygraph_orb",
+					"name": "Polygraph Orb",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "jar_of_astral_flora",
+					"name": "Jar of Astral Flora",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "vulshok_wand",
+					"name": "Vulshok Wand",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "bedraggled_toucan",
+					"name": "Bedraggled Toucan",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				}
+			]
+		},
+		{
+			"sha": "7bacaa7",
+			"date": "2026-08-20",
+			"kind": "cards",
+			"title": "Add two collectible neutral enchantments + a dice subsystem",
+			"body": "Netherese Puzzle-Ward (6, Epic) and Thorough Investigation (3, Rare),\nbuilt faithfully to the printed text:\n- rollDie(state, pi, sides) in core.js emits a `dieRolled` event and fires\n  the `die-rolled` / `die-rolled-max` ongoing triggers; the planar die and\n  Snake Eyes now route through it (rng-identical). New `roll-scry` effect\n  (roll a die, Scry the result) for Focus Beam.\n- Netherese: Focus Beam (turn-start: roll-scry d6) + Perfect Illumination\n  (die-rolled-max: draw).\n- Thorough: \"Swing: Investigate\" via the friendly-attacks event; \"sacrifice\n  a Clue -> Advance\" via the existing token-sacrificed event + if:{cardId:\n  'clue_token'} (no new plumbing needed). Advance reuses the dungeon system.\n\nTests: enchantment_dice_clue_test.mjs (18 checks) covers dice->scry, die-max\ndraw (and no draw on non-max), Swing:Investigate, and clue-sac->Advance.\neffect_registry count 1113->1114 (roll-scry). Relaxed groupd_wave4's Trick\nTotem assertion to check coherence, not totem-survival — a random <=3 spell\nmay transform the totem, and adding collectible cards perturbs the seeded\npick. Suite 285/285. Art extracted from the card images, deployed to the CDN.",
+			"cards": [
+				{
+					"id": "netherese_puzzle_ward",
+					"name": "Netherese Puzzle-Ward",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "thorough_investigation",
+					"name": "Thorough Investigation",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
 		{
 			"sha": "f231ebe",
 			"date": "2026-08-20",

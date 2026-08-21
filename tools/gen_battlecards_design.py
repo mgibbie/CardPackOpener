@@ -19,6 +19,12 @@ DATA = os.path.join(HERE, "data")                   # bundled design-source data
 game = json.load(open(os.path.join(WEB, "battlecards", "cards.json"), encoding="utf-8"))
 pool_ids = {c["id"] for c in game["cards"]}
 slug = lambda n: re.sub(r"[^a-z0-9]+", "_", n.lower()).strip("_")
+# A source card counts as imported if its name-slug matches a live card's id OR
+# the slug of a live card's NAME — ids don't always equal slug(name) (e.g.
+# hex_kellans_shadow vs slug("Hex, Kellan's Shadow")=hex_kellan_s_shadow), and
+# without the name check such cards get perpetually re-listed as "awaiting work".
+pool_name_slugs = {slug(c["name"]) for c in game["cards"] if c.get("name")}
+imported = lambda n: slug(n) in pool_ids or slug(n) in pool_name_slugs
 
 out = {"generated": "run tools/gen_battlecards_design.py to refresh", "sections": []}
 
@@ -60,7 +66,7 @@ ocr = json.load(open(ocr_path, encoding="utf-8"))
 ocr_cards = ocr if isinstance(ocr, list) else list(ocr.values())
 for card in ocr_cards:
     name = (card.get("name") or "").strip()
-    if name and slug(name) not in pool_ids:
+    if name and not imported(name):
         paper_pending.append({"name": name})
 paper_pending = sorted({p["name"]: p for p in paper_pending}.values(), key=lambda x: x["name"])
 section("paper", "Paper Cards Awaiting Mechanics",
@@ -72,7 +78,7 @@ wa = json.load(open(os.path.join(DATA, "wubrg_assessment.json"), encoding="utf-8
 redesign, hard = [], []
 for color, rows in wa.items():
     for r in rows:
-        if slug(r["name"]) in pool_ids:
+        if imported(r["name"]):
             continue
         item = {"name": r["name"], "note": f"{color.title()} {r.get('cost', '?')} — {r['why']}"}
         (redesign if r["verdict"] == "REDESIGN" else hard if r["verdict"] == "HARD" else []).append(item)
@@ -90,7 +96,7 @@ for m in re.finditer(r"^\d+\. ([A-Z][\w' ]+?) \d+ \((.+?)\)\s*$", dex, re.M):
     group, name = m.group(1), m.group(2)
     if group in ("White", "Blue", "Black", "Red", "Green"):
         continue
-    if slug(name) not in pool_ids:
+    if not imported(name):
         custom.append({"name": name, "note": f"{group} pool"})
 custom = sorted({c["name"]: c for c in custom}.values(), key=lambda x: (x["note"], x["name"]))
 section("dex_pools", "Advanced-Land Theme Pools (Planned Card Dex)",
@@ -151,7 +157,7 @@ def hs_items(cards, note_fn, key_fn=lambda c: slug(c.get("name") or ""), presort
     for c in cards:
         name = (c.get("name") or "").strip()
         k = key_fn(c)
-        if not name or not k or k in pool_ids or k in seen:
+        if not name or not k or k in pool_ids or slug(name) in pool_name_slugs or k in seen:
             continue
         seen[k] = True
         items.append({"name": name, "note": note_fn(c).rstrip(" —").strip()})
