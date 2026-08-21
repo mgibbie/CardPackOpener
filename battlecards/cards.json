@@ -225747,6 +225747,158 @@
         ]
       },
       "description": "At the end of your turn, Luck: Add a random Dragon that costs (5) or less to your hand."
+    },
+    {
+      "id": "wayward_grimscale",
+      "name": "Wayward Grimscale",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 1,
+      "health": 5,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Murloc",
+      "ongoing": {
+        "on": "self-attacked",
+        "effects": [
+          {
+            "type": "grant-keyword-self",
+            "keyword": "venomous"
+          }
+        ]
+      },
+      "description": "Whenever this creature is attacked, it gains Venomous."
+    },
+    {
+      "id": "unscrupulous_agent",
+      "name": "Unscrupulous Agent",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Elf Detective",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: The enemy discards a card."
+    },
+    {
+      "id": "mirkwood_hexmage",
+      "name": "Mirkwood Hexmage",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Spirit Elf Mage",
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "cardType": "creature",
+          "tribe": "Elf"
+        }
+      ],
+      "description": "Spell Damage +1.\nDeathrattle: Discover an Elf."
+    },
+    {
+      "id": "town_razer_tyrant",
+      "name": "Town-Razer Tyrant",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Dragon",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-permanent",
+          "which": "location"
+        }
+      ],
+      "description": "Battlecry: Destroy an enemy Location."
+    },
+    {
+      "id": "hungry_turtle",
+      "name": "Hungry Turtle",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast",
+      "ongoings": [
+        {
+          "on": "self-attacks",
+          "effects": [
+            {
+              "type": "cook"
+            }
+          ]
+        },
+        {
+          "on": "token-sacrificed",
+          "if": {
+            "cardId": "food_token"
+          },
+          "effects": [
+            {
+              "type": "heal",
+              "target": "self",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "description": "Swing: Cook.\nWhenever you sacrifice a Food, gain 2 Life."
+    },
+    {
+      "id": "vengeful_tracker",
+      "name": "Vengeful Tracker",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Human Detective",
+      "ongoing": {
+        "on": "token-sacrificed",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "Whenever you sacrifice a token, each opponent loses 2 Life."
     }
   ]
 }
