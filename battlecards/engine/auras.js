@@ -154,6 +154,7 @@ export function staticValue(p, type) {
 	let v = 0;
 	for (const card of [...p.enchantments, ...p.artifacts, ...p.emblems, ...p.board, ...(p.weapon ? [p.weapon] : [])]) {
 		if (card.static?.type === type) v += card.static.value || 1;
+		if (card.statics) for (const s of card.statics) if (s.type === type) v += s.value || 1; // Xixira: multiple statics on one card
 		// an equipment grants its spell-damage (etc.) only while attached to a creature
 		if (type === 'spell-damage' && card.equip?.spellDamage && card.attachedTo) v += card.equip.spellDamage;
 	}

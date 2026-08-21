@@ -1510,7 +1510,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 	// lifesteal accounting (was the effects-loop prefix; only these two
 	// damage types ever used it)
 	const totalHurt = () => state.players.reduce((s, pl) => s + pl.board.reduce((b, c) => b + c.damage, 0) - pl.life - pl.armor, 0);
-	const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && state.players[pi].spellsLifestealThisTurn; // Omega Mind
+	const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && (state.players[pi].spellsLifestealThisTurn || (schoolOf(source) && staticValue(state.players[pi], 'spell-lifesteal-' + schoolOf(source)) > 0)); // Omega Mind; Xixira: your <school> spells have Lifesteal
 	const lsBefore = (e.lifesteal || spellLS) ? totalHurt() : null;
 	do {
 			if (e.requireElementalLastTurn && !state.players[pi].elementalLastTurn) continue; // Gyreworm
@@ -1721,7 +1721,7 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 	// lifesteal accounting (was the effects-loop prefix; only these two
 	// damage types ever used it)
 	const totalHurt = () => state.players.reduce((s, pl) => s + pl.board.reduce((b, c) => b + c.damage, 0) - pl.life - pl.armor, 0);
-	const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && state.players[pi].spellsLifestealThisTurn; // Omega Mind
+	const spellLS = source && (source.type === 'sorcery' || source.type === 'instant') && (state.players[pi].spellsLifestealThisTurn || (schoolOf(source) && staticValue(state.players[pi], 'spell-lifesteal-' + schoolOf(source)) > 0)); // Omega Mind; Xixira: your <school> spells have Lifesteal
 	const lsBefore = (e.lifesteal || spellLS) ? totalHurt() : null;
 	do {
 			// count independent hits of `value` at random members of the pool;

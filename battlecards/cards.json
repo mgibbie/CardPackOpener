@@ -227790,10 +227790,6 @@
       "rarity": "legendary",
       "set": "paper",
       "tribe": "Human Mage",
-      "static": {
-        "type": "spell-damage-Fire",
-        "value": 2
-      },
       "activated": [
         {
           "cost": 2,
@@ -227807,7 +227803,17 @@
           "text": "Give a creature Taunt."
         }
       ],
-      "description": "Fire Spell Damage +2.\n2: Target creature gains Taunt."
+      "description": "Fire Spell Damage +2.\nYour Shadow spells have Lifesteal.\n2: Target creature gains Taunt.",
+      "statics": [
+        {
+          "type": "spell-damage-Fire",
+          "value": 2
+        },
+        {
+          "type": "spell-lifesteal-Shadow",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "stormkeld_curator",
@@ -228830,6 +228836,47 @@
         ]
       },
       "description": "Deathtouch.\nAt the end of your turn, draw a card."
+    },
+    {
+      "id": "illusion_token",
+      "name": "Illusion",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 0,
+      "attack": 1,
+      "health": 1,
+      "rarity": "common",
+      "set": "paper",
+      "token": true,
+      "collectible": false,
+      "tribe": "Illusion",
+      "selfScale": {
+        "tribe": "Illusion",
+        "attack": 1
+      },
+      "description": "Has +1/+0 for each other Illusion you control."
+    },
+    {
+      "id": "minn_wily_illusionist",
+      "name": "Minn, Wily Illusionist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Gnome Wizard",
+      "ongoing": {
+        "on": "ponder",
+        "effects": [
+          {
+            "type": "summon",
+            "summonId": "illusion_token"
+          }
+        ]
+      },
+      "description": "Whenever you draw your second card each turn, create a 1/1 Illusion with \"+1/+0 for each other Illusion you control.\""
     }
   ]
 }
