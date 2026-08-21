@@ -1702,6 +1702,21 @@ registerTrigger('summon-dead-copy-no-keyword', (state, pi, e, ctx, triggering) =
 });
 
 
+registerTrigger('add-dead-copy', (state, pi, e, ctx, triggering) => {
+	do { {
+				// Veteran Ghoulcaller: add a copy of the creature that just died to your hand
+				const dead = ctx.dead; const base = dead && state.cardsById[dead.id];
+				const p = state.players[pi];
+				if (base && !p.eliminated && p.hand.length < MAX_HAND) {
+					const c = instantiate(base, pi); c.zone = 'hand'; p.hand.push(c);
+					emit(state, { type: 'conjure', player: pi, card: c, color: null });
+				}
+				break;
+			}
+	} while (false); // `break` ends this effect, exactly like the old case break
+});
+
+
 registerTrigger('attack-played-minion', (state, pi, e, ctx, triggering) => {
 	do { {
 				// Gankster: attack the minion the opponent just played

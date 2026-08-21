@@ -9,6 +9,11 @@ register('advance', ({ state, pi }) => { advance(state, pi); });
 // Voting ("will of the council"): each player votes among options; the winner resolves.
 register('vote', ({ state, pi, target, source }, e) => { startVote(state, pi, e.options, e.tie || 0, source); });
 register('harvest', ({ state, pi, source }) => { startHarvest(state, pi, source); });
+register('skip-enemy-turn', ({ state, pi, enemies }, e) => {
+	// Eon Frolicker: a target opponent skips their next turn (turn-advance honors p.skipTurns)
+	const o = (enemies || opponentsOf(state, pi))[0];
+	if (o != null) { state.players[o].skipTurns = (state.players[o].skipTurns || 0) + (e.value || 1); emit(state, { type: 'skipTurn', player: o }); }
+});
 register('untap-land', ({ state, pi }) => {
 	// Harvest option: untap one of your tapped lands (refunds a use this turn)
 	const l = state.players[pi].lands.find(x => x.tapped);

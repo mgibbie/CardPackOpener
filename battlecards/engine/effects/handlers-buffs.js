@@ -81,6 +81,15 @@ register('grant-medic', ({ state, pi, target, source, enemies, scaled, hm, pickE
 
 
 register('grant-ongoing', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// multi-target grants push to `ongoings` (so an existing single `ongoing` isn't clobbered);
+			// the single chosen-creature path keeps setting `ongoing` for existing callers.
+			if (e.target === 'friendly-others' || e.target === 'friendly-creatures') {
+				const targets = state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location'
+					&& (e.target !== 'friendly-others' || c !== source)
+					&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
+				for (const t of targets) t.ongoings = [...(t.ongoings || []), JSON.parse(JSON.stringify(e.ongoing))];
+				return;
+			}
 			const t = chosenCreature();
 			if (t) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
 });

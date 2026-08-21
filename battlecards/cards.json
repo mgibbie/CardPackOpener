@@ -227293,6 +227293,157 @@
         }
       ],
       "description": "Flip a coin: Heads: Create a 2/2 Mech with Rush. Tails: Add a random Mech or Beast to your hand."
+    },
+    {
+      "id": "antique_collector",
+      "name": "Antique Collector",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant-deathrattle",
+          "effects": [
+            {
+              "type": "excavate"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Each creature you control gains \"Deathrattle: Excavate\"."
+    },
+    {
+      "id": "clavileno_first_of_the_blessed",
+      "name": "Clavileño, First of the Blessed",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Vampire Cleric",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grant-deathrattle",
+            "target": "friendly-others",
+            "tribe": "Vampire",
+            "effects": [
+              {
+                "type": "summon",
+                "count": 1,
+                "attack": 4,
+                "health": 3,
+                "name": "Demon",
+                "tribe": "Demon",
+                "keywords": [
+                  "windfury"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Swing: Your other Vampires gain \"Deathrattle: Create a 4/3 Demon with Windfury.\""
+    },
+    {
+      "id": "merfolk_tunnel_guide",
+      "name": "Merfolk Tunnel-Guide",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Merfolk Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "target": "friendly-others",
+          "tribe": "Merfolk",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "grant-ongoing",
+          "target": "friendly-others",
+          "tribe": "Merfolk",
+          "ongoing": {
+            "on": "self-hit-player",
+            "effects": [
+              {
+                "type": "advance"
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Battlecry: Each other Merfolk you control gains +1/+1 & \"Connect: Advance.\""
+    },
+    {
+      "id": "veteran_ghoulcaller",
+      "name": "Veteran Ghoulcaller",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Human Rogue",
+      "ongoing": {
+        "on": "creature-died",
+        "if": {
+          "tribe": "Undead"
+        },
+        "effects": [
+          {
+            "type": "add-dead-copy"
+          }
+        ]
+      },
+      "description": "Whenever an Undead dies, add a copy of it to your hand."
+    },
+    {
+      "id": "eon_frolicker",
+      "name": "Eon Frolicker",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Elemental Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "skip-enemy-turn"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "planeshift"
+        }
+      ],
+      "description": "Battlecry: Target opponent skips their next turn.\nDeathrattle: Planeshift."
     }
   ]
 }
