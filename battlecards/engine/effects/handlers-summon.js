@@ -1186,6 +1186,25 @@ register('blessing-wind', ({ state, pi, target, source, enemies, scaled, hm, pic
 } });
 
 
+register('transform-same-cost', ({ state, pi, chosenCreature }, e) => { {
+			// Tabaxi Transmogrifier: transform the chosen creature (either side) into a
+			// random collectible creature of equal Mana Cost. Mirrors blessing-wind's
+			// pool build but keyed to the target's controller and exact cost.
+			const t = chosenCreature();
+			if (!t || isDead(t) || t.type === 'location') return;
+			const opts = Object.values(state.cardsById).filter(dd => dd.type === 'creature' && (dd.cost || 0) === (t.cost || 0) && !dd.token && dd.collectible !== false && !dd.companion && !dd.commander && !(dd.colors && dd.colors.length));
+			if (!opts.length) return;
+			const owner = state.players[t.controller];
+			const bi = owner.board.indexOf(t);
+			if (bi < 0) return;
+			const nd = instantiate(opts[Math.floor(state.rng() * opts.length)], t.controller);
+			nd.zone = 'board'; nd.sick = t.sick;
+			owner.board[bi] = nd; t.zone = 'gone';
+			emit(state, { type: 'transformed', uid: t.uid, player: t.controller, from: t.name, card: nd });
+			recomputeAuras(state);
+} });
+
+
 register('blood-fighter-summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Lo'Gosh trio: summon a Blood Fighter from your hand with +5/+5 and a rider
 			const p = state.players[pi];

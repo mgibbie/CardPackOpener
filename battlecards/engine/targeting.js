@@ -80,6 +80,7 @@ const CHOSEN = {
 	'bounce-and-buff': { 'friendly-creature': 'friendly-creature' },
 	'copy-health': { 'friendly-creature': 'friendly-creature' },
 	'transform-target-into-source': { 'friendly-creature': 'friendly-creature' },
+	'transform-same-cost': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' }, // Tabaxi Transmogrifier
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },

@@ -91,14 +91,14 @@ register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) 
 // creatures, and these are mostly auto-resolving Deathrattles, so this removes a RANDOM
 // matching enemy non-creature permanent (paper: Heartblossom/Green Eyes/Cindervoid).
 register('destroy-permanent', ({ state, pi, target, source, enemies, scaled }, e) => {
-			const which = e.which || 'both'; // 'artifact' | 'enchantment' | 'location' | 'both'
+			const which = e.which || 'both'; // 'artifact' | 'enchantment' | 'location' | 'both' | 'any'
 			const owners = e.mine ? [pi] : opponentsOf(state, pi);
 			const cands = [];
 			for (const o of owners) {
 				const pp = state.players[o];
-				if (which === 'artifact' || which === 'both') for (const c of pp.artifacts) cands.push([o, c, 'artifacts']);
-				if (which === 'enchantment' || which === 'both') for (const c of pp.enchantments) cands.push([o, c, 'enchantments']);
-				if (which === 'location') for (const c of pp.board) if (c.type === 'location') cands.push([o, c, 'board']);
+				if (which === 'artifact' || which === 'both' || which === 'any') for (const c of pp.artifacts) cands.push([o, c, 'artifacts']);
+				if (which === 'enchantment' || which === 'both' || which === 'any') for (const c of pp.enchantments) cands.push([o, c, 'enchantments']);
+				if (which === 'location' || which === 'any') for (const c of pp.board) if (c.type === 'location') cands.push([o, c, 'board']);
 			}
 			for (let k = 0; k < (e.count || 1) && cands.length; k++) {
 				const idx = Math.floor(state.rng() * cands.length);

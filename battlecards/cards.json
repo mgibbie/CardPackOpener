@@ -226607,6 +226607,204 @@
         }
       ],
       "description": "Battlecry: Add four Blood Gems to your hand.\nDeathrattle: Discover a creature."
+    },
+    {
+      "id": "eagill",
+      "name": "Eagill",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 7,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast Murloc",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2,
+          "health": 3,
+          "excludeSelf": true
+        },
+        {
+          "type": "buff-random-hand",
+          "attack": 2,
+          "health": 3
+        }
+      ],
+      "description": "Battlecry: Another random creature you control & a random creature in your hand each gain +2/+3."
+    },
+    {
+      "id": "morwynn_eagill",
+      "name": "Morwynn Eagill",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 7,
+      "health": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast Murloc",
+      "keywords": [
+        "rush",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "buff-random-friendly",
+          "attack": 2,
+          "health": 3,
+          "excludeSelf": true
+        },
+        {
+          "type": "buff-random-hand",
+          "attack": 2,
+          "health": 3
+        }
+      ],
+      "description": "Rush.\nDeathrattle: Another random creature you control & a random creature in your hand each gain +2/+3."
+    },
+    {
+      "id": "gold_morwynn_eagill",
+      "name": "Gold Morwynn Eagill",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 8,
+      "attack": 14,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Murloc",
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "buff-random-friendly",
+            "attack": 2,
+            "health": 3,
+            "excludeSelf": true
+          },
+          {
+            "type": "buff-random-hand",
+            "attack": 2,
+            "health": 3
+          }
+        ]
+      },
+      "description": "Inspire: Another random creature you control & a random creature in your hand each gain +2/+3."
+    },
+    {
+      "id": "luto_exalted_rebel",
+      "name": "Luto, Exalted Rebel",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 9,
+      "attack": 4,
+      "health": 15,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Paladin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "target": "creature",
+          "attack": 0,
+          "health": 0,
+          "grant": "divine_shield"
+        },
+        {
+          "type": "grant",
+          "target": "creature",
+          "keyword": "elusive"
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "plunder",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Battlecry: Target creature gains Divine Shield & Hexproof.\nInspire: Plunder."
+    },
+    {
+      "id": "tabaxi_transmogrifier",
+      "name": "Tabaxi Transmogrifier",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 8,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Tabaxi Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "transform-same-cost",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Transform target creature into a random creature with an equal Mana Cost."
+    },
+    {
+      "id": "duskana_the_rage_mother",
+      "name": "Duskana, the Rage Mother",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 0,
+          "valuePer": "twotwo-you-control"
+        }
+      ],
+      "description": "Battlecry: Draw a card for each 2/2 creature you control.\nSwing: Create a 2/2 Beast.\nFrenzy: Destroy a Non-Creature permanent.",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Beast",
+            "tribe": "Beast"
+          }
+        ]
+      },
+      "ongoings": [
+        {
+          "on": "self-damaged",
+          "once": true,
+          "survives": true,
+          "effects": [
+            {
+              "type": "destroy-permanent",
+              "which": "any"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
