@@ -228671,6 +228671,60 @@
         }
       ],
       "description": "Liquid. (Costs X — all your remaining Mana — and enters as an X/X.)"
+    },
+    {
+      "id": "pathfinder_axejaw",
+      "name": "Pathfinder Axejaw",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast Explorer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "copy-enemy-location"
+        }
+      ],
+      "description": "Battlecry: Add a copy of an enemy Location to your hand."
+    },
+    {
+      "id": "mothwood_mystic_owl",
+      "name": "Mothwood Mystic Owl",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Faerie Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "blink",
+          "target": "creature"
+        }
+      ],
+      "adventure": {
+        "name": "Fey Subterfuge",
+        "cost": 5,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "bounce",
+            "target": "creature"
+          }
+        ]
+      },
+      "description": "Battlecry: Flicker a creature.\nAdventure — Fey Subterfuge (5): Bounce target creature."
     }
   ]
 }

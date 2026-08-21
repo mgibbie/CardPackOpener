@@ -224,6 +224,19 @@ register('copy-friendly-location', ({ state, pi, target, source, enemies, scaled
 } });
 
 
+register('copy-enemy-location', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Pathfinder Axejaw: add a copy of an enemy Location to your hand
+			const p = state.players[pi];
+			const locs = [];
+			for (const o of (enemies || opponentsOf(state, pi))) for (const c of state.players[o].board) if (c.type === 'location' && !isDead(c) && state.cardsById[c.id]) locs.push(c);
+			if (locs.length && p.hand.length < MAX_HAND) {
+				const src = locs[Math.floor(state.rng() * locs.length)];
+				const card = instantiate(state.cardsById[src.id], pi); card.zone = 'hand'; p.hand.push(card);
+				emit(state, { type: 'conjure', player: pi, card, color: null });
+			}
+} });
+
+
 register('copy-highest-spell', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Audio Splitter: add a copy of the highest-Cost spell in your hand
 			const p = state.players[pi];
