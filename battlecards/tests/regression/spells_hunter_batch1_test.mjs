@@ -98,8 +98,9 @@ for (const id of ['dart_trap', 'ice_trap', 'rat_trap', 'bait_and_switch', 'emerg
 	st.current = 1;
 	const attacker = enemyBoard(st, 4, 6);
 	E.attack(st, 1, attacker.uid, { type: 'hero', player: 0 });
-	// the summoned 3-Cost minion becomes the new target — the hero takes no damage
-	ok('Wandering Monster fired and protected the hero (attack redirected)', st.players[0].secrets.length === 0 && st.players[0].life === 40, [st.players[0].secrets.length, st.players[0].life]);
+	// the summoned 3-Cost minion becomes the new target — the hero takes no damage (life not
+	// reduced below its starting 40; a random summon may incidentally heal above 40, which is legal)
+	ok('Wandering Monster fired and protected the hero (attack redirected)', st.players[0].secrets.length === 0 && st.players[0].life >= 40, [st.players[0].secrets.length, st.players[0].life]);
 }
 
 // Motion Denied (Secret): opponent's 3rd card -> 6 to enemy hero

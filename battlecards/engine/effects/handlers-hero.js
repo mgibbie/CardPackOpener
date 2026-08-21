@@ -426,7 +426,7 @@ register('equip-random', ({ state, pi, target, source, enemies, scaled, hm, pick
 
 
 register('heal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : e.valueFromHeroDamage ? (state.players[pi].heroDamageTakenThisTurn || 0) : boost(e.value); // Spice Bread Baker; Healthstone: heal all damage taken this turn
+			let v = e.value === "X" ? (source?.xValue || 0) : e.valueFromHandSize ? state.players[pi].hand.length : e.valueFromHeroDamage ? (state.players[pi].heroDamageTakenThisTurn || 0) : e.valuePer ? scaled(e) : boost(e.value); // Spice Bread Baker; Healthstone: heal all damage taken this turn; Tenacious Pup: 1 per Beast (valuePer)
 			if (v > 0) v += state.players[pi].healBonusGame || 0; // Cleansing Cleric: your heals restore 2 more this game
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power healing
 			// Auchenai Soulpriest: your healing deals damage instead

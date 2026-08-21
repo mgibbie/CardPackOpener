@@ -1767,17 +1767,23 @@ register('deathwing-wipe', ({ state, pi, target, source, enemies, scaled, hm, pi
 
 register('velen-exiled-replay', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
-			// Velen, Leader of the Exiled: replay Battlecries + Deathrattles of played Draenei
-			const p = state.players[pi];
-			for (const [id, n] of Object.entries(p.playedCountById || {})) {
-				const def = state.cardsById[id];
-				if (!def || !(def.tribe || '').includes('Draenei') || id === (source && source.id)) continue;
-				for (let k = 0; k < n; k++) {
-					if (def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), null, source);
-					if (def.deathrattle) execEffects(state, pi, JSON.parse(JSON.stringify(def.deathrattle)), null, source);
-					if (state.over) return ABORT; // was: exit execEffects entirely
+			// Velen, Leader of the Exiled: replay Battlecries + Deathrattles of played Draenei.
+			// Re-entrancy guard: a replayed Draenei effect can re-trigger Velen (another Velen
+			// in play, a hero-power loop, etc.) -> unbounded recursion / stack overflow.
+			if (state._velenReplaying) break;
+			state._velenReplaying = true;
+			try {
+				const p = state.players[pi];
+				for (const [id, n] of Object.entries(p.playedCountById || {})) {
+					const def = state.cardsById[id];
+					if (!def || !(def.tribe || '').includes('Draenei') || id === (source && source.id)) continue;
+					for (let k = 0; k < n; k++) {
+						if (def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), null, source);
+						if (def.deathrattle) execEffects(state, pi, JSON.parse(JSON.stringify(def.deathrattle)), null, source);
+						if (state.over) return ABORT; // was: exit execEffects entirely
+					}
 				}
-			}
+			} finally { state._velenReplaying = false; }
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
 

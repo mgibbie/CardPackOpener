@@ -224192,6 +224192,313 @@
         }
       ],
       "description": "Battlecry: Return a Beast from your graveyard to your hand.\nDeathrattle: Dredge."
+    },
+    {
+      "id": "tenacious_pup",
+      "name": "Tenacious Pup",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 1,
+      "health": 2,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "target": "self",
+          "value": 0,
+          "valuePer": "beasts-you-control"
+        }
+      ],
+      "description": "Battlecry: Gain Life equal to the number of Beasts you control."
+    },
+    {
+      "id": "lushwater_mercenary",
+      "name": "Lushwater Mercenary",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 2,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Murloc Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlOtherTribe": "Murloc"
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you control another Murloc, gain +1/+1."
+    },
+    {
+      "id": "blazing_skyfin",
+      "name": "Blazing Skyfin",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Murloc Dragon",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "keyword": "battlecry"
+        },
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "After you play a Battlecry creature, gain +1/+1."
+    },
+    {
+      "id": "geode_tortoise",
+      "name": "Geode Tortoise",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Elemental Beast",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "artifact"
+        }
+      ],
+      "description": "Deathrattle: Return an Artifact from your graveyard to your hand."
+    },
+    {
+      "id": "deepholm_geode",
+      "name": "Deepholm Geode",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Elemental",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the end of your turn, deal 2 damage to each opponent and each enemy creature."
+    },
+    {
+      "id": "boo_beloved_hero",
+      "name": "Boo, Beloved Hero",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 3,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "exile",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Exile target creature."
+    },
+    {
+      "id": "balthor_the_defiled",
+      "name": "Balthor the Defiled",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Undead Dwarf",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Undead"
+      },
+      "activated": [
+        {
+          "cost": 4,
+          "effects": [
+            {
+              "type": "return-from-graveyard",
+              "cardType": "creature",
+              "tribe": "Undead"
+            }
+          ],
+          "text": "Return an Undead from your graveyard to your hand."
+        }
+      ],
+      "description": "Your other Undead have +1/+1.\n4: Return an Undead from your graveyard to your hand."
+    },
+    {
+      "id": "gutmourn_pactbound_servant",
+      "name": "Gutmourn, Pactbound Servant",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 1,
+      "health": 3,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Demon Warlock",
+      "keywords": [
+        "windfury",
+        "deathtouch",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "enemy-discard",
+          "value": 1
+        },
+        {
+          "type": "discard-random",
+          "count": 1
+        }
+      ],
+      "description": "Windfury & Deathtouch.\nDeathrattle: Each player discards a card."
+    },
+    {
+      "id": "ishkanah_broodmother",
+      "name": "Ishkanah, Broodmother",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "taunt",
+        "poisonous"
+      ],
+      "aura": {
+        "attack": 2,
+        "health": 2,
+        "others": true,
+        "tribe": "Beast"
+      },
+      "activated": [
+        {
+          "cost": 3,
+          "effects": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Beast"
+            }
+          ],
+          "text": "Discover a Beast."
+        }
+      ],
+      "description": "Taunt & Poisonous.\nYour other Beasts have +2/+2.\n3: Discover a Beast."
+    },
+    {
+      "id": "earthshaker_dreadmaw",
+      "name": "Earthshaker Dreadmaw",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 0,
+          "valuePer": "beasts-you-control"
+        }
+      ],
+      "description": "Battlecry: Draw a card for each Beast you control."
+    },
+    {
+      "id": "godsire",
+      "name": "Godsire",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Horror God",
+      "keywords": [
+        "elusive"
+      ],
+      "activated": [
+        {
+          "cost": 8,
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 8,
+              "health": 8,
+              "name": "Beast Horror",
+              "tribe": "Beast Horror",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ],
+          "text": "Create an 8/8 Beast Horror with Taunt."
+        }
+      ],
+      "description": "Hexproof.\n8: Create an 8/8 Beast Horror with Taunt."
     }
   ]
 }
