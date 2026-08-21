@@ -1548,7 +1548,7 @@ register('return-from-graveyard', ({ state, pi }, e) => {
 	if (p.hand.length >= MAX_HAND) return;
 	const match = c => e.equipOrWeapon
 		? (c.type === 'weapon' || (c.type === 'artifact' && c.equip))
-		: (!e.cardType || c.type === e.cardType);
+		: (!e.cardType || c.type === e.cardType) && (!e.tribe || (c.tribe || '').includes(e.tribe));
 	const pool = p.graveyard.filter(match);
 	if (!pool.length) return;
 	const c = pool[Math.floor(state.rng() * pool.length)];

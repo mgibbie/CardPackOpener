@@ -60154,7 +60154,11 @@
       "attack": 3,
       "health": 2,
       "tribe": "Faerie Demon Beast",
-      "tradeable": true
+      "tradeable": true,
+      "keywords": [
+        "lifesteal",
+        "elusive"
+      ]
     },
     {
       "id": "mistweaver_champion",
@@ -223996,6 +224000,198 @@
         }
       ],
       "description": "Creatures you control have \"Swing: Investigate.\"\nWhenever you sacrifice a Clue token, you may Advance."
+    },
+    {
+      "id": "soulstealer_axe",
+      "name": "Soulstealer Axe",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "equip": {
+        "cost": 1,
+        "keywords": [
+          "trample",
+          "lifesteal"
+        ]
+      },
+      "description": "Equipped creature has Trample & Lifesteal.\nEquip (1)."
+    },
+    {
+      "id": "robe_of_stars",
+      "name": "Robe of Stars",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 2,
+      "rarity": "rare",
+      "set": "paper",
+      "equip": {
+        "cost": 1,
+        "attack": 0,
+        "health": 3,
+        "keywords": [
+          "elusive"
+        ]
+      },
+      "description": "Equipped creature has +0/+3 & Hexproof.\nEquip (1)."
+    },
+    {
+      "id": "key_to_the_archive",
+      "name": "Key to the Archive",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "loot",
+            "value": 1
+          },
+          {
+            "type": "luck",
+            "effects": [
+              {
+                "type": "draw",
+                "value": 2
+              }
+            ]
+          }
+        ],
+        "text": "Loot. Then Luck: draw 2 cards."
+      },
+      "description": "{T}: Loot. Then Luck: draw 2 cards."
+    },
+    {
+      "id": "creation_station",
+      "name": "Creation Station",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ],
+        "text": "Deal 2 damage to any target."
+      },
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "investigate"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to any target.\nAlliance: Investigate."
+    },
+    {
+      "id": "polygraph_orb",
+      "name": "Polygraph Orb",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "effects": [
+        {
+          "type": "mill",
+          "value": 4
+        },
+        {
+          "type": "investigate"
+        },
+        {
+          "type": "investigate"
+        }
+      ],
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "value": 1
+          }
+        ],
+        "text": "Each opponent discards a card."
+      },
+      "description": "Battlecry: Mill 4 & Investigate twice.\n{T}: Each opponent discards a card."
+    },
+    {
+      "id": "jar_of_astral_flora",
+      "name": "Jar of Astral Flora",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "rare",
+      "set": "paper",
+      "ongoing": {
+        "on": "spell-played",
+        "if": {
+          "school": "Arcane"
+        },
+        "effects": [
+          {
+            "type": "scry",
+            "value": 2
+          }
+        ]
+      },
+      "description": "Whenever you cast an Arcane spell, Scry 2."
+    },
+    {
+      "id": "vulshok_wand",
+      "name": "Vulshok Wand",
+      "type": "artifact",
+      "cardClass": "neutral",
+      "cost": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "equip": {
+        "cost": 2,
+        "attack": 0,
+        "health": 3,
+        "keywords": [
+          "elusive"
+        ],
+        "spellDamage": 2
+      },
+      "description": "Equipped creature has +0/+3, Hexproof & Spell Damage +2.\nEquip (2)."
+    },
+    {
+      "id": "bedraggled_toucan",
+      "name": "Bedraggled Toucan",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "return-from-graveyard",
+          "cardType": "creature",
+          "tribe": "Beast"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "dredge"
+        }
+      ],
+      "description": "Battlecry: Return a Beast from your graveyard to your hand.\nDeathrattle: Dredge."
     }
   ]
 }
