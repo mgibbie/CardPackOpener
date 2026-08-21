@@ -58,8 +58,10 @@ let pass = 0, fail = 0; const ok = (l, c) => { if (c) pass++; else { fail++; con
   const lg = give(s, 0, 'living_garden'); E.playCard(s, 0, lg.uid, null, null, 0);
   s.players[0].board = s.players[0].board.filter(x => x.uid === ally.uid); // only one evolve candidate
   E.useHeroPower(s, 0, s.players[0].heroPowers[0].uid, null, null);
-  const evolved = s.players[0].board[0];
-  ok('wind blessing evolved the minion +1 cost', !!evolved && evolved.id !== 'bone_baron' && (byId[evolved.id]?.cost || 0) === baseCost + 1);
+  // The transform picks a random cost-(base+1) creature; some (e.g. Void Crusher's Inspire)
+  // self-destruct on the same hero-power event that created them, so scan board+graveyard.
+  const evolved = [...s.players[0].board, ...s.players[0].graveyard].find(x => x.id !== 'bone_baron' && (byId[x.id]?.cost || 0) === baseCost + 1);
+  ok('wind blessing evolved the minion +1 cost', !!evolved && !s.players[0].board.some(x => x.id === 'bone_baron'));
 }
 // Imbue as paladin: Blessing of the Dragon shuffles portals; portal summons on draw
 {

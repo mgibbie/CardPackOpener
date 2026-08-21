@@ -226399,6 +226399,214 @@
         ]
       },
       "description": "Pay 2 Life: Luck: Add a coin to your hand.\nCouncil: Add two coins to your hand."
+    },
+    {
+      "id": "drover_of_the_swine",
+      "name": "Drover of the Swine",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Human Warlock",
+      "keywords": [
+        "battlecry"
+      ],
+      "choices": [
+        {
+          "text": "Add three Beasts to your hand.",
+          "effects": [
+            {
+              "type": "add-random-card",
+              "cardType": "creature",
+              "tribe": "Beast",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "text": "Return three Beasts from your graveyard to your hand.",
+          "effects": [
+            {
+              "type": "return-from-graveyard",
+              "cardType": "creature",
+              "tribe": "Beast"
+            },
+            {
+              "type": "return-from-graveyard",
+              "cardType": "creature",
+              "tribe": "Beast"
+            },
+            {
+              "type": "return-from-graveyard",
+              "cardType": "creature",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: Choose One - Add three Beasts to your hand; or Return three Beasts from your graveyard."
+    },
+    {
+      "id": "lemon_magician_girl",
+      "name": "Lemon Magician Girl",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 4,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Wizard",
+      "ward": 2,
+      "static": {
+        "type": "spell-damage",
+        "value": 1
+      },
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "tutor",
+          "cardType": "spell",
+          "school": "Holy"
+        }
+      ],
+      "description": "Ward 2 & Spell Damage +1.\nDeathrattle: Tutor a Holy spell."
+    },
+    {
+      "id": "zock_galactic_wanderer",
+      "name": "Zock, Galactic Wanderer",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 5,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Mech Ranger Knight",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "planeshift"
+        },
+        {
+          "type": "plunder",
+          "value": 1
+        }
+      ],
+      "ongoing": {
+        "on": "hero-power-used",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Battlecry: Planeshift & Plunder.\nInspire: Draw a card."
+    },
+    {
+      "id": "giant_ambush_beetle",
+      "name": "Giant Ambush Beetle",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 4,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "charge",
+        "static",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant-target",
+          "keyword": "taunt"
+        }
+      ],
+      "description": "Charge & Static.\nBattlecry: A creature gains Taunt."
+    },
+    {
+      "id": "esolen_beastmaster_prodigy",
+      "name": "Esolen, Beastmaster Prodigy",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 2,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Elf Druid",
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Beast",
+        "amount": -1,
+        "scope": "own"
+      },
+      "activated": [
+        {
+          "cost": 3,
+          "effects": [
+            {
+              "type": "discover",
+              "cardType": "creature",
+              "tribe": "Beast"
+            }
+          ],
+          "text": "Discover a Beast."
+        }
+      ],
+      "description": "Your Beasts cost (1) less.\n3: Discover a Beast."
+    },
+    {
+      "id": "iron_hymn_soloist",
+      "name": "Iron Hymn Soloist",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 7,
+      "attack": 3,
+      "health": 4,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Ropteran Bard",
+      "keywords": [
+        "battlecry",
+        "deathrattle"
+      ],
+      "effects": [
+        {
+          "type": "add-card",
+          "id": "blood_gem"
+        },
+        {
+          "type": "add-card",
+          "id": "blood_gem"
+        },
+        {
+          "type": "add-card",
+          "id": "blood_gem"
+        },
+        {
+          "type": "add-card",
+          "id": "blood_gem"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "discover",
+          "cardType": "creature"
+        }
+      ],
+      "description": "Battlecry: Add four Blood Gems to your hand.\nDeathrattle: Discover a creature."
     }
   ]
 }
