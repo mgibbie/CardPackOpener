@@ -9,6 +9,14 @@ register('advance', ({ state, pi }) => { advance(state, pi); });
 // Voting ("will of the council"): each player votes among options; the winner resolves.
 register('vote', ({ state, pi, target, source }, e) => { startVote(state, pi, e.options, e.tie || 0, source); });
 register('harvest', ({ state, pi, source }) => { startHarvest(state, pi, source); });
+register('sac-land', ({ state, pi, enemies }, e) => {
+	// "Each player sacrifices a land" (or just the enemy / you, via e.who)
+	const who = e.who === 'enemy' ? (enemies || opponentsOf(state, pi)) : e.who === 'self' ? [pi] : state.players.map((_, i) => i);
+	for (const s of who) {
+		const pl = state.players[s];
+		if (pl && pl.lands && pl.lands.length) { const [land] = pl.lands.splice(pl.lands.length - 1, 1); emit(state, { type: 'landSacrificed', player: s, card: land }); }
+	}
+});
 register('skip-enemy-turn', ({ state, pi, enemies }, e) => {
 	// Eon Frolicker: a target opponent skips their next turn (turn-advance honors p.skipTurns)
 	const o = (enemies || opponentsOf(state, pi))[0];
@@ -2044,6 +2052,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			const p = state.players[pi];
 			let ok = true;
 			if (e.if.controlTribe) ok = e.if.controlTribe.split('|').some(tr => p.board.some(c => !isDead(c) && (c.tribe || '').includes(tr))); // Gutwrencher Oni: a Devil, Ogre or Horror
+			else if (e.if.party != null) { const toks = new Set(); for (const c of p.board) if (!isDead(c) && c.type === 'creature') for (const tk of (c.tribe || '').split(/\s+/).filter(Boolean)) toks.add(tk); ok = toks.size >= e.if.party; } // Party: N+ distinct creature classes/tribes on your board
 			else if (e.if.controlKeyword) ok = p.board.some(c => !isDead(c) && c.type !== 'location' && has(c, e.if.controlKeyword)); // King's Defender: a minion with Taunt
 			else if (e.if.lastCardRune) ok = !!(p.lastPlayedRunes && (p.lastPlayedRunes[e.if.lastCardRune] || 0) > 0); // Grotesque Runeblade: the last card you played had an Unholy/Blood rune
 			else if (e.if.minOtherCreatures != null) ok = p.board.filter(c => !isDead(c) && c !== source && c.type !== 'location').length >= e.if.minOtherCreatures; // Nesting Roc

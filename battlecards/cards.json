@@ -227528,6 +227528,132 @@
         ]
       },
       "description": "Your other creatures have \"Deathrattle: Plunder.\""
+    },
+    {
+      "id": "jubilant_jamfrog",
+      "name": "Jubilant Jamfrog",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 3,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "lifesteal",
+        "poisonous",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mill",
+          "value": 3
+        }
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "regenerate",
+            "value": 2
+          },
+          {
+            "type": "heal",
+            "target": "self",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Lifesteal & Poisonous.\nBattlecry: The opponent exiles 3 cards from the top of their deck.\nRegenerate 2 & Medic 1: at the end of your turn, restore 2 Health to this and 1 to your hero."
+    },
+    {
+      "id": "gitrog_horror_of_zhava",
+      "name": "Gitrog, Horror of Zhava",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 6,
+      "health": 6,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast Horror",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "sac-land"
+        }
+      ],
+      "description": "Deathrattle: Each player sacrifices a land."
+    },
+    {
+      "id": "cerise_slayer_of_fear",
+      "name": "Cerise, Slayer of Fear",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Cleric Knight",
+      "keywords": [
+        "first_strike",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "controlTribe": "Faerie|Angel"
+            },
+            "then": [
+              {
+                "type": "destroy-random",
+                "tribe": "Demon|Devil|Phyrexian"
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Swift & Lifesteal.\nAt the end of your turn, if you control a Faerie or an Angel, destroy an enemy Demon, Devil or Phyrexian."
+    },
+    {
+      "id": "angel_of_unity",
+      "name": "Angel of Unity",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Angel Cleric",
+      "keywords": [
+        "lifesteal",
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "party": 4
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
+      ],
+      "description": "Lifesteal & Windfury.\nParty: Gain +3/+3. (If you control 4+ creature classes.)"
     }
   ]
 }

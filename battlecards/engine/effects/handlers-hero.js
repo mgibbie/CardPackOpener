@@ -457,6 +457,11 @@ register('heal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 } });
 
 
+register('regenerate', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Regenerate N: the source creature restores N of its own Health (e.g. at your turn-end)
+			if (source && source.zone === 'board' && !isDead(source)) healCreature(source, e.value || 1);
+});
+
 register('consume-shields', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Blood Knight: pop every Divine Shield in play, grow per shield

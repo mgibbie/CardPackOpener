@@ -1146,7 +1146,8 @@ register('destroy-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			for (let n = 0; n < times; n++) {
 				const pool = [];
 				for (const o of enemies) for (const c of state.players[o].board) {
-					if (!isDead(c) && (e.maxAttack == null || c.attack <= e.maxAttack)) pool.push(c);
+					if (!isDead(c) && c.type !== 'location' && (e.maxAttack == null || c.attack <= e.maxAttack)
+						&& (!e.tribe || e.tribe.split('|').some(tr => (c.tribe || '').includes(tr)))) pool.push(c); // Cerise: a Demon, Devil or Phyrexian
 				}
 				if (!pool.length) break;
 				const t = pool[Math.floor(state.rng() * pool.length)];
