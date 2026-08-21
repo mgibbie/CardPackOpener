@@ -228562,6 +228562,62 @@
         }
       ],
       "description": "Choose one — Create a tapped Powerstone; Create a tapped Relic; Discover a Legendary card; or Add a random Legendary Excavation treasure to your hand."
+    },
+    {
+      "id": "undercity_eliminator",
+      "name": "Undercity Eliminator",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 3,
+      "rarity": "uncommon",
+      "set": "paper",
+      "tribe": "Gorgon Assassin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 1
+          },
+          "target": "creature",
+          "then": [
+            {
+              "type": "sacrifice-friendly"
+            },
+            {
+              "type": "exile",
+              "target": "creature"
+            }
+          ]
+        }
+      ],
+      "description": "Battlecry: If you control another creature, sacrifice it and exile an enemy creature."
+    },
+    {
+      "id": "the_meep",
+      "name": "The Meep",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 0,
+      "health": 4,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "sacrifice-friendly",
+            "tempBuffTeam": true
+          }
+        ]
+      },
+      "description": "Swing: Sacrifice another creature. Your creatures gain +X/+X until end of turn, where X is its Mana Value."
     }
   ]
 }

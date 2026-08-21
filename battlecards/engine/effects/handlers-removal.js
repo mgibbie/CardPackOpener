@@ -646,6 +646,26 @@ register('destroy-target-and-adjacent', ({ state, pi, target, source, enemies, s
 } });
 
 
+register('sacrifice-friendly', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Sacrifice another friendly creature. With tempBuffTeam, your other creatures gain
+			// +MV/+MV (the sacrificed creature's Mana Value) until end of turn (The Meep).
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type === 'creature');
+			if (!pool.length) return;
+			const victim = pool[Math.floor(state.rng() * pool.length)];
+			const mv = victim.cost || 0;
+			if (e.tempBuffTeam && mv > 0) {
+				for (const c of state.players[pi].board) {
+					if (c === victim || isDead(c) || c.type !== 'creature') continue;
+					c.attack += mv; c.tempAttack += mv; c.maxHealth += mv; c.tempHealth = (c.tempHealth || 0) + mv;
+					emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+				}
+			}
+			victim.damage = victim.maxHealth; victim.shield = false;
+			emit(state, { type: 'sacrificed', uid: victim.uid });
+			sweepDeaths(state);
+} });
+
+
 register('exile-graveyards', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Bahamut the Grey: exile matching cards from every graveyard; optionally +X/+X to the source per card exiled
 			let n = 0;
