@@ -1316,6 +1316,7 @@ register('damage-then', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				v += staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
 				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) v += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
+				{ const _sch = schoolOf(source); if (_sch) v += staticValue(state.players[pi], 'spell-damage-' + _sch); } // Xixira/Shorigo: static per-school Spell Damage
 			}
 			const t = chosenCreature();
 			if (t) {
@@ -1512,6 +1513,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (source && (source.type === 'sorcery' || source.type === 'instant')) {
 				let sdBonus = staticValue(state.players[pi], 'spell-damage') + (state.players[pi].nextSpellDamageBonus || 0) + (state.players[pi].spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
 				const sd = state.players[pi].schoolSpellDmg; if (sd) { const sch = schoolOf(source); if (sch && sd[sch]) sdBonus += sd[sch]; } // Duels: per-school Spell Damage (Kindling Flame / Bitter Cold / Natural Force)
+				{ const _sch = schoolOf(source); if (_sch) sdBonus += staticValue(state.players[pi], 'spell-damage-' + _sch); } // Xixira/Shorigo: static per-school Spell Damage
 				v += (e.doubleSpellDamage ? sdBonus * 2 : sdBonus); // Arcane Blast: this spell gets double bonus from Spell Damage
 			}
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
@@ -1634,7 +1636,7 @@ register('spend-all-mana-damage', ({ state, pi, target, source, enemies, scaled,
 			spendMana(p, spent);
 			emit(state, { type: 'mana', player: pi, cur: p.mana.cur, max: p.mana.max });
 			let v = spent;
-			if (source && (source.type === 'sorcery' || source.type === 'instant')) v += staticValue(p, 'spell-damage') + (p.nextSpellDamageBonus || 0) + (p.spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0);
+			if (source && (source.type === 'sorcery' || source.type === 'instant')) { v += staticValue(p, 'spell-damage') + (p.nextSpellDamageBonus || 0) + (p.spellDamageThisTurn || 0) + (source.bonusSpellDamage || 0); const _sch = schoolOf(source); if (_sch) v += staticValue(p, 'spell-damage-' + _sch); }
 			const t = chosenCreature();
 			if (t && v > 0) damageCreature(state, t, v, source);
 } });

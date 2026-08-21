@@ -227729,6 +227729,117 @@
         }
       ],
       "description": "Battlecry: Exile all Artifacts in each player's graveyard & gain +1/+1 for each card exiled.\nDeathrattle: Scry 2 & Gain 5 Armor."
+    },
+    {
+      "id": "shorigo_eastern_wind",
+      "name": "Shorigo, Eastern Wind",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 8,
+      "attack": 5,
+      "health": 7,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Pandaren Samurai",
+      "keywords": [
+        "elusive",
+        "windfury"
+      ],
+      "static": {
+        "type": "spell-damage-Arcane",
+        "value": 1
+      },
+      "ongoings": [
+        {
+          "on": "creature-played",
+          "if": {
+            "tribe": "Samurai"
+          },
+          "effects": [
+            {
+              "type": "buff-random-friendly",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        },
+        {
+          "on": "creature-played",
+          "if": {
+            "tribe": "Ninja"
+          },
+          "effects": [
+            {
+              "type": "buff-random-friendly",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
+      ],
+      "description": "Hexproof, Arcane Spell Damage +1 & Windfury.\nWhenever you play a Samurai or a Ninja, a creature you control gains +2/+2."
+    },
+    {
+      "id": "xixira_mirror_realm_necroczar",
+      "name": "Xixira, Mirror Realm Necroczar",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 2,
+      "health": 2,
+      "rarity": "legendary",
+      "set": "paper",
+      "tribe": "Human Mage",
+      "static": {
+        "type": "spell-damage-Fire",
+        "value": 2
+      },
+      "activated": [
+        {
+          "cost": 2,
+          "effects": [
+            {
+              "type": "grant",
+              "target": "creature",
+              "keyword": "taunt"
+            }
+          ],
+          "text": "Give a creature Taunt."
+        }
+      ],
+      "description": "Fire Spell Damage +2.\n2: Target creature gains Taunt."
+    },
+    {
+      "id": "stormkeld_curator",
+      "name": "Stormkeld Curator",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "rarity": "epic",
+      "set": "paper",
+      "tribe": "Giant",
+      "adventure": {
+        "name": "Giant Secrets",
+        "cost": 4,
+        "type": "instant",
+        "effects": [
+          {
+            "type": "conditional",
+            "if": {
+              "controlTribe": "Giant|Faerie"
+            },
+            "then": [
+              {
+                "type": "draw",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Adventure — Giant Secrets (4): If you control a Giant or a Faerie, draw 3 cards."
     }
   ]
 }
