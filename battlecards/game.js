@@ -1898,6 +1898,30 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'gy-vote') {
+		// Custodi Squire: vote for a card in your graveyard to return
+		modal.innerHTML = `<div class="wm-title">${pend.title || 'Vote'}</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		(pend.gyVoteLabels || []).forEach((label, i) => {
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${label}</b></div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Vote';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, String(i)), { k: 'pick', id: String(i) }); return; }
+				E.resolvePick(state, String(i));
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'target-player') {
 		// a Contraption (Hypnotic Swirly Disc / Insufferable Syphon) targets a player YOU choose
 		const label = pend.action === 'mill' ? `mills ${pend.value}` : pend.action === 'damage' ? `loses ${pend.value} life` : 'discards a card';
@@ -2541,6 +2565,11 @@ function nextEvent() {
 			break;
 		case 'harvestOffer':
 			log(`${nameOf(ev.player)} Harvests (3 options)`);
+			if (ev.player === HUMAN) openPickModal();
+			delay = 300;
+			break;
+		case 'gyVoteOffer':
+			log(`${nameOf(ev.player)} votes on a graveyard card (${ev.options.length} options)`);
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;

@@ -2,13 +2,28 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote, startHarvest } from '../../engine.js';
+import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote, startHarvest, startGraveyardVote } from '../../engine.js';
 
 // Advance (MTG's "Venture into the Dungeon"): enter a dungeon or advance to the next room.
 register('advance', ({ state, pi }) => { advance(state, pi); });
 // Voting ("will of the council"): each player votes among options; the winner resolves.
 register('vote', ({ state, pi, target, source }, e) => { startVote(state, pi, e.options, e.tie || 0, source); });
 register('harvest', ({ state, pi, source }) => { startHarvest(state, pi, source); });
+register('graveyard-vote', ({ state, pi, source }) => { startGraveyardVote(state, pi, source); });
+register('fight-random-beast', ({ state, pi, source, enemies }) => {
+	// Bloodrage Alpha: a random other friendly Beast fights a random enemy creature
+	const friendlies = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type === 'creature' && (c.tribe || '').includes('Beast'));
+	const foes = [];
+	for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type === 'creature') foes.push(c);
+	if (friendlies.length && foes.length) {
+		const a = friendlies[Math.floor(state.rng() * friendlies.length)];
+		const b = foes[Math.floor(state.rng() * foes.length)];
+		const pa = a.attack, pb = b.attack;
+		emit(state, { type: 'fight', a: a.uid, b: b.uid });
+		damageCreature(state, b, pa, a);
+		damageCreature(state, a, pb, b);
+	}
+});
 register('sac-land', ({ state, pi, enemies }, e) => {
 	// "Each player sacrifices a land" (or just the enemy / you, via e.who)
 	const who = e.who === 'enemy' ? (enemies || opponentsOf(state, pi)) : e.who === 'self' ? [pi] : state.players.map((_, i) => i);

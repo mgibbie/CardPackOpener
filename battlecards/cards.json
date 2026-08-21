@@ -228172,6 +228172,60 @@
         "static"
       ],
       "description": "Rush & Static."
+    },
+    {
+      "id": "custodi_squire",
+      "name": "Custodi Squire",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 5,
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Spirit Cleric",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "graveyard-vote"
+        }
+      ],
+      "description": "Battlecry: Each player votes for an artifact, creature, or enchantment card in your graveyard. Return each card with the most votes to your hand."
+    },
+    {
+      "id": "bloodrage_alpha",
+      "name": "Bloodrage Alpha",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "fight-random-beast"
+        }
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "damage",
+            "value": 4,
+            "target": "random-enemy"
+          }
+        ]
+      },
+      "description": "Battlecry: Another Beast you control fights an enemy creature.\nFrenzy: Deal 4 damage to a random enemy creature."
     }
   ]
 }

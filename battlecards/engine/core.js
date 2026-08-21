@@ -3638,6 +3638,22 @@ export function startHarvest(state, pi, source = null) {
 	emit(state, { type: 'harvestOffer', player: pi, options: options.map(o => o.label) });
 }
 
+// Custodi Squire: each player votes for an artifact/creature/enchantment in your graveyard;
+// return the most-voted (or tied) to hand. 2-player: controller picks A, the opposing vote lands
+// on a random other eligible card B, so both tie -> both return (the common outcome).
+export function startGraveyardVote(state, pi, source = null) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const TYPES = ['artifact', 'creature', 'enchantment'];
+	const eligible = p.graveyard.filter(c => TYPES.includes(c.type));
+	if (!eligible.length) return;
+	const returnGy = c => { const gi = p.graveyard.indexOf(c); if (gi >= 0 && p.hand.length < MAX_HAND) { p.graveyard.splice(gi, 1); const nc = instantiate(state.cardsById[c.id] || c, pi); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pi, card: nc, color: null }); } };
+	if (eligible.length === 1) { returnGy(eligible[0]); return; }
+	state.pickQueue.push({ player: pi, mode: 'gy-vote', ids: eligible.map((_, i) => String(i)),
+		gyVoteUids: eligible.map(c => c.uid), gyVoteLabels: eligible.map(c => c.name), title: 'Vote: return a graveyard card' });
+	emit(state, { type: 'gyVoteOffer', player: pi, options: eligible.map(c => c.name) });
+}
+
 export function placeContraption(state, pi, slot, contraptionId) {
 	const p = state.players[pi];
 	if (!p.sprocket) p.sprocket = [null, null, null];
@@ -3790,6 +3806,19 @@ export function resolvePick(state, id) {
 		for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) fireOngoing(state, s, 'council', {}); // Council triggers
 		sweepDeaths(state);
 		checkGameOver(state);
+		return true;
+	}
+	if (pend.mode === 'gy-vote') {
+		const p = state.players[pend.player];
+		const idx = pend.ids.includes(String(id)) ? Number(id) : 0;
+		const chosenUid = pend.gyVoteUids[idx];
+		const returnGy = c => { const gi = p.graveyard.indexOf(c); if (gi >= 0 && p.hand.length < MAX_HAND) { p.graveyard.splice(gi, 1); const nc = instantiate(state.cardsById[c.id] || c, pend.player); nc.zone = 'hand'; p.hand.push(nc); emit(state, { type: 'conjure', player: pend.player, card: nc, color: null }); } };
+		const eligible = p.graveyard.filter(c => pend.gyVoteUids.includes(c.uid));
+		const A = eligible.find(c => c.uid === chosenUid);
+		const others = eligible.filter(c => c.uid !== chosenUid);
+		const B = others.length ? others[Math.floor(state.rng() * others.length)] : null; // the opposing vote ties -> also returns
+		if (A) returnGy(A);
+		if (B) returnGy(B);
 		return true;
 	}
 	if (pend.mode === 'harvest') {
