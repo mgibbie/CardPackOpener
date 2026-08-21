@@ -191,6 +191,11 @@ export function step(state, pi = 1) {
 			E.resolvePick(state, best);
 			return true;
 		}
+		if (pend.mode === 'harvest') {
+			// untap a land if any is tapped (tempo); else make a 1/1 Plant body
+			E.resolvePick(state, state.players[pi].lands?.some(l => l.tapped) ? '0' : '1');
+			return true;
+		}
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 		return true;

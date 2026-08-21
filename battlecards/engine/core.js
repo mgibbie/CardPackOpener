@@ -3620,6 +3620,21 @@ export function startVote(state, pi, options, tie = 0, source = null) {
 	emit(state, { type: 'voteOffer', player: pi, options: options.map(o => o.label) });
 }
 
+// Harvest (paper keyword): choose one of three — untap a land, make a 1/1 Plant,
+// or make a Food. A self-controlled choose-one queued as a pick (no opposition).
+export function startHarvest(state, pi, source = null) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	const options = [
+		{ label: 'Untap a land', effects: [{ type: 'untap-land' }] },
+		{ label: 'Summon a 1/1 Plant', effects: [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Plant', tribe: 'Plant' }] },
+		{ label: 'Add a Food', effects: [{ type: 'cook' }] },
+	];
+	state.pickQueue.push({ player: pi, mode: 'harvest', ids: options.map((_, i) => String(i)),
+		harvestOptions: options, harvestSourceUid: source ? source.uid : null, title: 'Harvest' });
+	emit(state, { type: 'harvestOffer', player: pi, options: options.map(o => o.label) });
+}
+
 export function placeContraption(state, pi, slot, contraptionId) {
 	const p = state.players[pi];
 	if (!p.sprocket) p.sprocket = [null, null, null];
@@ -3772,6 +3787,15 @@ export function resolvePick(state, id) {
 		for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) fireOngoing(state, s, 'council', {}); // Council triggers
 		sweepDeaths(state);
 		checkGameOver(state);
+		return true;
+	}
+	if (pend.mode === 'harvest') {
+		// the controller chose one of the three Harvest options; run its effects
+		const opts = pend.harvestOptions || [];
+		const idx = pend.ids.includes(String(id)) ? Number(id) : 0;
+		const source = pend.harvestSourceUid ? findCreature(state, pend.harvestSourceUid) : null;
+		execEffects(state, pend.player, (opts[idx] && opts[idx].effects) || [], null, source);
+		sweepDeaths(state);
 		return true;
 	}
 	if (pend.mode === 'adapt') {

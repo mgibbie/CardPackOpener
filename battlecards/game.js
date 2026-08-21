@@ -1754,6 +1754,7 @@ function resolveAIPicks() {
 	while (state.pickQueue.length && isAiSeat(state.pickQueue[0].player)) {
 		const pend = state.pickQueue[0];
 		if (pend.mode === 'adapt') { E.resolvePick(state, bestAdaptId(pend)); continue; }
+		if (pend.mode === 'harvest') { E.resolvePick(state, bestHarvestId(state, pend)); continue; }
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 	}
@@ -1763,6 +1764,13 @@ function resolveAIPicks() {
 function bestAdaptId(pend) {
 	const score = e => (e.attack || 0) + (e.health || 0) + (e.keyword ? 3 : 0) + (e.deathrattle ? 3 : 0);
 	return [...pend.ids].sort((a, b) => score(E.ADAPT_TABLE[Number(b)]) - score(E.ADAPT_TABLE[Number(a)]))[0];
+}
+
+// AI Harvest: untap a land if any is tapped (mana is tempo); else make a 1/1 Plant (a body)
+function bestHarvestId(state, pend) {
+	const p = state.players[pend.player];
+	if (p && p.lands && p.lands.some(l => l.tapped)) return '0';
+	return '1';
 }
 
 // AI optional "you may …" prompts: the AI takes the beneficial option (yes)
@@ -1852,6 +1860,30 @@ function openPickModal() {
 			cell.innerHTML = `<div class="adapt-opt"><b>${opt.label}</b></div>`;
 			const btn = document.createElement('button');
 			btn.textContent = 'Vote';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, String(i)), { k: 'pick', id: String(i) }); return; }
+				E.resolvePick(state, String(i));
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
+	if (pend.mode === 'harvest') {
+		// Harvest: choose one of three (untap a land / 1-1 Plant / Food)
+		modal.innerHTML = `<div class="wm-title">${pend.title || 'Harvest'}</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		(pend.harvestOptions || []).forEach((opt, i) => {
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${opt.label}</b></div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Choose';
 			btn.addEventListener('pointerdown', e => {
 				e.stopPropagation();
 				modal.style.display = 'none';
@@ -2504,6 +2536,11 @@ function nextEvent() {
 			break;
 		case 'adaptOffer':
 			log(`${nameOf(ev.player)} Adapts (3 options)`);
+			if (ev.player === HUMAN) openPickModal();
+			delay = 300;
+			break;
+		case 'harvestOffer':
+			log(`${nameOf(ev.player)} Harvests (3 options)`);
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;

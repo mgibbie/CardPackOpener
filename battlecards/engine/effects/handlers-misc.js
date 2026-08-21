@@ -2,12 +2,18 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote } from '../../engine.js';
+import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote, startHarvest } from '../../engine.js';
 
 // Advance (MTG's "Venture into the Dungeon"): enter a dungeon or advance to the next room.
 register('advance', ({ state, pi }) => { advance(state, pi); });
 // Voting ("will of the council"): each player votes among options; the winner resolves.
 register('vote', ({ state, pi, target, source }, e) => { startVote(state, pi, e.options, e.tie || 0, source); });
+register('harvest', ({ state, pi, source }) => { startHarvest(state, pi, source); });
+register('untap-land', ({ state, pi }) => {
+	// Harvest option: untap one of your tapped lands (refunds a use this turn)
+	const l = state.players[pi].lands.find(x => x.tapped);
+	if (l) { l.tapped = false; emit(state, { type: 'landUntapped', player: pi, uid: l.uid }); }
+});
 // Focus Beam (Netherese Puzzle-Ward): roll a die (default d6), then Scry that many.
 register('roll-scry', ({ state, pi, target, source }, e) => {
 	const value = rollDie(state, pi, e.sides || 6);

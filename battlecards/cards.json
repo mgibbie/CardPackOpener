@@ -226805,6 +226805,98 @@
           ]
         }
       ]
+    },
+    {
+      "id": "flowersoul_guardian",
+      "name": "Flowersoul Guardian",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Undead Elemental Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "harvest"
+        }
+      ],
+      "description": "Battlecry: Scry 1 & Harvest."
+    },
+    {
+      "id": "ruska_elk",
+      "name": "Ruska Elk",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "rarity": "common",
+      "set": "paper",
+      "tribe": "Beast",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "harvest"
+        }
+      ],
+      "description": "Battlecry: Harvest."
+    },
+    {
+      "id": "beanstalk_giant",
+      "name": "Beanstalk Giant",
+      "type": "creature",
+      "cardClass": "neutral",
+      "cost": 7,
+      "attack": 7,
+      "health": 7,
+      "rarity": "rare",
+      "set": "paper",
+      "tribe": "Giant",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "harvest"
+          }
+        ]
+      },
+      "description": "Swing: Harvest."
+    },
+    {
+      "id": "captivating_crossroads",
+      "name": "Captivating Crossroads",
+      "type": "location",
+      "cardClass": "neutral",
+      "cost": 4,
+      "rarity": "uncommon",
+      "set": "paper",
+      "durability": 2,
+      "taps": [
+        {
+          "text": "Bounce a creature & Harvest.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            },
+            {
+              "type": "harvest"
+            }
+          ]
+        }
+      ],
+      "description": "Bounce target creature & Harvest."
     }
   ]
 }
