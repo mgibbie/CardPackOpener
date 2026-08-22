@@ -42260,22 +42260,64 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Taunt. Lifesteal. Battlecry: Give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Cat Planeswalker",
-      "keywords": [
-        "taunt",
-        "lifesteal",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Give a friendly creature +2/+2. −2: Gain 4 Armor and summon a 2/2 Cat with Taunt. −6: Emblem — at the start of your turn, give your creatures +1/+1.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "cost": 1,
+          "text": "Give a friendly creature +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature"
+            }
+          ]
+        },
+        {
+          "cost": -2,
+          "text": "Gain 4 Armor and summon a 2/2 Cat with Taunt.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 4
+            },
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Cat",
+              "tribe": "Cat",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Ajani’s Pridemate",
+              "description": "At the start of your turn, give your creatures +1/+1.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "buff",
+                    "attack": 1,
+                    "health": 1,
+                    "target": "friendly-creatures"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -42633,20 +42675,53 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Charge. Battlecry: Deal 4 damage to each opponent.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Elemental Planeswalker",
-      "keywords": [
-        "charge",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Deal 2 damage to each opponent. −2: Deal 4 damage to any target. −6: Emblem — at the end of your turn, deal 3 damage to a random enemy.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-heroes"
+          "cost": 1,
+          "text": "Deal 2 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            }
+          ]
+        },
+        {
+          "cost": -2,
+          "text": "Deal 4 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "any"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the end of your turn, deal 3 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Pyromaster",
+              "description": "At the end of your turn, deal 3 damage to a random enemy.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "random-damage",
+                    "value": 3,
+                    "pool": "enemies",
+                    "count": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -42662,14 +42737,30 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 5 damage to a creature.",
+      "description": "Deal 3 damage to a creature. Finale: also deal 3 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
-          "value": 5,
+          "value": 3,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            }
+          ]
         }
+      ],
+      "keywords": [
+        "finale"
       ]
     },
     {
@@ -42684,13 +42775,20 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Battlecry: Gain 1 Mana Crystal this turn.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Elemental Cat",
       "keywords": [
-        "rush"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
       ]
     },
     {
@@ -42705,19 +42803,28 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Battlecry: Deal 3 damage to a creature. Deathrattle: Deal 3 damage to a random enemy.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Elemental",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "deathrattle"
       ],
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "creature"
+        }
+      ],
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 1
         }
       ]
     },
@@ -42733,13 +42840,18 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
-      "type": "sorcery",
+      "description": "Deal 3 damage to all enemy creatures and 1 damage to each opponent.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -42755,14 +42867,32 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 4 damage to each opponent.",
+      "description": "Deal 4 damage to each opponent. Finale: deal 6 instead.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-heroes"
+          "type": "conditional",
+          "if": {
+            "finale": true
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 6,
+              "target": "enemy-heroes"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemy-heroes"
+            }
+          ]
         }
+      ],
+      "keywords": [
+        "finale"
       ]
     },
     {
@@ -42777,13 +42907,33 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 3 damage to all creatures.",
+      "description": "Deal 4 damage to all enemy creatures and 2 to each opponent. Manathirst 8: deal 4 to each opponent instead.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
-          "value": 3,
-          "target": "all-creatures"
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 8
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemy-heroes"
+            }
+          ],
+          "else": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -42799,13 +42949,15 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to a creature.",
+      "description": "Trample. Firebreathing. Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 6,
-      "health": 6,
+      "health": 5,
       "tribe": "Elemental",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "trample",
+        "firebreathing"
       ],
       "effects": [
         {
@@ -42827,22 +42979,25 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "description": "Rush. Whenever you cast a spell, deal 1 damage to a random enemy.",
       "type": "creature",
       "attack": 2,
       "health": 1,
       "tribe": "Elemental Hound",
       "keywords": [
-        "rush",
-        "battlecry"
+        "rush"
       ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "creature"
-        }
-      ]
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "chandra_outburst",
@@ -42856,13 +43011,26 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
+      "description": "Deal 3 damage to a creature. Manathirst 6: also deal 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "manathirst": 6
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -42878,7 +43046,7 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 3 damage to a creature and 1 to each opponent.",
+      "description": "Deal 3 damage to a creature and 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
@@ -42888,7 +43056,7 @@
         },
         {
           "type": "damage",
-          "value": 1,
+          "value": 2,
           "target": "enemy-heroes"
         }
       ]
@@ -42905,14 +43073,14 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Elusive. Rush. Reborn.",
+      "description": "Rush. Windfury. Reborn.",
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Phoenix",
+      "tribe": "Elemental Phoenix",
       "keywords": [
-        "elusive",
         "rush",
+        "windfury",
         "reborn"
       ]
     },
@@ -42928,14 +43096,24 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Elusive. Whenever you cast a spell, gain +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Elemental",
       "keywords": [
-        "rush"
-      ]
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "chandra_pyrohelix",
@@ -42949,13 +43127,28 @@
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Deal 2 damage to all enemy creatures.",
+      "description": "Deal 1 damage to two random enemies. If you control an Elemental, deal 1 damage to two more.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
+          "type": "random-damage",
+          "value": 1,
+          "pool": "enemies",
+          "count": 2
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlTribe": "Elemental"
+          },
+          "then": [
+            {
+              "type": "random-damage",
+              "value": 1,
+              "pool": "enemies",
+              "count": 2
+            }
+          ]
         }
       ]
     },
@@ -42964,22 +43157,33 @@
       "name": "Chandra’s Spitfire",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R"
       ],
       "loreDeck": "Chandra",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to each opponent.",
+      "description": "Elusive. Whenever you cast a spell, gain +2 Attack this turn. Overkill: deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 3,
-      "health": 3,
+      "health": 4,
       "tribe": "Elemental",
       "keywords": [
-        "battlecry"
+        "elusive",
+        "overkill"
       ],
-      "effects": [
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "temp-buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "overkill": [
         {
           "type": "damage",
           "value": 2,
@@ -42999,26 +43203,59 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Battlecry: Summon two 2/2 Constructs and deal 2 damage to a creature.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Goblin Planeswalker",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Deal 2 damage to a creature. −3: Summon a 4/4 Construct with Taunt. −6: Emblem — whenever a creature you control dies, deal 2 damage to a random enemy.",
+      "type": "planeswalker",
+      "loyalty": 3,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Construct"
+          "cost": 1,
+          "text": "Deal 2 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "cost": -3,
+          "text": "Summon a 4/4 Construct with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever a creature you control dies, deal 2 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Scrap Salvo",
+              "description": "Whenever a creature you control dies, deal 2 damage to a random enemy.",
+              "ongoing": {
+                "on": "friendly-creature-died",
+                "effects": [
+                  {
+                    "type": "random-damage",
+                    "value": 2,
+                    "pool": "enemies",
+                    "count": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -43361,27 +43598,62 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Battlecry: Summon three 1/1 Soldiers and give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon two 1/1 Soldiers. −3: Give your creatures +2/+2. −6: Emblem — at the start of your turn, summon a 2/2 Soldier with Taunt.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 3,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
+          "cost": 1,
+          "text": "Summon two 1/1 Soldiers.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Soldier",
+              "tribe": "Soldier"
+            }
+          ]
         },
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "cost": -3,
+          "text": "Give your creatures +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, summon a 2/2 Soldier with Taunt.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Sun’s Champion",
+              "description": "At the start of your turn, summon a 2/2 Soldier with Taunt.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "name": "Soldier",
+                    "tribe": "Soldier",
+                    "keywords": [
+                      "taunt"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -43747,24 +44019,63 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Trample. Battlecry: Summon a 3/3 Beast with Trample.",
-      "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "trample",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon a 3/3 Beast. −3: Summon two 3/3 Beasts with Rush. −6: Emblem — at the start of your turn, summon a 3/3 Beast.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Beast",
-          "keywords": [
-            "trample"
+          "cost": 1,
+          "text": "Summon a 3/3 Beast.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast",
+              "tribe": "Beast"
+            }
+          ]
+        },
+        {
+          "cost": -3,
+          "text": "Summon two 3/3 Beasts with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, summon a 3/3 Beast.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Overrun",
+              "description": "At the start of your turn, summon a 3/3 Beast.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 3,
+                    "health": 3,
+                    "name": "Beast",
+                    "tribe": "Beast"
+                  }
+                ]
+              }
+            }
           ]
         }
       ]
@@ -44134,22 +44445,58 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Taunt. Divine Shield. Battlecry: Give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "taunt",
-        "divine_shield",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon a 2/2 Knight with Taunt. −2: Give a friendly creature +2/+2. −6: Emblem — at the end of your turn, gain 5 Armor.",
+      "type": "planeswalker",
+      "loyalty": 5,
+      "abilities": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "cost": 1,
+          "text": "Summon a 2/2 Knight with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Knight",
+              "tribe": "Knight",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -2,
+          "text": "Give a friendly creature +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the end of your turn, gain 5 Armor.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Oath of Gideon",
+              "description": "At the end of your turn, gain 5 Armor.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "armor",
+                    "value": 5
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -44505,23 +44852,53 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards and return an enemy creature to its owner’s hand.",
-      "type": "creature",
-      "attack": 4,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Scry 2, then draw a card. −2: Return an enemy creature to its owner’s hand. −6: Emblem — at the start of your turn, draw a card.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "draw",
-          "value": 2
+          "cost": 1,
+          "text": "Scry 2, then draw a card.",
+          "effects": [
+            {
+              "type": "scry",
+              "value": 2
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "cost": -2,
+          "text": "Return an enemy creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "enemy-creature"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, draw a card.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Mind Sculptor",
+              "description": "At the start of your turn, draw a card.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "draw",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -44871,25 +45248,58 @@
       "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Battlecry: Summon two 2/2 Constructs and draw a card.",
-      "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Golem Planeswalker",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Draw a card. −3: Summon a 4/4 Construct with Taunt. −6: Emblem — whenever you play a card, deal 1 damage to a random enemy.",
+      "type": "planeswalker",
+      "loyalty": 5,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Construct"
+          "cost": 1,
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "cost": -3,
+          "text": "Summon a 4/4 Construct with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever you play a card, deal 1 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Silent Gravity",
+              "description": "Whenever you play a card, deal 1 damage to a random enemy.",
+              "ongoing": {
+                "on": "card-played",
+                "effects": [
+                  {
+                    "type": "random-damage",
+                    "value": 1,
+                    "pool": "enemies",
+                    "count": 1
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -45211,23 +45621,61 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Destroy a creature and each opponent discards a card.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "deathtouch",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Each player discards a card. −2: Summon a 3/3 Zombie. −6: Emblem — at the start of your turn, summon a 2/2 Zombie.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "cost": 1,
+          "text": "Each player discards a card.",
+          "effects": [
+            {
+              "type": "discard-random",
+              "count": 1
+            },
+            {
+              "type": "enemy-discard",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "enemy-discard",
-          "value": 1
+          "cost": -2,
+          "text": "Summon a 3/3 Zombie.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Zombie",
+              "tribe": "Zombie"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, summon a 2/2 Zombie.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Dreadhorde",
+              "description": "At the start of your turn, summon a 2/2 Zombie.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "name": "Zombie",
+                    "tribe": "Zombie"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -45578,26 +46026,61 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Rush. Battlecry: Deal 3 damage to a creature and give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "rush",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Deal 2 damage to a creature. −2: Summon a 4/4 Beast with Rush. −6: Emblem — at the end of your turn, summon a 5/5 Beast.",
+      "type": "planeswalker",
+      "loyalty": 3,
+      "abilities": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "cost": 1,
+          "text": "Deal 2 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "cost": -2,
+          "text": "Summon a 4/4 Beast with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the end of your turn, summon a 5/5 Beast.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Coppercoat Vanguard",
+              "description": "At the end of your turn, summon a 5/5 Beast.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 5,
+                    "health": 5,
+                    "name": "Beast",
+                    "tribe": "Beast"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -45939,28 +46422,61 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Battlecry: Summon a 5/5 Elemental with Trample and gain a Mana Crystal this turn.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Elf Planeswalker",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon a 2/2 Elemental with Taunt. −3: Summon two 3/3 Elementals. −6: Emblem — whenever you play a creature, give it +2/+2.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 5,
-          "health": 5,
-          "name": "Elemental",
-          "keywords": [
-            "trample"
+          "cost": 1,
+          "text": "Summon a 2/2 Elemental with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Elemental",
+              "tribe": "Elemental",
+              "keywords": [
+                "taunt"
+              ]
+            }
           ]
         },
         {
-          "type": "gain-mana",
-          "value": 1
+          "cost": -3,
+          "text": "Summon two 3/3 Elementals.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Elemental",
+              "tribe": "Elemental"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever you play a creature, give it +2/+2.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Animist’s Awakening",
+              "description": "Whenever you play a creature, give it +2/+2.",
+              "ongoing": {
+                "on": "creature-played",
+                "effects": [
+                  {
+                    "type": "buff-minion",
+                    "attack": 2,
+                    "health": 2
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -46315,25 +46831,63 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent and gain 3 life.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Demon Planeswalker",
-      "keywords": [
-        "lifesteal",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Each opponent loses 2 Life and you gain 2 Life. −3: Summon a 5/5 Demon with Taunt. −6: Emblem — whenever a creature dies, each opponent loses 1 Life.",
+      "type": "planeswalker",
+      "loyalty": 3,
+      "abilities": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
+          "cost": 1,
+          "text": "Each opponent loses 2 Life and you gain 2 Life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
         },
         {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "cost": -3,
+          "text": "Summon a 5/5 Demon with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Demon",
+              "tribe": "Demon",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever a creature dies, each opponent loses 1 Life.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Reignited",
+              "description": "Whenever a creature dies, each opponent loses 1 Life.",
+              "ongoing": {
+                "on": "creature-died",
+                "effects": [
+                  {
+                    "type": "damage",
+                    "value": 1,
+                    "target": "enemy-heroes"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -46678,25 +47232,65 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent and gain 3 life.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Vampire Planeswalker",
-      "keywords": [
-        "lifesteal",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon a 1/1 Vampire with Lifesteal. −2: Give a friendly creature +2/+2. −6: Emblem — at the start of your turn, summon a 2/2 Vampire with Lifesteal.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
+          "cost": 1,
+          "text": "Summon a 1/1 Vampire with Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Vampire",
+              "tribe": "Vampire",
+              "keywords": [
+                "lifesteal"
+              ]
+            }
+          ]
         },
         {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "cost": -2,
+          "text": "Give a friendly creature +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the start of your turn, summon a 2/2 Vampire with Lifesteal.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Bloodline",
+              "description": "At the start of your turn, summon a 2/2 Vampire with Lifesteal.",
+              "ongoing": {
+                "on": "turn-start",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 2,
+                    "health": 2,
+                    "name": "Vampire",
+                    "tribe": "Vampire",
+                    "keywords": [
+                      "lifesteal"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -47058,23 +47652,49 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Elusive. Battlecry: Freeze all enemy creatures and draw 2 cards.",
-      "type": "creature",
-      "attack": 4,
-      "health": 6,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Draw a card. −2: Return an enemy creature to its owner’s hand. −6: Emblem — at the end of your turn, Freeze all enemy creatures.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
+          "cost": 1,
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 2
+          "cost": -2,
+          "text": "Return an enemy creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "enemy-creature"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the end of your turn, Freeze all enemy creatures.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Temporal Manipulation",
+              "description": "At the end of your turn, Freeze all enemy creatures.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "freeze",
+                    "target": "enemy-creatures"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -47428,29 +48048,58 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Elusive. Battlecry: Summon two 2/2 Thopters with Elusive and draw a card.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Draw a card. −3: Summon a 5/5 Golem. −6: Emblem — at the end of your turn, deal 2 damage to each opponent and gain 2 Armor.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Thopter",
-          "keywords": [
-            "elusive"
+          "cost": 1,
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
           ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "cost": -3,
+          "text": "Summon a 5/5 Golem.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Golem",
+              "tribe": "Golem"
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — at the end of your turn, deal 2 damage to each opponent and gain 2 Armor.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Gambit",
+              "description": "At the end of your turn, deal 2 damage to each opponent and gain 2 Armor.",
+              "ongoing": {
+                "on": "turn-end",
+                "effects": [
+                  {
+                    "type": "damage",
+                    "value": 2,
+                    "target": "enemy-heroes"
+                  },
+                  {
+                    "type": "armor",
+                    "value": 2
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -47805,29 +48454,61 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Trample. Battlecry: Summon a 4/4 Beast with Trample and draw a card.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "trample",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Give a friendly creature +2/+2. −3: Summon a 4/4 Beast with Rush. −6: Emblem — whenever you play a Beast, draw a card.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Beast",
-          "keywords": [
-            "trample"
+          "cost": 1,
+          "text": "Give a friendly creature +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature"
+            }
           ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "cost": -3,
+          "text": "Summon a 4/4 Beast with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever you play a Beast, draw a card.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Arkbow",
+              "description": "Whenever you play a Beast, draw a card.",
+              "ongoing": {
+                "on": "creature-played",
+                "effects": [
+                  {
+                    "type": "draw",
+                    "value": 1
+                  }
+                ],
+                "if": {
+                  "tribe": "Beast"
+                }
+              }
+            }
+          ]
         }
       ]
     },
