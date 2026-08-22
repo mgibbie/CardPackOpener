@@ -50199,15 +50199,19 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Deal 2 damage to all creatures.",
+      "description": "Deathtouch. If a creature dying would trigger an ability you control, that ability triggers an additional time. Battlecry: Deal 2 damage to all creatures.",
       "type": "creature",
-      "attack": 5,
-      "health": 6,
+      "attack": 6,
+      "health": 7,
       "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
       ],
+      "static": {
+        "type": "death-doubler",
+        "value": 1
+      },
       "effects": [
         {
           "type": "damage",
@@ -50228,13 +50232,28 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Deathrattle: Summon a 3/3 Skeleton with Deathtouch and Taunt.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Undead",
       "keywords": [
-        "taunt"
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Skeleton",
+          "tribe": "Undead",
+          "keywords": [
+            "deathtouch",
+            "taunt"
+          ]
+        }
       ]
     },
     {
@@ -50249,17 +50268,24 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Summon two 2/2 Skeletons with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Skeleton with Deathtouch.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Skeleton",
-          "keywords": [
-            "deathtouch"
+          "text": "Summon a 2/2 Skeleton with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Skeleton",
+              "tribe": "Undead",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
           ]
         }
       ]
@@ -50276,13 +50302,21 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Deathrattle: Deal 1 damage to each opponent.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Undead",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
       ]
     },
     {
@@ -50297,13 +50331,30 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deal 2 damage to a creature.",
+      "description": "Choose One — Deal 2 damage to a creature; or Sacrifice a friendly creature to draw 2 cards.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "text": "Deal 2 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Sacrifice a friendly creature to draw 2 cards.",
+          "effects": [
+            {
+              "type": "sacrifice-friendly"
+            },
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         }
       ]
     },
@@ -50319,13 +50370,27 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Deathrattle: Summon two 2/2 Skeletons with Deathtouch.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Undead",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Skeleton",
+          "tribe": "Undead",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
       ]
     },
     {
@@ -50340,14 +50405,22 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Taunt. Deathtouch.",
+      "description": "Taunt. Deathtouch. Deathrattle: Deal 2 damage to all enemy creatures.",
       "type": "creature",
       "attack": 3,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
         "taunt",
-        "deathtouch"
+        "deathtouch",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
       ]
     },
     {
@@ -50362,14 +50435,28 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deathtouch. Elusive.",
+      "description": "Deathtouch. Elusive. Deathrattle: Summon a 2/2 Skeleton with Deathtouch.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Undead",
       "keywords": [
         "deathtouch",
-        "elusive"
+        "elusive",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Skeleton",
+          "tribe": "Undead",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
       ]
     },
     {
@@ -50406,20 +50493,24 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Summon three 2/2 Skeletons with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 3,
-          "attack": 2,
-          "health": 2,
-          "name": "Skeleton",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ]
+      "description": "Whenever a friendly creature dies, summon a 2/2 Skeleton with Deathtouch.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Skeleton",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "drivnod_torturous_tendencies",
@@ -50451,7 +50542,7 @@
       "id": "drivnod_crescendo_of_death",
       "name": "Drivnod’s Crescendo of Death",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -50459,15 +50550,32 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Deal 5 damage to all creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 5,
-          "target": "all-creatures"
-        }
-      ]
+      "description": "Quest: 6 creatures die. Reward: Summon three 3/3 Skeletons with Deathtouch and deal 4 damage to each opponent.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "death",
+          "count": 6
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 3,
+            "attack": 3,
+            "health": 3,
+            "name": "Skeleton",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          },
+          {
+            "type": "damage",
+            "value": 4,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "drivnod_deathcaller",
@@ -50481,7 +50589,7 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Skeleton with Deathtouch.",
+      "description": "Battlecry: Summon a 2/2 Skeleton with Deathtouch. Whenever a friendly creature dies, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -50496,11 +50604,21 @@
           "attack": 2,
           "health": 2,
           "name": "Skeleton",
+          "tribe": "Undead",
           "keywords": [
             "deathtouch"
           ]
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "drivnod_charnel_colossus",
@@ -50514,7 +50632,7 @@
       ],
       "loreDeck": "Drivnod",
       "collectible": false,
-      "description": "Trample. Reborn.",
+      "description": "Trample. Reborn. If a creature dying would trigger an ability you control, that ability triggers an additional time.",
       "type": "creature",
       "attack": 7,
       "health": 7,
@@ -50522,7 +50640,11 @@
       "keywords": [
         "trample",
         "reborn"
-      ]
+      ],
+      "static": {
+        "type": "death-doubler",
+        "value": 1
+      }
     },
     {
       "id": "drivnod_reaping",
@@ -50537,7 +50659,7 @@
       "loreDeck": "Drivnod",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",

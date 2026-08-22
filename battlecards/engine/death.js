@@ -10,7 +10,7 @@
 import {
 	emit, hp, has, instantiate, drawCards, recomputeAuras, checkGameOver,
 	fireOngoing, fireSecrets, questTick, firePlaneTrigger, summon, execEffects,
-	opponentsOf, TOKENS, KW, MAX_HAND,
+	opponentsOf, TOKENS, KW, MAX_HAND, staticValue,
 } from '../engine.js';
 import { damageCreature, damageHero } from './damage.js';
 import { toGraveyard } from './zones.js';
@@ -147,6 +147,7 @@ export function sweepDeaths(state) {
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'creature-died', { dead: c });
 			for (let s2 = 0; s2 < state.players.length; s2++) { const pl = state.players[s2]; if (pl.floopRefreshTurn === state.turnNumber && pl.mana.cur < pl.mana.max) { pl.mana.cur++; emit(state, { type: 'manaGained', player: s2, amount: 1, mana: pl.mana.cur }); } } // Floop's Glorious Gloop: any death refreshes a Mana Crystal this turn
 			fireOngoing(state, pi, 'friendly-creature-died', { dead: c });
+			{ const _dv = staticValue(state.players[pi], 'death-doubler'); for (let _k = 1; _k < 2 ** _dv; _k++) fireOngoing(state, pi, 'friendly-creature-died', { dead: c }); } // Drivnod: death triggers fire an extra time (stacks)
 				for (const hc of state.players[pi].hand) if (hc.handDeathGrowth) { hc.attack += 1; hc.maxHealth += 1; } // Blood Herald: grows while in hand
 				{ const p2 = state.players[pi]; for (let hi = 0; hi < p2.hand.length; hi++) { const hc = p2.hand[hi]; if (hc.infuse && !hc._infused) { hc.infuseCounter = (hc.infuseCounter || 0) + 1; if (hc.infuseCounter >= hc.infuse.count && state.cardsById[hc.infuse.id]) { const ni = instantiate(state.cardsById[hc.infuse.id], pi); ni.zone = 'hand'; ni._infused = true; p2.hand[hi] = ni; emit(state, { type: 'infused', player: pi, uid: hc.uid, name: ni.name }); } } } } // Castle Nathria Infuse
 			fireSecrets(state, pi, 'friendly-minion-died', { minion: c }); // Redemption
@@ -167,6 +168,7 @@ export function runDeathrattle(state, pi, card) {
 			|| state.players[pi].enchantments.some(en => en.rattleDouble)) { // Snowfall Graveyard (timed)
 			execEffects(state, pi, card.deathrattle, null, card);
 		}
+		{ const _dv = staticValue(state.players[pi], 'death-doubler'); for (let _k = 1; _k < 2 ** _dv; _k++) execEffects(state, pi, card.deathrattle, null, card); } // Drivnod: Deathrattles fire an extra time (stacks)
 	}
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
