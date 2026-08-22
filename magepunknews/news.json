@@ -1,6 +1,14 @@
 {
-	"generated": "2026-08-21",
+	"generated": "2026-08-22",
 	"entries": [
+		{
+			"sha": "45b330d",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Consistency sweep: Zombie -> Undead game-wide",
+			"body": "This game uses \"Undead\", never \"Zombie\". Rename every player-facing \"Zombie\"\n(case-sensitive, so lowercase ids/summonIds like rlk_zombie_rush are untouched):\n- cards.json: 96 string values across 47 tribes, 20 token names, 22 descriptions,\n  7 card names (Zombie Chow->Undead Chow, Lingering Zombie->Lingering Undead,\n  God-Eternal \"Zombie God\"->\"Undead God\", etc.). No tribal-synergy references key\n  on the string \"Zombie\", so nothing desyncs.\n- engine/death.js: the From-the-Swamp token \"Bloated Zombie\" -> \"Bloated Undead\".\n- duels.js: the From the Swamp passive text.\n- duels_run_test.mjs: assertion updated to \"Bloated Undead\".\nCard ids left unchanged (internal). Full suite 325/325.",
+			"cards": []
+		},
 		{
 			"sha": "d630b7b",
 			"date": "2026-08-21",
