@@ -46563,20 +46563,21 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Deathtouch.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Elf",
       "keywords": [
-        "taunt"
+        "taunt",
+        "deathtouch"
       ]
     },
     {
       "id": "nissa_defeat",
       "name": "Nissa’s Defeat",
       "cardClass": "magepunk",
-      "cost": 1,
+      "cost": 2,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -46584,12 +46585,12 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "A friendly creature fights an enemy creature.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "fight",
+          "target": "friendly-creature"
         }
       ]
     },
@@ -46605,14 +46606,15 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Give a creature +2/+2.",
+      "description": "Give a friendly creature +2/+2 and Trample.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature",
+          "grant": "trample"
         }
       ]
     },
@@ -46620,7 +46622,7 @@
       "id": "nissa_expedition",
       "name": "Nissa’s Expedition",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 1,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -46628,20 +46630,31 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Elf Druid",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "description": "Quest: Summon 5 creatures. Reward: Summon a 6/6 Elemental with Trample and gain 2 Mana Crystals.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 6,
+            "health": 6,
+            "name": "Elemental",
+            "tribe": "Elemental",
+            "keywords": [
+              "trample"
+            ]
+          },
+          {
+            "type": "gain-empty-mana-crystal",
+            "value": 2
+          }
+        ]
+      }
     },
     {
       "id": "nissa_judgement",
@@ -46655,8 +46668,8 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Give a creature +2/+2, then it fights an enemy creature.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +2/+2, then it fights an enemy creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -46674,7 +46687,7 @@
       "id": "nissa_pilgrimage",
       "name": "Nissa’s Pilgrimage",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -46682,16 +46695,22 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 2. {T}: Gain a Mana Crystal this turn and draw a card.",
+      "type": "location",
+      "durability": 2,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Gain a Mana Crystal this turn and draw a card.",
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -46707,17 +46726,31 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Gain 2 Mana Crystals this turn. Gain 3 life.",
+      "description": "Choose One — Gain 2 Mana Crystals; or Gain 5 life and draw a card.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "gain-mana",
-          "value": 2
+          "text": "Gain 2 Mana Crystals.",
+          "effects": [
+            {
+              "type": "gain-empty-mana-crystal",
+              "value": 2
+            }
+          ]
         },
         {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "text": "Gain 5 life and draw a card.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "self"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -46733,12 +46766,16 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Draw 3 cards. Gain 3 life.",
+      "description": "Draw 3 cards, gain a Mana Crystal, and gain 3 life.",
       "type": "sorcery",
       "effects": [
         {
           "type": "draw",
           "value": 3
+        },
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
         },
         {
           "type": "heal",
@@ -46759,7 +46796,7 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Summon two 2/2 Elementals.",
+      "description": "Summon two 2/2 Elementals with Trample.",
       "type": "sorcery",
       "effects": [
         {
@@ -46767,7 +46804,11 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Elemental"
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "trample"
+          ]
         }
       ]
     },
@@ -46783,21 +46824,16 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Trample. Gain a Mana Crystal this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "trample"
-        },
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "description": "Your Elementals have +1/+1 and Trample.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Elemental",
+        "keywords": [
+          "trample"
+        ]
+      }
     },
     {
       "id": "nissa_worldwaking_voice",
@@ -46811,13 +46847,28 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Rush. Battlecry: Summon a 2/2 Elemental with Taunt.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Elemental",
       "keywords": [
-        "trample"
+        "trample",
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "taunt"
+          ]
+        }
       ]
     },
     {
@@ -46832,14 +46883,28 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Trample. Reborn.",
+      "description": "Trample. Reborn. Deathrattle: Summon a 3/3 Elemental with Trample.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Elemental",
       "keywords": [
         "trample",
-        "reborn"
+        "reborn",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "trample"
+          ]
+        }
       ]
     },
     {
@@ -46854,7 +46919,7 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal. Whenever you play an Elemental, give it +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -46864,10 +46929,23 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Elemental"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "nissa_elemental",
@@ -46881,14 +46959,24 @@
       ],
       "loreDeck": "Nissa",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Landfall — whenever you play a land, gain +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Elemental",
       "keywords": [
         "trample"
-      ]
+      ],
+      "ongoing": {
+        "on": "landfall",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "ob_nixilis_sig",
