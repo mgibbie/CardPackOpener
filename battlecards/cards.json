@@ -53920,7 +53920,7 @@
       "id": "sheoldred_sig",
       "name": "Sheoldred",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 6,
       "rarity": "legendary",
       "set": "paper",
       "colors": [
@@ -53928,21 +53928,26 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Deathtouch. Lifesteal. Battlecry: Deal 2 damage to each opponent.",
+      "description": "Deathtouch. Lifesteal. Poisonous. Battlecry: Deal 3 damage to each opponent and each opponent discards a card.",
       "type": "creature",
-      "attack": 4,
-      "health": 5,
+      "attack": 6,
+      "health": 7,
       "tribe": "Phyrexian",
       "keywords": [
         "deathtouch",
         "lifesteal",
+        "poisonous",
         "battlecry"
       ],
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "enemy-heroes"
+        },
+        {
+          "type": "enemy-discard",
+          "value": 1
         }
       ]
     },
@@ -53958,14 +53963,29 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Lifesteal.",
-      "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Phyrexian",
-      "keywords": [
-        "lifesteal"
-      ]
+      "description": "{T}: Gain 2 life and summon a 1/1 Phyrexian with Deathtouch.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Phyrexian",
+            "tribe": "Phyrexian",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ],
+        "text": "Gain 2 life and summon a 1/1 Phyrexian with Deathtouch."
+      }
     },
     {
       "id": "sheoldred_edict",
@@ -53980,7 +54000,7 @@
       "loreDeck": "Sheoldred",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -54000,10 +54020,22 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "Lifesteal. After your hero attacks, draw a card.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "sheoldred_restoration",
@@ -54026,6 +54058,7 @@
           "attack": 3,
           "health": 3,
           "name": "Phyrexian",
+          "tribe": "Phyrexian",
           "keywords": [
             "deathtouch"
           ]
@@ -54049,18 +54082,21 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Each opponent discards a card. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the end of your turn, each opponent discards a card and you draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "sheoldred_terror",
@@ -54074,14 +54110,25 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt. Whenever an opponent draws a card, they lose 1 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch"
-      ]
+        "deathtouch",
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "enemy-draws",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "sheoldred_grasp",
@@ -54122,22 +54169,32 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Destroy a creature. Deal 2 damage to each opponent and gain 2 life.",
+      "description": "Choose One — Destroy a creature; or Deal 4 damage to each opponent and gain 4 life.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Destroy a creature.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "text": "Deal 4 damage to each opponent and gain 4 life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 4,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
@@ -54153,13 +54210,14 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Deathtouch.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "deathtouch"
       ]
     },
     {
@@ -54174,7 +54232,7 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Deathtouch. Lifesteal.",
+      "description": "Deathtouch. Lifesteal. Whenever you draw a card, gain 2 life. Whenever an opponent draws a card, they lose 2 life.",
       "type": "creature",
       "attack": 5,
       "health": 6,
@@ -54182,6 +54240,28 @@
       "keywords": [
         "deathtouch",
         "lifesteal"
+      ],
+      "ongoings": [
+        {
+          "on": "card-drawn",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "on": "enemy-draws",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            }
+          ]
+        }
       ]
     },
     {
@@ -54196,7 +54276,7 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
+      "description": "Deathtouch. Battlecry: Each opponent discards a card. Whenever you draw a card, gain 1 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -54210,7 +54290,17 @@
           "type": "enemy-discard",
           "value": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "sheoldred_apostle",
@@ -54224,13 +54314,15 @@
       ],
       "loreDeck": "Sheoldred",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Poisonous. Stealth.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "poisonous",
+        "stealth"
       ]
     },
     {
