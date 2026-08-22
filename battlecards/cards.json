@@ -46578,14 +46578,15 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Elusive. Rush.",
+      "description": "Elusive. Rush. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Cat",
+      "tribe": "Cat Beast",
       "keywords": [
         "elusive",
-        "rush"
+        "rush",
+        "first_strike"
       ]
     },
     {
@@ -46600,16 +46601,17 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "At the end of your turn, transform each of your creatures into a random one that costs (1) more.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "transform-friendly-costplus",
+            "costDelta": 1
+          }
+        ]
+      }
     },
     {
       "id": "lukka_connection",
@@ -46623,12 +46625,16 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Draw 2 cards.",
+      "description": "Summon a Beast from your deck, then draw a card.",
       "type": "sorcery",
       "effects": [
         {
+          "type": "recruit",
+          "tribe": "Beast"
+        },
+        {
           "type": "draw",
-          "value": 2
+          "value": 1
         }
       ]
     },
@@ -46644,7 +46650,7 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Trample. Rush.",
+      "description": "Trample. Rush. Has +1 Attack for each other Beast you control.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -46652,13 +46658,17 @@
       "keywords": [
         "trample",
         "rush"
-      ]
+      ],
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Beast"
+      }
     },
     {
       "id": "lukka_armada",
       "name": "Lukka’s Armada",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -46666,20 +46676,32 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Summon two 3/3 Beasts with Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
+      "description": "Quest: Summon 5 creatures. Reward: Summon an 8/8 Beast with Trample and Rush, and recruit a Beast from your deck.",
+      "type": "quest",
+      "quest": {
+        "goal": {
           "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Beast",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 8,
+            "health": 8,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": [
+              "trample",
+              "rush"
+            ]
+          },
+          {
+            "type": "recruit",
+            "tribe": "Beast"
+          }
+        ]
+      }
     },
     {
       "id": "lukka_command",
@@ -46693,7 +46715,7 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Summon a 4/4 Beast.",
+      "description": "Deal 3 damage to a creature. Summon a 4/4 Beast with Rush.",
       "type": "sorcery",
       "effects": [
         {
@@ -46706,7 +46728,11 @@
           "count": 1,
           "attack": 4,
           "health": 4,
-          "name": "Beast"
+          "name": "Beast",
+          "tribe": "Beast",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -46722,13 +46748,28 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
+      "description": "Choose One — Deal 3 damage to a creature; or Deal 3 damage to each opponent.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -46744,14 +46785,14 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Give a creature +2/+2 and Rush.",
+      "description": "Give a friendly creature +2/+2 and Rush.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
       ]
@@ -46768,14 +46809,21 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample. Your other Beasts have +1/+0.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Beast",
       "keywords": [
-        "rush"
-      ]
+        "rush",
+        "trample"
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Beast"
+      }
     },
     {
       "id": "lukka_eludha",
@@ -46803,7 +46851,7 @@
       "id": "lukka_heartless_act",
       "name": "Lukka’s Heartless Act",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -46812,7 +46860,7 @@
       "loreDeck": "Lukka",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
