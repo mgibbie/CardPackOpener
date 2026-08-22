@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "3fb441a",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Kozilek (boss — colorless Eldrazi card-flow)",
+			"body": "Seventh boss; second Eldrazi, differentiated from Emrakul (annihilator/reality)\ntoward card advantage.\n- 6 card types: creature (Eldrazi incl the 10/10 boss), artifact (Reckoning = tap\n  to draw + Scry), enchantment (Warden = draw + mill each turn), location\n  (Predator = a Spawn hatchery), instant (Distortion), sorcery.\n- card-flow: draw a flood (Translator/Reckoning/Warden/Rampage/Conquest/boss draws\n  4) + mill the opponent as an alternate deck-out (Aberration/Warden/Conquest 8/\n  boss mills 4) via destroy-enemy-deck; Spawn ramp (Predator) + Eldrazi cost-cut\n  (Pathfinder costMod) + permanent ramp (Channeler) -> huge Eldrazi; Eldrazi lord\n  (Shrieker), Choose One (Conquest: value or big mill). Data-only (no engine change).\n\nTests: pool_kozilek_test.mjs (45 checks); focused fuzz 300 clean; full suite 344/344.",
+			"cards": []
+		},
+		{
 			"sha": "c9f70db",
 			"date": "2026-08-22",
 			"kind": "patch",
