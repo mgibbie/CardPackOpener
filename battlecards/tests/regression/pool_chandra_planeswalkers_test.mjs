@@ -12,9 +12,9 @@ byId._sp = { id: '_sp', name: 'S', type: 'sorcery', cost: 0, rarity: 'common', d
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 
-// The 16 lorequest planeswalker pools (Urza is rostered as a boss, left as-is).
+// The 16 lorequest planeswalker pools + Urza (a boss-rostered planeswalker char).
 const PW = ['ajani', 'chandra', 'daretti', 'elspeth', 'garruk', 'gideon', 'jace', 'karn', 'liliana',
-  'lukka', 'nissa', 'ob_nixilis', 'sorin', 'teferi', 'tezzeret', 'vivian'].map(n => n + '_sig');
+  'lukka', 'nissa', 'ob_nixilis', 'sorin', 'teferi', 'tezzeret', 'urza', 'vivian'].map(n => n + '_sig');
 
 // ---- STRUCTURAL: all 17 signatures are real planeswalkers ----
 for (const id of PW) {

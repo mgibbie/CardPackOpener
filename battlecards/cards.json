@@ -54710,26 +54710,57 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Elusive. Battlecry: Summon two 2/2 Constructs and draw a card.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Human Planeswalker",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "+1: Summon a 1/1 Construct. −2: Draw two cards. −6: Emblem — whenever you cast a spell, summon a 1/1 Construct.",
+      "type": "planeswalker",
+      "loyalty": 4,
+      "abilities": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Construct"
+          "cost": 1,
+          "text": "Summon a 1/1 Construct.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Construct",
+              "tribe": "Construct"
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "cost": -2,
+          "text": "Draw two cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "cost": -6,
+          "text": "Emblem — whenever you cast a spell, summon a 1/1 Construct.",
+          "effects": [
+            {
+              "type": "emblem",
+              "name": "Lord High Artificer",
+              "description": "Whenever you cast a spell, summon a 1/1 Construct.",
+              "ongoing": {
+                "on": "spell-played",
+                "effects": [
+                  {
+                    "type": "summon",
+                    "count": 1,
+                    "attack": 1,
+                    "health": 1,
+                    "name": "Construct",
+                    "tribe": "Construct"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
