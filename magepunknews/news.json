@@ -2,6 +2,14 @@
 	"generated": "2026-08-21",
 	"entries": [
 		{
+			"sha": "65f639b",
+			"date": "2026-08-21",
+			"kind": "patch",
+			"title": "Pool redesign: Chandra pilot + 16 signature planeswalkers",
+			"body": "Kick off the pool-by-pool card redesign (names + art unchanged, mechanics\nricher). Research guide: Plans/POOL_CARD_REDESIGN_GUIDE.md.\n\nChandra pilot pool (mono-R burn + Elemental tribe + spell-matters): from 14/15\n\"deal X damage\" to 4 card types (planeswalker/instant/sorcery/creature), 10\nkeywords incl. finale/overkill/firebreathing, three spell-matters engines\n(Pyreling grows, Magmutt pings, Spitfire pumps), sticky Deathrattle (Firemaw),\nManathirst kickers. Chandra herself is now a planeswalker.\n\nSignature planeswalkers: convert all 16 lorequest planeswalker pools' signatures\nfrom creature -> real `planeswalker` (loyalty + 3 abilities + emblem ultimate),\nthemed per character (Ajani/Daretti/Elspeth/Garruk/Gideon/Jace/Karn/Liliana/\nLukka/Nissa/Ob Nixilis/Sorin/Teferi/Tezzeret/Vivien/Chandra). Urza left as-is\n(rostered as a boss, not one of the 16 planeswalker pools).\n\nTests: pool_chandra_planeswalkers_test.mjs (97 checks — all 16 PW play + abilities\nresolve + Chandra pool mechanics); focused PW+emblem fuzz 320 games clean; full\nsuite 322/322.",
+			"cards": []
+		},
+		{
 			"sha": "5208ace",
 			"date": "2026-08-21",
 			"kind": "cards",
