@@ -49824,23 +49824,26 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "description": "First Strike. Lifesteal. Whenever Drana attacks, give your creatures +1/+1.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal",
-        "battlecry"
+        "first_strike",
+        "lifesteal"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "drana_chosen",
@@ -49854,14 +49857,20 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "First Strike. Your other Vampires have +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
-      ]
+        "first_strike"
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Vampire"
+      }
     },
     {
       "id": "drana_emissary",
@@ -49875,12 +49884,13 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Elusive. Lifesteal.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Vampire",
       "keywords": [
+        "elusive",
         "lifesteal"
       ]
     },
@@ -49896,14 +49906,20 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Elusive. Deathtouch.",
+      "description": "Deathtouch. Battlecry: Silence a creature.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Vampire Rogue",
+      "tribe": "Vampire",
       "keywords": [
-        "elusive",
-        "deathtouch"
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
       ]
     },
     {
@@ -49911,27 +49927,26 @@
       "name": "Drana’s Bloodthirst",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ]
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "drana_mind_drain",
@@ -49945,12 +49960,12 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Each opponent discards a card. Draw a card.",
-      "type": "sorcery",
+      "description": "Each opponent discards 2 cards. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "enemy-discard",
-          "count": 1
+          "count": 2
         },
         {
           "type": "draw",
@@ -49970,12 +49985,12 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Gain 2 life.",
+      "description": "Deal 3 damage to a creature and gain 2 life.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "creature"
         },
         {
@@ -49997,17 +50012,46 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Destroy a creature. Gain 3 life.",
+      "description": "Choose One — Deal 4 damage to a creature; or give your creatures +2/+1 and First Strike; or Summon a 4/4 Vampire with Lifesteal.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "text": "Give your creatures +2/+1 and First Strike.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 1,
+              "target": "friendly-creatures",
+              "grant": "first_strike"
+            }
+          ]
+        },
+        {
+          "text": "Summon a 4/4 Vampire with Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Vampire",
+              "tribe": "Vampire",
+              "keywords": [
+                "lifesteal"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -50023,14 +50067,24 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Rush. Whenever a friendly creature dies, this gains +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 2,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
-      ]
+        "rush"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "drana_thrall",
@@ -50044,13 +50098,14 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Rush. Stealth.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
+        "rush",
+        "stealth"
       ]
     },
     {
@@ -50065,23 +50120,19 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. First Strike. Has +1 Attack for each other Vampire you control.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal",
-        "battlecry"
+        "trample",
+        "first_strike"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Vampire"
+      }
     },
     {
       "id": "drana_ancient_blood_magic",
@@ -50095,18 +50146,15 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Deal 5 damage to each opponent. Gain 5 life.",
+      "description": "Give your creatures +2/+2 and Trample.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 5,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 5,
-          "target": "self"
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "trample"
         }
       ]
     },
@@ -50122,17 +50170,24 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "lifesteal"
-        }
-      ]
+      "description": "Lifesteal. After your hero attacks, give your creatures +1/+0.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "drana_vampire_knight",
@@ -50146,46 +50201,56 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Charge. First Strike.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
+        "charge",
+        "first_strike"
       ]
     },
     {
       "id": "drana_bloodrite",
       "name": "Drana’s Bloodrite",
       "cardClass": "magepunk",
-      "cost": 4,
-      "rarity": "common",
+      "cost": 1,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Summon a 3/3 Vampire with Lifesteal. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Vampire",
-          "keywords": [
-            "lifesteal"
-          ]
+      "description": "Quest: Play 5 cards. Reward: Summon a 5/5 Vampire with First Strike and Lifesteal, and give your creatures +1/+1.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "play",
+          "count": 5
         },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
-        }
-      ]
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 5,
+            "health": 5,
+            "name": "Vampire",
+            "tribe": "Vampire",
+            "keywords": [
+              "first_strike",
+              "lifesteal"
+            ]
+          },
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "drivnod_sig",
