@@ -52246,19 +52246,24 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Trample. Battlecry: Draw 2 cards.",
+      "description": "Trample. Windfury. Battlecry: Draw 4 cards and your opponents mill 4 cards.",
       "type": "creature",
       "attack": 10,
       "health": 10,
       "tribe": "Eldrazi",
       "keywords": [
         "trample",
+        "windfury",
         "battlecry"
       ],
       "effects": [
         {
           "type": "draw",
-          "value": 2
+          "value": 4
+        },
+        {
+          "type": "destroy-enemy-deck",
+          "count": 4
         }
       ]
     },
@@ -52272,7 +52277,7 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -52282,7 +52287,7 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -52297,11 +52302,20 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "A 3/3 for three.",
+      "description": "Taunt. Your Eldrazi cost (1) less.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Eldrazi"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "taunt"
+      ],
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Eldrazi",
+        "amount": -1,
+        "scope": "own"
+      }
     },
     {
       "id": "kozilek_predator",
@@ -52313,21 +52327,22 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Battlecry: Summon two 0/1 Eldrazi Spawn.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Eldrazi",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "Durability 3. {T}: Summon two 0/1 Eldrazi Spawn.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 0,
-          "health": 1,
-          "name": "Eldrazi Spawn"
+          "text": "Summon two 0/1 Eldrazi Spawn.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 0,
+              "health": 1,
+              "name": "Eldrazi Spawn",
+              "tribe": "Eldrazi"
+            }
+          ]
         }
       ]
     },
@@ -52361,13 +52376,21 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Divine Shield. Battlecry: Scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Eldrazi Drone",
       "keywords": [
-        "taunt"
+        "taunt",
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        }
       ]
     },
     {
@@ -52380,14 +52403,21 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Reborn. Your other Eldrazi have +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Eldrazi",
       "keywords": [
-        "elusive"
-      ]
+        "elusive",
+        "reborn"
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Eldrazi"
+      }
     },
     {
       "id": "kozilek_translator",
@@ -52424,8 +52454,8 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Draw a card.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -52447,11 +52477,21 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "A 5/5 for five.",
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Eldrazi"
+      "description": "At the start of your turn, draw a card and your opponents mill 2 cards.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "destroy-enemy-deck",
+            "count": 2
+          }
+        ]
+      }
     },
     {
       "id": "kozilek_conquest",
@@ -52463,16 +52503,30 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Destroy a creature. Draw 2 cards.",
+      "description": "Choose One — Destroy a creature and draw 2 cards; or Your opponents mill 8 cards.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Destroy a creature and draw 2 cards.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 2
+          "text": "Your opponents mill 8 cards.",
+          "effects": [
+            {
+              "type": "destroy-enemy-deck",
+              "count": 8
+            }
+          ]
         }
       ]
     },
@@ -52486,13 +52540,20 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Draw 2 cards.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
       ]
     },
     {
@@ -52505,12 +52566,13 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to a creature.",
+      "description": "Trample. Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Eldrazi",
       "keywords": [
+        "trample",
         "battlecry"
       ],
       "effects": [
@@ -52531,11 +52593,20 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "A 4/4 for four.",
+      "description": "Battlecry: Your opponents mill 3 cards.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Eldrazi"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-enemy-deck",
+          "count": 3
+        }
+      ]
     },
     {
       "id": "kozilek_reckoning",
@@ -52547,14 +52618,21 @@
       "colors": [],
       "loreDeck": "Kozilek",
       "collectible": false,
-      "description": "Draw 3 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 3
-        }
-      ]
+      "description": "{T}: Draw a card and Scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card and Scry 1."
+      }
     },
     {
       "id": "lolth_sig",
