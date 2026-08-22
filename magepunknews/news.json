@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "9e249d7",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Drana boss pool (B go-tall evasive vampire aggro)",
+			"body": "Drana, Liberator of Malakir: a flying first-strike vampire who pumps her\nattackers when she swings. Pool = First Strike + evasion (Elusive/Stealth) +\nattack-triggered board pumps (sig on-attack anthem, Bloodthirst turn-start,\nDefiance weapon on hero-attack) + go-tall tribal scaling (Bloodlord selfScale,\nChosen lord). 6 card types (creature/enchantment/instant/sorcery/weapon/quest),\n9 keywords, all mono-B preserved. Distinct from Sorin (lifegain payoffs) and\nEdgar Markov (go-wide tokens).\n\nTest pool_drana_test.mjs 51/51. Full suite 347/347.",
+			"cards": []
+		},
+		{
 			"sha": "ef9957e",
 			"date": "2026-08-22",
 			"kind": "patch",
