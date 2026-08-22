@@ -49051,10 +49051,18 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "A 3/3 weapon.",
-      "type": "weapon",
-      "attack": 3,
-      "durability": 3
+      "description": "{T}: Deal 3 damage to a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "creature"
+          }
+        ],
+        "text": "Deal 3 damage to a creature."
+      }
     },
     {
       "id": "vivian_grizzly",
@@ -49089,7 +49097,7 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Battlecry: Give a creature +1/+1.",
+      "description": "Battlecry: Adapt a friendly creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -49099,10 +49107,8 @@
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
+          "type": "adapt",
+          "target": "friendly-creature"
         }
       ]
     },
@@ -49118,13 +49124,20 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Adapt.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Beast",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adapt",
+          "target": "self"
+        }
       ]
     },
     {
@@ -49139,7 +49152,7 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Discover a Beast.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -49149,8 +49162,9 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "discover",
+          "pick": 3,
+          "tribe": "Beast"
         }
       ]
     },
@@ -49166,14 +49180,14 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Trample.",
+      "description": "Give a friendly creature +4/+4 and Trample.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
+          "attack": 4,
+          "health": 4,
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -49205,6 +49219,7 @@
           "attack": 3,
           "health": 3,
           "name": "Beast",
+          "tribe": "Beast",
           "keywords": [
             "trample"
           ]
@@ -49232,6 +49247,7 @@
           "attack": 3,
           "health": 3,
           "name": "Beast",
+          "tribe": "Beast",
           "keywords": [
             "trample"
           ]
@@ -49250,7 +49266,7 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Draw a Beast from your deck.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -49260,8 +49276,9 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "tutor",
+          "tribe": "Beast",
+          "count": 1
         }
       ]
     },
@@ -49277,8 +49294,8 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Give a creature +2/+2, then it fights an enemy creature.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +2/+2, then it fights an enemy creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -49304,13 +49321,14 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. First Strike.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Snake",
+      "tribe": "Snake Beast",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "first_strike"
       ]
     },
     {
@@ -49325,13 +49343,20 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Battlecry: Adapt.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Cat Beast",
       "keywords": [
-        "rush"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "adapt",
+          "target": "self"
+        }
       ]
     },
     {
@@ -49346,7 +49371,7 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Trample. Taunt.",
+      "description": "Trample. Taunt. Your other Beasts have +1/+1.",
       "type": "creature",
       "attack": 5,
       "health": 6,
@@ -49354,7 +49379,13 @@
       "keywords": [
         "trample",
         "taunt"
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Beast"
+      }
     },
     {
       "id": "vivian_talent",
@@ -49368,16 +49399,16 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Your Beasts have +1/+1 and Deathtouch.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Beast",
+        "keywords": [
+          "deathtouch"
+        ]
+      }
     },
     {
       "id": "drana_sig",
