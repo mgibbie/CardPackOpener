@@ -358,13 +358,13 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const h = state.players[0].hand.find(c => c.id === 't_h');
 	ok('Dragonblood: hand creature +1/+1', h.attack === 3 && E.hp(h) === 3, [h.attack, E.hp(h)]);
 }
-// From the Swamp: first enemy death each turn raises a 1/1 Bloated Zombie for you
+// From the Swamp: first enemy death each turn raises a 1/1 Bloated Undead for you
 {
 	const { state } = new Scenario(byId).def('t_e', { type: 'creature', cost: 1, attack: 2, health: 1 }).board(1, ['t_e']).run();
 	D.applyPassive(state, 0, 'from_the_swamp');
 	kill(state, 1, state.players[1].board[0].uid);
-	const z = state.players[0].board.filter(c => c.name === 'Bloated Zombie');
-	ok('From the Swamp: a 1/1 Bloated Zombie on enemy death', z.length === 1 && z[0].attack === 1 && E.hp(z[0]) === 1, z.length);
+	const z = state.players[0].board.filter(c => c.name === 'Bloated Undead');
+	ok('From the Swamp: a 1/1 Bloated Undead on enemy death', z.length === 1 && z[0].attack === 1 && E.hp(z[0]) === 1, z.length);
 }
 // Cadaver Collector: first Corpse gained each turn banks an extra
 {

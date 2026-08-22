@@ -144,7 +144,7 @@ export const PASSIVES = {
 		apply: (state, pi) => { state.players[pi].dragonblood = true; },
 	},
 	from_the_swamp: {
-		name: 'From the Swamp', text: 'After the first enemy dies each turn, raise a 1/1 Bloated Zombie.',
+		name: 'From the Swamp', text: 'After the first enemy dies each turn, raise a 1/1 Bloated Undead.',
 		apply: (state, pi) => { state.players[pi].fromTheSwamp = true; },
 	},
 	cadaver_collector: {

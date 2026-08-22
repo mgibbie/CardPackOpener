@@ -5346,7 +5346,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Summon two 4/4 Zombie Warriors with Taunt.",
+      "description": "Divine Shield. Battlecry: Summon two 4/4 Undead Warriors with Taunt.",
       "type": "creature",
       "attack": 3,
       "health": 6,
@@ -5361,7 +5361,7 @@
           "count": 2,
           "attack": 4,
           "health": 4,
-          "name": "Zombie Warrior",
+          "name": "Undead Warrior",
           "keywords": [
             "taunt"
           ]
@@ -5384,7 +5384,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Zombie Warrior",
+      "tribe": "Undead Warrior",
       "keywords": [
         "taunt",
         "reborn"
@@ -6707,11 +6707,11 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Summon two 3/3 Zombies with Lifesteal.",
+      "description": "Battlecry: Summon two 3/3 Undeads with Lifesteal.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Zombie God",
+      "tribe": "Undead God",
       "keywords": [
         "battlecry"
       ],
@@ -6721,7 +6721,7 @@
           "count": 2,
           "attack": 3,
           "health": 3,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "lifesteal"
           ]
@@ -6786,7 +6786,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ],
@@ -6855,7 +6855,7 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Your creatures gain Lifesteal. Summon a 3/3 Zombie.",
+      "description": "Your creatures gain Lifesteal. Summon a 3/3 Undead.",
       "type": "sorcery",
       "effects": [
         {
@@ -6870,7 +6870,7 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Zombie"
+          "name": "Undead"
         }
       ],
       "colors": [
@@ -6886,7 +6886,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon a 4/4 Zombie with Lifesteal.",
+      "description": "Summon a 4/4 Undead with Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
@@ -6894,7 +6894,7 @@
           "count": 1,
           "attack": 4,
           "health": 4,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "lifesteal"
           ]
@@ -6991,7 +6991,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -6999,7 +6999,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -7074,7 +7074,7 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Zombie God",
+      "tribe": "Undead God",
       "keywords": [
         "lifesteal",
         "battlecry"
@@ -7149,7 +7149,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "reborn"
       ],
@@ -14061,7 +14061,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Zombie Elf",
+      "tribe": "Undead Elf",
       "keywords": [
         "deathtouch",
         "trample"
@@ -14203,7 +14203,7 @@
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Zombie Warrior",
+      "tribe": "Undead Warrior",
       "keywords": [
         "trample"
       ],
@@ -16893,7 +16893,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Zombie Wizard",
+      "tribe": "Undead Wizard",
       "keywords": [
         "reborn",
         "deathtouch"
@@ -22295,7 +22295,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -22320,7 +22320,7 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -22328,7 +22328,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -22356,7 +22356,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "elusive"
       ]
@@ -22853,7 +22853,7 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush"
       ]
@@ -23084,7 +23084,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -24105,7 +24105,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "reborn"
       ]
@@ -25055,7 +25055,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -25073,7 +25073,7 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Zombie with Rush.",
+      "description": "Battlecry: Summon a 2/2 Undead with Rush.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -25087,7 +25087,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "rush"
           ]
@@ -25111,7 +25111,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "elusive"
       ]
@@ -25155,7 +25155,7 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Zombie Wizard",
+      "tribe": "Undead Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -25281,7 +25281,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -25328,7 +25328,7 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -25336,7 +25336,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -25364,7 +25364,7 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Zombie Wizard",
+      "tribe": "Undead Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -25388,7 +25388,7 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Summon two 2/2 Zombies with Deathtouch.",
+      "description": "Summon two 2/2 Undeads with Deathtouch.",
       "type": "sorcery",
       "effects": [
         {
@@ -25396,7 +25396,7 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -27939,7 +27939,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "battlecry"
       ],
@@ -29586,7 +29586,7 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Zombie Assassin",
+      "tribe": "Undead Assassin",
       "keywords": [
         "charge"
       ]
@@ -29605,11 +29605,11 @@
       ],
       "landSet": "Grixis",
       "collectible": false,
-      "description": "Rush. Battlecry: Summon a 2/2 Zombie.",
+      "description": "Rush. Battlecry: Summon a 2/2 Undead.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush",
         "battlecry"
@@ -29620,7 +29620,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie"
+          "name": "Undead"
         }
       ]
     },
@@ -29779,7 +29779,7 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -29865,7 +29865,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "lifesteal"
@@ -29935,7 +29935,7 @@
       ],
       "landSet": "Grixis",
       "collectible": false,
-      "description": "Summon a 2/2 Zombie with Deathtouch. Each opponent loses 1 life.",
+      "description": "Summon a 2/2 Undead with Deathtouch. Each opponent loses 1 life.",
       "type": "sorcery",
       "effects": [
         {
@@ -29943,7 +29943,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -30383,7 +30383,7 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Zombie and draw a card.",
+      "description": "Battlecry: Summon a 2/2 Undead and draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -30397,7 +30397,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie"
+          "name": "Undead"
         },
         {
           "type": "draw",
@@ -30581,11 +30581,11 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon a 2/2 Zombie.",
+      "description": "Deathtouch. Battlecry: Summon a 2/2 Undead.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -30596,7 +30596,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie"
+          "name": "Undead"
         }
       ]
     },
@@ -30731,7 +30731,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "reborn"
@@ -30778,7 +30778,7 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Summon a 2/2 Zombie with Deathtouch. Draw a card.",
+      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -30786,7 +30786,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -33875,7 +33875,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -33900,11 +33900,11 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Zombie with Deathtouch.",
+      "description": "Battlecry: Summon a 2/2 Undead with Deathtouch.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "battlecry"
       ],
@@ -33914,7 +33914,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -33938,7 +33938,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie Rogue",
+      "tribe": "Undead Rogue",
       "keywords": [
         "elusive",
         "battlecry"
@@ -33985,7 +33985,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush"
       ]
@@ -34007,7 +34007,7 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Zombie Cleric",
+      "tribe": "Undead Cleric",
       "keywords": [
         "taunt",
         "battlecry"
@@ -34032,11 +34032,11 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon a 2/2 Zombie with Deathtouch.",
+      "description": "Deathtouch. Battlecry: Summon a 2/2 Undead with Deathtouch.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Zombie Wizard",
+      "tribe": "Undead Wizard",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -34047,7 +34047,7 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Zombie",
+          "name": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -34093,7 +34093,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "elusive"
       ]
@@ -37090,7 +37090,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush"
       ]
@@ -37253,7 +37253,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush"
       ]
@@ -49444,7 +49444,7 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -49473,7 +49473,7 @@
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "taunt"
       ]
@@ -49521,7 +49521,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -49564,7 +49564,7 @@
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
       ]
@@ -49607,7 +49607,7 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "elusive"
@@ -49726,7 +49726,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie Wizard",
+      "tribe": "Undead Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -49759,7 +49759,7 @@
       "type": "creature",
       "attack": 7,
       "health": 7,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "trample",
         "reborn"
@@ -52959,7 +52959,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "rush"
       ]
@@ -74391,14 +74391,14 @@
             "count": 1,
             "attack": 1,
             "health": 1,
-            "name": "Zombie",
+            "name": "Undead",
             "keywords": [
               "taunt"
             ]
           }
         ]
       },
-      "description": "Whenever you cast a spell, create a 1/1 Zombie creature token with Taunt.",
+      "description": "Whenever you cast a spell, create a 1/1 Undead creature token with Taunt.",
       "set": "hsx"
     },
     {
@@ -89785,7 +89785,7 @@
     },
     {
       "id": "zombie_chow",
-      "name": "Zombie Chow",
+      "name": "Undead Chow",
       "cardClass": "neutral",
       "cost": 1,
       "rarity": "common",
@@ -102649,12 +102649,12 @@
     },
     {
       "id": "lingering_zombie",
-      "name": "Lingering Zombie",
+      "name": "Lingering Undead",
       "cardClass": "druid",
       "cost": 1,
       "rarity": "common",
       "set": "hs",
-      "description": "Deathrattle: Create a 1/1 Disarmed Zombie creature token with \"Deathrattle: Create a 1/1 Zombie creature token.\"",
+      "description": "Deathrattle: Create a 1/1 Disarmed Undead creature token with \"Deathrattle: Create a 1/1 Undead creature token.\"",
       "type": "creature",
       "attack": 1,
       "health": 1,
@@ -102668,14 +102668,14 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Disarmed Zombie",
+          "name": "Disarmed Undead",
           "deathrattle": [
             {
               "type": "summon",
               "count": 1,
               "attack": 1,
               "health": 1,
-              "name": "Zombie"
+              "name": "Undead"
             }
           ]
         }
@@ -112011,7 +112011,7 @@
       "attack": 1,
       "health": 1,
       "set": "wubrg",
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [],
       "description": "Sacrifice a creature: Put a +1/+1 counter on this creature.",
       "activated": [
@@ -113078,7 +113078,7 @@
       "attack": 3,
       "health": 2,
       "set": "wubrg",
-      "tribe": "Zombie Snake",
+      "tribe": "Undead Snake",
       "keywords": [],
       "description": "",
       "landSet": "Island",
@@ -113264,7 +113264,7 @@
       "attack": 3,
       "health": 2,
       "set": "wubrg",
-      "tribe": "Zombie Minotaur",
+      "tribe": "Undead Minotaur",
       "keywords": [],
       "description": "",
       "landSet": "Swamp",
@@ -113300,7 +113300,7 @@
       "attack": 3,
       "health": 1,
       "set": "wubrg",
-      "tribe": "Zombie Bird",
+      "tribe": "Undead Bird",
       "keywords": [],
       "description": "",
       "landSet": "Swamp",
@@ -114181,7 +114181,7 @@
       "attack": 4,
       "health": 3,
       "set": "wubrg",
-      "tribe": "Zombie Beast",
+      "tribe": "Undead Beast",
       "keywords": [],
       "description": "",
       "landSet": "Swamp",
@@ -151797,7 +151797,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Target creature you control gains \"Deathrattle: Create a 2/2 Zombie creature token with Rush.\"",
+      "description": "Battlecry: Target creature you control gains \"Deathrattle: Create a 2/2 Undead creature token with Rush.\"",
       "effects": [
         {
           "type": "grant-deathrattle",
@@ -151889,7 +151889,7 @@
       "keywords": [
         "battlecry"
       ],
-      "description": "Battlecry: Infect all creatures your opponents control. When they die, you create a 2/2 Zombie creature token with Taunt.",
+      "description": "Battlecry: Infect all creatures your opponents control. When they die, you create a 2/2 Undead creature token with Taunt.",
       "effects": [
         {
           "type": "infect-enemies-summon-on-death",
@@ -151904,7 +151904,7 @@
     },
     {
       "id": "brittleskin_zombie",
-      "name": "Brittleskin Zombie",
+      "name": "Brittleskin Undead",
       "type": "creature",
       "cost": 3,
       "cardClass": "neutral",
@@ -152024,7 +152024,7 @@
     },
     {
       "id": "rlk_zombie_rush",
-      "name": "Zombie",
+      "name": "Undead",
       "type": "creature",
       "cost": 2,
       "cardClass": "neutral",
@@ -152042,7 +152042,7 @@
     },
     {
       "id": "rlk_zombie_taunt",
-      "name": "Zombie",
+      "name": "Undead",
       "type": "creature",
       "cost": 2,
       "cardClass": "neutral",
@@ -152814,7 +152814,7 @@
       "keywords": [
         "deathrattle"
       ],
-      "description": "Deathrattle: Spend all your Mana. Create that many 2/2 Zombies with Rush.",
+      "description": "Deathrattle: Spend all your Mana. Create that many 2/2 Undeads with Rush.",
       "deathrattle": [
         {
           "type": "spend-mana-summon",
@@ -152991,7 +152991,7 @@
     },
     {
       "id": "rlk_zombie_32",
-      "name": "Zombie",
+      "name": "Undead",
       "type": "creature",
       "cost": 3,
       "cardClass": "neutral",
@@ -153002,7 +153002,7 @@
       "tribe": "Undead",
       "token": true,
       "collectible": false,
-      "description": "A 3/2 Zombie."
+      "description": "A 3/2 Undead."
     },
     {
       "id": "thoribelore",
@@ -157091,7 +157091,7 @@
     },
     {
       "id": "shambling_zombietank",
-      "name": "Shambling Zombietank",
+      "name": "Shambling Undeadtank",
       "type": "creature",
       "cost": 2,
       "cardClass": "deathknight",
@@ -198215,7 +198215,7 @@
               "count": 2,
               "attack": 3,
               "health": 2,
-              "name": "Zombie"
+              "name": "Undead"
             }
           ]
         }
