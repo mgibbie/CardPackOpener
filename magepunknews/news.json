@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "c9f70db",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Drivnod (boss — B death-DOUBLER aristocrats)",
+			"body": "Sixth boss; completes the doubler trio (token/damage/death). Carnage Dominus =\nDeathrattles and death-triggered abilities fire an extra time. Distinct from the\nother four black pools (Liliana/Sorin/Ob Nixilis/Sheoldred).\n- Engine: `death-doubler` static (death.js) hooked in TWO spots — runDeathrattle\n  and the `friendly-creature-died` fire site: fire `2**dv - 1` extra times each\n  (stacks -> 4x). Reuses staticValue (now imported in death.js). Gated to static;\n  no new register().\n- 6 card types: creature (Undead + the 6/7 boss), enchantment (Skeletal Tapestry =\n  a Skeleton per death), location (Burnished Bones = fodder factory), quest\n  (Crescendo = 6 deaths -> Skeletons + drain), instant (Reaping), sorcery.\n- aristocrats: Deathrattle payoffs doubled (Grin burn, Razor AoE, Necrogen/Rotcloud/\n  Catacomb Skeletons), death-matters engines doubled (Deathcaller draw, Skeletal\n  Tapestry), Deathtouch fodder, AoE to trigger mass deaths (boss battlecry), Choose\n  One (Spikes: burn or sac-for-cards).\n\nTests: pool_drivnod_test.mjs (44 checks; deathrattle + death-trigger doubling +\nstacking to 4x); focused fuzz 300 clean; full suite 343/343.",
+			"cards": []
+		},
+		{
 			"sha": "8181179",
 			"date": "2026-08-22",
 			"kind": "patch",
