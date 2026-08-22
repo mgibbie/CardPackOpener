@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "d68f523",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Tezzeret (U artifacts matter)",
+			"body": "Twelfth pool. Turned \"U constructs + draw\" into a real artifact deck:\n- 6 card types incl THREE artifacts: Gambit ({T}: draw), Keyrune ({T}: a 1/1\n  Thopter), Puzzlebox ({T}: a 2/2 Construct). Plus enchantment (Touch = Construct\n  anthem), instant (Charm bounce), planeswalker (sig).\n- artifact-matters payoffs on `ongoing on:'artifact-played'`: Strider grows +1/+1,\n  Simulacrum draws, Tesseract makes a 1/1 Servo. Metalcraft via a new conditional\n  predicate `controlArtEnch` (Ambition draws an extra card / Gatebreaker gets\n  +2/+2 only when you control an artifact). Choose One (Command), go-wide Thopters/\n  Constructs.\n\nEngine: add `controlArtEnch` to the `conditional` effect's if-chain (additive;\nmirrors the existing ongoing `if`). Full suite 333/333.\n\nTests: pool_tezzeret_test.mjs (45 checks); focused fuzz 350 clean.",
+			"cards": []
+		},
+		{
 			"sha": "b2480d6",
 			"date": "2026-08-22",
 			"kind": "patch",
