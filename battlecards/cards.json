@@ -53179,22 +53179,30 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Divine Shield. Battlecry: Summon two 2/2 Phyrexians.",
+      "description": "Divine Shield. If one or more tokens would be created under your control, create twice as many instead. Battlecry: Summon two 2/2 Phyrexians.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
+      "attack": 6,
+      "health": 6,
       "tribe": "Phyrexian",
       "keywords": [
         "divine_shield",
         "battlecry"
       ],
+      "static": {
+        "type": "token-doubler",
+        "value": 1
+      },
       "effects": [
         {
           "type": "summon",
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Phyrexian"
+          "name": "Phyrexian",
+          "tribe": "Phyrexian",
+          "keywords": [
+            "divine_shield"
+          ]
         }
       ]
     },
@@ -53210,23 +53218,21 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Summon two 2/2 Phyrexians and give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Phyrexian"
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "At the start of your turn, summon a 1/1 Phyrexian.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Phyrexian",
+            "tribe": "Phyrexian"
+          }
+        ]
+      }
     },
     {
       "id": "mondrak_colossus",
@@ -53240,14 +53246,15 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt. Divine Shield. Rush.",
       "type": "creature",
       "attack": 5,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
         "taunt",
-        "divine_shield"
+        "divine_shield",
+        "rush"
       ]
     },
     {
@@ -53285,14 +53292,14 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Give a creature +0/+3 and Taunt.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +0/+3 and Taunt.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 0,
           "health": 3,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "taunt"
         }
       ]
@@ -53309,17 +53316,34 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Summon two 2/2 Phyrexians with Divine Shield.",
+      "description": "Choose One — Summon two 2/2 Phyrexians with Divine Shield; or Give your creatures +2/+2.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Phyrexian",
-          "keywords": [
-            "divine_shield"
+          "text": "Summon two 2/2 Phyrexians with Divine Shield.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian",
+              "keywords": [
+                "divine_shield"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures"
+            }
           ]
         }
       ]
@@ -53336,17 +53360,22 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Draw 2 cards. Gain 2 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 1/1 Phyrexian.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "text": "Summon a 1/1 Phyrexian.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian"
+            }
+          ]
         }
       ]
     },
@@ -53376,7 +53405,8 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Phyrexian"
+          "name": "Phyrexian",
+          "tribe": "Phyrexian"
         }
       ]
     },
@@ -53392,14 +53422,12 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Divine Shield.",
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Construct",
-      "keywords": [
-        "divine_shield"
-      ]
+      "description": "If one or more tokens would be created under your control, create twice as many instead.",
+      "type": "artifact",
+      "static": {
+        "type": "token-doubler",
+        "value": 1
+      }
     },
     {
       "id": "mondrak_warleader",
@@ -53413,22 +53441,20 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Taunt. Your other Phyrexians have +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
-        "battlecry"
+        "taunt"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Phyrexian"
+      }
     },
     {
       "id": "mondrak_crusader",
@@ -53442,14 +53468,19 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Reborn. Has +1 Attack for each other Phyrexian you control.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "divine_shield"
-      ]
+        "divine_shield",
+        "reborn"
+      ],
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Phyrexian"
+      }
     },
     {
       "id": "mondrak_chaos_tactician",
@@ -53477,7 +53508,8 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Phyrexian"
+          "name": "Phyrexian",
+          "tribe": "Phyrexian"
         }
       ]
     },
@@ -53493,13 +53525,22 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Battlecry: Gain +1/+1 for each other creature you control.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "taunt"
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "other-friendly"
+        }
       ]
     },
     {
@@ -53514,13 +53555,14 @@
       ],
       "loreDeck": "Mondrak",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Poisonous.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "divine_shield"
+        "divine_shield",
+        "poisonous"
       ]
     },
     {
@@ -53550,6 +53592,7 @@
           "attack": 1,
           "health": 1,
           "name": "Phyrexian",
+          "tribe": "Phyrexian",
           "keywords": [
             "divine_shield"
           ]

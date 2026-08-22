@@ -1342,6 +1342,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
 			}
 			if (!e.eachPlayer && !e.forEnemy && state.players[pi].board.some(c => c.id === 'khadgar' && !isDead(c))) n *= 2; // Khadgar: summon twice as many
+			if (!e.eachPlayer && !e.forEnemy) { const _dv = staticValue(state.players[pi], 'token-doubler'); if (_dv > 0) n *= 2 ** _dv; } // Mondrak: doublers double token creation (stack multiplicatively)
 			const isCompanions = e.options && e.options.some(o => o.name === 'Huffer');
 			if (isCompanions && state.players[pi].companionExtra) n += state.players[pi].companionExtra; // Talya Earthstrider
 			const summonOne = (ownerIdx) => {
