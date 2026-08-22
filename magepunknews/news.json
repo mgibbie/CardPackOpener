@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "ef9957e",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Nicol Bolas boss pool (Grixis tyrant control) + fix enemy-discard count",
+			"body": "Nicol Bolas UBR: discard (Cultist/Command/Spy Network/Elder Dragons), steal\n(Enslaver mind-control, boss battlecry), counterspell secret (Clutches), burn\n(Scorn/Rage/Ravaging), card advantage (Auger/Citadel artifact) under 6/6 & 8/8\nElder Dragon threats. 6 card types, 6 keywords, all {UBR} preserved.\n\nAlso swept enemy-discard value->count across 35 lore cards: the handler reads\ne.count (defaults 1), so 'discard 2' cards were only discarding 1. Now every\nenemy-discard matches its text.\n\nFull suite 346/346 green.",
+			"cards": []
+		},
+		{
 			"sha": "0526c84",
 			"date": "2026-08-22",
 			"kind": "patch",
