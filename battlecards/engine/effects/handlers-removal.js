@@ -1572,6 +1572,7 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			if (state.hpDamageBonus) v += state.hpDamageBonus; // Fallen Hero: your Hero Power deals extra
 			if (state.hpDoubling) v *= 2; // Clockwork Automaton: double Hero Power damage
 			v = boost(v);
+			{ const _dd = staticValue(state.players[pi], 'damage-doubler'); if (_dd > 0 && v > 0) v *= 2 ** _dd; } // Solphim: double your noncombat (effect) damage; stacks multiplicatively
 			// spell damage landed this turn: Unstable Spellcaster + Raincaller's first-strike bonus
 			if (source && isSpellType(source) && v > 0) {
 				const sp0 = state.players[pi];
