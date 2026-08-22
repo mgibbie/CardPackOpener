@@ -2090,6 +2090,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.noDuplicates) ok = new Set(p.deck).size === p.deck.length; // Reno Jackson
 			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
 			else if (e.if.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
+			else if (e.if.controlArtEnch) ok = p.artifacts.length > 0 || p.enchantments.length > 0; // metalcraft: control an artifact or enchantment
 			else if (e.if.enemyFrozen) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => c.frozen && !isDead(c))); // Cryomancer
 			else if (e.if.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
 			else if (e.if.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper

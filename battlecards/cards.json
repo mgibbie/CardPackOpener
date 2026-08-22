@@ -48695,7 +48695,7 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
+      "description": "Draw 2 cards and Scry 1. If you control an artifact or enchantment, draw another card.",
       "type": "sorcery",
       "effects": [
         {
@@ -48705,6 +48705,18 @@
         {
           "type": "scry",
           "value": 1
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlArtEnch": true
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -48720,12 +48732,24 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Destroy a creature. If you control an artifact or enchantment, gain 3 Armor.",
       "type": "sorcery",
       "effects": [
         {
           "type": "destroy",
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "controlArtEnch": true
+          },
+          "then": [
+            {
+              "type": "armor",
+              "value": 3
+            }
+          ]
         }
       ]
     },
@@ -48741,14 +48765,17 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "tezzeret_gatebreaker",
@@ -48762,13 +48789,30 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample. Battlecry: If you control an artifact or enchantment, gain +2/+2.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "rush",
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlArtEnch": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 2,
+              "health": 2
+            }
+          ]
+        }
       ]
     },
     {
@@ -48808,20 +48852,23 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Taunt. Whenever you play an artifact, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Construct",
       "keywords": [
-        "battlecry"
+        "taunt"
       ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "tezzeret_strider",
@@ -48835,20 +48882,31 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Divine Shield. Whenever you play an artifact, gain +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Construct",
       "keywords": [
-        "elusive"
-      ]
+        "elusive",
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "tezzeret_touch",
       "name": "Tezzeret’s Touch",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -48856,16 +48914,13 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Give a creature +3/+3.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 3,
-          "health": 3,
-          "target": "creature"
-        }
-      ]
+      "description": "Your Constructs have +1/+1.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Construct"
+      }
     },
     {
       "id": "tezzeret_scheme",
@@ -48888,6 +48943,7 @@
           "attack": 1,
           "health": 1,
           "name": "Thopter",
+          "tribe": "Thopter",
           "keywords": [
             "elusive"
           ]
@@ -48910,18 +48966,21 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Construct.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Construct",
+            "tribe": "Construct"
+          }
+        ],
+        "text": "Summon a 2/2 Construct."
+      }
     },
     {
       "id": "tezzeret_tesseract",
@@ -48935,14 +48994,28 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Divine Shield. Whenever you play an artifact, summon a 1/1 Servo.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
-        "taunt"
-      ]
+        "taunt",
+        "divine_shield"
+      ],
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Servo",
+            "tribe": "Construct"
+          }
+        ]
+      }
     },
     {
       "id": "tezzeret_keyrune",
@@ -48956,18 +49029,24 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Summon a 1/1 Thopter with Elusive.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Thopter",
+            "tribe": "Thopter",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ],
+        "text": "Summon a 1/1 Thopter with Elusive."
+      }
     },
     {
       "id": "tezzeret_charm",
@@ -48982,7 +49061,7 @@
       "loreDeck": "Tezzeret",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -49006,19 +49085,30 @@
       ],
       "loreDeck": "Tezzeret",
       "collectible": false,
-      "description": "Summon a 3/3 Construct. Draw 2 cards.",
+      "description": "Choose One — Summon a 5/5 Construct; or Draw 3 cards.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct"
+          "text": "Summon a 5/5 Construct.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Construct",
+              "tribe": "Construct"
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 2
+          "text": "Draw 3 cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 3
+            }
+          ]
         }
       ]
     },
