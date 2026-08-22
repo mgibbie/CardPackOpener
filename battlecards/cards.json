@@ -48237,13 +48237,15 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Windfury. Reborn.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Drake",
       "keywords": [
-        "elusive"
+        "elusive",
+        "windfury",
+        "reborn"
       ]
     },
     {
@@ -48259,7 +48261,7 @@
       "loreDeck": "Teferi",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -48279,14 +48281,14 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Give a creature +0/+4 and Divine Shield. Gain 3 life.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +0/+4 and Divine Shield. Gain 3 life.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 0,
           "health": 4,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         },
         {
@@ -48308,18 +48310,21 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Draw a card and Scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card and Scry 1."
+      }
     },
     {
       "id": "teferi_imp",
@@ -48333,13 +48338,21 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Stealth. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Imp",
       "keywords": [
-        "elusive"
+        "elusive",
+        "stealth",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
@@ -48354,7 +48367,7 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Battlecry: Draw a card and Scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -48365,6 +48378,10 @@
       "effects": [
         {
           "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
           "value": 1
         }
       ]
@@ -48381,14 +48398,23 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. At the end of your turn, freeze a random enemy.",
       "type": "creature",
       "attack": 3,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
         "taunt"
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "random-enemy"
+          }
+        ]
+      }
     },
     {
       "id": "teferi_time_twist",
@@ -48402,12 +48428,16 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Freeze all enemy creatures.",
+      "description": "Freeze all enemy creatures. Scry 1.",
       "type": "sorcery",
       "effects": [
         {
           "type": "freeze",
           "target": "enemy-creatures"
+        },
+        {
+          "type": "scry",
+          "value": 1
         }
       ]
     },
@@ -48423,18 +48453,21 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Each opponent discards a card. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, Scry 2 and draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 2
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "teferi_veil",
@@ -48448,15 +48481,12 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Elusive.",
+      "description": "Flicker a friendly creature: exile it, then return it (re-triggering its Battlecry).",
       "type": "sorcery",
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "elusive"
+          "type": "blink",
+          "target": "friendly-creature"
         }
       ]
     },
@@ -48472,7 +48502,7 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Elusive. Battlecry: Freeze an enemy creature.",
+      "description": "Elusive. Battlecry: Take control of an enemy creature with 4 or less Attack.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -48483,8 +48513,9 @@
       ],
       "effects": [
         {
-          "type": "freeze",
-          "target": "enemy-creature"
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 4
         }
       ]
     },
@@ -48500,16 +48531,34 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
+      "description": "Choose One — Scry 2 and draw a card; or Freeze an enemy creature and draw a card.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "scry",
-          "value": 2
+          "text": "Scry 2 and draw a card.",
+          "effects": [
+            {
+              "type": "scry",
+              "value": 2
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Freeze an enemy creature and draw a card.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -48525,12 +48574,16 @@
       ],
       "loreDeck": "Teferi",
       "collectible": false,
-      "description": "Draw 3 cards.",
+      "description": "Draw 3 cards and Scry 2.",
       "type": "sorcery",
       "effects": [
         {
           "type": "draw",
           "value": 3
+        },
+        {
+          "type": "scry",
+          "value": 2
         }
       ]
     },
