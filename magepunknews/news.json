@@ -2,6 +2,14 @@
 	"generated": "2026-08-21",
 	"entries": [
 		{
+			"sha": "190c874",
+			"date": "2026-08-21",
+			"kind": "patch",
+			"title": "Pool redesign: Ajani (W lifegain go-wide Cats)",
+			"body": "Second pool of the redesign. From 10 near-identical \"gain life / give +X/+X\"\nspells to a cohesive W archetype (gain life -> go wide with Cats -> anthem):\n- 7 card types: planeswalker (sig), enchantment (Welcome = heal-on-summon,\n  Mantra = Cat anthem aura), instant (Grace), secret (Retribution = destroy the\n  attacker), quest (Ultimatum = summon 6 -> mass +2/+2 & Divine Shield & +8 life),\n  sorcery, creature.\n- Lifegain-matters engines: Pridemate grows on each lifegain; Chosen makes a Cat\n  every 2nd lifegain; Welcome heals on every summon.\n- Choose One (Command), keyword grants via buff{grant} + tokens, Cat tribal.\n\nTests: pool_ajani_test.mjs (48 checks); focused fuzz 350 clean; full suite 323/323.",
+			"cards": []
+		},
+		{
 			"sha": "21f42bc",
 			"date": "2026-08-21",
 			"kind": "patch",
