@@ -43917,7 +43917,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "damage",
@@ -45276,7 +45276,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -45590,7 +45590,7 @@
           "effects": [
             {
               "type": "enemy-discard",
-              "value": 1
+              "count": 1
             }
           ]
         }
@@ -46075,7 +46075,7 @@
             },
             {
               "type": "enemy-discard",
-              "value": 1
+              "count": 1
             }
           ]
         },
@@ -46138,7 +46138,7 @@
         "effects": [
           {
             "type": "enemy-discard",
-            "value": 1
+            "count": 1
           }
         ]
       }
@@ -46298,7 +46298,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "damage",
@@ -46467,7 +46467,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -46488,7 +46488,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -47741,7 +47741,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "damage",
@@ -48039,7 +48039,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -49950,7 +49950,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -50529,7 +50529,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "damage",
@@ -51675,7 +51675,7 @@
           },
           {
             "type": "enemy-discard",
-            "value": 1
+            "count": 1
           }
         ]
       }
@@ -51986,7 +51986,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -52038,7 +52038,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -52101,7 +52101,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         }
       ]
     },
@@ -52126,7 +52126,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -52151,7 +52151,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "damage",
@@ -52895,7 +52895,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -53029,7 +53029,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -53107,7 +53107,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -53900,24 +53900,30 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Elusive. Battlecry: Each opponent discards 2 cards and takes 3 damage.",
+      "description": "Elusive. Charge. Battlecry: Each opponent discards 2 cards and takes 3 damage, and take control of an enemy creature with 6 or less Attack.",
       "type": "creature",
-      "attack": 7,
-      "health": 7,
+      "attack": 8,
+      "health": 8,
       "tribe": "Elder Dragon",
       "keywords": [
         "elusive",
+        "charge",
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "damage",
           "value": 3,
           "target": "enemy-heroes"
+        },
+        {
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 6
         }
       ]
     },
@@ -53935,7 +53941,7 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Battlecry: Draw a card and Scry 1. Whenever you cast a spell, Scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -53947,15 +53953,28 @@
         {
           "type": "draw",
           "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "nicol_bolas_citadel",
       "name": "Nicol Bolas’s Citadel",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -53964,14 +53983,21 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Elusive.",
-      "type": "creature",
-      "attack": 4,
-      "health": 5,
-      "tribe": "Dragon",
-      "keywords": [
-        "elusive"
-      ]
+      "description": "{T}: Draw a card and Scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card and Scry 1."
+      }
     },
     {
       "id": "nicol_bolas_clutches",
@@ -53987,18 +54013,20 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Each opponent discards a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and each opponent discards a card.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "nicol_bolas_command",
@@ -54014,21 +54042,36 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Each opponent discards a card. Draw a card.",
+      "description": "Choose One — Deal 3 damage to a creature; or each opponent discards 2 cards; or Draw 2 cards.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "enemy-discard",
-          "value": 1
+          "text": "Each opponent discards 2 cards.",
+          "effects": [
+            {
+              "type": "enemy-discard",
+              "count": 2
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Draw 2 cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         }
       ]
     },
@@ -54047,7 +54090,7 @@
       "loreDeck": "Nicol Bolas",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -54070,13 +54113,14 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Windfury.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Chimera",
       "keywords": [
-        "elusive"
+        "elusive",
+        "windfury"
       ]
     },
     {
@@ -54093,7 +54137,7 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Battlecry: Each opponent discards a card and deal 2 damage to a creature.",
+      "description": "Battlecry: Take control of an enemy creature with 5 or less Attack.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -54103,13 +54147,9 @@
       ],
       "effects": [
         {
-          "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 5
         }
       ]
     },
@@ -54127,13 +54167,20 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Human",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 1
+        }
       ]
     },
     {
@@ -54150,13 +54197,14 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Elusive.",
       "type": "creature",
       "attack": 3,
       "health": 2,
       "tribe": "Undead",
       "keywords": [
-        "rush"
+        "rush",
+        "elusive"
       ]
     },
     {
@@ -54206,7 +54254,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -54219,7 +54267,7 @@
       "name": "Nicol Bolas’s Spy Network",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -54228,18 +54276,21 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, draw a card and each opponent discards a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "nicol_bolas_elder_dragon",
@@ -54255,14 +54306,21 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Elusive. Charge.",
+      "description": "Elusive. Charge. Battlecry: Each opponent discards 2 cards.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Elder Dragon",
       "keywords": [
         "elusive",
-        "charge"
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 2
+        }
       ]
     },
     {
@@ -54279,7 +54337,7 @@
       ],
       "loreDeck": "Nicol Bolas",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures and 2 to each opponent.",
+      "description": "Deal 3 damage to all enemy creatures and 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
@@ -54325,7 +54383,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -54467,7 +54525,7 @@
         "effects": [
           {
             "type": "enemy-discard",
-            "value": 1
+            "count": 1
           },
           {
             "type": "draw",
@@ -54666,7 +54724,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ],
       "ongoing": {
@@ -56530,7 +56588,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -57076,7 +57134,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -57178,7 +57236,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -57208,7 +57266,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
