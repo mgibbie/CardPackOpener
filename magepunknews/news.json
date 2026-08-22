@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "eafeb5a",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Daretti (R artifact/goblin aristocrats + burn)",
+			"body": "Thirteenth pool. Differentiated from Tezzeret (U artifact value) toward reckless\nR aristocrats-burn:\n- 7 card types: planeswalker (sig), artifact (Cluestone = {T}: 2 to any target, a\n  burn cannon), weapon (Exoskeleton = summon a Goblin after each hero attack),\n  enchantment (Workshop = whenever a friendly dies, 1 to a random enemy), instant\n  (Tripwire burn), sorcery, creature.\n- aristocrats: Constructs die into value (Cogwork deathrattle burn, Clockwork\n  makes a Construct); Workshop + sig emblem turn deaths into burn; Scrap Mastery\n  resurrects your two best dead creatures. Goblin lord swarm (Alliance), reckless\n  keywords (Impulsive automaton, Firebreathing turret), Choose One (Charm).\n\nTests: pool_daretti_test.mjs (44 checks); focused fuzz 350 clean; full suite 334/334.",
+			"cards": []
+		},
+		{
 			"sha": "d68f523",
 			"date": "2026-08-22",
 			"kind": "patch",
