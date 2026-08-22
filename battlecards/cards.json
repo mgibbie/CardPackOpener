@@ -43342,12 +43342,23 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Draw 2 cards.",
+      "description": "Draw 2 cards and summon a 1/1 Goblin with Rush.",
       "type": "sorcery",
       "effects": [
         {
           "type": "draw",
           "value": 2
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Goblin",
+          "tribe": "Goblin",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -43363,11 +43374,22 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "A 3/3 for three.",
+      "description": "Deathrattle: Deal 2 damage to a random enemy.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Construct"
+      "tribe": "Construct",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "random-damage",
+          "value": 2,
+          "pool": "enemies",
+          "count": 1
+        }
+      ]
     },
     {
       "id": "daretti_clockwork_construct",
@@ -43381,13 +43403,24 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Deathrattle: Summon a 2/2 Construct.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Construct",
       "keywords": [
-        "taunt"
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Construct",
+          "tribe": "Construct"
+        }
       ]
     },
     {
@@ -43402,13 +43435,14 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Impulsive (must attack).",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "rush",
+        "impulsive"
       ]
     },
     {
@@ -43423,13 +43457,13 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Deal 2 damage to a creature.",
-      "type": "sorcery",
+      "description": "Deal 2 damage to any target.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
           "value": 2,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -43437,7 +43471,7 @@
       "id": "daretti_rocket_turret",
       "name": "Daretti’s Rocket Turret",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -43445,13 +43479,14 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Firebreathing. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Construct",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "firebreathing"
       ],
       "effects": [
         {
@@ -43473,7 +43508,7 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Goblins with Rush.",
+      "description": "Your other Goblins have +1/+0. Battlecry: Summon two 1/1 Goblins with Rush.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -43488,11 +43523,18 @@
           "attack": 1,
           "health": 1,
           "name": "Goblin",
+          "tribe": "Goblin",
           "keywords": [
             "rush"
           ]
         }
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Goblin"
+      }
     },
     {
       "id": "daretti_deadly_derision",
@@ -43506,12 +43548,17 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Destroy a creature and deal 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "destroy",
           "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -43527,15 +43574,12 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Summon two 3/3 Constructs.",
+      "description": "Resurrect the two highest-Cost creatures that died this game.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct"
+          "type": "resurrect-highest-died",
+          "count": 2
         }
       ]
     },
@@ -43551,10 +43595,26 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "A 3/3 weapon.",
+      "description": "After your hero attacks, summon a 1/1 Goblin with Rush.",
       "type": "weapon",
       "attack": 3,
-      "durability": 3
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Goblin",
+            "tribe": "Goblin",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "daretti_command",
@@ -43581,7 +43641,8 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Construct"
+          "name": "Construct",
+          "tribe": "Construct"
         }
       ]
     },
@@ -43597,13 +43658,28 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
+      "description": "Choose One — Deal 3 damage to a creature; or Deal 3 damage to each opponent.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -43619,18 +43695,19 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever a friendly creature dies, deal 1 damage to a random enemy.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "daretti_cluestone",
@@ -43644,18 +43721,18 @@
       ],
       "loreDeck": "Daretti",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Deal 2 damage to any target.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ],
+        "text": "Deal 2 damage to any target."
+      }
     },
     {
       "id": "elspeth_sig",
