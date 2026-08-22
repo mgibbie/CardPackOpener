@@ -44219,13 +44219,14 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Deathtouch.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Beast",
       "keywords": [
-        "trample"
+        "trample",
+        "deathtouch"
       ]
     },
     {
@@ -44240,13 +44241,24 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Overkill: Summon a 2/2 Beast.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Beast",
       "keywords": [
-        "trample"
+        "trample",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Beast",
+          "tribe": "Beast"
+        }
       ]
     },
     {
@@ -44261,20 +44273,23 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Trample. Whenever this attacks, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Beast",
       "keywords": [
-        "battlecry"
+        "trample"
       ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "garruk_hordebeast",
@@ -44288,14 +44303,18 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Has +1 Attack for each other Beast you control.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Beast",
       "keywords": [
         "trample"
-      ]
+      ],
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Beast"
+      }
     },
     {
       "id": "garruk_packleader",
@@ -44309,22 +44328,20 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. Your other Beasts have +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Beast",
       "keywords": [
-        "battlecry"
+        "trample"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Beast"
+      }
     },
     {
       "id": "garruk_uprising",
@@ -44338,17 +44355,16 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "trample"
-        }
-      ]
+      "description": "Your Beasts have +1/+1 and Trample.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Beast",
+        "keywords": [
+          "trample"
+        ]
+      }
     },
     {
       "id": "garruk_warsteed",
@@ -44362,13 +44378,15 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Beast",
       "keywords": [
-        "rush"
+        "rush",
+        "trample",
+        "first_strike"
       ]
     },
     {
@@ -44383,18 +44401,15 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Summon two 4/4 Beasts with Trample.",
+      "description": "Give your creatures +3/+3 and Trample.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 4,
-          "health": 4,
-          "name": "Beast",
-          "keywords": [
-            "trample"
-          ]
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creatures",
+          "grant": "trample"
         }
       ]
     },
@@ -44410,21 +44425,36 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Summon two 3/3 Beasts and give your creatures +1/+1.",
+      "description": "Choose One — Summon two 3/3 Beasts with Trample; or Give your creatures +2/+2 and Trample.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Beast"
+          "text": "Summon two 3/3 Beasts with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         },
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "text": "Give your creatures +2/+2 and Trample.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures",
+              "grant": "trample"
+            }
+          ]
         }
       ]
     },
@@ -44432,7 +44462,7 @@
       "id": "garruk_wrath",
       "name": "Garruk’s Wrath",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -44440,8 +44470,8 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Give a creature +3/+3, then it fights an enemy creature.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +3/+3, then it fights an enemy creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -44467,7 +44497,7 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Summon a 2/2 Beast.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -44477,8 +44507,12 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Beast",
+          "tribe": "Beast"
         }
       ]
     },
@@ -44494,20 +44528,24 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Whenever you play a Beast, give it +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Elf Druid",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "tribe": "Beast",
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Beast"
+        },
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "garruk_apex_predator",
@@ -44521,13 +44559,14 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Trample. Battlecry: Destroy a creature.",
+      "description": "Trample. Deathtouch. Battlecry: Destroy a creature.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Beast",
       "keywords": [
         "trample",
+        "deathtouch",
         "battlecry"
       ],
       "effects": [
@@ -44541,7 +44580,7 @@
       "id": "garruk_savagery",
       "name": "Garruk’s Savagery",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -44549,16 +44588,26 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Give a creature +3/+3.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 3,
-          "health": 3,
-          "target": "creature"
-        }
-      ]
+      "description": "After your hero kills a creature, summon a 3/3 Beast with Trample.",
+      "type": "weapon",
+      "attack": 4,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-kills-creature",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 3,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "gideon_sig",
