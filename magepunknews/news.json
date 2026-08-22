@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "80f60cc",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Gideon (W go-wide Soldiers + anthem + protection)",
+			"body": "Seventh pool. From Soldier tokens + generic anthems to a cohesive W archetype:\n- 6 card types: planeswalker (sig), enchantment (Battle Cry = Soldier anthem\n  +1/+1), quest (Resolve = summon 5 Soldiers -> +2/+2 & Divine Shield & 10 Armor),\n  instant (Intervention protection trick), sorcery, creature.\n- Soldier tribal: Avenger scales +1 Attack per other Soldier (selfScale);\n  Phalanx is a Divine Shield lord (+1/+0 aura); token generators (Talent/Company/\n  Command/sig). Protection everywhere (Divine Shield/Taunt grants via buff{grant}),\n  Choose One (Defeat: smite or 8 Armor), Reborn wall, Freeze tempo.\n\nTests: pool_gideon_test.mjs (45 checks); focused fuzz 350 clean; full suite 328/328.",
+			"cards": []
+		},
+		{
 			"sha": "7786779",
 			"date": "2026-08-22",
 			"kind": "patch",
