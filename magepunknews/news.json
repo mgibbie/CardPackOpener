@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "e2428cc",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Jace (U tempo-control: Illusions + spell-matters)",
+			"body": "Fifth pool. From \"bounce + draw N + Elusive Illusions\" to a cohesive U archetype:\n- 6 card types: planeswalker (sig), enchantment (Sanctum = your spells cost 1 less\n  + Scry 1 on each cast), secret (Ruse = counterspell + draw), instant (Defeat\n  bounce), sorcery, creature.\n- Illusions grow with spells: Phantasm Prowess (+1/+1 per spell), Sentinel wall\n  (+0/+1 per spell), Archivist (+1/+0 per spell); Projection is the Illusion lord\n  (+1/+1 aura); Mindseeker makes two Elusive Illusions.\n- Tempo/control: bounce (Defeat/Scrutiny/Command), 3-mode Charm (Choose One:\n  freeze+draw / bounce / discard), Discover-a-spell (Triumph), counterspell secret.\n\nTests: pool_jace_test.mjs (44 checks); focused fuzz 350 clean; full suite 326/326.",
+			"cards": []
+		},
+		{
 			"sha": "45b330d",
 			"date": "2026-08-22",
 			"kind": "patch",
