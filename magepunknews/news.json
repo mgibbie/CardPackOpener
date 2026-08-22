@@ -2,6 +2,14 @@
 	"generated": "2026-08-21",
 	"entries": [
 		{
+			"sha": "d630b7b",
+			"date": "2026-08-21",
+			"kind": "patch",
+			"title": "Pool redesign: Liliana (B sacrifice/reanimation + Undead + discard/drain)",
+			"body": "Fourth pool. From vanilla discard/removal to a cohesive B archetype. Uses\n\"Undead\" (not \"Zombie\") throughout — the pool's 5 old Zombie creatures AND the\nsignature planeswalker's tokens are all Undead now.\n- 6 card types: planeswalker (sig, tokens fixed to Undead), enchantment (Caress =\n  recurring end-of-turn discard), quest (Contract = 6 deaths -> resurrect x2 +\n  drain 5 + gain 5), instant (Defeat removal), sorcery, creature.\n- death-matters + reanimation: Devotee grows per friendly death; Scorn/Contract\n  use resurrect-highest-died (works on collectible:false lore creatures, unlike\n  `reanimate` which filters them out); Scrounger deathrattle-draws; Elite reborn.\n- Undead lord (Reaver aura: +1/+0 & Deathtouch), discard/drain suite, Undead army\n  (Mastery). Keywords: deathtouch/lifesteal/reborn/deathrattle/elusive/stealth/\n  battlecry.\n\nNote: ~72 OTHER pre-existing cards still say \"Zombie\" (Theros/HS imports) — left\nfor a separate careful sweep.\n\nTests: pool_liliana_test.mjs (47 checks, incl. no-Zombie assertions); focused fuzz\n350 clean; full suite 325/325.",
+			"cards": []
+		},
+		{
 			"sha": "336e050",
 			"date": "2026-08-21",
 			"kind": "patch",
