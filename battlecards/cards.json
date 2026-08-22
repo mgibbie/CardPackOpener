@@ -44985,7 +44985,7 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Battlecry: Draw 2 cards.",
+      "description": "Battlecry: Draw 2 cards. Whenever you cast a spell, gain +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -44998,13 +44998,23 @@
           "type": "draw",
           "value": 2
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
     },
     {
       "id": "jace_defeat",
       "name": "Jace’s Defeat",
       "cardClass": "magepunk",
-      "cost": 1,
+      "cost": 2,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -45013,7 +45023,7 @@
       "loreDeck": "Jace",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -45037,12 +45047,16 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Each opponent discards 2 cards.",
+      "description": "Each opponent discards 2 cards. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
           "type": "enemy-discard",
           "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -45058,12 +45072,16 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Draw 3 cards.",
+      "description": "Draw 3 cards and Scry 2.",
       "type": "sorcery",
       "effects": [
         {
           "type": "draw",
           "value": 3
+        },
+        {
+          "type": "scry",
+          "value": 2
         }
       ]
     },
@@ -45079,19 +45097,31 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Windfury. Battlecry: Summon two 2/2 Illusions with Elusive and draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Sphinx",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
         {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Illusion",
+          "tribe": "Illusion",
+          "keywords": [
+            "elusive"
+          ]
+        },
+        {
           "type": "draw",
-          "value": 2
+          "value": 1
         }
       ]
     },
@@ -45107,14 +45137,25 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Stealth. Whenever you cast a spell, gain +1/+1.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
+      "attack": 1,
+      "health": 1,
       "tribe": "Illusion",
       "keywords": [
-        "elusive"
-      ]
+        "elusive",
+        "stealth"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "jace_projection",
@@ -45128,43 +45169,24 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Your other Illusions have +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Illusion",
       "keywords": [
         "elusive"
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Illusion"
+      }
     },
     {
       "id": "jace_ruse",
       "name": "Jace’s Ruse",
-      "cardClass": "magepunk",
-      "cost": 3,
-      "rarity": "common",
-      "set": "paper",
-      "colors": [
-        "U"
-      ],
-      "loreDeck": "Jace",
-      "collectible": false,
-      "description": "Freeze all enemy creatures. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "id": "jace_sanctum",
-      "name": "Jace’s Sanctum",
       "cardClass": "magepunk",
       "cost": 2,
       "rarity": "common",
@@ -45174,18 +45196,49 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and draw a card.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "jace_sanctum",
+      "name": "Jace’s Sanctum",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "U"
+      ],
+      "loreDeck": "Jace",
+      "collectible": false,
+      "description": "Your spells cost (1) less. Whenever you cast a spell, Scry 1.",
+      "type": "enchantment",
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own"
+      },
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "jace_scrutiny",
@@ -45224,15 +45277,26 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Taunt. Elusive.",
+      "description": "Taunt. Elusive. Reborn. Whenever you cast a spell, gain +0/+1.",
       "type": "creature",
       "attack": 3,
       "health": 5,
       "tribe": "Illusion",
       "keywords": [
         "taunt",
-        "elusive"
-      ]
+        "elusive",
+        "reborn"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 0,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "jace_triumph",
@@ -45246,15 +45310,16 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
+      "description": "Discover a spell, then draw a card.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "discover",
+          "pick": 3,
+          "cardType": "spell"
         },
         {
-          "type": "scry",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -45271,16 +45336,39 @@
       ],
       "loreDeck": "Jace",
       "collectible": false,
-      "description": "Freeze an enemy creature. Draw a card.",
+      "description": "Choose One — Freeze an enemy creature and draw a card; or Return an enemy creature to hand; or each opponent discards a card.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "freeze",
-          "target": "enemy-creature"
+          "text": "Freeze an enemy creature and draw a card.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Return an enemy creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "enemy-creature"
+            }
+          ]
+        },
+        {
+          "text": "Each opponent discards a card.",
+          "effects": [
+            {
+              "type": "enemy-discard",
+              "value": 1
+            }
+          ]
         }
       ]
     },
