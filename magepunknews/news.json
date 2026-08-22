@@ -2,6 +2,14 @@
 	"generated": "2026-08-21",
 	"entries": [
 		{
+			"sha": "21f42bc",
+			"date": "2026-08-21",
+			"kind": "patch",
+			"title": "Convert Urza's signature to a planeswalker too",
+			"body": "Per user: make Urza a planeswalker like the other 16. urza_sig creature ->\nplaneswalker (U artificer: +1 summon a 1/1 Construct, -2 draw two, -6 emblem\n\"whenever you cast a spell, summon a 1/1 Construct\"). He stays a BOSS in the\nlorequest run roster (LQ.PLANESWALKERS unchanged at 16) — only his signature\ncard's type changes. Pool test back to 102/102; full suite 322/322.",
+			"cards": []
+		},
+		{
 			"sha": "65f639b",
 			"date": "2026-08-21",
 			"kind": "patch",
