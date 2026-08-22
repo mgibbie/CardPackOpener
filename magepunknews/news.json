@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "fc4f65f",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Lukka (R monsters: recruit -> evolve up -> big beasts)",
+			"body": "Fifteenth pool. Differentiated from Chandra (burn) & Daretti (aristocrats) toward\nR go-big monsters:\n- 6 card types: planeswalker (sig), enchantment (Talent = at end of turn,\n  transform each of your creatures into a random one costing 1 more), quest\n  (Armada = summon 5 -> an 8/8 Beast + recruit), instant (Heartless Act), sorcery,\n  creature.\n- signature evolve-up (transform-friendly-costplus) + recruit a Beast from your\n  deck (Connection); Beast lord (Vow +1/+0), scaling Monstrosity (+1 Atk per\n  Beast), big rushing/trampling/charging beasts, fight/burn, Choose One (Charm).\n\nTests: pool_lukka_test.mjs (43 checks); focused fuzz 350 clean; full suite 336/336.",
+			"cards": []
+		},
+		{
 			"sha": "de4da55",
 			"date": "2026-08-22",
 			"kind": "patch",
