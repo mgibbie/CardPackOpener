@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "7786779",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Sorin (B lifedrain vampires)",
+			"body": "Sixth pool. From \"deal X, gain X\" drain + vanilla Lifesteal vampires to a\ncohesive B archetype (lifedrain -> lifegain payoffs + vampire tribal):\n- 6 card types: planeswalker (sig), weapon (Bloody Blade = Lifesteal + spawns a\n  Vampire after each hero attack), enchantment (Curse = recurring end-of-turn\n  drain 2 & gain 2), instant (Thirst), sorcery, creature.\n- lifegain-matters payoffs: Guide (+1/+0) and Sorrowbringer (+1/+1) grow whenever\n  you gain life (fed by all the lifesteal); Vampire Lord anthem (+1/+1); Choose\n  One Charm; comeback kicker on Declaration (deal 2 more at <=15 life); Silence\n  removal.\n\nTests: pool_sorin_test.mjs (45 checks); focused fuzz 350 clean; full suite 327/327.",
+			"cards": []
+		},
+		{
 			"sha": "e2428cc",
 			"date": "2026-08-22",
 			"kind": "patch",
