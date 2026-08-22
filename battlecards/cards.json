@@ -45628,7 +45628,6 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
       "description": "+1: Draw a card. −3: Summon a 4/4 Construct with Taunt. −6: Emblem — whenever you play a card, deal 1 damage to a random enemy.",
@@ -45693,7 +45692,6 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
       "description": "Deal 4 damage to all creatures.",
@@ -45713,7 +45711,6 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand. Draw 2 cards.",
@@ -45736,17 +45733,33 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Give a creature +2/+2.",
+      "description": "Give a friendly creature +2/+2. If you control an artifact or enchantment, give it +4/+4 and Divine Shield instead.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
+          "type": "conditional",
+          "if": {
+            "controlArtEnch": true
+          },
+          "then": [
+            {
+              "type": "buff",
+              "attack": 4,
+              "health": 4,
+              "target": "friendly-creature",
+              "grant": "divine_shield"
+            }
+          ],
+          "else": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature"
+            }
+          ]
         }
       ]
     },
@@ -45757,27 +45770,40 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Summon a 3/3 Construct, draw a card, and gain 2 life.",
+      "description": "Choose One — Summon a 4/4 Construct with Taunt; or Draw 2 cards and gain 4 life.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct"
+          "text": "Summon a 4/4 Construct with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 4,
+              "health": 4,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "text": "Draw 2 cards and gain 4 life.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            },
+            {
+              "type": "heal",
+              "value": 4,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
@@ -45788,21 +45814,23 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain a Mana Crystal this turn and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Gain a Mana Crystal this turn and draw a card."
+      }
     },
     {
       "id": "karn_bastion",
@@ -45811,17 +45839,23 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Divine Shield. Your other Constructs have +0/+1.",
       "type": "creature",
       "attack": 3,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
-        "taunt"
-      ]
+        "taunt",
+        "divine_shield"
+      ],
+      "aura": {
+        "attack": 0,
+        "health": 1,
+        "others": true,
+        "tribe": "Construct"
+      }
     },
     {
       "id": "karn_piercing_vision",
@@ -45830,7 +45864,6 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
       "description": "Scry 2 and draw a card.",
@@ -45853,15 +45886,18 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Draw 2 cards.",
+      "description": "Draw 2 cards and Scry 1.",
       "type": "sorcery",
       "effects": [
         {
           "type": "draw",
           "value": 2
+        },
+        {
+          "type": "scry",
+          "value": 1
         }
       ]
     },
@@ -45872,17 +45908,19 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Scry 2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Scry 2.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 2
+          }
+        ],
+        "text": "Scry 2."
+      }
     },
     {
       "id": "karn_scouting_drone",
@@ -45891,10 +45929,9 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Elusive. Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Elusive. Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -45905,7 +45942,7 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -45914,17 +45951,16 @@
       "id": "karn_sacrifice",
       "name": "Karn’s Sacrifice",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Destroy a creature.",
-      "type": "sorcery",
+      "description": "Exile a creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "destroy",
+          "type": "exile",
           "target": "creature"
         }
       ]
@@ -45936,20 +45972,26 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Summon two 2/2 Constructs with Taunt.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Construct with Taunt.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Construct",
-          "keywords": [
-            "taunt"
+          "text": "Summon a 2/2 Construct with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": [
+                "taunt"
+              ]
+            }
           ]
         }
       ]
@@ -45961,35 +46003,50 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Battlecry: If you control an artifact or enchantment, gain +3/+3.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "conditional",
+          "if": {
+            "controlArtEnch": true
+          },
+          "then": [
+            {
+              "type": "buff-self",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        }
       ]
     },
     {
       "id": "karn_perfected_colossus",
       "name": "Karn’s Perfected Colossus",
       "cardClass": "magepunk",
-      "cost": 8,
+      "cost": 7,
       "rarity": "rare",
       "set": "paper",
-      "colors": [],
       "loreDeck": "Karn",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Rush.",
       "type": "creature",
       "attack": 9,
       "health": 9,
       "tribe": "Construct",
       "keywords": [
-        "trample"
+        "trample",
+        "rush"
       ]
     },
     {
