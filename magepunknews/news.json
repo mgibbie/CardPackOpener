@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "47200dc",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Ob Nixilis (B demons + drain + sacrifice aristocrats)",
+			"body": "Sixteenth pool — completes all 16 planeswalker pools. Differentiated from Sorin\n(vampire lifegain payoffs) & Liliana (undead reanimate/discard) toward demonic\ndrain/aristocrats:\n- 7 card types: planeswalker (sig), weapon (Chain Veil = Lifesteal, drain 1 after\n  each hero attack), enchantment (Vengeance = Demon anthem), quest (Malediction =\n  6 deaths -> drain 8 & gain 8), instant (Fall), sorcery, creature.\n- drain everywhere (deal damage to each opponent + gain life), demonic sacrifice\n  for power (Cruelty), death -> drain engines (Torment + sig emblem), Demon tribal\n  (big Lifesteal/Deathtouch demons), Choose One (Command).\n\nTests: pool_ob_nixilis_test.mjs (45 checks); focused fuzz 350 clean; full suite 337/337.\nMilestone: all 16 planeswalker character pools redesigned.",
+			"cards": []
+		},
+		{
 			"sha": "fc4f65f",
 			"date": "2026-08-22",
 			"kind": "patch",
