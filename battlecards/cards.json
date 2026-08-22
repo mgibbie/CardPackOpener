@@ -45692,7 +45692,7 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "+1: Each player discards a card. −2: Summon a 3/3 Zombie. −6: Emblem — at the start of your turn, summon a 2/2 Zombie.",
+      "description": "+1: Each player discards a card. −2: Summon a 3/3 Undead. −6: Emblem — at the start of your turn, summon a 2/2 Undead.",
       "type": "planeswalker",
       "loyalty": 4,
       "abilities": [
@@ -45712,26 +45712,26 @@
         },
         {
           "cost": -2,
-          "text": "Summon a 3/3 Zombie.",
+          "text": "Summon a 3/3 Undead.",
           "effects": [
             {
               "type": "summon",
               "count": 1,
               "attack": 3,
               "health": 3,
-              "name": "Zombie",
-              "tribe": "Zombie"
+              "name": "Undead",
+              "tribe": "Undead"
             }
           ]
         },
         {
           "cost": -6,
-          "text": "Emblem — at the start of your turn, summon a 2/2 Zombie.",
+          "text": "Emblem — at the start of your turn, summon a 2/2 Undead.",
           "effects": [
             {
               "type": "emblem",
               "name": "Dreadhorde",
-              "description": "At the start of your turn, summon a 2/2 Zombie.",
+              "description": "At the start of your turn, summon a 2/2 Undead.",
               "ongoing": {
                 "on": "turn-start",
                 "effects": [
@@ -45740,8 +45740,8 @@
                     "count": 1,
                     "attack": 2,
                     "health": 2,
-                    "name": "Zombie",
-                    "tribe": "Zombie"
+                    "name": "Undead",
+                    "tribe": "Undead"
                   }
                 ]
               }
@@ -45754,7 +45754,7 @@
       "id": "liliana_caress",
       "name": "Liliana’s Caress",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -45762,20 +45762,23 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Each opponent discards 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 2
-        }
-      ]
+      "description": "At the end of your turn, each opponent discards a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "liliana_contract",
       "name": "Liliana’s Contract",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -45783,25 +45786,36 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Draw 3 cards; you take 3 damage.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 3
+      "description": "Quest: 6 creatures die. Reward: Resurrect your two best dead creatures, deal 5 damage to each opponent, and gain 5 life.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "death",
+          "count": 6
         },
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "self"
-        }
-      ]
+        "reward": [
+          {
+            "type": "resurrect-highest-died",
+            "count": 2
+          },
+          {
+            "type": "damage",
+            "value": 5,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 5,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "liliana_defeat",
       "name": "Liliana’s Defeat",
       "cardClass": "magepunk",
-      "cost": 1,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -45810,7 +45824,7 @@
       "loreDeck": "Liliana",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -45830,14 +45844,24 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Whenever a friendly creature dies, gain +1/+0.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch"
-      ]
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
     },
     {
       "id": "liliana_elite",
@@ -45851,13 +45875,14 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Reborn.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "reborn"
       ]
     },
     {
@@ -45872,13 +45897,18 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
+      "description": "Deal 3 damage to all enemy creatures and 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -45925,7 +45955,7 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Summon two 3/3 Zombies with Deathtouch.",
+      "description": "Summon two 3/3 Undead with Deathtouch and Reborn.",
       "type": "sorcery",
       "effects": [
         {
@@ -45933,9 +45963,11 @@
           "count": 2,
           "attack": 3,
           "health": 3,
-          "name": "Zombie",
+          "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
-            "deathtouch"
+            "deathtouch",
+            "reborn"
           ]
         }
       ]
@@ -45952,21 +45984,23 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
+      "description": "Deathtouch. Your other Undead have +1/+0 and Deathtouch.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
-        "deathtouch",
-        "battlecry"
+        "deathtouch"
       ],
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ]
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Undead",
+        "keywords": [
+          "deathtouch"
+        ]
+      }
     },
     {
       "id": "liliana_scorn",
@@ -45980,12 +46014,12 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Resurrect the highest-Cost creature that died this game. It gains Reborn.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "resurrect-highest-died",
+          "grant": "reborn"
         }
       ]
     },
@@ -46001,13 +46035,20 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Deathrattle: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Zombie",
+      "tribe": "Undead",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
@@ -46022,14 +46063,15 @@
       ],
       "loreDeck": "Liliana",
       "collectible": false,
-      "description": "Elusive. Deathtouch.",
+      "description": "Elusive. Deathtouch. Stealth.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Shade",
       "keywords": [
         "elusive",
-        "deathtouch"
+        "deathtouch",
+        "stealth"
       ]
     },
     {
