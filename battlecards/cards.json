@@ -43740,7 +43740,7 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Destroy a creature. Summon a 3/3 Angel.",
+      "description": "Destroy a creature and summon a 4/4 Angel with Divine Shield and Elusive.",
       "type": "sorcery",
       "effects": [
         {
@@ -43750,9 +43750,14 @@
         {
           "type": "summon",
           "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Angel"
+          "attack": 4,
+          "health": 4,
+          "name": "Angel",
+          "tribe": "Angel",
+          "keywords": [
+            "divine_shield",
+            "elusive"
+          ]
         }
       ]
     },
@@ -43776,7 +43781,8 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier"
         },
         {
           "type": "buff",
@@ -43798,23 +43804,24 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Soldier.",
+      "description": "At the start of your turn, summon a 1/1 Soldier.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Human Soldier",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
-        }
-      ]
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Soldier",
+            "tribe": "Soldier"
+          }
+        ]
+      }
     },
     {
       "id": "elspeth_nightmare",
@@ -43854,13 +43861,25 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Deal 4 damage to a creature.",
+      "description": "Deal 4 damage to a creature. If you control 3 or more other creatures, draw a card.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 4,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "minOtherCreatures": 2
+          },
+          "then": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -43876,16 +43895,18 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Whenever you summon a creature, give it +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "buff-minion",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "elspeth_ascent",
@@ -43899,21 +43920,28 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Divine Shield. Taunt.",
+      "description": "Divine Shield. Taunt. Elusive. Your other Soldiers have +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Angel",
       "keywords": [
         "divine_shield",
-        "taunt"
-      ]
+        "taunt",
+        "elusive"
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Soldier"
+      }
     },
     {
       "id": "elspeth_ultimatum",
       "name": "Elspeth’s Ultimatum",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 7,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -43921,7 +43949,7 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Summon three 2/2 Soldiers. Gain 3 life.",
+      "description": "Summon three 2/2 Soldiers, give your creatures +2/+2, and destroy an enemy creature.",
       "type": "sorcery",
       "effects": [
         {
@@ -43929,12 +43957,21 @@
           "count": 3,
           "attack": 2,
           "health": 2,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier",
+          "keywords": [
+            "taunt"
+          ]
         },
         {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "destroy",
+          "target": "creature"
         }
       ]
     },
@@ -43950,22 +43987,22 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Taunt. Battlecry: Summon a 1/1 Soldier.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "taunt",
-        "battlecry"
-      ],
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Soldier.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
+          "text": "Summon a 2/2 Soldier.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Soldier",
+              "tribe": "Soldier"
+            }
+          ]
         }
       ]
     },
@@ -43973,7 +44010,7 @@
       "id": "elspeth_moment_of_truth",
       "name": "Elspeth’s Moment of Truth",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -43981,18 +44018,27 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
+      "description": "Secret: When your hero is attacked, summon two 1/1 Soldiers with Taunt.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "targetHero": true
         },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+        "effects": [
+          {
+            "type": "summon",
+            "count": 2,
+            "attack": 1,
+            "health": 1,
+            "name": "Soldier",
+            "tribe": "Soldier",
+            "keywords": [
+              "taunt"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "elspeth_vanishing",
@@ -44007,7 +44053,7 @@
       "loreDeck": "Elspeth",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -44027,13 +44073,14 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Reborn.",
       "type": "creature",
       "attack": 1,
       "health": 2,
       "tribe": "Human Soldier",
       "keywords": [
-        "taunt"
+        "taunt",
+        "reborn"
       ]
     },
     {
@@ -44048,13 +44095,22 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Battlecry: Gain +1/+1 for each other creature you control.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Human Soldier",
       "keywords": [
-        "divine_shield"
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1,
+          "per": "other-friendly"
+        }
       ]
     },
     {
