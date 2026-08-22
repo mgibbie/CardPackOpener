@@ -2,6 +2,14 @@
 	"generated": "2026-08-21",
 	"entries": [
 		{
+			"sha": "336e050",
+			"date": "2026-08-21",
+			"kind": "patch",
+			"title": "Pool redesign: Nissa (G ramp -> big Elementals + lands-matter)",
+			"body": "Third pool. From temp-ramp spells + vanilla Trample bodies to a cohesive G\narchetype (permanent ramp -> big Elementals + fight + Landfall):\n- 7 card types: planeswalker (sig), location (Pilgrimage = a grove you tap for\n  ramp + a card), enchantment (Vital Force = Elemental anthem +1/+1 & Trample),\n  quest (Expedition = summon 5 -> a 6/6 Elemental + 2 Mana Crystals), instant\n  (Judgement = fight trick), sorcery, creature.\n- Permanent ramp via gain-empty-mana-crystal (Naturalist/Renewal/Revelation/\n  Expedition). Elemental payoffs: Naturalist buffs each Elemental you play;\n  Elemental grows on Landfall; sticky Resurgence (Reborn + Deathrattle).\n- G fight removal (Defeat/Judgement), Choose One (Renewal), deathtouch wall.\n\nTests: pool_nissa_test.mjs (46 checks); focused fuzz 350 clean; full suite 324/324.",
+			"cards": []
+		},
+		{
 			"sha": "190c874",
 			"date": "2026-08-21",
 			"kind": "patch",
