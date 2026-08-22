@@ -47521,16 +47521,20 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Destroy a creature. Draw a card.",
+      "description": "Sacrifice a friendly creature. Draw 2 cards and deal 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "sacrifice-friendly"
         },
         {
           "type": "draw",
-          "value": 1
+          "value": 2
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -47546,10 +47550,23 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "A 2/3 weapon.",
+      "description": "Lifesteal. After your hero attacks, each opponent loses 1 life.",
       "type": "weapon",
-      "attack": 2,
-      "durability": 3
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "ob_nixilis_grasp",
@@ -47621,13 +47638,18 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
+      "description": "Deal 3 damage to all enemy creatures and 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -47643,17 +47665,32 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Destroy a creature. Deal 2 damage to each opponent.",
+      "description": "Choose One — Destroy a creature; or Deal 4 damage to each opponent and gain 4 life.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Destroy a creature.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
+          "text": "Deal 4 damage to each opponent and gain 4 life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 4,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
@@ -47669,14 +47706,22 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Lifesteal. Trample.",
+      "description": "Lifesteal. Trample. Battlecry: Each opponent loses 4 life.",
       "type": "creature",
       "attack": 7,
       "health": 6,
       "tribe": "Demon",
       "keywords": [
         "lifesteal",
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-heroes"
+        }
       ]
     },
     {
@@ -47717,14 +47762,13 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Destroy a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ]
+      "description": "Your Demons have +1/+1.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Demon"
+      }
     },
     {
       "id": "ob_nixilis_torment",
@@ -47738,14 +47782,25 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Stealth. Whenever a friendly creature dies, each opponent loses 1 life.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Demon",
       "keywords": [
-        "lifesteal"
-      ]
+        "lifesteal",
+        "stealth"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "ob_nixilis_demon",
@@ -47759,13 +47814,22 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Reborn. Battlecry: Each opponent loses 3 life.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Demon",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "battlecry",
+        "reborn"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
       ]
     },
     {
@@ -47780,13 +47844,15 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Lifesteal. Rush.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Demon",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "lifesteal",
+        "rush"
       ]
     },
     {
@@ -47801,13 +47867,18 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "description": "Deal 3 damage to a creature. Each opponent loses 1 life.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -47815,7 +47886,7 @@
       "id": "ob_nixilis_malediction",
       "name": "Ob Nixilis’s Malediction",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -47823,20 +47894,26 @@
       ],
       "loreDeck": "Ob Nixilis",
       "collectible": false,
-      "description": "Deal 4 damage to each opponent and gain 4 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-heroes"
+      "description": "Quest: 6 creatures die. Reward: Deal 8 damage to each opponent and gain 8 life.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "death",
+          "count": 6
         },
-        {
-          "type": "heal",
-          "value": 4,
-          "target": "self"
-        }
-      ]
+        "reward": [
+          {
+            "type": "damage",
+            "value": 8,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 8,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "sorin_sig",
