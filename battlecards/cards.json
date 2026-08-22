@@ -50680,15 +50680,34 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Summon two 1/1 Vampires with Rush.",
+      "description": "Lifesteal. Eminence — whenever you play a Vampire, summon a 1/1 Vampire with Rush. Battlecry: Summon two 1/1 Vampires with Rush.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
+      "attack": 6,
+      "health": 6,
       "tribe": "Vampire",
       "keywords": [
         "lifesteal",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "creature-played",
+        "if": {
+          "tribe": "Vampire"
+        },
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Vampire",
+            "tribe": "Vampire",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      },
       "effects": [
         {
           "type": "summon",
@@ -50696,6 +50715,7 @@
           "attack": 1,
           "health": 1,
           "name": "Vampire",
+          "tribe": "Vampire",
           "keywords": [
             "rush"
           ]
@@ -50715,10 +50735,29 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "Lifesteal. After your hero attacks, summon a 1/1 Vampire with Rush.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Vampire",
+            "tribe": "Vampire",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "edgar_markov_blood_crypt",
@@ -50733,17 +50772,24 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Summon two 2/2 Vampires with Lifesteal.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Vampire with Lifesteal.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Vampire",
-          "keywords": [
-            "lifesteal"
+          "text": "Summon a 2/2 Vampire with Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Vampire",
+              "tribe": "Vampire",
+              "keywords": [
+                "lifesteal"
+              ]
+            }
           ]
         }
       ]
@@ -50783,14 +50829,15 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Rush. Lifesteal.",
+      "description": "Rush. Lifesteal. Stealth.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Vampire",
       "keywords": [
         "rush",
-        "lifesteal"
+        "lifesteal",
+        "stealth"
       ]
     },
     {
@@ -50806,13 +50853,14 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Vampire with Rush.",
+      "description": "Reborn. Battlecry: Summon a 1/1 Vampire with Rush.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Vampire",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "reborn"
       ],
       "effects": [
         {
@@ -50821,6 +50869,7 @@
           "attack": 1,
           "health": 1,
           "name": "Vampire",
+          "tribe": "Vampire",
           "keywords": [
             "rush"
           ]
@@ -50865,14 +50914,14 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Give a creature +2/+0 and Rush.",
+      "description": "Give a friendly creature +2/+0 and Rush.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 0,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
       ]
@@ -50910,7 +50959,7 @@
       "name": "Edgar Markov’s Wedding Announcement",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B",
@@ -50918,17 +50967,24 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Summon two 2/2 Vampires.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Vampire"
-        }
-      ]
+      "description": "At the start of your turn, summon a 1/1 Vampire with Rush.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Vampire",
+            "tribe": "Vampire",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "edgar_markov_wedding_hymn",
@@ -50968,17 +51024,39 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Draw a card.",
+      "description": "Choose One — Deal 3 damage to a creature and draw a card; or Summon a 3/3 Vampire with Rush and Lifesteal.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature and draw a card.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Summon a 3/3 Vampire with Rush and Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Vampire",
+              "tribe": "Vampire",
+              "keywords": [
+                "rush",
+                "lifesteal"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -50996,7 +51074,7 @@
       "loreDeck": "Edgar Markov",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -51017,23 +51095,25 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "description": "Lifesteal. Whenever this attacks, give your creatures +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal",
-        "battlecry"
+        "lifesteal"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "edgar_markov_bloodline",
@@ -51048,15 +51128,22 @@
       ],
       "loreDeck": "Edgar Markov",
       "collectible": false,
-      "description": "Rush. Lifesteal.",
+      "description": "Rush. Lifesteal. Trample. Your other Vampires have +1/+0.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Vampire",
       "keywords": [
         "rush",
-        "lifesteal"
-      ]
+        "lifesteal",
+        "trample"
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Vampire"
+      }
     },
     {
       "id": "elesh_norn_sig",
