@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "96f23cb",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Elesh Norn (boss — W Phyrexian anthem + weaken)",
+			"body": "Third boss. Grand Cenobite identity: buff yours, weaken theirs. Differs from the\nW planeswalkers (Ajani lifegain / Gideon soldiers / Elspeth swarm).\n- Engine: NEW `weaken` effect (handlers-buffs.js) — permanently shrink creatures\n  (Attack min 0, max Health min 1; kills already-damaged ones). Neither a negative\n  aura nor a negative buff-to-enemies worked, so this is the clean primitive.\n  Registry 1135 -> 1136.\n- 6 card types: creature (Phyrexian/Construct walls incl the 5/7 boss commander),\n  enchantment (Choirmaster anthem), location (Wellspring Phyrexian factory), quest\n  (Uniformity = summon 5 -> the double swing), instant (Edict), sorcery.\n- buff-yours anthems (Devoted/Annex/Choirmaster/Inquisitor lord) + weaken-theirs\n  (Disassembly/Decree/Command Choose One/Uniformity/the boss battlecry does both),\n  Divine Shield walls, go-wide Phyrexian tokens, toxic (Poisonous).\n\nTests: pool_elesh_norn_test.mjs (46) + registry bumped to 1136; fuzz 350 clean;\nfull suite 340/340.",
+			"cards": []
+		},
+		{
 			"sha": "a864634",
 			"date": "2026-08-22",
 			"kind": "patch",
