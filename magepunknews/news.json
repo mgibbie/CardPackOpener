@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "a864634",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Sheoldred (boss — B Phyrexian attrition + drain-on-draw)",
+			"body": "Second boss pool. Differentiated from the other black pools (Liliana undead,\nSorin vampires, Ob Nixilis demons) via Phyrexian grind:\n- 6 card types: creature (Phyrexian bodies incl the boss commander), artifact\n  (Assimilator = tap for life + a 1/1 Phyrexian), enchantment (Whisper = enemy\n  discard + you draw each turn end), weapon (Headcleaver = Lifesteal, draw after\n  a hero attack), instant (Edict), sorcery.\n- the iconic drain-on-draw engine: Sheoldred, the Apocalypse (you draw -> gain 2;\n  an opponent draws -> they lose 2), plus Terror (opp draws -> -1) and Necrologist\n  (you draw -> +1). Deathtouch/Lifesteal attrition walls, toxic (Poisonous),\n  discard, Choose One (Command). The card engines fuel each other (Whisper/\n  Headcleaver make everyone draw, the boss profits either way).\n\nTests: pool_sheoldred_test.mjs (43 checks); focused fuzz 350 clean; full suite 339/339.",
+			"cards": []
+		},
+		{
 			"sha": "3286c67",
 			"date": "2026-08-22",
 			"kind": "patch",
