@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "3286c67",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Emrakul (first BOSS pool — colorless Eldrazi titans)",
+			"body": "Starts the 21 boss pools. Bosses are creature COMMANDERS (the sig stays a 12/12\ncreature, not a planeswalker) and can be more over-the-top than the PW pools.\n- 6 card types: creature (the Eldrazi titans), enchantment (Influence = draw +\n  enemy-discard each turn start), location (Shrine = tap for 2 Eldrazi Spawn),\n  artifact (Breach of Reality = tap to bounce), instant (Distortion), sorcery.\n- ramp: Spawn tokens (Evangel/Hatcher/Shrine) + Eldrazi cost-reduction (Herald\n  costMod) -> huge Eldrazi (up to the 12/12 boss). Annihilator (Emissary/Ravaging\n  destroy random enemies), reality distortion (mass bounce, Command Choose One\n  reset, the boss's battlecry wipe + extra-turn), Eldrazi lord (Madness).\n\nTests: pool_emrakul_test.mjs (44 checks); focused fuzz 350 clean; full suite 338/338.",
+			"cards": []
+		},
+		{
 			"sha": "47200dc",
 			"date": "2026-08-22",
 			"kind": "patch",
