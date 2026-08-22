@@ -42333,14 +42333,15 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Give a creature +2/+2. Gain 2 life.",
+      "description": "Give a friendly creature +2/+2 and Lifesteal. Gain 2 life.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature",
+          "grant": "lifesteal"
         },
         {
           "type": "heal",
@@ -42361,14 +42362,29 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Divine Shield. Taunt. Every other time you gain life, summon a 1/1 Cat.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Cat",
       "keywords": [
-        "lifesteal"
-      ]
+        "divine_shield",
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "healed",
+        "every": 2,
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Cat",
+            "tribe": "Cat"
+          }
+        ]
+      }
     },
     {
       "id": "ajani_comrade",
@@ -42411,14 +42427,15 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
+      "description": "Give your creatures +2/+2 and Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "friendly-creatures"
+          "target": "friendly-creatures",
+          "grant": "lifesteal"
         }
       ]
     },
@@ -42434,7 +42451,7 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Summon two 2/2 Cats. Gain 4 life.",
+      "description": "Summon two 2/2 Cats with Lifesteal. Gain 3 life.",
       "type": "sorcery",
       "effects": [
         {
@@ -42442,11 +42459,15 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Cat"
+          "name": "Cat",
+          "tribe": "Cat",
+          "keywords": [
+            "lifesteal"
+          ]
         },
         {
           "type": "heal",
-          "value": 4,
+          "value": 3,
           "target": "self"
         }
       ]
@@ -42455,7 +42476,7 @@
       "id": "ajani_mantra",
       "name": "Ajani’s Mantra",
       "cardClass": "magepunk",
-      "cost": 1,
+      "cost": 2,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -42463,15 +42484,13 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Gain 4 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "heal",
-          "value": 4,
-          "target": "self"
-        }
-      ]
+      "description": "Your Cats have +1/+1.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Cat"
+      }
     },
     {
       "id": "ajani_presence",
@@ -42485,15 +42504,20 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Give a creature +1/+3 and Taunt.",
+      "description": "Give a friendly creature +1/+3 and Taunt. Gain 1 life.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 3,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "taunt"
+        },
+        {
+          "type": "heal",
+          "value": 1,
+          "target": "self"
         }
       ]
     },
@@ -42502,21 +42526,31 @@
       "name": "Ajani’s Pridemate",
       "cardClass": "magepunk",
       "cost": 2,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "W"
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Whenever you gain life, gain +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Cat",
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "ajani_sunstriker",
@@ -42530,14 +42564,15 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Lifesteal. Rush.",
+      "description": "Lifesteal. Rush. Reborn.",
       "type": "creature",
       "attack": 2,
       "health": 1,
       "tribe": "Cat",
       "keywords": [
         "lifesteal",
-        "rush"
+        "rush",
+        "reborn"
       ]
     },
     {
@@ -42552,19 +42587,18 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Gain 2 life. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you summon a creature, gain 1 life.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "ajani_command",
@@ -42578,19 +42612,40 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Gain 4 life. Give your creatures +1/+1.",
+      "description": "Choose One — Gain 4 life and give your creatures +1/+1; or Summon two 2/2 Cats with Taunt.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "heal",
-          "value": 4,
-          "target": "self"
+          "text": "Gain 4 life and give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 4,
+              "target": "self"
+            },
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
         },
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "text": "Summon two 2/2 Cats with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Cat",
+              "tribe": "Cat",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -42606,14 +42661,14 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Give a creature +0/+3 and Divine Shield.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +0/+3 and Divine Shield.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 0,
           "health": 3,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         }
       ]
@@ -42622,7 +42677,7 @@
       "id": "ajani_retribution",
       "name": "Ajani’s Retribution",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -42630,20 +42685,25 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Destroy a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ]
+      "description": "Secret: When an enemy creature attacks, destroy it.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "destroy-attacker"
+          }
+        ]
+      }
     },
     {
       "id": "ajani_ultimatum",
       "name": "Ajani’s Ultimatum",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -42651,17 +42711,28 @@
       ],
       "loreDeck": "Ajani",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Divine Shield.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
-        }
-      ]
+      "description": "Quest: Summon 6 creatures. Reward: Give your creatures +2/+2 and Divine Shield, and gain 8 life.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 6
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures",
+            "grant": "divine_shield"
+          },
+          {
+            "type": "heal",
+            "value": 8,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "chandra_sig",
