@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "8181179",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Solphim (boss — R damage DOUBLER burn)",
+			"body": "Fifth boss; completes a doubler pair with Mondrak. Mayhem Dominus = double your\nnoncombat damage. Distinct from Chandra (spell-matters) & Daretti (aristocrats).\n- Engine: `damage-doubler` static, read in the `damage` effect handler right after\n  the value is finalized (v *= 2**dv; stacks multiplicatively). Applies to effect\n  (noncombat) damage only -- combat goes through resolveCombat, not this handler.\n  Gated to the static; no new register().\n- 6 card types: creature (Elemental burners incl the 6/6 boss), enchantment\n  (Ultimatum = a 2nd doubler -> 4x), artifact (Mayhem Crown burn cannon), location\n  (Puzzlebox furnace = repeatable AoE), instant (Radiant Entropy), sorcery.\n- all burn is doubled: single/AoE spells (Eruption/Inferno/Cataclysm), battlecries\n  (Volcano-Priest/Warlock/boss self-doubles its own battlecry 4->8), Spell Damage\n  stacks first (Fireblood Warlock), Choose One (Command), firebreathing/overkill.\n\nTests: pool_solphim_test.mjs (43 checks; doubler stacking + self-doubling boss +\nspell-damage stacking); focused fuzz 300 clean; full suite 342/342.",
+			"cards": []
+		},
+		{
 			"sha": "03282d8",
 			"date": "2026-08-22",
 			"kind": "patch",
