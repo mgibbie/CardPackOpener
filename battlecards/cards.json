@@ -51317,7 +51317,7 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Trample. Elusive. Battlecry: Deal 4 damage to all enemy creatures.",
+      "description": "Trample. Elusive. Windfury. Battlecry: Deal 4 damage to all enemy creatures and take an extra turn.",
       "type": "creature",
       "attack": 12,
       "health": 12,
@@ -51325,6 +51325,7 @@
       "keywords": [
         "trample",
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
@@ -51332,6 +51333,9 @@
           "type": "damage",
           "value": 4,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "extra-turns"
         }
       ]
     },
@@ -51339,7 +51343,7 @@
       "id": "emrakul_evangel",
       "name": "Emrakul’s Evangel",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 2,
       "rarity": "common",
       "set": "paper",
       "colors": [],
@@ -51359,7 +51363,8 @@
           "count": 2,
           "attack": 1,
           "health": 1,
-          "name": "Eldrazi Spawn"
+          "name": "Eldrazi Spawn",
+          "tribe": "Eldrazi"
         }
       ]
     },
@@ -51387,7 +51392,8 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Eldrazi Spawn"
+          "name": "Eldrazi Spawn",
+          "tribe": "Eldrazi"
         }
       ]
     },
@@ -51401,18 +51407,21 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Draw 2 cards. Each opponent discards a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, draw a card and each opponent discards a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "enemy-discard",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "emrakul_shrine",
@@ -51424,13 +51433,23 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Taunt.",
-      "type": "creature",
-      "attack": 2,
-      "health": 6,
-      "tribe": "Eldrazi",
-      "keywords": [
-        "taunt"
+      "description": "Durability 3. {T}: Summon two 1/1 Eldrazi Spawn.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon two 1/1 Eldrazi Spawn.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Eldrazi Spawn",
+              "tribe": "Eldrazi"
+            }
+          ]
+        }
       ]
     },
     {
@@ -51463,21 +51482,31 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Deal 3 damage to a creature, return an enemy creature to hand, and draw a card.",
+      "description": "Choose One — Deal 3 damage to a creature and draw a card; or Return all enemy creatures to their owners’ hands.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature and draw a card.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
         },
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Return all enemy creatures to their owners’ hands.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "enemy-creatures"
+            }
+          ]
         }
       ]
     },
@@ -51491,37 +51520,43 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Destroy two random enemy creatures.",
       "type": "creature",
       "attack": 8,
       "health": 8,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 2
+        }
       ]
     },
     {
       "id": "emrakul_breach_of_reality",
       "name": "Emrakul’s Breach of Reality",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Destroy a creature. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Return an enemy creature to its owner’s hand.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "bounce",
+            "target": "enemy-creature"
+          }
+        ],
+        "text": "Return an enemy creature to its owner’s hand."
+      }
     },
     {
       "id": "emrakul_aeon_torn",
@@ -51533,14 +51568,15 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Trample. Elusive.",
+      "description": "Trample. Elusive. Rush.",
       "type": "creature",
       "attack": 10,
       "health": 10,
       "tribe": "Eldrazi",
       "keywords": [
         "trample",
-        "elusive"
+        "elusive",
+        "rush"
       ]
     },
     {
@@ -51553,11 +51589,20 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "A 4/4 for four.",
+      "description": "Taunt. Your Eldrazi cost (1) less.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Eldrazi"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "taunt"
+      ],
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Eldrazi",
+        "amount": -1,
+        "scope": "own"
+      }
     },
     {
       "id": "emrakul_distortion",
@@ -51569,8 +51614,8 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Draw a card.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -51592,14 +51637,20 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Your other Eldrazi have +1/+1.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Eldrazi",
       "keywords": [
         "trample"
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Eldrazi"
+      }
     },
     {
       "id": "emrakul_devourer",
@@ -51637,13 +51688,20 @@
       "colors": [],
       "loreDeck": "Emrakul",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Destroy a random enemy creature.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-random",
+          "count": 1
+        }
       ]
     },
     {
