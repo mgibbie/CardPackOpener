@@ -47595,11 +47595,16 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Silence a creature, then deal 2 damage to it.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
+          "type": "silence",
+          "target": "creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
           "target": "creature"
         }
       ]
@@ -47644,7 +47649,7 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Draw 2 cards. Gain 3 life.",
+      "description": "Draw 2 cards, gain 3 life, and summon a 1/1 Vampire with Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
@@ -47655,6 +47660,17 @@
           "type": "heal",
           "value": 3,
           "target": "self"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Vampire",
+          "tribe": "Vampire",
+          "keywords": [
+            "lifesteal"
+          ]
         }
       ]
     },
@@ -47670,14 +47686,25 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Rush. Whenever you gain life, gain +1/+0.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
-      ]
+        "lifesteal",
+        "rush"
+      ],
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
     },
     {
       "id": "sorin_thirst",
@@ -47692,7 +47719,7 @@
       "loreDeck": "Sorin",
       "collectible": false,
       "description": "Deal 3 damage to a creature. Gain 2 life.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -47745,13 +47772,15 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Stealth. Reborn.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "stealth",
+        "reborn"
       ]
     },
     {
@@ -47766,13 +47795,26 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Gain 3 life.",
+      "description": "Deal 3 damage to a creature and gain 3 life. If you have 15 or less life, deal 2 more.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
+        },
+        {
+          "type": "conditional",
+          "if": {
+            "maxHealthSelf": 15
+          },
+          "then": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            }
+          ]
         },
         {
           "type": "heal",
@@ -47823,13 +47865,33 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
+      "description": "Choose One — Deal 3 damage to a creature; or Deal 3 damage to each opponent and gain 3 life.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to each opponent and gain 3 life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
@@ -47845,7 +47907,7 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Lifesteal. Deathtouch.",
+      "description": "Lifesteal. Deathtouch. Whenever you gain life, gain +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -47853,7 +47915,17 @@
       "keywords": [
         "lifesteal",
         "deathtouch"
-      ]
+      ],
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "sorin_bloody_blade",
@@ -47867,10 +47939,29 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "Lifesteal. After your hero attacks, summon a 1/1 Vampire with Lifesteal.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Vampire",
+            "tribe": "Vampire",
+            "keywords": [
+              "lifesteal"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "sorin_curse",
@@ -47884,20 +47975,23 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Deal 4 damage to each opponent. Gain 4 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 4,
-          "target": "self"
-        }
-      ]
+      "description": "At the end of your turn, deal 2 damage to each opponent and gain 2 life.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "sorin_vampire_lord",
@@ -47911,23 +48005,20 @@
       ],
       "loreDeck": "Sorin",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "description": "Lifesteal. Your other Vampires have +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Vampire",
       "keywords": [
-        "lifesteal",
-        "battlecry"
+        "lifesteal"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "others": true,
+        "tribe": "Vampire"
+      }
     },
     {
       "id": "teferi_sig",
