@@ -44583,14 +44583,19 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. First Strike. Has +1 Attack for each other Soldier you control.",
       "type": "creature",
       "attack": 2,
       "health": 4,
       "tribe": "Human Soldier",
       "keywords": [
-        "taunt"
-      ]
+        "taunt",
+        "first_strike"
+      ],
+      "selfScale": {
+        "attack": 1,
+        "tribe": "Soldier"
+      }
     },
     {
       "id": "gideon_battle_cry",
@@ -44604,16 +44609,13 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Your Soldiers have +1/+1.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Soldier"
+      }
     },
     {
       "id": "gideon_company",
@@ -44627,7 +44629,7 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Soldier.",
+      "description": "Battlecry: Summon two 2/2 Soldiers.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -44638,10 +44640,11 @@
       "effects": [
         {
           "type": "summon",
-          "count": 1,
+          "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier"
         }
       ]
     },
@@ -44649,7 +44652,7 @@
       "id": "gideon_defeat",
       "name": "Gideon’s Defeat",
       "cardClass": "magepunk",
-      "cost": 1,
+      "cost": 2,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -44657,13 +44660,27 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Deal 4 damage to a creature.",
+      "description": "Choose One — Deal 4 damage to a creature; or Gain 8 Armor.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
+          "text": "Deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Gain 8 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 8
+            }
+          ]
         }
       ]
     },
@@ -44679,14 +44696,14 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Give a creature +2/+2 and Divine Shield.",
-      "type": "sorcery",
+      "description": "Give a friendly creature +2/+2 and Divine Shield.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         }
       ]
@@ -44703,13 +44720,14 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Battlecry: Freeze an enemy creature.",
+      "description": "Rush. Battlecry: Freeze an enemy creature.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Human Soldier",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "rush"
       ],
       "effects": [
         {
@@ -44730,7 +44748,7 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt. Divine Shield. Your other Soldiers have +1/+0.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -44738,7 +44756,13 @@
       "keywords": [
         "taunt",
         "divine_shield"
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Soldier"
+      }
     },
     {
       "id": "gideon_reproach",
@@ -44766,25 +44790,36 @@
       "id": "gideon_resolve",
       "name": "Gideon’s Resolve",
       "cardClass": "magepunk",
-      "cost": 4,
-      "rarity": "common",
+      "cost": 1,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "W"
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Taunt.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "taunt"
-        }
-      ]
+      "description": "Quest: Summon 5 Soldiers. Reward: Give your creatures +2/+2 and Divine Shield, and gain 10 Armor.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5,
+          "tribe": "Soldier"
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures",
+            "grant": "divine_shield"
+          },
+          {
+            "type": "armor",
+            "value": 10
+          }
+        ]
+      }
     },
     {
       "id": "gideon_sacrifice",
@@ -44798,15 +44833,15 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Give a creature +0/+4 and Taunt.",
+      "description": "Give a friendly creature +0/+4 and Divine Shield.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 0,
           "health": 4,
-          "target": "creature",
-          "grant": "taunt"
+          "target": "friendly-creature",
+          "grant": "divine_shield"
         }
       ]
     },
@@ -44822,14 +44857,15 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
+      "description": "Give your creatures +2/+2 and Divine Shield.",
       "type": "sorcery",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "friendly-creatures"
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
         }
       ]
     },
@@ -44845,7 +44881,7 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Summon two 2/2 Soldiers with Taunt.",
+      "description": "Summon two 2/2 Soldiers with Divine Shield.",
       "type": "sorcery",
       "effects": [
         {
@@ -44854,8 +44890,9 @@
           "attack": 2,
           "health": 2,
           "name": "Soldier",
+          "tribe": "Soldier",
           "keywords": [
-            "taunt"
+            "divine_shield"
           ]
         }
       ]
@@ -44872,7 +44909,7 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Summon two 2/2 Soldiers and give your creatures +1/+1.",
+      "description": "Summon two 2/2 Soldiers with Taunt and give your creatures +1/+1.",
       "type": "sorcery",
       "effects": [
         {
@@ -44880,7 +44917,11 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier",
+          "keywords": [
+            "taunt"
+          ]
         },
         {
           "type": "buff",
@@ -44902,13 +44943,14 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Reborn.",
       "type": "creature",
       "attack": 1,
       "health": 3,
       "tribe": "Human Soldier",
       "keywords": [
-        "taunt"
+        "taunt",
+        "reborn"
       ]
     },
     {
