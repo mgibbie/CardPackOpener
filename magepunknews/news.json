@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "de4da55",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Karn (colorless big-artifact goodstuff)",
+			"body": "Fourteenth pool. Differentiated from Tezzeret (U value) & Daretti (R aristocrats)\ntoward colorless ramp-into-big-Constructs:\n- 6 card types: planeswalker (sig), two artifacts (Scrying Orb {T}: Scry 2;\n  Puzzlebox {T}: mana + draw), location (Reconstruction = a forge, {T}: a 2/2\n  Construct), instant (Sacrifice = EXILE a creature — hard removal that dodges\n  deathrattle/reborn), sorcery, creature.\n- ramp (Scouting Drone permanent crystal) -> big Constructs (9/9 Colossus);\n  metalcraft scaling (Touch +4/+4 & DS, Chrome Automaton +3/+3 when you control\n  an artifact); Construct lord (Bastion +0/+1); Sylex board wipe; Choose One\n  (Command). Stays fully colorless (stripped empty colors:[]).\n\nTests: pool_karn_test.mjs (45 checks); focused fuzz 350 clean; full suite 335/335.",
+			"cards": []
+		},
+		{
 			"sha": "eafeb5a",
 			"date": "2026-08-22",
 			"kind": "patch",
