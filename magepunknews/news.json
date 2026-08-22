@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "0c51f84",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Garruk (G beast aggression: lords + trample + overrun + fight)",
+			"body": "Ninth pool. Differentiated from Nissa (G ramp/Elementals) by pure beatdown:\n- 6 card types: planeswalker (sig), weapon (Savagery = a hunting axe; after your\n  hero kills a creature, summon a 3/3 Beast), enchantment (Uprising = Beast anthem\n  +1/+1 & Trample), instant (Wrath fight trick), sorcery, creature.\n- Beast tribal: Primalist buffs each Beast you play; Packleader lord (+1/+0);\n  Hordebeast scales +1 Atk per other Beast (selfScale). Big trample bodies +\n  overrun (Wake = mass +3/+3 & Trample; Command Choose One: go wide vs overrun).\n  Gorehorn Overkill spawns a Beast; Harbinger draws when it attacks; Apex Predator\n  destroys on entry. Keywords: trample/deathtouch/overkill/rush/first_strike/battlecry.\n\nTests: pool_garruk_test.mjs (45 checks); focused fuzz 350 clean; full suite 330/330.",
+			"cards": []
+		},
+		{
 			"sha": "bc34cde",
 			"date": "2026-08-22",
 			"kind": "patch",
