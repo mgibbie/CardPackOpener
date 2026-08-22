@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "0526c84",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Pool redesign: Edgar Markov (boss — B go-wide vampire swarm)",
+			"body": "Eighth boss; the vampire commander, differentiated from Sorin (lifedrain/lifegain\npayoffs) toward a go-wide swarm.\n- 6 card types: creature (Vampires incl the 6/6 boss), weapon (Coffin = raise a\n  Vampire per hero attack), enchantment (Wedding Announcement = a Vampire each\n  turn), location (Blood Crypt = a Vampire per tap), instant (Fateful Absence),\n  sorcery.\n- Eminence: the boss makes a 1/1 Vampire whenever you play a Vampire; token floods\n  (Officiant/Wedding Announcement/Blood Crypt/Coffin/boss); tribal payoffs\n  (Bloodline lord, Crimson Vow puts +1/+1 on your board when it attacks, Wedding\n  Hymn/Uncanny Speed anthems); Rush/Lifesteal aggression; Choose One (Infernal\n  Alchemy). Data-only.\n\nTests: pool_edgar_markov_test.mjs (43 checks; Eminence + attack-anthem + engines);\nfocused fuzz 300 clean; full suite 345/345.",
+			"cards": []
+		},
+		{
 			"sha": "3fb441a",
 			"date": "2026-08-22",
 			"kind": "patch",
