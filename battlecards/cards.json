@@ -50948,13 +50948,14 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Taunt. Battlecry: Give your creatures +2/+2 and deal 1 damage to all enemy creatures.",
+      "description": "Taunt. Divine Shield. Battlecry: Give your creatures +2/+2 and give all enemy creatures -2/-2.",
       "type": "creature",
       "attack": 5,
       "health": 7,
       "tribe": "Phyrexian",
       "keywords": [
         "taunt",
+        "divine_shield",
         "battlecry"
       ],
       "effects": [
@@ -50965,8 +50966,9 @@
           "target": "friendly-creatures"
         },
         {
-          "type": "damage",
-          "value": 1,
+          "type": "weaken",
+          "attack": 2,
+          "health": 2,
           "target": "enemy-creatures"
         }
       ]
@@ -50983,13 +50985,15 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Taunt. Rush.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Construct",
       "keywords": [
-        "divine_shield"
+        "divine_shield",
+        "taunt",
+        "rush"
       ]
     },
     {
@@ -51042,7 +51046,8 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Phyrexian"
+          "name": "Phyrexian",
+          "tribe": "Phyrexian"
         }
       ]
     },
@@ -51059,7 +51064,7 @@
       "loreDeck": "Elesh Norn",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -51079,19 +51084,31 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and deal 2 damage to all enemy creatures.",
+      "description": "Choose One — Give your creatures +1/+1 and Divine Shield; or Give all enemy creatures -2/-2.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "text": "Give your creatures +1/+1 and Divine Shield.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures",
+              "grant": "divine_shield"
+            }
+          ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
+          "text": "Give all enemy creatures -2/-2.",
+          "effects": [
+            {
+              "type": "weaken",
+              "attack": 2,
+              "health": 2,
+              "target": "enemy-creatures"
+            }
+          ]
         }
       ]
     },
@@ -51107,22 +51124,13 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Phyrexian",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Your Phyrexians have +1/+1.",
+      "type": "enchantment",
+      "aura": {
+        "attack": 1,
+        "health": 1,
+        "tribe": "Phyrexian"
+      }
     },
     {
       "id": "elesh_norn_decree",
@@ -51136,12 +51144,13 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
+      "description": "Give all enemy creatures -2/-2.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
+          "type": "weaken",
+          "attack": 2,
+          "health": 2,
           "target": "enemy-creatures"
         }
       ]
@@ -51158,13 +51167,26 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Taunt.",
-      "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Construct",
-      "keywords": [
-        "taunt"
+      "description": "Durability 3. {T}: Summon a 1/1 Phyrexian with Divine Shield.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Phyrexian with Divine Shield.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian",
+              "keywords": [
+                "divine_shield"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
@@ -51179,7 +51201,7 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Divine Shield. Taunt.",
+      "description": "Divine Shield. Taunt. Your other Phyrexians have +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -51187,7 +51209,13 @@
       "keywords": [
         "divine_shield",
         "taunt"
-      ]
+      ],
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Phyrexian"
+      }
     },
     {
       "id": "elesh_norn_disassembly",
@@ -51201,12 +51229,18 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Deal 2 damage to all enemy creatures.",
+      "description": "Give all enemy creatures -1/-1, then deal 1 damage to them.",
       "type": "sorcery",
       "effects": [
         {
+          "type": "weaken",
+          "attack": 1,
+          "health": 1,
+          "target": "enemy-creatures"
+        },
+        {
           "type": "damage",
-          "value": 2,
+          "value": 1,
           "target": "enemy-creatures"
         }
       ]
@@ -51223,13 +51257,14 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Poisonous.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "divine_shield"
+        "divine_shield",
+        "poisonous"
       ]
     },
     {
@@ -51244,14 +51279,15 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt. Divine Shield. Reborn.",
       "type": "creature",
       "attack": 4,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
         "taunt",
-        "divine_shield"
+        "divine_shield",
+        "reborn"
       ]
     },
     {
@@ -51287,7 +51323,7 @@
       "id": "elesh_norn_uniformity",
       "name": "Elesh Norn’s Uniformity",
       "cardClass": "magepunk",
-      "cost": 6,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -51295,17 +51331,29 @@
       ],
       "loreDeck": "Elesh Norn",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Divine Shield.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
-        }
-      ]
+      "description": "Quest: Summon 5 creatures. Reward: Give your creatures +2/+2 and Divine Shield, and give all enemy creatures -2/-2.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures",
+            "grant": "divine_shield"
+          },
+          {
+            "type": "weaken",
+            "attack": 2,
+            "health": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "emrakul_sig",

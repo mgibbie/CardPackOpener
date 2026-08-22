@@ -1322,6 +1322,23 @@ register('debuff-enemies-attack-turn', ({ state, pi, target, source, enemies, sc
 });
 
 
+register('weaken', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+			// Elesh Norn: permanently shrink creatures (Attack to a min of 0, max
+			// Health to a min of 1). target: 'enemy-creatures' | 'all-creatures' | a chosen creature.
+			const a = e.attack || 0, h = e.health || 0;
+			const hit = (c) => {
+				if (!c || isDead(c) || c.type === 'location') return;
+				if (a) c.attack = Math.max(0, c.attack - a);
+				if (h) { c.maxHealth = Math.max(1, c.maxHealth - h); if (c.damage > c.maxHealth) c.damage = c.maxHealth; }
+				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+			};
+			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of [...state.players[o].board]) hit(c); }
+			else if (e.target === 'all-creatures') { for (const p of state.players) for (const c of [...p.board]) hit(c); }
+			else hit(chosenCreature());
+			sweepDeaths(state);
+});
+
+
 register('buff-friendly-others-filtered', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// Hatchery Helper: buff your OTHER minions matching an Attack filter, optionally grant a keyword
