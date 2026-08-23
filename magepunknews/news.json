@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "6116a84",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Zopandrel boss pool (G Eldrazi — big bodies + devour + fight)",
+			"body": "Zopandrel, Hunger Dominus (5th/final titan; mono-Green in this game's data):\nplay huge Eldrazi that DEVOUR enemy creatures (destroy + gain their stats) and\nFIGHT to clear the board, growing relentlessly. Sig devours on entry + devours a\nrandom enemy each attack; Apex Predator devours target+neighbors; Devourer/\nMagesty devour; Maze Warden fights on entry; Behemoth overkill-grows; Mite Swarm\n+ Scythestrike weapon make fodder; Maze-Song enchantment + Feast quest grow the\nteam. 6 card types, 6 keywords, mono-G. Distinct from the other Eldrazi\n(annihilator/card-flow/exile/cast) and green pools (Nissa/Garruk/Vivien/Lukka/\nVorinclex) via the devour mechanic.\n\nTest pool_zopandrel_test.mjs 50/50. Full suite 354/354.",
+			"cards": []
+		},
+		{
 			"sha": "b9acb1c",
 			"date": "2026-08-23",
 			"kind": "patch",
