@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "b7fe4cb",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Azorius land pool (WU control) — first advanced-land pool",
+			"body": "Land pools were 2 card types (creature/sorcery) with repeated 'Battlecry: Freeze'\nand the generic signet/locket/keyrune/cluestone mana-rock filler. Azorius (WU)\nrebuilt into a real control shell: Isperia finisher (draw 2 + board freeze),\nLavinia tempo bounce, detain (Arrester/Justiciar freeze), a Ploy counter-secret,\nmodal Azorius Charm (instant), Signet/Cluestone artifacts (tap for mana/draw),\nLocket enchantment (cast -> Scry), Keyrune token, Arbiter tempo+value. 6 card\ntypes, 7 keywords, WU preserved. Names/art/colors unchanged.\n\nTest pool_azorius_test.mjs 49/49. Full suite 358/358.",
+			"cards": []
+		},
+		{
 			"sha": "1a891d9",
 			"date": "2026-08-23",
 			"kind": "patch",
