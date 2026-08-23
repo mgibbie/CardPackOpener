@@ -56833,25 +56833,25 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample. Battlecry: Gain 2 Mana Crystals this turn and give your creatures +1/+1.",
+      "description": "Trample. Your +1/+1 counters are doubled. Battlecry: Gain two Mana Crystals and steal one of your opponent’s.",
       "type": "creature",
       "attack": 7,
       "health": 6,
       "tribe": "Phyrexian",
       "keywords": [
-        "trample",
-        "battlecry"
+        "trample"
       ],
+      "static": {
+        "type": "counter-doubler",
+        "value": 1
+      },
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 2
         },
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "type": "steal-empty-mana-crystal"
         }
       ]
     },
@@ -56867,13 +56867,20 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Gain a Mana Crystal.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
       ]
     },
     {
@@ -56888,13 +56895,22 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Put a +1/+1 counter on each of your creatures.",
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 1
+        }
       ]
     },
     {
@@ -56909,17 +56925,17 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain a Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Elf Druid",
+      "tribe": "Phyrexian",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -56929,24 +56945,24 @@
       "name": "Vorinclex’s Voracity",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G"
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Give a creature +3/+3 and Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 3,
-          "health": 3,
-          "target": "creature",
-          "grant": "trample"
-        }
-      ]
+      "description": "At the start of your turn, gain a Mana Crystal.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-empty-mana-crystal",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "vorinclex_command",
@@ -56960,22 +56976,44 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Summon a 4/4 Beast with Trample. Gain a Mana Crystal this turn.",
+      "description": "Choose One — Put two +1/+1 counters on each of your creatures; or Gain three Mana Crystals; or Summon a 6/6 Phyrexian with Trample.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Beast",
-          "keywords": [
-            "trample"
+          "text": "Put two +1/+1 counters on each of your creatures.",
+          "effects": [
+            {
+              "type": "grow",
+              "target": "friendly-creatures",
+              "attack": 2,
+              "health": 2
+            }
           ]
         },
         {
-          "type": "gain-mana",
-          "value": 1
+          "text": "Gain three Mana Crystals.",
+          "effects": [
+            {
+              "type": "gain-empty-mana-crystal",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "text": "Summon a 6/6 Phyrexian with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 6,
+              "health": 6,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -56991,18 +57029,14 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Give a creature +2/+2, then it fights an enemy creature.",
+      "description": "Steal up to two of your opponent’s Mana Crystals.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
+          "type": "steal-empty-mana-crystal"
         },
         {
-          "type": "fight",
-          "target": "friendly-creature"
+          "type": "steal-empty-mana-crystal"
         }
       ]
     },
@@ -57018,14 +57052,14 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample. Reborn.",
+      "description": "Reborn. Trample.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
-        "trample",
-        "reborn"
+        "reborn",
+        "trample"
       ]
     },
     {
@@ -57040,13 +57074,22 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Battlecry: Put two +1/+1 counters on a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
-        "rush"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creature",
+          "attack": 2,
+          "health": 2
+        }
       ]
     },
     {
@@ -57061,13 +57104,21 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Taunt.",
-      "type": "creature",
-      "attack": 3,
-      "health": 5,
-      "tribe": "Construct",
-      "keywords": [
-        "taunt"
+      "description": "Durability 3. {T}: Put a +1/+1 counter on each of your creatures.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Put a +1/+1 counter on each of your creatures.",
+          "effects": [
+            {
+              "type": "grow",
+              "target": "friendly-creatures",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
       ]
     },
     {
@@ -57082,14 +57133,34 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Whenever this attacks, put a +1/+1 counter on it. Overkill: Put two +1/+1 counters on it.",
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
-        "trample"
-      ]
+        "trample",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "grow",
+          "target": "self",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "vorinclex_hostility",
@@ -57103,15 +57174,12 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Trample.",
-      "type": "sorcery",
+      "description": "Choose a friendly creature; it fights an enemy creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
-          "grant": "trample"
+          "type": "fight",
+          "target": "friendly-creature"
         }
       ]
     },
@@ -57127,48 +57195,53 @@
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Deathtouch. At the start of your turn, put a +1/+1 counter on this.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Druid",
+      "tribe": "Phyrexian",
       "keywords": [
-        "battlecry"
+        "deathtouch"
       ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "vorinclex_ravager",
       "name": "Vorinclex’s Ravager",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G"
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. Rush. Overkill: Deal 3 damage to each opponent.",
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Beast",
+      "tribe": "Phyrexian",
       "keywords": [
         "trample",
-        "battlecry"
+        "rush",
+        "overkill"
       ],
-      "effects": [
+      "overkill": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -57176,22 +57249,34 @@
       "id": "vorinclex_overgrowth",
       "name": "Vorinclex’s Overgrowth",
       "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
+      "cost": 1,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G"
       ],
       "loreDeck": "Vorinclex",
       "collectible": false,
-      "description": "Gain 2 Mana Crystals this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        }
-      ]
+      "description": "Quest: Summon 5 creatures. Reward: Put two +1/+1 counters on each of your creatures and gain two Mana Crystals.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "grow",
+            "target": "friendly-creatures",
+            "attack": 2,
+            "health": 2
+          },
+          {
+            "type": "gain-empty-mana-crystal",
+            "value": 2
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_sig",

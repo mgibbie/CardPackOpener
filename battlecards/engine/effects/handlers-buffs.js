@@ -1188,6 +1188,23 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 });
 
 
+// Vorinclex: place +1/+1 "counters" on creatures. A `counter-doubler` static
+// (Vorinclex, Monstrous Raider — "counters are doubled") multiplies the counters
+// placed, and stacks multiplicatively like the token/damage/death doublers.
+// Scoped to `grow` on purpose so ordinary buffs/auras are never doubled.
+register('grow', ({ state, pi, source, chosenCreature, buffCreature }, e) => {
+	const dv = staticValue(state.players[pi], 'counter-doubler');
+	const mul = 2 ** dv;
+	const a = (e.attack || 0) * mul, h = (e.health || 0) * mul;
+	if (a === 0 && h === 0) return;
+	const apply = (c) => { if (c && !isDead(c) && c.type !== 'location') buffCreature(c, a, h); };
+	if (e.target === 'friendly-creatures') { for (const c of state.players[pi].board) apply(c); }
+	else if (e.target === 'friendly-others') { for (const c of state.players[pi].board) if (c !== source) apply(c); }
+	else if (e.target === 'self') { apply(source); }
+	else apply(chosenCreature());
+});
+
+
 register('grant', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			const grantTo = e.target === 'friendly-creatures' ? state.players[pi].board
