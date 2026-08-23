@@ -1,6 +1,14 @@
 {
-	"generated": "2026-08-22",
+	"generated": "2026-08-23",
 	"entries": [
+		{
+			"sha": "b9acb1c",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Zhulodok boss pool (colorless Eldrazi spellslinger — cast-matters + cascade)",
+			"body": "Zhulodok, the Void Gorger (4th titan): casting spells triggers value + cascade.\nPool = colorless spellslinger: cast-matters bodies (sig + Monument enchantment\nmake Eldrazi Scions per spell, Mimic prowess, Futurist draws every 2nd spell),\nspell cost reduction (sig costMod), and CASCADE (cast-spell-from-deck: sig/\nDevastator battlecries, Planar Portal artifact tap, Command, Cataclysm wrath,\nVoidmaze counter-secret) into big colorless payoffs. Cast-trigger stays a Scion-\nmaker (no recursion); cascade gated to specific spells. 6 card types, 6 keywords,\ncolorless. Distinct from Emrakul (annihilator), Kozilek (draw/mill), Ulamog\n(exile/indestructible).\n\nTest pool_zhulodok_test.mjs 52/52. Full suite 353/353.",
+			"cards": []
+		},
 		{
 			"sha": "c6a084d",
 			"date": "2026-08-22",
