@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "780b2e3",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Gix boss pool (B Phyrexian spymaster — Connect:draw card advantage)",
+			"body": "Gix, Yawgmoth Praetor: 'combat damage to a player -> draw a card.' Pool = evasive\nmenacing attackers (Stealth/Elusive/Charge) carrying Connect:draw (sig +\nInfiltrator/Aggressor/Nemesis via ongoing on:self-hit-player), spymaster steal\n(Puppeteer/Command mind-control), card-draw engines (Devotion enchantment =\nPhyrexian Arena, Skullflayer weapon draws on hero attack, Vivisector sac-for-2),\ndiscard attrition (Caress/Bloodletter/Painful Quandary secret), reanimation\n(Sacrifice), removal (Reckoning). 6 card types, 7 keywords, mono-B. UNIQUE among\nthe Black pools (card-advantage aggression vs reanimate/vampire/demon/drain).\n\nTest pool_gix_test.mjs 55/55. Full suite 350/350.",
+			"cards": []
+		},
+		{
 			"sha": "d585d0e",
 			"date": "2026-08-22",
 			"kind": "patch",
