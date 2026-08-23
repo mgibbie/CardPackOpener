@@ -57383,20 +57383,33 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Deal 1 damage to all enemy creatures and draw a card.",
+      "description": "Elusive. Battlecry: Sacrifice a creature and draw a card. Whenever a friendly creature dies, draw a card and put a -1/-1 counter on a random enemy.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch",
+        "elusive",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "weaken",
+            "target": "random-enemy",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
       "effects": [
         {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-creatures"
+          "type": "sacrifice-friendly"
         },
         {
           "type": "draw",
@@ -57409,46 +57422,58 @@
       "name": "Yawgmoth Demon",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Trample. Lifesteal. Whenever a friendly creature dies, this gains +1/+1.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Demon",
       "keywords": [
-        "deathtouch"
-      ]
+        "trample",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_agenda",
       "name": "Yawgmoth’s Agenda",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Each opponent discards 2 cards. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "count": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, put a +1/+1 counter on each of your creatures.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "friendly-creatures",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_bargain",
@@ -57462,9 +57487,12 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Draw 3 cards; you take 3 damage.",
+      "description": "Sacrifice a creature. Draw 3 cards.",
       "type": "sorcery",
       "effects": [
+        {
+          "type": "sacrifice-friendly"
+        },
         {
           "type": "draw",
           "value": 3
@@ -57483,12 +57511,14 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Put a -3/-3 counter on a creature.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "weaken",
+          "target": "creature",
+          "attack": 3,
+          "health": 3
         }
       ]
     },
@@ -57496,7 +57526,7 @@
       "id": "yawgmoth_vile_offering",
       "name": "Yawgmoth’s Vile Offering",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -57504,49 +57534,55 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Destroy a creature. Summon a 3/3 Demon with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Demon",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ]
+      "description": "Lifesteal. After your hero attacks, put a -1/-1 counter on a random enemy.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "weaken",
+            "target": "random-enemy",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_will",
       "name": "Yawgmoth’s Will",
       "cardClass": "magepunk",
-      "cost": 4,
-      "rarity": "common",
+      "cost": 1,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Draw 2 cards. Each opponent discards a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
+      "description": "Quest: 6 friendly creatures die. Reward: Return your two highest-Attack dead creatures and draw 2 cards.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "death",
+          "count": 6
         },
-        {
-          "type": "enemy-discard",
-          "count": 1
-        }
-      ]
+        "reward": [
+          {
+            "type": "resurrect-highest-died",
+            "count": 2
+          },
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_command",
@@ -57560,21 +57596,37 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deal 2 damage to all enemy creatures, draw a card, and each opponent discards a card.",
+      "description": "Choose One — Put a -3/-3 counter on a creature; or Draw 2 cards; or Return your highest-Attack dead creature.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
+          "text": "Put a -3/-3 counter on a creature.",
+          "effects": [
+            {
+              "type": "weaken",
+              "target": "creature",
+              "attack": 3,
+              "health": 3
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Draw 2 cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         },
         {
-          "type": "enemy-discard",
-          "count": 1
+          "text": "Return your highest-Attack dead creature.",
+          "effects": [
+            {
+              "type": "resurrect-highest-died",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -57590,20 +57642,21 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Deal 1 damage to a creature.",
+      "description": "Battlecry: Sacrifice a creature. Draw 2 cards.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 1,
-          "target": "creature"
+          "type": "sacrifice-friendly"
+        },
+        {
+          "type": "draw",
+          "value": 2
         }
       ]
     },
@@ -57612,20 +57665,21 @@
       "name": "Yawgmoth’s Plague",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deal 3 damage to all creatures.",
+      "description": "Give all enemy creatures -2/-2.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "all-creatures"
+          "type": "weaken",
+          "target": "enemy-creatures",
+          "attack": 2,
+          "health": 2
         }
       ]
     },
@@ -57641,13 +57695,14 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Draw a card.",
-      "type": "sorcery",
+      "description": "Put a -2/-2 counter on a creature. Draw a card.",
+      "type": "instant",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "type": "weaken",
+          "target": "creature",
+          "attack": 2,
+          "health": 2
         },
         {
           "type": "draw",
@@ -57667,14 +57722,25 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Whenever a friendly creature dies, put a -1/-1 counter on a random enemy.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
         "deathtouch"
-      ]
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "weaken",
+            "target": "random-enemy",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "yawgmoth_contagion",
@@ -57688,13 +57754,20 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deal 2 damage to all enemy creatures.",
+      "description": "Give all enemy creatures -1/-1 and put a +1/+1 counter on each of your creatures.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
+          "type": "weaken",
+          "target": "enemy-creatures",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 1
         }
       ]
     },
@@ -57710,7 +57783,7 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Battlecry: Summon a 3/3 Demon with Deathtouch.",
+      "description": "Battlecry: Return your highest-Attack dead creature to the battlefield.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -57720,14 +57793,8 @@
       ],
       "effects": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Demon",
-          "keywords": [
-            "deathtouch"
-          ]
+          "type": "resurrect-highest-died",
+          "count": 1
         }
       ]
     },
@@ -57743,14 +57810,22 @@
       ],
       "loreDeck": "Yawgmoth",
       "collectible": false,
-      "description": "Deathtouch. Lifesteal.",
+      "description": "Reborn. Deathtouch. Deathrattle: Put a +1/+1 counter on each of your creatures.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Demon",
+      "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch",
-        "lifesteal"
+        "reborn",
+        "deathtouch"
+      ],
+      "deathrattle": [
+        {
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 1
+        }
       ]
     },
     {

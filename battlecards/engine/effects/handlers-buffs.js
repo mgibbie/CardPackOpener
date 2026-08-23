@@ -1351,6 +1351,10 @@ register('weaken', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			};
 			if (e.target === 'enemy-creatures') { for (const o of enemies) for (const c of [...state.players[o].board]) hit(c); }
 			else if (e.target === 'all-creatures') { for (const p of state.players) for (const c of [...p.board]) hit(c); }
+			else if (e.target === 'random-enemy') { // Yawgmoth: a -1/-1 counter on a random enemy (auto-resolves in triggers)
+				const pool = []; for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type !== 'location') pool.push(c);
+				if (pool.length) hit(pool[Math.floor(state.rng() * pool.length)]);
+			}
 			else hit(chosenCreature());
 			sweepDeaths(state);
 });
