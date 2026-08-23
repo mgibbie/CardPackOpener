@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "ae874b1",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Urabrask boss pool (R haste-aggro Phyrexian praetor)",
+			"body": "Urabrask the Hidden: 'creatures you control have haste' (haste = Charge here).\nPool = relentless haste swarm — sig aura + Aggression enchantment give your\ncreatures Charge, cheap aggressive bodies (Frontliner/Zealot) attack the turn\nthey land, Forge location + Uprising flood hasty Phyrexians, burn (Demolition/\nFirebrand/Furnace-Priest/Molten Charge weapon) clears blockers, Rebel Leader\nanthem + Tormentor trample/overkill push face. 6 card types, 7 keywords, mono-R\npreserved. Distinct from Chandra (spell burn), Daretti (goblin aristocrats),\nSolphim (damage-doubler), Lukka (evolve).\n\nTest pool_urabrask_test.mjs 48/48. Full suite 348/348.",
+			"cards": []
+		},
+		{
 			"sha": "9e249d7",
 			"date": "2026-08-22",
 			"kind": "patch",
