@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "b132aed",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Lolth boss pool (B spider tribal — venom + web traps + spiderling swarm)",
+			"body": "Lolth, the Spider Queen: venom (Deathtouch/Venomous kills what it bites) + WEB\nTRAPS (Web secret destroys an attacker; Webcloak enchantment freezes the enemy\nboard) + a Spiderling swarm + death-BIRTHS-spiders (sig spins a Spider whenever\na creature dies; Broodmother each turn; Soulspider deathrattle; Spellweaver on\ncast; Crown weapon on hero attack). Signet quest, modal Command (-3/-3 / freeze\n/ swarm). 7 card types, 6 keywords, mono-B. Distinct from the aggressive vampire\nswarms (Edgar/Drana/Sorin) and reanimator/aristocrat B pools (Liliana/Ob Nixilis/\nYawgmoth/Drivnod) and Gix (card-adv)/Sheoldred (draw-punish).\n\nTest pool_lolth_test.mjs 54/54. Full suite 355/355.",
+			"cards": []
+		},
+		{
 			"sha": "6116a84",
 			"date": "2026-08-23",
 			"kind": "patch",
