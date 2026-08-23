@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "db1c3c6",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Yawgmoth boss pool (B aristocrats sacrifice engine + -1/-1 counters)",
+			"body": "Yawgmoth, Thran Physician: 'sacrifice a creature -> draw + put a -1/-1 counter on\nan enemy,' plus proliferate. Pool converts your creatures' DEATHS into cards +\nenemy -1/-1 counters (weaken) and spreads +1/+1 counters (grow = proliferate):\nsig death-engine (friendly death -> draw + shrink a random enemy), Demon grows\non deaths, Reaper weakens on deaths, Agenda enchantment + Contagion proliferate,\nPlague mass -2/-2, sac-for-cards (Bargain/Vile Disciple), reanimation\n(Reanimator/Command/Will death-quest), Immortal (Reborn+Deathrattle proliferate,\nnow fires on both deaths). 6 types, 6 keywords, mono-B. Distinct from Ob Nixilis\n(sac->drain life) and Drivnod (death-doubler) via the card-draw + counter axis.\n\nENGINE: weaken gains a 'random-enemy' target branch (auto-resolves in triggers;\nnot a new register, still 1137).\n\nTest pool_yawgmoth_test.mjs 54/54. Full suite 351/351.",
+			"cards": []
+		},
+		{
 			"sha": "90f977a",
 			"date": "2026-08-22",
 			"kind": "patch",
