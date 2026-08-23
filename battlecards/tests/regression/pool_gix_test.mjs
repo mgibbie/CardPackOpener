@@ -77,10 +77,13 @@ for (const c of pool) {
   E.attack(st, 0, bl.uid, { type: 'hero', player: 1 });
   ok('Bloodletter: attacking makes the opponent discard', st.players[1].hand.length === 1, st.players[1].hand.length); }
 
-// ---- recycler: Deathrattle draw (and Reborn) ----
+// ---- recycler: Reborn + Deathrattle both fire on the first death ----
 { const st = game(); const rec = put(st, 0, 'gix_recycler'); const h0 = st.players[0].hand.length;
   rec.damage = rec.maxHealth; E.sweepDeaths(st);
-  ok('Recycler Deathrattle draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  ok('Recycler Deathrattle draws a card on the first death', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]);
+  ok('Recycler also Reborns (returns to the board)', st.players[0].board.some(c => c.id === 'gix_recycler'), st.players[0].board.map(c => c.id));
+  const back = st.players[0].board.find(c => c.id === 'gix_recycler'); back.damage = back.maxHealth; E.sweepDeaths(st);
+  ok('Recycler draws again on its final death', st.players[0].hand.length === h0 + 2, [h0, st.players[0].hand.length]); }
 
 // ---- skullflayer weapon: draw when the hero attacks ----
 { const st = game(); play(st, 0, 'gix_skullflayer', null); const h0 = st.players[0].hand.length;

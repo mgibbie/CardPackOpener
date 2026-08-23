@@ -76,8 +76,11 @@ export function sweepDeaths(state) {
 				if (p.cadaverCollector && p._cadaverTurn !== state.turnNumber) { p._cadaverTurn = state.turnNumber; p.corpses += 1; } // Cadaver Collector: first Corpse each turn banks an extra
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
 			}
-			// reborn: the first death returns it at 1 health, reborn spent
+			// reborn: the first death returns it at 1 health, reborn spent. The
+			// Deathrattle STILL fires on this first death (matches Hearthstone —
+			// e.g. Khartut Defender heals on both deaths), then it resurrects.
 			if (has(c, KW.REBORN) && !p.eliminated) {
+				runDeathrattle(state, pi, c);
 				c.keywords = c.keywords.filter(k => k !== KW.REBORN);
 				c.damage = c.maxHealth - 1;
 				c.doomed = false;
@@ -90,7 +93,7 @@ export function sweepDeaths(state) {
 				p.board.push(c);
 				emit(state, { type: 'reborn', uid: c.uid, player: pi, name: c.name });
 				fireOngoing(state, pi, 'minion-reborn', { minion: c }); // Auchenai Death-Speaker
-				continue; // no graveyard, no deathrattle
+				continue; // returns to play (no graveyard); Deathrattle already fired
 			}
 			if (c.marked) drawCards(state, c.markedBy, 2);
 			runDeathrattle(state, pi, c);

@@ -52137,13 +52137,14 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Deathtouch. Deathrattle: Draw a card.",
+      "description": "Deathtouch. Reborn. Deathrattle: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "reborn"
       ],
       "deathrattle": [
         {
@@ -52437,14 +52438,13 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Lifesteal. Reborn. Whenever this attacks, each opponent discards a card.",
+      "description": "Lifesteal. Whenever this attacks, each opponent discards a card.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "lifesteal",
-        "reborn"
+        "lifesteal"
       ],
       "ongoing": {
         "on": "self-attacks",

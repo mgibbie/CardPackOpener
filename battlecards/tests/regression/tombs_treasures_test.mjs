@@ -51,9 +51,9 @@ ok('batch-1 treasures marked treasure+token', raw.cards.filter(c => c.set === 'T
 	ok('Gyrocopter: 5 to enemy creature', state.players[1].board[0].damage === 5, state.players[1].board[0].damage);
 	ok('Gyrocopter: shuffled back into deck', state.players[0].deck.includes('ulda_runaway_gyrocopter'));
 }
-// Crawling Claw: Rush+Reborn body; DR steals a card on its FINAL death
-// (this engine's Reborn returns it at 1 health and skips the deathrattle the
-// first time — the steal fires when it dies for good)
+// Crawling Claw: Rush+Reborn body; DR steals a card. Reborn fires the Deathrattle
+// on the FIRST death too (Hearthstone-faithful), returning it at 1 health; the
+// second death is for good.
 {
 	const { state } = new Scenario(byId)
 		.def('t_held', { type: 'creature', cost: 4, attack: 4, health: 4 })
@@ -63,9 +63,9 @@ ok('batch-1 treasures marked treasure+token', raw.cards.filter(c => c.set === 'T
 	ok('Crawling Claw: Rush + Reborn body', claw.keywords.includes('rush') && claw.keywords.includes('reborn'));
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_kill').uid, { type: 'creature', uid: claw.uid, player: 0 });
 	const reborn = state.players[0].board.find(c => c.id === 'ulda_crawling_claw');
-	ok('Crawling Claw: reborned once (no steal yet)', !!reborn && !state.players[0].hand.some(c => c.id === 't_held'));
+	ok('Crawling Claw: reborned AND stole on the first death (Reborn fires the Deathrattle)', !!reborn && state.players[0].hand.some(c => c.id === 't_held'));
 	E.playCard(state, 0, state.players[0].hand.find(c => c.id === 't_kill').uid, { type: 'creature', uid: reborn.uid, player: 0 });
-	ok('Crawling Claw: stole from the enemy hand on final death', state.players[0].hand.some(c => c.id === 't_held'));
+	ok('Crawling Claw: dies for good on the second death', !state.players[0].board.some(c => c.id === 'ulda_crawling_claw'));
 }
 // Reno's Crafty Lasso: weapon steals on hero attack
 {
