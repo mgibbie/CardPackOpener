@@ -11547,8 +11547,14 @@
       "cost": 4,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Each opponent discards 2 cards.",
+      "description": "Elusive. Battlecry: Exile the top 5 cards of the opponent’s deck and each opponent discards a card.",
       "type": "creature",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false,
       "attack": 3,
       "health": 3,
       "tribe": "Human Wizard",
@@ -11558,16 +11564,14 @@
       ],
       "effects": [
         {
+          "type": "destroy-enemy-deck",
+          "count": 5
+        },
+        {
           "type": "enemy-discard",
-          "value": 2
+          "count": 1
         }
-      ],
-      "colors": [
-        "U",
-        "B"
-      ],
-      "landSet": "Dimir",
-      "collectible": false
+      ]
     },
     {
       "id": "lazav_dimir_mastermind",
@@ -11576,21 +11580,31 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Elusive. Deathtouch.",
+      "description": "Elusive. Deathtouch. Windfury. Whenever this attacks, exile the top 3 cards of the opponent’s deck.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Shapeshifter",
-      "keywords": [
-        "elusive",
-        "deathtouch"
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive",
+        "deathtouch",
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 3
+          }
+        ]
+      }
     },
     {
       "id": "dimir_cutpurse",
@@ -11601,9 +11615,14 @@
       "set": "paper",
       "description": "Elusive. Battlecry: Each opponent discards a card. Draw a card.",
       "type": "creature",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
         "battlecry"
@@ -11611,19 +11630,13 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U",
-        "B"
-      ],
-      "landSet": "Dimir",
-      "collectible": false
+      ]
     },
     {
       "id": "dimir_guildmage",
@@ -11632,26 +11645,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Each opponent discards a card.",
+      "description": "Battlecry: Exile the top 3 cards of the opponent’s deck.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-enemy-deck",
+          "count": 3
+        }
+      ]
     },
     {
       "id": "dimir_infiltrator",
@@ -11660,20 +11672,20 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive.",
+      "description": "Stealth. Elusive.",
       "type": "creature",
-      "attack": 1,
-      "health": 4,
-      "tribe": "Human Wizard",
-      "keywords": [
-        "elusive"
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 4,
+      "keywords": [
+        "stealth",
+        "elusive"
+      ]
     },
     {
       "id": "dimir_house_guard",
@@ -11682,20 +11694,20 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive.",
+      "description": "Elusive. Lifesteal.",
       "type": "creature",
-      "attack": 5,
-      "health": 3,
-      "tribe": "Skeleton",
-      "keywords": [
-        "elusive"
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 3,
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
     },
     {
       "id": "dimir_informant",
@@ -11706,9 +11718,14 @@
       "set": "paper",
       "description": "Battlecry: Scry 2. Draw a card.",
       "type": "creature",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false,
       "attack": 1,
       "health": 3,
-      "tribe": "Human Rogue",
       "keywords": [
         "battlecry"
       ],
@@ -11721,13 +11738,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U",
-        "B"
-      ],
-      "landSet": "Dimir",
-      "collectible": false
+      ]
     },
     {
       "id": "dimir_doppelganger",
@@ -11736,20 +11747,27 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Battlecry: Take control of an enemy creature with 3 or less Attack.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Shapeshifter",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 3
+        }
+      ]
     },
     {
       "id": "dimir_spybug",
@@ -11758,20 +11776,28 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive.",
+      "description": "Elusive. At the end of your turn, Scry 1.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Insect",
-      "keywords": [
-        "elusive"
-      ],
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "dimir_charm",
@@ -11780,21 +11806,44 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Destroy a creature with 3 or less Attack.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature",
-          "maxAttack": 3
-        }
-      ],
+      "description": "Choose One — Destroy a creature with 3 or less Attack; or Exile the top 3 cards of the opponent’s deck; or Return a creature to its owner’s hand.",
+      "type": "instant",
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Destroy a creature with 3 or less Attack.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature",
+              "maxAttack": 3
+            }
+          ]
+        },
+        {
+          "text": "Exile the top 3 cards of the opponent’s deck.",
+          "effects": [
+            {
+              "type": "destroy-enemy-deck",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "text": "Return a creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "dimir_cluestone",
@@ -11803,20 +11852,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "dimir_keyrune",
@@ -11827,6 +11879,12 @@
       "set": "paper",
       "description": "Summon a 2/2 Assassin with Elusive and Deathtouch.",
       "type": "sorcery",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Dimir",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -11834,18 +11892,13 @@
           "attack": 2,
           "health": 2,
           "name": "Assassin",
+          "tribe": "Assassin",
           "keywords": [
             "elusive",
             "deathtouch"
           ]
         }
-      ],
-      "colors": [
-        "U",
-        "B"
-      ],
-      "landSet": "Dimir",
-      "collectible": false
+      ]
     },
     {
       "id": "dimir_locket",
@@ -11854,24 +11907,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "Whenever you cast a spell, exile the top card of the opponent’s deck.",
+      "type": "enchantment",
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "dimir_signet",
@@ -11880,20 +11932,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "dimir_machinations",
@@ -11902,24 +11957,26 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Scry 3. Each opponent discards a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 3
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ],
+      "description": "Secret: When an opponent casts a spell, counter it and exile the top 3 cards of their deck.",
+      "type": "secret",
       "colors": [
         "U",
         "B"
       ],
       "landSet": "Dimir",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "destroy-enemy-deck",
+            "count": 3
+          }
+        ]
+      }
     },
     {
       "id": "silumgar_dragonspire",
