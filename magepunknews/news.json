@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "f0831d6",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Dimir land pool (UB mill + surveillance + theft)",
+			"body": "Circu mill+discard legend, Lazav milling assassin (Elusive/Deathtouch/Windfury,\nexiles deck on attack), Cutpurse/Guildmage discard+mill, Doppelganger steals a\ncreature, Informant scry, modal Dimir Charm (kill/mill/bounce instant), Locket\nenchantment (mill on cast), Machinations counter-secret + mill, Cluestone/Signet\nartifacts, Keyrune Assassin token. 6 card types, 6 keywords, UB preserved.\n\nTest pool_dimir_test.mjs 48/48. Full suite 359/359.",
+			"cards": []
+		},
+		{
 			"sha": "b7fe4cb",
 			"date": "2026-08-23",
 			"kind": "patch",
