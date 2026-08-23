@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "e24c229",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Gruul land pool (RG big beaters + haste/riot + fight/smash)",
+			"body": "Borborygmos land-hurling finisher, Ruric Thar fights on entry, Ragebeast flings\na friendly at a foe, Nodorog trample+overkill, riot Guildmage/Beastmaster\nanthems, Cluestone enchantment (grant Rush to played creatures), War Chant\noverrun quest, modal Gruul Charm instant, Keyrune Beast token, Signet/Locket\nartifacts. 6 card types, 7 keywords, GR preserved.\n\nTest pool_gruul_test.mjs 47/47. Full suite 362/362.",
+			"cards": []
+		},
+		{
 			"sha": "b761ac2",
 			"date": "2026-08-23",
 			"kind": "patch",
