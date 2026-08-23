@@ -52038,24 +52038,32 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Elusive. Lifesteal. Battlecry: Each opponent discards a card and draw a card.",
+      "description": "Stealth. Battlecry: Draw 2 cards; each opponent discards a card. Whenever Gix deals combat damage to a player, draw a card.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Phyrexian",
       "keywords": [
-        "elusive",
-        "lifesteal",
+        "stealth",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
       "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
         {
           "type": "enemy-discard",
           "count": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -52071,14 +52079,23 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Stealth. Whenever this deals combat damage to a player, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Phyrexian Rogue",
+      "tribe": "Phyrexian",
       "keywords": [
-        "elusive"
-      ]
+        "stealth"
+      ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "gix_puppeteer",
@@ -52092,7 +52109,7 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Battlecry: Each opponent discards a card.",
+      "description": "Battlecry: Take control of an enemy creature with 3 or less Attack.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -52102,8 +52119,9 @@
       ],
       "effects": [
         {
-          "type": "enemy-discard",
-          "count": 1
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 3
         }
       ]
     },
@@ -52119,20 +52137,26 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Deathrattle: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
         "deathtouch"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
       "id": "gix_skullflayer",
       "name": "Gix’s Skullflayer",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -52140,14 +52164,22 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Lifesteal.",
-      "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Phyrexian",
+      "description": "Lifesteal. After your hero attacks, draw a card.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "gix_caress",
@@ -52161,12 +52193,16 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Each opponent discards 2 cards.",
-      "type": "sorcery",
+      "description": "Each opponent discards 2 cards. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "enemy-discard",
           "count": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -52182,20 +52218,36 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Destroy a creature. Each opponent discards a card. Draw a card.",
+      "description": "Choose One — Draw 2 cards; or each opponent discards 2 cards; or take control of an enemy creature with 4 or less Attack.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Draw 2 cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         },
         {
-          "type": "enemy-discard",
-          "count": 1
+          "text": "Each opponent discards 2 cards.",
+          "effects": [
+            {
+              "type": "enemy-discard",
+              "count": 2
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 1
+          "text": "Take control of an enemy creature with 4 or less Attack.",
+          "effects": [
+            {
+              "type": "mind-control",
+              "target": "enemy-creature",
+              "maxAttack": 4
+            }
+          ]
         }
       ]
     },
@@ -52211,19 +52263,22 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Each opponent discards 2 cards and takes 2 damage.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "count": 2
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, they discard a card and take 3 damage.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          },
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "gix_aggressor",
@@ -52237,35 +52292,58 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge. Whenever this deals combat damage to a player, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "rush"
-      ]
+        "charge"
+      ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "gix_nemesis",
       "name": "Gix’s Nemesis",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Elusive. Whenever this deals combat damage to a player, draw a card and deal 1 damage to each opponent.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
-        "deathtouch"
-      ]
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "self-hit-player",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "gix_sacrifice",
@@ -52279,18 +52357,12 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Deal 3 damage to each opponent and gain 3 life.",
+      "description": "Return your highest-Attack dead creature to the battlefield.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "type": "resurrect-highest-died",
+          "count": 1
         }
       ]
     },
@@ -52299,24 +52371,29 @@
       "name": "Gix’s Devotion",
       "cardClass": "magepunk",
       "cost": 2,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "lifesteal"
-        }
-      ]
+      "description": "At the start of your turn, draw a card and deal 1 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "gix_vivisector",
@@ -52330,7 +52407,7 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Battlecry: Destroy a friendly creature. Draw 2 cards.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -52340,8 +52417,11 @@
       ],
       "effects": [
         {
+          "type": "sacrifice-friendly"
+        },
+        {
           "type": "draw",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -52357,14 +52437,24 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Reborn. Whenever this attacks, each opponent discards a card.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "lifesteal"
-      ]
+        "lifesteal",
+        "reborn"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "gix_reckoning",
@@ -52378,13 +52468,16 @@
       ],
       "loreDeck": "Gix",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
+      "description": "Destroy a creature. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
+          "type": "destroy",
+          "target": "creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
