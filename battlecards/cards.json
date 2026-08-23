@@ -14675,8 +14675,14 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Trample. Battlecry: Deal 3 damage to all enemy creatures.",
+      "description": "Trample. Battlecry: Deal 3 damage to all enemy creatures and 3 to each opponent.",
       "type": "creature",
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false,
       "attack": 7,
       "health": 6,
       "tribe": "Cyclops",
@@ -14689,14 +14695,13 @@
           "type": "damage",
           "value": 3,
           "target": "enemy-creatures"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
         }
-      ],
-      "colors": [
-        "G",
-        "R"
-      ],
-      "landSet": "Gruul",
-      "collectible": false
+      ]
     },
     {
       "id": "ruric_thar_gruul_champion",
@@ -14705,21 +14710,28 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Trample. Rush.",
+      "description": "Trample. Rush. Battlecry: This fights an enemy creature.",
       "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Ogre Warrior",
-      "keywords": [
-        "trample",
-        "rush"
-      ],
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Ogre",
+      "keywords": [
+        "trample",
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "fight",
+          "selfFights": true
+        }
+      ]
     },
     {
       "id": "gruul_ragebeast",
@@ -14730,6 +14742,12 @@
       "set": "paper",
       "description": "Battlecry: A friendly creature fights an enemy creature.",
       "type": "creature",
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false,
       "attack": 6,
       "health": 6,
       "tribe": "Beast",
@@ -14741,13 +14759,7 @@
           "type": "fight",
           "target": "friendly-creature"
         }
-      ],
-      "colors": [
-        "G",
-        "R"
-      ],
-      "landSet": "Gruul",
-      "collectible": false
+      ]
     },
     {
       "id": "gruul_war_plow",
@@ -14756,20 +14768,20 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Taunt.",
       "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Construct",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 6,
+      "keywords": [
+        "trample",
+        "taunt"
+      ]
     },
     {
       "id": "gruul_nodorog",
@@ -14778,20 +14790,28 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Overkill: Deal 3 damage to each opponent.",
       "type": "creature",
-      "attack": 6,
-      "health": 5,
-      "tribe": "Beast",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
     },
     {
       "id": "gruul_spellbreaker",
@@ -14800,20 +14820,20 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Rush.",
+      "description": "Rush. Elusive.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Ogre Warrior",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "rush",
+        "elusive"
+      ]
     },
     {
       "id": "gruul_beastmaster",
@@ -14824,9 +14844,14 @@
       "set": "paper",
       "description": "Battlecry: Give your creatures +1/+1.",
       "type": "creature",
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Human Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -14837,13 +14862,7 @@
           "health": 1,
           "target": "friendly-creatures"
         }
-      ],
-      "colors": [
-        "G",
-        "R"
-      ],
-      "landSet": "Gruul",
-      "collectible": false
+      ]
     },
     {
       "id": "gruul_guildmage",
@@ -14854,9 +14873,14 @@
       "set": "paper",
       "description": "Battlecry: Give a creature +2/+2 and Rush.",
       "type": "creature",
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -14865,16 +14889,10 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
-      ],
-      "colors": [
-        "G",
-        "R"
-      ],
-      "landSet": "Gruul",
-      "collectible": false
+      ]
     },
     {
       "id": "gruul_scrapper",
@@ -14883,20 +14901,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush.",
+      "description": "Charge.",
       "type": "creature",
-      "attack": 3,
-      "health": 2,
-      "tribe": "Human Warrior",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 2,
+      "keywords": [
+        "charge"
+      ]
     },
     {
       "id": "gruul_charm",
@@ -14905,48 +14922,81 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +2/+2 and Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "trample"
-        }
-      ],
+      "description": "Choose One — Give a creature +2/+2 and Trample; or Deal 3 damage to a creature; or Give your creatures +1/+0 and Rush.",
+      "type": "instant",
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Give a creature +2/+2 and Trample.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creature",
+              "grant": "trample"
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +1/+0 and Rush.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 0,
+              "target": "friendly-creatures",
+              "grant": "rush"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "gruul_war_chant",
       "name": "Gruul War Chant",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +2/+1 and Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        }
-      ],
+      "description": "Quest: Summon 5 creatures. Reward: Give your creatures +2/+2 and Trample.",
+      "type": "quest",
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures",
+            "grant": "trample"
+          }
+        ]
+      }
     },
     {
       "id": "gruul_keyrune",
@@ -14957,6 +15007,12 @@
       "set": "paper",
       "description": "Summon a 3/3 Beast with Trample.",
       "type": "sorcery",
+      "colors": [
+        "G",
+        "R"
+      ],
+      "landSet": "Gruul",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -14964,17 +15020,12 @@
           "attack": 3,
           "health": 3,
           "name": "Beast",
+          "tribe": "Beast",
           "keywords": [
             "trample"
           ]
         }
-      ],
-      "colors": [
-        "G",
-        "R"
-      ],
-      "landSet": "Gruul",
-      "collectible": false
+      ]
     },
     {
       "id": "gruul_locket",
@@ -14983,24 +15034,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "gruul_signet",
@@ -15009,20 +15059,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "gruul_cluestone",
@@ -15031,20 +15084,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "Whenever you play a creature, give it Rush.",
+      "type": "enchantment",
       "colors": [
         "G",
         "R"
       ],
       "landSet": "Gruul",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "rush"
+          }
+        ]
+      }
     },
     {
       "id": "atarka_dragonspire",
