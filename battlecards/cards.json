@@ -52891,7 +52891,7 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon two 1/2 Spiders with Deathtouch.",
+      "description": "Deathtouch. Battlecry: Summon two 2/1 Spiders with Venomous. Whenever a friendly creature dies, summon a 2/1 Spider with Venomous.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -52900,15 +52900,32 @@
         "deathtouch",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Spider",
+            "tribe": "Spider",
+            "keywords": [
+              "venomous"
+            ]
+          }
+        ]
+      },
       "effects": [
         {
           "type": "summon",
           "count": 2,
-          "attack": 1,
-          "health": 2,
+          "attack": 2,
+          "health": 1,
           "name": "Spider",
+          "tribe": "Spider",
           "keywords": [
-            "deathtouch"
+            "venomous"
           ]
         }
       ]
@@ -52925,15 +52942,13 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
+      "description": "Deal 4 damage to a creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "deathtouch"
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
         }
       ]
     },
@@ -52941,27 +52956,25 @@
       "id": "lolth_webcloak",
       "name": "Lolth’s Webcloak",
       "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Freeze an enemy creature and deal 1 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "creature"
-        }
-      ]
+      "description": "At the start of your turn, freeze all enemy creatures.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "lolth_crown",
@@ -52975,17 +52988,29 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "deathtouch"
-        }
-      ]
+      "description": "Deathtouch. After your hero attacks, summon a 1/1 Spider with Venomous.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "keywords": [
+        "deathtouch"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spider",
+            "tribe": "Spider",
+            "keywords": [
+              "venomous"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "lolth_spiderspawn",
@@ -52999,13 +53024,14 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt.",
       "type": "creature",
       "attack": 1,
       "health": 3,
       "tribe": "Spider",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "taunt"
       ]
     },
     {
@@ -53020,14 +53046,27 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deathtouch. Lifesteal.",
+      "description": "Deathtouch. Elusive. Deathrattle: Summon two 1/1 Spiders with Venomous.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Spider",
       "keywords": [
         "deathtouch",
-        "lifesteal"
+        "elusive"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Spider",
+          "tribe": "Spider",
+          "keywords": [
+            "venomous"
+          ]
+        }
       ]
     },
     {
@@ -53042,45 +53081,67 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Battlecry: Each opponent discards a card.",
+      "description": "Whenever you cast a spell, summon a 1/1 Spider with Venomous.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Spider Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "count": 1
-        }
-      ]
+      "tribe": "Spider",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spider",
+            "tribe": "Spider",
+            "keywords": [
+              "venomous"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "lolth_signet",
       "name": "Lolth’s Signet",
       "cardClass": "magepunk",
-      "cost": 3,
-      "rarity": "common",
+      "cost": 1,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B"
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
+      "description": "Quest: Summon 6 creatures. Reward: Summon a 6/6 Spider with Deathtouch and give your creatures +1/+1.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 6
         },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+        "reward": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 6,
+            "health": 6,
+            "name": "Spider",
+            "tribe": "Spider",
+            "keywords": [
+              "deathtouch"
+            ]
+          },
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "lolth_broodmother",
@@ -53094,27 +53155,30 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon two 1/2 Spiders with Deathtouch.",
+      "description": "Taunt. At the start of your turn, summon a 2/1 Spider with Venomous.",
       "type": "creature",
       "attack": 3,
       "health": 5,
       "tribe": "Spider",
       "keywords": [
-        "deathtouch",
-        "battlecry"
+        "taunt"
       ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 2,
-          "name": "Spider",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ]
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Spider",
+            "tribe": "Spider",
+            "keywords": [
+              "venomous"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "lolth_sting",
@@ -53128,13 +53192,23 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deal 2 damage to a creature.",
-      "type": "sorcery",
+      "description": "Draw a card and summon a 1/1 Spider with Venomous.",
+      "type": "instant",
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Spider",
+          "tribe": "Spider",
+          "keywords": [
+            "venomous"
+          ]
         }
       ]
     },
@@ -53150,14 +53224,19 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Freeze all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        }
-      ]
+      "description": "Secret: When an enemy creature attacks, destroy it.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "destroy-attacker"
+          }
+        ]
+      }
     },
     {
       "id": "lolth_priestess",
@@ -53171,25 +53250,17 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Battlecry: Gain 2 life and each opponent discards a card.",
+      "description": "Your other Spiders have +1/+0.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Spider Cleric",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
-        },
-        {
-          "type": "enemy-discard",
-          "count": 1
-        }
-      ]
+      "tribe": "Spider",
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true,
+        "tribe": "Spider"
+      }
     },
     {
       "id": "lolth_ambusher",
@@ -53203,14 +53274,14 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Deathtouch. Rush.",
+      "description": "Stealth. Poisonous.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Spider",
       "keywords": [
-        "deathtouch",
-        "rush"
+        "stealth",
+        "poisonous"
       ]
     },
     {
@@ -53225,21 +53296,43 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Destroy a creature. Summon a 1/2 Spider with Deathtouch.",
+      "description": "Choose One — Summon three 2/1 Spiders with Venomous; or Put a -3/-3 counter on a creature; or Freeze all enemy creatures.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Summon three 2/1 Spiders with Venomous.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 3,
+              "attack": 2,
+              "health": 1,
+              "name": "Spider",
+              "tribe": "Spider",
+              "keywords": [
+                "venomous"
+              ]
+            }
+          ]
         },
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 2,
-          "name": "Spider",
-          "keywords": [
-            "deathtouch"
+          "text": "Put a -3/-3 counter on a creature.",
+          "effects": [
+            {
+              "type": "weaken",
+              "target": "creature",
+              "attack": 3,
+              "health": 3
+            }
+          ]
+        },
+        {
+          "text": "Freeze all enemy creatures.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creatures"
+            }
           ]
         }
       ]
@@ -53256,7 +53349,7 @@
       ],
       "loreDeck": "Lolth",
       "collectible": false,
-      "description": "Draw 2 cards. Each opponent discards a card.",
+      "description": "Draw 2 cards and deal 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
@@ -53264,8 +53357,9 @@
           "value": 2
         },
         {
-          "type": "enemy-discard",
-          "count": 1
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
