@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "c3b89fd",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Rakdos land pool (BR reckless aggro + sacrifice/aristocrats burn)",
+			"body": "Fast Rush/Charge bodies + face burn, plus a sac-for-value sub-theme: Lord of\nRiots burn demon, Exava unleash (+2/+0 & Charge), Guildmage sac->burn, Shred-\nFreak deathrattle burn, Anthem of Rakdos enchantment (deaths -> burn opponent),\nmodal Rakdos Charm instant (face/creature/sac-draw), Showstopper wrath,\nCluestone artifact, Riteknife lifesteal weapon (sweep on hero attack). 6 card\ntypes, 7 keywords, BR preserved.\n\nTest pool_rakdos_test.mjs 47/47. Full suite 360/360.",
+			"cards": []
+		},
+		{
 			"sha": "f0831d6",
 			"date": "2026-08-23",
 			"kind": "patch",
