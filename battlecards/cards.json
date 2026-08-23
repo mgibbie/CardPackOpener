@@ -9101,27 +9101,32 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Windfury. Battlecry: Draw 2 cards and freeze all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "attack": 5,
       "health": 6,
       "tribe": "Sphinx",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
         {
           "type": "draw",
           "value": 2
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "lavinia_azorius_renegade",
@@ -9130,20 +9135,27 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Stealth. Battlecry: Return an enemy creature to its owner’s hand.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "divine_shield"
-      ],
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "divine_shield",
+        "stealth",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
     },
     {
       "id": "azorius_guildmage",
@@ -9152,26 +9164,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Freeze an enemy creature.",
+      "description": "Battlecry: Draw a card.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creature"
-        }
-      ],
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "azorius_skyguard",
@@ -9182,19 +9193,18 @@
       "set": "paper",
       "description": "Elusive. Taunt.",
       "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Bird Soldier",
-      "keywords": [
-        "elusive",
-        "taunt"
-      ],
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
     },
     {
       "id": "azorius_arrester",
@@ -9205,9 +9215,14 @@
       "set": "paper",
       "description": "Battlecry: Freeze an enemy creature.",
       "type": "creature",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "tribe": "Human Soldier",
       "keywords": [
         "battlecry"
       ],
@@ -9216,13 +9231,7 @@
           "type": "freeze",
           "target": "enemy-creature"
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "azorius_herald",
@@ -9231,11 +9240,16 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive. Battlecry: Gain 4 life.",
+      "description": "Elusive. Battlecry: Gain 4 life and draw a card.",
       "type": "creature",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
         "battlecry"
@@ -9245,14 +9259,12 @@
           "type": "heal",
           "value": 4,
           "target": "self"
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "azorius_justiciar",
@@ -9263,9 +9275,14 @@
       "set": "paper",
       "description": "Taunt. Battlecry: Freeze all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "attack": 2,
       "health": 4,
-      "tribe": "Human Advisor",
       "keywords": [
         "taunt",
         "battlecry"
@@ -9275,13 +9292,7 @@
           "type": "freeze",
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "azorius_knight",
@@ -9290,21 +9301,21 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Divine Shield. Taunt.",
+      "description": "Divine Shield. Taunt. First Strike.",
       "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Human Knight",
-      "keywords": [
-        "divine_shield",
-        "taunt"
-      ],
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "divine_shield",
+        "taunt",
+        "first_strike"
+      ]
     },
     {
       "id": "azorius_ploy",
@@ -9313,27 +9324,26 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature Elusive. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "creature",
-          "grant": "elusive"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "Secret: When an opponent casts a spell, counter it and draw a card.",
+      "type": "secret",
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "azorius_charm",
@@ -9342,25 +9352,48 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw a card. Gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ],
+      "description": "Choose One — Return a creature to its owner’s hand; or Draw a card and gain 3 life; or Freeze an enemy creature.",
+      "type": "instant",
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Return a creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Draw a card and gain 3 life.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            },
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Freeze an enemy creature.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "azorius_signet",
@@ -9369,20 +9402,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "azorius_cluestone",
@@ -9391,20 +9427,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "azorius_locket",
@@ -9413,24 +9452,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "Whenever you cast a spell, Scry 1.",
+      "type": "enchantment",
       "colors": [
         "W",
         "U"
       ],
       "landSet": "Azorius",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "azorius_keyrune",
@@ -9441,6 +9479,12 @@
       "set": "paper",
       "description": "Summon a 2/2 Elemental with Elusive.",
       "type": "sorcery",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -9448,17 +9492,12 @@
           "attack": 2,
           "health": 2,
           "name": "Elemental",
+          "tribe": "Elemental",
           "keywords": [
             "elusive"
           ]
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "azorius_arbiter",
@@ -9467,8 +9506,14 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Return an enemy creature to its owner's hand. Draw 2 cards.",
+      "description": "Return an enemy creature to its owner’s hand. Draw 2 cards.",
       "type": "sorcery",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Azorius",
+      "collectible": false,
       "effects": [
         {
           "type": "bounce",
@@ -9478,13 +9523,7 @@
           "type": "draw",
           "value": 2
         }
-      ],
-      "colors": [
-        "W",
-        "U"
-      ],
-      "landSet": "Azorius",
-      "collectible": false
+      ]
     },
     {
       "id": "istfell_citadel",
