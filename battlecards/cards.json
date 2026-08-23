@@ -14204,21 +14204,28 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Deathtouch. Trample.",
+      "description": "Deathtouch. Trample. Battlecry: Return your highest-Attack dead creature to the battlefield.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Undead Elf",
-      "keywords": [
-        "deathtouch",
-        "trample"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Undead Elf",
+      "keywords": [
+        "deathtouch",
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 1
+        }
+      ]
     },
     {
       "id": "vraska_golgari_conqueror",
@@ -14229,6 +14236,12 @@
       "set": "paper",
       "description": "Deathtouch. Battlecry: Destroy a creature.",
       "type": "creature",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Golgari",
+      "collectible": false,
       "attack": 5,
       "health": 5,
       "tribe": "Gorgon",
@@ -14241,13 +14254,7 @@
           "type": "destroy",
           "target": "creature"
         }
-      ],
-      "colors": [
-        "B",
-        "G"
-      ],
-      "landSet": "Golgari",
-      "collectible": false
+      ]
     },
     {
       "id": "savra_queen_of_the_golgari",
@@ -14256,21 +14263,31 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Deathtouch. Lifesteal.",
+      "description": "Deathtouch. Lifesteal. Whenever a friendly creature dies, gain 2 life.",
       "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Elf Shaman",
-      "keywords": [
-        "deathtouch",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "golgari_rotwurm",
@@ -14281,19 +14298,18 @@
       "set": "paper",
       "description": "Trample. Lifesteal.",
       "type": "creature",
-      "attack": 6,
-      "health": 5,
-      "tribe": "Wurm",
-      "keywords": [
-        "trample",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 5,
+      "keywords": [
+        "trample",
+        "lifesteal"
+      ]
     },
     {
       "id": "golgari_grave_troll",
@@ -14302,20 +14318,21 @@
       "cost": 6,
       "rarity": "common",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Reborn.",
       "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Troll Skeleton",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Troll",
+      "keywords": [
+        "trample",
+        "reborn"
+      ]
     },
     {
       "id": "golgari_findbroker",
@@ -14324,20 +14341,26 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Reborn.",
-      "type": "creature",
-      "attack": 4,
-      "health": 5,
-      "tribe": "Elf Shaman",
-      "keywords": [
-        "reborn"
-      ],
+      "description": "Durability 3. {T}: Return your highest-Attack dead creature to the battlefield.",
+      "type": "location",
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Return your highest-Attack dead creature.",
+          "effects": [
+            {
+              "type": "resurrect-highest-died",
+              "count": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "golgari_raider",
@@ -14348,18 +14371,17 @@
       "set": "paper",
       "description": "Trample.",
       "type": "creature",
-      "attack": 5,
-      "health": 4,
-      "tribe": "Undead Warrior",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "golgari_longlegs",
@@ -14370,18 +14392,18 @@
       "set": "paper",
       "description": "Deathtouch.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Insect",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Insect",
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "golgari_decoy",
@@ -14392,19 +14414,18 @@
       "set": "paper",
       "description": "Taunt. Deathtouch.",
       "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Elf",
-      "keywords": [
-        "taunt",
-        "deathtouch"
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "taunt",
+        "deathtouch"
+      ]
     },
     {
       "id": "golgari_brownscale",
@@ -14413,27 +14434,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Gain 3 life.",
+      "description": "Deathrattle: Gain 3 life.",
       "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Beast",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ],
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 4,
+      "deathrattle": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "golgari_guildmage",
@@ -14444,9 +14461,14 @@
       "set": "paper",
       "description": "Battlecry: Give a creature +1/+1 and Deathtouch.",
       "type": "creature",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Golgari",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -14455,16 +14477,10 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "deathtouch"
         }
-      ],
-      "colors": [
-        "B",
-        "G"
-      ],
-      "landSet": "Golgari",
-      "collectible": false
+      ]
     },
     {
       "id": "golgari_charm",
@@ -14473,49 +14489,78 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 1 damage to all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-creatures"
-        }
-      ],
+      "description": "Choose One — Deal 1 damage to all enemy creatures; or Give your creatures +1/+1; or Return your highest-Attack dead creature.",
+      "type": "instant",
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Deal 1 damage to all enemy creatures.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Return your highest-Attack dead creature.",
+          "effects": [
+            {
+              "type": "resurrect-highest-died",
+              "count": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "golgari_germination",
       "name": "Golgari Germination",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Summon two 2/2 Insects with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Insect",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ],
+      "description": "At the start of your turn, summon a 1/1 Insect with Deathtouch.",
+      "type": "enchantment",
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Insect",
+            "tribe": "Insect",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "golgari_keyrune",
@@ -14526,6 +14571,12 @@
       "set": "paper",
       "description": "Summon a 3/3 Beast with Deathtouch.",
       "type": "sorcery",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Golgari",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -14533,17 +14584,12 @@
           "attack": 3,
           "health": 3,
           "name": "Beast",
+          "tribe": "Beast",
           "keywords": [
             "deathtouch"
           ]
         }
-      ],
-      "colors": [
-        "B",
-        "G"
-      ],
-      "landSet": "Golgari",
-      "collectible": false
+      ]
     },
     {
       "id": "golgari_cluestone",
@@ -14552,20 +14598,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "B",
         "G"
       ],
       "landSet": "Golgari",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "gruul_guildgate",
