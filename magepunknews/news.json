@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "b761ac2",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Golgari land pool (BG graveyard value + aristocrats + Deathtouch)",
+			"body": "Jarad reanimator legend, Vraska Deathtouch removal, Savra aristocrat lifegain\n(deaths -> +2 life), Grave-Troll Reborn, Brownscale deathrattle lifegain,\nGuildmage deathtouch-granter, undergrowth Germination enchantment (turn-start\nDeathtouch Insect), modal Golgari Charm instant (sweep/anthem/reanimate),\nFindbroker LOCATION (tap to reanimate), Keyrune Beast token, Cluestone artifact.\n6 card types, 6 keywords, BG preserved.\n\nTest pool_golgari_test.mjs 46/46. Full suite 361/361.",
+			"cards": []
+		},
+		{
 			"sha": "c3b89fd",
 			"date": "2026-08-23",
 			"kind": "patch",
