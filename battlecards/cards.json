@@ -55987,22 +55987,31 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures Rush.",
+      "description": "Charge. Your other creatures have Charge. Battlecry: Summon two 3/1 Phyrexians with Charge.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Phyrexian",
       "keywords": [
-        "charge",
-        "battlecry"
+        "charge"
       ],
+      "aura": {
+        "others": true,
+        "keywords": [
+          "charge"
+        ]
+      },
       "effects": [
         {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 1,
+          "name": "Phyrexian",
+          "tribe": "Phyrexian",
+          "keywords": [
+            "charge"
+          ]
         }
       ]
     },
@@ -56018,13 +56027,26 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Rush.",
-      "type": "creature",
-      "attack": 4,
-      "health": 3,
-      "tribe": "Construct",
-      "keywords": [
-        "rush"
+      "description": "Durability 3. {T}: Summon a 2/1 Phyrexian with Charge.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/1 Phyrexian with Charge.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian",
+              "keywords": [
+                "charge"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
@@ -56039,7 +56061,7 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+0.",
+      "description": "Battlecry: Give a friendly creature +2/+0 and Charge.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -56050,9 +56072,10 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
+          "attack": 2,
           "health": 0,
-          "target": "friendly-creatures"
+          "target": "friendly-creature",
+          "grant": "charge"
         }
       ]
     },
@@ -56068,17 +56091,17 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        }
-      ]
+      "description": "Whenever you play a creature, give it Charge.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "charge"
+          }
+        ]
+      }
     },
     {
       "id": "urabrask_frontliner",
@@ -56092,13 +56115,13 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge.",
       "type": "creature",
       "attack": 3,
       "health": 1,
       "tribe": "Phyrexian",
       "keywords": [
-        "rush"
+        "charge"
       ]
     },
     {
@@ -56113,22 +56136,45 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Summon a 3/2 Phyrexian with Rush.",
+      "description": "Choose One — Deal 4 damage to a creature; or give your creatures +2/+0 and Charge; or Summon two 2/2 Phyrexians with Charge.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Phyrexian",
-          "keywords": [
-            "rush"
+          "text": "Give your creatures +2/+0 and Charge.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creatures",
+              "grant": "charge"
+            }
+          ]
+        },
+        {
+          "text": "Summon two 2/2 Phyrexians with Charge.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 2,
+              "health": 2,
+              "name": "Phyrexian",
+              "tribe": "Phyrexian",
+              "keywords": [
+                "charge"
+              ]
+            }
           ]
         }
       ]
@@ -56145,26 +56191,19 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/1 Phyrexian with Rush.",
+      "description": "Charge. Your other creatures have +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "battlecry"
+        "charge"
       ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 1,
-          "name": "Phyrexian",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
+      "aura": {
+        "attack": 1,
+        "health": 0,
+        "others": true
+      }
     },
     {
       "id": "urabrask_demolition",
@@ -56179,7 +56218,7 @@
       "loreDeck": "Urabrask",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -56193,27 +56232,27 @@
       "name": "Urabrask’s Tormentor",
       "cardClass": "magepunk",
       "cost": 5,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R"
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Rush. Battlecry: Deal 2 damage to a creature.",
+      "description": "Trample. Overkill: Deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
-        "rush",
-        "battlecry"
+        "trample",
+        "overkill"
       ],
-      "effects": [
+      "overkill": [
         {
           "type": "damage",
           "value": 2,
-          "target": "creature"
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -56229,13 +56268,21 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Windfury. Battlecry: Deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 3,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "rush"
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
       ]
     },
     {
@@ -56250,13 +56297,14 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Charge.",
+      "description": "Charge. First Strike.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Construct",
+      "tribe": "Phyrexian",
       "keywords": [
-        "charge"
+        "charge",
+        "first_strike"
       ]
     },
     {
@@ -56271,13 +56319,21 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 2,
       "tribe": "Phyrexian",
       "keywords": [
-        "rush"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "creature"
+        }
       ]
     },
     {
@@ -56292,15 +56348,20 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Deal 3 damage to each opponent.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        }
-      ]
+      "description": "After your hero attacks, deal 1 damage to all enemy creatures.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "urabrask_firebrand",
@@ -56314,13 +56375,21 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Charge.",
+      "description": "Trample. Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elemental",
+      "tribe": "Phyrexian",
       "keywords": [
-        "charge"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "creature"
+        }
       ]
     },
     {
@@ -56328,30 +56397,26 @@
       "name": "Urabrask’s Uprising",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R"
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Summon two 2/2 Phyrexians with Rush. Each opponent loses 1 life.",
+      "description": "Summon three 2/2 Phyrexians with Charge.",
       "type": "sorcery",
       "effects": [
         {
           "type": "summon",
-          "count": 2,
+          "count": 3,
           "attack": 2,
           "health": 2,
           "name": "Phyrexian",
+          "tribe": "Phyrexian",
           "keywords": [
-            "rush"
+            "charge"
           ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
