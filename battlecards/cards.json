@@ -55544,23 +55544,32 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive. Battlecry: Freeze all enemy creatures and draw a card.",
+      "description": "Elusive. If you would proliferate, proliferate twice instead. Battlecry: Put a +1/+1 counter on each of your creatures. At the start of your turn, proliferate.",
       "type": "creature",
       "attack": 4,
       "health": 6,
       "tribe": "Phyrexian",
       "keywords": [
-        "elusive",
-        "battlecry"
+        "elusive"
       ],
+      "static": {
+        "type": "proliferate-doubler",
+        "value": 1
+      },
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "proliferate"
+          }
+        ]
+      },
       "effects": [
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 1
         }
       ]
     },
@@ -55576,15 +55585,15 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Scry 1.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
           "target": "enemy-creature"
         },
         {
-          "type": "scry",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -55601,13 +55610,19 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Battlecry: Return an enemy creature to its owner’s hand.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "elusive"
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
       ]
     },
     {
@@ -55622,19 +55637,21 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Divine Shield. Battlecry: Put two +1/+1 counters on a creature.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Phyrexian",
       "keywords": [
-        "elusive",
+        "divine_shield",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "grow",
+          "target": "friendly-creature",
+          "attack": 2,
+          "health": 2
         }
       ]
     },
@@ -55650,10 +55667,18 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "A 2/3 weapon.",
+      "description": "After your hero attacks, proliferate.",
       "type": "weapon",
       "attack": 2,
-      "durability": 3
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "proliferate"
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_skullbomb",
@@ -55667,19 +55692,18 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Deal 2 damage to a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "creature"
+          }
+        ],
+        "text": "Deal 2 damage to a creature."
+      }
     },
     {
       "id": "tekuthal_spy_drone",
@@ -55693,21 +55717,23 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive. Battlecry: Scry 1.",
+      "description": "Taunt. At the end of your turn, Scry 1.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Thopter",
+      "tribe": "Phyrexian",
       "keywords": [
-        "elusive",
-        "battlecry"
+        "taunt"
       ],
-      "effects": [
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "ongoing": {
+        "on": "turn-end",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_seastrider",
@@ -55721,14 +55747,26 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Rush. Whenever this attacks, put a +1/+1 counter on it.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Phyrexian",
       "keywords": [
-        "elusive"
-      ]
+        "elusive",
+        "rush"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_cobalt_golem",
@@ -55742,14 +55780,25 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Taunt. At the start of your turn, put a +1/+1 counter on this.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Construct",
+      "tribe": "Golem",
       "keywords": [
-        "elusive"
-      ]
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_trickery",
@@ -55763,18 +55812,19 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Freeze all enemy creatures. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and proliferate.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "proliferate"
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_precision",
@@ -55788,16 +55838,16 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Draw 2 cards. Scry 1.",
+      "description": "Deal 5 damage to a creature, then proliferate.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "damage",
+          "value": 5,
+          "target": "creature"
         },
         {
-          "type": "scry",
-          "value": 1
+          "type": "proliferate"
         }
       ]
     },
@@ -55813,22 +55863,19 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Whenever you cast a spell, proliferate.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Phyrexian",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "proliferate"
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_reflection",
@@ -55842,18 +55889,19 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "At the start of your turn, put a +1/+1 counter on each of your creatures.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "friendly-creatures",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "tekuthal_infiltrator",
@@ -55867,14 +55915,20 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Elusive. Deathtouch.",
+      "description": "Stealth. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Phyrexian Rogue",
+      "tribe": "Phyrexian",
       "keywords": [
-        "elusive",
-        "deathtouch"
+        "stealth",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
@@ -55889,20 +55943,17 @@
       ],
       "loreDeck": "Tekuthal",
       "collectible": false,
-      "description": "Freeze all enemy creatures, return one to hand, and draw 2 cards.",
+      "description": "Put two +1/+1 counters on each of your creatures, then proliferate.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 2,
+          "health": 2
         },
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "draw",
-          "value": 2
+          "type": "proliferate"
         }
       ]
     },

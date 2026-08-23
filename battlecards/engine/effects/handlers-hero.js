@@ -522,13 +522,17 @@ register('bless-divine-shield', ({ state, pi, target, source, enemies, scaled, h
 
 register('proliferate', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
-			// each creature you've strengthened grows +1/+1; each of your planeswalkers gains 1 loyalty
+			// each creature you've strengthened grows +1/+1; each of your planeswalkers gains 1 loyalty.
+			// Tekuthal, Inquiry Dominus: a `proliferate-doubler` static makes it happen twice (stacks).
 			const pp = state.players[pi];
-			for (const c of [...pp.board]) {
-				if (c.type === 'location' || isDead(c)) continue;
-				if ((c.counters || 0) > 0) buffCreature(c, 1, 1);
+			const _times = 2 ** staticValue(pp, 'proliferate-doubler');
+			for (let _k = 0; _k < _times; _k++) {
+				for (const c of [...pp.board]) {
+					if (c.type === 'location' || isDead(c)) continue;
+					if ((c.counters || 0) > 0) buffCreature(c, 1, 1);
+				}
+				for (const w of pp.planeswalkers) { w.loyalty = (w.loyalty || 0) + 1; emit(state, { type: 'walkerLoyalty', uid: w.uid, loyalty: w.loyalty }); }
 			}
-			for (const w of pp.planeswalkers) { w.loyalty = (w.loyalty || 0) + 1; emit(state, { type: 'walkerLoyalty', uid: w.uid, loyalty: w.loyalty }); }
 			emit(state, { type: 'proliferate', player: pi });
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
