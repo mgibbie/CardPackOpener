@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "a26a1dc",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Mishra boss pool (colorless artifact war machines)",
+			"body": "Brothers' War artificer: aggressive artifact-matters. Play artifacts -> spawn\nConstructs (sig + Workshop/Factory), belch fire (Foundry), pump the team (Self-\nReplicator grows, Onslaught enchantment anthem) and swing with big tramplers\n(War Machine 6/6 windfury, Juggernaut charge, Groundbreaker overkill). Real\nartifact-type cards (Bauble/Workshop/Research-Desk tap engines) + Factory\nlocation fuel the artifact-played triggers. Helix removal, Domination mind-\ncontrol, modal Command. 6 card types, 6 keywords, colorless. Distinct from\nTezzeret (U artifact value), Daretti (R artifact aristocrats), Karn (colorless\nbig-artifact ramp) via aggressive war machines.\n\nTest pool_mishra_test.mjs 51/51. Full suite 356/356.",
+			"cards": []
+		},
+		{
 			"sha": "b132aed",
 			"date": "2026-08-23",
 			"kind": "patch",
