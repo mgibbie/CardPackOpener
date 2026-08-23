@@ -55753,21 +55753,32 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Trample. Battlecry: Destroy a creature.",
+      "description": "Trample. Immune. Battlecry: Exile two enemy creatures. Whenever Ulamog attacks, exile the top 5 cards of the opponent’s deck.",
       "type": "creature",
       "attack": 10,
       "health": 10,
       "tribe": "Eldrazi",
       "keywords": [
         "trample",
+        "immune",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "exile",
+          "target": "enemy-creature",
+          "alsoRandomOther": true
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 5
+          }
+        ]
+      }
     },
     {
       "id": "ulamog_crusher",
@@ -55779,13 +55790,14 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Rush.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "rush"
       ]
     },
     {
@@ -55798,13 +55810,20 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Battlecry: Exile an enemy creature.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "exile",
+          "target": "enemy-creature"
+        }
       ]
     },
     {
@@ -55817,13 +55836,20 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Battlecry: Silence a creature.",
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Eldrazi Drone",
+      "tribe": "Eldrazi",
       "keywords": [
-        "taunt"
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
       ]
     },
     {
@@ -55836,18 +55862,23 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Battlecry: Summon two 1/1 Eldrazi Scions.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Eldrazi Drone",
+      "tribe": "Eldrazi",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Eldrazi Scion",
+          "tribe": "Eldrazi",
+          "keywords": []
         }
       ]
     },
@@ -55861,19 +55892,23 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Summon a 3/3 Eldrazi. Gain a Mana Crystal this turn.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 1/1 Eldrazi Scion.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Eldrazi"
-        },
-        {
-          "type": "gain-mana",
-          "value": 1
+          "text": "Summon a 1/1 Eldrazi Scion.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Eldrazi Scion",
+              "tribe": "Eldrazi",
+              "keywords": []
+            }
+          ]
         }
       ]
     },
@@ -55887,11 +55922,25 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "A 2/2 for two.",
+      "description": "Battlecry: Summon a 1/1 Eldrazi Scion.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Eldrazi Drone"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Eldrazi Scion",
+          "tribe": "Eldrazi",
+          "keywords": []
+        }
+      ]
     },
     {
       "id": "ulamog_command",
@@ -55903,16 +55952,42 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Destroy a creature. Freeze all enemy creatures.",
+      "description": "Choose One — Exile a creature; or Summon a 5/5 Eldrazi with Trample; or Exile the top 5 cards of the opponent’s deck.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "text": "Exile a creature.",
+          "effects": [
+            {
+              "type": "exile",
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
+          "text": "Summon a 5/5 Eldrazi with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Eldrazi",
+              "tribe": "Eldrazi",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Exile the top 5 cards of the opponent’s deck.",
+          "effects": [
+            {
+              "type": "destroy-enemy-deck",
+              "count": 5
+            }
+          ]
         }
       ]
     },
@@ -55920,24 +55995,36 @@
       "id": "ulamog_descent_into_oblivion",
       "name": "Ulamog’s Descent into Oblivion",
       "cardClass": "magepunk",
-      "cost": 7,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Destroy two creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
+      "description": "Quest: Play 8 cards. Reward: Exile the opponent’s entire deck and summon a 10/10 Eldrazi with Trample.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "play",
+          "count": 8
         },
-        {
-          "type": "destroy",
-          "target": "creature"
-        }
-      ]
+        "reward": [
+          {
+            "type": "destroy-enemy-deck"
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 10,
+            "health": 10,
+            "name": "Eldrazi",
+            "tribe": "Eldrazi",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "ulamog_ceaseless_hunger",
@@ -55949,21 +56036,31 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Trample. Battlecry: Destroy a creature.",
+      "description": "Trample. Windfury. Battlecry: Exile an enemy creature. Whenever this attacks, exile the top 3 cards of the opponent’s deck.",
       "type": "creature",
       "attack": 8,
       "health": 8,
       "tribe": "Eldrazi",
       "keywords": [
         "trample",
+        "windfury",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "exile",
+          "target": "enemy-creature"
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 3
+          }
+        ]
+      }
     },
     {
       "id": "ulamog_consumer",
@@ -55975,11 +56072,20 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "A 5/5 for five.",
+      "description": "Battlecry: Exile the top 5 cards of the opponent’s deck.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Eldrazi"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy-enemy-deck",
+          "count": 5
+        }
+      ]
     },
     {
       "id": "ulamog_locus",
@@ -55991,20 +56097,17 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Your Eldrazi cost (1) less.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Eldrazi",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "costMod": {
+        "cardType": "creature",
+        "tribe": "Eldrazi",
+        "amount": -1,
+        "scope": "own"
+      }
     },
     {
       "id": "ulamog_corruption",
@@ -56016,11 +56119,11 @@
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Destroy a creature.",
-      "type": "sorcery",
+      "description": "Exile a creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "destroy",
+          "type": "exile",
           "target": "creature"
         }
       ]
@@ -56030,19 +56133,19 @@
       "name": "Ulamog’s Titan",
       "cardClass": "magepunk",
       "cost": 7,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Taunt. Trample.",
+      "description": "Immune. Taunt.",
       "type": "creature",
       "attack": 7,
       "health": 8,
       "tribe": "Eldrazi",
       "keywords": [
-        "taunt",
-        "trample"
+        "immune",
+        "taunt"
       ]
     },
     {
@@ -56050,23 +56153,22 @@
       "name": "Ulamog’s Devouring",
       "cardClass": "magepunk",
       "cost": 6,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Ulamog",
       "collectible": false,
-      "description": "Destroy a creature. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, exile the top 2 cards of the opponent’s deck.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 2
+          }
+        ]
+      }
     },
     {
       "id": "urabrask_sig",
