@@ -58391,23 +58391,28 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample. Battlecry: Give your creatures +2/+2.",
+      "description": "Trample. Battlecry: Devour an enemy creature (destroy it and gain its stats). Whenever Zopandrel attacks, devour a random enemy creature.",
       "type": "creature",
       "attack": 7,
       "health": 7,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
         "trample",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
+          "type": "devour-enemy"
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "eat-random-enemy"
+          }
+        ]
+      }
     },
     {
       "id": "zopandrel_labyrinth_colossus",
@@ -58421,12 +58426,13 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Taunt. Trample.",
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
+        "taunt",
         "trample"
       ]
     },
@@ -58434,7 +58440,7 @@
       "id": "zopandrel_scythestrike",
       "name": "Zopandrel’s Scythestrike",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -58442,39 +58448,44 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Give a creature +2/+2, then it fights an enemy creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        },
-        {
-          "type": "fight",
-          "target": "friendly-creature"
-        }
-      ]
+      "description": "After your hero attacks, summon a 1/1 Mite.",
+      "type": "weapon",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Mite",
+            "tribe": "Eldrazi",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "zopandrel_uncaring_cruelty",
       "name": "Zopandrel’s Uncaring Cruelty",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G"
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Deal 3 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
         }
       ]
     },
@@ -58490,13 +58501,19 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Rush. Battlecry: Devour an enemy creature.",
       "type": "creature",
       "attack": 6,
       "health": 4,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "devour-enemy"
+        }
       ]
     },
     {
@@ -58511,21 +58528,23 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Insects.",
+      "description": "Battlecry: Summon three 1/1 Mites.",
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Insect",
+      "tribe": "Eldrazi",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "summon",
-          "count": 2,
+          "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Insect"
+          "name": "Mite",
+          "tribe": "Eldrazi",
+          "keywords": []
         }
       ]
     },
@@ -58534,23 +58553,26 @@
       "name": "Zopandrel’s Murmuring Maze-Song",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G"
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "At the start of your turn, give your creatures +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "zopandrel_command",
@@ -58564,15 +58586,45 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Trample.",
+      "description": "Choose One — Deal 5 damage to a creature; or Give your creatures +2/+2; or Summon a 6/6 Eldrazi with Trample.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
-          "grant": "trample"
+          "text": "Deal 5 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Summon a 6/6 Eldrazi with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 6,
+              "health": 6,
+              "name": "Eldrazi",
+              "tribe": "Eldrazi",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -58588,20 +58640,27 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Deathtouch. Battlecry: Devour a random enemy creature.",
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "eat-random-enemy"
+        }
       ]
     },
     {
       "id": "zopandrel_beheading_strike",
       "name": "Zopandrel’s Beheading Strike",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -58609,12 +58668,11 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "description": "Destroy a creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "damage",
-          "value": 4,
+          "type": "destroy",
           "target": "creature"
         }
       ]
@@ -58631,14 +58689,20 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Taunt. Trample.",
+      "description": "Taunt. Battlecry: This fights an enemy creature.",
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
         "taunt",
-        "trample"
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "fight",
+          "selfFights": true
+        }
       ]
     },
     {
@@ -58653,24 +58717,21 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Battlecry: Summon a 3/3 Beast with Trample.",
+      "description": "Battlecry: Give a friendly creature +2/+2 and Trample.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elf",
+      "tribe": "Eldrazi",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Beast",
-          "keywords": [
-            "trample"
-          ]
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature",
+          "grant": "trample"
         }
       ]
     },
@@ -58686,14 +58747,20 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample. Charge.",
+      "description": "Trample. Battlecry: Devour an enemy creature and the creatures beside it.",
       "type": "creature",
       "attack": 9,
       "health": 9,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
         "trample",
-        "charge"
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "devour-enemy",
+          "neighbors": true
+        }
       ]
     },
     {
@@ -58708,20 +58775,28 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Overkill: This gains +2/+2.",
       "type": "creature",
       "attack": 7,
       "health": 6,
-      "tribe": "Beast",
+      "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
       ]
     },
     {
       "id": "zopandrel_feast",
       "name": "Zopandrel’s Feast",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 1,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -58729,17 +58804,33 @@
       ],
       "loreDeck": "Zopandrel",
       "collectible": false,
-      "description": "Give a creature +4/+4 and Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 4,
-          "health": 4,
-          "target": "creature",
-          "grant": "trample"
-        }
-      ]
+      "description": "Quest: Summon 5 creatures. Reward: Give your creatures +2/+2 and summon a 7/7 Eldrazi with Trample.",
+      "type": "quest",
+      "quest": {
+        "goal": {
+          "type": "summon",
+          "count": 5
+        },
+        "reward": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creatures"
+          },
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 7,
+            "health": 7,
+            "name": "Eldrazi",
+            "tribe": "Eldrazi",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "bant_citadel",
