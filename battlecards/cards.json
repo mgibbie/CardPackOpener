@@ -13419,8 +13419,14 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge. Lifesteal. Battlecry: Deal 3 damage to each opponent.",
+      "description": "Charge. Lifesteal. Battlecry: Deal 4 damage to each opponent.",
       "type": "creature",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false,
       "attack": 6,
       "health": 5,
       "tribe": "Demon",
@@ -13432,16 +13438,10 @@
       "effects": [
         {
           "type": "damage",
-          "value": 3,
+          "value": 4,
           "target": "enemy-heroes"
         }
-      ],
-      "colors": [
-        "B",
-        "R"
-      ],
-      "landSet": "Rakdos",
-      "collectible": false
+      ]
     },
     {
       "id": "rakdos_defiler",
@@ -13450,21 +13450,22 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Rush. Lifesteal.",
+      "description": "Rush. Lifesteal. Trample.",
       "type": "creature",
-      "attack": 7,
-      "health": 6,
-      "tribe": "Demon",
-      "keywords": [
-        "rush",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 7,
+      "health": 6,
+      "tribe": "Demon",
+      "keywords": [
+        "rush",
+        "lifesteal",
+        "trample"
+      ]
     },
     {
       "id": "rakdos_pit_dragon",
@@ -13475,19 +13476,19 @@
       "set": "paper",
       "description": "Charge. Cleave.",
       "type": "creature",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false,
       "attack": 5,
       "health": 4,
       "tribe": "Dragon",
       "keywords": [
         "charge",
         "cleave"
-      ],
-      "colors": [
-        "B",
-        "R"
-      ],
-      "landSet": "Rakdos",
-      "collectible": false
+      ]
     },
     {
       "id": "exava_rakdos_blood_witch",
@@ -13496,11 +13497,16 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Charge. Battlecry: Give your creatures +1/+1.",
+      "description": "Charge. Battlecry: Give your creatures +2/+0 and Charge.",
       "type": "creature",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false,
       "attack": 4,
       "health": 3,
-      "tribe": "Human Warrior",
       "keywords": [
         "charge",
         "battlecry"
@@ -13508,17 +13514,12 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "charge"
         }
-      ],
-      "colors": [
-        "B",
-        "R"
-      ],
-      "landSet": "Rakdos",
-      "collectible": false
+      ]
     },
     {
       "id": "rakdos_firewheeler",
@@ -13529,9 +13530,14 @@
       "set": "paper",
       "description": "Battlecry: Deal 2 damage to each opponent and 2 damage to a creature.",
       "type": "creature",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Devil",
       "keywords": [
         "battlecry"
       ],
@@ -13546,13 +13552,7 @@
           "value": 2,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "B",
-        "R"
-      ],
-      "landSet": "Rakdos",
-      "collectible": false
+      ]
     },
     {
       "id": "rakdos_guildmage",
@@ -13561,27 +13561,29 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Battlecry: Sacrifice a creature to deal 3 damage to each opponent.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Human Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        }
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "sacrifice-friendly"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ]
     },
     {
       "id": "rakdos_drake",
@@ -13592,19 +13594,19 @@
       "set": "paper",
       "description": "Elusive. Charge.",
       "type": "creature",
-      "attack": 4,
-      "health": 3,
-      "tribe": "Drake",
-      "keywords": [
-        "elusive",
-        "charge"
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "charge"
+      ]
     },
     {
       "id": "rakdos_trumpeter",
@@ -13615,18 +13617,17 @@
       "set": "paper",
       "description": "Rush.",
       "type": "creature",
-      "attack": 3,
-      "health": 1,
-      "tribe": "Human Warrior",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 1,
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "rakdos_shred_freak",
@@ -13635,20 +13636,26 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Rush.",
+      "description": "Rush. Deathrattle: Deal 1 damage to each opponent.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Devil Berserker",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "rush"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
     },
     {
       "id": "rakdos_cackler",
@@ -13659,18 +13666,17 @@
       "set": "paper",
       "description": "Rush.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Devil",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "rakdos_showstopper",
@@ -13681,43 +13687,45 @@
       "set": "paper",
       "description": "Deal 3 damage to all creatures.",
       "type": "sorcery",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Rakdos",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "all-creatures"
         }
-      ],
-      "colors": [
-        "B",
-        "R"
-      ],
-      "landSet": "Rakdos",
-      "collectible": false
+      ]
     },
     {
       "id": "anthem_of_rakdos",
       "name": "Anthem of Rakdos",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +2/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ],
+      "description": "Whenever a friendly creature dies, deal 1 damage to each opponent.",
+      "type": "enchantment",
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "rakdos_charm",
@@ -13726,21 +13734,48 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        }
-      ],
+      "description": "Choose One — Deal 3 damage to a creature; or Deal 3 damage to each opponent; or Sacrifice a creature to draw 2 cards.",
+      "type": "instant",
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            }
+          ]
+        },
+        {
+          "text": "Sacrifice a creature to draw 2 cards.",
+          "effects": [
+            {
+              "type": "sacrifice-friendly"
+            },
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "rakdos_cluestone",
@@ -13749,20 +13784,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "rakdos_riteknife",
@@ -13771,16 +13809,29 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "A 3/2 weapon.",
+      "description": "Lifesteal. After your hero attacks, deal 1 damage to all enemy creatures.",
       "type": "weapon",
-      "attack": 3,
-      "durability": 2,
       "colors": [
         "B",
         "R"
       ],
       "landSet": "Rakdos",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "immersturm_citadel",
