@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "90f977a",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "Reborn no longer skips the Deathrattle (fires on first death)",
+			"body": "Reborn's first death now runs the creature's Deathrattle BEFORE resurrecting it\nat 1 health (Hearthstone-faithful). Previously the reborn branch in death.js\ncontinued past runDeathrattle, so a Reborn+Deathrattle creature only triggered\nits Deathrattle on its FINAL death — wrong for 13 cards incl. real HS imports\n(Khartut Defender heals on both deaths, Grandmummy, Invincible, Crawling Claw...).\n\nRestores Gix's Recycler to its intended 'Deathtouch. Reborn. Deathrattle: Draw a\ncard' (drew only once before; now draws on both deaths) and reverts Bloodletter\nto lifesteal-only. Updated tombs_treasures Crawling Claw assertion (steal now\nfires on first death) and Gix recycler test.\n\nFull suite 350/350.",
+			"cards": []
+		},
+		{
 			"sha": "780b2e3",
 			"date": "2026-08-22",
 			"kind": "patch",
