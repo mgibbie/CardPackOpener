@@ -53373,26 +53373,40 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Battlecry: Summon two 3/3 Constructs and deal 2 damage to a creature.",
+      "description": "Trample. Battlecry: Summon a 4/4 Construct with Rush. Whenever you play an artifact, summon a 2/2 Construct.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
+        "trample",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Construct",
+            "tribe": "Construct",
+            "keywords": []
+          }
+        ]
+      },
       "effects": [
         {
           "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct"
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Construct",
+          "tribe": "Construct",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -53406,18 +53420,17 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Draw a card. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "mishra_command",
@@ -53429,20 +53442,43 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Summon a 3/3 Construct.",
+      "description": "Choose One — Deal 5 damage to a creature; or Summon two 3/3 Constructs; or Give your creatures +2/+2.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Deal 5 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 5,
+              "target": "creature"
+            }
+          ]
         },
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct"
+          "text": "Summon two 3/3 Constructs.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 3,
+              "health": 3,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": []
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +2/+2.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 2,
+              "target": "friendly-creatures"
+            }
+          ]
         }
       ]
     },
@@ -53451,17 +53487,18 @@
       "name": "Mishra’s Domination",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Take control of an enemy creature with 4 or less Attack.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 4
         }
       ]
     },
@@ -53475,13 +53512,24 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Rush.",
-      "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Construct",
-      "keywords": [
-        "rush"
+      "description": "Durability 3. {T}: Summon a 2/2 Construct.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Construct.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Construct",
+              "tribe": "Construct",
+              "keywords": []
+            }
+          ]
+        }
       ]
     },
     {
@@ -53494,14 +53542,21 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Whenever you play an artifact, deal 1 damage to each opponent.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Construct",
-      "keywords": [
-        "taunt"
-      ]
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "mishra_groundbreaker",
@@ -53513,13 +53568,21 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge. Overkill: Deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 4,
       "health": 2,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "charge",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
       ]
     },
     {
@@ -53532,17 +53595,13 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Draw a card.",
-      "type": "sorcery",
+      "description": "Deal 4 damage to a creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
-          "value": 3,
+          "value": 4,
           "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -53556,39 +53615,39 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge. Trample.",
       "type": "creature",
       "attack": 5,
       "health": 3,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "charge",
+        "trample"
       ]
     },
     {
       "id": "mishra_onslaught",
       "name": "Mishra’s Onslaught",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Summon two 3/3 Constructs with Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Construct",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
+      "description": "Whenever you play an artifact, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "mishra_research_desk",
@@ -53600,20 +53659,17 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
-      "type": "creature",
-      "attack": 1,
-      "health": 3,
-      "tribe": "Construct",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "mishra_self_replicator",
@@ -53625,41 +53681,40 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Construct.",
+      "description": "Whenever you play an artifact, this gains +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
       "tribe": "Construct",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Construct"
-        }
-      ]
+      "ongoing": {
+        "on": "artifact-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "mishra_war_machine",
       "name": "Mishra’s War Machine",
       "cardClass": "magepunk",
       "cost": 6,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Windfury.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
-        "trample"
+        "trample",
+        "windfury"
       ]
     },
     {
@@ -53672,20 +53727,22 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Construct",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Summon a 1/1 Construct.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Construct",
+            "tribe": "Construct",
+            "keywords": []
+          }
+        ],
+        "text": "Summon a 1/1 Construct."
+      }
     },
     {
       "id": "mishra_assembler",
@@ -53697,13 +53754,25 @@
       "colors": [],
       "loreDeck": "Mishra",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Taunt. Battlecry: Summon two 2/2 Constructs.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Construct",
+          "tribe": "Construct",
+          "keywords": []
+        }
       ]
     },
     {
