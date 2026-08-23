@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "d585d0e",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Vorinclex boss pool (G Phyrexian ramp + doubled counters) + add grow effect",
+			"body": "Vorinclex = Voice of Hunger (greedy ramp + mana denial: steal the opponent's\nMana Crystals) fused with Monstrous Raider ('+1/+1 counters are doubled').\n\nENGINE: new 'grow' effect (handlers-buffs.js) places +1/+1 counters and reads a\n'counter-doubler' static (doubler recipe, stacks multiplicatively) — scoped to\n'grow' so ordinary buffs/auras are never doubled. Registry 1136->1137.\n\nPool: sig static counter-doubler + ramp/steal battlecry; Monument location and\nMonstrosity/Instinct/Command place counters (doubled under the boss); Devastator\ngrows as it attacks; Voracity enchantment + Overgrowth quest ramp; giant\ntramplers (8/8 Devastator, 6/6 Monstrosity) with overkill reach; Curse steals\nenemy mana. 6 types, 6 keywords, mono-G. Distinct from Nissa/Garruk/Vivien/Lukka.\n\nTest pool_vorinclex_test.mjs 50/50, registry 1137. Full suite 349/349.",
+			"cards": []
+		},
+		{
 			"sha": "ae874b1",
 			"date": "2026-08-22",
 			"kind": "patch",
