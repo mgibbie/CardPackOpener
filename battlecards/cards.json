@@ -57940,7 +57940,7 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Trample. Battlecry: Deal 3 damage to all creatures and draw 2 cards.",
+      "description": "Trample. Your spells cost (1) less. Whenever you cast a spell, summon a 1/1 Eldrazi Scion. Battlecry: Cast a spell from your deck for free.",
       "type": "creature",
       "attack": 8,
       "health": 8,
@@ -57949,15 +57949,28 @@
         "trample",
         "battlecry"
       ],
+      "costMod": {
+        "cardType": "spell",
+        "amount": -1,
+        "scope": "own"
+      },
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Eldrazi Scion",
+            "tribe": "Eldrazi",
+            "keywords": []
+          }
+        ]
+      },
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "all-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 2
+          "type": "cast-spell-from-deck"
         }
       ]
     },
@@ -57971,17 +57984,42 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Draw 2 cards.",
+      "description": "Choose One — Cast a spell from your deck for free; or Deal 4 damage to a creature; or Summon a 5/5 Eldrazi with Trample.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "text": "Cast a spell from your deck for free.",
+          "effects": [
+            {
+              "type": "cast-spell-from-deck"
+            }
+          ]
         },
         {
-          "type": "draw",
-          "value": 2
+          "text": "Deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Summon a 5/5 Eldrazi with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 5,
+              "health": 5,
+              "name": "Eldrazi",
+              "tribe": "Eldrazi",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -57995,16 +58033,41 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Scry 1.",
+      "description": "Choose One — Draw 2 cards; or Deal 3 damage to a creature; or Summon two 1/1 Eldrazi Scions.",
       "type": "sorcery",
-      "effects": [
+      "choices": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "text": "Draw 2 cards.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 2
+            }
+          ]
         },
         {
-          "type": "scry",
-          "value": 1
+          "text": "Deal 3 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Summon two 1/1 Eldrazi Scions.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Eldrazi Scion",
+              "tribe": "Eldrazi",
+              "keywords": []
+            }
+          ]
         }
       ]
     },
@@ -58018,18 +58081,19 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Freeze all enemy creatures. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and cast a spell from your deck.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "cast-spell-from-deck"
+          }
+        ]
+      }
     },
     {
       "id": "zhulodok_void_rend",
@@ -58060,29 +58124,49 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "A 2/1 for two.",
+      "description": "Rush. Whenever you cast a spell, this gains +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Eldrazi"
+      "tribe": "Eldrazi",
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "zhulodok_devastator",
       "name": "Zhulodok’s Devastator",
       "cardClass": "magepunk",
       "cost": 7,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Windfury. Battlecry: Cast a spell from your deck for free.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Eldrazi",
       "keywords": [
-        "trample"
+        "trample",
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "cast-spell-from-deck"
+        }
       ]
     },
     {
@@ -58095,13 +58179,16 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Deal 5 damage to all creatures.",
+      "description": "Deal 4 damage to all enemy creatures, then cast a spell from your deck for free.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
-          "value": 5,
-          "target": "all-creatures"
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "cast-spell-from-deck"
         }
       ]
     },
@@ -58110,26 +58197,27 @@
       "name": "Zhulodok Monument",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Summon a 3/3 Eldrazi. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Eldrazi"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you cast a spell, summon a 1/1 Eldrazi Scion.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Eldrazi Scion",
+            "tribe": "Eldrazi",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "zhulodok_skyspawner",
@@ -58141,12 +58229,13 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Thopter with Elusive.",
+      "description": "Elusive. Battlecry: Summon a 1/1 Eldrazi Scion.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Eldrazi Drone",
+      "tribe": "Eldrazi",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
@@ -58155,10 +58244,9 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Thopter",
-          "keywords": [
-            "elusive"
-          ]
+          "name": "Eldrazi Scion",
+          "tribe": "Eldrazi",
+          "keywords": []
         }
       ]
     },
@@ -58172,18 +58260,24 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Taunt. Battlecry: Summon a 1/1 Eldrazi Scion.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Eldrazi Drone",
+      "tribe": "Eldrazi",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Eldrazi Scion",
+          "tribe": "Eldrazi",
+          "keywords": []
         }
       ]
     },
@@ -58197,7 +58291,7 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Battlecry: Silence a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -58207,8 +58301,7 @@
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
+          "type": "silence",
           "target": "creature"
         }
       ]
@@ -58223,24 +58316,24 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Battlecry: Draw a card and Scry 1.",
+      "description": "Elusive. After you cast two spells, draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Eldrazi Drone",
+      "tribe": "Eldrazi",
       "keywords": [
-        "battlecry"
+        "elusive"
       ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "ongoing": {
+        "on": "spell-played",
+        "every": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "zhulodok_omen",
@@ -58252,15 +58345,15 @@
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
-      "type": "sorcery",
+      "description": "Draw a card and Scry 1.",
+      "type": "instant",
       "effects": [
         {
-          "type": "scry",
-          "value": 2
+          "type": "draw",
+          "value": 1
         },
         {
-          "type": "draw",
+          "type": "scry",
           "value": 1
         }
       ]
@@ -58270,19 +58363,21 @@
       "name": "Zhulodok’s Planar Portal",
       "cardClass": "magepunk",
       "cost": 6,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [],
       "loreDeck": "Zhulodok",
       "collectible": false,
-      "description": "Trample.",
-      "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Eldrazi",
-      "keywords": [
-        "trample"
-      ]
+      "description": "{T}: Cast a spell from your deck for free.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "cast-spell-from-deck"
+          }
+        ],
+        "text": "Cast a spell from your deck for free."
+      }
     },
     {
       "id": "zopandrel_sig",
