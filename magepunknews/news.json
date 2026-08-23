@@ -2,6 +2,14 @@
 	"generated": "2026-08-22",
 	"entries": [
 		{
+			"sha": "c6a084d",
+			"date": "2026-08-22",
+			"kind": "patch",
+			"title": "redesign Ulamog boss pool (colorless Eldrazi — exile-removal + Indestructible)",
+			"body": "Ulamog, the Ceaseless Hunger (3rd titan): exile permanents, Indestructible\n(= Immune here), attacks exile the opponent's deck. Pool = hard 'exile' removal\n(no death, dodges deathrattle/reborn: Corruption/Despoiler/Command + sig exiles\nTWO via alsoRandomOther), Immune unkillable bodies (sig 10/10, Titan 7/8 taunt),\ndeck-exile (destroy-enemy-deck: Ceaseless Hunger attacks, Consumer, Devouring\nenchantment, Descent quest exiles the whole deck), Eldrazi Scion ramp\n(Reclaimer/Drone/Monument location) + Locus cost-cut. 6 card types, 6 keywords,\ncolorless. Distinct from Emrakul (annihilator) and Kozilek (draw/mill-for-self).\n\nTest pool_ulamog_test.mjs 51/51. Full suite 352/352.",
+			"cards": []
+		},
+		{
 			"sha": "db1c3c6",
 			"date": "2026-08-22",
 			"kind": "patch",
