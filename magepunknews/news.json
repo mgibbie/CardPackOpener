@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "1a891d9",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Tekuthal boss pool (U Phyrexian proliferate) — completes the Dominus doubler cycle + all 20 bosses",
+			"body": "Tekuthal, Inquiry Dominus: 'if you would proliferate, proliferate twice.' Seed\n+1/+1 counters (grow), then proliferate multiplies every counter-bearer, doubled\nby the sig — wrapped in blue tempo/control (bounce/counter/freeze/draw/evasion).\nProliferator (on cast), Seachrome weapon (on hero attack), Reflection enchantment\n+ Compleation seed/proliferate; Trickery counter-secret; Skullbomb artifact.\n7 card types, 6 keywords, mono-U.\n\nENGINE: the existing 'proliferate' effect now reads a 'proliferate-doubler'\nstatic (n = 2**dv iterations) — the doubler recipe, not a new register (registry\nstays 1137). Completes the Dominus cycle: Mondrak (tokens) / Solphim (damage) /\nDrivnod (deaths) / Vorinclex (counters) / Tekuthal (proliferate).\n\nDistinct from Vorinclex (G ramp + counter-doubler on the initial grow) — Tekuthal\n(U) multiplies EXISTING counters via proliferate.\n\nTest pool_tekuthal_test.mjs 55/55. Full suite 357/357. ALL 20 BOSS POOLS DONE.",
+			"cards": []
+		},
+		{
 			"sha": "a26a1dc",
 			"date": "2026-08-23",
 			"kind": "patch",
