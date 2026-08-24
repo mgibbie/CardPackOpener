@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "288debf",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Sultai land pool (BGU/Tarkir wedge — Undead + graveyard value + mill/discard + deathtouch + draw; 25 -> 30)",
+			"body": "Redesigned 25 + added 5 NEW (real MTG art, deployed): Grim Haruspex (death -> draw),\nGurmag Angler (5/5), Reaper of the Wilds (deathtouch+scry), Whisperer of the Wilds\n(ramp), Sidisi Undead Vizier (deathtouch+draw+scry). Sidisi Undead engine (bc + spell\n-> 2/2 deathtouch Undead), Ascendancy aristocrat-Undead ENCHANTMENT, Kheru Lich Lord\nreanimator, Banner Undead-crypt LOCATION, Cluestone mana ARTIFACT, Charm/Runemark\nINSTANTS, Hymn/Villainous Wealth discard. Undead token (not zombie). 6 types, 6\nkeywords, BGU. Distinct from Zagoth. (old test green.)\n\nTest pool_sultai_test.mjs 76/76 (asserts 30). Full suite 406/406.",
+			"cards": []
+		},
+		{
 			"sha": "02d4fa1",
 			"date": "2026-08-24",
 			"kind": "patch",
