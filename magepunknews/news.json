@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "84e32e4",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Maestros land pool (UBR/Grixis tri-color — aristocrats + spellslinging + Vampires/assassins + drain) — 3rd Capenna family",
+			"body": "7 card types. Xander finisher (bc discard 2 + 3 dmg), Anhelo spellslinger Vampire\n(bc draw + spell -> 1 to each opp), Ascendancy aristocrat ENCHANTMENT (friendly\ndeath -> drain 1), Mask cursed WEAPON (hero attack -> 1 to each opp), Ceremony blood-\naltar LOCATION (tap -> Lifesteal Vampire), Performance ARTIFACT (tap -> enemy discard),\nCharm/Sigil INSTANTS, Invitation/Command/Confluence removal. 7 types, 6 keywords, UBR.\n(old test stayed green.)\n\nTest pool_maestros_test.mjs 45/45. Full suite 396/396.",
+			"cards": []
+		},
+		{
 			"sha": "a1fe6ea",
 			"date": "2026-08-24",
 			"kind": "patch",
