@@ -28400,18 +28400,19 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Draw 2 cards.",
+      "description": "Elusive. Battlecry: Draw 3 cards.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "God",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
         {
           "type": "draw",
-          "value": 2
+          "value": 3
         }
       ]
     },
@@ -28428,7 +28429,7 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Draw a card and Scry 1.",
+      "description": "Battlecry: Draw a card and scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -28488,7 +28489,7 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Return an enemy creature to its owner’s hand.",
+      "description": "Battlecry: Return a creature to its owner's hand.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -28498,8 +28499,7 @@
       ],
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         }
       ]
     },
@@ -28520,7 +28520,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Shapeshifter",
       "keywords": [
         "battlecry"
       ],
@@ -28544,17 +28543,16 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Horse Fish",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -28572,17 +28570,17 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Elf Druid",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -28626,15 +28624,14 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand. Scry 1.",
-      "type": "sorcery",
+      "description": "Return a creature to its owner's hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         },
         {
-          "type": "scry",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -28652,16 +28649,11 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "description": "Return a creature to its owner's hand.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "type": "bounce"
         }
       ]
     },
@@ -28729,19 +28721,21 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Taunt. Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Taunt. Battlecry: Give a creature +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Treefolk Shapeshifter",
+      "tribe": "Treefolk",
       "keywords": [
         "taunt",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
         }
       ]
     },
@@ -28780,7 +28774,7 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Summon two 2/2 Shapeshifters with Elusive. Draw a card.",
+      "description": "Summon two 2/2 Shapeshifters with Elusive.",
       "type": "sorcery",
       "effects": [
         {
@@ -28789,13 +28783,10 @@
           "attack": 2,
           "health": 2,
           "name": "Shapeshifter",
+          "tribe": "Shapeshifter",
           "keywords": [
             "elusive"
           ]
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -36733,21 +36724,16 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn and draw a card.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Druid",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -36765,7 +36751,7 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Freeze all enemy creatures. Scry 1.",
+      "description": "Freeze all enemy creatures. Scry 2.",
       "type": "sorcery",
       "effects": [
         {
@@ -36774,7 +36760,7 @@
         },
         {
           "type": "scry",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -36791,15 +36777,25 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Summon two 3/3 Bear Shapeshifters.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Shapeshifter with Elusive.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Bear Shapeshifter"
+          "text": "Summon a 3/3 Shapeshifter with Elusive.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Shapeshifter",
+              "tribe": "Shapeshifter",
+              "keywords": [
+                "elusive"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -36816,17 +36812,16 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Shapeshifter",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -36870,7 +36865,7 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Shapeshifter",
+      "tribe": "Treefolk",
       "keywords": [
         "taunt"
       ]
@@ -36892,7 +36887,7 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Shapeshifter",
+      "tribe": "Treefolk",
       "keywords": [
         "battlecry"
       ],
@@ -36901,7 +36896,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -36918,20 +36913,24 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Summon two 2/2 Shapeshifters with Elusive.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Shapeshifter",
-          "keywords": [
-            "elusive"
-          ]
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Shapeshifter with Elusive.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Shapeshifter",
+            "tribe": "Shapeshifter",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Shapeshifter with Elusive."
+      }
     },
     {
       "id": "littjara_amalgam",
@@ -36969,16 +36968,11 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand. Scry 1.",
-      "type": "sorcery",
+      "description": "Return a creature to its owner's hand.",
+      "type": "instant",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "scry",
-          "value": 1
+          "type": "bounce"
         }
       ]
     },
@@ -36986,7 +36980,7 @@
       "id": "littjara_paradox",
       "name": "Littjara Paradox",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -36995,14 +36989,17 @@
       ],
       "landSet": "Littjara",
       "collectible": false,
-      "description": "Draw 3 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 3
-        }
-      ]
+      "description": "At the start of your turn, draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "bant_archangel",
@@ -235011,6 +235008,116 @@
         "B"
       ],
       "landSet": "Karfell",
+      "collectible": false
+    },
+    {
+      "id": "littjara_realmwalker",
+      "name": "Littjara Realmwalker",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw a card.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false
+    },
+    {
+      "id": "littjara_moritte",
+      "name": "Littjara Moritte of the Frost",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Shapeshifter",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Elusive. Battlecry: Give your creatures +1/+1.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false
+    },
+    {
+      "id": "littjara_berg_strider",
+      "name": "Littjara Berg Strider",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ],
+      "description": "Battlecry: Freeze an enemy creature.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
+      "collectible": false
+    },
+    {
+      "id": "littjara_old_growth_troll",
+      "name": "Littjara Old-Growth Troll",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Troll",
+      "keywords": [
+        "trample",
+        "reborn"
+      ],
+      "description": "Trample. Reborn.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Littjara",
       "collectible": false
     }
   ]
