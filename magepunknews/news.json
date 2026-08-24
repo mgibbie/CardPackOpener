@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "7a631c7",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Mardu land pool (BRW/Tarkir wedge — Warrior go-wide + dash/haste + raid + burn + anthems; 25 -> 30)",
+			"body": "Redesigned 25 + added 5 NEW (real MTG art, deployed): Bloodsoaked Champion, Wingmate\nRoc (token flier), Chief of the Edge (Warrior anthem), Herald of Anafenza (Warrior\nmaker), Alesha's Vanguard. Alesha dash-anthem (bc team +1/+0 + Rush), Hordechief/\nPonyback/Strike Leader token makers, Ascendancy go-wide war-drum ENCHANTMENT (creature\nenters -> team +1/+0), Monument Warrior ARTIFACT, Command war-camp LOCATION, Crackling\nDoom destroy+reach, Charm burn INSTANT. 6 types, 8 keywords, BRW. Distinct from Savai.\n(old test green.)\n\nTest pool_mardu_test.mjs 76/76 (asserts 30). Full suite 407/407.",
+			"cards": []
+		},
+		{
 			"sha": "288debf",
 			"date": "2026-08-24",
 			"kind": "patch",
