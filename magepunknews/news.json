@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "fdbd73e",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Selesnya land pool (GW token swarm + populate + go-wide anthems + lifegain)",
+			"body": "Emmara go-wide finisher (+2/+2 & Divine Shield), Trostani lifegain-on-summon,\nBloom Hulk anthem, Saproling makers (Gardener/Eulogist/Evangel), Guildmage\nbuff+Taunt, Sagittar sweep, modal Selesnya Charm instant (Knight/anthem/gain 5),\nKeyrune Wolf LOCATION, Locket Saproling enchantment, Signet artifact, Cluestone\ndraw. 6 card types, 7 keywords, GW preserved.\n\nTest pool_selesnya_test.mjs 47/47. Full suite 364/364.",
+			"cards": []
+		},
+		{
 			"sha": "adbd5e5",
 			"date": "2026-08-23",
 			"kind": "patch",
