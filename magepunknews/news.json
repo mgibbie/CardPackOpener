@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "8fe5975",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Gnottvold land pool (RG/Kaldheim realm — Troll/Giant/Beast big aggro + ramp + trample + Reborn + burn + weapons; 27 -> 30) — 3rd Kaldheim realm",
+			"body": "Redesigned 27 + added 3 NEW (real MTG art, deployed): Toralf God of Fury (charge burn),\nCinderheart Giant (6/6), Craven Hulk (5/4). Beast token=3/3 trample; Reborn Trolls,\nbig trample beaters + Giants, Beastcaller/Monument(LOCATION) Beast makers, Hymn go-wide\nENCHANTMENT (creature enters -> +1/+0), Hunt counter-forge ARTIFACT, Rampage +2/+2\nINSTANT, Boulder/Charm burn, Slumberwand WEAPON. 7 types, 7 keywords, RG.\n\nTest pool_gnottvold_test.mjs 77/77 (asserts 30). Full suite 416/416.",
+			"cards": []
+		},
+		{
 			"sha": "b854fa9",
 			"date": "2026-08-24",
 			"kind": "patch",
