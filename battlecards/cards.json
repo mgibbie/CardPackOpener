@@ -12347,32 +12347,38 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Deal 4 damage to all enemy creatures. Draw a card.",
+      "description": "Elusive. Windfury. Battlecry: Draw a card. Whenever you draw a card, deal 1 damage to each opponent.",
       "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Dragon",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "ral_izzet_viceroy",
@@ -12383,9 +12389,15 @@
       "set": "paper",
       "description": "Battlecry: Deal 3 damage to a creature. Draw a card.",
       "type": "creature",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Human Wizard",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -12399,13 +12411,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "melek_izzet_paragon",
@@ -12414,27 +12420,30 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Whenever you cast a spell, this gains +2/+0.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Weird",
-      "keywords": [
-        "elusive",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Weird",
+      "keywords": [
+        "elusive"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      }
     },
     {
       "id": "izzet_chronarch",
@@ -12443,11 +12452,17 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Draw a card.",
+      "description": "Battlecry: Draw a card. Whenever you cast a spell, this gains +1/+1.",
       "type": "creature",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Human Wizard",
+      "tribe": "Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -12457,12 +12472,16 @@
           "value": 1
         }
       ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "izzet_inventor",
@@ -12473,9 +12492,14 @@
       "set": "paper",
       "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "tribe": "Vedalken Artificer",
       "keywords": [
         "elusive",
         "battlecry"
@@ -12485,13 +12509,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "izzet_chemister",
@@ -12500,26 +12518,29 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Draw 2 cards.",
+      "description": "Rush. Whenever you cast a spell, this gains +1/+1.",
       "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Goblin",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 4,
+      "keywords": [
+        "rush"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "izzet_guildmage",
@@ -12528,13 +12549,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "first_strike"
       ],
       "effects": [
         {
@@ -12542,13 +12569,7 @@
           "value": 2,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "izzet_staticaster",
@@ -12557,12 +12578,18 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "description": "Stealth. Battlecry: Deal 1 damage to all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -12571,13 +12598,7 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "izzet_charm",
@@ -12586,25 +12607,49 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 2 damage to a creature. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "Choose One — Deal 2 damage to a creature and draw a card; or Deal 3 damage to each opponent; or Freeze an enemy creature.",
+      "type": "instant",
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Deal 2 damage to a creature and draw a card.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "creature"
+            },
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "text": "Deal 3 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-heroes"
+            }
+          ]
+        },
+        {
+          "text": "Freeze an enemy creature.",
+          "effects": [
+            {
+              "type": "freeze",
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "izzet_command",
@@ -12613,25 +12658,27 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 3 damage to a creature. Scry 2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "scry",
-          "value": 2
-        }
-      ],
+      "description": "Secret: When an opponent casts a spell, counter it and deal 2 damage to them.",
+      "type": "secret",
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "izzet_electroblast",
@@ -12641,20 +12688,20 @@
       "rarity": "common",
       "set": "paper",
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "izzet_keyrune",
@@ -12665,6 +12712,12 @@
       "set": "paper",
       "description": "Summon a 3/2 Elemental with Elusive.",
       "type": "sorcery",
+      "colors": [
+        "R",
+        "U"
+      ],
+      "landSet": "Izzet",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -12672,43 +12725,38 @@
           "attack": 3,
           "health": 2,
           "name": "Elemental",
+          "tribe": "Elemental",
           "keywords": [
             "elusive"
           ]
         }
-      ],
-      "colors": [
-        "R",
-        "U"
-      ],
-      "landSet": "Izzet",
-      "collectible": false
+      ]
     },
     {
       "id": "izzet_locket",
       "name": "Izzet Locket",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "After you cast two spells, draw a card.",
+      "type": "enchantment",
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "spell-played",
+        "every": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "izzet_signet",
@@ -12717,20 +12765,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "izzet_cluestone",
@@ -12739,20 +12790,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "R",
         "U"
       ],
       "landSet": "Izzet",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "prismari_campus",
