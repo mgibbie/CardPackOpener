@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "f48783c",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Ojutai land pool (WU/Tarkir dragon brood — flying Dragons/Birds + freeze control + card draw + defensive walls) — 4th brood",
+			"body": "Dragonlord Ojutai card-advantage flier (bc: draw 2; elusive+Divine Shield), Soul of\nWinter board freeze (bc: freeze all enemy creatures), Bird tokens, Monument Bird-roost\nARTIFACT, Summons Bird-aerie LOCATION (tap -> 3/3 Elusive Bird), Breath freeze+draw\nINSTANT, Command draw+life SORCERY, Breezedancer prowess ENCHANTMENT (spell -> team\n+1/+0), draw/scry package. 6 types, 7 keywords, WU. Distinct from Azorius.\n\nTest pool_ojutai_test.mjs 43/43. Full suite 412/412.",
+			"cards": []
+		},
+		{
 			"sha": "d77b34f",
 			"date": "2026-08-24",
 			"kind": "patch",
