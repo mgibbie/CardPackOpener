@@ -21807,22 +21807,31 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Elusive. Trample. Battlecry: Give your creatures +2/+2.",
+      "description": "Elusive. Trample. Your tokens are doubled. Battlecry: Summon a 3/3 Fractal with Trample.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Hydra",
+      "tribe": "Fractal",
       "keywords": [
         "elusive",
         "trample",
         "battlecry"
       ],
+      "static": {
+        "type": "token-doubler",
+        "value": 1
+      },
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Fractal",
+          "tribe": "Fractal",
+          "keywords": [
+            "trample"
+          ]
         }
       ]
     },
@@ -21843,7 +21852,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -21871,7 +21879,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -21881,7 +21888,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -21898,12 +21905,12 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Battlecry: Scry 2.",
+      "description": "Taunt. Battlecry: Scry 2.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -21937,7 +21944,7 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -21955,7 +21962,7 @@
       "landSet": "Quandrix",
       "collectible": false,
       "description": "Give a creature +2/+2 and Elusive.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -21971,7 +21978,7 @@
       "name": "Quandrix Ascendancy",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G",
@@ -21979,20 +21986,23 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Give your creatures +1/+1. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you cast a spell, give your creatures +1/+1 and scry 1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "quandrix_cultivator",
@@ -22007,18 +22017,18 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Battlecry: Gain 3 mana this turn.",
+      "description": "Taunt. Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 3
+          "type": "gain-empty-mana-crystal",
+          "value": 1
         }
       ]
     },
@@ -22035,19 +22045,25 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Battlecry: Summon a 4/4 Fractal with Trample.",
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Elf Wizard",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Fractal",
+          "tribe": "Fractal",
+          "keywords": [
+            "trample"
+          ]
         }
       ]
     },
@@ -22073,6 +22089,7 @@
           "attack": 5,
           "health": 5,
           "name": "Fractal",
+          "tribe": "Fractal",
           "keywords": [
             "trample"
           ]
@@ -22092,7 +22109,7 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Summon two 3/3 Fractals.",
+      "description": "Summon two 3/3 Fractals with Trample.",
       "type": "sorcery",
       "effects": [
         {
@@ -22100,7 +22117,11 @@
           "count": 2,
           "attack": 3,
           "health": 3,
-          "name": "Fractal"
+          "name": "Fractal",
+          "tribe": "Fractal",
+          "keywords": [
+            "trample"
+          ]
         }
       ]
     },
@@ -22117,18 +22138,21 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Gain 3 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and draw a card."
+      }
     },
     {
       "id": "quandrix_duplication",
@@ -22143,14 +22167,25 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Fractal with Trample.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
+          "text": "Summon a 3/3 Fractal with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Fractal",
+              "tribe": "Fractal",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -22167,12 +22202,12 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Battlecry: Scry 2 and draw a card.",
+      "description": "Divine Shield. Battlecry: Scry 2 and draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Merfolk Wizard",
       "keywords": [
+        "divine_shield",
         "battlecry"
       ],
       "effects": [
@@ -22199,14 +22234,15 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Elusive. Trample.",
+      "description": "Elusive. Trample. First Strike.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Fractal",
       "keywords": [
         "elusive",
-        "trample"
+        "trample",
+        "first_strike"
       ]
     },
     {
