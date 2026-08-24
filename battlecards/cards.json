@@ -16928,7 +16928,7 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Taunt. Battlecry: Summon two 2/2 Elephants.",
+      "description": "Taunt. Battlecry: Summon two 2/2 Elementals. Whenever you play a creature, summon a 1/1 Elemental.",
       "type": "creature",
       "attack": 4,
       "health": 7,
@@ -16937,13 +16937,29 @@
         "taunt",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Elemental",
+            "tribe": "Elemental",
+            "keywords": []
+          }
+        ]
+      },
       "effects": [
         {
           "type": "summon",
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Elephant"
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": []
         }
       ]
     },
@@ -16952,7 +16968,7 @@
       "name": "Dictate of Karametra",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G",
@@ -16960,18 +16976,17 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Gain 3 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you play a creature, gain a Mana Crystal this turn.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "karametras_acolyte",
@@ -16986,18 +17001,17 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Battlecry: Gain 3 mana this turn.",
+      "description": "Battlecry: Gain a Mana Crystal.",
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Centaur Druid",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 3
+          "type": "gain-empty-mana-crystal",
+          "value": 1
         }
       ]
     },
@@ -17015,13 +17029,13 @@
       "landSet": "Karametra",
       "collectible": false,
       "description": "Give a creature +2/+2 and Divine Shield.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         }
       ]
@@ -17040,13 +17054,13 @@
       "landSet": "Karametra",
       "collectible": false,
       "description": "Give a creature +1/+1. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature"
+          "target": "friendly-creature"
         },
         {
           "type": "draw",
@@ -17071,7 +17085,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -17095,13 +17108,13 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Lifesteal.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Beast",
       "keywords": [
-        "taunt"
+        "taunt",
+        "lifesteal"
       ]
     },
     {
@@ -17117,13 +17130,13 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Battlecry: Gain 4 life.",
+      "description": "Divine Shield. Battlecry: Gain 4 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Cleric",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "divine_shield"
       ],
       "effects": [
         {
@@ -17146,11 +17159,10 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Battlecry: Gain 2 mana this turn.",
+      "description": "Battlecry: Gain 2 Mana this turn.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Elf Druid",
       "keywords": [
         "battlecry"
       ],
@@ -17174,14 +17186,14 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Give a creature +3/+3.",
+      "description": "Put three +1/+1 counters on a creature.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "buff",
+          "type": "grow",
+          "target": "friendly-creature",
           "attack": 3,
-          "health": 3,
-          "target": "creature"
+          "health": 3
         }
       ]
     },
@@ -17202,7 +17214,6 @@
       "type": "creature",
       "attack": 4,
       "health": 6,
-      "tribe": "Elemental",
       "keywords": [
         "taunt",
         "divine_shield"
@@ -17229,7 +17240,9 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Saproling"
+          "name": "Saproling",
+          "tribe": "Saproling",
+          "keywords": []
         },
         {
           "type": "heal",
@@ -17251,14 +17264,14 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Trample. Taunt.",
+      "description": "Trample. Taunt. First Strike.",
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Elemental",
       "keywords": [
         "trample",
-        "taunt"
+        "taunt",
+        "first_strike"
       ]
     },
     {
@@ -17274,10 +17287,24 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "A 3/3 weapon.",
+      "description": "After your hero attacks, summon a 1/1 Elemental.",
       "type": "weapon",
       "attack": 3,
-      "durability": 3
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Elemental",
+            "tribe": "Elemental",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "veneration_of_karametra",
@@ -17292,14 +17319,28 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Elemental and gain 1 life.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "text": "Summon a 2/2 Elemental and gain 1 life.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Elemental",
+              "tribe": "Elemental",
+              "keywords": []
+            },
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ]
         }
       ]
     },
