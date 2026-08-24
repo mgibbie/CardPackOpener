@@ -7927,31 +7927,36 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Deal 2 damage to each opponent and all enemy creatures.",
+      "description": "Battlecry: Deal 2 damage to each opponent. Whenever a creature enters under your control, deal 1 damage to each opponent.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "attack": 4,
       "health": 6,
       "tribe": "God",
       "keywords": [
         "battlecry"
       ],
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "enemy-heroes"
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "bronze_blood_of_purphoros",
@@ -7960,28 +7965,28 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Your creatures gain Rush.",
+      "description": "Battlecry: Give your creatures +1/+0 and Rush.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "attack": 4,
       "health": 5,
-      "tribe": "God",
+      "tribe": "Golem",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "buff",
-          "attack": 0,
+          "attack": 1,
           "health": 0,
           "target": "friendly-creatures",
           "grant": "rush"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "purphoros_emissary",
@@ -7990,19 +7995,19 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Cleave.",
+      "description": "Cleave. Trample.",
       "type": "creature",
-      "attack": 5,
-      "health": 3,
-      "tribe": "Elemental",
-      "keywords": [
-        "cleave"
-      ],
       "colors": [
         "R"
       ],
       "landSet": "Purphoros",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 3,
+      "keywords": [
+        "cleave",
+        "trample"
+      ]
     },
     {
       "id": "manticore_of_purphoros",
@@ -8013,18 +8018,18 @@
       "set": "paper",
       "description": "Cleave. Rush.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "attack": 5,
       "health": 4,
       "tribe": "Manticore",
       "keywords": [
         "cleave",
         "rush"
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "oracle_of_purphoros",
@@ -8035,9 +8040,13 @@
       "set": "paper",
       "description": "Battlecry: Deal 1 damage to all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -8047,12 +8056,7 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "unicorn_of_purphoros",
@@ -8061,19 +8065,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Charge.",
+      "description": "Charge. First Strike.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Unicorn",
-      "keywords": [
-        "charge"
-      ],
       "colors": [
         "R"
       ],
       "landSet": "Purphoros",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "charge",
+        "first_strike"
+      ]
     },
     {
       "id": "hammer_of_purphoros",
@@ -8082,29 +8086,29 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Your creatures gain Rush. Summon a 3/3 Golem.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Golem"
-        }
-      ],
+      "description": "{T}: Summon a 3/3 Golem with Rush.",
+      "type": "artifact",
       "colors": [
         "R"
       ],
       "landSet": "Purphoros",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 3,
+            "name": "Golem",
+            "tribe": "Golem",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ],
+        "text": "Summon a 3/3 Golem with Rush."
+      }
     },
     {
       "id": "ordeal_of_purphoros",
@@ -8113,26 +8117,26 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +2/+2. Deal 3 damage to a creature.",
+      "description": "Give a creature +2/+2. Deal 3 damage to each opponent.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         },
         {
           "type": "damage",
           "value": 3,
-          "target": "creature"
+          "target": "enemy-heroes"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "purphoros_intervention",
@@ -8142,19 +8146,19 @@
       "rarity": "rare",
       "set": "paper",
       "description": "Deal 6 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 6,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "rage_of_purphoros",
@@ -8163,20 +8167,23 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Deal 3 damage to all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
-        }
-      ],
+      "description": "At the start of your turn, deal 1 damage to all enemy creatures.",
+      "type": "enchantment",
       "colors": [
         "R"
       ],
       "landSet": "Purphoros",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "omen_of_purphoros",
@@ -8186,7 +8193,12 @@
       "rarity": "common",
       "set": "paper",
       "description": "Deal 2 damage to a creature. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
@@ -8197,12 +8209,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "temper_of_purphoros",
@@ -8213,20 +8220,20 @@
       "set": "paper",
       "description": "Give a creature +2/+2 and Windfury.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "windfury"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "sparkjolt_of_purphoros",
@@ -8237,18 +8244,18 @@
       "set": "paper",
       "description": "Deal 2 damage to a creature.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "flamecast_wheel_of_purphoros",
@@ -8259,18 +8266,18 @@
       "set": "paper",
       "description": "Deal 2 damage to any target.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Purphoros",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 2,
           "target": "any"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Purphoros",
-      "collectible": false
+      ]
     },
     {
       "id": "magmaforge_of_purphoros",
@@ -8279,15 +8286,28 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "A 4/3 weapon.",
+      "description": "Windfury. After your hero attacks, deal 1 damage to all enemy creatures.",
       "type": "weapon",
-      "attack": 4,
-      "durability": 3,
       "colors": [
         "R"
       ],
       "landSet": "Purphoros",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "durability": 2,
+      "keywords": [
+        "windfury"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "temple_of_nylea",
