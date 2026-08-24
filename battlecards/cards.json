@@ -16123,7 +16123,7 @@
       ],
       "landSet": "Athreos",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Each opponent loses 2 life.",
+      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent and gain 3 life. Whenever a friendly creature dies, drain 1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -16132,11 +16132,31 @@
         "lifesteal",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
         }
       ]
     },
@@ -16154,13 +16174,13 @@
       "landSet": "Athreos",
       "collectible": false,
       "description": "Give a creature +1/+1 and Reborn.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "reborn"
         }
       ]
@@ -16179,13 +16199,13 @@
       "landSet": "Athreos",
       "collectible": false,
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -16207,7 +16227,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -16255,17 +16274,17 @@
       ],
       "landSet": "Athreos",
       "collectible": false,
-      "description": "Give your creatures Divine Shield.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
-        }
-      ]
+      "description": "Whenever you play a creature, give it Divine Shield.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "divine_shield"
+          }
+        ]
+      }
     },
     {
       "id": "silence_of_athreos",
@@ -16306,7 +16325,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Cleric",
       "keywords": [
         "taunt",
         "lifesteal"
@@ -16329,7 +16347,6 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Golem",
       "keywords": [
         "taunt",
         "deathtouch"
@@ -16352,7 +16369,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Skeleton",
       "keywords": [
         "lifesteal"
       ]
@@ -16370,26 +16386,34 @@
       ],
       "landSet": "Athreos",
       "collectible": false,
-      "description": "Each opponent loses 3 life. Gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ]
+      "description": "Lifesteal. After your hero attacks, deal 1 damage to each opponent and gain 1 life.",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "mask_of_athreos",
       "name": "Mask of Athreos",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -16398,15 +16422,18 @@
       ],
       "landSet": "Athreos",
       "collectible": false,
-      "description": "Give a creature Reborn.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Return your highest-Attack dead creature to the battlefield.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "creature",
-          "grant": "reborn"
+          "text": "Return your highest-Attack dead creature.",
+          "effects": [
+            {
+              "type": "resurrect-highest-died",
+              "count": 1
+            }
+          ]
         }
       ]
     },
@@ -16427,7 +16454,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Skeleton Griffin",
+      "tribe": "Undead",
       "keywords": [
         "elusive",
         "reborn"
@@ -16450,14 +16477,13 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -16474,7 +16500,7 @@
       ],
       "landSet": "Athreos",
       "collectible": false,
-      "description": "Trample. Lifesteal. Battlecry: Each opponent discards a card and loses 2 life.",
+      "description": "Trample. Lifesteal. Battlecry: Each opponent discards a card and takes 2 damage.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -16487,7 +16513,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "damage",
