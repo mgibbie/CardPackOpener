@@ -1,6 +1,14 @@
 {
-	"generated": "2026-08-23",
+	"generated": "2026-08-24",
 	"entries": [
+		{
+			"sha": "cf9b9cf",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Erebos land pool (B devotion — death + drain + aristocrats + Undead recursion)",
+			"body": "Erebos god (drain 3 + draw), Anikthea reanimator, Dictate aristocrat enchantment\n(deaths -> -2/-2 a random enemy), Whip of Erebos WEAPON (Undead on hero attack),\nUndead tokens (Claim/Omen), drain (Bleak Heart), Intervention removal instant,\nBoon lifesteal instant, Hymn counter-secret + discard, reborn Titan. 6 card\ntypes, 7 keywords, mono-B.\n\nTest pool_erebos_test.mjs 47/47. Full suite 369/369.",
+			"cards": []
+		},
 		{
 			"sha": "9479527",
 			"date": "2026-08-23",
