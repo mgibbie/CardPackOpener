@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "b854fa9",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Bretagard land pool (GW/Kaldheim realm — Human go-wide + counters/anthems + lifegain + ramp; 27 -> 30) — 2nd Kaldheim realm",
+			"body": "Redesigned 27 + added 3 NEW (real MTG art, deployed): Sigrid God-Favored (DS+first-\nstrike), Guardian Gladewalker (counter), Reidane God of the Worthy (taunt+DS wall).\nHuman token=2/2; Maja/Lawspeaker/Command anthems + Human makers, Bear Spirit lifegain\n-> counters ENCHANTMENT (heal -> bolster), Charm counter-forge ARTIFACT (tap grow),\nMonument Human-barracks LOCATION, Rally +2/+2 INSTANT. 6 types, 7 keywords, GW.\n\nTest pool_bretagard_test.mjs 75/75 (asserts 30). Full suite 415/415.",
+			"cards": []
+		},
+		{
 			"sha": "76ca1f9",
 			"date": "2026-08-24",
 			"kind": "patch",
