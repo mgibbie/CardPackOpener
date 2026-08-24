@@ -15724,7 +15724,7 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Divine Shield. Battlecry: Draw a card and summon a 1/1 Soldier.",
+      "description": "Divine Shield. Battlecry: Draw 2 cards. After you play two creatures, draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -15736,16 +15736,19 @@
       "effects": [
         {
           "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
+          "value": 2
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "every": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "epharas_dispersal",
@@ -15761,7 +15764,7 @@
       "landSet": "Ephara",
       "collectible": false,
       "description": "Return an enemy creature to its owner’s hand. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
@@ -15840,7 +15843,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Soldier",
       "keywords": [
         "taunt",
         "elusive"
@@ -15859,12 +15861,12 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Battlecry: Scry 2.",
+      "description": "Stealth. Battlecry: Scry 2.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -15887,14 +15889,20 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Return a creature to its owner’s hand.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "creature"
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and draw a card.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "epharas_prayer_of_shelter",
@@ -15946,7 +15954,9 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier",
+          "keywords": []
         }
       ]
     },
@@ -15970,7 +15980,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         },
         {
@@ -15992,14 +16002,14 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
+      "description": "Taunt. Divine Shield. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Human Soldier",
       "keywords": [
         "taunt",
-        "divine_shield"
+        "divine_shield",
+        "first_strike"
       ]
     },
     {
@@ -16015,15 +16025,23 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Summon two 2/2 Soldiers.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Soldier.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Soldier"
+          "text": "Summon a 2/2 Soldier.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Soldier",
+              "tribe": "Soldier",
+              "keywords": []
+            }
+          ]
         }
       ]
     },
@@ -16040,20 +16058,23 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Give your creatures +1/+1. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, draw a card and give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "epharas_godfire",
@@ -16098,7 +16119,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
         "battlecry"
