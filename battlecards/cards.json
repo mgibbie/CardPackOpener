@@ -22222,11 +22222,11 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Charge. Elusive. Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Charge. Elusive. Battlecry: Return your highest-Cost creature that died this game to the battlefield.",
       "type": "creature",
       "attack": 7,
       "health": 7,
-      "tribe": "Dragon Spirit",
+      "tribe": "Dragon",
       "keywords": [
         "charge",
         "elusive",
@@ -22234,11 +22234,8 @@
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "type": "resurrect-highest-died",
+          "count": 1
         }
       ]
     },
@@ -22259,7 +22256,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -22284,7 +22280,7 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Give your creatures +1/+1.",
+      "description": "Deal 2 damage to a creature. Give your creatures +2/+2.",
       "type": "sorcery",
       "effects": [
         {
@@ -22294,8 +22290,8 @@
         },
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
+          "attack": 2,
+          "health": 2,
           "target": "friendly-creatures"
         }
       ]
@@ -22314,7 +22310,7 @@
       "landSet": "Lorehold",
       "collectible": false,
       "description": "Give a creature +2/+2 and Rush.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -22361,17 +22357,21 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Summon two 2/2 Spirits.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Spirit"
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Spirit.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Spirit",
+            "tribe": "Spirit"
+          }
+        ],
+        "text": "Summon a 2/2 Spirit."
+      }
     },
     {
       "id": "lorehold_pledgemage",
@@ -22390,7 +22390,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "rush",
         "first_strike"
@@ -22413,7 +22412,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Rogue",
       "keywords": [
         "elusive",
         "battlecry"
@@ -22442,7 +22440,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Spirit Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -22471,7 +22468,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elemental",
       "keywords": [
         "taunt",
         "divine_shield"
@@ -22494,7 +22490,6 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human Warrior",
       "keywords": [
         "charge"
       ]
@@ -22512,11 +22507,10 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Elusive. Battlecry: Summon a 3/3 Spirit.",
+      "description": "Elusive. Battlecry: Summon two 2/2 Spirits.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
         "battlecry"
@@ -22524,10 +22518,11 @@
       "effects": [
         {
           "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Spirit"
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Spirit",
+          "tribe": "Spirit"
         }
       ]
     },
@@ -22548,7 +22543,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Spirit",
       "keywords": [
         "battlecry"
       ],
@@ -22572,14 +22566,26 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
-      "type": "creature",
-      "attack": 4,
-      "health": 6,
-      "tribe": "Spirit",
-      "keywords": [
-        "taunt",
-        "divine_shield"
+      "description": "Durability 3. {T}: Summon a 2/2 Spirit with Divine Shield.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Spirit with Divine Shield.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Spirit",
+              "tribe": "Spirit",
+              "keywords": [
+                "divine_shield"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
@@ -22595,17 +22601,21 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Give your creatures +2/+1 and Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        }
-      ]
+      "description": "Whenever you cast a spell, summon a 1/1 Spirit.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spirit",
+            "tribe": "Spirit"
+          }
+        ]
+      }
     },
     {
       "id": "dragonlord_ojutai",
