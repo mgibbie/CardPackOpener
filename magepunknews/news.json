@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "ec6a478",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Zagoth land pool (BGU/Sultai tri-color — graveyard value + reanimation + deathtouch + draw) — 5th/last Ikoria wedge",
+			"body": "Brokkos keeps Reborn (reborn+reanimator showcase): bc return highest-cost dead\ncreature + Reborn recursion. Deathtouch snakes/Nightmares, Hymn Sultai-dirge\nENCHANTMENT (friendly death -> draw), Nantuko/Mythos/Command permanent ramp, Crystal\nmana-rock ARTIFACT (tap gain-mana+scry), Rhino mire LOCATION (tap -> deathtouch Snake),\nCharm deathtouch-trick+cantrip INSTANT. 6 types, 6 keywords, BGU. All 5 Ikoria wedges\ndone. (old test stayed green.)\n\nTest pool_zagoth_test.mjs 43/43. Full suite 403/403.",
+			"cards": []
+		},
+		{
 			"sha": "d191ad7",
 			"date": "2026-08-24",
 			"kind": "patch",
