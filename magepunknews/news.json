@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "92c1064",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Cabaretti land pool (RGW/Naya tri-color — Alliance/go-wide + Cat & Human tokens + anthems + haste) — 5th/last Capenna family",
+			"body": "Four legends stay creatures: Jetmir go-wide finisher (bc team +2/+0 + Trample),\nRocco/Jinnie 2 Cats each, Kitt haste diva (bc team +1/+0 + Charge). Ascendancy\nALLIANCE ENCHANTMENT (creature enters -> team +1/+0), Hymn ARTIFACT (tap -> 2/2 Cat),\nCommand club LOCATION (tap -> 2/2 Cat), Charm trample INSTANT, Confluence/Revels/\nArming-Gala tokens+anthems. 6 types, 6 keywords, RGW. All 5 Capenna families done.\n(old test stayed green.)\n\nTest pool_cabaretti_test.mjs 46/46. Full suite 398/398.",
+			"cards": []
+		},
+		{
 			"sha": "e7e5cef",
 			"date": "2026-08-24",
 			"kind": "patch",
