@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "bf451a0",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Starnheim land pool (WB/Kaldheim realm — Angels/Valkyries + lifegain/lifedrain + reanimation + go-wide + board wipes; 23 -> 30) — 9th Kaldheim realm",
+			"body": "Redesigned 23 + added 7 NEW (real MTG art, deployed): Valkyrie's Sword (WEAPON), Youthful\nValkyrie, Sungold Sentinel, Usher of the Fallen, Halvar God of Battle (team +1/+1), Angel\nof Destiny, Speaker of the Heavens. Angel token=2/2 elusive lifesteal; Firja reanimator,\nMonument Angel-roost LOCATION, Search for Glory ARTIFACT, Astral Wheel ENCHANTMENT\n(turn-start draw), Doomskar/Reckoning/Hailstorm board wipes, INSTANTS. 7 types, 8\nkeywords, WB.\n\nTest pool_starnheim_test.mjs 75/75 (asserts 30). Full suite 422/422.",
+			"cards": []
+		},
+		{
 			"sha": "290e609",
 			"date": "2026-08-24",
 			"kind": "patch",
