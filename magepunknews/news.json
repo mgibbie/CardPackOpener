@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "44ccb45",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Immersturm land pool (BR/Kaldheim realm — Demons/Devils + sacrifice/aristocrats + burn + haste + Berserker aggro; 25 -> 30) — 4th Kaldheim realm",
+			"body": "Redesigned 25 + added 5 NEW (real MTG art, deployed): Valki God of Lies, Vengeful\nReaper, Egon God of Death, Grim Draugr, Draugr's Helm (WEAPON). Devil token=3/2 rush\nthat pings 1 on death; Kardur/Egon reach, hasty lifesteal Berserkers, Death Ritual\naristocrat ENCHANTMENT (friendly death -> 1 to each opp), Monument Devil-forge\nLOCATION, Legend demonic-idol ARTIFACT (tap -> Devil), burn INSTANTS + sweeps. 7 types,\n7 keywords, BR.\n\nTest pool_immersturm_test.mjs 75/75 (asserts 30). Full suite 417/417.",
+			"cards": []
+		},
+		{
 			"sha": "8fe5975",
 			"date": "2026-08-24",
 			"kind": "patch",
