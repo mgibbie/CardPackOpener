@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "f89be33",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Iroas land pool (RW devotion — aggressive first-strike combat + go-wide anthems + burn)",
+			"body": "Iroas god (+2/+0 & First Strike), Kalemne team Divine Shield finisher, first-\nstrike/charge attackers, Hero buff, Priest burn, Armory rally WEAPON, Blessing\nINSTANT, Triumph escalating-anthem ENCHANTMENT, Hymn burn, Will arena LOCATION\n(First Strike Soldiers). 6 card types, 6 keywords, RW preserved.\n\nTest pool_iroas_test.mjs 44/44. Full suite 382/382.",
+			"cards": []
+		},
+		{
 			"sha": "88b5bac",
 			"date": "2026-08-24",
 			"kind": "patch",
