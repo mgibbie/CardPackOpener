@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "840d8a9",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Indatha land pool (WBG/Abzan tri-color — deathtouch menagerie + reanimation + lifedrain + counters) — first Ikoria wedge",
+			"body": "Nethroi reanimator (bc: return highest-cost dead creature + 2/2 deathtouch Nightmare),\ndeathtouch beasts, lifesteal, Runemark lifegain->counters ENCHANTMENT (heal -> bolster),\nCrystal mana-diamond ARTIFACT (tap gain-mana+scry), Cluestone Nightmare-den LOCATION\n(tap -> deathtouch Nightmare), Charm destroy INSTANT, Command/Mythos removal, Puzzlebox\ndraw+life. 6 types, 6 keywords, WBG. (old test stayed green.)\n\nTest pool_indatha_test.mjs 42/42. Full suite 399/399.",
+			"cards": []
+		},
+		{
 			"sha": "92c1064",
 			"date": "2026-08-24",
 			"kind": "patch",
