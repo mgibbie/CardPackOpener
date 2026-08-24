@@ -26751,19 +26751,20 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 4 damage to all enemy creatures.",
+      "description": "Charge. Battlecry: Deal 4 damage to a creature.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Giant",
       "keywords": [
+        "charge",
         "battlecry"
       ],
       "effects": [
         {
           "type": "damage",
           "value": 4,
-          "target": "enemy-creatures"
+          "target": "creature"
         }
       ]
     },
@@ -26780,12 +26781,13 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "description": "Taunt. Battlecry: Deal 3 damage to each opponent.",
       "type": "creature",
       "attack": 4,
       "health": 6,
       "tribe": "Giant",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -26809,7 +26811,7 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to all creatures.",
+      "description": "Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -26820,8 +26822,8 @@
       "effects": [
         {
           "type": "damage",
-          "value": 2,
-          "target": "all-creatures"
+          "value": 3,
+          "target": "creature"
         }
       ]
     },
@@ -26842,7 +26844,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Dragon Berserker",
       "keywords": [
         "rush"
       ]
@@ -26860,11 +26861,10 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Battlecry: Deal 2 damage to any target.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Giant Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -26872,7 +26872,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -26889,13 +26889,13 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Deal 2 damage to all creatures.",
+      "description": "Deal 2 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 2,
-          "target": "all-creatures"
+          "target": "enemy-creatures"
         }
       ]
     },
@@ -26913,7 +26913,7 @@
       "landSet": "Surtland",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -27016,7 +27016,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Giant Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -27064,11 +27063,10 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Elusive. Battlecry: Scry 2 and draw a card.",
+      "description": "Elusive. Battlecry: Scry 1 and draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -27076,7 +27074,7 @@
       "effects": [
         {
           "type": "scry",
-          "value": 2
+          "value": 1
         },
         {
           "type": "draw",
@@ -27097,18 +27095,13 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Deal 5 damage to a creature and 1 damage to each opponent.",
-      "type": "sorcery",
+      "description": "Deal 5 damage to a creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
           "value": 5,
           "target": "creature"
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -27125,20 +27118,25 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Summon a 3/3 Giant. Deal 2 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Giant with Trample.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Giant"
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "text": "Summon a 3/3 Giant with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Giant",
+              "tribe": "Giant",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -35537,7 +35535,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Giant Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -35562,7 +35559,7 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "description": "Battlecry: Deal 3 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -35574,7 +35571,7 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "enemy-heroes"
+          "target": "any"
         }
       ]
     },
@@ -35613,18 +35610,17 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Freeze an enemy creature and deal 1 damage to a creature.",
+      "description": "Battlecry: Freeze an enemy creature and deal 1 damage to it.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Giant Wizard",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         },
         {
           "type": "damage",
@@ -35646,13 +35642,14 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Beast",
       "keywords": [
-        "rush"
+        "rush",
+        "trample"
       ]
     },
     {
@@ -35668,12 +35665,13 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Battlecry: Deal 4 damage to all enemy creatures.",
+      "description": "Charge. Battlecry: Deal 4 damage to all enemy creatures.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Giant",
       "keywords": [
+        "charge",
         "battlecry"
       ],
       "effects": [
@@ -35720,7 +35718,7 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Freeze all enemy creatures and deal 1 damage to them.",
+      "description": "Freeze all enemy creatures. Scry 2.",
       "type": "sorcery",
       "effects": [
         {
@@ -35728,9 +35726,8 @@
           "target": "enemy-creatures"
         },
         {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-creatures"
+          "type": "scry",
+          "value": 2
         }
       ]
     },
@@ -35747,17 +35744,13 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Deal 3 damage to a creature and freeze an enemy creature.",
-      "type": "sorcery",
+      "description": "Deal 3 damage to a creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
-        },
-        {
-          "type": "freeze",
-          "target": "enemy-creature"
         }
       ]
     },
@@ -35774,7 +35767,7 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Draw 2 cards.",
+      "description": "Deal 3 damage to a creature. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -35784,7 +35777,7 @@
         },
         {
           "type": "draw",
-          "value": 2
+          "value": 1
         }
       ]
     },
@@ -35793,7 +35786,7 @@
       "name": "Surtland Charm",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -35801,19 +35794,18 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you cast a spell, deal 1 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "surtland_puzzlebox",
@@ -35854,14 +35846,21 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "Gain 2 Mana Crystals this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "surtland_cryomagma_staff",
@@ -35876,10 +35875,20 @@
       ],
       "landSet": "Surtland",
       "collectible": false,
-      "description": "A 3/3 weapon.",
+      "description": "A 3/3 weapon. After your hero attacks, deal 1 damage to each opponent.",
       "type": "weapon",
       "attack": 3,
-      "durability": 3
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "immersturm_renegade",
@@ -121171,17 +121180,28 @@
       "id": "frost_giant",
       "name": "Frost Giant",
       "type": "creature",
-      "cost": 10,
+      "cost": 4,
       "cardClass": "neutral",
-      "attack": 8,
-      "health": 8,
       "rarity": "epic",
       "set": "TGT",
-      "description": "Costs (1) less for each time you used your Hero Power this game.",
+      "description": "Taunt. Battlecry: Freeze an enemy creature.",
       "selfCost": {
         "per": "hero-powers-game",
         "amount": -1
-      }
+      },
+      "attack": 3,
+      "health": 5,
+      "tribe": "Giant",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ]
     },
     {
       "id": "fallen_hero",
@@ -235483,6 +235503,35 @@
         "B"
       ],
       "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "surtland_basalt_ravager",
+      "name": "Surtland Basalt Ravager",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 2,
+      "tribe": "Giant",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to any target.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "landSet": "Surtland",
       "collectible": false
     }
   ]
