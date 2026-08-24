@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "68b1ac2",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Bontu land pool (B devotion — sacrifice/aristocrats + drain + removal + deathtouch) — first Amonkhet god",
+			"body": "God-Eternal Bontu (sac -> drain 3 + draw 2), Acolyte aristocrat lifegain, Last\nReckoning wipe (destroy-all), Sacrifice-to-Bontu sac-draw, deathtouch/reborn\nbodies, Ambition/Cartouche instants, Scarab Swarm Insect LOCATION, Barren Heart\ndiscard+drain ENCHANTMENT, Vindication discard ARTIFACT, Despark/Maelstrom removal.\n6 card types, 6 keywords, mono-B.\n\nTest pool_bontu_test.mjs 46/46. Full suite 384/384.",
+			"cards": []
+		},
+		{
 			"sha": "570c66f",
 			"date": "2026-08-24",
 			"kind": "patch",
