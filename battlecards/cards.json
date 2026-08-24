@@ -26346,7 +26346,7 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Draw a card. Each opponent discards a card.",
+      "description": "Deathtouch. Battlecry: Deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -26357,12 +26357,9 @@
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -26379,13 +26376,20 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Battlecry: Return your highest-Cost creature that died this game.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Undead",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 1
+        }
       ]
     },
     {
@@ -26401,11 +26405,11 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Undead with Rush.",
+      "description": "Battlecry: Summon a 2/2 Undead with Deathtouch.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
+      "tribe": "Undead",
       "keywords": [
         "battlecry"
       ],
@@ -26416,8 +26420,9 @@
           "attack": 2,
           "health": 2,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
-            "rush"
+            "deathtouch"
           ]
         }
       ]
@@ -26448,8 +26453,8 @@
       "id": "priest_of_the_haunted_edge",
       "name": "Karfell Priest of the Haunted Edge",
       "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -26457,14 +26462,17 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch.",
-      "type": "creature",
-      "attack": 1,
-      "health": 3,
-      "tribe": "Elf Cleric",
-      "keywords": [
-        "deathtouch"
-      ]
+      "description": "Whenever a friendly creature dies, each opponent discards a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "karfell_harbinger",
@@ -26479,19 +26487,18 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Scry 2.",
+      "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Undead Wizard",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "scry",
-          "value": 2
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -26539,7 +26546,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -26561,7 +26568,7 @@
       "landSet": "Karfell",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -26586,7 +26593,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Assassin",
+      "tribe": "Undead",
       "keywords": [
         "elusive",
         "deathtouch"
@@ -26627,19 +26634,18 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Freeze an enemy creature.",
+      "description": "Elusive. Battlecry: Scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "freeze",
-          "target": "enemy-creature"
+          "type": "scry",
+          "value": 1
         }
       ]
     },
@@ -26647,7 +26653,7 @@
       "id": "raise_the_draugr",
       "name": "Karfell Reanimation",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -26656,22 +26662,25 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Undead with Deathtouch.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Undead",
-          "keywords": [
-            "deathtouch"
+          "text": "Summon a 2/2 Undead with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Undead",
+              "tribe": "Undead",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
           ]
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -26688,18 +26697,18 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Battlecry: Each opponent discards 2 cards.",
+      "description": "Battlecry: Each opponent discards a card.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Undead Wizard",
+      "tribe": "Undead",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 1
         }
       ]
     },
@@ -26716,20 +26725,24 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Summon two 2/2 Undeads with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Undead",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Undead with Deathtouch.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Undead",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Undead with Deathtouch."
+      }
     },
     {
       "id": "surtr_fire_giant",
@@ -35225,7 +35238,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Rogue",
       "keywords": [
         "elusive"
       ]
@@ -35243,13 +35255,14 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt.",
       "type": "creature",
       "attack": 5,
       "health": 6,
       "tribe": "Beast",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "taunt"
       ]
     },
     {
@@ -35277,7 +35290,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -35309,6 +35322,7 @@
           "attack": 2,
           "health": 2,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -35328,19 +35342,18 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Battlecry: Each opponent discards a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Undead Rogue",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "enemy-discard",
+          "count": 1
         }
       ]
     },
@@ -35357,10 +35370,20 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "A 3/2 weapon. After your hero attacks, deal 1 damage to each opponent.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "karfell_berserker",
@@ -35379,7 +35402,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Undead",
+      "tribe": "Berserker",
       "keywords": [
         "rush"
       ]
@@ -35401,7 +35424,7 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Undead Cleric",
+      "tribe": "Undead",
       "keywords": [
         "taunt",
         "battlecry"
@@ -35409,7 +35432,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -35426,11 +35449,11 @@
       ],
       "landSet": "Karfell",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon a 2/2 Undead with Deathtouch.",
+      "description": "Deathtouch. Battlecry: Summon two 2/2 Undead with Deathtouch.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Undead Wizard",
+      "tribe": "Undead",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -35438,10 +35461,11 @@
       "effects": [
         {
           "type": "summon",
-          "count": 1,
+          "count": 2,
           "attack": 2,
           "health": 2,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -35465,7 +35489,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Skeleton",
+      "tribe": "Undead",
       "keywords": [
         "reborn"
       ]
@@ -35487,7 +35511,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Undead",
+      "tribe": "Berserker",
       "keywords": [
         "elusive"
       ]
@@ -234872,6 +234896,121 @@
         "U"
       ],
       "landSet": "Istfell",
+      "collectible": false
+    },
+    {
+      "id": "karfell_tergrid",
+      "name": "Karfell Tergrid, God of Fright",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 2
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Each opponent discards 2 cards.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false
+    },
+    {
+      "id": "karfell_draugr_recruiter",
+      "name": "Karfell Draugr Recruiter",
+      "cost": 3,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Undead",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Undead",
+          "tribe": "Undead",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ],
+      "description": "Battlecry: Summon a 2/2 Undead with Deathtouch.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false
+    },
+    {
+      "id": "karfell_dread_rider",
+      "name": "Karfell Dread Rider",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 3,
+      "tribe": "Undead",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ],
+      "description": "Elusive. Deathtouch.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
+      "collectible": false
+    },
+    {
+      "id": "karfell_vault_robber",
+      "name": "Karfell Vault Robber",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Rogue",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Draw a card.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "U",
+        "B"
+      ],
+      "landSet": "Karfell",
       "collectible": false
     }
   ]
