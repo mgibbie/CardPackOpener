@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "4bcf7d7",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Rhonas land pool (G devotion — big tramplers + ramp + fight + pump)",
+			"body": "Rhonas god (+2/+0 & Trample anthem), big Trample beaters, Wurm overkill, Hydra/\nChampion pump, Devotee ramp, Cartouche/Benefaction instants, Last Stand Beasts,\nStrength counters, Menagerie Beast LOCATION, Trial fight, Hour of Glory removal,\nCommand escalating-anthem ENCHANTMENT, Charm deathtouch WEAPON. 6 card types, 6\nkeywords, mono-G. (old rhonas_pool_test stayed green.)\n\nTest pool_rhonas_test.mjs 48/48. Full suite 387/387.",
+			"cards": []
+		},
+		{
 			"sha": "1803253",
 			"date": "2026-08-24",
 			"kind": "patch",
