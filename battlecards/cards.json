@@ -19736,7 +19736,7 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Trample. Charge. Battlecry: Gain 2 mana this turn and draw a card.",
+      "description": "Trample. Charge. Battlecry: Deal 3 damage to each opponent. At the start of your turn, drain 1 and gain 1 Mana this turn.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -19746,14 +19746,30 @@
         "charge",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          },
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      },
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -19762,7 +19778,7 @@
       "name": "Klothys’s Design",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R",
@@ -19770,20 +19786,23 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Gain 3 mana this turn. Give a creature +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
-      ]
+      "description": "At the start of your turn, gain 1 Mana this turn and give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "klothys_charm",
@@ -19799,13 +19818,13 @@
       "landSet": "Klothys",
       "collectible": false,
       "description": "Give a creature +2/+2 and Trample.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -19823,7 +19842,7 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Deal 2 damage to a creature. Gain 2 mana this turn.",
+      "description": "Deal 2 damage to a creature. Gain 2 Mana this turn.",
       "type": "sorcery",
       "effects": [
         {
@@ -19850,13 +19869,14 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Battlecry: A friendly creature fights an enemy creature.",
+      "description": "First Strike. Battlecry: A friendly creature fights an enemy creature.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Human",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "first_strike"
       ],
       "effects": [
         {
@@ -19878,7 +19898,7 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Each opponent loses 2 life.",
+      "description": "Deal 3 damage to a creature and 2 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
@@ -19906,20 +19926,24 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Summon a 3/3 Beast with Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Beast",
-          "keywords": [
-            "trample"
-          ]
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Beast with Trample.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Beast with Trample."
+      }
     },
     {
       "id": "klothys_runemark",
@@ -19935,13 +19959,13 @@
       "landSet": "Klothys",
       "collectible": false,
       "description": "Give a creature +2/+2 and Rush.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
       ]
@@ -19982,11 +20006,10 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Taunt. Battlecry: Gain 3 mana this turn.",
+      "description": "Taunt. Battlecry: Gain 3 Mana this turn.",
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
         "taunt",
         "battlecry"
@@ -20015,7 +20038,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
         "trample",
         "battlecry"
@@ -20042,14 +20064,25 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Give your creatures +2/+1.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Beast with Trample.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures"
+          "text": "Summon a 3/3 Beast with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -20089,13 +20122,13 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Elusive.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Wizard",
       "keywords": [
-        "trample"
+        "trample",
+        "elusive"
       ]
     },
     {
