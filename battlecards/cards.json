@@ -7151,31 +7151,34 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Lifesteal. Battlecry: Each opponent loses 4 life. Draw a card.",
+      "description": "Lifesteal. Battlecry: Sacrifice a creature. Each opponent loses 3 life and you draw 2 cards.",
       "type": "creature",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "attack": 5,
       "health": 6,
-      "tribe": "Undead God",
+      "tribe": "God",
       "keywords": [
         "lifesteal",
         "battlecry"
       ],
       "effects": [
         {
+          "type": "sacrifice-friendly"
+        },
+        {
           "type": "damage",
-          "value": 4,
+          "value": 3,
           "target": "enemy-heroes"
         },
         {
           "type": "draw",
-          "value": 1
+          "value": 2
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "bontu_initiate",
@@ -7184,19 +7187,19 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Cleric",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
     },
     {
       "id": "bontu_acolyte",
@@ -7205,19 +7208,28 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Whenever a friendly creature dies, gain 1 life.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Human Cleric",
-      "keywords": [
-        "lifesteal"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "bontus_mummification",
@@ -7226,19 +7238,20 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Reborn.",
+      "description": "Reborn. Deathtouch.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Undead",
-      "keywords": [
-        "reborn"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Undead",
+      "keywords": [
+        "reborn",
+        "deathtouch"
+      ]
     },
     {
       "id": "river_crocodile_of_bontu",
@@ -7247,19 +7260,20 @@
       "cost": 5,
       "rarity": "common",
       "set": "paper",
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Trample.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Crocodile",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Crocodile",
+      "keywords": [
+        "deathtouch",
+        "trample"
+      ]
     },
     {
       "id": "bontus_last_reckoning",
@@ -7270,16 +7284,16 @@
       "set": "paper",
       "description": "Destroy all creatures.",
       "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy-all"
-        }
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ]
     },
     {
       "id": "ambition_of_bontu",
@@ -7289,18 +7303,18 @@
       "rarity": "common",
       "set": "paper",
       "description": "Draw 2 cards.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
           "value": 2
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "bontus_cartouche",
@@ -7310,21 +7324,21 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +1/+1 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "bontus_scarab_swarm",
@@ -7333,25 +7347,32 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon three 1/1 Insects with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 3,
-          "attack": 1,
-          "health": 1,
-          "name": "Insect",
-          "keywords": [
-            "deathtouch"
-          ]
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 1/1 Insect with Deathtouch.",
+      "type": "location",
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Insect with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Insect",
+              "tribe": "Insect",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "bontus_painful_lesson",
@@ -7362,6 +7383,11 @@
       "set": "paper",
       "description": "Draw a card. Each opponent loses 2 life.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
@@ -7372,12 +7398,7 @@
           "value": 2,
           "target": "enemy-heroes"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "bontus_maelstrom",
@@ -7388,6 +7409,11 @@
       "set": "paper",
       "description": "Destroy a creature. Each opponent loses 2 life.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
           "type": "destroy",
@@ -7398,12 +7424,7 @@
           "value": 2,
           "target": "enemy-heroes"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "sacrifice_to_bontu",
@@ -7412,23 +7433,22 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Destroy a creature. Draw two cards.",
+      "description": "Sacrifice a creature. Draw 2 cards.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "sacrifice-friendly"
         },
         {
           "type": "draw",
           "value": 2
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "bontus_despark",
@@ -7439,69 +7459,71 @@
       "set": "paper",
       "description": "Destroy a creature with 4 or more Attack.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Bontu",
+      "collectible": false,
       "effects": [
         {
           "type": "destroy",
           "target": "creature",
           "minAttack": 4
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Bontu",
-      "collectible": false
+      ]
     },
     {
       "id": "barren_heart_of_bontu",
       "name": "Barren Heart of Bontu",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Each opponent discards a card and loses 2 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
-        }
-      ],
+      "description": "At the start of your turn, each opponent discards a card and takes 1 damage.",
+      "type": "enchantment",
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "vindication_of_bontu",
       "name": "Vindication of Bontu",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Destroy a creature. Each opponent discards a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ],
+      "description": "{T}: Each opponent discards a card.",
+      "type": "artifact",
       "colors": [
         "B"
       ],
       "landSet": "Bontu",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ],
+        "text": "Each opponent discards a card."
+      }
     },
     {
       "id": "temple_of_hazoret",
