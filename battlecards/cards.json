@@ -10965,29 +10965,30 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Give your creatures +1/+1 and Divine Shield.",
+      "description": "Divine Shield. Battlecry: Give your creatures +2/+2 and Divine Shield.",
       "type": "creature",
-      "attack": 5,
-      "health": 7,
-      "tribe": "Elf Shaman",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
-        }
-      ],
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 7,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry",
+        "divine_shield"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
+        }
+      ]
     },
     {
       "id": "trostani_selesnyas_voice",
@@ -10996,28 +10997,31 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Taunt. Battlecry: Gain 5 life.",
+      "description": "Taunt. Lifesteal. Whenever you summon a creature, gain 1 life.",
       "type": "creature",
-      "attack": 3,
-      "health": 5,
-      "tribe": "Dryad",
-      "keywords": [
-        "taunt",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 5,
-          "target": "self"
-        }
-      ],
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Dryad",
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "summoned",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "selesnya_guardian",
@@ -11028,19 +11032,18 @@
       "set": "paper",
       "description": "Taunt. Divine Shield.",
       "type": "creature",
-      "attack": 4,
-      "health": 6,
-      "tribe": "Golem",
-      "keywords": [
-        "taunt",
-        "divine_shield"
-      ],
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 6,
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
     },
     {
       "id": "selesnya_bloom_hulk",
@@ -11049,12 +11052,18 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
+        "trample",
         "battlecry"
       ],
       "effects": [
@@ -11064,13 +11073,7 @@
           "health": 1,
           "target": "friendly-creatures"
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_gardener",
@@ -11081,9 +11084,14 @@
       "set": "paper",
       "description": "Battlecry: Summon two 2/2 Saprolings.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Druid",
       "keywords": [
         "battlecry"
       ],
@@ -11093,15 +11101,11 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Saproling"
+          "name": "Saproling",
+          "tribe": "Saproling",
+          "keywords": []
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_sentry",
@@ -11110,20 +11114,20 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt.",
+      "description": "Taunt. First Strike.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Elephant",
-      "keywords": [
-        "taunt"
-      ],
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "first_strike"
+      ]
     },
     {
       "id": "selesnya_guildmage",
@@ -11132,11 +11136,16 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Battlecry: Give a creature +1/+1 and Taunt.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -11145,15 +11154,10 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "friendly-creatures"
+          "target": "friendly-creature",
+          "grant": "taunt"
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_sagittar",
@@ -11162,12 +11166,18 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Deal 1 damage to all enemy creatures.",
+      "description": "Elusive. Battlecry: Deal 1 damage to all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "tribe": "Centaur Archer",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
@@ -11176,13 +11186,7 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_eulogist",
@@ -11191,11 +11195,16 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Summon two 1/1 Saprolings.",
+      "description": "Battlecry: Summon two 1/1 Saprolings and gain 2 life.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -11205,15 +11214,16 @@
           "count": 2,
           "attack": 1,
           "health": 1,
-          "name": "Saproling"
+          "name": "Saproling",
+          "tribe": "Saproling",
+          "keywords": []
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_evangel",
@@ -11224,9 +11234,14 @@
       "set": "paper",
       "description": "Battlecry: Summon two 1/1 Saprolings.",
       "type": "creature",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Selesnya",
+      "collectible": false,
       "attack": 1,
       "health": 1,
-      "tribe": "Elf Shaman",
       "keywords": [
         "battlecry"
       ],
@@ -11236,15 +11251,11 @@
           "count": 2,
           "attack": 1,
           "health": 1,
-          "name": "Saproling"
+          "name": "Saproling",
+          "tribe": "Saproling",
+          "keywords": []
         }
-      ],
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Selesnya",
-      "collectible": false
+      ]
     },
     {
       "id": "selesnya_charm",
@@ -11253,26 +11264,53 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon a 2/2 Knight with Taunt.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Knight",
-          "keywords": [
-            "taunt"
-          ]
-        }
-      ],
+      "description": "Choose One — Summon a 2/2 Knight with Taunt; or Give your creatures +1/+1; or Gain 5 life.",
+      "type": "instant",
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Summon a 2/2 Knight with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Knight",
+              "tribe": "Knight",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        },
+        {
+          "text": "Gain 5 life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 5,
+              "target": "self"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "selesnya_keyrune",
@@ -11281,52 +11319,63 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon a 3/3 Wolf with Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Wolf",
-          "keywords": [
-            "trample"
-          ]
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Wolf with Trample.",
+      "type": "location",
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Wolf with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Wolf",
+              "tribe": "Wolf",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "selesnya_locket",
       "name": "Selesnya Locket",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "At the start of your turn, summon a 1/1 Saproling.",
+      "type": "enchantment",
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Saproling",
+            "tribe": "Saproling",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "selesnya_signet",
@@ -11335,20 +11384,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "selesnya_cluestone",
@@ -11359,18 +11411,18 @@
       "set": "paper",
       "description": "Draw 2 cards.",
       "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
       "colors": [
         "G",
         "W"
       ],
       "landSet": "Selesnya",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "dromoka_dragonspire",
