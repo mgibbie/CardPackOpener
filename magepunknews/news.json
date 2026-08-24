@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "c56fd36",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Orzhov land pool (WB lifedrain + aristocrats + extort + removal)",
+			"body": "Obzedat drain finisher, Kaya exile removal, Teysa aristocrat (deaths -> Lifesteal\nSpirits), drain bodies (Guildmage/Gift), Pontiff sweep, extort Keyrune\nenchantment (drain per spell), Racketeers drain LOCATION, modal Orzhov Charm\ninstant (kill<=3/drain/draw), Cluestone artifact. 6 card types, 6 keywords, WB\npreserved.\n\nTest pool_orzhov_test.mjs 46/46. Full suite 365/365.",
+			"cards": []
+		},
+		{
 			"sha": "fdbd73e",
 			"date": "2026-08-23",
 			"kind": "patch",
