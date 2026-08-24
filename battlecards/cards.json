@@ -25901,21 +25901,22 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Human and give your creatures +1/+1.",
+      "description": "Battlecry: Summon two 2/2 Humans and give your creatures +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Human"
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Human",
+          "tribe": "Human"
         },
         {
           "type": "buff",
@@ -25946,7 +25947,8 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Human"
+          "name": "Human",
+          "tribe": "Human"
         },
         {
           "type": "buff",
@@ -25973,7 +25975,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Soldier",
+      "tribe": "Human",
       "keywords": [
         "taunt"
       ]
@@ -26058,7 +26060,8 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Human"
+          "name": "Human",
+          "tribe": "Human"
         }
       ]
     },
@@ -26075,11 +26078,11 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Taunt.",
+      "description": "Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Soldier",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -26088,8 +26091,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "taunt"
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -26106,11 +26108,11 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Elf.",
+      "description": "Battlecry: Summon a 2/2 Human.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Warrior",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
@@ -26118,9 +26120,10 @@
         {
           "type": "summon",
           "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Elf"
+          "attack": 2,
+          "health": 2,
+          "name": "Human",
+          "tribe": "Human"
         }
       ]
     },
@@ -26141,7 +26144,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Elf Warrior",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -26150,7 +26153,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -26171,7 +26174,7 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Cleric",
+      "tribe": "Human",
       "keywords": [
         "taunt",
         "battlecry"
@@ -26197,11 +26200,11 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Trample. Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. Battlecry: Give a creature +2/+2.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "trample",
         "battlecry"
@@ -26209,9 +26212,9 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature"
         }
       ]
     },
@@ -26250,23 +26253,18 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn and gain 2 life.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elf Druid",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
         }
       ]
     },
@@ -26284,7 +26282,7 @@
       "landSet": "Bretagard",
       "collectible": false,
       "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -26307,20 +26305,22 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Summon two 2/2 Humans. Gain 2 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Human.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Human"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "text": "Summon a 2/2 Human.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Human",
+              "tribe": "Human"
+            }
+          ]
         }
       ]
     },
@@ -34834,11 +34834,11 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "Battlecry: Give your creatures +1/+0 and Trample.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -34846,8 +34846,9 @@
         {
           "type": "buff",
           "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "trample"
         }
       ]
     },
@@ -34892,29 +34893,22 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Taunt. Battlecry: Gain 2 life.",
+      "description": "Taunt. Lifesteal.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Cleric",
+      "tribe": "Human",
       "keywords": [
         "taunt",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
-        }
+        "lifesteal"
       ]
     },
     {
       "id": "bretagard_bear_spirit",
       "name": "Bretagard Bear Spirit",
       "cardClass": "magepunk",
-      "cost": 4,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "G",
@@ -34922,14 +34916,17 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Taunt.",
-      "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Beast Spirit",
-      "keywords": [
-        "taunt"
-      ]
+      "description": "Whenever you gain life, give your weakest creature +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "bretagard_wanderer",
@@ -34944,7 +34941,7 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Give a creature +1/+1.",
+      "description": "Battlecry: Give a creature +2/+0.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -34955,9 +34952,9 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
         }
       ]
     },
@@ -34974,12 +34971,13 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Gain 3 life.",
+      "description": "Lifesteal. Battlecry: Gain 3 life.",
       "type": "creature",
       "attack": 2,
       "health": 4,
       "tribe": "Human",
       "keywords": [
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -35007,7 +35005,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "rush"
       ]
@@ -35029,7 +35027,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Wizard",
+      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -35057,7 +35055,7 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Divine Shield.",
+      "description": "Battlecry: Give your creatures +2/+2.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -35068,10 +35066,9 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -35088,7 +35085,7 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -35098,7 +35095,7 @@
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -35116,16 +35113,18 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Give a creature +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        }
-      ]
+      "description": "{T}: Put a +1/+1 counter on a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "bretagard_command",
@@ -35140,7 +35139,7 @@
       ],
       "landSet": "Bretagard",
       "collectible": false,
-      "description": "Summon two 2/2 Humans and give your creatures +1/+1.",
+      "description": "Summon two 2/2 Humans and give your creatures +2/+0.",
       "type": "sorcery",
       "effects": [
         {
@@ -35148,12 +35147,13 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Human"
+          "name": "Human",
+          "tribe": "Human"
         },
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
+          "attack": 2,
+          "health": 0,
           "target": "friendly-creatures"
         }
       ]
@@ -234445,6 +234445,82 @@
         "W"
       ],
       "landSet": "Axgard",
+      "collectible": false
+    },
+    {
+      "id": "bretagard_sigrid_god_favored",
+      "name": "Bretagard Sigrid, God-Favored",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "divine_shield",
+        "first_strike"
+      ],
+      "description": "Divine Shield. First Strike.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false
+    },
+    {
+      "id": "bretagard_guardian_gladewalker",
+      "name": "Bretagard Guardian Gladewalker",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Treefolk",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a creature +1/+1.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
+      "collectible": false
+    },
+    {
+      "id": "bretagard_reidane",
+      "name": "Bretagard Reidane, God of the Worthy",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ],
+      "description": "Taunt. Divine Shield.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Bretagard",
       "collectible": false
     }
   ]
