@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "967d876",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Surtland land pool (UR/Kaldheim realm — Giants + spellslinging burn + freeze control + big beaters + spell value; 29 -> 30) — last Kaldheim realm, completes Kaldheim",
+			"body": "Redesigned 29 + added 1 NEW (real MTG art, deployed): Basalt Ravager (burn battlecry\nGiant). Giant token=3/3 trample; Surtr/Fire Giant King burn finishers (King bc: 4 to\nall enemy creatures), Monument Giant-hall LOCATION, Keyrune mana ARTIFACT, Charm\nspellslinger ENCHANTMENT (spell -> 1 to each opp), Firebolt/Flame/Iceflame burn\nINSTANTS, Eruption/Conflagration sweeps, Ice Geyser freeze, Cryomagma Staff WEAPON.\n7 types, 6 keywords, UR. All 10 Kaldheim realms done.\n\nTest pool_surtland_test.mjs 75/75 (asserts 30). Full suite 423/423.",
+			"cards": []
+		},
+		{
 			"sha": "bf451a0",
 			"date": "2026-08-24",
 			"kind": "patch",
