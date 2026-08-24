@@ -31650,11 +31650,11 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/2 Undead and draw a card.",
+      "description": "Battlecry: Summon a 2/2 Undead with Deathtouch. Whenever you cast a spell, summon a 2/2 Undead with Deathtouch.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Naga Wizard",
+      "tribe": "Naga",
       "keywords": [
         "battlecry"
       ],
@@ -31664,13 +31664,29 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Undead"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "name": "Undead",
+          "tribe": "Undead",
+          "keywords": [
+            "deathtouch"
+          ]
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Undead",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "sultai_sagu_mauler",
@@ -31714,7 +31730,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Cat Demon",
+      "tribe": "Demon",
       "keywords": [
         "deathtouch"
       ]
@@ -31733,11 +31749,11 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Elusive. Deathtouch. Battlecry: Each opponent discards a card.",
+      "description": "Elusive. Deathtouch. Battlecry: Destroy a creature.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Insect",
+      "tribe": "Demon",
       "keywords": [
         "elusive",
         "deathtouch",
@@ -31745,8 +31761,8 @@
       ],
       "effects": [
         {
-          "type": "enemy-discard",
-          "value": 1
+          "type": "destroy",
+          "target": "creature"
         }
       ]
     },
@@ -31765,7 +31781,7 @@
       "landSet": "Sultai",
       "collectible": false,
       "description": "Destroy a creature. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -31791,19 +31807,17 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Return an enemy creature to its owner’s hand.",
+      "description": "Elusive. Battlecry: Return a creature to its owner's hand.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Bird",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         }
       ]
     },
@@ -31826,7 +31840,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -31848,7 +31862,7 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon a 2/2 Undead.",
+      "description": "Deathtouch. Battlecry: Return your highest-Cost creature that died this game.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -31859,11 +31873,8 @@
       ],
       "effects": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Undead"
+          "type": "resurrect-highest-died",
+          "count": 1
         }
       ]
     },
@@ -31885,7 +31896,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Snake",
       "keywords": [
         "elusive",
         "deathtouch"
@@ -31909,7 +31919,6 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Bird",
       "keywords": [
         "elusive"
       ]
@@ -31928,11 +31937,10 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Battlecry: Draw a card and Scry 1.",
+      "description": "Battlecry: Draw a card and scry 2.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Naga Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -31943,7 +31951,7 @@
         },
         {
           "type": "scry",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -31961,21 +31969,16 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn and draw a card.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elf Druid",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -32018,18 +32021,24 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Scry 2. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever a friendly creature dies, summon a 1/1 Undead with Deathtouch.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Undead",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "sultai_monument",
@@ -32054,6 +32063,7 @@
           "attack": 2,
           "health": 2,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -38617,7 +38627,7 @@
       "id": "sultai_banner",
       "name": "Sultai Banner",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -38627,16 +38637,25 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Undead with Deathtouch.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Summon a 2/2 Undead with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Undead",
+              "tribe": "Undead",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -38654,18 +38673,17 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Scry 1.",
+      "description": "Deathtouch. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Warrior",
       "keywords": [
         "deathtouch",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "scry",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -38684,12 +38702,12 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Battlecry: Gain 4 life.",
+      "description": "Lifesteal. Battlecry: Gain 4 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Warrior",
       "keywords": [
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -38715,13 +38733,13 @@
       "landSet": "Sultai",
       "collectible": false,
       "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "deathtouch"
         }
       ]
@@ -38744,7 +38762,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
+      "tribe": "Undead",
       "keywords": [
         "battlecry"
       ],
@@ -38774,7 +38792,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -38796,18 +38814,21 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "sultai_command",
@@ -38855,7 +38876,7 @@
       ],
       "landSet": "Sultai",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Draw a card.",
+      "description": "Deathtouch. Battlecry: Draw 2 cards.",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -38867,7 +38888,7 @@
       "effects": [
         {
           "type": "draw",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -38889,7 +38910,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Cat Demon",
+      "tribe": "Demon",
       "keywords": [
         "deathtouch",
         "elusive"
@@ -233799,6 +233820,152 @@
         "elusive",
         "taunt"
       ]
+    },
+    {
+      "id": "sultai_grim_haruspex",
+      "name": "Sultai Grim Haruspex",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature dies, draw a card.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G",
+        "U"
+      ],
+      "landSet": "Sultai",
+      "collectible": false
+    },
+    {
+      "id": "sultai_gurmag_angler",
+      "name": "Sultai Gurmag Angler",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Fish",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G",
+        "U"
+      ],
+      "landSet": "Sultai",
+      "collectible": false
+    },
+    {
+      "id": "sultai_reaper_of_the_wilds",
+      "name": "Sultai Reaper of the Wilds",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Beast",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Scry 2.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G",
+        "U"
+      ],
+      "landSet": "Sultai",
+      "collectible": false
+    },
+    {
+      "id": "sultai_whisperer_of_the_wilds",
+      "name": "Sultai Whisperer of the Wilds",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G",
+        "U"
+      ],
+      "landSet": "Sultai",
+      "collectible": false
+    },
+    {
+      "id": "sultai_undead_vizier",
+      "name": "Sultai Undead Vizier",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 6,
+      "tribe": "Naga",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Draw a card and scry 2.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G",
+        "U"
+      ],
+      "landSet": "Sultai",
+      "collectible": false
     }
   ]
 }
