@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "ea8b7ac",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Wastes basic pool (COLORLESS, 70) — real equipment ongoings + add artifact/location/enchantment; completes the pool-redesign initiative",
+			"body": "Eldrazi + colorless equipment. Gave 7 blank weapons real ongoings (Skullclamp draw-on-\ndeath, Sword of Fire and Ice burn+draw, Batterskull/Loxodon lifegain, Vulshok/Grafted\nrally, Bonesplitter ping), Eldrazi keywords (trample/rush/taunt). Repurposed 3: Phyrexian\nMetamorph -> ARTIFACT (tap +1/+1 counter), Conduit of Ruin -> LOCATION (tap -> 2/2 Eldrazi\nScion), Deceiver of Form -> ENCHANTMENT (turn-start Scion). Colorless + neutral + no\nrarity preserved. 6 types, 7 keywords.\n\nTest pool_wastes_test.mjs 13/13; old wastes_pool_test 152/152. Full suite 429/429.\nALL 108 land pools done.",
+			"cards": []
+		},
+		{
 			"sha": "286931d",
 			"date": "2026-08-24",
 			"kind": "patch",
