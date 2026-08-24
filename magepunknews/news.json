@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "85db9e5",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Istfell land pool (WU/Kaldheim realm — Spirit tokens + elusive fliers + freeze/bounce control + card draw + lifegain; 27 -> 30) — 5th Kaldheim realm",
+			"body": "Redesigned 27 + added 3 NEW (real MTG art, deployed): Cosmos Charger (charge flier),\nGods' Hall Guardian (taunt wall), Cyclone Summoner (board bounce). Ranar Spirit maker\n(bc 2 Spirits + draw), Spirit token=2/2 elusive, Ascendance magecraft-Spirit ENCHANTMENT\n(spell -> 1/1 Spirit), Monument Spirit-aerie LOCATION, Aura counter-forge ARTIFACT, Fog\nboard freeze+draw, Foresight/Iron Verdict/Iceblade INSTANTS. 6 types, 7 keywords, WU.\n\nTest pool_istfell_test.mjs 74/74 (asserts 30). Full suite 418/418.",
+			"cards": []
+		},
+		{
 			"sha": "44ccb45",
 			"date": "2026-08-24",
 			"kind": "patch",
