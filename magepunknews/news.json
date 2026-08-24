@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "40012fa",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Quandrix land pool (GU — Fractals + token-doubling + ramp + growth) — 5th/last Strixhaven college",
+			"body": "Tanazir Fractal-doubler (token-doubler static: your tokens are doubled) + bc 3/3\nFractal, Kianne 4/4 Fractal, Aether Helix 5/5 Fractal, Fractal Summoning 2x3/3\n(doubles under Tanazir), Duplication Fractal-forge LOCATION, Cultivator permanent\nramp (empty Mana Crystal), Ascendancy magecraft-growth ENCHANTMENT (spell -> team\n+1/+1 + scry), Manifestation ramp+draw ARTIFACT, Charm elusive INSTANT. 6 types, 6\nkeywords, GU. All 5 Strixhaven colleges done. (old test stayed green.)\n\nTest pool_quandrix_test.mjs 43/43. Full suite 393/393.",
+			"cards": []
+		},
+		{
 			"sha": "e2f9b97",
 			"date": "2026-08-24",
 			"kind": "patch",
