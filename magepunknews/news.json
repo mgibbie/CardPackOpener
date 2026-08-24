@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "2c988e4",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Kefnet land pool (U devotion — card advantage + draw-matters flyers + tempo control)",
+			"body": "Kefnet god (draw 2 + grows on each draw), Elusive draw/scry flyers, Last Word/\nCartouche/Command/Charm draw+tempo, Flood recurring-freeze enchantment, Boltbend\nfreeze, Puzzlebox scry+draw artifact, Cluestone library LOCATION, Rebuke counter-\nsecret, Epiphany big draw. 7 card types, 6 keywords, mono-U.\n\nTest pool_kefnet_test.mjs 46/46. Full suite 385/385.",
+			"cards": []
+		},
+		{
 			"sha": "68b1ac2",
 			"date": "2026-08-24",
 			"kind": "patch",
