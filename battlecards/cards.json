@@ -23876,7 +23876,7 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Charge. Lifesteal. Battlecry: Give your creatures Rush.",
+      "description": "Charge. Lifesteal. Battlecry: Deal 3 damage to each opponent.",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -23888,11 +23888,9 @@
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -23919,7 +23917,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -23940,7 +23938,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush",
         "first_strike"
@@ -23959,11 +23957,11 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures Rush.",
+      "description": "Charge. Battlecry: Give your creatures +1/+0.",
       "type": "creature",
       "attack": 4,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Dragon",
       "keywords": [
         "charge",
         "battlecry"
@@ -23971,10 +23969,9 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 0,
+          "attack": 1,
           "health": 0,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -23991,23 +23988,25 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Summon a 3/2 Warrior with Rush. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/2 Warrior with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Warrior",
-          "keywords": [
-            "rush"
+          "text": "Summon a 3/2 Warrior with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "rush"
+              ]
+            }
           ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -24028,7 +24027,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush"
       ]
@@ -24037,8 +24036,8 @@
       "id": "kolaghan_stormsinger",
       "name": "Kolaghan Stormsinger",
       "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B",
@@ -24046,15 +24045,18 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Rush. Elusive.",
-      "type": "creature",
-      "attack": 2,
-      "health": 1,
-      "tribe": "Human Shaman",
-      "keywords": [
-        "rush",
-        "elusive"
-      ]
+      "description": "At the start of your turn, deal 1 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "kolaghan_warmonger",
@@ -24069,11 +24071,11 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "description": "Rush. Battlecry: Deal 1 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Orc Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush",
         "battlecry"
@@ -24082,7 +24084,7 @@
         {
           "type": "damage",
           "value": 1,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -24100,7 +24102,7 @@
       "landSet": "Kolaghan",
       "collectible": false,
       "description": "Deal 3 damage to each opponent.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -24126,7 +24128,7 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Undead",
+      "tribe": "Warrior",
       "keywords": [
         "rush"
       ]
@@ -24148,7 +24150,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush",
         "lifesteal"
@@ -24158,7 +24160,7 @@
       "id": "kolaghan_scaleguard",
       "name": "Kolaghan’s Scaleguard",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -24167,14 +24169,18 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Charge.",
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "charge"
-      ]
+      "description": "{T}: Deal 2 damage to each opponent.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ],
+        "text": "Deal 2 damage to each opponent."
+      }
     },
     {
       "id": "kolaghan_warkite",
