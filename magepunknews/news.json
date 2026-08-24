@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "286931d",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Forest basic pool (mono-G, 70) — fill 40 vanilla beaters + add enchantment/artifact/location, keep faithful cards",
+			"body": "Beasts/wurms/dinos -> trample, couriers/apes/wolves -> rush, bears varied (taunt/\nfirst-strike/elusive/rush), archer -> deathtouch, elves -> ramp battlecries (empty Mana\nCrystal), Starved Rusalka +2/+2. Repurposed 3 blanks: Blanchwood Treefolk -> ENCHANTMENT\n(turn-start bolster), Cowl Prowler -> ARTIFACT (tap +1/+1 counter), Ferocious Zheng ->\nLOCATION (tap -> 3/3 Trample Beast). Kept tribes. 6 types, 10 keywords, mono-G, no rarity.\n\nTest pool_forest_test.mjs 26/26; abzan basics-guardian 34/34. Full suite 428/428.",
+			"cards": []
+		},
+		{
 			"sha": "2d45fa3",
 			"date": "2026-08-24",
 			"kind": "patch",
