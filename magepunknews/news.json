@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "3269549",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Brokers land pool (GWU tri-color — counters + shield counters + Citizens + draw/lifegain) — first Capenna family",
+			"body": "Falco team-buff payoff (bc: your creatures +1/+1 and Divine Shield), Veteran counters\nanthem, Charm shield-counter INSTANT, Resourcefulness safehouse LOCATION (tap -> 1/1\nDS Citizen), Ascendancy turn-start ENCHANTMENT (bolster), Reconnaissance surveillance\nARTIFACT (tap scry+draw), Regulator bounce, Verdict destroy, Catering/Confluence\ndraw+lifegain. 6 types, 6 keywords, GWU. First tri-color pool. (old test stayed green.)\n\nTest pool_brokers_test.mjs 44/44. Full suite 394/394.",
+			"cards": []
+		},
+		{
 			"sha": "40012fa",
 			"date": "2026-08-24",
 			"kind": "patch",
