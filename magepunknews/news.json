@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "3bf7bc8",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Hazoret land pool (R devotion — aggressive haste + burn + weapons + go-wide) — Amonkhet gods done",
+			"body": "Hazoret god (battlecry 3 + turn-start burn 2), Rush/Charge/Cleave/First-Strike\nbodies, Protection fervor enchantment (grant Rush), Armory Warrior LOCATION,\nUndying Fury Warriors, burn (Hymn/Flameblade weapon), Spear rally weapon,\nFavor/Zeal/Cartouche haste buffs. 6 card types, 6 keywords, mono-R. (old\nhazoret_pool_test stayed green.)\n\nTest pool_hazoret_test.mjs 46/46. Full suite 388/388. All 5 Amonkhet gods done.",
+			"cards": []
+		},
+		{
 			"sha": "4bcf7d7",
 			"date": "2026-08-24",
 			"kind": "patch",
