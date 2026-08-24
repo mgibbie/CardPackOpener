@@ -111878,14 +111878,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Deathtouch.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 1,
       "health": 2,
-      "set": "wubrg",
-      "keywords": [],
-      "description": "",
-      "effects": [],
-      "landSet": "Plains",
-      "collectible": false
+      "tribe": "Human",
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "sunlance",
@@ -112208,15 +112210,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 2,
       "health": 1,
-      "set": "wubrg",
-      "keywords": [],
-      "description": "",
-      "effects": [],
       "tribe": "Human Soldier",
-      "landSet": "Plains",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "opt",
@@ -113869,14 +113872,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 2,
       "health": 1,
-      "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "A 2/1 for one mana.",
-      "landSet": "Plains",
-      "collectible": false
+      "tribe": "Cat",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "counterspell",
@@ -114310,9 +114315,12 @@
       "attackTax": {
         "amount": 2
       },
-      "description": "Creatures can't attack you unless their controller pays 2 for each attacking creature.",
+      "description": "Your creatures have +0/+2.",
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "aura": {
+        "health": 2
+      }
     },
     {
       "id": "thrill_of_possibility",
@@ -114688,51 +114696,14 @@
       "cardClass": "neutral",
       "set": "wubrg",
       "chooseCount": 2,
-      "description": "Choose two —\n> Destroy all artifacts.\n> Destroy all enchantments.\n> Destroy all creatures with mana value 3 or less.\n> Destroy all creatures with mana value 4 or greater.",
-      "choices": [
-        {
-          "text": "Destroy all artifacts",
-          "effects": [
-            {
-              "type": "destroy-art-ench",
-              "scope": "all",
-              "count": "all",
-              "only": "artifact"
-            }
-          ]
-        },
-        {
-          "text": "Destroy all enchantments",
-          "effects": [
-            {
-              "type": "destroy-art-ench",
-              "scope": "all",
-              "count": "all",
-              "only": "enchantment"
-            }
-          ]
-        },
-        {
-          "text": "Destroy all creatures with mana value 3 or less",
-          "effects": [
-            {
-              "type": "destroy-all",
-              "maxCost": 3
-            }
-          ]
-        },
-        {
-          "text": "Destroy all creatures with mana value 4 or greater",
-          "effects": [
-            {
-              "type": "destroy-all",
-              "minCost": 4
-            }
-          ]
-        }
-      ],
+      "description": "Destroy all creatures.",
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "destroy-all"
+        }
+      ]
     },
     {
       "id": "farewell",
@@ -114746,52 +114717,19 @@
       "set": "wubrg",
       "chooseMin": 1,
       "chooseMax": 4,
-      "description": "Choose one or more —\n> Exile all artifacts.\n> Exile all creatures.\n> Exile all enchantments.\n> Exile all graveyards.",
-      "choices": [
-        {
-          "text": "Exile all artifacts",
-          "effects": [
-            {
-              "type": "destroy-art-ench",
-              "scope": "all",
-              "count": "all",
-              "only": "artifact",
-              "exile": true
-            }
-          ]
-        },
-        {
-          "text": "Exile all creatures",
-          "effects": [
-            {
-              "type": "destroy-all",
-              "exile": true
-            }
-          ]
-        },
-        {
-          "text": "Exile all enchantments",
-          "effects": [
-            {
-              "type": "destroy-art-ench",
-              "scope": "all",
-              "count": "all",
-              "only": "enchantment",
-              "exile": true
-            }
-          ]
-        },
-        {
-          "text": "Exile all graveyards",
-          "effects": [
-            {
-              "type": "clear-graveyards"
-            }
-          ]
-        }
-      ],
+      "description": "Destroy all creatures. Gain 3 life.",
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "destroy-all"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "felidar_guardian",
@@ -115242,14 +115180,17 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. First Strike.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Angel",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "first_strike"
+      ]
     },
     {
       "id": "idyllic_tutor",
@@ -116273,12 +116214,8 @@
         "W"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Spirit",
-      "keywords": [],
-      "description": "(1), Sacrifice a creature: Freeze a creature.",
+      "description": "Deathtouch. Battlecry: Freeze an enemy creature.",
       "activated": [
         {
           "cost": 1,
@@ -116293,7 +116230,20 @@
         }
       ],
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "creature"
+        }
+      ]
     },
     {
       "id": "argothian_swine",
@@ -116820,14 +116770,17 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. Taunt.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Griffin",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
     },
     {
       "id": "aerial_responder",
@@ -116858,14 +116811,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 1,
       "health": 2,
-      "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "tribe": "Pegasus",
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "alabaster_kirin",
@@ -116876,14 +116831,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Kirin",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "ajanis_sunstriker",
@@ -116914,14 +116871,16 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "tribe": "Hound",
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "angel_of_light",
@@ -116932,14 +116891,17 @@
         "W"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. Divine Shield.",
+      "landSet": "Plains",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Angel",
-      "keywords": [],
-      "description": "",
-      "landSet": "Plains",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "divine_shield"
+      ]
     },
     {
       "id": "aven_fleetwing",
@@ -118015,38 +117977,57 @@
     {
       "id": "ageless_guardian",
       "name": "Ageless Guardian",
-      "type": "creature",
+      "type": "artifact",
       "cost": 2,
       "colors": [
         "W"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 4,
       "set": "wubrg",
-      "tribe": "Spirit Soldier",
-      "keywords": [],
-      "description": "",
+      "description": "{T}: Give your creatures +0/+1.",
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 0,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ],
+        "text": "Give your creatures +0/+1."
+      }
     },
     {
       "id": "alaborn_trooper",
       "name": "Alaborn Trooper",
-      "type": "creature",
+      "type": "location",
       "cost": 3,
       "colors": [
         "W"
       ],
       "cardClass": "neutral",
-      "attack": 2,
-      "health": 3,
       "set": "wubrg",
-      "tribe": "Human Soldier",
-      "keywords": [],
-      "description": "",
+      "description": "Durability 3. {T}: Summon a 1/1 Soldier.",
       "landSet": "Plains",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Soldier.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Soldier",
+              "tribe": "Soldier"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "ancient_carp",
