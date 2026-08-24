@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "6052b54",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Karfell land pool (UB/Kaldheim realm — Undead + deathtouch + mill/discard + reanimation/aristocrats + control; 26 -> 30) — 6th Kaldheim realm",
+			"body": "Redesigned 26 + added 4 NEW (real MTG art, deployed): Tergrid God of Fright (discard\n2), Draugr Recruiter (Undead maker), Dread Rider (elusive deathtouch), Vault Robber\n(draw). Undead token=2/2 deathtouch; Narfi Lich-King 2 Undead, Draugr Necromancer\nreanimator, discard package, Priest aristocrat-discard ENCHANTMENT, Reanimation Undead-\ncrypt LOCATION, Monument Undead-idol ARTIFACT, Deathknell removal INSTANT, Helm WEAPON,\nSkeleton Reborn. 7 types, 6 keywords, UB.\n\nTest pool_karfell_test.mjs 76/76 (asserts 30). Full suite 419/419.",
+			"cards": []
+		},
+		{
 			"sha": "85db9e5",
 			"date": "2026-08-24",
 			"kind": "patch",
