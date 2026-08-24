@@ -17357,7 +17357,7 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Elusive. Battlecry: Each opponent discards 2 cards.",
+      "description": "Elusive. Battlecry: Each opponent discards 2 cards and you exile the top 3 of their deck. At the start of your turn, exile the top 3 cards of the opponent’s deck.",
       "type": "creature",
       "attack": 4,
       "health": 6,
@@ -17366,10 +17366,23 @@
         "elusive",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 3
+          }
+        ]
+      },
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
+        },
+        {
+          "type": "destroy-enemy-deck",
+          "count": 3
         }
       ]
     },
@@ -17390,14 +17403,13 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -17414,14 +17426,20 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "enemy-creature"
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and exile the top 3 cards of their deck.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "destroy-enemy-deck",
+            "count": 3
+          }
+        ]
+      }
     },
     {
       "id": "phenax_command",
@@ -17441,7 +17459,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "draw",
@@ -17463,7 +17481,7 @@
       "landSet": "Phenax",
       "collectible": false,
       "description": "Freeze an enemy creature. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "freeze",
@@ -17479,8 +17497,8 @@
       "id": "phenax_blessing",
       "name": "Phenax’s Blessing",
       "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -17488,17 +17506,17 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "deathtouch"
-        }
-      ]
+      "description": "Whenever you play a creature, give it Deathtouch.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "deathtouch"
+          }
+        ]
+      }
     },
     {
       "id": "phenax_treachery",
@@ -17513,12 +17531,13 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Destroy a creature.",
+      "description": "Take control of an enemy creature with 5 or less Attack.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "mind-control",
+          "target": "enemy-creature",
+          "maxAttack": 5
         }
       ]
     },
@@ -17539,7 +17558,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Rogue",
       "keywords": [
         "elusive",
         "deathtouch"
@@ -17563,7 +17581,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         }
       ]
     },
@@ -17580,18 +17598,17 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Each opponent discards 2 cards. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Exile the top 2 cards of the opponent’s deck.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "destroy-enemy-deck",
+            "count": 2
+          }
+        ],
+        "text": "Exile the top 2 cards of the opponent deck."
+      }
     },
     {
       "id": "guardian_of_phenax",
@@ -17610,7 +17627,6 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Golem",
       "keywords": [
         "taunt",
         "deathtouch"
@@ -17633,7 +17649,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Undead Wizard",
       "keywords": [
         "reborn",
         "deathtouch"
@@ -17652,12 +17667,12 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Return a creature to its owner’s hand. Draw a card.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
           "type": "bounce",
-          "target": "creature"
+          "target": "enemy-creature"
         },
         {
           "type": "draw",
@@ -17678,13 +17693,13 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. Taunt.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Treefolk",
       "keywords": [
-        "elusive"
+        "elusive",
+        "taunt"
       ]
     },
     {
@@ -17700,13 +17715,13 @@
       ],
       "landSet": "Phenax",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Stealth. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Spirit",
       "keywords": [
         "elusive",
+        "stealth",
         "battlecry"
       ],
       "effects": [
