@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "e43c2f0",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Atarka land pool (RG/Tarkir dragon brood — Dragon tribal + big fatties + burn + haste + trample) — first brood",
+			"body": "Dragonlord Atarka dragonfire finisher (bc: 3 to all enemy creatures), big trample/\ncharge Dragons + Beasts, Descending Armada Dragon-roost ARTIFACT (tap -> 3/3 Elusive\nDragon), Monument Beast-nest LOCATION (tap -> 3/3 Trample Beast), Harbinger dragonstorm\nENCHANTMENT (turn-start 1 to each opp), Lava Ritual burn INSTANT, Command reach+anthem\nSORCERY. 6 types, 7 keywords, RG.\n\nTest pool_atarka_test.mjs 43/43. Full suite 409/409.",
+			"cards": []
+		},
+		{
 			"sha": "3bbd6fb",
 			"date": "2026-08-24",
 			"kind": "patch",
