@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "9479527",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Heliod land pool (W devotion — lifegain + tokens + anthems) — first Theros god",
+			"body": "Heliod god (Clerics + life), Sun-Crowned lifegain payoff (+1/+1 on gain life),\nEvangel Soldiers, Emissary counters, Chosen instant, Dictate anthem enchantment,\nSpear of Heliod WEAPON (hero-attack anthem), Generosity Cleric LOCATION, Radiant\nDawn token+life enchantment, mass silence/removal + lifegain, Pacifist soft\nremoval. Keeps 'Discover a Heliod Card'. 6 card types, 6 keywords, mono-W.\n\nTest pool_heliod_test.mjs 48/48. Full suite 368/368.",
+			"cards": []
+		},
+		{
 			"sha": "a91516e",
 			"date": "2026-08-23",
 			"kind": "patch",
