@@ -21313,7 +21313,7 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Taunt. Deathtouch. Battlecry: Each opponent loses 3 life; gain 3 life.",
+      "description": "Taunt. Deathtouch. Battlecry: Summon two 1/1 Pests. At the start of your turn, summon a 1/1 Pest. (Pests give you 1 life when they die.)",
       "type": "creature",
       "attack": 6,
       "health": 8,
@@ -21325,16 +21325,47 @@
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Pest",
+          "tribe": "Pest",
+          "keywords": [
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ]
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Pest",
+            "tribe": "Pest",
+            "keywords": [
+              "deathrattle"
+            ],
+            "deathrattle": [
+              {
+                "type": "heal",
+                "value": 1,
+                "target": "self"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "witherbloom_apprentice",
@@ -21349,11 +21380,10 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Battlecry: Each opponent loses 1 life; gain 1 life.",
+      "description": "Battlecry: Deal 1 damage to each opponent and gain 1 life.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -21403,7 +21433,7 @@
       "name": "Witherbloom Pledgemage",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B",
@@ -21411,15 +21441,17 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Taunt. Lifesteal.",
-      "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Human Wizard",
-      "keywords": [
-        "taunt",
-        "lifesteal"
-      ]
+      "description": "Whenever you gain life, give your weakest creature +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "witherbloom_charm",
@@ -21435,7 +21467,7 @@
       "landSet": "Witherbloom",
       "collectible": false,
       "description": "Give a creature +2/+2 and Deathtouch.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
@@ -21459,19 +21491,36 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Gain 3 life.",
+      "description": "Deathtouch. Battlecry: Summon a 1/1 Pest and gain 1 life.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "deathtouch",
         "battlecry"
       ],
       "effects": [
         {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Pest",
+          "tribe": "Pest",
+          "keywords": [
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ]
+        },
+        {
           "type": "heal",
-          "value": 3,
+          "value": 1,
           "target": "self"
         }
       ]
@@ -21493,7 +21542,6 @@
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Beast",
       "keywords": [
         "trample",
         "lifesteal"
@@ -21516,7 +21564,6 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "deathtouch",
         "rush"
@@ -21558,11 +21605,10 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Pests with Deathtouch.",
+      "description": "Battlecry: Summon two 1/1 Pests. (Pests give you 1 life when they die.)",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Witch",
       "keywords": [
         "battlecry"
       ],
@@ -21573,8 +21619,16 @@
           "attack": 1,
           "health": 1,
           "name": "Pest",
+          "tribe": "Pest",
           "keywords": [
-            "deathtouch"
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
           ]
         }
       ]
@@ -21596,7 +21650,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -21625,22 +21678,28 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Each opponent loses 2 life.",
+      "description": "Lifesteal. Whenever a friendly creature dies, deal 1 damage to each opponent and gain 1 life.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Wizard",
       "keywords": [
-        "lifesteal",
-        "battlecry"
+        "lifesteal"
       ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
-        }
-      ]
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "witherbloom_concoction",
@@ -21655,19 +21714,22 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Draw a card. Gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ]
+      "description": "{T}: Draw a card and gain 2 life.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ],
+        "text": "Draw a card and gain 2 life."
+      }
     },
     {
       "id": "witherbloom_bayou_dog",
@@ -21686,7 +21748,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Dog",
       "keywords": [
         "deathtouch"
       ]
@@ -21704,14 +21765,33 @@
       ],
       "landSet": "Witherbloom",
       "collectible": false,
-      "description": "Deathtouch. Taunt.",
-      "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Plant",
-      "keywords": [
-        "deathtouch",
-        "taunt"
+      "description": "Durability 3. {T}: Summon a 1/1 Pest. (Pests give you 1 life when they die.)",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Pest.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Pest",
+              "tribe": "Pest",
+              "keywords": [
+                "deathrattle"
+              ],
+              "deathrattle": [
+                {
+                  "type": "heal",
+                  "value": 1,
+                  "target": "self"
+                }
+              ]
+            }
+          ]
+        }
       ]
     },
     {
