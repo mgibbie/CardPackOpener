@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "fa0a438",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Athreos land pool (WB devotion — recursion + aristocrats drain + lifesteal) — first two-color god",
+			"body": "Athreos god (drain 3 + deaths drain 1), Kunoros deathtouch wall, Kroxa discard\ntitan, drain/lifesteal bodies, Veil/Shroud protective instants (Reborn/Lifesteal),\nAegis Divine-Shield-on-play enchantment, Silence, Staff of Athreos drain WEAPON,\nMask reanimation LOCATION, reborn Skeletal Griffin. 6 card types, 7 keywords, WB.\n\nTest pool_athreos_test.mjs 45/45. Full suite 373/373.",
+			"cards": []
+		},
+		{
 			"sha": "8be20f4",
 			"date": "2026-08-24",
 			"kind": "patch",
