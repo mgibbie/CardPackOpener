@@ -39441,17 +39441,17 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Elusive.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "elusive"
-        }
-      ]
+      "description": "At the start of your turn, give your weakest creature +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "brokers_catering",
@@ -39495,14 +39495,15 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Give a creature +2/+2.",
-      "type": "sorcery",
+      "description": "Give a creature +2/+2 and Divine Shield.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature",
+          "grant": "divine_shield"
         }
       ]
     },
@@ -39520,11 +39521,10 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Elusive. Battlecry: Scry 1.",
+      "description": "Elusive. Battlecry: Scry 1 and draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "elusive",
         "battlecry"
@@ -39532,6 +39532,10 @@
       "effects": [
         {
           "type": "scry",
+          "value": 1
+        },
+        {
+          "type": "draw",
           "value": 1
         }
       ]
@@ -39582,7 +39586,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Advisor",
       "keywords": [
         "battlecry"
       ],
@@ -39607,13 +39610,13 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "First Strike. Divine Shield.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human",
       "keywords": [
-        "first_strike"
+        "first_strike",
+        "divine_shield"
       ]
     },
     {
@@ -39634,7 +39637,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human",
       "keywords": [
         "elusive",
         "taunt"
@@ -39658,7 +39660,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "taunt",
         "battlecry"
@@ -39685,18 +39686,21 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Scry 1 and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1 and draw a card."
+      }
     },
     {
       "id": "brokers_regulator",
@@ -39712,18 +39716,16 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Battlecry: Return an enemy creature to its owner’s hand.",
+      "description": "Battlecry: Return a creature to its owner's hand.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         }
       ]
     },
@@ -39741,12 +39743,25 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 1/1 Citizen with Divine Shield.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "draw",
-          "value": 2
+          "text": "Summon a 1/1 Citizen with Divine Shield.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Citizen",
+              "tribe": "Citizen",
+              "keywords": [
+                "divine_shield"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -39787,13 +39802,13 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Taunt. Battlecry: Give your creatures +1/+1.",
+      "description": "Taunt. Lifesteal. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Human",
       "keywords": [
         "taunt",
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -39819,19 +39834,23 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Divine Shield. Battlecry: Give your creatures +1/+1 and Divine Shield.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Bird Wizard",
+      "tribe": "Snake",
       "keywords": [
         "elusive",
+        "divine_shield",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 2
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
         }
       ]
     },
