@@ -6708,8 +6708,13 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent. Draw a card.",
+      "description": "Lifesteal. Battlecry: Deal 3 damage to each opponent, gain 3 life, and draw a card.",
       "type": "creature",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "attack": 5,
       "health": 6,
       "tribe": "God",
@@ -6724,15 +6729,15 @@
           "target": "enemy-heroes"
         },
         {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        },
+        {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "anikthea_hand_of_erebos",
@@ -6741,31 +6746,37 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Battlecry: Summon two 3/3 Undeads with Lifesteal.",
+      "description": "Lifesteal. Battlecry: Return your highest-Attack dead creature and summon a 3/3 Undead with Lifesteal.",
       "type": "creature",
-      "attack": 4,
-      "health": 5,
-      "tribe": "Undead God",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Undead",
-          "keywords": [
-            "lifesteal"
-          ]
-        }
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 5,
+      "tribe": "God",
+      "keywords": [
+        "battlecry",
+        "lifesteal"
+      ],
+      "effects": [
+        {
+          "type": "resurrect-highest-died",
+          "count": 1
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Undead",
+          "tribe": "Undead",
+          "keywords": [
+            "lifesteal"
+          ]
+        }
+      ]
     },
     {
       "id": "erebos_titan",
@@ -6774,19 +6785,19 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Reborn.",
+      "description": "Reborn. Trample.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Giant",
-      "keywords": [
-        "reborn"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 5,
+      "keywords": [
+        "reborn",
+        "trample"
+      ]
     },
     {
       "id": "erebos_emissary",
@@ -6795,19 +6806,19 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Elusive.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Snake",
-      "keywords": [
-        "lifesteal"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "keywords": [
+        "lifesteal",
+        "elusive"
+      ]
     },
     {
       "id": "agent_of_erebos",
@@ -6816,19 +6827,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Undead",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
     },
     {
       "id": "dictate_of_erebos",
@@ -6837,23 +6848,24 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Destroy a creature. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "Whenever a friendly creature dies, put a -2/-2 counter on a random enemy.",
+      "type": "enchantment",
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "weaken",
+            "target": "random-enemy",
+            "attack": 2,
+            "health": 2
+          }
+        ]
+      }
     },
     {
       "id": "erebos_intervention",
@@ -6863,7 +6875,12 @@
       "rarity": "rare",
       "set": "paper",
       "description": "Deal 4 damage to a creature. Gain 4 life.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
@@ -6875,12 +6892,7 @@
           "value": 4,
           "target": "self"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "whip_of_erebos",
@@ -6889,29 +6901,34 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Your creatures gain Lifesteal. Summon a 3/3 Undead.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "lifesteal"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Undead"
-        }
-      ],
+      "description": "Lifesteal. After your hero attacks, summon a 2/2 Undead with Lifesteal.",
+      "type": "weapon",
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Undead",
+            "tribe": "Undead",
+            "keywords": [
+              "lifesteal"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "claim_of_erebos",
@@ -6922,6 +6939,11 @@
       "set": "paper",
       "description": "Summon a 4/4 Undead with Lifesteal.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -6929,16 +6951,12 @@
           "attack": 4,
           "health": 4,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
             "lifesteal"
           ]
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "bleak_heart_of_erebos",
@@ -6947,8 +6965,13 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Each opponent loses 3 life. Gain 3 life.",
+      "description": "Deal 3 damage to each opponent and gain 3 life.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
@@ -6960,12 +6983,7 @@
           "value": 3,
           "target": "self"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "boon_of_erebos",
@@ -6975,21 +6993,21 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "ordeal_of_erebos",
@@ -7000,23 +7018,23 @@
       "set": "paper",
       "description": "Give a creature +2/+2. Each opponent discards a card.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         },
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "omen_of_erebos",
@@ -7027,6 +7045,11 @@
       "set": "paper",
       "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -7034,6 +7057,7 @@
           "attack": 2,
           "health": 2,
           "name": "Undead",
+          "tribe": "Undead",
           "keywords": [
             "deathtouch"
           ]
@@ -7042,12 +7066,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "scourgemark_of_erebos",
@@ -7058,23 +7077,23 @@
       "set": "paper",
       "description": "Give a creature +1/+2. Draw a card.",
       "type": "sorcery",
+      "colors": [
+        "B"
+      ],
+      "landSet": "Erebos",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         },
         {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "B"
-      ],
-      "landSet": "Erebos",
-      "collectible": false
+      ]
     },
     {
       "id": "hymn_of_erebos",
@@ -7083,19 +7102,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Each opponent discards 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 2
-        }
-      ],
+      "description": "Secret: When an opponent casts a spell, counter it and they discard a card.",
+      "type": "secret",
       "colors": [
         "B"
       ],
       "landSet": "Erebos",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "god_eternal_bontu",
