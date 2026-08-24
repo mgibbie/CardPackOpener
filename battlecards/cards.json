@@ -19342,7 +19342,7 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures +2/+2 and Rush.",
+      "description": "Charge. Battlecry: Give your creatures +2/+0 and Rush.",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -19355,7 +19355,7 @@
         {
           "type": "buff",
           "attack": 2,
-          "health": 2,
+          "health": 0,
           "target": "friendly-creatures",
           "grant": "rush"
         }
@@ -19396,11 +19396,10 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Battlecry: Summon two 2/2 Satyrs.",
+      "description": "Battlecry: Summon two 2/2 Satyrs with Rush.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Satyr",
       "keywords": [
         "battlecry"
       ],
@@ -19410,7 +19409,11 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Satyr"
+          "name": "Satyr",
+          "tribe": "Satyr",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -19419,7 +19422,7 @@
       "name": "Xenagos Ascendancy",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R",
@@ -19427,16 +19430,17 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Give your creatures +2/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Whenever you play a creature, give it Rush.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "rush"
+          }
+        ]
+      }
     },
     {
       "id": "mischief_of_xenagos",
@@ -19452,13 +19456,13 @@
       "landSet": "Xenagos",
       "collectible": false,
       "description": "Give a creature +2/+2 and Rush.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
       ]
@@ -19508,7 +19512,7 @@
           "type": "buff",
           "attack": 3,
           "health": 3,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -19534,6 +19538,7 @@
           "attack": 3,
           "health": 3,
           "name": "Satyr",
+          "tribe": "Satyr",
           "keywords": [
             "rush"
           ]
@@ -19557,7 +19562,6 @@
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elemental",
       "keywords": [
         "taunt",
         "trample"
@@ -19576,15 +19580,25 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Give a creature +2/+2 and Trample.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/1 Satyr with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "trample"
+          "text": "Summon a 2/1 Satyr with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Satyr",
+              "tribe": "Satyr",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -19628,7 +19642,6 @@
       "type": "creature",
       "attack": 8,
       "health": 8,
-      "tribe": "Beast",
       "keywords": [
         "trample",
         "charge"
@@ -19647,20 +19660,24 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Summon two 2/2 Beasts with Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Beast",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Beast with Rush.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Beast with Rush."
+      }
     },
     {
       "id": "xenagos_satyr",
@@ -19697,13 +19714,13 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Charge.",
+      "description": "Charge. First Strike.",
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Satyr Soldier",
       "keywords": [
-        "charge"
+        "charge",
+        "first_strike"
       ]
     },
     {
