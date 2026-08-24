@@ -25521,7 +25521,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Dwarf Warrior",
+      "tribe": "Dwarf",
       "keywords": [
         "battlecry"
       ],
@@ -25552,7 +25552,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Dwarf Warrior",
+      "tribe": "Dwarf",
       "keywords": [
         "first_strike"
       ]
@@ -25570,7 +25570,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Summon two 2/1 Dwarves with Rush.",
+      "description": "Summon three 2/1 Dwarves with Rush.",
       "type": "sorcery",
       "effects": [
         {
@@ -25579,6 +25579,18 @@
           "attack": 2,
           "health": 1,
           "name": "Dwarf",
+          "tribe": "Dwarf",
+          "keywords": [
+            "rush"
+          ]
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 1,
+          "name": "Dwarf",
+          "tribe": "Dwarf",
           "keywords": [
             "rush"
           ]
@@ -25598,10 +25610,21 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "A 3/2 weapon. After your hero attacks, give your creatures +1/+0.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "axgard_forgemaster",
@@ -25616,7 +25639,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give a creature +2/+2 and Divine Shield.",
+      "description": "Battlecry: Give a creature +2/+2.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -25629,8 +25652,7 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
-          "grant": "divine_shield"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -25648,7 +25670,7 @@
       "landSet": "Axgard",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -25671,7 +25693,7 @@
       "landSet": "Axgard",
       "collectible": false,
       "description": "Deal 2 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -25700,7 +25722,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         },
         {
@@ -25748,7 +25770,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Devil",
       "keywords": [
         "battlecry"
       ],
@@ -25777,7 +25798,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Dwarf Warrior",
+      "tribe": "Dwarf",
       "keywords": [
         "first_strike"
       ]
@@ -25821,7 +25842,6 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Dwarf Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -25846,23 +25866,25 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Summon a 3/2 Dwarf with Rush. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/2 Dwarf with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Dwarf",
-          "keywords": [
-            "rush"
+          "text": "Summon a 3/2 Dwarf with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Dwarf",
+              "tribe": "Dwarf",
+              "keywords": [
+                "rush"
+              ]
+            }
           ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -34437,7 +34459,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give a creature +1/+1 and Divine Shield.",
+      "description": "Battlecry: Give a creature +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -34450,8 +34472,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
-          "grant": "divine_shield"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -34468,10 +34489,20 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "A 4/2 weapon.",
+      "description": "A 4/2 weapon. After your hero attacks, deal 1 damage to each opponent.",
       "type": "weapon",
       "attack": 4,
-      "durability": 2
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "axgard_armorer",
@@ -34486,7 +34517,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Taunt. Battlecry: Give your creatures +1/+1.",
+      "description": "Taunt. Battlecry: Give your creatures +0/+1.",
       "type": "creature",
       "attack": 1,
       "health": 3,
@@ -34498,7 +34529,7 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
+          "attack": 0,
           "health": 1,
           "target": "friendly-creatures"
         }
@@ -34521,7 +34552,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Dwarf Soldier",
+      "tribe": "Dwarf",
       "keywords": [
         "divine_shield"
       ]
@@ -34539,19 +34570,21 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to all enemy creatures.",
+      "description": "Taunt. Battlecry: Give your creatures +2/+2.",
       "type": "creature",
       "attack": 7,
       "health": 7,
       "tribe": "Giant",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -34568,11 +34601,11 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Charge. Battlecry: Deal 2 damage to a creature.",
+      "description": "Charge. Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Dragon",
+      "tribe": "Giant",
       "keywords": [
         "charge",
         "battlecry"
@@ -34580,7 +34613,7 @@
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "creature"
         }
       ]
@@ -34590,7 +34623,7 @@
       "name": "Axgard Mountain Song",
       "cardClass": "magepunk",
       "cost": 2,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R",
@@ -34598,16 +34631,19 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Whenever you play a creature, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "golden_doors_of_axgard",
@@ -34622,18 +34658,21 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Gain 2 Mana Crystals this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and draw a card."
+      }
     },
     {
       "id": "unending_hymn_of_axgard",
@@ -34648,7 +34687,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Summon two 2/2 Dwarves with Rush. Give your creatures +1/+0.",
+      "description": "Summon two 2/2 Dwarves with Rush.",
       "type": "sorcery",
       "effects": [
         {
@@ -34657,15 +34696,10 @@
           "attack": 2,
           "health": 2,
           "name": "Dwarf",
+          "tribe": "Dwarf",
           "keywords": [
             "rush"
           ]
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 0,
-          "target": "friendly-creatures"
         }
       ]
     },
@@ -34682,11 +34716,11 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give a creature +2/+1.",
+      "description": "Battlecry: Give a creature +2/+0 and First Strike.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Dwarf Cleric",
+      "tribe": "Dwarf",
       "keywords": [
         "battlecry"
       ],
@@ -34694,8 +34728,9 @@
         {
           "type": "buff",
           "attack": 2,
-          "health": 1,
-          "target": "creature"
+          "health": 0,
+          "target": "friendly-creature",
+          "grant": "first_strike"
         }
       ]
     },
@@ -34712,7 +34747,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Battlecry: Summon two 2/1 Dwarves with Rush.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -34722,11 +34757,15 @@
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 1,
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "name": "Dwarf",
+          "tribe": "Dwarf",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -34765,11 +34804,11 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +2/+2.",
+      "description": "Battlecry: Give your creatures +2/+0.",
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Dwarf Warrior",
+      "tribe": "Dwarf",
       "keywords": [
         "battlecry"
       ],
@@ -34777,7 +34816,7 @@
         {
           "type": "buff",
           "attack": 2,
-          "health": 2,
+          "health": 0,
           "target": "friendly-creatures"
         }
       ]
@@ -234353,6 +234392,59 @@
         "U"
       ],
       "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "axgard_goldspan_dragon",
+      "name": "Axgard Goldspan Dragon",
+      "cost": 6,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Elusive. Charge. Battlecry: Gain 2 Mana this turn.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
+      "collectible": false
+    },
+    {
+      "id": "axgard_battlefield_raptor",
+      "name": "Axgard Battlefield Raptor",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 1,
+      "health": 2,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "first_strike"
+      ],
+      "description": "Elusive. First Strike.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Axgard",
       "collectible": false
     }
   ]
