@@ -93466,12 +93466,15 @@
       "cost": 3,
       "set": "wubrg",
       "type": "creature",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 5,
       "tribe": "Beast",
-      "description": "A 4/5 creature.",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "kalonian_tusker",
@@ -93483,12 +93486,15 @@
       "cost": 2,
       "set": "wubrg",
       "type": "creature",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 3,
       "tribe": "Beast",
-      "description": "A 3/3 creature.",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "garruk_s_companion",
@@ -93520,12 +93526,15 @@
       "cost": 3,
       "set": "wubrg",
       "type": "creature",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 3,
       "tribe": "Centaur Warrior",
-      "description": "A 3/3 creature.",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "elvish_visionary",
@@ -112707,14 +112716,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "set": "wubrg",
-      "keywords": [],
-      "description": "",
-      "effects": [],
-      "landSet": "Forest",
-      "collectible": false
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "midnight_reaper",
@@ -113156,15 +113167,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 5,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "effects": [],
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "disenchant",
@@ -114697,12 +114709,8 @@
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 4,
-      "health": 4,
       "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "Kicker 4 — if kicked, enters with three +1/+1 counters (a 7/7).",
+      "description": "Trample.",
       "kicker": {
         "cost": 4,
         "effects": [
@@ -114714,7 +114722,13 @@
         ]
       },
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "goblin_bushwhacker",
@@ -115783,14 +115797,17 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Dragon",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "trample"
+      ]
     },
     {
       "id": "questing_beast",
@@ -115849,12 +115866,8 @@
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Elf",
-      "keywords": [],
-      "description": "(1): Target creature gains Trample.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "activated": [
         {
           "cost": 1,
@@ -115870,7 +115883,19 @@
         }
       ],
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "goblin_sledder",
@@ -116308,12 +116333,8 @@
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Spirit",
-      "keywords": [],
-      "description": "(1), Sacrifice a creature: Gain 1 life.",
+      "description": "Battlecry: Give a creature +2/+2.",
       "activated": [
         {
           "cost": 1,
@@ -116329,7 +116350,21 @@
         }
       ],
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature"
+        }
+      ]
     },
     {
       "id": "martyred_rusalka",
@@ -116500,14 +116535,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "axebane_beast",
@@ -116518,14 +116555,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "centaur_courser",
@@ -116536,14 +116575,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Centaur Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "craw_wurm",
@@ -116554,14 +116595,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 6,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Wurm",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "elvish_warrior",
@@ -116572,14 +116615,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Elf Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "durkwood_boars",
@@ -116590,14 +116635,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Boar",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "feral_krushok",
@@ -116608,14 +116655,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 5,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "colossodon_yearling",
@@ -116626,14 +116675,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "cylian_elf",
@@ -116644,14 +116695,22 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Elf Scout",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "air_elemental",
@@ -117851,14 +117910,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 6,
-      "set": "wubrg",
       "tribe": "Elf Knight",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "ashcoat_bear",
@@ -117869,14 +117930,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "balduvian_bears",
@@ -117887,14 +117950,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "barbary_apes",
@@ -117905,14 +117970,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Ape",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "barbtooth_wurm",
@@ -117923,14 +117990,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 6,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Wurm",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "bear_cub",
@@ -117941,14 +118010,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "bitterbow_sharpshooters",
@@ -117959,32 +118030,39 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Deathtouch.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Jackal Archer",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "blanchwood_treefolk",
       "name": "Blanchwood Treefolk",
-      "type": "creature",
+      "type": "enchantment",
       "cost": 5,
       "colors": [
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 4,
-      "health": 5,
       "set": "wubrg",
-      "tribe": "Treefolk",
-      "keywords": [],
-      "description": "",
+      "description": "At the start of your turn, give your weakest creature +1/+1.",
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "bounding_wolf",
@@ -117995,14 +118073,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Wolf",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "brambleweft_behemoth",
@@ -118033,14 +118113,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Wurm",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "brushstrider",
@@ -118051,14 +118133,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "canopy_gorger",
@@ -118069,14 +118153,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 6,
       "health": 5,
-      "set": "wubrg",
       "tribe": "Wurm",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "elvish_ranger",
@@ -118087,14 +118173,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 4,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Elf Ranger",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "colossapede",
@@ -118105,32 +118193,40 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 5,
       "health": 5,
-      "set": "wubrg",
       "tribe": "Insect",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "cowl_prowler",
       "name": "Cowl Prowler",
-      "type": "creature",
-      "cost": 6,
+      "type": "artifact",
+      "cost": 4,
       "colors": [
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 6,
-      "health": 6,
       "set": "wubrg",
-      "tribe": "Wurm",
-      "keywords": [],
-      "description": "",
+      "description": "{T}: Put a +1/+1 counter on a creature.",
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "fusion_elemental",
@@ -118141,14 +118237,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 8,
       "health": 8,
-      "set": "wubrg",
       "tribe": "Elemental",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "forest_bear",
@@ -118159,14 +118257,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "First strike.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "first_strike"
+      ]
     },
     {
       "id": "grizzly_bears",
@@ -118177,14 +118277,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Bear",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "catacomb_slug",
@@ -118228,14 +118330,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Elephant",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "ageless_guardian",
@@ -118430,32 +118534,49 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 6,
       "health": 5,
-      "set": "wubrg",
       "tribe": "Dinosaur Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "ferocious_zheng",
       "name": "Ferocious Zheng",
-      "type": "creature",
+      "type": "location",
       "cost": 4,
       "colors": [
         "G"
       ],
       "cardClass": "neutral",
-      "attack": 4,
-      "health": 4,
       "set": "wubrg",
-      "tribe": "Beast",
-      "keywords": [],
-      "description": "",
+      "description": "Durability 3. {T}: Summon a 3/3 Beast with Trample.",
       "landSet": "Forest",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 3/3 Beast with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "garruk_s_gorehorn",
@@ -118466,14 +118587,16 @@
         "G"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Forest",
+      "collectible": false,
       "attack": 7,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Forest",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "capital_guard",
