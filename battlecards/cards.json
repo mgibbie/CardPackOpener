@@ -20430,13 +20430,14 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Elusive. Battlecry: Summon two 2/1 Inklings with Elusive; each opponent loses 2 life.",
+      "description": "Elusive. Windfury. Battlecry: Summon two 2/1 Inklings with Elusive and Lifesteal, and draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 4,
       "tribe": "Dragon",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
@@ -20446,14 +20447,15 @@
           "attack": 2,
           "health": 1,
           "name": "Inkling",
+          "tribe": "Inkling",
           "keywords": [
-            "elusive"
+            "elusive",
+            "lifesteal"
           ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -20474,7 +20476,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -20502,7 +20503,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "lifesteal"
@@ -20521,7 +20521,7 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Summon two 1/1 Inklings with Elusive.",
+      "description": "Lifesteal. Whenever a friendly creature dies, summon a 1/1 Inkling with Elusive and Lifesteal.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -20530,18 +20530,23 @@
         "lifesteal",
         "battlecry"
       ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Inkling",
-          "keywords": [
-            "elusive"
-          ]
-        }
-      ]
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Inkling",
+            "tribe": "Inkling",
+            "keywords": [
+              "elusive",
+              "lifesteal"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "silverquill_command",
@@ -20556,17 +20561,26 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Each opponent loses 3 life. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 1/1 Inkling with Elusive and Lifesteal.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Summon a 1/1 Inkling with Elusive and Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Inkling",
+              "tribe": "Inkling",
+              "keywords": [
+                "elusive",
+                "lifesteal"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -20583,12 +20597,12 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Battlecry: Silence an enemy creature.",
+      "description": "Taunt. Battlecry: Silence an enemy creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Rogue",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -20615,7 +20629,6 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Inkling",
       "keywords": [
         "elusive",
         "battlecry"
@@ -20642,17 +20655,19 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Give your creatures +2/+2 and Lifesteal.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures",
-          "grant": "lifesteal"
-        }
-      ]
+      "description": "Whenever you cast a spell, give your creatures +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "killian_ink_duelist",
@@ -20667,22 +20682,30 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Deal 2 damage to a creature.",
+      "description": "Lifesteal. First Strike. Whenever you cast a spell, deal 1 damage to each opponent and gain 1 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "lifesteal",
-        "battlecry"
+        "first_strike"
       ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        }
-      ]
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "silverquill_finale",
@@ -20697,7 +20720,7 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Each opponent loses 4 life. Gain 4 life.",
+      "description": "Deal 4 damage to each opponent and gain 4 life.",
       "type": "sorcery",
       "effects": [
         {
@@ -20726,7 +20749,7 @@
       "landSet": "Silverquill",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -20751,7 +20774,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -20777,13 +20799,13 @@
       "landSet": "Silverquill",
       "collectible": false,
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -20801,15 +20823,18 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Destroy a creature with 3 or less Attack.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature",
-          "maxAttack": 3
-        }
-      ]
+      "description": "{T}: Destroy a creature with 2 or less Attack.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "destroy",
+            "target": "creature",
+            "maxAttack": 2
+          }
+        ],
+        "text": "Destroy a creature with 2 or less Attack."
+      }
     },
     {
       "id": "silverquill_spite",
@@ -20824,17 +20849,22 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Each opponent discards a card and loses 2 life.",
+      "description": "Each opponent discards a card, and you deal 2 damage to each opponent and gain 2 life.",
       "type": "sorcery",
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         },
         {
           "type": "damage",
           "value": 2,
           "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
         }
       ]
     },
