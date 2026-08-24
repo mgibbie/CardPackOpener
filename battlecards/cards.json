@@ -10338,8 +10338,14 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge. Divine Shield. Battlecry: Give your creatures +1/+1.",
+      "description": "Charge. Divine Shield. Battlecry: Give your creatures +2/+2 and First Strike.",
       "type": "creature",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false,
       "attack": 5,
       "health": 5,
       "tribe": "Angel",
@@ -10351,17 +10357,12 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures",
+          "grant": "first_strike"
         }
-      ],
-      "colors": [
-        "R",
-        "W"
-      ],
-      "landSet": "Boros",
-      "collectible": false
+      ]
     },
     {
       "id": "boros_battleshaper",
@@ -10370,29 +10371,28 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Whenever this attacks, give your creatures +1/+1.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Human Warrior",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        }
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Soldier",
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "boros_reckoner",
@@ -10403,19 +10403,18 @@
       "set": "paper",
       "description": "Taunt. First Strike.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Minotaur Wizard",
-      "keywords": [
-        "taunt",
-        "first_strike"
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "first_strike"
+      ]
     },
     {
       "id": "boros_challenger",
@@ -10426,9 +10425,15 @@
       "set": "paper",
       "description": "Rush. Battlecry: Give a creature +2/+2.",
       "type": "creature",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Human Soldier",
+      "tribe": "Soldier",
       "keywords": [
         "rush",
         "battlecry"
@@ -10438,15 +10443,9 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         }
-      ],
-      "colors": [
-        "R",
-        "W"
-      ],
-      "landSet": "Boros",
-      "collectible": false
+      ]
     },
     {
       "id": "boros_guildmage",
@@ -10457,9 +10456,14 @@
       "set": "paper",
       "description": "Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -10469,13 +10473,7 @@
           "value": 2,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R",
-        "W"
-      ],
-      "landSet": "Boros",
-      "collectible": false
+      ]
     },
     {
       "id": "boros_mastiff",
@@ -10486,19 +10484,18 @@
       "set": "paper",
       "description": "Rush. Lifesteal.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Dog",
-      "keywords": [
-        "rush",
-        "lifesteal"
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "rush",
+        "lifesteal"
+      ]
     },
     {
       "id": "boros_swiftblade",
@@ -10509,19 +10506,19 @@
       "set": "paper",
       "description": "First Strike. Windfury.",
       "type": "creature",
-      "attack": 1,
-      "health": 2,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "first_strike",
-        "windfury"
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 2,
+      "tribe": "Soldier",
+      "keywords": [
+        "first_strike",
+        "windfury"
+      ]
     },
     {
       "id": "boros_elite",
@@ -10532,18 +10529,18 @@
       "set": "paper",
       "description": "Rush.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Soldier",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "boros_recruit",
@@ -10554,18 +10551,18 @@
       "set": "paper",
       "description": "First Strike.",
       "type": "creature",
-      "attack": 1,
-      "health": 2,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "first_strike"
-      ],
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 2,
+      "tribe": "Soldier",
+      "keywords": [
+        "first_strike"
+      ]
     },
     {
       "id": "boros_charm",
@@ -10574,21 +10571,48 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        }
-      ],
+      "description": "Choose One — Deal 4 damage to a creature; or Deal 4 damage to each opponent; or Give your creatures Divine Shield.",
+      "type": "instant",
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Deal 4 damage to a creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Deal 4 damage to each opponent.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 4,
+              "target": "enemy-heroes"
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures Divine Shield.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": 0,
+              "target": "friendly-creatures",
+              "grant": "divine_shield"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "boros_fury_shield",
@@ -10597,46 +10621,55 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deal 3 damage to each opponent.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        }
-      ],
+      "description": "Secret: When an enemy creature attacks, destroy it.",
+      "type": "secret",
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "destroy-attacker"
+          }
+        ]
+      }
     },
     {
       "id": "boros_garrison",
       "name": "Boros Garrison",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Summon three 1/1 Soldiers.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 3,
-          "attack": 1,
-          "health": 1,
-          "name": "Soldier"
-        }
-      ],
+      "description": "At the start of your turn, summon a 1/1 Soldier.",
+      "type": "enchantment",
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Soldier",
+            "tribe": "Soldier",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "boros_keyrune",
@@ -10647,6 +10680,12 @@
       "set": "paper",
       "description": "Summon a 3/1 Soldier with Rush.",
       "type": "sorcery",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "landSet": "Boros",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -10654,17 +10693,12 @@
           "attack": 3,
           "health": 1,
           "name": "Soldier",
+          "tribe": "Soldier",
           "keywords": [
             "rush"
           ]
         }
-      ],
-      "colors": [
-        "R",
-        "W"
-      ],
-      "landSet": "Boros",
-      "collectible": false
+      ]
     },
     {
       "id": "boros_signet",
@@ -10673,20 +10707,23 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "boros_cluestone",
@@ -10695,20 +10732,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "R",
         "W"
       ],
       "landSet": "Boros",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "axgard_citadel",
