@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "2299e88",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Xenagos land pool (RG devotion — haste revels + Satyrs + go-wide)",
+			"body": "Xenagos god (haste anthem), Satyr tokens (Reveler/Command/Blessing LOCATION),\nAscendancy Rush-on-play enchantment, haste buffs (Mischief instant/Mayhem/Charm),\nPuzzlebox Beast ARTIFACT, Hymn burn, first-strike Hoplite, big trampling Legend.\n6 card types, 6 keywords, RG. Kept names/colors/collectible so the existing\nxenagos_pool_test (temple + discover integration) stays green; added a new\npool_xenagos_test for the rubric + mechanics.\n\nTest pool_xenagos_test.mjs 44/44 (+ xenagos_pool_test 37/37). Full suite 377/377.",
+			"cards": []
+		},
+		{
 			"sha": "42a51df",
 			"date": "2026-08-24",
 			"kind": "patch",
