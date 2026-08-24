@@ -39868,7 +39868,7 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Battlecry: Give your creatures Elusive and draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -39879,8 +39879,15 @@
       ],
       "effects": [
         {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "elusive"
+        },
+        {
           "type": "draw",
-          "value": 2
+          "value": 1
         }
       ]
     },
@@ -39898,20 +39905,21 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Give your creatures +1/+1. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, scry 1 and draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "obscura_charm",
@@ -39928,7 +39936,7 @@
       "landSet": "Obscura",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -39955,7 +39963,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "draw",
@@ -39977,17 +39985,20 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Give your creatures +1/+0 and Elusive.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "elusive"
-        }
-      ]
+      "description": "{T}: Give your creatures +1/+0 and Elusive.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures",
+            "grant": "elusive"
+          }
+        ],
+        "text": "Give your creatures +1/+0 and Elusive."
+      }
     },
     {
       "id": "obscura_editor",
@@ -40007,7 +40018,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -40060,19 +40070,19 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Elusive. Battlecry: Each opponent discards a card.",
+      "description": "Elusive. Stealth. Battlecry: Each opponent discards a card.",
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Human Rogue",
       "keywords": [
         "elusive",
+        "stealth",
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -40094,7 +40104,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "taunt",
         "battlecry"
@@ -40120,14 +40129,14 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Elusive. Taunt.",
+      "description": "Elusive. Taunt. Divine Shield.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Bird",
       "keywords": [
         "elusive",
-        "taunt"
+        "taunt",
+        "divine_shield"
       ]
     },
     {
@@ -40144,14 +40153,26 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Taunt. Divine Shield.",
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "taunt",
-        "divine_shield"
+      "description": "Durability 3. {T}: Summon a 1/1 Thopter with Elusive.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Thopter with Elusive.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Thopter",
+              "tribe": "Thopter",
+              "keywords": [
+                "elusive"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
@@ -40168,14 +40189,20 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Deathtouch. Elusive.",
+      "description": "Deathtouch. Elusive. Battlecry: Silence an enemy creature.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Rogue",
       "keywords": [
         "deathtouch",
-        "elusive"
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "silence",
+          "target": "creature"
+        }
       ]
     },
     {
@@ -40196,7 +40223,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -40222,11 +40248,11 @@
       ],
       "landSet": "Obscura",
       "collectible": false,
-      "description": "Elusive. Battlecry: Give your creatures +1/+1 and Elusive.",
+      "description": "Elusive. Battlecry: Connive — give your creatures +1/+1 and draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Sphinx Cleric",
+      "tribe": "Sphinx",
       "keywords": [
         "elusive",
         "battlecry"
@@ -40236,8 +40262,11 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "elusive"
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -40271,6 +40300,7 @@
           "attack": 1,
           "health": 1,
           "name": "Thopter",
+          "tribe": "Thopter",
           "keywords": [
             "elusive"
           ]
