@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "10a2651",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Island basic pool (mono-U, 70) — fill blanks + add artifact/location, keep faithful cards (incl. all counterspells)",
+			"body": "Counterspells (Counterspell/Negate/Dispel/Force of Will/Cryptic Command...) ALREADY\nwork via counterSpell:true -> left untouched. Filled ~24 vanilla creatures + 3 looters:\nflyers -> elusive, walls -> taunt, aggro -> rush, Cloud Manta elusive+windfury, Ancient\nCrab taunt+DS, wizards/looters battlecries. Repurposed 2 blanks: Lumengrid Warden ->\nARTIFACT (tap scry+draw), Fortress Crab -> LOCATION (tap -> 1/3 Taunt Merfolk). Kept\ntribes. 6 types, 6 keywords, mono-U, no rarity.\n\nTest pool_island_test.mjs 30/30; abzan basics-guardian 34/34. Full suite 425/425.",
+			"cards": []
+		},
+		{
 			"sha": "3dcc19a",
 			"date": "2026-08-24",
 			"kind": "patch",
