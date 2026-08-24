@@ -40769,13 +40769,19 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge. Deathrattle: Draw a card. (Blitz.)",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Warrior",
       "keywords": [
-        "rush"
+        "charge",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
@@ -40796,7 +40802,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Beast",
       "keywords": [
         "taunt"
       ]
@@ -40816,7 +40821,7 @@
       "landSet": "Riveteers",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -40839,7 +40844,7 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Gain a Mana Crystal this turn. Draw a card.",
+      "description": "Deal 3 damage to a creature. Gain an empty Mana Crystal.",
       "type": "sorcery",
       "effects": [
         {
@@ -40848,11 +40853,7 @@
           "target": "creature"
         },
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -40871,17 +40872,18 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        }
-      ]
+      "description": "Whenever a friendly creature dies, deal 2 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "riveteers_provocateur",
@@ -40901,7 +40903,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Rogue",
       "keywords": [
         "rush",
         "battlecry"
@@ -40928,18 +40929,17 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Rush. Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Rush. Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "rush",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -40958,20 +40958,34 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Charge. Battlecry: Deal 4 damage to a creature.",
+      "description": "Charge. Trample. Battlecry: Summon two 3/2 Devils. (A Devil deals 1 damage when it dies.)",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Dragon",
       "keywords": [
         "charge",
+        "trample",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 2,
+          "name": "Devil",
+          "tribe": "Devil",
+          "keywords": [
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -40989,11 +41003,11 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Rush. Battlecry: Give your creatures +1/+0 and Rush.",
+      "description": "Rush. Battlecry: Give your creatures Charge.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "rush",
         "battlecry"
@@ -41001,10 +41015,10 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
+          "attack": 0,
           "health": 0,
           "target": "friendly-creatures",
-          "grant": "rush"
+          "grant": "charge"
         }
       ]
     },
@@ -41022,18 +41036,17 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Rush. Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Rush. Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Devil",
       "keywords": [
         "rush",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -41052,13 +41065,19 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Charge. Deathrattle: Draw a card. (Blitz.)",
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Ogre",
       "keywords": [
-        "rush"
+        "charge",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
       ]
     },
     {
@@ -41079,7 +41098,6 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Warrior",
       "keywords": [
         "trample"
       ]
@@ -41102,7 +41120,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
         "rush"
       ]
@@ -41121,22 +41138,31 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Summon a 3/2 Devil with Rush.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/2 Devil. (A Devil deals 1 damage when it dies.)",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Devil",
-          "keywords": [
-            "rush"
+          "text": "Summon a 3/2 Devil.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Devil",
+              "tribe": "Devil",
+              "keywords": [
+                "deathrattle"
+              ],
+              "deathrattle": [
+                {
+                  "type": "damage",
+                  "value": 1,
+                  "target": "enemy-heroes"
+                }
+              ]
+            }
           ]
         }
       ]
@@ -41155,10 +41181,21 @@
       ],
       "landSet": "Riveteers",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "A 3/2 weapon. After your hero attacks, give your creatures +1/+0.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "cabaretti_charm",
