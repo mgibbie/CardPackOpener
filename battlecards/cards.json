@@ -41212,13 +41212,13 @@
       "landSet": "Cabaretti",
       "collectible": false,
       "description": "Give a creature +2/+2 and Trample.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -41237,23 +41237,19 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Summon two 2/2 Cats and give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Cat"
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Whenever you play a creature, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "cabaretti_confluence",
@@ -41269,7 +41265,7 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Summon two 2/2 Cats, give your creatures +1/+1, and gain 2 life.",
+      "description": "Summon two 2/2 Cats and give your creatures +1/+1.",
       "type": "sorcery",
       "effects": [
         {
@@ -41277,18 +41273,14 @@
           "count": 2,
           "attack": 2,
           "health": 2,
-          "name": "Cat"
+          "name": "Cat",
+          "tribe": "Cat"
         },
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
           "target": "friendly-creatures"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
         }
       ]
     },
@@ -41310,7 +41302,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -41320,7 +41311,8 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Human"
+          "name": "Human",
+          "tribe": "Human"
         }
       ]
     },
@@ -41346,7 +41338,8 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Cat"
+          "name": "Cat",
+          "tribe": "Cat"
         }
       ]
     },
@@ -41364,26 +41357,23 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Cats and gain 2 life.",
+      "description": "Taunt. Battlecry: Summon two 2/2 Cats.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Druid",
+      "tribe": "Cat",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
         {
           "type": "summon",
           "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Cat"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "attack": 2,
+          "health": 2,
+          "name": "Cat",
+          "tribe": "Cat"
         }
       ]
     },
@@ -41401,19 +41391,20 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +2/+2 and Trample.",
+      "description": "Trample. Battlecry: Give your creatures +2/+0 and Trample.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Cat Noble",
+      "tribe": "Cat",
       "keywords": [
+        "trample",
         "battlecry"
       ],
       "effects": [
         {
           "type": "buff",
           "attack": 2,
-          "health": 2,
+          "health": 0,
           "target": "friendly-creatures",
           "grant": "trample"
         }
@@ -41433,12 +41424,12 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
+      "description": "First Strike. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
+        "first_strike",
         "battlecry"
       ],
       "effects": [
@@ -41464,21 +41455,21 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Charge. Battlecry: Give your creatures +1/+0 and Charge.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human",
       "keywords": [
+        "charge",
         "battlecry"
       ],
       "effects": [
         {
           "type": "buff",
           "attack": 1,
-          "health": 1,
+          "health": 0,
           "target": "friendly-creatures",
-          "grant": "rush"
+          "grant": "charge"
         }
       ]
     },
@@ -41496,21 +41487,22 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Cats.",
+      "description": "Elusive. Battlecry: Summon two 2/2 Cats.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
         {
           "type": "summon",
           "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Cat"
+          "attack": 2,
+          "health": 2,
+          "name": "Cat",
+          "tribe": "Cat"
         }
       ]
     },
@@ -41532,7 +41524,6 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -41542,7 +41533,8 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Human"
+          "name": "Human",
+          "tribe": "Human"
         }
       ]
     },
@@ -41589,7 +41581,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human",
       "keywords": [
         "battlecry"
       ],
@@ -41616,17 +41607,21 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Summon two 2/2 Cats.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Cat"
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Cat.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Cat",
+            "tribe": "Cat"
+          }
+        ],
+        "text": "Summon a 2/2 Cat."
+      }
     },
     {
       "id": "cabaretti_command",
@@ -41642,26 +41637,22 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "Summon two 2/2 Cats, give your creatures +1/+1, and gain 2 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Cat.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Cat"
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "text": "Summon a 2/2 Cat.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Cat",
+              "tribe": "Cat"
+            }
+          ]
         }
       ]
     },
