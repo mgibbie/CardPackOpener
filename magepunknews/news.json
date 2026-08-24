@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "0fb9a95",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Phenax land pool (UB devotion — defensive mill + discard + control)",
+			"body": "Phenax god (discard 2 + mill 3 + turn-start mill), deathtouch walls, Blessing\ndeathtouch enchantment, Charm counter-mill secret, Dictate mill artifact,\nTreachery steal, discard (Disciple/Command/Spite), Deceit freeze / Hubris bounce\ninstants. 6 card types, 6 keywords, UB. Distinct from Dimir (aggressive spy mill)\nvia defensive grind.\n\nTest pool_phenax_test.mjs 46/46. Full suite 380/380.",
+			"cards": []
+		},
+		{
 			"sha": "c9e1fbe",
 			"date": "2026-08-24",
 			"kind": "patch",
