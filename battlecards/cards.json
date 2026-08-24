@@ -92857,12 +92857,15 @@
       "cost": 1,
       "set": "wubrg",
       "type": "creature",
+      "description": "Rush.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 2,
       "tribe": "Undead",
-      "description": "A 2/2 creature.",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "nantuko_shade",
@@ -92874,9 +92877,6 @@
       "cost": 2,
       "set": "wubrg",
       "type": "creature",
-      "attack": 2,
-      "health": 1,
-      "tribe": "Insect Shade",
       "activated": [
         {
           "cost": 1,
@@ -92890,9 +92890,15 @@
           "text": "This creature gets +1/+1 until end of turn."
         }
       ],
-      "description": "1: This creature gets +1/+1 until end of turn.",
+      "description": "Rush.",
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Insect Shade",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "dusk_legion_zealot",
@@ -92935,12 +92941,15 @@
       "cost": 2,
       "set": "wubrg",
       "type": "creature",
+      "description": "Deathtouch.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 2,
       "tribe": "Undead",
-      "description": "A 2/2 creature.",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "shambling_ghoul",
@@ -92952,12 +92961,15 @@
       "cost": 2,
       "set": "wubrg",
       "type": "creature",
+      "description": "Taunt.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 3,
       "tribe": "Undead",
-      "description": "A 2/3 creature.",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "black_cat",
@@ -115638,14 +115650,17 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Vampire Scout",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
     },
     {
       "id": "exsanguinate",
@@ -115908,12 +115923,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Vampire Wizard",
-      "keywords": [],
-      "description": "Sacrifice a creature: Scry 1.",
+      "description": "Battlecry: Scry 1.",
       "activated": [
         {
           "sacCost": {},
@@ -115927,7 +115938,19 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Vampire Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "carrion_feeder",
@@ -115938,12 +115961,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Undead",
-      "keywords": [],
-      "description": "Sacrifice a creature: Put a +1/+1 counter on this creature.",
+      "description": "Deathtouch.",
       "activated": [
         {
           "sacCost": {},
@@ -115958,7 +115977,13 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Undead",
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "bloodthrone_vampire",
@@ -115969,12 +115994,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Vampire",
-      "keywords": [],
-      "description": "Sacrifice a creature: This gets +2/+2 until end of turn.",
+      "description": "Lifesteal.",
       "activated": [
         {
           "sacCost": {},
@@ -115989,7 +116010,13 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Vampire",
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "plagued_rusalka",
@@ -116000,12 +116027,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Spirit",
-      "keywords": [],
-      "description": "(1), Sacrifice a creature: Target creature gets -1/-1 until end of turn.",
+      "description": "Deathtouch. Battlecry: Deal 1 damage to a creature.",
       "activated": [
         {
           "cost": 1,
@@ -116022,7 +116045,21 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "creature"
+        }
+      ]
     },
     {
       "id": "cutthroat_contender",
@@ -116033,12 +116070,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Vampire Warrior",
-      "keywords": [],
-      "description": "Pay 1 life: This gets +1/+0 until end of turn. (Once per turn.)",
+      "description": "Lifesteal.",
       "activated": [
         {
           "payLife": 1,
@@ -116052,7 +116085,13 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Vampire Warrior",
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "grimclaw_bats",
@@ -116063,12 +116102,8 @@
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Bat",
-      "keywords": [],
-      "description": "(1), Pay 1 life: This gets +1/+1 until end of turn.",
+      "description": "Elusive.",
       "activated": [
         {
           "cost": 1,
@@ -116085,7 +116120,13 @@
         }
       ],
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Bat",
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "scorched_rusalka",
@@ -117168,14 +117209,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 3,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Vampire",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "bog_imp",
@@ -117186,14 +117229,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 1,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Imp",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "arrogant_vampire",
@@ -117204,14 +117249,17 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive. Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 4,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Vampire",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
     },
     {
       "id": "bartizan_bats",
@@ -117222,14 +117270,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 3,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Bat",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "blood_glutton",
@@ -117280,14 +117330,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 3,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Undead Minotaur",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "alley_strangler",
@@ -117298,14 +117350,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Deathtouch.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Aetherborn Rogue",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "carrion_screecher",
@@ -117316,14 +117370,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Elusive.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 3,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Undead Bird",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "elusive"
+      ]
     },
     {
       "id": "catacomb_crocodile",
@@ -117334,14 +117390,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 3,
       "health": 7,
-      "set": "wubrg",
       "tribe": "Crocodile",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "cabal_evangel",
@@ -117352,14 +117410,24 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Lifesteal. Battlecry: Gain 2 life.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Human Cleric",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "canal_monitor",
@@ -117370,14 +117438,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 5,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Lizard",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "dakmor_scorpion",
@@ -117388,14 +117458,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Deathtouch.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 2,
       "health": 1,
-      "set": "wubrg",
       "tribe": "Scorpion",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "deathtouch"
+      ]
     },
     {
       "id": "bane_alley_blackguard",
@@ -117406,14 +117478,17 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Taunt. Lifesteal.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 1,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Human Rogue",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ]
     },
     {
       "id": "bogstomper",
@@ -117424,14 +117499,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 6,
       "health": 5,
-      "set": "wubrg",
       "tribe": "Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "charity_extractor",
@@ -118047,20 +118124,35 @@
     {
       "id": "catacomb_slug",
       "name": "Catacomb Slug",
-      "type": "creature",
-      "cost": 5,
+      "type": "location",
+      "cost": 4,
       "colors": [
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 2,
-      "health": 6,
       "set": "wubrg",
-      "tribe": "Slug",
-      "keywords": [],
-      "description": "",
+      "description": "Durability 3. {T}: Summon a 2/2 Undead with Deathtouch.",
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Undead with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Undead",
+              "tribe": "Undead",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "trained_armodon",
@@ -118198,20 +118290,31 @@
     {
       "id": "douser_of_lights",
       "name": "Douser of Lights",
-      "type": "creature",
-      "cost": 5,
+      "type": "artifact",
+      "cost": 4,
       "colors": [
         "B"
       ],
       "cardClass": "neutral",
-      "attack": 4,
-      "health": 5,
       "set": "wubrg",
-      "tribe": "Horror",
-      "keywords": [],
-      "description": "",
+      "description": "{T}: Deal 1 damage to each opponent and gain 1 life.",
       "landSet": "Swamp",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ],
+        "text": "Deal 1 damage to each opponent and gain 1 life."
+      }
     },
     {
       "id": "dreg_reaver",
@@ -118222,14 +118325,16 @@
         "B"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Swamp",
+      "collectible": false,
       "attack": 4,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Undead Beast",
-      "keywords": [],
-      "description": "",
-      "landSet": "Swamp",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "barbarian_horde",
