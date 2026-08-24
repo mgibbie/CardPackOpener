@@ -40352,19 +40352,23 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Deal 2 damage to all enemy creatures. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever a friendly creature dies, deal 1 damage to each opponent and gain 1 life.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "maestros_charm",
@@ -40381,7 +40385,7 @@
       "landSet": "Maestros",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -40404,7 +40408,7 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Each opponent discards a card. Draw a card.",
+      "description": "Deal 3 damage to a creature. Each opponent discards a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -40414,11 +40418,7 @@
         },
         {
           "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -40464,13 +40464,13 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Rush. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Devil Wizard",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "rush"
       ],
       "effects": [
         {
@@ -40494,13 +40494,13 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Lifesteal.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Assassin",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "lifesteal"
       ]
     },
     {
@@ -40546,18 +40546,17 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Each opponent discards a card. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Each opponent discards a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ],
+        "text": "Each opponent discards a card."
+      }
     },
     {
       "id": "xander_maestros_lord",
@@ -40573,11 +40572,11 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Elusive. Battlecry: Each opponent discards a card and deal 2 damage to a creature.",
+      "description": "Elusive. Battlecry: Each opponent discards 2 cards and takes 3 damage.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Vampire Noble",
+      "tribe": "Vampire",
       "keywords": [
         "elusive",
         "battlecry"
@@ -40585,12 +40584,12 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 2
         },
         {
           "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "value": 3,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -40608,11 +40607,11 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Elusive. Deathtouch. Battlecry: Each opponent discards a card.",
+      "description": "Elusive. Deathtouch. Battlecry: Draw a card. Whenever you cast a spell, deal 1 damage to each opponent.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Assassin",
+      "tribe": "Vampire",
       "keywords": [
         "elusive",
         "deathtouch",
@@ -40620,10 +40619,20 @@
       ],
       "effects": [
         {
-          "type": "enemy-discard",
+          "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "maestros_sigil",
@@ -40640,13 +40649,13 @@
       "landSet": "Maestros",
       "collectible": false,
       "description": "Give a creature +2/+0 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 0,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -40665,10 +40674,20 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "A 2/3 weapon.",
+      "description": "A 2/3 weapon. After your hero attacks, deal 1 damage to each opponent.",
       "type": "weapon",
       "attack": 2,
-      "durability": 3
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "maestros_ceremony",
@@ -40684,23 +40703,25 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Summon a 3/3 Vampire with Lifesteal. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Vampire with Lifesteal.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Vampire",
-          "keywords": [
-            "lifesteal"
+          "text": "Summon a 2/2 Vampire with Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Vampire",
+              "tribe": "Vampire",
+              "keywords": [
+                "lifesteal"
+              ]
+            }
           ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -40718,13 +40739,13 @@
       ],
       "landSet": "Maestros",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Stealth. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Rogue",
       "keywords": [
         "elusive",
+        "stealth",
         "battlecry"
       ],
       "effects": [
