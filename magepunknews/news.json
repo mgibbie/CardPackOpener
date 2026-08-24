@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "6aa5e75",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Izzet land pool (UR spells-matter/prowess + burn + draw)",
+			"body": "Niv-Mizzet draw->ping engine, prowess growers (Melek +2/+0, Chronarch/Chemister\n+1/+1 per spell), Ral spellslinger removal, burn (Guildmage/Electroblast/\nStaticaster), modal Izzet Charm instant (bolt+draw/face/freeze), Command counter-\nsecret + burn, Locket spell-payoff enchantment (draw per 2 spells), Keyrune\nElemental token, Signet/Cluestone artifacts. 6 card types, 6 keywords, UR\npreserved.\n\nTest pool_izzet_test.mjs 51/51. Full suite 366/366.",
+			"cards": []
+		},
+		{
 			"sha": "c56fd36",
 			"date": "2026-08-23",
 			"kind": "patch",
