@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "e2f9b97",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Lorehold land pool (RW — Spirits + reanimation + relics + magecraft) — 4th Strixhaven college",
+			"body": "Velomachus reanimator Dragon (bc: return highest-cost dead creature), Pastcaller\ntwo Spirits, Excavation relic ARTIFACT (tap -> 2/2 Spirit), Chronomancer magecraft\nENCHANTMENT (spell -> 1/1 Spirit), Guardian warded-ruin LOCATION (tap -> 2/2 Divine\nShield Spirit), Command burn+anthem, Hymn reach, Charm rush INSTANT. 6 types, 7\nkeywords (charge/elusive/battlecry/rush/first_strike/taunt/divine_shield), RW.\n(old test stayed green.)\n\nTest pool_lorehold_test.mjs 45/45. Full suite 392/392.",
+			"cards": []
+		},
+		{
 			"sha": "fc6a963",
 			"date": "2026-08-24",
 			"kind": "patch",
