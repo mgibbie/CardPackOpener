@@ -32724,10 +32724,13 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "creature",
+      "description": "Trample.",
       "attack": 4,
       "health": 4,
       "tribe": "Eldrazi",
-      "description": "A 4/4 for four."
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "wastes_hangarback_walker",
@@ -32794,10 +32797,13 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "creature",
+      "description": "Rush.",
       "attack": 2,
       "health": 1,
       "tribe": "Eldrazi",
-      "description": "A 2/1 for two."
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "wastes_endbringer",
@@ -32983,11 +32989,24 @@
       "set": "paper",
       "landSet": "Wastes",
       "collectible": false,
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Eldrazi",
-      "description": "A 3/4 for five."
+      "type": "location",
+      "description": "Durability 3. {T}: Summon a 2/2 Eldrazi Scion.",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Eldrazi Scion.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Eldrazi Scion",
+              "tribe": "Eldrazi"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "wastes_deceiver_of_form",
@@ -32998,11 +33017,21 @@
       "set": "paper",
       "landSet": "Wastes",
       "collectible": false,
-      "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Eldrazi",
-      "description": "A 5/5 for seven."
+      "type": "enchantment",
+      "description": "At the start of your turn, summon a 1/1 Eldrazi Scion.",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Eldrazi Scion",
+            "tribe": "Eldrazi"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_wurmcoil_engine",
@@ -33118,11 +33147,18 @@
       "set": "paper",
       "landSet": "Wastes",
       "collectible": false,
-      "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Construct",
-      "description": "A 3/3 for three."
+      "type": "artifact",
+      "description": "{T}: Put a +1/+1 counter on a creature.",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "wastes_lodestone_golem",
@@ -33134,10 +33170,13 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "creature",
+      "description": "Taunt.",
       "attack": 5,
       "health": 3,
       "tribe": "Golem",
-      "description": "A 5/3 for four."
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "wastes_meteor_golem",
@@ -33462,9 +33501,19 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
-      "attack": 2,
-      "durability": 3,
-      "description": "A 2/3 weapon."
+      "description": "A 3/2 weapon. After your hero attacks, deal 1 damage to each opponent.",
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_skullclamp",
@@ -33476,9 +33525,18 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 1/2 weapon. Whenever a friendly creature dies, draw a card.",
       "attack": 1,
-      "durability": 4,
-      "description": "A 1/4 weapon."
+      "durability": 2,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "wastes_sword_of_fire_and_ice",
@@ -33490,9 +33548,23 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 2/3 weapon. After your hero attacks, deal 2 damage to each opponent and draw a card.",
       "attack": 2,
-      "durability": 4,
-      "description": "A 2/4 weapon."
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "wastes_batterskull",
@@ -33504,9 +33576,19 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 4/3 weapon. After your hero attacks, gain 4 life.",
       "attack": 4,
-      "durability": 4,
-      "description": "A 4/4 weapon."
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 4,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_loxodon_warhammer",
@@ -33518,9 +33600,19 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 3/3 weapon. After your hero attacks, gain 3 life.",
       "attack": 3,
       "durability": 3,
-      "description": "A 3/3 weapon."
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_vulshok_morningstar",
@@ -33532,9 +33624,20 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 2/3 weapon. After your hero attacks, give your creatures +1/+0.",
       "attack": 2,
       "durability": 3,
-      "description": "A 2/3 weapon."
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_grafted_wargear",
@@ -33546,9 +33649,20 @@
       "landSet": "Wastes",
       "collectible": false,
       "type": "weapon",
+      "description": "A 3/2 weapon. After your hero attacks, give your creatures +1/+0.",
       "attack": 3,
       "durability": 2,
-      "description": "A 3/2 weapon."
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "wastes_lightning_greaves",
