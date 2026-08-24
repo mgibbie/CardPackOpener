@@ -24673,11 +24673,11 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Summon a 1/1 Spirit with Elusive.",
+      "description": "Elusive. Battlecry: Summon two 1/1 Spirits with Elusive and draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Spirit",
+      "tribe": "Angel",
       "keywords": [
         "elusive",
         "battlecry"
@@ -24685,13 +24685,18 @@
       "effects": [
         {
           "type": "summon",
-          "count": 1,
+          "count": 2,
           "attack": 1,
           "health": 1,
           "name": "Spirit",
+          "tribe": "Spirit",
           "keywords": [
             "elusive"
           ]
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -24753,7 +24758,7 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Battlecry: Scry 1 and draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -24763,6 +24768,10 @@
         "battlecry"
       ],
       "effects": [
+        {
+          "type": "scry",
+          "value": 1
+        },
         {
           "type": "draw",
           "value": 1
@@ -24830,15 +24839,14 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand. Scry 1.",
-      "type": "sorcery",
+      "description": "Return a creature to its owner's hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         },
         {
-          "type": "scry",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -24856,16 +24864,11 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "description": "Return a creature to its owner's hand.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "type": "bounce"
         }
       ]
     },
@@ -24883,7 +24886,7 @@
       "landSet": "Istfell",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -24956,7 +24959,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -25033,17 +25035,24 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Summon two 2/2 Spirits with Elusive.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Spirit with Elusive.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Spirit",
-          "keywords": [
-            "elusive"
+          "text": "Summon a 2/2 Spirit with Elusive.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Spirit",
+              "tribe": "Spirit",
+              "keywords": [
+                "elusive"
+              ]
+            }
           ]
         }
       ]
@@ -34028,7 +34037,6 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Spirit",
       "keywords": [
         "taunt"
       ]
@@ -34098,13 +34106,14 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Divine Shield.",
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Giant Spirit",
+      "tribe": "Giant",
       "keywords": [
-        "taunt"
+        "taunt",
+        "divine_shield"
       ]
     },
     {
@@ -34124,7 +34133,7 @@
       "type": "creature",
       "attack": 4,
       "health": 5,
-      "tribe": "Wolf Spirit",
+      "tribe": "Wolf",
       "keywords": [
         "taunt"
       ]
@@ -34142,19 +34151,19 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Freeze all enemy creatures.",
+      "description": "Elusive. Battlecry: Draw 2 cards.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Dragon Spirit",
+      "tribe": "Dragon",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "freeze",
-          "target": "enemy-creatures"
+          "type": "draw",
+          "value": 2
         }
       ]
     },
@@ -34162,7 +34171,7 @@
       "id": "istfell_aura",
       "name": "Istfell Aura",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -34171,17 +34180,18 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Divine Shield.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "divine_shield"
-        }
-      ]
+      "description": "{T}: Put a +1/+1 counter on a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "istfell_iceblade",
@@ -34196,12 +34206,12 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Freeze an enemy creature and deal 1 damage to a creature.",
-      "type": "sorcery",
+      "description": "Freeze an enemy creature and deal 1 damage to it.",
+      "type": "instant",
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         },
         {
           "type": "damage",
@@ -34227,7 +34237,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive"
       ]
@@ -34245,17 +34254,24 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Elusive.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "elusive"
-        }
-      ]
+      "description": "Whenever you cast a spell, summon a 1/1 Spirit with Elusive.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spirit",
+            "tribe": "Spirit",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "valki_istfell_trickster",
@@ -34270,18 +34286,21 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Elusive. Battlecry: Each opponent discards a card.",
+      "description": "Elusive. Battlecry: Draw a card and scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Shapeshifter",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "enemy-discard",
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "scry",
           "value": 1
         }
       ]
@@ -234778,6 +234797,81 @@
         "R"
       ],
       "landSet": "Immersturm",
+      "collectible": false
+    },
+    {
+      "id": "istfell_cosmos_charger",
+      "name": "Istfell Cosmos Charger",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "charge"
+      ],
+      "description": "Elusive. Charge.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false
+    },
+    {
+      "id": "istfell_gods_hall_guardian",
+      "name": "Istfell Gods Hall Guardian",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 5,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ],
+      "description": "Elusive. Taunt.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
+      "collectible": false
+    },
+    {
+      "id": "istfell_cyclone_summoner",
+      "name": "Istfell Cyclone Summoner",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Elusive. Battlecry: Return all enemy creatures to their owners' hands.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "U"
+      ],
+      "landSet": "Istfell",
       "collectible": false
     }
   ]
