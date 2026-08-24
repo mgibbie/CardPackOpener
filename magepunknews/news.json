@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "0262644",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Swamp basic pool (mono-B, 70) — fill 27 vanilla creatures + add artifact/location, keep faithful cards",
+			"body": "Vampires -> lifesteal (+elusive flyers), Bats/flyers -> elusive, Undead aggro -> rush,\nscorpions/assassins -> deathtouch, walls -> taunt, Bogstomper trample, sac-outlets ->\nbattlecries (Viscera Seer scry, Plagued Rusalka ping, Cabal Evangel gain 2). Repurposed\n2 blanks: Douser of Lights -> ARTIFACT (tap drain 1), Catacomb Slug -> LOCATION (tap ->\n2/2 deathtouch Undead). Kept tribes. 6 types, 8 keywords, mono-B, no rarity.\n\nTest pool_swamp_test.mjs 26/26; abzan basics-guardian 34/34. Full suite 426/426.",
+			"cards": []
+		},
+		{
 			"sha": "10a2651",
 			"date": "2026-08-24",
 			"kind": "patch",
