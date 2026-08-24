@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "153b489",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Littjara land pool (GU/Kaldheim realm — Shapeshifter tokens + counters + ramp + card draw + freeze/bounce; 26 -> 30) — 7th Kaldheim realm",
+			"body": "Redesigned 26 + added 4 NEW (real MTG art, deployed): Realmwalker (draw), Moritte of\nthe Frost (team +1/+1), Berg Strider (freeze), Old-Growth Troll (trample+reborn).\nShapeshifter token=2/2 elusive; Alrund draw 3, ramp package, Monument/Bears(LOCATION)/\nMetamorphosis(ARTIFACT) Shapeshifter makers, Paradox card-advantage ENCHANTMENT\n(turn-start draw), Icebreaker Kraken/Mists board freeze, bounce INSTANTS. 6 types, 6\nkeywords, GU.\n\nTest pool_littjara_test.mjs 75/75 (asserts 30). Full suite 420/420.",
+			"cards": []
+		},
+		{
 			"sha": "6052b54",
 			"date": "2026-08-24",
 			"kind": "patch",
