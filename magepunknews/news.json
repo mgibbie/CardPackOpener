@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "02d4fa1",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "revisit Abzan land pool (WBG — clean up the 8 broken cards; +1/+1 counters + Warriors + lifegain + resilience)",
+			"body": "Abzan was inconsistent: 7 cards cleanly built (Warlord/Survivalist/Battlepriest/\nRunemark-Coven/Sand Blessing/Strike/Advantage, all locked by abzan_pool_test which\nalso guards the 6 basics=70) but 8 were keyword-salad/truncated. Cleaned ONLY the 8,\nleft the 7 tested + structure untouched: Falconer->ARTIFACT (tap +1/+1 counter),\nFortification->LOCATION (tap Taunt Warrior), Ascendancy->ENCHANTMENT (death->Spirit),\nGuide/Steward lifesteal+heal, Skycaptain counter bc, Infantry deathrattle Warrior,\nCharm clean 2-mode Choose One. 6 types, 6 keywords, WBG, NO rarity (pool rule).\n\nTest pool_abzan_test.mjs 43/43; old abzan_pool_test 34/34. Full suite 405/405.",
+			"cards": []
+		},
+		{
 			"sha": "832b62f",
 			"date": "2026-08-24",
 			"kind": "patch",
