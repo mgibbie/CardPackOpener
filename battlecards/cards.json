@@ -32087,11 +32087,11 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Trample. First Strike. Battlecry: Draw a card.",
+      "description": "Trample. First Strike. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "trample",
         "first_strike",
@@ -32099,8 +32099,10 @@
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -32122,7 +32124,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Ogre Warrior",
+      "tribe": "Ogre",
       "keywords": [
         "rush"
       ]
@@ -32145,7 +32147,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Warrior",
+      "tribe": "Human",
       "keywords": [
         "elusive"
       ]
@@ -32164,18 +32166,20 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Battlecry: A friendly creature fights an enemy creature.",
+      "description": "Trample. Battlecry: Deal 4 damage to a creature.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elephant Warrior",
+      "tribe": "Beast",
       "keywords": [
+        "trample",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "fight",
-          "target": "friendly-creature"
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
         }
       ]
     },
@@ -32194,7 +32198,7 @@
       "landSet": "Temur",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -32221,7 +32225,6 @@
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Beast",
       "keywords": [
         "trample"
       ]
@@ -32240,11 +32243,14 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "A hardy 5/6 Elemental.",
+      "description": "Taunt.",
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elemental"
+      "tribe": "Elemental",
+      "keywords": [
+        "taunt"
+      ]
     },
     {
       "id": "temur_woolly_loxodon",
@@ -32264,7 +32270,7 @@
       "type": "creature",
       "attack": 6,
       "health": 7,
-      "tribe": "Elephant Warrior",
+      "tribe": "Beast",
       "keywords": [
         "trample"
       ]
@@ -32306,11 +32312,10 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 2 damage to a creature.",
+      "description": "Elusive. Battlecry: Deal 2 damage to any target.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -32319,7 +32324,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -32341,7 +32346,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elemental",
       "keywords": [
         "battlecry"
       ],
@@ -32374,7 +32378,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Horse",
+      "tribe": "Beast",
       "keywords": [
         "rush"
       ]
@@ -32393,11 +32397,10 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to each opponent and draw a card.",
+      "description": "Battlecry: Deal 3 damage to each opponent.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
         "battlecry"
       ],
@@ -32406,10 +32409,6 @@
           "type": "damage",
           "value": 3,
           "target": "enemy-heroes"
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -32427,27 +32426,23 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Rush. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "temur_monument",
       "name": "Temur Monument",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -32457,25 +32452,24 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Summon a 4/4 Beast with Trample. Deal 2 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Beast",
-          "keywords": [
-            "trample"
-          ]
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        }
-      ]
+      "description": "{T}: Summon a 4/4 Beast with Trample.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 4,
+            "health": 4,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": [
+              "trample"
+            ]
+          }
+        ],
+        "text": "Summon a 4/4 Beast with Trample."
+      }
     },
     {
       "id": "wastes_kozilek",
@@ -38930,16 +38924,22 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Gain 1 Mana this turn and scry 1.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Gain 1 Mana this turn and scry 1.",
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            },
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -38958,13 +38958,13 @@
       "landSet": "Temur",
       "collectible": false,
       "description": "Give a creature +3/+0 and Trample.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 3,
           "health": 0,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -38990,7 +38990,7 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -39013,7 +39013,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Hound Warrior",
       "keywords": [
         "rush"
       ]
@@ -39032,13 +39031,14 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Lifesteal.",
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Elephant",
+      "tribe": "Beast",
       "keywords": [
-        "trample"
+        "trample",
+        "lifesteal"
       ]
     },
     {
@@ -39059,7 +39059,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Bird",
       "keywords": [
         "elusive",
         "battlecry"
@@ -234115,6 +234114,210 @@
         "W"
       ],
       "landSet": "Mardu",
+      "collectible": false
+    },
+    {
+      "id": "temur_savage_ventmaw",
+      "name": "Temur Savage Ventmaw",
+      "cost": 6,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ],
+      "description": "Trample. Battlecry: Gain an empty Mana Crystal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_rattleclaw_mystic",
+      "name": "Temur Rattleclaw Mystic",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_snowhorn_rider",
+      "name": "Temur Snowhorn Rider",
+      "cost": 6,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 5,
+      "health": 5,
+      "tribe": "Beast",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_bears_companion",
+      "name": "Temur Bear's Companion",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Bear",
+          "tribe": "Bear",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Battlecry: Summon a 4/4 Bear with Taunt.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_surrak_hunt_caller",
+      "name": "Temur Surrak the Hunt Caller",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 5,
+      "health": 4,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "charge"
+        }
+      ],
+      "description": "Battlecry: Give your creatures Charge.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_thunderbreak_regent",
+      "name": "Temur Thunderbreak Regent",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Elusive. Battlecry: Deal 3 damage to each opponent.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
+      "collectible": false
+    },
+    {
+      "id": "temur_heir_of_the_wilds",
+      "name": "Temur Heir of the Wilds",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human",
+      "keywords": [
+        "deathtouch"
+      ],
+      "description": "Deathtouch.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "G",
+        "R",
+        "U"
+      ],
+      "landSet": "Temur",
       "collectible": false
     }
   ]
