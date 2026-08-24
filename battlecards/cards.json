@@ -7691,8 +7691,13 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge. Battlecry: Deal 3 damage to a creature.",
+      "description": "Charge. Battlecry: Deal 3 damage to any target. At the start of your turn, deal 2 damage to each opponent.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "attack": 5,
       "health": 4,
       "tribe": "God",
@@ -7700,18 +7705,23 @@
         "charge",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "creature"
+          "target": "any"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "champion_of_hazoret",
@@ -7722,17 +7732,16 @@
       "set": "paper",
       "description": "Rush.",
       "type": "creature",
-      "attack": 4,
-      "health": 3,
-      "tribe": "Human Warrior",
-      "keywords": [
-        "rush"
-      ],
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "hazorets_jackal",
@@ -7743,17 +7752,17 @@
       "set": "paper",
       "description": "Rush.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "attack": 3,
       "health": 2,
       "tribe": "Jackal",
       "keywords": [
         "rush"
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_minotaur",
@@ -7764,17 +7773,17 @@
       "set": "paper",
       "description": "Cleave.",
       "type": "creature",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "attack": 5,
       "health": 3,
       "tribe": "Minotaur",
       "keywords": [
         "cleave"
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_cerodon",
@@ -7785,18 +7794,17 @@
       "set": "paper",
       "description": "First Strike. Charge.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Beast",
-      "keywords": [
-        "first_strike",
-        "charge"
-      ],
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "first_strike",
+        "charge"
+      ]
     },
     {
       "id": "hazorets_brawler",
@@ -7805,16 +7813,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "A cheap, reckless bruiser.",
+      "description": "Rush. Trample.",
       "type": "creature",
-      "attack": 5,
-      "health": 4,
-      "tribe": "Minotaur Berserker",
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 4,
+      "keywords": [
+        "rush",
+        "trample"
+      ]
     },
     {
       "id": "hymn_of_hazoret",
@@ -7824,19 +7835,19 @@
       "rarity": "common",
       "set": "paper",
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "creature"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_favor",
@@ -7846,21 +7857,21 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +2/+2 and Charge.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "charge"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_undying_fury",
@@ -7871,6 +7882,11 @@
       "set": "paper",
       "description": "Summon three 2/2 Warriors with Rush.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -7878,16 +7894,12 @@
           "attack": 2,
           "health": 2,
           "name": "Warrior",
+          "tribe": "Warrior",
           "keywords": [
             "rush"
           ]
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_cartouche",
@@ -7898,20 +7910,20 @@
       "set": "paper",
       "description": "Give a creature +1/+1 and Rush.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_zeal",
@@ -7922,43 +7934,44 @@
       "set": "paper",
       "description": "Give a creature +2/+1 and Charge.",
       "type": "sorcery",
+      "colors": [
+        "R"
+      ],
+      "landSet": "Hazoret",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "charge"
         }
-      ],
-      "colors": [
-        "R"
-      ],
-      "landSet": "Hazoret",
-      "collectible": false
+      ]
     },
     {
       "id": "hazorets_protection",
       "name": "Hazoret's Protection",
       "cardClass": "magepunk",
       "cost": 2,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Give a creature +3/+3.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 3,
-          "health": 3,
-          "target": "creature"
-        }
-      ],
+      "description": "Whenever you play a creature, give it Rush.",
+      "type": "enchantment",
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "grant-keyword-to-played",
+            "keyword": "rush"
+          }
+        ]
+      }
     },
     {
       "id": "hazorets_armory",
@@ -7967,21 +7980,32 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Warrior with Rush.",
+      "type": "location",
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Warrior with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "hazorets_flameblade",
@@ -7990,15 +8014,25 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "A 3/2 weapon.",
+      "description": "After your hero attacks, deal 1 damage to each opponent.",
       "type": "weapon",
-      "attack": 3,
-      "durability": 2,
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "spear_of_hazoret",
@@ -8007,15 +8041,26 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "A 3/3 weapon.",
+      "description": "After your hero attacks, give your creatures +1/+0.",
       "type": "weapon",
-      "attack": 3,
-      "durability": 3,
       "colors": [
         "R"
       ],
       "landSet": "Hazoret",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "purphoros_god_of_the_forge",
