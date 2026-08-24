@@ -42887,18 +42887,21 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "savai_sabertooth",
@@ -42961,11 +42964,11 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Rush. First Strike. Battlecry: Deal 3 damage to a creature.",
+      "description": "Rush. First Strike. Battlecry: Give your creatures +2/+0 and Rush.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Cat Dinosaur",
+      "tribe": "Cat",
       "keywords": [
         "rush",
         "first_strike",
@@ -42973,9 +42976,11 @@
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
         }
       ]
     },
@@ -43022,13 +43027,26 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Deathrattle: Summon a 3/2 Cat with Rush.",
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Egg",
       "keywords": [
-        "taunt"
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Cat",
+          "tribe": "Cat",
+          "keywords": [
+            "rush"
+          ]
+        }
       ]
     },
     {
@@ -43046,7 +43064,7 @@
       "landSet": "Savai",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -43069,22 +43087,24 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Summon a 3/2 Cat with Rush.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/2 Cat with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Cat",
-          "keywords": [
-            "rush"
+          "text": "Summon a 3/2 Cat with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Cat",
+              "tribe": "Cat",
+              "keywords": [
+                "rush"
+              ]
+            }
           ]
         }
       ]
@@ -43200,7 +43220,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Beast",
       "keywords": [
         "elusive",
         "lifesteal"
@@ -43211,7 +43230,7 @@
       "name": "Savai Bonder",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "W",
@@ -43220,22 +43239,23 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1.",
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Human",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "Whenever a friendly creature dies, deal 1 damage to each opponent and gain 1 life.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "savai_leopard_bat",
@@ -43255,7 +43275,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Cat Bat",
       "keywords": [
         "elusive",
         "lifesteal"
