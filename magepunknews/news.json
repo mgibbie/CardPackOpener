@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "290e609",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Skemfar land pool (BG/Kaldheim realm — Elf go-wide tribal + graveyard/sacrifice + deathtouch + counters + ramp + drain; 25 -> 30) — 8th Kaldheim realm, 100th pool",
+			"body": "Redesigned 25 + added 5 NEW (real MTG art, deployed): Poison-Tip Archer (aristocrat\nburn), Shaman of the Pack (reach), Dwynen's Elite (Elf maker), Elvish Champion (team\n+1/+1), Marwyn the Nurturer (ramp). Elf token=2/2 deathtouch; Harald/Lathril Elf makers,\nSarulf removal, Monument Elf-grove LOCATION, Bounty horn ARTIFACT, Crown go-wide\nENCHANTMENT, Serpent Tunnel 4/4 Snake, Struggle/Venom/Veil INSTANTS. 6 types, 6\nkeywords, BG.\n\nTest pool_skemfar_test.mjs 74/74 (asserts 30). Full suite 421/421.",
+			"cards": []
+		},
+		{
 			"sha": "153b489",
 			"date": "2026-08-24",
 			"kind": "patch",
