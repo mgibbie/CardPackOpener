@@ -42073,11 +42073,11 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Trample. Charge. Battlecry: Deal 3 damage to a creature.",
+      "description": "Trample. Charge. Battlecry: Draw 2 cards and summon a 5/5 Elemental with Trample.",
       "type": "creature",
       "attack": 6,
       "health": 6,
-      "tribe": "Dragon Beast",
+      "tribe": "Dragon",
       "keywords": [
         "trample",
         "charge",
@@ -42085,9 +42085,19 @@
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Elemental",
+          "tribe": "Elemental",
+          "keywords": [
+            "trample"
+          ]
         }
       ]
     },
@@ -42105,18 +42115,21 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "ketria_boon",
@@ -42133,13 +42146,13 @@
       "landSet": "Ketria",
       "collectible": false,
       "description": "Give a creature +3/+3 and Trample.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 3,
           "health": 3,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "trample"
         }
       ]
@@ -42158,7 +42171,7 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Draw 2 cards. Gain a Mana Crystal this turn.",
+      "description": "Draw 2 cards. Gain an empty Mana Crystal.",
       "type": "sorcery",
       "effects": [
         {
@@ -42166,7 +42179,7 @@
           "value": 2
         },
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -42185,13 +42198,14 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Trample.",
+      "description": "Trample. Taunt.",
       "type": "creature",
       "attack": 6,
       "health": 6,
       "tribe": "Elemental",
       "keywords": [
-        "trample"
+        "trample",
+        "taunt"
       ]
     },
     {
@@ -42199,7 +42213,7 @@
       "name": "Ketria Bond",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -42208,20 +42222,17 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Give a creature +2/+2. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "At the start of your turn, gain 2 Mana this turn.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ]
+      }
     },
     {
       "id": "ketria_gimmerbell",
@@ -42237,17 +42248,16 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elemental",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -42266,12 +42276,13 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Battlecry: Deal 3 damage to a creature and gain a Mana Crystal this turn.",
+      "description": "Elusive. Battlecry: Deal 3 damage to a creature.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Shaman",
+      "tribe": "Elemental",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
@@ -42279,10 +42290,6 @@
           "type": "damage",
           "value": 3,
           "target": "creature"
-        },
-        {
-          "type": "gain-mana",
-          "value": 1
         }
       ]
     },
@@ -42327,7 +42334,8 @@
       "type": "creature",
       "attack": 6,
       "health": 5,
-      "tribe": "Dinosaur"
+      "tribe": "Dinosaur",
+      "keywords": []
     },
     {
       "id": "ketria_avarax",
@@ -42366,16 +42374,25 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Gain 2 Mana Crystals this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Elemental with Trample.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Summon a 3/3 Elemental with Trample.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Elemental",
+              "tribe": "Elemental",
+              "keywords": [
+                "trample"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -42393,17 +42410,16 @@
       ],
       "landSet": "Ketria",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elemental",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -42426,7 +42442,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Elemental",
       "keywords": [
         "elusive"
       ]
