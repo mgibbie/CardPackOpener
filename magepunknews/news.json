@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "a91516e",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Simic land pool (GU ramp + +1/+1 counters + proliferate + evolve) — all 10 Ravnica guilds done",
+			"body": "Sky Swallower go-tall finisher (team counters), Momir Vig creature-draw engine,\nRagworm evolve-on-attack, counter-slingers (Manipulator/Guildmage/Initiate),\nFluxmage proliferate, modal Simic Charm instant (grow+trample/bounce/team),\nAscendancy counter-anthem enchantment, Growth Chamber LOCATION (tap for team\ncounters), Signet permanent ramp, Keyrune Crab token, Cluestone/Locket artifacts.\n6 card types, 6 keywords, GU preserved.\n\nTest pool_simic_test.mjs 47/47. Full suite 367/367. ALL 10 RAVNICA GUILDS DONE.",
+			"cards": []
+		},
+		{
 			"sha": "6aa5e75",
 			"date": "2026-08-23",
 			"kind": "patch",
