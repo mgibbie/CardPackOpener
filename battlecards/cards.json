@@ -41670,18 +41670,21 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "indatha_charm",
@@ -41698,7 +41701,7 @@
       "landSet": "Indatha",
       "collectible": false,
       "description": "Destroy a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
@@ -41743,7 +41746,7 @@
       "name": "Indatha Runemark",
       "cardClass": "magepunk",
       "cost": 2,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "W",
@@ -41752,17 +41755,17 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "deathtouch"
-        }
-      ]
+      "description": "Whenever you gain life, give your weakest creature +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "indatha_cluestone",
@@ -41778,16 +41781,25 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Scry 1.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Nightmare with Deathtouch.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
+          "text": "Summon a 2/2 Nightmare with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Nightmare",
+              "tribe": "Nightmare",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -41833,11 +41845,11 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Lifesteal. Deathtouch. Battlecry: Summon two 2/2 Nightmares with Deathtouch.",
+      "description": "Lifesteal. Deathtouch. Battlecry: Return your highest-Cost creature that died this game, and summon a 2/2 Nightmare with Deathtouch.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Cat Nightmare",
+      "tribe": "Nightmare",
       "keywords": [
         "lifesteal",
         "deathtouch",
@@ -41845,11 +41857,16 @@
       ],
       "effects": [
         {
+          "type": "resurrect-highest-died",
+          "count": 1
+        },
+        {
           "type": "summon",
-          "count": 2,
+          "count": 1,
           "attack": 2,
           "health": 2,
           "name": "Nightmare",
+          "tribe": "Nightmare",
           "keywords": [
             "deathtouch"
           ]
@@ -41897,13 +41914,13 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Taunt.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Cat",
       "keywords": [
-        "lifesteal"
+        "lifesteal",
+        "taunt"
       ]
     },
     {
@@ -41924,7 +41941,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Cat Nightmare",
       "keywords": [
         "deathtouch"
       ]
@@ -41947,7 +41963,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Beast Nightmare",
       "keywords": [
         "deathtouch",
         "taunt"
@@ -41971,7 +41986,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Nightmare",
       "keywords": [
         "deathtouch",
         "elusive"
@@ -41991,13 +42005,13 @@
       ],
       "landSet": "Indatha",
       "collectible": false,
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Rush.",
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Wolf Nightmare",
       "keywords": [
-        "deathtouch"
+        "deathtouch",
+        "rush"
       ]
     },
     {
@@ -42018,7 +42032,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Bat Bird",
       "keywords": [
         "elusive",
         "lifesteal"
@@ -42042,7 +42055,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Cat Nightmare",
       "keywords": [
         "deathtouch"
       ]
