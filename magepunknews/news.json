@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "42a51df",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Mogis land pool (BR devotion — aggro Minotaurs + burn + sacrifice)",
+			"body": "Mogis god (battlecry 3 + turn-start slaughter 2), Fanatic burn, Marauder haste,\nSlaughter-Priest sac->burn, Soulreaper aristocrat grower, Warleader/Warchanter\nanthems, Rush/Charge Minotaurs, Favor instant, Spite destroy-attacker secret,\nHymn burn, Red Eye recurring-burn enchantment, Dictate burn-cannon artifact.\n6 card types, 6 keywords, BR preserved.\n\nTest pool_mogis_test.mjs 47/47. Full suite 376/376.",
+			"cards": []
+		},
+		{
 			"sha": "c978205",
 			"date": "2026-08-24",
 			"kind": "patch",
