@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "4d2beee",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Purphoros land pool (R devotion — ETB-burn + Golems + haste + burn)",
+			"body": "Purphoros god (battlecry 2 + creatures entering deal 1 to the opponent), Bronze\nBlood haste anthem, cleave beaters, Hammer Golem-forge artifact, Rage recurring-\nsweep enchantment, big burn (Intervention/Omen instants, Sparkjolt/Flamecast\nsorceries), Ordeal buff+burn, Temper windfury, Magmaforge windfury weapon\n(sweep on hero attack). 6 card types, 7 keywords, mono-R.\n\nTest pool_purphoros_test.mjs 47/47. Full suite 371/371.",
+			"cards": []
+		},
+		{
 			"sha": "c0881b8",
 			"date": "2026-08-24",
 			"kind": "patch",
