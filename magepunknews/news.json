@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "1bd06b1",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Ketria land pool (GUR/Temur tri-color — ramp + big Elementals + draw + burn) — 2nd Ikoria wedge",
+			"body": "Illuna ramp payoff (bc: draw 2 + 5/5 Trample Elemental), permanent ramp (Gimmerbell/\nGatherer/Mythos empty Mana Crystal), Bond ramp ENCHANTMENT (turn-start gain 2 mana),\nCrystal mana-rock ARTIFACT (tap gain-mana+scry), Crystal Hymn geode LOCATION (tap ->\n3/3 Trample Elemental), Boon +3/+3 trample INSTANT, big Elementals + Imperiosaur 6/5,\nNaireh burn. 6 types, 6 keywords, GUR. (old test stayed green.)\n\nTest pool_ketria_test.mjs 43/43. Full suite 400/400.",
+			"cards": []
+		},
+		{
 			"sha": "840d8a9",
 			"date": "2026-08-24",
 			"kind": "patch",
