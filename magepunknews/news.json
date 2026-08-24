@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "e626b2e",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Prismari land pool (UR — magecraft + ramp + Elementals + burn) — 2nd Strixhaven college",
+			"body": "Galazeth ramp-magecraft Dragon (spell -> gain 1 mana this turn) + burn battlecry,\nExpression magecraft-sweep ENCHANTMENT (spell -> 1 to enemy creatures), Cluestone/\nPuzzlebox tap-draw ARTIFACTS, Summoning Elemental-forge LOCATION, Keyrune Elemental\ntoken, Command/Charm/Iteration burn+draw, Inspiration ramp+draw. 6 types, 6 keywords\n(elusive/windfury/battlecry/first_strike/rush/stealth), UR. (old test stayed green.)\n\nTest pool_prismari_test.mjs 44/44. Full suite 390/390.",
+			"cards": []
+		},
+		{
 			"sha": "d18c3c9",
 			"date": "2026-08-24",
 			"kind": "patch",
