@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "d18c3c9",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Silverquill land pool (WB — Inkling tokens + magecraft + lifedrain) — first Strixhaven college",
+			"body": "Shadrix Inkling maker, Felisa aristocrat Inkling engine (deaths -> Inkling),\nKillian magecraft drain (spell -> drain 1), Elocution magecraft anthem\nenchantment, Command Inkling LOCATION, lifedrain (Finale/Spite/Command), Fracture/\nCharm instants, Vanishverse removal ARTIFACT, Silencer silence, evasive Lifesteal\nInklings. 6 card types, 6 keywords, WB. (old test stayed green.)\n\nTest pool_silverquill_test.mjs 46/46. Full suite 389/389.",
+			"cards": []
+		},
+		{
 			"sha": "3bf7bc8",
 			"date": "2026-08-24",
 			"kind": "patch",
