@@ -25070,23 +25070,20 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Draw a card. Each opponent discards a card.",
+      "description": "Lifesteal. Elusive. Battlecry: Return your highest-Cost creature that died this game.",
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Angel Cleric",
+      "tribe": "Angel",
       "keywords": [
         "lifesteal",
+        "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "enemy-discard",
-          "value": 1
+          "type": "resurrect-highest-died",
+          "count": 1
         }
       ]
     },
@@ -25107,7 +25104,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Angel Cleric",
+      "tribe": "Angel",
       "keywords": [
         "lifesteal",
         "battlecry"
@@ -25137,7 +25134,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -25146,7 +25142,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -25163,23 +25159,26 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Lifesteal. Battlecry: Summon a 4/4 Angel with Lifesteal.",
+      "description": "Lifesteal. Elusive. Battlecry: Summon a 2/2 Angel with Elusive and Lifesteal.",
       "type": "creature",
       "attack": 4,
       "health": 5,
       "tribe": "Angel",
       "keywords": [
         "lifesteal",
+        "elusive",
         "battlecry"
       ],
       "effects": [
         {
           "type": "summon",
           "count": 1,
-          "attack": 4,
-          "health": 4,
+          "attack": 2,
+          "health": 2,
           "name": "Angel",
+          "tribe": "Angel",
           "keywords": [
+            "elusive",
             "lifesteal"
           ]
         }
@@ -25202,7 +25201,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Angel",
       "keywords": [
         "reborn"
       ]
@@ -25220,22 +25218,12 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Destroy a creature. Summon a 2/2 Angel with Lifesteal.",
-      "type": "sorcery",
+      "description": "Destroy a creature.",
+      "type": "instant",
       "effects": [
         {
           "type": "destroy",
           "target": "creature"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Angel",
-          "keywords": [
-            "lifesteal"
-          ]
         }
       ]
     },
@@ -25252,13 +25240,13 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Deal 5 damage to all creatures.",
+      "description": "Deal 5 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 5,
-          "target": "all-creatures"
+          "target": "enemy-creatures"
         }
       ]
     },
@@ -25276,13 +25264,13 @@
       "landSet": "Starnheim",
       "collectible": false,
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -25300,18 +25288,21 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Scry 2 and draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Scry 1 and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1 and draw a card."
+      }
     },
     {
       "id": "starnheim_unleashed",
@@ -25326,7 +25317,7 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Summon two 4/4 Angels with Lifesteal.",
+      "description": "Summon two 4/4 Angels with Elusive and Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
@@ -25335,7 +25326,9 @@
           "attack": 4,
           "health": 4,
           "name": "Angel",
+          "tribe": "Angel",
           "keywords": [
+            "elusive",
             "lifesteal"
           ]
         }
@@ -25381,7 +25374,6 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
         "taunt",
         "battlecry"
@@ -25411,7 +25403,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Undead",
       "keywords": [
         "reborn"
       ]
@@ -25429,12 +25420,12 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to each opponent and gain 2 life.",
+      "description": "Lifesteal. Battlecry: Deal 2 damage to each opponent and gain 2 life.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -25463,23 +25454,26 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Summon a 2/2 Angel with Lifesteal. Gain 2 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Angel with Elusive and Lifesteal.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Angel",
-          "keywords": [
-            "lifesteal"
+          "text": "Summon a 2/2 Angel with Elusive and Lifesteal.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Angel",
+              "tribe": "Angel",
+              "keywords": [
+                "elusive",
+                "lifesteal"
+              ]
+            }
           ]
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
         }
       ]
     },
@@ -34336,12 +34330,13 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
+      "tribe": "Angel",
       "keywords": [
+        "elusive",
         "battlecry"
       ],
       "effects": [
@@ -34423,7 +34418,7 @@
       "id": "starnheim_astral_wheel",
       "name": "Starnheim Astral Wheel",
       "cardClass": "magepunk",
-      "cost": 3,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -34432,14 +34427,17 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "At the start of your turn, draw a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "story_of_starnheim",
@@ -34454,7 +34452,7 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Summon two 3/3 Angels with Lifesteal.",
+      "description": "Summon two 3/3 Angels with Elusive and Lifesteal.",
       "type": "sorcery",
       "effects": [
         {
@@ -34463,7 +34461,9 @@
           "attack": 3,
           "health": 3,
           "name": "Angel",
+          "tribe": "Angel",
           "keywords": [
+            "elusive",
             "lifesteal"
           ]
         }
@@ -34486,7 +34486,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Serpent",
       "keywords": [
         "deathtouch"
       ]
@@ -34504,13 +34503,13 @@
       ],
       "landSet": "Starnheim",
       "collectible": false,
-      "description": "Deal 6 damage to all creatures.",
+      "description": "Deal 6 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 6,
-          "target": "all-creatures"
+          "target": "enemy-creatures"
         }
       ]
     },
@@ -235304,6 +235303,186 @@
         "G"
       ],
       "landSet": "Skemfar",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_valkyries_sword",
+      "name": "Starnheim Valkyrie's Sword",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "A 2/3 weapon. After your hero attacks, gain 1 life.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_youthful_valkyrie",
+      "name": "Starnheim Youthful Valkyrie",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Angel",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ],
+      "description": "Elusive. Lifesteal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_sungold_sentinel",
+      "name": "Starnheim Sungold Sentinel",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "divine_shield"
+      ],
+      "description": "Divine Shield.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_usher_of_the_fallen",
+      "name": "Starnheim Usher of the Fallen",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Human",
+          "tribe": "Human"
+        }
+      ],
+      "description": "Battlecry: Summon a 1/1 Human.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_halvar",
+      "name": "Starnheim Halvar, God of Battle",
+      "cost": 4,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_angel_of_destiny",
+      "name": "Starnheim Angel of Destiny",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Angel",
+      "keywords": [
+        "elusive",
+        "lifesteal",
+        "divine_shield"
+      ],
+      "description": "Elusive. Lifesteal. Divine Shield.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
+      "collectible": false
+    },
+    {
+      "id": "starnheim_speaker_of_the_heavens",
+      "name": "Starnheim Speaker of the Heavens",
+      "cost": 1,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 1,
+      "health": 1,
+      "tribe": "Angel",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ],
+      "description": "Elusive. Lifesteal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "W",
+        "B"
+      ],
+      "landSet": "Starnheim",
       "collectible": false
     }
   ]
