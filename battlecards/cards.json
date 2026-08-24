@@ -62792,18 +62792,25 @@
       "cardClass": "magepunk",
       "cost": 3,
       "set": "paper",
-      "description": "Creatures you control with Attack of 5 or greater have Windfury.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Soldier",
+      "description": "{T}: Put a +1/+1 counter on a creature.",
+      "type": "artifact",
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "abzan_fortification",
@@ -62811,21 +62818,34 @@
       "cardClass": "magepunk",
       "cost": 5,
       "set": "paper",
-      "description": "Defender\nStatic",
-      "type": "creature",
-      "attack": 1,
-      "health": 7,
-      "tribe": "Wall",
-      "keywords": [
-        "defender"
-      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Warrior with Taunt.",
+      "type": "location",
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Warrior with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "abzan_guide",
@@ -62833,23 +62853,31 @@
       "cardClass": "magepunk",
       "cost": 6,
       "set": "paper",
-      "description": "Lifesteal Medic 2 Tradeable",
+      "description": "Lifesteal. Battlecry: Gain 4 life.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Human Warrior",
       "medic": 2,
       "tradeable": true,
-      "keywords": [
-        "lifesteal"
-      ],
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Warrior",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "abzan_skycaptain",
@@ -62857,31 +62885,30 @@
       "cardClass": "magepunk",
       "cost": 4,
       "set": "paper",
-      "description": "Battlecry: Target creature gains +2/+2. Taunt Windfury",
+      "description": "Taunt. Windfury. Battlecry: Put a +1/+1 counter on a creature.",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
-      "tribe": "Aarakocra Soldier",
-      "keywords": [
-        "battlecry",
-        "taunt",
-        "windfury"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        }
-      ],
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Warrior",
+      "keywords": [
+        "taunt",
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     },
     {
       "id": "abzan_steward",
@@ -62889,21 +62916,29 @@
       "cardClass": "magepunk",
       "cost": 4,
       "set": "paper",
-      "description": "Lifesteal",
+      "description": "Lifesteal. Battlecry: Gain 2 life.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Human Warrior",
-      "keywords": [
-        "lifesteal"
-      ],
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Warrior",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "blood_gem",
@@ -72317,21 +72352,17 @@
       "cardClass": "magepunk",
       "cost": 3,
       "set": "paper",
-      "description": "Battlecry: Target creature gains +1/+1. Whenever a nontoken creature you control dies, create a 1/1 Spirit token with Windfury.",
+      "description": "Whenever a friendly creature dies, summon a 1/1 Spirit with Elusive.",
       "type": "enchantment",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
+      "colors": [
+        "W",
+        "B",
+        "G"
       ],
+      "landSet": "Abzan",
+      "collectible": false,
       "ongoing": {
         "on": "friendly-creature-died",
-        "if": {
-          "nontoken": true
-        },
         "effects": [
           {
             "type": "summon",
@@ -72339,19 +72370,13 @@
             "attack": 1,
             "health": 1,
             "name": "Spirit",
+            "tribe": "Spirit",
             "keywords": [
-              "windfury"
+              "elusive"
             ]
           }
         ]
-      },
-      "colors": [
-        "W",
-        "B",
-        "G"
-      ],
-      "landSet": "Abzan",
-      "collectible": false
+      }
     },
     {
       "id": "quick_pick",
@@ -73259,32 +73284,35 @@
       "cardClass": "magepunk",
       "cost": 5,
       "set": "paper",
-      "description": "Taunt\nDeathrattle: Luck: Return this card to your hand.",
+      "description": "Taunt. Deathrattle: Summon a 2/2 Warrior with Taunt.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Human Soldier",
-      "keywords": [
-        "taunt",
-        "deathrattle"
-      ],
-      "deathrattle": [
-        {
-          "type": "luck",
-          "effects": [
-            {
-              "type": "return-self-to-hand"
-            }
-          ]
-        }
-      ],
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Warrior",
+      "keywords": [
+        "taunt",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
     },
     {
       "id": "sanguine_templar",
@@ -74572,72 +74600,38 @@
       "cardClass": "magepunk",
       "cost": 3,
       "set": "paper",
-      "description": "Choose one - • Exile target creature with 3 or more Attack. • Draw 2 cards & take 2 damage. • Target creature gains +2/+2. • Target creature gains Taunt. • Target creature gains Medic 2.",
+      "description": "Choose one — Destroy a creature with 3+ Attack; or give your creatures +1/+1.",
       "type": "instant",
-      "choices": [
-        {
-          "text": "Exile target creature with 3 or more Attack.",
-          "effects": [
-            {
-              "type": "exile",
-              "target": "creature",
-              "minAttack": 3
-            }
-          ]
-        },
-        {
-          "text": "Draw 2 cards and take 2 damage.",
-          "effects": [
-            {
-              "type": "draw",
-              "value": 2
-            },
-            {
-              "type": "damage",
-              "value": 2,
-              "target": "own-hero"
-            }
-          ]
-        },
-        {
-          "text": "Give a creature +2/+2.",
-          "effects": [
-            {
-              "type": "buff",
-              "attack": 2,
-              "health": 2,
-              "target": "creature"
-            }
-          ]
-        },
-        {
-          "text": "Give a creature Taunt.",
-          "effects": [
-            {
-              "type": "grant",
-              "keyword": "taunt",
-              "target": "creature"
-            }
-          ]
-        },
-        {
-          "text": "Give a creature Medic 2.",
-          "effects": [
-            {
-              "type": "grant-medic",
-              "value": 2,
-              "target": "creature"
-            }
-          ]
-        }
-      ],
       "colors": [
         "W",
         "B",
         "G"
       ],
       "landSet": "Abzan",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Destroy a creature with 3 or more Attack.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature",
+              "minAttack": 3
+            }
+          ]
+        },
+        {
+          "text": "Give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "abzan_advantage",
