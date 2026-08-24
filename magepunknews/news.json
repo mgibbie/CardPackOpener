@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "ba4bc58",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Plains basic pool (mono-W, 70) — fill blanks + add artifact/location types, keep faithful cards",
+			"body": "Basics are already faithful real-MTG cards (Swords/Wrath/Pacifism/Soul Warden/Steppe\nLynx), so NO full reskin: left the 54 faithful cards untouched. Filled 16 blank/vanilla:\nflyers -> elusive (Griffin/Pegasus/Kirin/Angel/Serra), aggro -> rush (Lions/Vanguard),\nGiant Killer deathtouch, ghostly_prison aura (+0/+2), austere_command/farewell destroy-\nall, martyred_rusalka freeze bc. Repurposed 2 blanks into the missing types: Ageless\nGuardian -> ARTIFACT (tap team +0/+1), Alaborn Trooper -> LOCATION (tap -> 1/1 Soldier).\nKept tribes (blacksmith_immune_test needs Elite Vanguard = Human Soldier). 6 types, 9\nkeywords, mono-W, no rarity.\n\nTest pool_plains_test.mjs 30/30; abzan basics-guardian 34/34. Full suite 424/424.",
+			"cards": []
+		},
+		{
 			"sha": "967d876",
 			"date": "2026-08-24",
 			"kind": "patch",
