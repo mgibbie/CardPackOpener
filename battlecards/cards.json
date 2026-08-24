@@ -6267,13 +6267,19 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Windfury. Battlecry: Draw 2 cards. Whenever you draw a card, this gains +1/+0.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "attack": 4,
       "health": 5,
       "tribe": "God",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
@@ -6282,11 +6288,16 @@
           "value": 2
         }
       ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      "ongoing": {
+        "on": "card-drawn",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      }
     },
     {
       "id": "kefnets_drake",
@@ -6297,6 +6308,11 @@
       "set": "paper",
       "description": "Elusive. Battlecry: Scry 2.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "attack": 4,
       "health": 4,
       "tribe": "Drake",
@@ -6309,12 +6325,7 @@
           "type": "scry",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "mindful_ibis_of_kefnet",
@@ -6323,13 +6334,19 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Stealth. Battlecry: Draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "attack": 2,
       "health": 3,
       "tribe": "Bird",
       "keywords": [
         "elusive",
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -6337,12 +6354,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_scribe",
@@ -6351,25 +6363,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Draw a card.",
+      "description": "Divine Shield. Battlecry: Draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "divine_shield"
       ],
       "effects": [
         {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "acolyte_of_kefnet",
@@ -6378,25 +6390,25 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Scry 2.",
+      "description": "Taunt. Battlecry: Scry 2.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "attack": 1,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "taunt"
       ],
       "effects": [
         {
           "type": "scry",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_last_word",
@@ -6405,8 +6417,13 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Return an enemy creature to its owner's hand. Draw a card.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand. Draw a card.",
+      "type": "instant",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "bounce",
@@ -6416,12 +6433,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "cartouche_of_knowledge",
@@ -6431,25 +6443,25 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +1/+1 and Elusive. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "elusive"
         },
         {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_command",
@@ -6460,6 +6472,11 @@
       "set": "paper",
       "description": "Draw a card. Scry 2.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
@@ -6469,12 +6486,7 @@
           "type": "scry",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_charm",
@@ -6483,8 +6495,13 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw a card. Return an enemy creature to its owner's hand.",
+      "description": "Draw a card. Return an enemy creature to its owner’s hand.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
@@ -6494,12 +6511,7 @@
           "type": "bounce",
           "target": "enemy-creature"
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_flood",
@@ -6508,19 +6520,22 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Freeze all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        }
-      ],
+      "description": "At the start of your turn, freeze all enemy creatures.",
+      "type": "enchantment",
       "colors": [
         "U"
       ],
       "landSet": "Kefnet",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "kefnets_boltbend",
@@ -6531,6 +6546,11 @@
       "set": "paper",
       "description": "Freeze an enemy creature. Draw a card.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "freeze",
@@ -6540,12 +6560,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "kefnets_puzzlebox",
@@ -6554,23 +6569,26 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Scry 3. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Scry 1 and draw a card.",
+      "type": "artifact",
       "colors": [
         "U"
       ],
       "landSet": "Kefnet",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1 and draw a card."
+      }
     },
     {
       "id": "cluestone_of_kefnet",
@@ -6579,19 +6597,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "Durability 3. {T}: Draw a card.",
+      "type": "location",
       "colors": [
         "U"
       ],
       "landSet": "Kefnet",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "kefnets_rebuke",
@@ -6600,19 +6624,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Return an enemy creature to its owner's hand.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "bounce",
-          "target": "enemy-creature"
-        }
-      ],
+      "description": "Secret: When an opponent casts a spell, counter it and draw a card.",
+      "type": "secret",
       "colors": [
         "U"
       ],
       "landSet": "Kefnet",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "kefnets_epiphany",
@@ -6623,6 +6653,11 @@
       "set": "paper",
       "description": "Draw 3 cards. Scry 2.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Kefnet",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
@@ -6632,12 +6667,7 @@
           "type": "scry",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Kefnet",
-      "collectible": false
+      ]
     },
     {
       "id": "temple_of_erebos",
