@@ -4890,13 +4890,19 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Summon two 2/1 Clerics with Taunt.",
+      "description": "Divine Shield. Taunt. Battlecry: Summon two 2/1 Clerics with Taunt and Lifesteal, and gain 3 life.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "attack": 5,
       "health": 6,
       "tribe": "God",
       "keywords": [
         "divine_shield",
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -4906,16 +4912,18 @@
           "attack": 2,
           "health": 1,
           "name": "Cleric",
+          "tribe": "Cleric",
           "keywords": [
-            "taunt"
+            "taunt",
+            "lifesteal"
           ]
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "heliod_sun_crowned",
@@ -4924,29 +4932,30 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Give a creature +2/+2 and Lifesteal.",
+      "description": "Divine Shield. Lifesteal. Whenever you gain life, this gains +1/+1.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "attack": 3,
       "health": 4,
       "tribe": "God",
       "keywords": [
         "divine_shield",
-        "battlecry"
+        "lifesteal"
       ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "lifesteal"
-        }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "chosen_by_heliod",
@@ -4956,21 +4965,21 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "dictate_of_heliod",
@@ -4979,21 +4988,24 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +2/+2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
-        }
-      ],
+      "description": "At the start of your turn, give your creatures +1/+1.",
+      "type": "enchantment",
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "evangel_of_heliod",
@@ -5004,9 +5016,13 @@
       "set": "paper",
       "description": "Battlecry: Summon three 1/1 Soldiers.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "attack": 1,
       "health": 2,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -5016,14 +5032,11 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Soldier"
+          "name": "Soldier",
+          "tribe": "Soldier",
+          "keywords": []
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "heliods_emissary",
@@ -5032,27 +5045,27 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give a creature +2/+2.",
+      "description": "Elusive. Battlecry: Put two +1/+1 counters on a creature.",
       "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Elemental",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        }
-      ],
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 4,
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creature",
+          "attack": 2,
+          "health": 2
+        }
+      ]
     },
     {
       "id": "heliods_pilgrim",
@@ -5063,9 +5076,13 @@
       "set": "paper",
       "description": "Battlecry: Discover a Heliod Card.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "attack": 1,
       "health": 2,
-      "tribe": "Human Soldier",
       "keywords": [
         "battlecry"
       ],
@@ -5074,12 +5091,7 @@
           "type": "discover",
           "landSet": "Heliod"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "heliods_intervention",
@@ -5090,6 +5102,11 @@
       "set": "paper",
       "description": "Gain 6 life. Discover a Heliod Card.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "effects": [
         {
           "type": "heal",
@@ -5100,12 +5117,7 @@
           "type": "discover",
           "landSet": "Heliod"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "heliods_punishment",
@@ -5114,20 +5126,22 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature Pacifist (it can't attack).",
+      "description": "Give a creature Pacifist (it can’t attack).",
       "type": "sorcery",
-      "effects": [
-        {
-          "type": "grant",
-          "keyword": "pacifist",
-          "target": "creature"
-        }
-      ],
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 0,
+          "target": "creature",
+          "grant": "pacifist"
+        }
+      ]
     },
     {
       "id": "ordeal_of_heliod",
@@ -5136,26 +5150,26 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +3/+3. Gain 5 life.",
+      "description": "Put three +1/+1 counters on a creature. Gain 5 life.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "effects": [
         {
-          "type": "buff",
+          "type": "grow",
+          "target": "friendly-creature",
           "attack": 3,
-          "health": 3,
-          "target": "creature"
+          "health": 3
         },
         {
           "type": "heal",
           "value": 5,
           "target": "self"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "spear_of_heliod",
@@ -5164,22 +5178,30 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +1/+1 and Divine Shield.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "divine_shield"
-        }
-      ],
+      "description": "Divine Shield. First Strike. After your hero attacks, give your creatures +1/+0.",
+      "type": "weapon",
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "durability": 3,
+      "keywords": [
+        "divine_shield",
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "heliods_generosity",
@@ -5188,62 +5210,74 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon two 2/1 Clerics with Taunt. Gain 2 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 1,
-          "name": "Cleric",
-          "keywords": [
-            "taunt"
-          ]
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 2/1 Cleric with Taunt and Lifesteal, and gain 1 life.",
+      "type": "location",
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/1 Cleric with Taunt and Lifesteal, and gain 1 life.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Cleric",
+              "tribe": "Cleric",
+              "keywords": [
+                "taunt",
+                "lifesteal"
+              ]
+            },
+            {
+              "type": "heal",
+              "value": 1,
+              "target": "self"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "heliods_radiant_dawn",
       "name": "Heliod's Radiant Dawn",
       "cardClass": "magepunk",
       "cost": 4,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Gain 4 life. Summon two 1/1 Clerics with Taunt.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "heal",
-          "value": 4,
-          "target": "self"
-        },
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Cleric",
-          "keywords": [
-            "taunt"
-          ]
-        }
-      ],
+      "description": "At the start of your turn, summon a 1/1 Cleric with Taunt and gain 1 life.",
+      "type": "enchantment",
       "colors": [
         "W"
       ],
       "landSet": "Heliod",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Cleric",
+            "tribe": "Cleric",
+            "keywords": [
+              "taunt"
+            ]
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "heliods_warped_eclipse",
@@ -5254,6 +5288,11 @@
       "set": "paper",
       "description": "Silence all enemy creatures. Gain 3 life.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "effects": [
         {
           "type": "silence",
@@ -5264,12 +5303,7 @@
           "value": 3,
           "target": "self"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "betrayal_of_heliod",
@@ -5280,6 +5314,11 @@
       "set": "paper",
       "description": "Destroy a creature. Gain 3 life.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Heliod",
+      "collectible": false,
       "effects": [
         {
           "type": "destroy",
@@ -5290,12 +5329,7 @@
           "value": 3,
           "target": "self"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Heliod",
-      "collectible": false
+      ]
     },
     {
       "id": "temple_of_oketra",
