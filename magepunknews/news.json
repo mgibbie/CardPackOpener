@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "8cec2e7",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "Urza Lorequest deck variety pass (3 -> 7 card types)",
+			"body": "Urza's deck was the one under-built Lorequest deck (only planeswalker/creature/sorcery,\n8 sorceries). Brought it to the other 36 decks' standard: Rage -> INSTANT burn, Guilt ->\nINSTANT bounce, Bauble/Chalice -> ARTIFACTS (real Urza artifacts; tap draw / tap mana),\nBlueprints -> ENCHANTMENT (Construct factory, turn-start 1/1), Power Plant -> LOCATION\n(Urza-land, tap -> 2/2 Construct); creatures got keywords (Armor taunt+DS, Avenger\nelusive+FS, Engine rush+trample). Kept the planeswalker sig, names, art, mono-U, rarity,\nloreDeck tag. 7 types, 6 keywords.\n\nlorequest_decks_test 114/114, lorequest_run_test 132/132. Full suite 429/429.",
+			"cards": []
+		},
+		{
 			"sha": "ea8b7ac",
 			"date": "2026-08-24",
 			"kind": "patch",
