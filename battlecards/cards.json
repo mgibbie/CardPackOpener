@@ -5858,8 +5858,13 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Scry 2.",
+      "description": "Elusive. Battlecry: Scry 2 and draw a card. At the start of your turn, Scry 1.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 5,
       "health": 5,
       "tribe": "God",
@@ -5871,13 +5876,21 @@
         {
           "type": "scry",
           "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "thassas_devourer",
@@ -5886,26 +5899,30 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Elusive. Battlecry: Draw a card.",
+      "description": "Elusive. Battlecry: Return an enemy creature to its owner’s hand. Draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 4,
       "health": 5,
-      "tribe": "Octopus",
+      "tribe": "Serpent",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_emissary",
@@ -5916,9 +5933,13 @@
       "set": "paper",
       "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
         "elusive",
         "battlecry"
@@ -5928,12 +5949,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "kenessos_priest_of_thassa",
@@ -5942,11 +5958,15 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Scry 3.",
+      "description": "Battlecry: Scry 3 and draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 2,
       "health": 4,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -5954,13 +5974,12 @@
         {
           "type": "scry",
           "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_oracle",
@@ -5969,12 +5988,17 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Scry 3.",
+      "description": "Stealth. Battlecry: Scry 3.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 1,
       "health": 3,
-      "tribe": "Merfolk Wizard",
       "keywords": [
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -5982,12 +6006,7 @@
           "type": "scry",
           "value": 3
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_mystic",
@@ -5998,9 +6017,13 @@
       "set": "paper",
       "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Merfolk Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -6010,12 +6033,7 @@
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_serpent",
@@ -6024,19 +6042,21 @@
       "cost": 6,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive.",
+      "description": "Elusive. Taunt. Deathtouch.",
       "type": "creature",
-      "attack": 5,
-      "health": 7,
-      "tribe": "Serpent",
-      "keywords": [
-        "elusive"
-      ],
       "colors": [
         "U"
       ],
       "landSet": "Thassa",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 7,
+      "tribe": "Serpent",
+      "keywords": [
+        "elusive",
+        "taunt",
+        "deathtouch"
+      ]
     },
     {
       "id": "thassas_leviathan",
@@ -6045,13 +6065,19 @@
       "cost": 8,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Battlecry: Freeze all enemy creatures.",
+      "description": "Elusive. Windfury. Battlecry: Freeze all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "attack": 8,
       "health": 8,
       "tribe": "Leviathan",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
@@ -6059,12 +6085,7 @@
           "type": "freeze",
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "bident_of_thassa",
@@ -6073,26 +6094,22 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Draw a card. Your creatures gain Elusive.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "buff",
-          "attack": 0,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "elusive"
-        }
-      ],
+      "description": "At the start of your turn, draw a card.",
+      "type": "enchantment",
       "colors": [
         "U"
       ],
       "landSet": "Thassa",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "ordeal_of_thassa",
@@ -6101,50 +6118,50 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +2/+2. Draw a card.",
+      "description": "Give a creature +2/+2 and Elusive. Draw a card.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature",
+          "grant": "elusive"
         },
         {
           "type": "draw",
           "value": 1
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_bounty",
       "name": "Thassa's Bounty",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Gain 3 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "U"
       ],
       "landSet": "Thassa",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "thassas_intervention",
@@ -6155,6 +6172,11 @@
       "set": "paper",
       "description": "Scry 2. Draw 2 cards.",
       "type": "sorcery",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "effects": [
         {
           "type": "scry",
@@ -6164,12 +6186,7 @@
           "type": "draw",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_ire",
@@ -6179,18 +6196,18 @@
       "rarity": "common",
       "set": "paper",
       "description": "Scry 2.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "effects": [
         {
           "type": "scry",
           "value": 2
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "thassas_rebuff",
@@ -6199,44 +6216,49 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Return an enemy creature to its owner's hand.",
-      "type": "sorcery",
+      "description": "Return an enemy creature to its owner’s hand.",
+      "type": "instant",
+      "colors": [
+        "U"
+      ],
+      "landSet": "Thassa",
+      "collectible": false,
       "effects": [
         {
           "type": "bounce",
           "target": "enemy-creature"
         }
-      ],
-      "colors": [
-        "U"
-      ],
-      "landSet": "Thassa",
-      "collectible": false
+      ]
     },
     {
       "id": "tidal_wave",
       "name": "Thassa Tidal Wave",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Freeze all enemy creatures. Scry 2.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "freeze",
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "scry",
-          "value": 2
-        }
-      ],
+      "description": "Secret: When an enemy creature attacks, freeze it and Scry 1.",
+      "type": "secret",
       "colors": [
         "U"
       ],
       "landSet": "Thassa",
-      "collectible": false
+      "collectible": false,
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "freeze-attacker"
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "god_eternal_kefnet",
@@ -105588,7 +105610,7 @@
       "cost": 8,
       "rarity": "common",
       "set": "hs",
-      "description": "Lifesteal Deal 3 damage to all creatures.",
+      "description": "Deal 3 damage to all creatures.",
       "type": "sorcery",
       "effects": [
         {
