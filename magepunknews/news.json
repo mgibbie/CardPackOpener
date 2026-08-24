@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "3bbd6fb",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Temur land pool (GRU/Tarkir wedge — big Beasts + ferocious + ramp + fight/burn + trample; 23 -> 30) — completes Tarkir wedges",
+			"body": "Redesigned 23 + added 7 NEW (real MTG art, deployed): Savage Ventmaw, Rattleclaw\nMystic, Snowhorn Rider, Bear's Companion (4/4 Bear), Surrak the Hunt Caller (grant\nCharge), Thunderbreak Regent (reach), Heir of the Wilds. Surrak Dragonclaw ferocious\nanthem (bc team +1/+1), big trample beaters, Avalanche Tusker burn, Ascendancy card-\nadvantage ENCHANTMENT (turn-start draw), Monument Beast ARTIFACT, Banner supply\nLOCATION, Battle Rage +3/+0 INSTANT. 6 types, 8 keywords, GRU. Distinct from Ketria.\nAll 4 Tarkir wedges done + Abzan revisited. (old test green.)\n\nTest pool_temur_test.mjs 76/76 (asserts 30). Full suite 408/408.",
+			"cards": []
+		},
+		{
 			"sha": "7a631c7",
 			"date": "2026-08-24",
 			"kind": "patch",
