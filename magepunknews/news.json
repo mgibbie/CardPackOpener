@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "832b62f",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Jeskai land pool (RUW/Tarkir wedge — Monk tokens + prowess + burn + tempo; 24 -> 30 cards) — first Tarkir wedge",
+			"body": "Redesigned 24 existing + added 6 NEW cards (real MTG names, art fetched from\nScryfall + deployed to magepunk-cardart): Jeskai Monastery Swiftspear (prowess\nself +1/+0 on cast), Soulfire Grand Master (lifegain on cast), Sage of the Inward\nEye, Abbot of Keral Keep (charge+draw), Ponyback Brigade (two Monks), Pearl Lake\nAncient (7/7 finisher). Monastery Mentor Monk engine (spell -> Monk), Shu Yun prowess\nlord, Ascendancy prowess-anthem ENCHANTMENT, Monument Monk ARTIFACT, Banner supply\nLOCATION, Lightning/Runemark INSTANTS, Charm reach SORCERY. 6 types, 7 keywords, RUW.\nNew-card names contain the set word (naming-test convention). (old test green.)\n\nTest pool_jeskai_test.mjs 77/77 (asserts 30). Full suite 404/404.",
+			"cards": []
+		},
+		{
 			"sha": "ec6a478",
 			"date": "2026-08-24",
 			"kind": "patch",
