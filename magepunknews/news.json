@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "a1fe6ea",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Obscura land pool (WUB/Esper tri-color — Connive/card-advantage + spy tokens + evasion + control) — 2nd Capenna family",
+			"body": "Three Sphinx legends stay creatures: Raffine Connive (bc team +1/+1 + draw), Tivit\ntwo Elusive Thopters + draw, Kamiz grant-Elusive + draw. Ascendancy spy-network\nENCHANTMENT (turn-start scry+draw), Crown of Intrigue evasion ARTIFACT (tap -> team\n+1/+0 + Elusive), Sentinel watchpost LOCATION (tap -> Elusive Thopter), Charm destroy\nINSTANT, Confluence discard2+draw2, Informant/Silencer control. 6 types, 6 keywords,\nWUB. (old test stayed green.)\n\nTest pool_obscura_test.mjs 44/44. Full suite 395/395.",
+			"cards": []
+		},
+		{
 			"sha": "3269549",
 			"date": "2026-08-24",
 			"kind": "patch",
