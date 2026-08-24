@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "e7e5cef",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Riveteers land pool (BRG/Jund tri-color — Blitz aggression + Treasure ramp + Devils + sacrifice) — 4th Capenna family",
+			"body": "Blitz (Charge + Deathrattle-draw) on Initiate/Bruiser, Devil tokens ping 1 on death,\nZiatora two Devils, Henzie Blitz-enabler (bc grant Charge to team), Ognis/Requisitioner/\nConfluence Treasure ramp (empty Mana Crystal), Ascendancy blaze-of-glory ENCHANTMENT\n(friendly death -> 2 to each opp), Command Devil-forge LOCATION (tap -> 3/2 Devil),\nBeatstick rally WEAPON, Charm burn INSTANT. 6 types, 6 keywords, BRG.\n(old test stayed green.)\n\nTest pool_riveteers_test.mjs 47/47. Full suite 397/397.",
+			"cards": []
+		},
+		{
 			"sha": "84e32e4",
 			"date": "2026-08-24",
 			"kind": "patch",
