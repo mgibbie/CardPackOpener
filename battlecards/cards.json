@@ -16555,7 +16555,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Charge. Battlecry: Give your creatures +2/+0 and First Strike.",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -16567,10 +16567,10 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
+          "attack": 2,
+          "health": 0,
           "target": "friendly-creatures",
-          "grant": "rush"
+          "grant": "first_strike"
         }
       ]
     },
@@ -16587,10 +16587,21 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "A 3/2 weapon.",
+      "description": "After your hero attacks, give your creatures +1/+0.",
       "type": "weapon",
       "attack": 3,
-      "durability": 2
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "favored_of_iroas",
@@ -16609,7 +16620,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Soldier",
       "keywords": [
         "rush",
         "first_strike"
@@ -16632,7 +16642,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Soldier",
       "keywords": [
         "battlecry"
       ],
@@ -16641,7 +16650,7 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -16659,13 +16668,13 @@
       "landSet": "Iroas",
       "collectible": false,
       "description": "Give a creature +2/+2 and Rush.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "rush"
         }
       ]
@@ -16687,7 +16696,6 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human Warrior",
       "keywords": [
         "charge",
         "first_strike"
@@ -16706,11 +16714,10 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Charge. Divine Shield. Battlecry: Give your creatures +1/+1.",
+      "description": "Charge. Divine Shield. Battlecry: Give your creatures Divine Shield.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Giant Soldier",
       "keywords": [
         "charge",
         "divine_shield",
@@ -16719,9 +16726,10 @@
       "effects": [
         {
           "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "attack": 0,
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "divine_shield"
         }
       ]
     },
@@ -16742,7 +16750,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -16771,7 +16778,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Cleric",
       "keywords": [
         "first_strike"
       ]
@@ -16781,7 +16787,7 @@
       "name": "Triumph of Iroas",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "R",
@@ -16789,16 +16795,19 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Give your creatures +2/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "hymn_of_iroas",
@@ -16836,15 +16845,25 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Divine Shield.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/1 Soldier with First Strike.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "divine_shield"
+          "text": "Summon a 2/1 Soldier with First Strike.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Soldier",
+              "tribe": "Soldier",
+              "keywords": [
+                "first_strike"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -16865,7 +16884,6 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Soldier",
       "keywords": [
         "rush"
       ]
@@ -16887,7 +16905,6 @@
       "type": "creature",
       "attack": 3,
       "health": 5,
-      "tribe": "Human Soldier",
       "keywords": [
         "taunt",
         "divine_shield"
@@ -16910,7 +16927,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Human Soldier",
       "keywords": [
         "first_strike"
       ]
