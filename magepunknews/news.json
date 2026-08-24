@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "c978205",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Karametra land pool (GW devotion — ramp + tokens/harvest + lifegain + go-wide)",
+			"body": "Karametra god (creatures beget Elementals + battlecry 2), permanent/temp ramp\n(Acolyte/Mystic), Dictate ramp-on-creature enchantment, Battle Priest lifegain,\nBlessing/Favor protective instants, Repeal counters, Bountiful Harvest Saprolings,\nVeneration Elemental LOCATION, Scythe harvest WEAPON. Keeps 'Discover a Karametra\nCard'. 6 card types, 6 keywords, GW preserved.\n\nTest pool_karametra_test.mjs 47/47. Full suite 375/375.",
+			"cards": []
+		},
+		{
 			"sha": "ca51f58",
 			"date": "2026-08-24",
 			"kind": "patch",
