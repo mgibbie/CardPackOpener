@@ -2,6 +2,14 @@
 	"generated": "2026-08-23",
 	"entries": [
 		{
+			"sha": "adbd5e5",
+			"date": "2026-08-23",
+			"kind": "patch",
+			"title": "redesign Boros land pool (RW go-wide Soldiers + mentor/battalion + First Strike + burn)",
+			"body": "Razia go-wide alpha (+2/+2 & First Strike), Battleshaper mentor (pumps the team\non attack), Challenger buff, Guildmage burn, First Strike weenies, modal Boros\nCharm instant (creature/face/team Divine Shield), Fury-Shield destroy-attacker\nsecret, Garrison Soldier enchantment, Keyrune 3/1 Soldier token, Signet/Cluestone\nartifacts. 6 card types, 8 keywords, RW preserved.\n\nTest pool_boros_test.mjs 46/46. Full suite 363/363.",
+			"cards": []
+		},
+		{
 			"sha": "e24c229",
 			"date": "2026-08-23",
 			"kind": "patch",
