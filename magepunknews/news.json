@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "2d45fa3",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "light-enhance Mountain basic pool (mono-R, 70) — fill 17 vanilla creatures + add artifact/location, keep faithful cards",
+			"body": "Sac-pingers -> burn battlecries (Ember Hauler 2, Mogg Fanatic 1, Scorched Rusalka 1),\nGoblin Bushwhacker anthem, goblins/lizards/barbarians/minotaurs -> rush, Bold Impaler\nfirst-strike, Giants -> trample. Repurposed 2 blanks: Cobblebrute -> ARTIFACT (tap 2\ndmg any), Capital Guard -> LOCATION (tap -> 2/2 Rush Soldier). Kept tribes. 6 types, 7\nkeywords, mono-R, no rarity.\n\nTest pool_mountain_test.mjs 28/28; abzan basics-guardian 34/34. Full suite 427/427.",
+			"cards": []
+		},
+		{
 			"sha": "0262644",
 			"date": "2026-08-24",
 			"kind": "patch",
