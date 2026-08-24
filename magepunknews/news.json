@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "d77b34f",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Kolaghan land pool (BR/Tarkir dragon brood — Dragon tribal + dash/charge haste aggro + burn + Warriors) — 3rd brood",
+			"body": "Dragonlord Kolaghan haste-reach finisher (bc: 3 to each opp; charge+lifesteal), all-\nhaste Dragons/Warriors, Forerunner charge-lord anthem, Command burn+discard SORCERY,\nFury reach INSTANT, Monument war-camp LOCATION (tap -> 3/2 Rush Warrior), Stormsinger\nbattle-hymn ENCHANTMENT (turn-start 1 to each opp), Scaleguard war-drum ARTIFACT (tap\n-> 2 to each opp), Thunder Regent burn. 6 types, 6 keywords, BR. Distinct from Rakdos/\nAtarka.\n\nTest pool_kolaghan_test.mjs 43/43. Full suite 411/411.",
+			"cards": []
+		},
+		{
 			"sha": "cb489d3",
 			"date": "2026-08-24",
 			"kind": "patch",
