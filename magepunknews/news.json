@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "fa5ff1b",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Silumgar land pool (UB/Tarkir dragon brood — elusive Dragons + steal/control + deathtouch + exploit + discard) — last brood, completes Tarkir",
+			"body": "Dragonlord Silumgar thief (bc: mind-control a <=4 Attack enemy), Scalelord board freeze,\nSorcerer single freeze, deathtouch assassins, Monument Undead-crypt ARTIFACT, Scavenger\npit LOCATION (tap -> enemy discard), Spell-Eater exploit ENCHANTMENT (friendly death ->\nenemy discard), Scorn bounce+draw INSTANT, Command destroy+draw / Pact discard SORCERIES.\n6 types, 7 keywords, UB. Distinct from Dimir/Phenax. All 5 broods + all of Tarkir done.\n\nTest pool_silumgar_test.mjs 43/43. Full suite 413/413.",
+			"cards": []
+		},
+		{
 			"sha": "f48783c",
 			"date": "2026-08-24",
 			"kind": "patch",
