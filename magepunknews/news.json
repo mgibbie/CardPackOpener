@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "c9e1fbe",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Pharika land pool (BG devotion — deathtouch + Snakes + recursion + lifegain)",
+			"body": "Pharika god (deaths -> Deathtouch Snakes + battlecry 2), deathtouch bodies,\nHeirophant/Infusion enchantment grant Deathtouch, Spawn Snake LOCATION, Mender/\nCure/Libation lifegain, Malady plague ARTIFACT, poison Viper. 6 card types, 8\nkeywords, BG. (11 creatures -> converted Spawn to a location for type variety.)\n\nTest pool_pharika_test.mjs 43/43. Full suite 379/379.",
+			"cards": []
+		},
+		{
 			"sha": "4fd2798",
 			"date": "2026-08-24",
 			"kind": "patch",
