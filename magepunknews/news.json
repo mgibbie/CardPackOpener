@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "4fd2798",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Klothys land pool (RG devotion — ramp + burn + fight + destiny engine)",
+			"body": "Klothys god (battlecry 3 + turn-start drain 1 & ramp), Calix fight servant,\nramp (Seal/Command/Design enchantment), burn (Reckoning/Will/Hymn/Maelstrom),\nCharm/Runemark instants, Puzzlebox Beast artifact, Triumph Beast LOCATION,\nFateweaver anthem, elusive Destiny Spinner. 6 card types, 6 keywords, RG.\nDistinct from Xenagos (haste revels) via ramp/burn/fight midrange.\n\nTest pool_klothys_test.mjs 47/47. Full suite 378/378.",
+			"cards": []
+		},
+		{
 			"sha": "2299e88",
 			"date": "2026-08-24",
 			"kind": "patch",
