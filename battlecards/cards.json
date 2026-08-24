@@ -17760,7 +17760,7 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 3 damage to a creature and draw a card.",
+      "description": "Elusive. Battlecry: Deal 3 damage to any target. At the start of your turn, deal 2 to each opponent and draw a card.",
       "type": "creature",
       "attack": 5,
       "health": 6,
@@ -17769,15 +17769,25 @@
         "elusive",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "target": "any"
         }
       ]
     },
@@ -17795,7 +17805,7 @@
       "landSet": "Keranos",
       "collectible": false,
       "description": "Deal 3 damage to a creature. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -17821,13 +17831,13 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "first_strike"
       ],
       "effects": [
         {
@@ -17850,12 +17860,12 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Battlecry: Scry 2 and draw a card.",
+      "description": "Stealth. Battlecry: Scry 2 and draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -17935,7 +17945,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -17961,7 +17970,7 @@
       "landSet": "Keranos",
       "collectible": false,
       "description": "Draw 2 cards.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "draw",
@@ -17974,7 +17983,7 @@
       "name": "Dictate of Keranos",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -17982,25 +17991,24 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Deal 3 damage to a creature. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you cast a spell, deal 1 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "edict_of_keranos",
       "name": "Edict of Keranos",
       "cardClass": "magepunk",
-      "cost": 2,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -18009,15 +18017,18 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        }
-      ]
+      "description": "{T}: Deal 2 damage to a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "creature"
+          }
+        ],
+        "text": "Deal 2 damage to a creature."
+      }
     },
     {
       "id": "hymn_of_keranos",
@@ -18055,25 +18066,20 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 2 damage to all enemies.",
+      "description": "Elusive. Windfury. Battlecry: Deal 3 damage to any target.",
       "type": "creature",
       "attack": 5,
       "health": 5,
-      "tribe": "Elemental",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
       "effects": [
         {
           "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
+          "value": 3,
+          "target": "any"
         }
       ]
     },
@@ -18094,7 +18100,6 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Elemental",
       "keywords": [
         "elusive",
         "charge"
@@ -18113,18 +18118,20 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "Scry 2. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Secret: When an opponent casts a spell, counter it and draw a card.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-spell-cast",
+        "effects": [
+          {
+            "type": "counter"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "power_of_keranos",
@@ -18140,13 +18147,13 @@
       "landSet": "Keranos",
       "collectible": false,
       "description": "Give a creature +2/+2 and Windfury.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "windfury"
         }
       ]
