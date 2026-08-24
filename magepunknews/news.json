@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "d191ad7",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Savai land pool (RWB/Mardu tri-color — aggressive Cats + aristocrat drain + haste + lifedrain) — 4th Ikoria wedge",
+			"body": "Snapdax alpha-strike finisher (bc team +2/+0 + Rush), rush-Cat swarm (many lifesteal),\nEgg hatches a 3/2 Rush Cat on death, Bonder aristocrat-drain ENCHANTMENT (friendly\ndeath -> drain 1), Command Cat-den LOCATION (tap -> 3/2 Rush Cat), Crystal mana-rock\nARTIFACT (tap gain-mana+scry), Charm burn INSTANT, Mythos removal+drain SORCERY.\n6 types, 7 keywords, RWB. (old test stayed green.)\n\nTest pool_savai_test.mjs 42/42. Full suite 402/402.",
+			"cards": []
+		},
+		{
 			"sha": "b2b1632",
 			"date": "2026-08-24",
 			"kind": "patch",
