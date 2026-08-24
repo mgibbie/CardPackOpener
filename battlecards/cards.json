@@ -23083,7 +23083,7 @@
       ],
       "landSet": "Dromoka",
       "collectible": false,
-      "description": "Taunt. Lifesteal. Battlecry: Give your creatures +1/+1.",
+      "description": "Taunt. Lifesteal. Battlecry: Gain 5 life and give your creatures +1/+1.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -23094,6 +23094,11 @@
         "battlecry"
       ],
       "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        },
         {
           "type": "buff",
           "attack": 1,
@@ -23119,7 +23124,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -23128,7 +23133,7 @@
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature"
+          "target": "friendly-creature"
         }
       ]
     },
@@ -23138,59 +23143,6 @@
       "cardClass": "magepunk",
       "cost": 4,
       "rarity": "rare",
-      "set": "paper",
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Dromoka",
-      "collectible": false,
-      "description": "Give your creatures +1/+1. A friendly creature fights an enemy creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "fight",
-          "target": "friendly-creature"
-        }
-      ]
-    },
-    {
-      "id": "dromoka_gift",
-      "name": "Dromoka’s Gift",
-      "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
-      "set": "paper",
-      "colors": [
-        "G",
-        "W"
-      ],
-      "landSet": "Dromoka",
-      "collectible": false,
-      "description": "Give a creature +2/+2 and Taunt.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "taunt"
-        }
-      ]
-    },
-    {
-      "id": "dromoka_radiance",
-      "name": "Dromoka’s Radiance",
-      "cardClass": "magepunk",
-      "cost": 3,
-      "rarity": "common",
       "set": "paper",
       "colors": [
         "G",
@@ -23215,6 +23167,56 @@
       ]
     },
     {
+      "id": "dromoka_gift",
+      "name": "Dromoka’s Gift",
+      "cardClass": "magepunk",
+      "cost": 2,
+      "rarity": "common",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Give a creature +2/+2 and Taunt.",
+      "type": "instant",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature",
+          "grant": "taunt"
+        }
+      ]
+    },
+    {
+      "id": "dromoka_radiance",
+      "name": "Dromoka’s Radiance",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "landSet": "Dromoka",
+      "collectible": false,
+      "description": "Whenever you gain life, give your weakest creature +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "healed",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
       "id": "dromoka_ascendancy",
       "name": "Dromoka Ascendancy",
       "cardClass": "magepunk",
@@ -23227,16 +23229,18 @@
       ],
       "landSet": "Dromoka",
       "collectible": false,
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ]
+      "description": "{T}: Put a +1/+1 counter on a creature.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grow",
+            "attack": 1,
+            "health": 1
+          }
+        ],
+        "text": "Put a +1/+1 counter on a creature."
+      }
     },
     {
       "id": "dromoka_captain",
@@ -23255,7 +23259,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Soldier",
+      "tribe": "Warrior",
       "keywords": [
         "taunt",
         "divine_shield"
@@ -23278,14 +23282,13 @@
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         }
       ]
     },
@@ -23302,15 +23305,25 @@
       ],
       "landSet": "Dromoka",
       "collectible": false,
-      "description": "Summon two 2/2 Warriors.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Warrior with Taunt.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Warrior"
+          "text": "Summon a 2/2 Warrior with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -23331,7 +23344,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Drake",
+      "tribe": "Dragon",
       "keywords": [
         "elusive",
         "trample"
@@ -23372,7 +23385,7 @@
       ],
       "landSet": "Dromoka",
       "collectible": false,
-      "description": "Trample. Battlecry: Give your creatures +1/+1 and Taunt.",
+      "description": "Trample. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 5,
       "health": 6,
@@ -23386,8 +23399,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "taunt"
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -23404,12 +23416,12 @@
       ],
       "landSet": "Dromoka",
       "collectible": false,
-      "description": "Battlecry: Gain 4 life.",
+      "description": "Lifesteal. Battlecry: Gain 4 life.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Dragon",
       "keywords": [
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -23437,7 +23449,7 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "taunt"
       ]
@@ -23459,7 +23471,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Soldier",
       "keywords": [
         "taunt",
         "lifesteal"
