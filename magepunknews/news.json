@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "8be20f4",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Nylea land pool (G devotion — stompy Beasts + trample + ramp + fight) — mono gods done",
+			"body": "Nylea hunt god (trample anthem), Colossus overkill, Beasts + Trample everywhere,\nramp (Grovedancer/Intervention permanent), Bow of Nylea deathtouch WEAPON (ping\non hero attack), Presence Beast enchantment, Chrysalis Beast LOCATION, Ordeal\ncounters+ramp, Omen fight instant, deathtouch Moss Viper. 6 card types, 6\nkeywords, mono-G.\n\nTest pool_nylea_test.mjs 48/48. Full suite 372/372. All 5 mono Theros gods done.",
+			"cards": []
+		},
+		{
 			"sha": "4d2beee",
 			"date": "2026-08-24",
 			"kind": "patch",
