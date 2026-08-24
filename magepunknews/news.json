@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "c0881b8",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "fix Thassa pool card name -> 'Thassa's Tidal Wave' (possessive, matching the pool)",
+			"body": "Was 'Thassa Tidal Wave'; every other card is 'Thassa's X'. Straight apostrophe\nto match. Renamed the landSet:Thassa card only (the id collides with the HS\nshaman 'Tidal Wave', which is untouched).",
+			"cards": []
+		},
+		{
 			"sha": "eec87d1",
 			"date": "2026-08-24",
 			"kind": "patch",
