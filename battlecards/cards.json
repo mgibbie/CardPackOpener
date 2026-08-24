@@ -92237,10 +92237,7 @@
       ],
       "cardClass": "neutral",
       "cost": 2,
-      "tribe": "Goblin",
       "type": "creature",
-      "attack": 2,
-      "health": 2,
       "activated": [
         {
           "cost": 1,
@@ -92255,9 +92252,22 @@
           "text": "Sacrifice: deal 2 damage to any target."
         }
       ],
-      "description": "1, Sacrifice: Deal 2 damage to any target.",
+      "description": "Battlecry: Deal 2 damage to any target.",
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Goblin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ]
     },
     {
       "id": "pacifism",
@@ -112148,11 +112158,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "keywords": [],
-      "description": "Sacrifice this: deal 1 damage to any target.",
+      "description": "Battlecry: Deal 1 damage to any target.",
       "activated": [
         {
           "cost": 0,
@@ -112168,7 +112175,20 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "any"
+        }
+      ]
     },
     {
       "id": "goblin_arsonist",
@@ -114705,12 +114725,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Goblin Warrior",
-      "keywords": [],
-      "description": "Kicker 1 — if kicked, creatures you control get +1/+0 & gain Rush until end of turn.",
+      "description": "Battlecry: Give your creatures +1/+0.",
       "kicker": {
         "cost": 1,
         "effects": [
@@ -114727,7 +114743,21 @@
         ]
       },
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ]
     },
     {
       "id": "austere_command",
@@ -115851,12 +115881,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Goblin",
-      "keywords": [],
-      "description": "Sacrifice a Goblin: Target creature gets +1/+1 until end of turn.",
+      "description": "Rush.",
       "activated": [
         {
           "sacCost": {
@@ -115874,7 +115900,13 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Goblin",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "goblin_trashmaster",
@@ -116137,12 +116169,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Spirit",
-      "keywords": [],
-      "description": "(1), Sacrifice a creature: Each other player loses 1 life.",
+      "description": "Battlecry: Deal 1 damage to each opponent.",
       "activated": [
         {
           "cost": 1,
@@ -116158,7 +116186,20 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Spirit",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ]
     },
     {
       "id": "blazing_rootwalla",
@@ -116169,12 +116210,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Lizard",
-      "keywords": [],
-      "description": "(1): This gets +2/+0 until end of turn. (Once per turn.)",
+      "description": "Rush.",
       "activated": [
         {
           "cost": 1,
@@ -116188,7 +116225,13 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Lizard",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "bold_impaler",
@@ -116199,12 +116242,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 2,
       "set": "wubrg",
-      "tribe": "Vampire Knight",
-      "keywords": [],
-      "description": "(3): This gets +2/+0 until end of turn.",
+      "description": "First Strike.",
       "activated": [
         {
           "cost": 3,
@@ -116219,7 +116258,13 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 2,
+      "tribe": "Vampire Knight",
+      "keywords": [
+        "first_strike"
+      ]
     },
     {
       "id": "bellows_lizard",
@@ -116230,12 +116275,8 @@
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 1,
-      "health": 1,
       "set": "wubrg",
-      "tribe": "Lizard",
-      "keywords": [],
-      "description": "(2): This gets +1/+0 until end of turn.",
+      "description": "Rush.",
       "activated": [
         {
           "cost": 2,
@@ -116250,7 +116291,13 @@
         }
       ],
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Lizard",
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "starved_rusalka",
@@ -117539,14 +117586,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 3,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Human Barbarian",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "boggart_brute",
@@ -117557,14 +117606,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 3,
       "health": 2,
-      "set": "wubrg",
       "tribe": "Goblin Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "borderland_minotaur",
@@ -117575,14 +117626,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 4,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Minotaur Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "canyon_minotaur",
@@ -117593,14 +117646,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Minotaur Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "brazen_scourge",
@@ -117686,20 +117741,26 @@
     {
       "id": "cobblebrute",
       "name": "Cobblebrute",
-      "type": "creature",
+      "type": "artifact",
       "cost": 4,
       "colors": [
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 5,
-      "health": 2,
       "set": "wubrg",
-      "tribe": "Elemental",
-      "keywords": [],
-      "description": "",
+      "description": "{T}: Deal 2 damage to any target.",
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ],
+        "text": "Deal 2 damage to any target."
+      }
     },
     {
       "id": "anaba_bodyguard",
@@ -117730,14 +117791,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 6,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Giant Warrior",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "bonebreaker_giant",
@@ -117748,14 +117811,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Trample.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "set": "wubrg",
       "tribe": "Giant",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "trample"
+      ]
     },
     {
       "id": "bull_cerodon",
@@ -118345,14 +118410,16 @@
         "R"
       ],
       "cardClass": "neutral",
+      "set": "wubrg",
+      "description": "Rush.",
+      "landSet": "Mountain",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "set": "wubrg",
       "tribe": "Human Barbarian Soldier",
-      "keywords": [],
-      "description": "",
-      "landSet": "Mountain",
-      "collectible": false
+      "keywords": [
+        "rush"
+      ]
     },
     {
       "id": "alpha_tyrranax",
@@ -118411,20 +118478,35 @@
     {
       "id": "capital_guard",
       "name": "Capital Guard",
-      "type": "creature",
-      "cost": 2,
+      "type": "location",
+      "cost": 3,
       "colors": [
         "R"
       ],
       "cardClass": "neutral",
-      "attack": 2,
-      "health": 2,
       "set": "wubrg",
-      "tribe": "Human Soldier",
-      "keywords": [],
-      "description": "",
+      "description": "Durability 3. {T}: Summon a 2/2 Soldier with Rush.",
       "landSet": "Mountain",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Soldier with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Soldier",
+              "tribe": "Soldier",
+              "keywords": [
+                "rush"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "blistering_barrier",
