@@ -20881,24 +20881,30 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 3 damage to a creature and draw a card.",
+      "description": "Elusive. Windfury. Battlecry: Deal 3 damage to any target. Whenever you cast a spell, gain 1 Mana this turn.",
       "type": "creature",
       "attack": 5,
       "health": 4,
       "tribe": "Dragon",
       "keywords": [
         "elusive",
+        "windfury",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "target": "any"
         }
       ]
     },
@@ -20919,7 +20925,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -20943,13 +20948,13 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "first_strike"
       ],
       "effects": [
         {
@@ -20976,7 +20981,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -21029,7 +21033,7 @@
       "landSet": "Prismari",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -21051,14 +21055,17 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "prismari_keyrune",
@@ -21082,6 +21089,7 @@
           "attack": 3,
           "health": 2,
           "name": "Elemental",
+          "tribe": "Elemental",
           "keywords": [
             "elusive"
           ]
@@ -21101,18 +21109,21 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Scry 3. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "scry",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Scry 1 and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1 and draw a card."
+      }
     },
     {
       "id": "prismari_pledgemage",
@@ -21127,20 +21138,20 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 1 damage to all enemy creatures.",
+      "description": "Elusive. Rush. Battlecry: Deal 1 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
+        "rush",
         "battlecry"
       ],
       "effects": [
         {
           "type": "damage",
           "value": 1,
-          "target": "enemy-creatures"
+          "target": "any"
         }
       ]
     },
@@ -21157,15 +21168,25 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Summon two 3/3 Elementals.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Elemental with Elusive.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Elemental"
+          "text": "Summon a 3/3 Elemental with Elusive.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Elemental",
+              "tribe": "Elemental",
+              "keywords": [
+                "elusive"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -21182,12 +21203,12 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Battlecry: Scry 2 and draw a card.",
+      "description": "Stealth. Battlecry: Scry 2 and draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "stealth",
         "battlecry"
       ],
       "effects": [
@@ -21215,7 +21236,7 @@
       "landSet": "Prismari",
       "collectible": false,
       "description": "Draw 2 cards. Scry 1.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "draw",
@@ -21240,15 +21261,18 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
-        }
-      ]
+      "description": "Whenever you cast a spell, deal 1 damage to all enemy creatures.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "prismari_inspiration",
@@ -21263,7 +21287,7 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "Gain 2 mana this turn. Draw a card.",
+      "description": "Gain 2 Mana this turn. Draw a card.",
       "type": "sorcery",
       "effects": [
         {
