@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "1803253",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Oketra land pool (W devotion — Warrior tokens + anthems + First Strike + lifegain)",
+			"body": "God-Eternal Oketra (creatures muster Warriors + battlecry 2), Caracal Lifesteal\nCats, Avenger/Command LOCATION/Vindication WEAPON make Warriors, Trial/Solidarity\nenchantment anthems, Cartouche/Charm instants, Invocation mass Reborn, Last Mercy\nlifegain, Light Arrow removal. Keeps 'Discover an Oketra Card'. 6 types, 6 keywords,\nmono-W.\n\nNote: every land pool has a pre-existing <set>_pool_test.mjs integration test.\nUpdated oketra_pool_test's Initiate assertion (planeshift -> Warrior-summon\ndeathrattle) to match the redesign.\n\nTest pool_oketra_test.mjs 48/48 (+ oketra_pool_test 41/41). Full suite 386/386.",
+			"cards": []
+		},
+		{
 			"sha": "2c988e4",
 			"date": "2026-08-24",
 			"kind": "patch",
