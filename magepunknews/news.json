@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "b2b1632",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Raugrin land pool (URW/Jeskai tri-color — Dino aggro + prowess/spellslinging + burn + tempo) — 3rd Ikoria wedge",
+			"body": "Kept Dinosaur tribal + added prowess: Vadrok prowess lord (bc burn 3 + spell ->\nteam +1/+0), Vantasaur spellslinger-ping ENCHANTMENT (spell -> 1 to each opp),\nBaryonyx burn INSTANT, Mythos burn+draw SORCERY, Crystal mana-rock ARTIFACT (tap\ngain-mana+scry), Dinomancer nesting-ground LOCATION (tap -> 3/3 Trample Dino), hasty/\ntrample Dinos + Imperiosaur 6/5. 6 types, 6 keywords, URW. (old test stayed green.)\n\nTest pool_raugrin_test.mjs 42/42. Full suite 401/401.",
+			"cards": []
+		},
+		{
 			"sha": "1bd06b1",
 			"date": "2026-08-24",
 			"kind": "patch",
