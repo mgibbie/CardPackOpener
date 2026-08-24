@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "fc6a963",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Witherbloom land pool (BG — Pests + sacrifice value + lifegain payoff + drain) — 3rd Strixhaven college",
+			"body": "Beledros Pest engine (bc 2 Pests + turn-start Pest), Pest token = 1/1 that gives 1\nlife on death, Witch/Laureate/Vineclinger(LOCATION) make Pests, Potionmaster Blood-\nArtist (friendly death -> drain 1), Pledgemage lifegain-payoff ENCHANTMENT (heal ->\nbolster), Concoction potion ARTIFACT (tap draw+gain 2), Command destroy<=3+life,\nTangletrap sweep, Charm deathtouch INSTANT. 6 types, 6 keywords, BG. (old test green.)\n\nTest pool_witherbloom_test.mjs 46/46. Full suite 391/391.",
+			"cards": []
+		},
+		{
 			"sha": "e626b2e",
 			"date": "2026-08-24",
 			"kind": "patch",
