@@ -9792,28 +9792,34 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Lifesteal. Battlecry: Each opponent loses 3 life.",
+      "description": "Lifesteal. Divine Shield. Battlecry: Deal 4 damage to each opponent and gain 4 life.",
       "type": "creature",
-      "attack": 5,
-      "health": 5,
-      "tribe": "Spirit",
-      "keywords": [
-        "lifesteal",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        }
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Spirit",
+      "keywords": [
+        "lifesteal",
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
     },
     {
       "id": "kaya_orzhov_usurper",
@@ -9822,27 +9828,27 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Lifesteal. Battlecry: Destroy a creature.",
+      "description": "Lifesteal. Battlecry: Exile a creature.",
       "type": "creature",
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Human Assassin",
+      "tribe": "Human",
       "keywords": [
         "lifesteal",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "destroy",
+          "type": "exile",
           "target": "creature"
         }
-      ],
-      "colors": [
-        "B",
-        "W"
-      ],
-      "landSet": "Orzhov",
-      "collectible": false
+      ]
     },
     {
       "id": "teysa_orzhov_scion",
@@ -9851,21 +9857,37 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Deathtouch. Lifesteal.",
+      "description": "Deathtouch. Lifesteal. Whenever a friendly creature dies, summon a 1/1 Spirit with Lifesteal.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Human Advisor",
-      "keywords": [
-        "deathtouch",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Spirit",
+            "tribe": "Spirit",
+            "keywords": [
+              "lifesteal"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "orzhov_advisor",
@@ -9876,19 +9898,18 @@
       "set": "paper",
       "description": "Taunt. Lifesteal.",
       "type": "creature",
-      "attack": 3,
-      "health": 5,
-      "tribe": "Human Advisor",
-      "keywords": [
-        "taunt",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 5,
+      "keywords": [
+        "taunt",
+        "lifesteal"
+      ]
     },
     {
       "id": "orzhov_ghost_drake",
@@ -9899,19 +9920,19 @@
       "set": "paper",
       "description": "Elusive. Lifesteal.",
       "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Spirit Drake",
-      "keywords": [
-        "elusive",
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spirit",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
     },
     {
       "id": "orzhov_advokist",
@@ -9922,9 +9943,14 @@
       "set": "paper",
       "description": "Taunt. Battlecry: Gain 4 life.",
       "type": "creature",
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false,
       "attack": 2,
       "health": 4,
-      "tribe": "Human Advisor",
       "keywords": [
         "taunt",
         "battlecry"
@@ -9935,13 +9961,7 @@
           "value": 4,
           "target": "self"
         }
-      ],
-      "colors": [
-        "B",
-        "W"
-      ],
-      "landSet": "Orzhov",
-      "collectible": false
+      ]
     },
     {
       "id": "orzhov_racketeers",
@@ -9950,27 +9970,32 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Battlecry: Each opponent discards a card.",
-      "type": "creature",
-      "attack": 1,
-      "health": 4,
-      "tribe": "Human Rogue",
-      "keywords": [
-        "taunt",
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ],
+      "description": "Durability 3. {T}: Deal 2 damage to each opponent and gain 2 life.",
+      "type": "location",
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 2 damage to each opponent and gain 2 life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "orzhov_guildmage",
@@ -9979,11 +10004,16 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Each opponent loses 2 life.",
+      "description": "Battlecry: Deal 2 damage to each opponent and gain 2 life.",
       "type": "creature",
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -9992,14 +10022,13 @@
           "type": "damage",
           "value": 2,
           "target": "enemy-heroes"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
         }
-      ],
-      "colors": [
-        "B",
-        "W"
-      ],
-      "landSet": "Orzhov",
-      "collectible": false
+      ]
     },
     {
       "id": "orzhov_pontiff",
@@ -10010,9 +10039,14 @@
       "set": "paper",
       "description": "Battlecry: Deal 1 damage to all enemy creatures.",
       "type": "creature",
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false,
       "attack": 1,
       "health": 1,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
@@ -10022,13 +10056,7 @@
           "value": 1,
           "target": "enemy-creatures"
         }
-      ],
-      "colors": [
-        "B",
-        "W"
-      ],
-      "landSet": "Orzhov",
-      "collectible": false
+      ]
     },
     {
       "id": "orzhov_cleric",
@@ -10039,18 +10067,17 @@
       "set": "paper",
       "description": "Lifesteal.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Cleric",
-      "keywords": [
-        "lifesteal"
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "lifesteal"
+      ]
     },
     {
       "id": "orzhov_enforcer",
@@ -10059,20 +10086,20 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Deathtouch.",
+      "description": "Deathtouch. Taunt.",
       "type": "creature",
-      "attack": 1,
-      "health": 3,
-      "tribe": "Human Assassin",
-      "keywords": [
-        "deathtouch"
-      ],
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "taunt"
+      ]
     },
     {
       "id": "orzhov_gift",
@@ -10081,8 +10108,14 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Each opponent loses 3 life. Gain 3 life.",
+      "description": "Deal 3 damage to each opponent and gain 3 life.",
       "type": "sorcery",
+      "colors": [
+        "B",
+        "W"
+      ],
+      "landSet": "Orzhov",
+      "collectible": false,
       "effects": [
         {
           "type": "damage",
@@ -10094,13 +10127,7 @@
           "value": 3,
           "target": "self"
         }
-      ],
-      "colors": [
-        "B",
-        "W"
-      ],
-      "landSet": "Orzhov",
-      "collectible": false
+      ]
     },
     {
       "id": "orzhov_charm",
@@ -10109,49 +10136,81 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Destroy a creature with 3 or less Attack.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature",
-          "maxAttack": 3
-        }
-      ],
+      "description": "Choose One — Destroy a creature with 3 or less Attack; or Deal 2 damage to each opponent and gain 2 life; or Draw a card.",
+      "type": "instant",
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Destroy a creature with 3 or less Attack.",
+          "effects": [
+            {
+              "type": "destroy",
+              "target": "creature",
+              "maxAttack": 3
+            }
+          ]
+        },
+        {
+          "text": "Deal 2 damage to each opponent and gain 2 life.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-heroes"
+            },
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
+        },
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "orzhov_keyrune",
       "name": "Orzhov Keyrune",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
-      "description": "Summon a 2/2 Spirit with Lifesteal.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Spirit",
-          "keywords": [
-            "lifesteal"
-          ]
-        }
-      ],
+      "description": "Extort — whenever you cast a spell, deal 1 damage to each opponent and gain 1 life.",
+      "type": "enchantment",
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
     },
     {
       "id": "orzhov_cluestone",
@@ -10160,20 +10219,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "B",
         "W"
       ],
       "landSet": "Orzhov",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "silverquill_campus",
