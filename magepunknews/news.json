@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "570c66f",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Keranos land pool (UR devotion — storm burn + card advantage) — Theros 2-color gods done",
+			"body": "Keranos god (battlecry 3 + turn-start storm 2 & draw), lightning bodies, Bolt/\nDivination instants, Dictate spell-burn enchantment (Guttersnipe), Edict burn\nartifact, Knowledge counter-secret, Wrath sweep, Epiphany dig, Power windfury\ninstant. 6 card types, 6 keywords, UR. Distinct from Izzet (prowess) via storm\nburn engines.\n\nTest pool_keranos_test.mjs 46/46. Full suite 383/383. All Theros 2-color gods done.",
+			"cards": []
+		},
+		{
 			"sha": "f89be33",
 			"date": "2026-08-24",
 			"kind": "patch",
