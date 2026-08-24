@@ -18538,7 +18538,7 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Charge. Lifesteal. Battlecry: Deal 2 damage to each opponent.",
+      "description": "Charge. Lifesteal. Battlecry: Deal 3 damage to each opponent. At the start of your turn, deal 2 damage to each opponent.",
       "type": "creature",
       "attack": 6,
       "health": 5,
@@ -18548,10 +18548,20 @@
         "lifesteal",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
       "effects": [
         {
           "type": "damage",
-          "value": 2,
+          "value": 3,
           "target": "enemy-heroes"
         }
       ]
@@ -18573,7 +18583,6 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Minotaur",
       "keywords": [
         "battlecry"
       ],
@@ -18599,13 +18608,13 @@
       "landSet": "Mogis",
       "collectible": false,
       "description": "Give a creature +2/+1 and Charge.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "charge"
         }
       ]
@@ -18659,7 +18668,6 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Hound",
       "keywords": [
         "rush"
       ]
@@ -18677,19 +18685,21 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to a creature.",
+      "description": "Battlecry: Sacrifice a creature to deal 3 damage to each opponent.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Cleric",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
+          "type": "sacrifice-friendly"
+        },
+        {
           "type": "damage",
-          "value": 2,
-          "target": "creature"
+          "value": 3,
+          "target": "enemy-heroes"
         }
       ]
     },
@@ -18706,14 +18716,23 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Lifesteal.",
+      "description": "Lifesteal. Whenever a friendly creature dies, this gains +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Cleric",
       "keywords": [
         "lifesteal"
-      ]
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "spite_of_mogis",
@@ -18728,15 +18747,19 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "creature"
-        }
-      ]
+      "description": "Secret: When an enemy creature attacks, destroy it.",
+      "type": "secret",
+      "secret": {
+        "trigger": "enemy-attack",
+        "condition": {
+          "attackerCreature": true
+        },
+        "effects": [
+          {
+            "type": "destroy-attacker"
+          }
+        ]
+      }
     },
     {
       "id": "warchanter_of_mogis",
@@ -18755,7 +18778,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Minotaur",
       "keywords": [
         "battlecry"
       ],
@@ -18804,15 +18826,23 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Deal 3 damage to all enemy creatures.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
-        }
-      ]
+      "description": "At the start of your turn, deal 1 damage to all enemy creatures and 1 to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "dictate_of_mogis",
@@ -18827,20 +18857,18 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Deal 4 damage to a creature. Each opponent loses 2 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "creature"
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
-        }
-      ]
+      "description": "{T}: Deal 2 damage to each opponent.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-heroes"
+          }
+        ],
+        "text": "Deal 2 damage to each opponent."
+      }
     },
     {
       "id": "mogis_minotaur",
@@ -18855,13 +18883,14 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample.",
       "type": "creature",
       "attack": 4,
       "health": 3,
       "tribe": "Minotaur",
       "keywords": [
-        "rush"
+        "rush",
+        "trample"
       ]
     },
     {
@@ -18877,13 +18906,14 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Minotaur Berserker",
+      "tribe": "Minotaur",
       "keywords": [
-        "rush"
+        "rush",
+        "first_strike"
       ]
     },
     {
@@ -18899,7 +18929,7 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures +2/+1 and Rush.",
+      "description": "Charge. Battlecry: Give your creatures +2/+1.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -18913,8 +18943,7 @@
           "type": "buff",
           "attack": 2,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "target": "friendly-creatures"
         }
       ]
     },
