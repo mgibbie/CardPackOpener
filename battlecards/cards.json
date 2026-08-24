@@ -5380,8 +5380,13 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Summon two 4/4 Undead Warriors with Taunt.",
+      "description": "Divine Shield. Battlecry: Summon two 2/2 Warriors with First Strike. Whenever you play a creature, summon a 2/2 Warrior with First Strike.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "attack": 3,
       "health": 6,
       "tribe": "God",
@@ -5389,23 +5394,35 @@
         "divine_shield",
         "battlecry"
       ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Warrior",
+            "tribe": "Warrior",
+            "keywords": [
+              "first_strike"
+            ]
+          }
+        ]
+      },
       "effects": [
         {
           "type": "summon",
           "count": 2,
-          "attack": 4,
-          "health": 4,
-          "name": "Undead Warrior",
+          "attack": 2,
+          "health": 2,
+          "name": "Warrior",
+          "tribe": "Warrior",
           "keywords": [
-            "taunt"
+            "first_strike"
           ]
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_attendant",
@@ -5416,18 +5433,17 @@
       "set": "paper",
       "description": "Taunt. Reborn.",
       "type": "creature",
-      "attack": 4,
-      "health": 3,
-      "tribe": "Undead Warrior",
-      "keywords": [
-        "taunt",
-        "reborn"
-      ],
       "colors": [
         "W"
       ],
       "landSet": "Oketra",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 3,
+      "keywords": [
+        "taunt",
+        "reborn"
+      ]
     },
     {
       "id": "oketras_caracal",
@@ -5438,6 +5454,11 @@
       "set": "paper",
       "description": "Lifesteal. Battlecry: Summon two 1/1 Cats with Lifesteal.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "attack": 3,
       "health": 3,
       "tribe": "Cat",
@@ -5452,16 +5473,12 @@
           "attack": 1,
           "health": 1,
           "name": "Cat",
+          "tribe": "Cat",
           "keywords": [
             "lifesteal"
           ]
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_avenger",
@@ -5470,13 +5487,18 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Summon two 1/1 Warriors.",
+      "description": "First Strike. Battlecry: Summon two 1/1 Warriors with First Strike.",
       "type": "creature",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
       "keywords": [
-        "battlecry"
+        "battlecry",
+        "first_strike"
       ],
       "effects": [
         {
@@ -5484,14 +5506,13 @@
           "count": 2,
           "attack": 1,
           "health": 1,
-          "name": "Warrior"
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "first_strike"
+          ]
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_initiate",
@@ -5500,25 +5521,31 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Deathrattle: Planeshift.",
+      "description": "Taunt. Deathrattle: Summon a 1/1 Warrior with First Strike.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Human Cleric",
-      "keywords": [
-        "taunt",
-        "deathrattle"
-      ],
-      "deathrattle": [
-        {
-          "type": "planeshift"
-        }
-      ],
       "colors": [
         "W"
       ],
       "landSet": "Oketra",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "taunt"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "first_strike"
+          ]
+        }
+      ]
     },
     {
       "id": "oketras_trial",
@@ -5529,6 +5556,11 @@
       "set": "paper",
       "description": "Give your creatures +2/+2.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
@@ -5536,12 +5568,7 @@
           "health": 2,
           "target": "friendly-creatures"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_solidarity",
@@ -5550,22 +5577,24 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +1/+1 and First Strike.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "first_strike"
-        }
-      ],
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "type": "enchantment",
       "colors": [
         "W"
       ],
       "landSet": "Oketra",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "oketras_cartouche",
@@ -5575,13 +5604,18 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +1/+1 and First Strike. Summon a 1/1 Warrior.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "first_strike"
         },
         {
@@ -5589,14 +5623,13 @@
           "count": 1,
           "attack": 1,
           "health": 1,
-          "name": "Warrior"
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "first_strike"
+          ]
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_charm",
@@ -5606,21 +5639,21 @@
       "rarity": "common",
       "set": "paper",
       "description": "Give a creature +2/+2 and Divine Shield.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "divine_shield"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_command",
@@ -5629,27 +5662,32 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon two 1/1 Warriors. Gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Warrior"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 1/1 Warrior with First Strike.",
+      "type": "location",
       "colors": [
         "W"
       ],
       "landSet": "Oketra",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Warrior with First Strike.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "first_strike"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "oketras_invocation",
@@ -5658,8 +5696,13 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Creatures you control gain Reborn.",
+      "description": "Your creatures gain Reborn.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "buff",
@@ -5668,12 +5711,7 @@
           "target": "friendly-creatures",
           "grant": "reborn"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_last_mercy",
@@ -5684,18 +5722,18 @@
       "set": "paper",
       "description": "Gain 10 life.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "heal",
           "value": 10,
           "target": "self"
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_truth",
@@ -5706,18 +5744,18 @@
       "set": "paper",
       "description": "Discover an Oketra Card, then add two copies of it to your hand.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "discover",
           "landSet": "Oketra",
           "duplicate": true
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_light_arrow",
@@ -5728,18 +5766,18 @@
       "set": "paper",
       "description": "Destroy a creature with 4 or more Attack.",
       "type": "sorcery",
+      "colors": [
+        "W"
+      ],
+      "landSet": "Oketra",
+      "collectible": false,
       "effects": [
         {
           "type": "destroy",
           "target": "creature",
           "minAttack": 4
         }
-      ],
-      "colors": [
-        "W"
-      ],
-      "landSet": "Oketra",
-      "collectible": false
+      ]
     },
     {
       "id": "oketras_vindication",
@@ -5748,24 +5786,31 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Destroy a creature. Gain 2 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "destroy",
-          "target": "creature"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
-        }
-      ],
+      "description": "After your hero attacks, summon a 1/1 Warrior with First Strike.",
+      "type": "weapon",
       "colors": [
         "W"
       ],
       "landSet": "Oketra",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Warrior",
+            "tribe": "Warrior",
+            "keywords": [
+              "first_strike"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "temple_of_thassa",

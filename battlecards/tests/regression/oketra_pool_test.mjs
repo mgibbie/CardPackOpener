@@ -75,17 +75,17 @@ for (const card of pool) {
 	ok('discover offers only Oketra cards', pend && pend.ids && pend.ids.every(id => byId[id] && byId[id].landSet === 'Oketra'), pend && pend.ids);
 }
 
-// ---- Oketra's Initiate: Deathrattle planeshifts the arena on death ----
+// ---- Oketra's Initiate: Deathrattle summons a Warrior on death (redesigned) ----
 {
 	byId._big = { id: '_big', name: 'Big', type: 'creature', cost: 1, attack: 5, health: 5, rarity: 'common' };
 	const st = fresh();
 	const atk = E.instantiate(byId._big, 0); atk.zone = 'board'; atk.sick = false; st.players[0].board.push(atk);
 	const init = E.instantiate(byId.oketras_initiate, 1); init.zone = 'board'; init.sick = false; st.players[1].board.push(init);
 	E.recomputeAuras(st);
-	const before = st.plane;
-	E.attack(st, 0, atk.uid, { type: 'creature', uid: init.uid, player: 1 }); // 5/5 kills the 2/3 Taunt
-	ok('Initiate dies to combat', !st.players[1].board.some(x => x.id === 'oketras_initiate' && x.damage < x.maxHealth));
-	ok('Initiate Deathrattle planeshifts the arena', !!st.plane && st.plane !== before, st.plane);
+	const w0 = st.players[1].board.filter(c => c.name === 'Warrior').length;
+	E.attack(st, 0, atk.uid, { type: 'creature', uid: init.uid, player: 1 }); E.sweepDeaths(st); // 5/5 kills the 2/3 Taunt
+	ok('Initiate dies to combat', !st.players[1].board.some(x => x.id === 'oketras_initiate'));
+	ok('Initiate Deathrattle summons a Warrior', st.players[1].board.filter(c => c.name === 'Warrior').length === w0 + 1, st.players[1].board.map(c => c.name));
 }
 
 // ---- Oketra's Truth: Discover, then add a second copy (2 total in hand) ----
