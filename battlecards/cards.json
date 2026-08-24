@@ -29962,11 +29962,11 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Rush. First Strike. Battlecry: Give a creature +1/+1.",
+      "description": "Rush. First Strike. Battlecry: Give your creatures +1/+0 and Rush.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush",
         "first_strike",
@@ -29976,8 +29976,9 @@
         {
           "type": "buff",
           "attack": 1,
-          "health": 1,
-          "target": "creature"
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "rush"
         }
       ]
     },
@@ -30023,7 +30024,7 @@
       "type": "creature",
       "attack": 7,
       "health": 2,
-      "tribe": "Orc Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "charge",
         "first_strike"
@@ -30043,12 +30044,13 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Summon a 2/1 Warrior with Rush.",
+      "description": "Rush. Battlecry: Summon a 2/1 Warrior with Rush.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
+        "rush",
         "battlecry"
       ],
       "effects": [
@@ -30058,6 +30060,7 @@
           "attack": 2,
           "health": 1,
           "name": "Warrior",
+          "tribe": "Warrior",
           "keywords": [
             "rush"
           ]
@@ -30082,14 +30085,14 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -30111,7 +30114,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush"
       ]
@@ -30131,7 +30134,7 @@
       "landSet": "Mardu",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -30182,11 +30185,10 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Summon three 1/1 Goblins.",
+      "description": "Battlecry: Summon three 1/1 Warriors with Rush.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Goblin",
       "keywords": [
         "battlecry"
       ],
@@ -30196,7 +30198,11 @@
           "count": 3,
           "attack": 1,
           "health": 1,
-          "name": "Goblin"
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -30218,7 +30224,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Advisor",
       "keywords": [
         "taunt",
         "lifesteal"
@@ -30238,11 +30243,11 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Summon two 1/1 Warriors.",
+      "description": "Battlecry: Summon two 2/1 Warriors with Rush.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -30250,9 +30255,13 @@
         {
           "type": "summon",
           "count": 2,
-          "attack": 1,
+          "attack": 2,
           "health": 1,
-          "name": "Warrior"
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "rush"
+          ]
         }
       ]
     },
@@ -30270,11 +30279,11 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -30283,8 +30292,7 @@
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "friendly-creatures",
-          "grant": "rush"
+          "target": "friendly-creatures"
         }
       ]
     },
@@ -30306,7 +30314,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "charge",
         "lifesteal"
@@ -30326,27 +30334,19 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Give your creatures +1/+0 and Rush. Summon a 1/1 Goblin with Rush.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 0,
-          "target": "friendly-creatures",
-          "grant": "rush"
-        },
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Goblin",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
+      "description": "Whenever you play a creature, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "mardu_monument",
@@ -30362,25 +30362,24 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Summon two 2/1 Warriors with Rush. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 1,
-          "name": "Warrior",
-          "keywords": [
-            "rush"
-          ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
-        }
-      ]
+      "description": "{T}: Summon a 2/1 Warrior with Rush.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 1,
+            "name": "Warrior",
+            "tribe": "Warrior",
+            "keywords": [
+              "rush"
+            ]
+          }
+        ],
+        "text": "Summon a 2/1 Warrior with Rush."
+      }
     },
     {
       "id": "naya_mayael",
@@ -37688,7 +37687,6 @@
       "type": "creature",
       "attack": 3,
       "health": 1,
-      "tribe": "Human Warrior",
       "keywords": [
         "rush"
       ]
@@ -37707,23 +37705,25 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Summon two 2/1 Warriors with Rush. Deal 2 damage to each opponent.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/1 Warrior with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 1,
-          "name": "Warrior",
-          "keywords": [
-            "rush"
+          "text": "Summon a 2/1 Warrior with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 1,
+              "name": "Warrior",
+              "tribe": "Warrior",
+              "keywords": [
+                "rush"
+              ]
+            }
           ]
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -37745,7 +37745,7 @@
       "type": "creature",
       "attack": 1,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "deathtouch"
       ]
@@ -37764,11 +37764,11 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Deal 1 damage to a creature.",
+      "description": "Battlecry: Deal 1 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -37776,7 +37776,7 @@
         {
           "type": "damage",
           "value": 1,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -37798,7 +37798,7 @@
       "type": "creature",
       "attack": 4,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush"
       ]
@@ -37821,7 +37821,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Ogre Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "charge"
       ]
@@ -37841,13 +37841,13 @@
       "landSet": "Mardu",
       "collectible": false,
       "description": "Give a creature +2/+2 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -37870,7 +37870,7 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Goblin Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush"
       ]
@@ -37893,7 +37893,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "rush",
         "lifesteal"
@@ -37913,11 +37913,11 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Battlecry: Give your creatures +1/+1 and Rush.",
+      "description": "Battlecry: Give your creatures +1/+0 and Rush.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Warrior",
+      "tribe": "Warrior",
       "keywords": [
         "battlecry"
       ],
@@ -37925,7 +37925,7 @@
         {
           "type": "buff",
           "attack": 1,
-          "health": 1,
+          "health": 0,
           "target": "friendly-creatures",
           "grant": "rush"
         }
@@ -233965,6 +233965,156 @@
         "U"
       ],
       "landSet": "Sultai",
+      "collectible": false
+    },
+    {
+      "id": "mardu_bloodsoaked_champion",
+      "name": "Mardu Bloodsoaked Champion",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "Warrior",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "landSet": "Mardu",
+      "collectible": false
+    },
+    {
+      "id": "mardu_wingmate_roc",
+      "name": "Mardu Wingmate Roc",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 4,
+      "tribe": "Bird",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 4,
+          "name": "Roc",
+          "tribe": "Bird",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "description": "Elusive. Battlecry: Summon a 3/4 Roc with Elusive.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "landSet": "Mardu",
+      "collectible": false
+    },
+    {
+      "id": "mardu_chief_of_the_edge",
+      "name": "Mardu Chief of the Edge",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Give your creatures +1/+0.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "landSet": "Mardu",
+      "collectible": false
+    },
+    {
+      "id": "mardu_herald_of_anafenza",
+      "name": "Mardu Herald of Anafenza",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Warrior",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Warrior",
+          "tribe": "Warrior",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "description": "Battlecry: Summon a 1/1 Warrior with Rush.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "landSet": "Mardu",
+      "collectible": false
+    },
+    {
+      "id": "mardu_aleshas_vanguard",
+      "name": "Mardu Alesha's Vanguard",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 4,
+      "health": 3,
+      "tribe": "Warrior",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "landSet": "Mardu",
       "collectible": false
     }
   ]
