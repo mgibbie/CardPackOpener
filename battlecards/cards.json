@@ -27173,7 +27173,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Dragon",
+      "tribe": "Berserker",
       "keywords": [
         "lifesteal",
         "rush"
@@ -27196,7 +27196,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Berserker",
+      "tribe": "Berserker",
       "keywords": [
         "rush"
       ]
@@ -27214,7 +27214,7 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Rush. Battlecry: Deal 1 damage to a creature.",
+      "description": "Rush. Battlecry: Deal 1 damage to any target.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -27227,7 +27227,7 @@
         {
           "type": "damage",
           "value": 1,
-          "target": "creature"
+          "target": "any"
         }
       ]
     },
@@ -27244,15 +27244,15 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Give a creature +2/+0 and Reborn.",
-      "type": "sorcery",
+      "description": "Give a creature +2/+0 and Lifesteal.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 0,
-          "target": "creature",
-          "grant": "reborn"
+          "target": "friendly-creature",
+          "grant": "lifesteal"
         }
       ]
     },
@@ -27269,23 +27269,46 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Summon two 2/2 Devils with Rush. Deal 2 damage to each opponent.",
+      "description": "Summon two 3/2 Devils with Rush. (Devils deal 1 damage when they die.)",
       "type": "sorcery",
       "effects": [
         {
           "type": "summon",
-          "count": 2,
-          "attack": 2,
+          "count": 1,
+          "attack": 3,
           "health": 2,
           "name": "Devil",
+          "tribe": "Devil",
           "keywords": [
-            "rush"
+            "rush",
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-heroes"
+            }
           ]
         },
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-heroes"
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 2,
+          "name": "Devil",
+          "tribe": "Devil",
+          "keywords": [
+            "rush",
+            "deathrattle"
+          ],
+          "deathrattle": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-heroes"
+            }
+          ]
         }
       ]
     },
@@ -27303,7 +27326,7 @@
       "landSet": "Immersturm",
       "collectible": false,
       "description": "Deal 3 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -27329,7 +27352,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Berserker",
       "keywords": [
         "rush",
         "lifesteal"
@@ -27360,7 +27383,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -27399,18 +27422,13 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Deal 3 damage to each opponent and gain 3 life.",
+      "description": "Deal 3 damage to each opponent.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
           "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
         }
       ]
     },
@@ -27454,7 +27472,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human",
       "keywords": [
         "deathtouch"
       ]
@@ -27495,23 +27512,33 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Summon a 3/2 Devil with Rush. Each opponent loses 1 life.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/2 Devil with Rush.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 2,
-          "name": "Devil",
-          "keywords": [
-            "rush"
+          "text": "Summon a 3/2 Devil with Rush.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 2,
+              "name": "Devil",
+              "tribe": "Devil",
+              "keywords": [
+                "rush",
+                "deathrattle"
+              ],
+              "deathrattle": [
+                {
+                  "type": "damage",
+                  "value": 1,
+                  "target": "enemy-heroes"
+                }
+              ]
+            }
           ]
-        },
-        {
-          "type": "damage",
-          "value": 1,
-          "target": "enemy-heroes"
         }
       ]
     },
@@ -35824,7 +35851,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Warrior",
+      "tribe": "Berserker",
       "keywords": [
         "rush",
         "lifesteal"
@@ -35847,7 +35874,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Devil Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -35873,13 +35899,13 @@
       "landSet": "Immersturm",
       "collectible": false,
       "description": "Give a creature +2/+0 and Lifesteal.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 0,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "lifesteal"
         }
       ]
@@ -35897,13 +35923,14 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample.",
       "type": "creature",
       "attack": 5,
       "health": 4,
-      "tribe": "Demon",
+      "tribe": "Giant",
       "keywords": [
-        "rush"
+        "rush",
+        "trample"
       ]
     },
     {
@@ -35911,7 +35938,7 @@
       "name": "Immersturm Death Ritual",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "B",
@@ -35919,20 +35946,18 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Deal 3 damage to each opponent and gain 3 life.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        }
-      ]
+      "description": "Whenever a friendly creature dies, deal 1 damage to each opponent.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      }
     },
     {
       "id": "immersturm_hymn",
@@ -35947,16 +35972,16 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Each opponent discards 2 cards and loses 1 life.",
+      "description": "Each opponent discards 2 cards and takes 2 damage.",
       "type": "sorcery",
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         },
         {
           "type": "damage",
-          "value": 1,
+          "value": 2,
           "target": "enemy-heroes"
         }
       ]
@@ -35965,7 +35990,7 @@
       "id": "legend_of_immersturm",
       "name": "Legend of Immersturm",
       "cardClass": "magepunk",
-      "cost": 5,
+      "cost": 4,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -35974,21 +35999,32 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Summon a 4/4 Demon with Rush and Lifesteal.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Demon",
-          "keywords": [
-            "rush",
-            "lifesteal"
-          ]
-        }
-      ]
+      "description": "{T}: Summon a 3/2 Devil with Rush.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 3,
+            "health": 2,
+            "name": "Devil",
+            "tribe": "Devil",
+            "keywords": [
+              "rush",
+              "deathrattle"
+            ],
+            "deathrattle": [
+              {
+                "type": "damage",
+                "value": 1,
+                "target": "enemy-heroes"
+              }
+            ]
+          }
+        ],
+        "text": "Summon a 3/2 Devil with Rush."
+      }
     },
     {
       "id": "immersturm_rageflame",
@@ -36025,13 +36061,13 @@
       ],
       "landSet": "Immersturm",
       "collectible": false,
-      "description": "Deal 3 damage to all creatures.",
+      "description": "Deal 3 damage to all enemy creatures.",
       "type": "sorcery",
       "effects": [
         {
           "type": "damage",
           "value": 3,
-          "target": "all-creatures"
+          "target": "enemy-creatures"
         }
       ]
     },
@@ -36059,7 +36095,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -234610,6 +234646,138 @@
         "G"
       ],
       "landSet": "Gnottvold",
+      "collectible": false
+    },
+    {
+      "id": "immersturm_valki",
+      "name": "Immersturm Valki, God of Lies",
+      "cost": 2,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 2,
+      "health": 1,
+      "tribe": "God",
+      "keywords": [
+        "deathtouch",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "enemy-discard",
+          "count": 1
+        }
+      ],
+      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false
+    },
+    {
+      "id": "immersturm_vengeful_reaper",
+      "name": "Immersturm Vengeful Reaper",
+      "cost": 4,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Demon",
+      "keywords": [
+        "elusive",
+        "deathtouch"
+      ],
+      "description": "Elusive. Deathtouch.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false
+    },
+    {
+      "id": "immersturm_egon",
+      "name": "Immersturm Egon, God of Death",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 4,
+      "health": 4,
+      "tribe": "God",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Lifesteal. Battlecry: Deal 2 damage to each opponent.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false
+    },
+    {
+      "id": "immersturm_grim_draugr",
+      "name": "Immersturm Grim Draugr",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Berserker",
+      "keywords": [
+        "rush"
+      ],
+      "description": "Rush.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
+      "collectible": false
+    },
+    {
+      "id": "immersturm_draugrs_helm",
+      "name": "Immersturm Draugr's Helm",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "weapon",
+      "attack": 2,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "A 2/3 weapon. After your hero attacks, deal 1 damage to each opponent.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "R"
+      ],
+      "landSet": "Immersturm",
       "collectible": false
     }
   ]
