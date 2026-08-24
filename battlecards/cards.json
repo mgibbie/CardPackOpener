@@ -29530,7 +29530,7 @@
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "elusive",
         "first_strike",
@@ -29561,7 +29561,6 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Monk",
       "keywords": [
         "elusive",
         "rush"
@@ -29581,11 +29580,11 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Monk with Elusive.",
+      "description": "Battlecry: Summon a 1/1 Monk. Whenever you cast a spell, summon a 1/1 Monk with Elusive.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "battlecry"
       ],
@@ -29596,11 +29595,28 @@
           "attack": 1,
           "health": 1,
           "name": "Monk",
+          "tribe": "Monk",
           "keywords": [
             "elusive"
           ]
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Monk",
+            "tribe": "Monk",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "jeskai_seeker_of_the_way",
@@ -29620,7 +29636,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "lifesteal"
       ]
@@ -29643,7 +29659,6 @@
       "type": "creature",
       "attack": 2,
       "health": 1,
-      "tribe": "Bird",
       "keywords": [
         "elusive"
       ]
@@ -29690,7 +29705,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "elusive",
         "battlecry"
@@ -29716,19 +29731,17 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Return an enemy creature to its owner’s hand.",
+      "description": "Elusive. Battlecry: Return a creature to its owner's hand.",
       "type": "creature",
       "attack": 5,
       "health": 6,
-      "tribe": "Djinn Monk",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
         }
       ]
     },
@@ -29750,7 +29763,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -29780,7 +29792,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "battlecry"
       ],
@@ -29807,11 +29819,10 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 2 damage to each opponent and draw a card.",
+      "description": "Elusive. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -29820,11 +29831,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "target": "creature"
         }
       ]
     },
@@ -29846,7 +29853,7 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "elusive",
         "first_strike"
@@ -29867,7 +29874,7 @@
       "landSet": "Jeskai",
       "collectible": false,
       "description": "Deal 3 damage to a creature. Scry 1.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -29894,20 +29901,19 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Give your creatures +1/+1. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "Whenever you cast a spell, give your creatures +1/+1.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "jeskai_monument",
@@ -29923,25 +29929,24 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Summon a 2/2 Monk with Elusive. Deal 2 damage to a creature.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Monk",
-          "keywords": [
-            "elusive"
-          ]
-        },
-        {
-          "type": "damage",
-          "value": 2,
-          "target": "creature"
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Monk with Elusive.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Monk",
+            "tribe": "Monk",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Monk with Elusive."
+      }
     },
     {
       "id": "mardu_alesha",
@@ -37412,16 +37417,22 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Gain 1 Mana this turn and scry 1.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
+          "text": "Gain 1 Mana this turn and scry 1.",
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            },
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ]
         }
       ]
     },
@@ -37443,7 +37454,6 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Monk",
       "keywords": [
         "taunt"
       ]
@@ -37466,7 +37476,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Monk",
       "keywords": [
         "elusive"
       ]
@@ -37486,13 +37495,13 @@
       "landSet": "Jeskai",
       "collectible": false,
       "description": "Give a creature +2/+2 and Elusive.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 2,
           "health": 2,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "elusive"
         }
       ]
@@ -37515,7 +37524,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "battlecry"
       ],
@@ -37540,11 +37549,11 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. First Strike. Battlecry: Give a creature +2/+2.",
+      "description": "Elusive. First Strike. Battlecry: Deal 2 damage to a creature. Whenever you cast a spell, give your creatures +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "elusive",
         "first_strike",
@@ -37552,12 +37561,22 @@
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
+          "type": "damage",
+          "value": 2,
           "target": "creature"
         }
-      ]
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "jeskai_wizard",
@@ -37577,7 +37596,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -37607,7 +37625,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
+      "tribe": "Monk",
       "keywords": [
         "lifesteal"
       ]
@@ -37626,11 +37644,10 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Deal 2 damage to each opponent.",
+      "description": "Elusive. Battlecry: Deal 2 damage to any target.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Efreet",
       "keywords": [
         "elusive",
         "battlecry"
@@ -37639,7 +37656,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-heroes"
+          "target": "any"
         }
       ]
     },
@@ -233608,6 +233625,186 @@
         }
       ],
       "description": "Companion. (Your deck must have at least 15 artifacts that cost 3 or less.)\nWhenever you cast an Adventure or Shadow spell, gain +2/+2 & flip a coin. If heads, destroy the enemy's costliest permanent with even mana value. If tails, destroy the enemy's costliest creature with odd mana value."
+    },
+    {
+      "id": "jeskai_monastery_swiftspear",
+      "name": "Jeskai Monastery Swiftspear",
+      "cost": 1,
+      "rarity": "common",
+      "type": "creature",
+      "description": "Charge. Whenever you cast a spell, this gets +1/+0.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 1,
+      "health": 2,
+      "tribe": "Monk",
+      "keywords": [
+        "charge"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jeskai_soulfire_grand_master",
+      "name": "Jeskai Soulfire Grand Master",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "description": "Lifesteal. Whenever you cast a spell, gain 1 life.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Monk",
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jeskai_sage_of_the_inward_eye",
+      "name": "Jeskai Sage of the Inward Eye",
+      "cost": 5,
+      "rarity": "rare",
+      "type": "creature",
+      "description": "Elusive. Lifesteal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Monk",
+      "keywords": [
+        "elusive",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "jeskai_abbot_of_keral_keep",
+      "name": "Jeskai Abbot of Keral Keep",
+      "cost": 2,
+      "rarity": "rare",
+      "type": "creature",
+      "description": "Charge. Battlecry: Draw a card.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Monk",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "jeskai_ponyback_brigade",
+      "name": "Jeskai Ponyback Brigade",
+      "cost": 5,
+      "rarity": "common",
+      "type": "creature",
+      "description": "Battlecry: Summon two 1/1 Monks with Elusive.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 2,
+      "health": 2,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Monk",
+          "tribe": "Monk",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jeskai_pearl_lake_ancient",
+      "name": "Jeskai Pearl Lake Ancient",
+      "cost": 7,
+      "rarity": "epic",
+      "type": "creature",
+      "description": "Elusive. Taunt.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "R",
+        "U",
+        "W"
+      ],
+      "landSet": "Jeskai",
+      "collectible": false,
+      "attack": 6,
+      "health": 7,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "taunt"
+      ]
     }
   ]
 }
