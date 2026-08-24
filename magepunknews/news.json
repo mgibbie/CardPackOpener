@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "cb489d3",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Dromoka land pool (GW/Tarkir dragon brood — Dragon tribal + counters + lifegain + go-wide + defensive) — 2nd brood",
+			"body": "Dragonlord Dromoka lifegain finisher (bc: gain 5 + team +1/+1), Radiance lifegain->\ncounters ENCHANTMENT (heal -> bolster), Ascendancy counter-forge ARTIFACT (tap +1/+1),\nMonument Warrior-barracks LOCATION (tap -> 2/2 Taunt Warrior), Gift +2/+2+taunt INSTANT,\nCommand anthem+life SORCERY, Captain Taunt+Divine Shield wall, Dunecaster freeze.\n6 types, 6 keywords, GW.\n\nTest pool_dromoka_test.mjs 43/43. Full suite 410/410.",
+			"cards": []
+		},
+		{
 			"sha": "e43c2f0",
 			"date": "2026-08-24",
 			"kind": "patch",
