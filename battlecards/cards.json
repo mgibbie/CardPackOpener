@@ -13075,21 +13075,31 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Elusive. Trample.",
+      "description": "Elusive. Trample. Windfury. Battlecry: Put a +1/+1 counter on each of your creatures.",
       "type": "creature",
-      "attack": 6,
-      "health": 6,
-      "tribe": "Leviathan",
-      "keywords": [
-        "elusive",
-        "trample"
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Leviathan",
+      "keywords": [
+        "elusive",
+        "trample",
+        "windfury",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creatures",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     },
     {
       "id": "momir_vig_simic_visionary",
@@ -13098,11 +13108,17 @@
       "cost": 5,
       "rarity": "rare",
       "set": "paper",
-      "description": "Battlecry: Draw 2 cards.",
+      "description": "Battlecry: Draw 2 cards. After you play two creatures, draw a card.",
       "type": "creature",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Wizard",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
@@ -13112,12 +13128,16 @@
           "value": 2
         }
       ],
-      "colors": [
-        "G",
-        "U"
-      ],
-      "landSet": "Simic",
-      "collectible": false
+      "ongoing": {
+        "on": "creature-played",
+        "every": 2,
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
     },
     {
       "id": "simic_ragworm",
@@ -13126,20 +13146,32 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Taunt. Whenever this attacks, put a +1/+1 counter on it.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Insect",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "simic_basilisk",
@@ -13150,19 +13182,18 @@
       "set": "paper",
       "description": "Deathtouch. Trample.",
       "type": "creature",
-      "attack": 3,
-      "health": 3,
-      "tribe": "Basilisk",
-      "keywords": [
-        "deathtouch",
-        "trample"
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 3,
+      "health": 3,
+      "keywords": [
+        "deathtouch",
+        "trample"
+      ]
     },
     {
       "id": "simic_manipulator",
@@ -13171,29 +13202,28 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Elusive. Battlecry: Give a creature +2/+2.",
+      "description": "Elusive. Battlecry: Put two +1/+1 counters on a creature.",
       "type": "creature",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false,
       "attack": 2,
       "health": 2,
-      "tribe": "Mutant Wizard",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "buff",
+          "type": "grow",
+          "target": "friendly-creature",
           "attack": 2,
-          "health": 2,
-          "target": "creature"
+          "health": 2
         }
-      ],
-      "colors": [
-        "G",
-        "U"
-      ],
-      "landSet": "Simic",
-      "collectible": false
+      ]
     },
     {
       "id": "simic_guildmage",
@@ -13202,32 +13232,31 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give a creature +1/+1. Draw a card.",
+      "description": "Battlecry: Put a +1/+1 counter on a creature. Draw a card.",
       "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Elf Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "health": 3,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     },
     {
       "id": "simic_fluxmage",
@@ -13236,28 +13265,25 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give a creature +2/+2.",
+      "description": "Battlecry: Proliferate (each of your counter-bearing creatures grows +1/+1).",
       "type": "creature",
-      "attack": 1,
-      "health": 3,
-      "tribe": "Merfolk Wizard",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
-        }
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 3,
+      "tribe": "Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "proliferate"
+        }
+      ]
     },
     {
       "id": "simic_initiate",
@@ -13266,28 +13292,27 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Give a creature +1/+1.",
+      "description": "Battlecry: Put a +1/+1 counter on a creature.",
       "type": "creature",
-      "attack": 1,
-      "health": 1,
-      "tribe": "Elf Warrior",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "attack": 1,
+      "health": 1,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grow",
+          "target": "friendly-creature",
+          "attack": 1,
+          "health": 1
+        }
+      ]
     },
     {
       "id": "simic_charm",
@@ -13296,23 +13321,54 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +2/+2 and Trample.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature",
-          "grant": "trample"
-        }
-      ],
+      "description": "Choose One — Give a creature +2/+2 and Trample; or Return a creature to its owner’s hand; or Put a +1/+1 counter on each of your creatures.",
+      "type": "instant",
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "choices": [
+        {
+          "text": "Give a creature +2/+2 and Trample.",
+          "effects": [
+            {
+              "type": "grow",
+              "target": "friendly-creature",
+              "attack": 2,
+              "health": 2
+            },
+            {
+              "type": "buff",
+              "attack": 0,
+              "health": 0,
+              "target": "friendly-creature",
+              "grant": "trample"
+            }
+          ]
+        },
+        {
+          "text": "Return a creature to its owner’s hand.",
+          "effects": [
+            {
+              "type": "bounce",
+              "target": "creature"
+            }
+          ]
+        },
+        {
+          "text": "Put a +1/+1 counter on each of your creatures.",
+          "effects": [
+            {
+              "type": "grow",
+              "target": "friendly-creatures",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "simic_ascendancy",
@@ -13321,22 +13377,25 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Give your creatures +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
-        }
-      ],
+      "description": "At the start of your turn, put a +1/+1 counter on each of your creatures.",
+      "type": "enchantment",
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grow",
+            "target": "friendly-creatures",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      }
     },
     {
       "id": "simic_growth_chamber",
@@ -13345,26 +13404,28 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Give a creature +1/+1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature"
-        }
-      ],
+      "description": "Durability 3. {T}: Put a +1/+1 counter on each of your creatures.",
+      "type": "location",
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Put a +1/+1 counter on each of your creatures.",
+          "effects": [
+            {
+              "type": "grow",
+              "target": "friendly-creatures",
+              "attack": 1,
+              "health": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "simic_keyrune",
@@ -13375,6 +13436,12 @@
       "set": "paper",
       "description": "Summon a 3/3 Crab with Elusive.",
       "type": "sorcery",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "landSet": "Simic",
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -13382,17 +13449,12 @@
           "attack": 3,
           "health": 3,
           "name": "Crab",
+          "tribe": "Crab",
           "keywords": [
             "elusive"
           ]
         }
-      ],
-      "colors": [
-        "G",
-        "U"
-      ],
-      "landSet": "Simic",
-      "collectible": false
+      ]
     },
     {
       "id": "simic_cluestone",
@@ -13401,20 +13463,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ],
+      "description": "{T}: Draw a card.",
+      "type": "artifact",
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Draw a card."
+      }
     },
     {
       "id": "simic_locket",
@@ -13423,24 +13488,23 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
+      "description": "{T}: Gain 2 Mana this turn.",
+      "type": "artifact",
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Mana this turn."
+      }
     },
     {
       "id": "simic_signet",
@@ -13449,20 +13513,20 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Gain 3 mana this turn.",
+      "description": "Gain 2 Mana Crystals.",
       "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        }
-      ],
       "colors": [
         "G",
         "U"
       ],
       "landSet": "Simic",
-      "collectible": false
+      "collectible": false,
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 2
+        }
+      ]
     },
     {
       "id": "quandrix_campus",
