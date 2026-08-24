@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "3dcc19a",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "rename Alaborn Trooper -> Alaborn Barracks (it became a LOCATION in the Plains enhancement)",
+			"body": "Display name only; art stays keyed by id (alaborn_trooper). Full suite 424/424.",
+			"cards": []
+		},
+		{
 			"sha": "ba4bc58",
 			"date": "2026-08-24",
 			"kind": "patch",
