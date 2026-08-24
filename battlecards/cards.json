@@ -8400,8 +8400,13 @@
       "cost": 5,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Trample. Battlecry: Give your creatures +2/+2.",
+      "description": "Trample. Battlecry: Give your creatures +2/+0 and Trample.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 6,
       "health": 6,
       "tribe": "God",
@@ -8413,15 +8418,11 @@
         {
           "type": "buff",
           "attack": 2,
-          "health": 2,
-          "target": "friendly-creatures"
+          "health": 0,
+          "target": "friendly-creatures",
+          "grant": "trample"
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_colossus",
@@ -8430,19 +8431,27 @@
       "cost": 6,
       "rarity": "rare",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Overkill: This gains +2/+2.",
       "type": "creature",
-      "attack": 7,
-      "health": 7,
-      "tribe": "Giant",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
+      "collectible": false,
+      "attack": 7,
+      "health": 7,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
+      ]
     },
     {
       "id": "nyleas_forerunner",
@@ -8453,6 +8462,11 @@
       "set": "paper",
       "description": "Trample. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 5,
       "health": 5,
       "tribe": "Beast",
@@ -8467,12 +8481,7 @@
           "health": 1,
           "target": "friendly-creatures"
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_emissary",
@@ -8481,19 +8490,20 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Trample.",
+      "description": "Trample. Rush.",
       "type": "creature",
-      "attack": 4,
-      "health": 4,
-      "tribe": "Elemental",
-      "keywords": [
-        "trample"
-      ],
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
+      "collectible": false,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Beast",
+      "keywords": [
+        "trample",
+        "rush"
+      ]
     },
     {
       "id": "nyleas_disciple",
@@ -8502,12 +8512,17 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Gain 5 life.",
+      "description": "Taunt. Battlecry: Gain 5 life.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 3,
       "health": 4,
-      "tribe": "Centaur",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -8516,12 +8531,7 @@
           "value": 5,
           "target": "self"
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_huntmaster",
@@ -8532,9 +8542,13 @@
       "set": "paper",
       "description": "Battlecry: Summon a 2/2 Beast.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 4,
       "health": 4,
-      "tribe": "Cat",
       "keywords": [
         "battlecry"
       ],
@@ -8544,14 +8558,11 @@
           "count": 1,
           "attack": 2,
           "health": 2,
-          "name": "Beast"
+          "name": "Beast",
+          "tribe": "Beast",
+          "keywords": []
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_grovedancer",
@@ -8560,11 +8571,15 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Battlecry: Gain 2 mana this turn.",
+      "description": "Battlecry: Gain 2 Mana this turn.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 2,
       "health": 3,
-      "tribe": "Dryad",
       "keywords": [
         "battlecry"
       ],
@@ -8573,12 +8588,7 @@
           "type": "gain-mana",
           "value": 2
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_moss_viper",
@@ -8589,17 +8599,17 @@
       "set": "paper",
       "description": "Deathtouch.",
       "type": "creature",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "attack": 2,
       "health": 2,
       "tribe": "Snake",
       "keywords": [
         "deathtouch"
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "bow_of_nylea",
@@ -8608,22 +8618,28 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "creature",
-          "grant": "deathtouch"
-        }
-      ],
+      "description": "Deathtouch. After your hero attacks, deal 1 damage to all enemy creatures.",
+      "type": "weapon",
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
+      "collectible": false,
+      "attack": 2,
+      "durability": 3,
+      "keywords": [
+        "deathtouch"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "keen_eyes_of_nylea",
@@ -8633,18 +8649,18 @@
       "rarity": "common",
       "set": "paper",
       "description": "Draw 2 cards.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "effects": [
         {
           "type": "draw",
           "value": 2
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "nyleas_intervention",
@@ -8653,48 +8669,52 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "Gain 3 mana this turn. Draw a card.",
+      "description": "Gain 2 Mana Crystals. Draw a card.",
       "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 3
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ],
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
-    },
-    {
-      "id": "nyleas_presence",
-      "name": "Nylea's Presence",
-      "cardClass": "magepunk",
-      "cost": 2,
-      "rarity": "common",
-      "set": "paper",
-      "description": "Gain 2 mana this turn. Draw a card.",
-      "type": "sorcery",
+      "collectible": false,
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 2
         },
         {
           "type": "draw",
           "value": 1
         }
-      ],
+      ]
+    },
+    {
+      "id": "nyleas_presence",
+      "name": "Nylea's Presence",
+      "cardClass": "magepunk",
+      "cost": 3,
+      "rarity": "rare",
+      "set": "paper",
+      "description": "At the start of your turn, summon a 1/1 Beast.",
+      "type": "enchantment",
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
+      "collectible": false,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Beast",
+            "tribe": "Beast",
+            "keywords": []
+          }
+        ]
+      }
     },
     {
       "id": "ordeal_of_nylea",
@@ -8703,25 +8723,25 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +2/+2. Gain 2 mana this turn.",
+      "description": "Put two +1/+1 counters on a creature. Gain 2 Mana this turn.",
       "type": "sorcery",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "effects": [
         {
-          "type": "buff",
+          "type": "grow",
+          "target": "friendly-creature",
           "attack": 2,
-          "health": 2,
-          "target": "creature"
+          "health": 2
         },
         {
           "type": "gain-mana",
           "value": 2
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "chrysalis_of_nylea",
@@ -8730,22 +8750,30 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Summon two 2/2 Beasts.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Beast"
-        }
-      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Beast.",
+      "type": "location",
       "colors": [
         "G"
       ],
       "landSet": "Nylea",
-      "collectible": false
+      "collectible": false,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Beast.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Beast",
+              "tribe": "Beast",
+              "keywords": []
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "omen_of_nylea",
@@ -8755,18 +8783,18 @@
       "rarity": "common",
       "set": "paper",
       "description": "A friendly creature fights an enemy creature.",
-      "type": "sorcery",
+      "type": "instant",
+      "colors": [
+        "G"
+      ],
+      "landSet": "Nylea",
+      "collectible": false,
       "effects": [
         {
           "type": "fight",
           "target": "friendly-creature"
         }
-      ],
-      "colors": [
-        "G"
-      ],
-      "landSet": "Nylea",
-      "collectible": false
+      ]
     },
     {
       "id": "god_eternal_rhonas",
