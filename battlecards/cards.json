@@ -58708,7 +58708,8 @@
           "count": 2,
           "attack": 3,
           "health": 3,
-          "name": "Construct"
+          "name": "Construct",
+          "tribe": "Construct"
         }
       ]
     },
@@ -58724,13 +58725,14 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Taunt.",
+      "description": "Taunt. Divine Shield.",
       "type": "creature",
       "attack": 1,
       "health": 6,
       "tribe": "Construct",
       "keywords": [
-        "taunt"
+        "taunt",
+        "divine_shield"
       ]
     },
     {
@@ -58745,20 +58747,21 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Elusive.",
+      "description": "Elusive. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 4,
       "tribe": "Construct",
       "keywords": [
-        "elusive"
+        "elusive",
+        "first_strike"
       ]
     },
     {
       "id": "urza_bauble",
       "name": "Urza’s Bauble",
       "cardClass": "magepunk",
-      "cost": 0,
+      "cost": 1,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -58766,18 +58769,21 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Draw a card. Scry 1.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 1
-        },
-        {
-          "type": "scry",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Scry 1 and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1 and draw a card."
+      }
     },
     {
       "id": "urza_blueprints",
@@ -58791,14 +58797,21 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "At the start of your turn, summon a 1/1 Construct.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Construct",
+            "tribe": "Construct"
+          }
+        ]
+      }
     },
     {
       "id": "urza_chalice",
@@ -58812,18 +58825,21 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and scry 1.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and scry 1."
+      }
     },
     {
       "id": "urza_command",
@@ -58837,7 +58853,7 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Summon a 3/3 Construct, draw a card, and freeze an enemy creature.",
+      "description": "Summon a 3/3 Construct and draw a card.",
       "type": "sorcery",
       "effects": [
         {
@@ -58845,15 +58861,12 @@
           "count": 1,
           "attack": 3,
           "health": 3,
-          "name": "Construct"
+          "name": "Construct",
+          "tribe": "Construct"
         },
         {
           "type": "draw",
           "value": 1
-        },
-        {
-          "type": "freeze",
-          "target": "enemy-creature"
         }
       ]
     },
@@ -58873,7 +58886,7 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Thopter",
+      "tribe": "Construct",
       "keywords": [
         "elusive"
       ]
@@ -58890,13 +58903,14 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Rush.",
+      "description": "Rush. Trample.",
       "type": "creature",
       "attack": 5,
       "health": 5,
       "tribe": "Construct",
       "keywords": [
-        "rush"
+        "rush",
+        "trample"
       ]
     },
     {
@@ -58911,16 +58925,11 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Each opponent discards a card.",
-      "type": "sorcery",
+      "description": "Return a creature to its owner's hand.",
+      "type": "instant",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "enemy-discard",
-          "count": 1
+          "type": "bounce"
         }
       ]
     },
@@ -58937,7 +58946,7 @@
       "loreDeck": "Urza",
       "collectible": false,
       "description": "Deal 4 damage to a creature.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "damage",
@@ -58958,16 +58967,11 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Return an enemy creature to hand. Scry 1.",
+      "description": "Return a creature to its owner's hand.",
       "type": "sorcery",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
-        },
-        {
-          "type": "scry",
-          "value": 1
+          "type": "bounce"
         }
       ]
     },
@@ -59008,18 +59012,22 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
-      "type": "creature",
-      "attack": 2,
-      "health": 3,
-      "tribe": "Construct",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Construct.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "text": "Summon a 2/2 Construct.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Construct",
+              "tribe": "Construct"
+            }
+          ]
         }
       ]
     },
