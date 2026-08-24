@@ -27577,19 +27577,26 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Draw a card.",
+      "description": "Deathtouch. Battlecry: Summon two 2/2 Elves with Deathtouch.",
       "type": "creature",
       "attack": 3,
       "health": 2,
-      "tribe": "Elf Warrior",
+      "tribe": "Elf",
       "keywords": [
         "deathtouch",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
-          "value": 1
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
         }
       ]
     },
@@ -27606,7 +27613,7 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Battlecry: Summon a 1/1 Elf and give your creatures +1/+1.",
+      "description": "Battlecry: Summon a 2/2 Elf with Deathtouch.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -27618,15 +27625,13 @@
         {
           "type": "summon",
           "count": 1,
-          "attack": 1,
-          "health": 1,
-          "name": "Elf"
-        },
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures"
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
         }
       ]
     },
@@ -27647,14 +27652,14 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Elf Cleric",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 1
+          "count": 1
         }
       ]
     },
@@ -27671,20 +27676,16 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Scry 1 and draw a card.",
+      "description": "Deathtouch. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Elf Warrior",
+      "tribe": "Elf",
       "keywords": [
         "deathtouch",
         "battlecry"
       ],
       "effects": [
-        {
-          "type": "scry",
-          "value": 1
-        },
         {
           "type": "draw",
           "value": 1
@@ -27708,7 +27709,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Cleric",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
@@ -27738,7 +27739,7 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to all enemy creatures.",
+      "description": "Battlecry: Destroy an enemy creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -27748,9 +27749,8 @@
       ],
       "effects": [
         {
-          "type": "damage",
-          "value": 2,
-          "target": "enemy-creatures"
+          "type": "destroy",
+          "target": "creature"
         }
       ]
     },
@@ -27767,18 +27767,25 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Give your creatures +1/+1. A friendly creature fights an enemy creature.",
+      "description": "Summon two 2/2 Elves with Deathtouch and give your creatures +1/+1.",
       "type": "sorcery",
       "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
           "target": "friendly-creatures"
-        },
-        {
-          "type": "fight",
-          "target": "friendly-creature"
         }
       ]
     },
@@ -27795,12 +27802,13 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "A friendly creature fights an enemy creature.",
-      "type": "sorcery",
+      "description": "Deal 4 damage to a creature.",
+      "type": "instant",
       "effects": [
         {
-          "type": "fight",
-          "target": "friendly-creature"
+          "type": "damage",
+          "value": 4,
+          "target": "creature"
         }
       ]
     },
@@ -27817,18 +27825,21 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Give a creature +1/+1 and Deathtouch.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Elf Druid",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
-          "value": 1
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature",
+          "grant": "deathtouch"
         }
       ]
     },
@@ -27845,17 +27856,17 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "description": "Battlecry: Gain an empty Mana Crystal.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Elf Druid",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
       "effects": [
         {
-          "type": "gain-mana",
+          "type": "gain-empty-mana-crystal",
           "value": 1
         }
       ]
@@ -27877,7 +27888,7 @@
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Cleric",
+      "tribe": "Elf",
       "keywords": [
         "deathtouch",
         "reborn"
@@ -27900,7 +27911,7 @@
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Warrior",
+      "tribe": "Elf",
       "keywords": [
         "trample"
       ]
@@ -27940,19 +27951,15 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Give a creature +1/+1 and Deathtouch. Draw a card.",
-      "type": "sorcery",
+      "description": "Give a creature +1/+1 and Deathtouch.",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "deathtouch"
-        },
-        {
-          "type": "draw",
-          "value": 1
         }
       ]
     },
@@ -27969,17 +27976,24 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Summon two 2/2 Elves with Deathtouch.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 2/2 Elf with Deathtouch.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 2,
-          "health": 2,
-          "name": "Elf",
-          "keywords": [
-            "deathtouch"
+          "text": "Summon a 2/2 Elf with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Elf",
+              "tribe": "Elf",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
           ]
         }
       ]
@@ -36146,24 +36160,27 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Gain a Mana Crystal this turn. Draw 2 cards.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 1
-        },
-        {
-          "type": "draw",
-          "value": 2
-        }
-      ]
+      "description": "{T}: Gain 1 Mana this turn and draw a card.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Gain 1 Mana this turn and draw a card."
+      }
     },
     {
       "id": "crown_of_skemfar",
       "name": "Crown of Skemfar",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 3,
       "rarity": "rare",
       "set": "paper",
       "colors": [
@@ -36172,17 +36189,19 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Give your creatures +1/+1 and Deathtouch.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "buff",
-          "attack": 1,
-          "health": 1,
-          "target": "friendly-creatures",
-          "grant": "deathtouch"
-        }
-      ]
+      "description": "Whenever you play a creature, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "seven_trees_of_skemfar",
@@ -36202,10 +36221,22 @@
       "effects": [
         {
           "type": "summon",
-          "count": 3,
+          "count": 2,
           "attack": 2,
           "health": 2,
           "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
           "keywords": [
             "deathtouch"
           ]
@@ -36225,7 +36256,7 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Summon a 4/4 Snake with Deathtouch. Gain a Mana Crystal this turn.",
+      "description": "Summon a 4/4 Snake with Deathtouch.",
       "type": "sorcery",
       "effects": [
         {
@@ -36234,13 +36265,10 @@
           "attack": 4,
           "health": 4,
           "name": "Snake",
+          "tribe": "Snake",
           "keywords": [
             "deathtouch"
           ]
-        },
-        {
-          "type": "gain-mana",
-          "value": 1
         }
       ]
     },
@@ -36261,7 +36289,7 @@
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Elf Warrior",
+      "tribe": "Elf",
       "keywords": [
         "taunt",
         "deathtouch"
@@ -36281,13 +36309,13 @@
       "landSet": "Skemfar",
       "collectible": false,
       "description": "Give a creature +1/+1 and Deathtouch.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "buff",
           "attack": 1,
           "health": 1,
-          "target": "creature",
+          "target": "friendly-creature",
           "grant": "deathtouch"
         }
       ]
@@ -36327,11 +36355,11 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Battlecry: Deal 2 damage to each opponent and gain 2 life.",
+      "description": "Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 3,
       "health": 3,
-      "tribe": "Elf Wizard",
+      "tribe": "Elf",
       "keywords": [
         "battlecry"
       ],
@@ -36339,12 +36367,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "enemy-heroes"
-        },
-        {
-          "type": "heal",
-          "value": 2,
-          "target": "self"
+          "target": "creature"
         }
       ]
     },
@@ -36384,11 +36407,11 @@
       ],
       "landSet": "Skemfar",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Summon two 1/1 Elves.",
+      "description": "Deathtouch. Battlecry: Summon two 2/2 Elves with Deathtouch and gain 2 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Elf Noble",
+      "tribe": "Elf",
       "keywords": [
         "deathtouch",
         "battlecry"
@@ -36397,9 +36420,18 @@
         {
           "type": "summon",
           "count": 2,
-          "attack": 1,
-          "health": 1,
-          "name": "Elf"
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
         }
       ]
     },
@@ -235118,6 +235150,160 @@
         "U"
       ],
       "landSet": "Littjara",
+      "collectible": false
+    },
+    {
+      "id": "skemfar_poison_tip_archer",
+      "name": "Skemfar Poison-Tip Archer",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf",
+      "keywords": [
+        "deathtouch"
+      ],
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "Deathtouch. Whenever a friendly creature dies, deal 1 damage to each opponent.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false
+    },
+    {
+      "id": "skemfar_shaman_of_the_pack",
+      "name": "Skemfar Shaman of the Pack",
+      "cost": 5,
+      "rarity": "epic",
+      "type": "creature",
+      "attack": 3,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to each opponent.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false
+    },
+    {
+      "id": "skemfar_dwynens_elite",
+      "name": "Skemfar Dwynen's Elite",
+      "cost": 2,
+      "rarity": "common",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 2,
+          "health": 2,
+          "name": "Elf",
+          "tribe": "Elf",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ],
+      "description": "Battlecry: Summon a 2/2 Elf with Deathtouch.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false
+    },
+    {
+      "id": "skemfar_elvish_champion",
+      "name": "Skemfar Elvish Champion",
+      "cost": 4,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Give your creatures +1/+1.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
+      "collectible": false
+    },
+    {
+      "id": "skemfar_marwyn",
+      "name": "Skemfar Marwyn, the Nurturer",
+      "cost": 3,
+      "rarity": "rare",
+      "type": "creature",
+      "attack": 2,
+      "health": 3,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "cardClass": "magepunk",
+      "set": "paper",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "landSet": "Skemfar",
       "collectible": false
     }
   ]
