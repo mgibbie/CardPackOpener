@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "76ca1f9",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign + expand Axgard land pool (RW/Kaldheim realm — Dwarf go-wide + weapons + anthems + Treasure + aggro; 28 -> 30) — first Kaldheim realm",
+			"body": "Redesigned 28 + added 2 NEW (real MTG art, deployed): Goldspan Dragon (ramp charge),\nBattlefield Raptor (elusive first-strike). Dwarf token=2/1 rush; Magda/Warlord/Giant\nanthems, Dwarf King/Reinforcements/Hymn token makers, Mountain Song go-wide ENCHANTMENT\n(creature enters -> +1/+0), Monument Dwarf-forge LOCATION, Golden Doors Treasure ARTIFACT\n(tap gain-mana+draw), Demon Bolt/Frost Bite burn INSTANTS, Dwarven Hammer/Bloodhammer\nWEAPONS. 7 types, 7 keywords, RW.\n\nTest pool_axgard_test.mjs 75/75 (asserts 30). Full suite 414/414.",
+			"cards": []
+		},
+		{
 			"sha": "fa5ff1b",
 			"date": "2026-08-24",
 			"kind": "patch",
