@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "eec87d1",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Thassa land pool (U devotion — card advantage + tempo + evasion)",
+			"body": "Thassa god (scry+draw, turn-start scry), Devourer/Rebuff tempo bounce, Leviathan\nfreeze finisher, Bident card-engine enchantment, Bounty mana artifact, Ire/dig\nscry, Ordeal buff+draw, Tidal Wave freeze-attacker secret, deathtouch sea Serpent.\n6 card types, 6 keywords, mono-U.\n\nFix: 'tidal_wave' id collides with the HS shaman 'Tidal Wave' — reskin-by-id hit\nthe wrong card; disambiguated by landSet and restored the HS card. (Only\ncollision across all 13 done pools.)\n\nTest pool_thassa_test.mjs 45/45. Full suite 370/370.",
+			"cards": []
+		},
+		{
 			"sha": "cf9b9cf",
 			"date": "2026-08-24",
 			"kind": "patch",
