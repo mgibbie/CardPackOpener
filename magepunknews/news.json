@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "ca51f58",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Ephara land pool (WU devotion — card advantage on creatures + control + tokens + defense)",
+			"body": "Ephara god (draw 2 + draw after every 2nd creature), Dispersal bounce instant,\nStern Dismissal counter-secret, Radiance sweep, Prayer mass Divine Shield,\nCommand/Temple Grounds LOCATION Soldiers, City Blessing draw+anthem enchantment,\nGodfire removal, Charm buff+draw, defensive Taunt/Divine Shield walls. 6 card\ntypes, 6 keywords, WU preserved.\n\nTest pool_ephara_test.mjs 46/46. Full suite 374/374.",
+			"cards": []
+		},
+		{
 			"sha": "fa0a438",
 			"date": "2026-08-24",
 			"kind": "patch",
