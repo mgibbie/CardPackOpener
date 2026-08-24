@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "88b5bac",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "redesign Kruphix land pool (GU devotion — ramp + big card draw + big Elusive threats)",
+			"body": "Kruphix god (draw 2 + turn-start draw & ramp), Horizon Chimera draw->lifegain,\nramp (Prophet/Sigil LOCATION), draw (Kydele/Agent/Insight/Dictate enchantment/\nPuzzlebox artifact), scry (Starfish/Oracle), Enigma/Cloak instants, big Elusive\nIncarnation. 6 card types, 7 keywords, GU. Distinct from Simic (counters/evolve).\n\nTest pool_kruphix_test.mjs 45/45. Full suite 381/381.",
+			"cards": []
+		},
+		{
 			"sha": "0fb9a95",
 			"date": "2026-08-24",
 			"kind": "patch",
