@@ -22666,7 +22666,7 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Divine Shield. Battlecry: Draw a card.",
+      "description": "Elusive. Divine Shield. Battlecry: Draw 2 cards.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -22679,7 +22679,7 @@
       "effects": [
         {
           "type": "draw",
-          "value": 1
+          "value": 2
         }
       ]
     },
@@ -22696,21 +22696,18 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Give a creature +2/+2.",
+      "description": "Elusive. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Bird Monk",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "buff",
-          "attack": 2,
-          "health": 2,
-          "target": "creature"
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -22727,13 +22724,13 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Divine Shield.",
+      "description": "Divine Shield. Windfury.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Human Monk",
       "keywords": [
-        "divine_shield"
+        "divine_shield",
+        "windfury"
       ]
     },
     {
@@ -22749,14 +22746,14 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Taunt.",
+      "description": "Elusive. Taunt. First Strike.",
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
-        "taunt"
+        "taunt",
+        "first_strike"
       ]
     },
     {
@@ -22772,24 +22769,24 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Summon a 2/2 Bird with Elusive. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Bird",
-          "keywords": [
-            "elusive"
-          ]
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Bird with Elusive.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Bird",
+            "tribe": "Bird",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Bird with Elusive."
+      }
     },
     {
       "id": "ojutai_breath",
@@ -22805,11 +22802,11 @@
       "landSet": "Ojutai",
       "collectible": false,
       "description": "Freeze an enemy creature. Draw a card.",
-      "type": "sorcery",
+      "type": "instant",
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         },
         {
           "type": "draw",
@@ -22861,7 +22858,6 @@
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Elemental",
       "keywords": [
         "battlecry"
       ],
@@ -22885,17 +22881,24 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Summon two 3/3 Birds with Elusive.",
-      "type": "sorcery",
-      "effects": [
+      "description": "Durability 3. {T}: Summon a 3/3 Bird with Elusive.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
         {
-          "type": "summon",
-          "count": 2,
-          "attack": 3,
-          "health": 3,
-          "name": "Bird",
-          "keywords": [
-            "elusive"
+          "text": "Summon a 3/3 Bird with Elusive.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 3,
+              "health": 3,
+              "name": "Bird",
+              "tribe": "Bird",
+              "keywords": [
+                "elusive"
+              ]
+            }
           ]
         }
       ]
@@ -22917,7 +22920,6 @@
       "type": "creature",
       "attack": 1,
       "health": 4,
-      "tribe": "Bird Cleric",
       "keywords": [
         "taunt",
         "battlecry"
@@ -22942,12 +22944,12 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Battlecry: Gain 3 life.",
+      "description": "Lifesteal. Battlecry: Gain 3 life.",
       "type": "creature",
       "attack": 2,
       "health": 4,
-      "tribe": "Human Monk",
       "keywords": [
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
@@ -22971,19 +22973,22 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Battlecry: Scry 2 and draw a card.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Human Monk",
       "keywords": [
         "elusive",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "draw",
+          "type": "scry",
           "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -23000,11 +23005,10 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Battlecry: Scry 2.",
+      "description": "Elusive. Battlecry: Scry 1.",
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Monk",
       "keywords": [
         "elusive",
         "battlecry"
@@ -23012,7 +23016,7 @@
       "effects": [
         {
           "type": "scry",
-          "value": 2
+          "value": 1
         }
       ]
     },
@@ -23033,7 +23037,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "battlecry"
       ],
@@ -23052,8 +23055,8 @@
       "id": "ojutai_breezedancer",
       "name": "Ojutai Breezedancer",
       "cardClass": "magepunk",
-      "cost": 4,
-      "rarity": "common",
+      "cost": 3,
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "W",
@@ -23061,14 +23064,19 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive.",
-      "type": "creature",
-      "attack": 3,
-      "health": 4,
-      "tribe": "Djinn Monk",
-      "keywords": [
-        "elusive"
-      ]
+      "description": "Whenever you cast a spell, give your creatures +1/+0.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
     },
     {
       "id": "dragonlord_dromoka",
