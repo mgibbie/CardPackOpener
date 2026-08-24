@@ -23497,7 +23497,7 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Elusive. Deathtouch. Battlecry: Destroy a creature.",
+      "description": "Elusive. Deathtouch. Battlecry: Take control of an enemy creature with 4 or less Attack.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -23509,8 +23509,8 @@
       ],
       "effects": [
         {
-          "type": "destroy",
-          "target": "creature"
+          "type": "mind-control",
+          "maxAttack": 4
         }
       ]
     },
@@ -23531,7 +23531,6 @@
       "type": "creature",
       "attack": 1,
       "health": 1,
-      "tribe": "Snake",
       "keywords": [
         "deathtouch"
       ]
@@ -23553,7 +23552,6 @@
       "type": "creature",
       "attack": 2,
       "health": 2,
-      "tribe": "Human Assassin",
       "keywords": [
         "elusive",
         "deathtouch"
@@ -23572,18 +23570,18 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Deathtouch. Battlecry: Each opponent discards a card.",
+      "description": "Deathtouch. Lifesteal. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 4,
       "health": 4,
-      "tribe": "Undead",
       "keywords": [
         "deathtouch",
+        "lifesteal",
         "battlecry"
       ],
       "effects": [
         {
-          "type": "enemy-discard",
+          "type": "draw",
           "value": 1
         }
       ]
@@ -23601,30 +23599,30 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Summon a 2/2 Undead with Deathtouch. Draw a card.",
-      "type": "sorcery",
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 2,
-          "health": 2,
-          "name": "Undead",
-          "keywords": [
-            "deathtouch"
-          ]
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
+      "description": "{T}: Summon a 2/2 Undead with Deathtouch.",
+      "type": "artifact",
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Undead",
+            "tribe": "Undead",
+            "keywords": [
+              "deathtouch"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Undead with Deathtouch."
+      }
     },
     {
       "id": "silumgar_scavenger",
       "name": "Silumgar Scavenger",
       "cardClass": "magepunk",
-      "cost": 4,
+      "cost": 3,
       "rarity": "common",
       "set": "paper",
       "colors": [
@@ -23633,13 +23631,19 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Elusive.",
-      "type": "creature",
-      "attack": 4,
-      "health": 3,
-      "tribe": "Undead",
-      "keywords": [
-        "elusive"
+      "description": "Durability 3. {T}: Each opponent discards a card.",
+      "type": "location",
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Each opponent discards a card.",
+          "effects": [
+            {
+              "type": "enemy-discard",
+              "count": 1
+            }
+          ]
+        }
       ]
     },
     {
@@ -23685,7 +23689,6 @@
       "type": "creature",
       "attack": 2,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
         "elusive",
         "battlecry"
@@ -23693,7 +23696,7 @@
       "effects": [
         {
           "type": "freeze",
-          "target": "enemy-creature"
+          "target": "creature"
         }
       ]
     },
@@ -23702,7 +23705,7 @@
       "name": "Silumgar Spell-Eater",
       "cardClass": "magepunk",
       "cost": 3,
-      "rarity": "common",
+      "rarity": "rare",
       "set": "paper",
       "colors": [
         "U",
@@ -23710,20 +23713,17 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Battlecry: Each opponent discards a card.",
-      "type": "creature",
-      "attack": 2,
-      "health": 4,
-      "tribe": "Snake",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "enemy-discard",
-          "value": 1
-        }
-      ]
+      "description": "Whenever a friendly creature dies, each opponent discards a card.",
+      "type": "enchantment",
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "enemy-discard",
+            "count": 1
+          }
+        ]
+      }
     },
     {
       "id": "silumgar_scorn",
@@ -23738,12 +23738,15 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Return an enemy creature to its owner’s hand.",
-      "type": "sorcery",
+      "description": "Return a creature to its owner's hand. Draw a card.",
+      "type": "instant",
       "effects": [
         {
-          "type": "bounce",
-          "target": "enemy-creature"
+          "type": "bounce"
+        },
+        {
+          "type": "draw",
+          "value": 1
         }
       ]
     },
@@ -23782,12 +23785,12 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Battlecry: Draw a card.",
+      "description": "Taunt. Battlecry: Draw a card.",
       "type": "creature",
       "attack": 1,
       "health": 3,
-      "tribe": "Human Wizard",
       "keywords": [
+        "taunt",
         "battlecry"
       ],
       "effects": [
@@ -23839,14 +23842,14 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Deathtouch. Trample.",
+      "description": "Deathtouch. Trample. First Strike.",
       "type": "creature",
       "attack": 3,
       "health": 4,
-      "tribe": "Dragon",
       "keywords": [
         "deathtouch",
-        "trample"
+        "trample",
+        "first_strike"
       ]
     },
     {
@@ -23867,7 +23870,7 @@
       "effects": [
         {
           "type": "enemy-discard",
-          "value": 2
+          "count": 2
         }
       ]
     },
