@@ -248975,6 +248975,472 @@
         ]
       },
       "description": "Battlecry: The Ring tempts you. Swing: The Ring tempts you, and Plunder (steal the top card of your opponent's deck)."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "id": "bant_empyrial_archangel",
+      "name": "Bant Empyrial Archangel",
+      "type": "creature",
+      "cost": 8,
+      "attack": 6,
+      "health": 8,
+      "tribe": "Angel",
+      "keywords": [
+        "elusive",
+        "divine_shield",
+        "lifesteal"
+      ],
+      "description": "Elusive. Divine Shield. Lifesteal.",
+      "colors": [
+        "G",
+        "U",
+        "W"
+      ],
+      "landSet": "Bant"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "bant_aerie_mystics",
+      "name": "Bant Aerie Mystics",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Bird Wizard",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Elusive. Battlecry: Give your creatures Divine Shield.",
+      "colors": [
+        "G",
+        "U",
+        "W"
+      ],
+      "landSet": "Bant"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "bant_sojourners",
+      "name": "Bant Sojourners",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Give your other creatures +1/+1.",
+      "colors": [
+        "G",
+        "U",
+        "W"
+      ],
+      "landSet": "Bant"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "bant_giltspire_avenger",
+      "name": "Bant Giltspire Avenger",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "First Strike. Battlecry: Deal 2 damage to an enemy creature.",
+      "colors": [
+        "G",
+        "U",
+        "W"
+      ],
+      "landSet": "Bant"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "esper_enigma_sphinx",
+      "name": "Esper Enigma Sphinx",
+      "type": "creature",
+      "cost": 7,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Sphinx",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "description": "Elusive. Battlecry: Draw two cards.",
+      "colors": [
+        "B",
+        "U",
+        "W"
+      ],
+      "landSet": "Esper"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "rare",
+      "id": "esper_magister_sphinx",
+      "name": "Esper Magister Sphinx",
+      "type": "creature",
+      "cost": 7,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Sphinx",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Elusive. Battlecry: Deal 5 damage to each opponent.",
+      "colors": [
+        "B",
+        "U",
+        "W"
+      ],
+      "landSet": "Esper"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "esper_arsenal_thresher",
+      "name": "Esper Arsenal Thresher",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Construct",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 2,
+          "health": 2
+        }
+      ],
+      "description": "Battlecry: Gain +2/+2 (fed from the arsenal).",
+      "colors": [
+        "B",
+        "U",
+        "W"
+      ],
+      "landSet": "Esper"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "rare",
+      "id": "esper_brilliant_ultimatum",
+      "name": "Esper Brilliant Ultimatum",
+      "type": "sorcery",
+      "cost": 7,
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        },
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ],
+      "description": "Draw three cards and gain 2 Mana this turn.",
+      "colors": [
+        "B",
+        "U",
+        "W"
+      ],
+      "landSet": "Esper"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "esper_etherwrought_page",
+      "name": "Esper Etherwrought Page",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "self"
+          }
+        ],
+        "text": "Draw a card and restore 1 Health."
+      },
+      "description": "{T}: Draw a card and restore 1 Health.",
+      "colors": [
+        "B",
+        "U",
+        "W"
+      ],
+      "landSet": "Esper"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "naya_gloryscale_viashino",
+      "name": "Naya Gloryscale Viashino",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Lizard Soldier",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff-self",
+          "attack": 3,
+          "health": 3
+        }
+      ],
+      "description": "Battlecry: Gain +3/+3 (exalted might).",
+      "colors": [
+        "G",
+        "R",
+        "W"
+      ],
+      "landSet": "Naya"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "naya_marisis_twinclaws",
+      "name": "Naya Marisi's Twinclaws",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cat Warrior",
+      "keywords": [
+        "first_strike"
+      ],
+      "description": "First Strike.",
+      "colors": [
+        "G",
+        "R",
+        "W"
+      ],
+      "landSet": "Naya"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "grixis_fire_field_ogre",
+      "name": "Grixis Fire-Field Ogre",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Ogre Mutant",
+      "keywords": [
+        "first_strike",
+        "trample"
+      ],
+      "description": "First Strike. Trample.",
+      "colors": [
+        "B",
+        "R",
+        "U"
+      ],
+      "landSet": "Grixis"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "grixis_kederekt_creeper",
+      "name": "Grixis Kederekt Creeper",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Horror",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Deathrattle: Deal 1 damage to each opponent.",
+      "colors": [
+        "B",
+        "R",
+        "U"
+      ],
+      "landSet": "Grixis"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "jund_broodmate_dragon",
+      "name": "Jund Broodmate Dragon",
+      "type": "creature",
+      "cost": 6,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Dragon",
+          "tribe": "Dragon",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "description": "Elusive. Battlecry: Summon a 4/4 Dragon with Flying.",
+      "colors": [
+        "B",
+        "G",
+        "R"
+      ],
+      "landSet": "Jund"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "id": "jund_charnelhoard_wurm",
+      "name": "Jund Charnelhoard Wurm",
+      "type": "creature",
+      "cost": 7,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Wurm",
+      "keywords": [
+        "trample",
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Trample. Deathrattle: Draw a card (reclaim the hoard).",
+      "colors": [
+        "B",
+        "G",
+        "R"
+      ],
+      "landSet": "Jund"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "id": "jund_hellkite_overlord",
+      "name": "Jund Hellkite Overlord",
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 8,
+      "tribe": "Dragon",
+      "keywords": [
+        "elusive",
+        "trample",
+        "windfury"
+      ],
+      "description": "Flying (Elusive). Trample. Windfury.",
+      "colors": [
+        "B",
+        "G",
+        "R"
+      ],
+      "landSet": "Jund"
     }
   ]
 }
