@@ -17,12 +17,15 @@ const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 const named = (st, pi, n) => st.players[pi].board.filter(c => c.name === n).length;
 
 const HEROES = ['Aragorn', 'Gandalf', 'Legolas', 'Gimli', 'Frodo', 'Samwise', 'Éowyn', 'Galadriel', 'Théoden', 'Elrond'];
+const CLASS_OF = { Aragorn: 'paladin', Gandalf: 'mage', Legolas: 'hunter', Gimli: 'warrior',
+  Frodo: 'rogue', Samwise: 'priest', 'Éowyn': 'demon_hunter', Galadriel: 'druid',
+  'Théoden': 'shaman', Elrond: 'priest' };
 const pool = raw.cards.filter(c => c.meDeck);
 
 // ───────────────────────── structure ─────────────────────────
 ok('exactly 100 hero-deck cards tagged meDeck', pool.length === 100, pool.length);
 ok('all 10 heroes present', HEROES.every(h => pool.some(c => c.meDeck === h)));
-ok('every meDeck card is non-collectible magepunk/paper', pool.every(c => c.collectible === false && c.cardClass === 'magepunk' && c.set === 'paper'));
+ok('every meDeck card is colorless, non-collectible, paper', pool.every(c => c.collectible === false && (c.colors || []).length === 0 && c.set === 'paper'), pool.find(c => (c.colors||[]).length)?.id);
 const names = pool.map(c => c.name);
 ok('all 100 names distinct + non-empty', new Set(names).size === 100 && names.every(n => n && n.length > 2), new Set(names).size);
 ok('all ids prefixed me_ and unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 100);
@@ -37,7 +40,7 @@ for (const h of HEROES) {
     (t.enchantment || 0) === 1 && (t.artifact || 0) === 1, JSON.stringify(t));
   ok(`${h}: exactly one legendary signature (_sig)`,
     d.filter(c => c.rarity === 'legendary').length === 1 && d.some(c => c.id === `me_${h === 'Éowyn' ? 'eowyn' : h === 'Théoden' ? 'theoden' : h.toLowerCase()}_sig`));
-  ok(`${h}: colors stay within hero identity`, d.every(c => (c.colors || []).every(col => 'WUBRGC'.includes(col))));
+  ok(`${h}: all cards are class '${CLASS_OF[h]}' and colorless`, d.every(c => c.cardClass === CLASS_OF[h] && (c.colors || []).length === 0), d.find(c => c.cardClass !== CLASS_OF[h])?.id);
 }
 
 // ───────────────────────── breadth ─────────────────────────
