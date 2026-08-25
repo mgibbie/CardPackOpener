@@ -6,10 +6,20 @@ dungeon run**: you pick ONE good-guy hero and fight a gauntlet of Sauron's force
 or 3 losses**. Heroes and enemies are **disjoint** rosters (you never fight another hero), which is
 the core departure from Duels/Lorequest (where the enemy pool = the same characters you could play).
 
-All card NAMES + ART are sourced from the real MTG set **"The Lord of the Rings: Tales of
-Middle-earth"** (`set:ltr`, 85 legendary creatures) and its Commander decks (`set:ltc`, 43 legendary
-creatures) on Scryfall — 128 named characters total, every one with an `art_crop`. Mechanics are
-ORIGINAL Magepunk designs (keywords/effects DSL), same as the whole pool-redesign initiative — we
+All card NAMES + ART are sourced from real MTG Middle-earth sets on Scryfall — **FOUR** of them, all
+with `art_crop` on every legendary:
+- **LTR** — "The Lord of the Rings: Tales of Middle-earth" (85 legendary creatures)
+- **LTC** — its Commander decks (43 legendary creatures)
+- **HOB** — "The Hobbit" main set (verified 2026-08-24)
+- **HOC** — "The Hobbit" Commander decks
+
+HOB+HOC add **79 more legendary creatures** → **~207 named characters total**. This materially reshapes
+the roster: the Hobbit sets supply a whole villain tier the LTR-only plan lacked — **Smaug** (4 versions;
+*Smaug the Impenetrable* HOC/BR is commander-scale), **Azog, Moria's Ruin** (B), **Bolg of the North**
+(BR), **The Great Goblin** (BR), **Tom, Bert, and William** (the three Trolls, BG), **The Chief Warg**
+(BG) — plus new HERO candidates: **Bilbo** (several printings), **Thorin Oakenshield** (RW), **Bard the
+Bowman** (UW), **Beorn** (G), and **Tom Bombadil** (HOC, a 5-color God — ideal secret hero). Mechanics
+are ORIGINAL Magepunk designs (keywords/effects DSL), same as the whole pool-redesign initiative — we
 reuse names + art only, never WOTC rules text.
 
 ---
@@ -23,7 +33,7 @@ reuse names + art only, never WOTC rules text.
 | Enemy deck | **15 cards × 2 copies = 30** | Enemies are full-strength; heroes start behind. |
 | Win condition | **12 wins** | Clears the run (defeat Sauron as the 12th). |
 | Loss condition | **3 losses** | Ends the run. |
-| Enemy roster | **~21 enemies, split into RUNGS** | Which enemies can appear is gated by your win count. |
+| Enemy roster | **22 enemies, split into RUNGS** | Which enemies can appear is gated by your win count. |
 | Growth (per win) | **Spoils draft + alternating reward** | See the loot sequence below. This is how a 10-card deck catches a 30-card deck. |
 
 **Loot sequence — every win grants BOTH (decided with the user):**
@@ -92,14 +102,15 @@ still keys which loot BUCKETS are offered).** ~2-mana, once/turn, slot-0:
 | Théoden | **Forth Eorlingas!** — Give your creatures +1/+0 this turn. |
 | Elrond | **Rivendell's Grace** — Restore 2 health and scry 1. |
 
-**Enemy hero powers — EVERY one of the 21 enemies gets its OWN unique signature power** (decided with the
+**Enemy hero powers — EVERY one of the 22 enemies gets its OWN unique signature power** (decided with the
 user; no class-defaults). These are the enemy's whole "loot advantage" — since enemies are otherwise
 **STATIC** (see §1: no win-parity buckets/treasures), the signature power is what gives each foe teeth and
 personality. Examples: Balrog **Flame of Udûn** — Deal 2 to all enemy creatures; Witch-king **Morgul
 Blade** — a creature you damage this turn can't be healed; Shelob **Ensnare** — Freeze a creature and
 give it −1/−0; Saruman **Voice of Isengard** — Summon a 1/1 Uruk; Gríma **Poison Words** — an opponent
-discards a random card; Sauron **The Eye** — Draw a card, then each opponent discards one. **All 31 powers
-(10 heroes + 21 enemies) enumerated in Phase A.**
+discards a random card; Sauron **The Eye** — Draw a card, then each opponent discards one; Smaug
+**Dragonfire** — Deal 3 to a creature and gain a Treasure. **All 32 powers (10 heroes + 22 enemies)
+enumerated in Phase A.**
 
 ---
 
@@ -128,25 +139,29 @@ Weak, aggressive fodder. **★ = first-encounter-only (only spawns at win 0).**
 13. **King of the Oathbreakers** (BW) — the Dead Men; Wraith tokens + deathtouch.
 14. **Shelob, Child of Ungoliant** (BG) — deathtouch Spider + poison.
 
-### Rung C — Named commanders (wins 8–11) — 5 enemies
+### Rung C — Named commanders (wins 8–11) — 6 enemies
 15. **Saruman the White** (U) — Isengard control + Uruk factory.
 16. **The Balrog, Durin's Bane** (BR) — Flame of Udûn; big burn finisher.
 17. **Witch-king of Angmar** (B) — Lord of the Nazgûl; "no man can kill me" (first-strike/fear).
 18. **Sauron, the Necromancer** (B) — Dol Guldur; reanimation/aristocrats.
 19. **Sméagol, Helpful Guide / Gollum, Patient Plotter** (BG) — the Ring's pull; steal/copy tricks.
+20. **Smaug the Impenetrable** (HOC, BR) ✚ — the Hobbit-era marquee boss; a giant Dragon that hoards
+    Treasure and torches the board. (Newly available via HOB/HOC — see intro.)
 
 ### Rung D — The Dark Lord (win 12) — 2 enemies (final-boss pool)
-20. **Sauron, the Dark Lord** (BRU) — the 12th-win boss; the One Ring's master, an all-threats finisher.
-21. **Sauron, the Lidless Eye** (BR) — alternate final boss (rotates with #20 for replay variety).
+21. **Sauron, the Dark Lord** (BRU) — the 12th-win boss; the One Ring's master, an all-threats finisher.
+22. **Sauron, the Lidless Eye** (BR) — alternate final boss (rotates with #21 for replay variety).
 
-**Rung math:** A=7, B=7, C=5, D=2 → 21. `enemyRosterFor(wins)`: `wins===0` → the ★ first-encounter subset
-(+ rest of A); `wins 1–3` → A; `4–7` → B; `8–11` → C; `12` → D (pick one Sauron).
+**Rung math:** A=7, B=7, C=6, D=2 → **22** (≈21 target — Smaug added). `enemyRosterFor(wins)`:
+`wins===0` → the ★ first-encounter subset (+ rest of A); `wins 1–3` → A; `4–7` → B; `8–11` → C; `12` → D
+(pick one Sauron). **Candidate Hobbit swaps for §9 sign-off:** Azog/Bolg/Great Goblin/the three Trolls/
+Chief Warg could replace or augment the generic Rung A/B Orc entries for stronger Hobbit-era identity.
 
 ---
 
 ## 4. Card build spec
 
-- **Total new cards:** 10 heroes × 10 + 21 enemies × 15 = **100 + 315 = 415 cards** in `cards.json`.
+- **Total new cards:** 10 heroes × 10 + 22 enemies × 15 = **100 + 330 = 430 cards** in `cards.json`.
 - **Tag:** `meDeck: "<Character>"` (Middle-earth analog of `loreDeck`), `collectible:false`,
   `cardClass:'magepunk'`, `set:'paper'`. Colors per character's Scryfall identity.
 - **Signature:** each deck has one legendary-rarity signature (the character); `id` ends `_sig`
@@ -155,9 +170,9 @@ Weak, aggressive fodder. **★ = first-encounter-only (only spawns at win 0).**
 - **Design bar** (same rubric as the pool initiative): each deck spans **6+ card types** and **6+
   keywords**, cohesive to the character's theme. Use the full DSL (creature/sorcery/instant/enchantment/
   artifact/location/weapon/quest + the signature).
-- **Art:** real Scryfall LTR/LTC `art_crop` per named card; support cards named after real LTR cards
-  in-theme (e.g. Aragorn deck pulls "Andúril, Flame of the West", "Rangers of Ithilien", "Gondor
-  gate"…). Fetch + deploy via the proven pipeline (§7).
+- **Art:** real Scryfall **LTR / LTC / HOB / HOC** `art_crop` per named card; support cards named after
+  real in-set cards in-theme (e.g. Aragorn deck pulls "Andúril, Flame of the West", "Rangers of Ithilien";
+  Smaug deck pulls "Desolation of Smaug", "Smaug's Fury"…). Fetch + deploy via the proven pipeline (§7).
 
 ---
 
@@ -177,7 +192,7 @@ treasure/curse rather than per-card:
 
 lorequest.js is a 76-line data+helper module; Middle-earth mirrors it as **`battlecards/middleearth.js`**:
 - `HEROES` (10) / `ENEMIES` (21) / `ENEMY_RUNGS` (A/B/C/D arrays + `FIRST_ONLY` set) / `CLASS_OF`
-  (hero→class, drives buckets) / `HERO_POWER` (all 31 characters → their unique power id) /
+  (hero→class, drives buckets) / `HERO_POWER` (all 32 characters → their unique power id) /
   `heroChoices()` (returns all 10) / `deckOf(cardsById, ch)` (hero → 10 singleton; enemy → 2×15) /
   `enemyRosterFor(wins)` (rung-gated) / `generateEnemy(rng, wins, avoidId)` / `WINS_TO_CLEAR=12` /
   `LOSSES_TO_END=3`.
@@ -206,7 +221,7 @@ lorequest.js is a 76-line data+helper module; Middle-earth mirrors it as **`batt
 Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 1. Map `{id: "Real LTR Card Name"}`.
 2. `scratchpad/fetch_pool_art.mjs <map.json>` — Scryfall `art_crop` (User-Agent header + ~180ms delay),
-   writes `battlecards/art/<id>.jpg` + appends id to `art/index.json`. For 415 cards, prefer the
+   writes `battlecards/art/<id>.jpg` + appends id to `art/index.json`. For ~430 cards, prefer the
    **`/cards/collection` batch resolver** (`lq_prime.py` style, 75/call) over per-name to dodge 429s.
 3. Deploy: `npx wrangler pages deploy art --project-name=magepunk-cardart --commit-dirty=true`
    (already OAuth'd). Verify `https://magepunk-cardart.pages.dev/<id>.jpg` → 200.
@@ -215,9 +230,9 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 
 ## 8. Build phases
 
-- **Phase A — Cards + art:** author 415 cards (10 heroes ×10 + 21 enemies ×15) into cards.json with
+- **Phase A — Cards + art:** author ~430 cards (10 heroes ×10 + 22 enemies ×15) into cards.json with
   `meDeck` tags + signatures; source + deploy all art. Test `middleearth_decks_test.mjs` (10 heroes =10,
-  21 enemies =15, legendary sig, plays-clean, 6+ types/deck).
+  22 enemies =15, legendary sig, plays-clean, 6+ types/deck).
 - **Phase B — Run module:** `middleearth.js` + game.js hooks + `?middleearth=1` + boot/run blocks +
   loot growth. Test `middleearth_run_test.mjs` (rung gating, 12W/3L, enemy-gen, engine-boot).
 - **Phase C — Surfaces:** in-game + start.html menus, spectate maps, designwiki section, news regen,
@@ -235,14 +250,19 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 2. ✅ **Enemies are STATIC** — the Duels/Lorequest **win-parity** budget (enemy matches your buckets/
    treasures) is **removed**. Each enemy = fixed 30-card deck + one unique signature hero power; difficulty
    scales by RUNG only. See §1 + §2.
-3. ✅ **Hero powers are unique per character** — all **31** (10 heroes + 21 enemies) get their OWN
+3. ✅ **Hero powers are unique per character** — all **32** (10 heroes + 22 enemies) get their OWN
    signature power (no class-defaults). Class is retained only to pick which loot BUCKETS a hero drafts.
-   See §2 table (10 heroes enumerated; 21 enemy powers enumerated in Phase A).
-4. ✅ **Final boss** — **rotate two Saurons** (#20/#21) for replay variety. (In roster §4.)
+   See §2 table (10 heroes enumerated; 22 enemy powers enumerated in Phase A).
+4. ✅ **Final boss** — **rotate two Saurons** (#21/#22) for replay variety. (In roster §3.)
 5. ✅ **The One Ring mechanic** — **deferred to v2** (Phase D stretch goal; base run doesn't block on it).
+6. ✅ **Source correction (2026-08-24):** the Hobbit sets **HOB + HOC** exist (79 more legends). **Smaug
+   DOES exist** in MTG (4 versions) — added as Rung C boss #20 (*Smaug the Impenetrable*, HOC/BR). Bilbo,
+   Thorin, Bard, Beorn, Tom Bombadil, Azog, Bolg, the Great Goblin, the Trolls, the Wargs now available.
 
 **STILL OPEN (confirm before Phase A):**
-6. **Roster swaps** — any must-have characters missing (Bilbo; Tom Bombadil as a secret hero? no MTG
-   Smaug exists), or any of the 31 listed you want cut/replaced?
-7. **Class assignments** — the hero→class map in §2 (drives which loot buckets each hero drafts) — happy
+7. **Roster swaps** — with the Hobbit pool now in scope: keep the 22 as listed, or swap in Hobbit-era
+   Orcs (**Azog / Bolg / Great Goblin / Tom, Bert & William / Chief Warg**) for the generic Rung A/B
+   entries? And do you want **Bilbo / Thorin / Bard / Beorn** as hero alternates, or **Tom Bombadil** as
+   a hidden 11th (secret) hero?
+8. **Class assignments** — the hero→class map in §2 (drives which loot buckets each hero drafts) — happy
    with it, or re-theme any?
