@@ -248932,6 +248932,40 @@
         "text": "The Ring tempts you."
       },
       "description": "Battlecry: The Ring tempts you. {T}: The Ring tempts you. (One Ring to rule them all.)"
+    },
+    {
+      "id": "sauron_lord_of_the_rings",
+      "name": "Sauron, Lord of the Rings",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Horror God",
+      "rarity": "legendary",
+      "cardClass": "neutral",
+      "set": "paper",
+      "collectible": true,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tempt"
+        }
+      ],
+      "ongoing": {
+        "on": "self-attacks",
+        "effects": [
+          {
+            "type": "tempt"
+          },
+          {
+            "type": "plunder",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Battlecry: The Ring tempts you. Swing: The Ring tempts you, and Plunder (steal the top card of your opponent's deck)."
     }
   ]
 }

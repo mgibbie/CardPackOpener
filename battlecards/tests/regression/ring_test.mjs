@@ -141,5 +141,19 @@ const play = (st, pi, id) => { const c = E.instantiate(byId[id], pi); c.zone = '
   E.fireOngoing(st, 0, 'turn-start');
   ok('T11: Gollum\'s "One Ring to Rule Them All" tempts at turn start', st.players[0].ring === 1); }
 
+// T12 — the collectible paper Sauron: Battlecry Tempt; Swing Tempt & Plunder
+{ const st = game();
+  st.players[1].deck = ['_X', '_X', '_X'];
+  const s = play(st, 0, 'sauron_lord_of_the_rings');
+  ok('T12: Sauron battlecry tempts (L1, Sauron itself is bearer)', st.players[0].ring === 1 && st.players[0].ringBearer === s.uid, [st.players[0].ring, st.players[0].ringBearer, s.uid]);
+  ok('T12: Sauron is collectible + legendary', byId['sauron_lord_of_the_rings'].collectible === true && byId['sauron_lord_of_the_rings'].rarity === 'legendary');
+  s.sick = false;
+  const foeDeck0 = st.players[1].deck.length, myHand0 = st.players[0].hand.length;
+  E.attack(st, 0, s.uid, { type: 'hero', player: 1 });
+  ok('T12: Sauron Swing tempts again (L2)', st.players[0].ring === 2, st.players[0].ring);
+  ok('T12: Sauron Swing plunders the enemy deck (top -1)', st.players[1].deck.length === foeDeck0 - 1, [foeDeck0, st.players[1].deck.length]);
+  ok('T12: plundered card entered your hand', st.players[0].hand.length === myHand0 + 1, [myHand0, st.players[0].hand.length]);
+  valid(st, 'T12'); }
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

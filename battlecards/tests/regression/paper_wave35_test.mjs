@@ -30,7 +30,10 @@ ok('hex has the 15-artifacts-<=3 deckbuilding requirement', H.companionReq && H.
 ok('hex triggers on Shadow spells AND on Adventures', Array.isArray(H.ongoings) && H.ongoings.some(o => o.on === 'spell-played' && o.if && o.if.school === 'Shadow') && H.ongoings.some(o => o.on === 'adventure-cast'));
 
 function game(loadouts) {
-  const st = E.createGame(byId, seededRng(35), loadouts || null, 2, [{ id: 'mage', name: 'A', power: null }, { id: 'mage', name: 'B', power: null }]);
+  // loadouts go in the 6th arg (per-deck companion/commander); the 3rd is playerDeckIds. Passing the
+  // companion loadout deterministically (not via the random-companion fallback) keeps this test immune
+  // to cards.json seed-drift.
+  const st = E.createGame(byId, seededRng(35), null, 2, [{ id: 'mage', name: 'A', power: null }, { id: 'mage', name: 'B', power: null }], loadouts || null);
   st.current = 0; st.priority = null; st.stack = [];
   for (const p of st.players) { p.hand = []; p.deck = ['_v', '_v', '_v']; p.board = []; p.artifacts = []; p.enchantments = []; p.graveyard = []; p.mana = { cur: 30, max: 30, bonus: 0 }; }
   return st;

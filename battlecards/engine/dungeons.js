@@ -32,6 +32,22 @@ export const DUNGEONS = {
 			cradle_of_the_death_god: { name: 'Cradle of the Death God', text: 'Create The Atropal, a 4/4 with Deathtouch.', effects: [{ type: 'summon', count: 1, attack: 4, health: 4, name: 'The Atropal', tribe: 'God Horror', keywords: ['deathtouch'] }], next: [] },
 		},
 	},
+	amber_temple: {
+		// Curse of Strahd's Amber Temple: a vault of imprisoned dark powers whose "vestiges" grant
+		// dark gifts — potent boons, most exacting a price in life. A custom dungeon in the same shape
+		// (start -> branch -> converge -> branch -> payoff) as the three AFR dungeons above.
+		name: 'Amber Temple', start: 'temple_doors',
+		rooms: {
+			temple_doors:     { name: 'Temple Doors',     text: 'Scry 1.',                                              effects: [{ type: 'scry', value: 1 }], next: ['amber_sarcophagi'] },
+			amber_sarcophagi: { name: 'Amber Sarcophagi', text: 'Bolster 1 (+1/+1 to your weakest).',                   effects: [{ type: 'bolster', value: 1 }], next: ['vault_of_vampyr', 'shrine_of_delban'] },
+			vault_of_vampyr:  { name: 'Vault of Vampyr',  text: "Vampyr's gift: gain 2 Armor and 2 life.",              effects: [{ type: 'armor', value: 2 }, { type: 'heal', value: 2, target: 'self' }], next: ['hall_of_vestiges'] },
+			shrine_of_delban: { name: 'Shrine of Delban', text: "Delban's star: deal 2 to a random enemy; lose 1 life.", effects: [{ type: 'random-damage', value: 2, pool: 'enemies', count: 1 }, { type: 'damage', value: 1, target: 'own-hero' }], next: ['hall_of_vestiges'] },
+			hall_of_vestiges: { name: 'Hall of Vestiges', text: 'Forbidden lore: draw a card; lose 1 life.',            effects: [{ type: 'draw', value: 1 }, { type: 'damage', value: 1, target: 'own-hero' }], next: ['shrine_of_zhudun', 'shrine_of_savnok'] },
+			shrine_of_zhudun: { name: 'Shrine of Zhudun', text: 'Create a 3/3 Amber Horror.',                           effects: [{ type: 'summon', count: 1, attack: 3, health: 3, name: 'Amber Horror', tribe: 'Horror' }], next: ['heart_of_amber'] },
+			shrine_of_savnok: { name: 'Shrine of Savnok', text: 'The Imprisoner wards your host: give your creatures +1/+1.', effects: [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creatures' }], next: ['heart_of_amber'] },
+			heart_of_amber:   { name: 'Heart of Amber',   text: 'The dark bargain: draw two cards, deal 3 to each opponent, and lose 3 life.', effects: [{ type: 'draw', value: 2 }, { type: 'damage', value: 3, target: 'enemy-heroes' }, { type: 'damage', value: 3, target: 'own-hero' }], next: [] },
+		},
+	},
 	mad_mage: {
 		name: 'Dungeon of the Mad Mage', start: 'yawning_portal',
 		rooms: {

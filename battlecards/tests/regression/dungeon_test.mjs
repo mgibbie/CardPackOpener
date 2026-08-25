@@ -24,8 +24,8 @@ const play = (st, id, t) => E.playCard(st, 0, st.players[0].hand.find(x => x.id 
 const adv = (st, pi, choice) => { E.advance(st, pi); if (st.pickQueue.length && st.pickQueue[0].advance && st.pickQueue[0].player === pi) E.resolvePick(st, choice); st.scryQueue.length = 0; };
 
 // ---------- data sanity ----------
-ok('3 dungeons exist', Object.keys(E.DUNGEONS).length === 3);
-for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
+ok('4 dungeons exist', Object.keys(E.DUNGEONS).length === 4);
+for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9], ['amber_temple', 8]]) {
 	const d = E.DUNGEONS[id];
 	ok(`${id} has ${exp} rooms + a start`, Object.keys(d.rooms).length === exp && d.rooms[d.start]);
 	ok(`${id} final room has no exits`, Object.values(d.rooms).some(r => (r.next || []).length === 0));
@@ -35,7 +35,7 @@ for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
 {
 	const st = game();
 	E.advance(st, 0);
-	ok('venture with no dungeon queues an enter pick (3 dungeons)', st.pickQueue[0]?.advance === 'enter' && st.pickQueue[0].ids.length === 3);
+	ok('venture with no dungeon queues an enter pick (4 dungeons)', st.pickQueue[0]?.advance === 'enter' && st.pickQueue[0].ids.length === 4);
 	E.resolvePick(st, 'lost_mine');
 	ok('entered Lost Mine at its start room', st.players[0].dungeon?.id === 'lost_mine' && st.players[0].dungeon?.room === 'cave_entrance');
 	ok('Cave Entrance fired Scry 1', st.scryQueue.length === 1);
@@ -83,6 +83,45 @@ for (const [id, exp] of [['lost_mine', 7], ['tomb', 5], ['mad_mage', 9]]) {
 	ok('Mad Mage completed', st.players[0].dungeon === null && st.players[0].completedDungeons.includes('mad_mage'));
 	E.advance(st, 0);
 	ok('a fresh venture starts a NEW dungeon (enter pick again)', st.pickQueue[0]?.advance === 'enter');
+}
+
+// ---------- walk Amber Temple to the Heart of Amber payoff (dark gifts at a life cost) ----------
+{
+	const st = game(); st.players[0].deck = Array(12).fill('_c');
+	adv(st, 0, 'amber_temple');       // enter -> temple_doors (scry)
+	adv(st, 0, null);                 // -> amber_sarcophagi (bolster) [branch]
+	adv(st, 0, 'vault_of_vampyr');    // -> vault_of_vampyr (2 Armor + 2 life)
+	ok('Vault of Vampyr granted Armor', (st.players[0].armor || 0) >= 2, st.players[0].armor);
+	adv(st, 0, null);                 // -> hall_of_vestiges (draw 1 + lose 1) [branch]
+	adv(st, 0, 'shrine_of_zhudun');   // -> shrine_of_zhudun (summon 3/3 Amber Horror)
+	const horror = st.players[0].board.find(c => c.name === 'Amber Horror');
+	ok('Shrine of Zhudun summoned a 3/3 Amber Horror', !!horror && horror.attack === 3 && E.hp(horror) === 3);
+	const h = st.players[0].hand.length, el = st.players[1].life;
+	const ehp0 = st.players[0].life + (st.players[0].armor || 0); // effective HP (Vault's Armor cushions the cost)
+	adv(st, 0, null);                 // -> heart_of_amber (draw 2, 3 to each opp, lose 3) = final
+	ok('Heart of Amber drew 2', st.players[0].hand.length === h + 2, [h, st.players[0].hand.length]);
+	ok('Heart of Amber dealt 3 to the opponent', st.players[1].life === el - 3, [el, st.players[1].life]);
+	ok('Heart of Amber cost you 3 (life/Armor — the dark bargain)', (st.players[0].life + (st.players[0].armor || 0)) === ehp0 - 3, [ehp0, st.players[0].life, st.players[0].armor]);
+	ok('Amber Temple completed + marker cleared', st.players[0].dungeon === null && st.players[0].completedDungeons.includes('amber_temple'));
+}
+// ---------- Amber Temple's other branch fires cleanly (Delban's star + Savnok's ward) ----------
+{
+	const st = game();
+	const foe = putC(st, 1, 2, 2);   // a target for Delban's random burn
+	const friend = putC(st, 0, 1, 1);
+	adv(st, 0, 'amber_temple');       // -> temple_doors
+	adv(st, 0, null);                 // -> amber_sarcophagi
+	const foeHp0 = E.hp(foe), enemyLife0 = st.players[1].life;
+	adv(st, 0, 'shrine_of_delban');   // -> Delban's star: 2 to a random enemy (creature OR hero); lose 1
+	const foeDmg = foeHp0 - (st.players[1].board.includes(foe) ? E.hp(foe) : 0);
+	const enemyDmg = foeDmg + (enemyLife0 - st.players[1].life);
+	ok('Shrine of Delban dealt 2 to a random enemy', enemyDmg >= 2, enemyDmg);
+	adv(st, 0, null);                 // -> hall_of_vestiges
+	const a0 = friend.attack;
+	adv(st, 0, 'shrine_of_savnok');   // -> Savnok's ward: your creatures +1/+1
+	ok('Shrine of Savnok buffed your creatures +1/+1', friend.attack === a0 + 1, [a0, friend.attack]);
+	adv(st, 0, null);                 // -> heart_of_amber (final)
+	ok('Amber Temple (Delban/Savnok path) completed', st.players[0].completedDungeons.includes('amber_temple'));
 }
 
 // ---------- Abzan Runemark: Inspire: Advance (venture on hero power) ----------
