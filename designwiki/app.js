@@ -1872,6 +1872,45 @@ async function finalFantasyDeckDetail(slug) {
     cardSizeControl(grid), grid);
 }
 
+// ── Tempt ("The Ring tempts you") — the One Ring mechanic ──
+async function temptView() {
+  content.replaceChildren(h('h1', null, 'Tempt'), h('p', { class: 'muted' }, 'Loading…'));
+  let cards;
+  try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Tempt'), h('p', { class: 'muted' }, 'Could not load card data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'tempt') return;
+  // every card that tempts you (One Rings + Sauron); show one face per distinct name (prefer the collectible/treasure printing)
+  const all = cards.filter(c => JSON.stringify(c).includes('"tempt"'))
+    .sort((a, b) => ((b.collectible !== false) - (a.collectible !== false)) || ((b.meTreasure ? 1 : 0) - (a.meTreasure ? 1 : 0)));
+  const seen = new Set(), temptCards = all.filter(c => (seen.has(c.name) ? false : (seen.add(c.name), true)));
+  await CardArt.preloadArt(temptCards.map(c => c.id));
+  const tier = (n, name, txt) => h('div', { class: 'lp-tier', style: 'display:flex;gap:14px;align-items:flex-start;padding:12px 14px;' },
+    h('div', { style: 'flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:#8a6f3a;color:#1c1830;font-weight:bold;display:flex;align-items:center;justify-content:center;' }, 'L' + n),
+    h('div', null, h('div', { style: 'font-weight:bold;margin-bottom:2px;' }, name), h('div', { class: 'muted', style: 'font-size:.92em;line-height:1.35;' }, txt)));
+  const faceOf = c => { const canvas = CardArt.drawCardFace(c); return h('a', { class: 'wiki-card', href: '#/cards/' + c.id, title: c.description || c.name }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy' }), h('div', { class: 'lq-name' }, c.name)); };
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' }, h('div', null,
+      h('h1', null, 'Tempt — “The Ring tempts you”'),
+      h('p', { class: 'muted' }, 'Tempt is Magepunk’s take on Magic: The Gathering’s ', h('em', null, 'The Ring tempts you'), ': a per-player Ring that levels up and rides on one of your creatures — its ', h('b', null, 'Ring-bearer'), '.'))),
+    h('section', { class: 'lp-tier' },
+      h('div', { class: 'lp-tier-head' }, h('h2', null, 'How it works')),
+      h('ul', { class: 'muted', style: 'line-height:1.5;' },
+        h('li', null, 'Each time you are tempted, your Ring ', h('b', null, 'levels up by 1'), ' (up to a maximum of ', h('b', null, '4'), '). The tiers are ', h('b', null, 'cumulative'), '.'),
+        h('li', null, 'You then choose a creature you control as your ', h('b', null, 'Ring-bearer'), ' — it immediately gains every tier your Ring has unlocked. With one creature it’s chosen automatically; with none, you simply level up.'),
+        h('li', null, 'If your Ring-bearer leaves play, the Ring ', h('b', null, 'keeps its level'), ' — you choose a new bearer the next time you’re tempted.'))),
+    h('section', { class: 'lp-tier' },
+      h('div', { class: 'lp-tier-head' }, h('h2', null, 'The four tiers'), h('p', { class: 'muted' }, 'Each is granted once, and they stack on your Ring-bearer.')),
+      h('div', { style: 'display:flex;flex-direction:column;gap:8px;max-width:660px;' },
+        tier(1, 'Stealth', 'Your Ring-bearer gains Stealth — the enemy can’t attack or target it until it acts.'),
+        tier(2, 'Loot on attack', 'Whenever your Ring-bearer attacks, loot: draw a card, then discard a card.'),
+        tier(3, 'Deathtouch & +1/+1', 'Your Ring-bearer gains Deathtouch and a permanent +1/+1.'),
+        tier(4, 'Corruption', 'Whenever your Ring-bearer damages a hero, each opponent loses 3 life.'))),
+    h('section', { class: 'lp-tier' },
+      h('div', { class: 'lp-tier-head' }, h('h2', null, 'Cards that tempt you'),
+        h('p', { class: 'muted' }, 'The One Ring tempts you when it’s played, tapped, or at the start of your turn (depending on the card). Draft ', h('b', null, 'The One Ring'), ' in the ', h('a', { href: '#/middle-earth' }, 'Lorequest: Middle-earth'), ' run, or wield the collectible ', h('b', null, 'Sauron, Lord of the Rings'), ' in your own deck.')),
+      h('div', { class: 'card-grid size-small' }, ...temptCards.map(faceOf))));
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1896,6 +1935,7 @@ function route() {
   if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
   if (section === 'sword-coast') return id ? swordCoastDeckDetail(id) : swordCoastView();
   if (section === 'final-fantasy') return id ? finalFantasyDeckDetail(id) : finalFantasyView();
+  if (section === 'tempt') return temptView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
