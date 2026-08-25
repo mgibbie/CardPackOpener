@@ -16,19 +16,19 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 const named = (st, pi, n) => st.players[pi].board.filter(c => c.name === n).length;
 
-const HEROES = ['Aragorn', 'Gandalf', 'Legolas', 'Gimli', 'Frodo', 'Samwise', 'Éowyn', 'Galadriel', 'Théoden', 'Elrond'];
+const HEROES = ['Aragorn', 'Gandalf', 'Legolas', 'Gimli', 'Frodo', 'Samwise', 'Éowyn', 'Galadriel', 'Théoden', 'Elrond', 'Tom Bombadil'];
 const CLASS_OF = { Aragorn: 'paladin', Gandalf: 'mage', Legolas: 'hunter', Gimli: 'warrior',
   Frodo: 'rogue', Samwise: 'priest', 'Éowyn': 'demon_hunter', Galadriel: 'druid',
-  'Théoden': 'shaman', Elrond: 'priest' };
+  'Théoden': 'shaman', Elrond: 'priest', 'Tom Bombadil': 'druid' };
 const pool = raw.cards.filter(c => c.meDeck && c.meSide === 'hero');
 
 // ───────────────────────── structure ─────────────────────────
-ok('exactly 100 hero-deck cards tagged meDeck', pool.length === 100, pool.length);
-ok('all 10 heroes present', HEROES.every(h => pool.some(c => c.meDeck === h)));
+ok('exactly 110 hero-deck cards tagged meDeck (10 heroes + secret Tom Bombadil)', pool.length === 110, pool.length);
+ok('all 11 heroes present (incl. Tom Bombadil)', HEROES.every(h => pool.some(c => c.meDeck === h)));
 ok('every meDeck card is colorless, non-collectible, paper', pool.every(c => c.collectible === false && (c.colors || []).length === 0 && c.set === 'paper'), pool.find(c => (c.colors||[]).length)?.id);
 const names = pool.map(c => c.name);
-ok('all 100 names distinct + non-empty', new Set(names).size === 100 && names.every(n => n && n.length > 2), new Set(names).size);
-ok('all ids prefixed me_ and unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 100);
+ok('all 110 names distinct + non-empty', new Set(names).size === 110 && names.every(n => n && n.length > 2), new Set(names).size);
+ok('all ids prefixed me_ and unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 110);
 
 for (const h of HEROES) {
   const d = pool.filter(c => c.meDeck === h);
@@ -38,8 +38,9 @@ for (const h of HEROES) {
   ok(`${h}: 4 creatures / 2 spells / 1 location / 1 weapon / 1 enchantment / 1 artifact`,
     (t.creature || 0) === 4 && spells === 2 && (t.location || 0) === 1 && (t.weapon || 0) === 1 &&
     (t.enchantment || 0) === 1 && (t.artifact || 0) === 1, JSON.stringify(t));
+  const slug = h === 'Éowyn' ? 'eowyn' : h === 'Théoden' ? 'theoden' : h === 'Tom Bombadil' ? 'tom' : h.toLowerCase();
   ok(`${h}: exactly one legendary signature (_sig)`,
-    d.filter(c => c.rarity === 'legendary').length === 1 && d.some(c => c.id === `me_${h === 'Éowyn' ? 'eowyn' : h === 'Théoden' ? 'theoden' : h.toLowerCase()}_sig`));
+    d.filter(c => c.rarity === 'legendary').length === 1 && d.some(c => c.id === `me_${slug}_sig`));
   ok(`${h}: all cards are class '${CLASS_OF[h]}' and colorless`, d.every(c => c.cardClass === CLASS_OF[h] && (c.colors || []).length === 0), d.find(c => c.cardClass !== CLASS_OF[h])?.id);
 }
 

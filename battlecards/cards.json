@@ -248644,6 +248644,278 @@
       "description": "{T}: Deal 3 to an enemy creature and restore 3 Health.",
       "colors": [],
       "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_sig",
+      "name": "Tom Bombadil",
+      "type": "creature",
+      "cost": 6,
+      "attack": 5,
+      "health": 6,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Elusive. Battlecry: Gain an empty Mana Crystal, restore 3 Health, and Scry 1. (The Ring has no power over him.)",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_goldberry",
+      "name": "Goldberry, River-Daughter",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Nymph",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Elusive. Battlecry: Restore 2 Health to your creatures.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_willowwind",
+      "name": "Willow-Wind",
+      "type": "creature",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "tribe": "Elemental",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_quickbeam",
+      "name": "Quickbeam, Upstart Ent",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Treefolk",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Taunt. Battlecry: Give your other creatures +1/+1.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_song",
+      "name": "Bombadil's Song",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature +1/+1 and Elusive.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_revive",
+      "name": "Revive the Shire",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "friendly-all"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Restore 3 Health to all friendly characters and Scry 1.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_loc",
+      "name": "Yavimaya, Cradle of Growth",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain 1 Mana this turn and Scry 1.",
+          "effects": [
+            {
+              "type": "gain-mana",
+              "value": 1
+            },
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain 1 Mana this turn and Scry 1.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_wep",
+      "name": "Sword of the Animist",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 1,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "gain-empty-mana-crystal",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, gain an empty Mana Crystal.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_ench",
+      "name": "Dancing from Dark to Dawn",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, restore 2 Health to your creatures.",
+      "colors": [],
+      "cardClass": "druid"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Tom Bombadil",
+      "meSide": "hero",
+      "id": "me_tom_art",
+      "name": "The Great Henge",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ],
+        "text": "Draw a card and restore 2 Health."
+      },
+      "description": "{T}: Draw a card and restore 2 Health to your hero.",
+      "colors": [],
+      "cardClass": "druid"
     }
   ]
 }
