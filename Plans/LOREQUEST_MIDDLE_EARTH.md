@@ -275,10 +275,18 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
     Tests `pool_middleearth_heroes_test.mjs` (278) + `pool_middleearth_enemies_test.mjs` (1012); suite
     431/431 green. Enemy→class map locked (warlock 8 / warrior 6 / death_knight 5 / rogue 3 / hunter 2 /
     mage 2 / druid 1).
-  - ⏳ **Remaining Phase A:** the **38 unique HERO-POWER cards** (`type:'heropower'`, 11 heroes + 27
-    enemies) — powers enumerated in §2; author + wire into the HERO_POWER map with Phase B.
-- **Phase B — Run module:** `middleearth.js` + game.js hooks + `?middleearth=1` + boot/run blocks +
-  loot growth. Test `middleearth_run_test.mjs` (rung gating, 12W/3L, enemy-gen, engine-boot).
+  - ✅ **38 hero powers DONE (as data, not cards):** the engine installs a hero power from each seat's
+    inline `power` object at `createGame` — so the 38 UNIQUE powers (11 heroes + 27 enemies) live in
+    `middleearth.js` `HERO_POWERS`, NOT as `heropower` cards in cards.json. Simpler + engine-native.
+  - ✅ **Tom Bombadil (secret 11th hero) DONE:** 10-card druid deck in cards.json (`me_tom_*`, art
+    deployed), unlocked by clearing a run. Heroes now 11 / 110 cards.
+- **Phase B — Run module:** ✅ **DONE (2026-08-25, commit 5b02143b).** `middleearth.js` (rosters, rung
+  gating, static enemies, deckOf, reward alternation, spoils draft, seatOf, HERO_POWERS) + full game.js
+  `?middleearth=1` wiring (mirrors the lorequest block: key/flag/load-save-clear, slot-0 power, mulligan
+  gate, game-over hook, mode/label/replay-meta, menu tile, pick-hero overlay, boot, spoils+alternating
+  loot, advance, run-complete/over + Tom unlock). Test `middleearth_run_test.mjs` (209 checks: rung
+  gating, 12W/3L, static enemy-gen, all 38 powers install+fire via the engine). Suite 432/432. A
+  44-encounter node boot sanity (every hero × 4 rung enemies) is clean.
 - **Phase C — Surfaces:** in-game + start.html menus, spectate maps, designwiki section, news regen,
   cache-busts. Ship.
 - **Phase D (optional) — The One Ring** corruption mechanic.
