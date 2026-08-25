@@ -65,7 +65,9 @@ ok('win 11 = Rung D final boss (2 Saurons)', ME.enemyRosterFor(11).length === 2 
 ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(ME.rewardForWin).join(',') === 'treasure,bucket,treasure,bucket,treasure,bucket');
 { const rng = seededRng(9); const sp = ME.spoilsChoices(cardsById, 'The Balrog', rng, 3);
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].meDeck === 'The Balrog'), sp); }
-ok('treasurePool returns DUELS treasures', ME.treasurePool(cardsById).length > 0 && ME.treasurePool(cardsById).every(d => d.treasure && d.set === 'DUELS'));
+ok('treasurePool returns DUELS treasures + The One Ring', ME.treasurePool(cardsById).length > 0
+  && ME.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.meTreasure)
+  && ME.treasurePool(cardsById).some(d => d.id === 'me_the_one_ring'));
 
 // ───────────────────────── engine integration: install + fire all 38 powers ─────────────────────────
 function bootWith(seatChar, oppChar = 'Aragorn') {

@@ -125,5 +125,21 @@ ok('tempt / setRingBearer exported', typeof E.tempt === 'function' && typeof E.s
   ok('T10: {type:tempt} levels the Ring and picks the bearer', st.players[0].ring === 1 && st.players[0].ringBearer === c.uid);
   valid(st, 'T10'); }
 
+// T11 — Middle-earth Ring cards actually grant tempt
+const play = (st, pi, id) => { const c = E.instantiate(byId[id], pi); c.zone = 'hand'; st.players[pi].hand.push(c); E.playCard(st, pi, c.uid, null, null); return c; };
+{ const st = game(); const cr = put(st, 0, dummy(3, 3, 'Bearer'));
+  play(st, 0, 'me_the_one_ring');
+  ok('T11: The One Ring treasure tempts on play (L1 + bearer)', st.players[0].ring === 1 && st.players[0].ringBearer === cr.uid, [st.players[0].ring, st.players[0].ringBearer]);
+  valid(st, 'T11'); }
+{ const st = game(); const cr = put(st, 0, dummy(3, 3, 'Bearer'));
+  play(st, 0, 'me_frodo_onering'); // enchantment installs
+  E.fireOngoing(st, 0, 'turn-start');
+  ok('T11: Frodo\'s "One Ring to Rule Them All" tempts at turn start', st.players[0].ring === 1 && st.players[0].ringBearer === cr.uid);
+  valid(st, 'T11b'); }
+{ const st = game(); const cr = put(st, 0, dummy(3, 3, 'Bearer'));
+  play(st, 0, 'me_gl_ench'); // Gollum's One Ring
+  E.fireOngoing(st, 0, 'turn-start');
+  ok('T11: Gollum\'s "One Ring to Rule Them All" tempts at turn start', st.players[0].ring === 1); }
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

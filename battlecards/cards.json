@@ -237296,19 +237296,14 @@
       "type": "enchantment",
       "cost": 4,
       "ongoing": {
-        "colors": [
-          "B"
-        ],
         "on": "turn-start",
         "effects": [
           {
-            "type": "grant",
-            "keyword": "stealth",
-            "target": "friendly-creatures"
+            "type": "tempt"
           }
         ]
       },
-      "description": "At the start of your turn, give your creatures Stealth. (The Ring hides its bearers — and corrupts.)",
+      "description": "At the start of your turn, the Ring tempts you. (Bear it — and grow in its power.)",
       "colors": [],
       "cardClass": "rogue",
       "meSide": "hero"
@@ -243805,17 +243800,16 @@
       "tapAbility": {
         "effects": [
           {
-            "type": "draw",
-            "value": 1
+            "type": "tempt"
           },
           {
             "type": "enemy-discard",
             "count": 1
           }
         ],
-        "text": "Draw a card; each opponent discards one."
+        "text": "The Ring tempts you; each opponent discards a card."
       },
-      "description": "{T}: Draw a card; each opponent discards a card.",
+      "description": "{T}: The Ring tempts you; each opponent discards a card.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -247122,13 +247116,11 @@
         "on": "turn-start",
         "effects": [
           {
-            "type": "grant",
-            "keyword": "stealth",
-            "target": "friendly-creatures"
+            "type": "tempt"
           }
         ]
       },
-      "description": "At the start of your turn, give your creatures Stealth.",
+      "description": "At the start of your turn, the Ring tempts you. (Bear it — and grow in its power.)",
       "colors": [],
       "cardClass": "rogue"
     },
@@ -248264,22 +248256,16 @@
       "tapAbility": {
         "effects": [
           {
+            "type": "tempt"
+          },
+          {
             "type": "draw",
             "value": 1
-          },
-          {
-            "type": "enemy-discard",
-            "count": 1
-          },
-          {
-            "type": "heal",
-            "value": 2,
-            "target": "self"
           }
         ],
-        "text": "Draw a card, each opponent discards one, restore 2 Health."
+        "text": "The Ring tempts you; draw a card."
       },
-      "description": "{T}: Draw a card; each opponent discards one; restore 2 Health.",
+      "description": "{T}: The Ring tempts you; draw a card.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -248916,6 +248902,36 @@
       "description": "{T}: Draw a card and restore 2 Health to your hero.",
       "colors": [],
       "cardClass": "druid"
+    },
+    {
+      "id": "me_the_one_ring",
+      "name": "The One Ring",
+      "type": "artifact",
+      "cost": 2,
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "tempt"
+        }
+      ],
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "tempt"
+          }
+        ],
+        "text": "The Ring tempts you."
+      },
+      "description": "Battlecry: The Ring tempts you. {T}: The Ring tempts you. (One Ring to rule them all.)"
     }
   ]
 }
