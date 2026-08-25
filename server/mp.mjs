@@ -756,7 +756,7 @@ export default async function handler(req, env) {
 	if (action === 'arena-score') {
 		const wins = Math.max(0, Math.min(12, parseInt(body.wins, 10) || 0));
 		const losses = Math.max(0, Math.min(3, parseInt(body.losses, 10) || 0));
-		const hero = String(body.hero || '').replace(/[ -]/g, '').slice(0, 32).trim();
+		const hero = String(body.hero || '').replace(/[\u0000-\u001f]/g, '').slice(0, 32).trim();
 		const run = { wins, losses, hero };
 		const better = arenaBetter(run, user.arenaBest);
 		if (better) { user.arenaBest = { wins, losses, hero, when: Date.now() }; await store.setJSON(username, user); }
