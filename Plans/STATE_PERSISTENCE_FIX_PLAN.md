@@ -1,5 +1,9 @@
 # State Persistence, Deterministic Resume & Sprite Fixes — Plan
 
+> **STATUS: ALL 4 PHASES SHIPPED (2026-08-25).** Phase 0 sprites `36939b4e` · Phase 1 resume `6c56628b`
+> · Phase 2 server state `f12517b6` · Phase 3 hardening `981abf0f`. Full suite 435/435 + overworld tests
+> green. Backend confirmed = **Cloudflare Pages + D1** (not Netlify).
+
 Fixes three reported problems + sensible hardening, based on a full read of the code (Aug 2026):
 1. **Resuming a run re-deals a different hand** (mid-fight state is lost).
 2. **Stale localStorage across devices/browsers** — old starter/region/run data because state lives only in
