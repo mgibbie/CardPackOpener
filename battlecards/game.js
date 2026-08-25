@@ -111,25 +111,25 @@ function statInc(arr, i, n = 1) { if (i == null || i < 0) return; arr[i] = (arr[
 
 const loadRun = () => safeLoad(RUN_KEY, null);
 const saveRun = run => safeSave(RUN_KEY, run);
-const clearRun = () => localStorage.removeItem(RUN_KEY);
+const clearRun = () => { localStorage.removeItem(RUN_KEY); serverClearRun(RUN_KEY); };
 const loadHeist = () => safeLoad(HEIST_KEY, null);
 const saveHeist = run => safeSave(HEIST_KEY, run);
-const clearHeist = () => localStorage.removeItem(HEIST_KEY);
+const clearHeist = () => { localStorage.removeItem(HEIST_KEY); serverClearRun(HEIST_KEY); };
 const loadTombs = () => safeLoad(TOMBS_KEY, null);
 const saveTombs = run => safeSave(TOMBS_KEY, run);
-const clearTombs = () => localStorage.removeItem(TOMBS_KEY);
+const clearTombs = () => { localStorage.removeItem(TOMBS_KEY); serverClearRun(TOMBS_KEY); };
 const loadDuels = () => safeLoad(DUELS_KEY, null);
 const saveDuels = run => safeSave(DUELS_KEY, run);
-const clearDuels = () => localStorage.removeItem(DUELS_KEY);
+const clearDuels = () => { localStorage.removeItem(DUELS_KEY); serverClearRun(DUELS_KEY); };
 const loadArena = () => safeLoad(ARENA_KEY, null);
 const saveArena = run => safeSave(ARENA_KEY, run);
-const clearArena = () => localStorage.removeItem(ARENA_KEY);
+const clearArena = () => { localStorage.removeItem(ARENA_KEY); serverClearRun(ARENA_KEY); };
 const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
 const saveLorequest = run => safeSave(LOREQUEST_KEY, run);
-const clearLorequest = () => localStorage.removeItem(LOREQUEST_KEY);
+const clearLorequest = () => { localStorage.removeItem(LOREQUEST_KEY); serverClearRun(LOREQUEST_KEY); };
 const loadMiddleearth = () => safeLoad(MIDDLEEARTH_KEY, null);
 const saveMiddleearth = run => safeSave(MIDDLEEARTH_KEY, run);
-const clearMiddleearth = () => localStorage.removeItem(MIDDLEEARTH_KEY);
+const clearMiddleearth = () => { localStorage.removeItem(MIDDLEEARTH_KEY); serverClearRun(MIDDLEEARTH_KEY); };
 const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
 // ---------- deterministic mid-fight resume (Phase 1) ----------
@@ -142,18 +142,19 @@ const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEE
 const RUN_SNAP_MAX = 600_000; // bytes; skip persisting a pathologically large board (localStorage safety)
 // a seeded RNG for a run fight (random seed at boot, but the STREAM is snapshot-able so resume is exact)
 const seededGame = () => E.seededRng((Math.random() * 0x100000000) >>> 0);
-// the active single-player run mode's load/save (null outside a run)
+// the active single-player run mode's load/save + its localStorage key (null outside a run)
 function activeRunIO() {
-	if (dungeonRunMode) return { load: loadRun, save: saveRun };
-	if (heistRunMode) return { load: loadHeist, save: saveHeist };
-	if (tombsRunMode) return { load: loadTombs, save: saveTombs };
-	if (duelsRunMode) return { load: loadDuels, save: saveDuels };
-	if (arenaRunMode) return { load: loadArena, save: saveArena };
-	if (lorequestRunMode) return { load: loadLorequest, save: saveLorequest };
-	if (middleearthRunMode) return { load: loadMiddleearth, save: saveMiddleearth };
+	if (dungeonRunMode) return { load: loadRun, save: saveRun, key: RUN_KEY };
+	if (heistRunMode) return { load: loadHeist, save: saveHeist, key: HEIST_KEY };
+	if (tombsRunMode) return { load: loadTombs, save: saveTombs, key: TOMBS_KEY };
+	if (duelsRunMode) return { load: loadDuels, save: saveDuels, key: DUELS_KEY };
+	if (arenaRunMode) return { load: loadArena, save: saveArena, key: ARENA_KEY };
+	if (lorequestRunMode) return { load: loadLorequest, save: saveLorequest, key: LOREQUEST_KEY };
+	if (middleearthRunMode) return { load: loadMiddleearth, save: saveMiddleearth, key: MIDDLEEARTH_KEY };
 	return null;
 }
-// persist the live board into the active run so a resume restores the exact fight
+// persist the live board into the active run so a resume restores the exact fight (localStorage only —
+// per-frame writes are cheap locally; the server gets it via the coarse heartbeat / on-hidden push below)
 function saveRunSnapshot() {
 	const io = activeRunIO();
 	if (!io || !state || state.over || (typeof isGuest === 'function' && isGuest())) return;
@@ -163,7 +164,7 @@ function saveRunSnapshot() {
 		const json = JSON.stringify(E.toSnapshot(state));
 		if (json.length > RUN_SNAP_MAX) return; // don't persist absurd sizes
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
-		io.save(run);
+		safeSave(io.key, run); // local only
 	} catch (e) { /* never let a save break play */ }
 }
 // drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
@@ -185,10 +186,39 @@ function resumeRunSnapshot(run, byId) {
 		return true;
 	} catch (e) { console.warn('resume: snapshot restore failed, booting fresh', e); return false; }
 }
-// leaving the page / hiding the tab mid-fight should capture the current board even between settled frames
+// ---------- server-authoritative run state (Phase 2) ----------
+// A logged-in player's run lives on the server (D1) so it's the same, current run on every device —
+// not whatever a possibly-stale localStorage cache holds. localStorage stays the fast/offline cache.
+// Cost control: per-frame snapshots stay LOCAL; the server gets a small metadata heartbeat every few
+// seconds (snapshot stripped, deduped) and the FULL run (with the mid-fight snapshot) only when you
+// leave (tab hidden / pagehide) — the moment a cross-device handoff matters.
+let _lastPushedRunJson = '';
+function pushActiveRun(withSnapshot) {
+	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
+	const io = activeRunIO(); if (!io) return;
+	const run = io.load(); if (!run || !run.active) return;
+	const toPush = withSnapshot ? run : { ...run, snapshot: undefined };
+	const json = JSON.stringify(toPush);
+	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged
+	_lastPushedRunJson = json;
+	MPX.call('run-save', { key: io.key, run: toPush }).catch(() => {});
+}
+function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
+// server is authoritative on boot: overwrite the localStorage run caches with the server's copies
+async function hydrateRunsFromServer() {
+	if (!MP_ON) return;
+	try {
+		const r = await MPX.call('run-load');
+		const runs = r && r.runs;
+		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
+			if (entry && entry.run && typeof entry.run === 'object') safeSave(key, entry.run);
+		}
+	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
+}
 try {
-	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveRunSnapshot(); });
-	window.addEventListener('pagehide', () => saveRunSnapshot());
+	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); pushActiveRun(true); } });
+	window.addEventListener('pagehide', () => { saveRunSnapshot(); pushActiveRun(true); });
+	setInterval(() => pushActiveRun(false), 5000); // coarse metadata heartbeat to the server
 } catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
 
 const nameOf = pi => pi === HUMAN ? 'You'
@@ -4800,6 +4830,7 @@ async function start() {
 		if (mode === 'middleearth') { location.href = '?middleearth=1'; return; }
 		menuChosen = true;
 	}
+	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
 	if (dungeonRunMode) {
 		let run = loadRun();
 		// a saved run offers resume-or-abandon; it never locks the class choice

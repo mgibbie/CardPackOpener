@@ -74,6 +74,15 @@ const GC_TABLE = [
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 ];
 
+// ---------- authoritative single-player state (durable, server-owned) ----------
+// Run progress + overworld (starter/region/position) live under dedicated durable keys (run:<user>,
+// ow:<user>) — NOT in GC_TABLE, so never swept — so a logged-in player gets the same, current state on
+// any device/browser instead of whatever a possibly-stale localStorage cache holds. Kept off the user
+// row so the account blob stays small; each carries `updated_at` for last-write-wins reconciliation.
+const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1']);
+const RUN_MAX_BYTES = 700_000; // a run may carry a mid-fight snapshot (both hands/board/deck order)
+const OW_MAX_BYTES = 400_000;
+
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
 const MAGE_STARTER = ['arcane_missiles', 'arcane_missiles', 'mirror_image', 'mirror_image', 'arcane_explosion', 'arcane_explosion', 'frostbolt', 'frostbolt', 'arcane_intellect', 'arcane_intellect', 'fireball', 'fireball', 'flamestrike', 'flamestrike', 'babbling_book', 'babbling_book', 'glacier_racer', 'glacier_racer', 'lab_partner', 'lab_partner', 'mana_wyrm', 'mana_wyrm', 'time_twisted_seer', 'time_twisted_seer', 'wand_thief', 'wand_thief', 'winterspring_whelp', 'winterspring_whelp', 'aqua_archivist', 'aqua_archivist', 'arcanologist', 'arcanologist', 'chill_o_matic', 'chill_o_matic', 'game_master', 'game_master', 'imprisoned_phoenix', 'imprisoned_phoenix', 'magic_dart_frog', 'magic_dart_frog'];
@@ -1773,6 +1782,40 @@ export default async function handler(req, env) {
 		};
 		await store.setJSON(username, user);
 		return json({ ok: true });
+	}
+
+	// ---- authoritative run state: the server owns the run so it's consistent across devices ----
+	if (action === 'run-save') {
+		const key = String(body.key || '');
+		if (!RUN_KEYS.has(key)) return json({ error: 'bad run key' }, 400);
+		const run = body.run;
+		if (!run || typeof run !== 'object' || Array.isArray(run)) return json({ error: 'bad run' }, 400);
+		if (JSON.stringify(run).length > RUN_MAX_BYTES) return json({ error: 'run too large' }, 413);
+		const doc = (await store.get('run:' + username)) || {};
+		doc[key] = { run, updated_at: Date.now() };
+		await store.setJSON('run:' + username, doc);
+		return json({ ok: true });
+	}
+	if (action === 'run-load') {
+		return json({ runs: (await store.get('run:' + username)) || {} });
+	}
+	if (action === 'run-clear') {
+		const key = String(body.key || '');
+		const doc = (await store.get('run:' + username)) || {};
+		if (key) delete doc[key]; else for (const k of Object.keys(doc)) delete doc[k];
+		await store.setJSON('run:' + username, doc);
+		return json({ ok: true });
+	}
+	// ---- authoritative overworld state: starter (party), region, position, boxes ----
+	if (action === 'ow-save') {
+		const ow = body.ow;
+		if (!ow || typeof ow !== 'object' || Array.isArray(ow)) return json({ error: 'bad ow' }, 400);
+		if (JSON.stringify(ow).length > OW_MAX_BYTES) return json({ error: 'ow too large' }, 413);
+		await store.setJSON('ow:' + username, { ow, updated_at: Date.now() });
+		return json({ ok: true });
+	}
+	if (action === 'ow-load') {
+		return json({ ow: (await store.get('ow:' + username)) || null });
 	}
 
 	return json({ error: 'unknown action' }, 400);

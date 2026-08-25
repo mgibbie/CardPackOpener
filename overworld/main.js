@@ -2832,6 +2832,34 @@ function syncOverworldAchievements() {
 	if (!MP_ON) return;
 	try { MP.call('overworld-sync', { ow: overworldSummary() }).catch(() => {}); } catch (e) {}
 }
+// ---------- server-authoritative overworld save (Phase 2) ----------
+// Which starter you picked, which region you're on, your position/boxes/money — these lived only in
+// localStorage, so a different device/browser saw stale data. Persist the raw save strings to the
+// server (D1, ow:<user>) so a logged-in player gets the same, current game everywhere. The server is
+// authoritative on boot (hydrateOw overwrites the local cache); a deduped push keeps it current.
+const OW_KEYS = ['magepunk_party_v1', 'magepunk_region', POS_KEY, 'magepunk_box_v1', 'magepunk_rival', 'magepunk_name', 'magepunk_money', 'magepunk_playtime'];
+function owSnapshot() {
+	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
+}
+let _lastOwJson = '';
+function pushOw() {
+	if (!MP_ON) return;
+	const ow = owSnapshot(); const json = JSON.stringify(ow);
+	if (json === _lastOwJson || json === '{}') return; // unchanged / nothing to save
+	_lastOwJson = json;
+	try { MP.call('ow-save', { ow }).catch(() => {}); } catch (e) {}
+}
+async function hydrateOw() {
+	if (!MP_ON) return;
+	try {
+		const r = await MP.call('ow-load');
+		const ow = r && r.ow && r.ow.ow; // ow-load returns { ow: { ow:<snapshot>, updated_at } }
+		if (ow && typeof ow === 'object') {
+			for (const k of OW_KEYS) { try { if (ow[k] != null) localStorage.setItem(k, ow[k]); } catch (e) {} }
+			_lastOwJson = JSON.stringify(owSnapshot()); // don't immediately re-push what we just pulled
+		}
+	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
+}
 
 // open the on-screen starter picker locked to one region's trio
 function openStarterPick(region) {
@@ -4376,6 +4404,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
+	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
 	party = loadParty(battle.data);
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to
@@ -4499,6 +4528,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
+	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
+	try {
+		setInterval(pushOw, 10000);
+		document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pushOw(); });
+		window.addEventListener('pagehide', pushOw);
+	} catch (e) { /* best-effort */ }
 	// standalone mini-game: warp to the Battle Factory (moveToMap is the safe path)
 	// and drop straight into a run
 	if (factoryStandalone) {
