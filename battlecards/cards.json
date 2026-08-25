@@ -3252,7 +3252,7 @@
     },
     {
       "id": "dead_mans_hand",
-      "name": "Dead Man's Hand",
+      "name": "Dead Man's Bounty",
       "type": "quest",
       "cardClass": "bounty_hunter",
       "cost": 1,
@@ -104768,7 +104768,8 @@
       "health": 10,
       "keywords": [
         "battlecry"
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "derailed_coaster",
@@ -137532,7 +137533,8 @@
           "type": "draw-and-summon-if-tribe",
           "tribe": "Dragon"
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "necrium_apothecary",
@@ -206360,7 +206362,7 @@
       "rarity": "rare",
       "set": "ULDUM",
       "tribe": "Holy",
-      "collectible": true,
+      "collectible": false,
       "description": "Target creature gains +4/+4, Divine Shield, and Taunt.",
       "effects": [
         {
@@ -207169,7 +207171,7 @@
       "type": "sorcery",
       "tribe": "Nature",
       "set": "DALARAN",
-      "collectible": true,
+      "collectible": false,
       "effects": [
         {
           "type": "summon",
@@ -210170,7 +210172,7 @@
       "cardClass": "demon_hunter",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "description": "Discover a Temporary Fel Barrage, Chaos Strike, or Chaos Nova.",
       "effects": [
         {
@@ -210331,7 +210333,7 @@
       "cardClass": "demon_hunter",
       "rarity": "epic",
       "set": "CORE",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Fel",
       "description": "Lifesteal. Deal 3 damage to a creature. Outcast: This costs (1).",
       "effects": [
@@ -211691,7 +211693,7 @@
       "cardClass": "warlock",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "description": "Discover a Temporary Mortal Coil, Siphon Soul, or Twisting Nether.",
       "effects": [
         {
@@ -213588,7 +213590,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "description": "Discover a Temporary Power Word: Shield, Shadow Word: Pain, or Mind Control.",
       "effects": [
         {
@@ -213882,7 +213884,7 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Holy",
       "description": "Target creature you control gains +2/+3 and \"Elusive on target opponent's turn.\"",
       "effects": [
@@ -213950,7 +213952,7 @@
       "cardClass": "priest",
       "rarity": "rare",
       "set": "WONDERS",
-      "collectible": true,
+      "collectible": false,
       "description": "Put a copy of a creature an opponent controls into your hand. It costs (1).",
       "effects": [
         {
@@ -215991,7 +215993,7 @@
       "cardClass": "demon_hunter",
       "rarity": "epic",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "description": "Create seven 1/1 Illidari creature tokens with Rush. If they all die this turn, create seven more.",
       "effects": [
         {
@@ -217489,7 +217491,7 @@
       "cardClass": "priest",
       "rarity": "common",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Shadow",
       "description": "Discover a copy of a card from your opponent's hand and deck.",
       "effects": [
@@ -217701,7 +217703,7 @@
       "cardClass": "priest",
       "rarity": "epic",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Holy",
       "description": "Give a minion +2 Health. Create a Kyrian with its stats and Taunt.",
       "target": "friendly-creature",
@@ -219245,7 +219247,8 @@
         {
           "type": "draw-all-copies-random"
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "service_bell_revendreth",
@@ -219425,7 +219428,8 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "order_in_the_court_revendreth",
@@ -219711,7 +219715,8 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "invasive_shadeleaf",
@@ -219801,7 +219806,8 @@
           "type": "destroy-all",
           "minAttack": 5
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "tram_heist",
@@ -219832,7 +219838,8 @@
           "type": "destroy-all",
           "maxAttack": 3
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "clean_the_scene_revendreth",
@@ -220065,7 +220072,8 @@
           "type": "mind-control-delayed",
           "target": "enemy-creature"
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "embrace_darkness_icecrown",
@@ -220126,7 +220134,8 @@
             }
           ]
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "initiation_scholomance",
@@ -220246,7 +220255,8 @@
             ]
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "sticky_situation_revendreth",
@@ -220539,7 +220549,8 @@
         {
           "type": "return-self-to-hand"
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "snowball_fight",
@@ -220646,7 +220657,8 @@
           "freeze": true,
           "target": "creature"
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "avalanche_icecrown",
@@ -221935,7 +221947,8 @@
             "type": "install-random-secret"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "perjury_revendreth",
@@ -221995,7 +222008,8 @@
             "type": "copy-enemy-last-card"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "plagiarize_scholomance",
@@ -222032,7 +222046,8 @@
           "type": "draw",
           "value": 1
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "roll_the_bones_icecrown",
@@ -222207,7 +222222,8 @@
           "type": "summon-random",
           "cost": 8
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "instant_multiverse",
@@ -222399,7 +222415,8 @@
             "rush"
           ]
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "habeas_corpses_revendreth",
@@ -223555,7 +223572,8 @@
           "type": "reduce-deck-cost",
           "value": 1
         }
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "sindragosas_triumph",
@@ -223973,7 +223991,8 @@
             "tribe": "Beast"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "champions_of_azeroth",
@@ -224254,7 +224273,8 @@
             ]
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "renewing_flames",
