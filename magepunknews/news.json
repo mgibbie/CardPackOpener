@@ -2,6 +2,14 @@
 	"generated": "2026-08-24",
 	"entries": [
 		{
+			"sha": "24d9740",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "Chandra Lorequest deck variety pass (4 -> 6 card types)",
+			"body": "Chandra was rich (10 keywords) but burn-heavy at only 4 types. Minimal 2-card convert:\nChandra's Outburst -> ENCHANTMENT (spellslinger: spell -> 1 to each opp), Chandra's\nOutrage -> ARTIFACT (tap -> 1 to any target). Other 13 cards untouched. Kept names/art/\nmono-R/rarity/legendary sig/loreDeck tag. 6 types, 10 keywords.\n\nlorequest_decks_test 114/114, lorequest_run_test 132/132. Full suite 429/429.",
+			"cards": []
+		},
+		{
 			"sha": "8cec2e7",
 			"date": "2026-08-24",
 			"kind": "patch",
