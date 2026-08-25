@@ -322,6 +322,12 @@ function loadFinalfantasy() {
   if (!finalfantasyPromise) finalfantasyPromise = import('../battlecards/finalfantasy.js' + CB);
   return finalfantasyPromise;
 }
+// Lorequest: Multiverse data (Marvel — WIN-PARITY hero/villain rosters, rungs, class map, hero powers)
+let multiversePromise = null;
+function loadMultiverse() {
+  if (!multiversePromise) multiversePromise = import('../battlecards/multiverse.js' + CB);
+  return multiversePromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -1911,6 +1917,89 @@ async function temptView() {
       h('div', { class: 'card-grid size-small' }, ...temptCards.map(faceOf))));
 }
 
+// ── Lorequest: Multiverse (Marvel, WIN-PARITY) ──
+function mvDeckCards(cards, ch) {
+  return cards.filter(c => c.mvDeck === ch && !c.token)
+    .sort((a, b) => ((b.rarity === 'legendary') - (a.rarity === 'legendary'))
+      || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+}
+function mvTile(ch, deck, clsName, pw, colors) {
+  const canvas = CardArt.drawCardFace(lqSig(deck));
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
+  return h('a', { class: 'wiki-card lq-tile', href: '#/multiverse/' + lqSlug(ch), title: pw ? `${pw.name}: ${pw.text}` : ch },
+    img,
+    h('div', { class: 'lq-name' }, ch),
+    h('div', { class: 'lq-sub' }, colorPips(colors), h('span', { class: 'lq-cls' }, clsName)));
+}
+async function multiverseView() {
+  content.replaceChildren(h('h1', null, 'Lorequest: Multiverse'), h('p', { class: 'muted' }, 'Loading decks…'));
+  let MV, classes, cards;
+  try { [MV, classes, cards] = await Promise.all([loadMultiverse(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest: Multiverse'), h('p', { class: 'muted' }, 'Could not load the Multiverse data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'multiverse') return;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase((id || '').replace(/_/g, ' '));
+  const heroes = [...MV.HEROES, ...MV.SECRET_HEROES];
+  const allChars = [...heroes, ...MV.ENEMIES];
+  const decks = {}; for (const ch of allChars) decks[ch] = mvDeckCards(cards, ch);
+  await CardArt.preloadArt(allChars.map(ch => lqSig(decks[ch])?.id).filter(Boolean));
+  const group = (title, blurb, names) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
+      h('p', { class: 'muted' }, blurb)),
+    h('div', { class: 'card-grid size-small' },
+      ...names.map(ch => mvTile(ch, decks[ch], clsName(MV.classOf(ch)), MV.powerOf(ch), MV.colorsOf(ch)))));
+  const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Lorequest: Multiverse'),
+        h('p', { class: 'muted' }, 'A dungeon run built from the MARVEL Magic: The Gathering set art (Spider-Man & Marvel Super Heroes). Pick a Marvel hero — a ', h('strong', null, '10-card'), ' starter deck with a unique hero power — and climb to 12 wins or 3 losses. Unlike the other Lorequest runs, Multiverse ', h('strong', null, 'returns to WIN-PARITY'), ': there is no spoils draft — every win YOU pick a class bucket (+ a treasure at wins 2/5/8/11), and the next villain is regenerated to hold the ', h('em', null, 'exact same'), ' bucket & treasure count you do, layered on its own 10-card base. So the enemy always scales with your loot. Tap one to see its cards.')),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' base cards'))),
+    group('Heroes — Earth’s Mightiest', '11 heroes (Silver Surfer is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter you grow via buckets & treasures.', heroes),
+    group('Street-Level — Rogues’ Gallery', 'Your first eight fights (wins 0–7). The classic Spider-Man rogues and street villains.', MV.ENEMY_RUNGS.STREET),
+    group('Masterminds', 'The bigger threats (wins 8–10) — Doom, Loki, Kang, Abomination.', MV.ENEMY_RUNGS.MASTERMIND),
+    group('Cosmic Threat — Final Boss', 'The 12th-win final boss — Thanos and Galactus rotate for replay variety.', MV.ENEMY_RUNGS.COSMIC));
+}
+async function multiverseDeckDetail(slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let MV, classes, cards;
+  try { [MV, classes, cards] = await Promise.all([loadMultiverse(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Multiverse Deck'), h('p', { class: 'muted' }, 'Could not load the Multiverse data.')); }
+  const allChars = [...MV.HEROES, ...MV.SECRET_HEROES, ...MV.ENEMIES];
+  const ch = allChars.find(x => lqSlug(x) === slug);
+  if (!ch) return content.replaceChildren(h('h1', null, 'Deck not found'),
+    h('p', null, h('a', { href: '#/multiverse' }, '← Back to Lorequest: Multiverse')));
+  const deck = mvDeckCards(cards, ch);
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'multiverse') return;
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  await CardArt.preloadArt(deck.map(c => c.id));
+  const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const grid = await deckGrid(deck.map(c => c.id), byId);
+  const clsName = (classes.find(c => c.id === MV.classOf(ch))?.name) || titleCase(MV.classOf(ch).replace(/_/g, ' '));
+  const isEnemy = MV.isEnemy(ch);
+  const secret = MV.SECRET_HEROES.includes(ch);
+  const pw = MV.powerOf(ch);
+  const rung = !isEnemy ? null
+    : MV.ENEMY_RUNGS.STREET.includes(ch) ? 'Street-Level' : MV.ENEMY_RUNGS.MASTERMIND.includes(ch) ? 'Mastermind' : 'Cosmic Threat';
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/multiverse' }, '← All Multiverse decks')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, ch),
+        h('div', { class: 'lp-detail-meta' },
+          colorPips(MV.colorsOf(ch)),
+          h('span', { class: 'lq-cls' }, clsName),
+          isEnemy ? h('span', { class: 'lq-cls' }, rung) : null,
+          h('span', { class: 'lp-count' }, deck.length + '-card base deck')),
+        pw ? h('p', { class: 'muted' }, h('strong', null, 'Hero Power — ' + pw.name + ': '), pw.text) : null,
+        h('p', { class: 'muted' }, isEnemy
+          ? `A villain faced as you climb. Its 10-card base is shown here; at WIN-PARITY it also fields one class bucket per win you hold plus a treasure per milestone — so it always matches your loot.`
+          : (secret ? `A secret hero, unlocked by clearing a full run (12 wins). Its loot buckets come from the ${clsName} class.`
+            : `One of the 10 heroes offered at the start of a run. You grow this 10-card deck via a class bucket each win (+ a treasure at wins 2/5/8/11). Its loot buckets come from the ${clsName} class.`)))),
+    h('h2', null, 'Base deck ', h('span', { class: 'num' }, '(' + deck.length + ' cards)')),
+    cardSizeControl(grid), grid);
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1935,6 +2024,7 @@ function route() {
   if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
   if (section === 'sword-coast') return id ? swordCoastDeckDetail(id) : swordCoastView();
   if (section === 'final-fantasy') return id ? finalFantasyDeckDetail(id) : finalFantasyView();
+  if (section === 'multiverse') return id ? multiverseDeckDetail(id) : multiverseView();
   if (section === 'tempt') return temptView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {

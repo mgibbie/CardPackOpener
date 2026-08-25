@@ -277016,6 +277016,7278 @@
       "keywords": [
         "first_strike"
       ]
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_1",
+      "name": "Spider-Man, Web-Slinger",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Hero",
+      "description": "Rush. Battlecry: Give a friendly creature Stealth.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_2",
+      "name": "Web-Warriors",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spider Hero",
+      "description": "A team of spiders.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_3",
+      "name": "Skyward Spider",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spider Hero",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_4",
+      "name": "Iron Spider, Stark Upgrade",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Spider Hero",
+      "description": "Divine Shield.",
+      "keywords": [
+        "divine_shield"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_5",
+      "name": "West Coast Expansion",
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Draw two cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_6",
+      "name": "Spider-Sense",
+      "type": "instant",
+      "cost": 1,
+      "description": "Give a friendly creature Elusive.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_7",
+      "name": "Web-Shooters",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 2,
+      "durability": 3,
+      "description": "After your hero attacks, deal 1 damage to a random enemy.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_8",
+      "name": "Peter Parker's Camera",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "text": "Draw a card.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Draw a card.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_9",
+      "name": "Friendly Neighborhood",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, give a friendly creature +1/+1.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Spider-Man",
+      "id": "mv_spiderman_10",
+      "name": "Daily Bugle Building",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain a Coin.",
+          "effects": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain a Coin.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_1",
+      "name": "Iron Man, Armored Avenger",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Hero",
+      "description": "Battlecry: Deal 3 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_2",
+      "name": "Iron Man, Bleeding Edge",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Hero",
+      "description": "Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_3",
+      "name": "Repulsor Bots",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Battlecry: Deal 1 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_4",
+      "name": "Machine Man, Model X-51",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "A cybernetic marvel.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_5",
+      "name": "Repulsor Blast",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_6",
+      "name": "Repulsor Rays",
+      "type": "instant",
+      "cost": 2,
+      "description": "Deal 3 damage split among random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_7",
+      "name": "Hulkbuster Armor",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "Heavy assault plating.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_8",
+      "name": "Arc Reactor",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "text": "Gain a Mana Crystal this turn.",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Gain a Mana Crystal this turn.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_9",
+      "name": "Stark's Ingenuity",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Iron Man",
+      "id": "mv_ironman_10",
+      "name": "Stark Industries",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_1",
+      "name": "Captain America, Steve Rogers",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 6,
+      "tribe": "Human Hero",
+      "description": "Taunt. Battlecry: Give your other creatures +1/+1.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_2",
+      "name": "Agents of S.H.I.E.L.D.",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Soldier",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_3",
+      "name": "Dora Milaje Elite",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Warrior",
+      "description": "Divine Shield.",
+      "keywords": [
+        "divine_shield"
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_4",
+      "name": "Bastion Protector",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Soldier",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_5",
+      "name": "Borough Backup",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Summon two 2/2 Soldiers with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "S.H.I.E.L.D. Agent",
+          "tribe": "Soldier",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_6",
+      "name": "Take Up the Shield",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give your creatures Divine Shield.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_7",
+      "name": "Captain America's Shield",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 3,
+      "description": "After your hero attacks, gain 2 Armor.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_8",
+      "name": "Super-Soldier Serum",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_9",
+      "name": "Avengers Assemble!",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+1.",
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain America",
+      "id": "mv_cap_10",
+      "name": "Avengers Tower",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain 3 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 3
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain 3 Armor.",
+      "colors": [],
+      "cardClass": "paladin",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Thor",
+      "id": "mv_thor_1",
+      "name": "Thor, God of Thunder",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "God",
+      "description": "Battlecry: Deal 2 damage to all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_2",
+      "name": "Valkyrior Skyrider",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "God",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_3",
+      "name": "Sif's Spearmaster",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Warrior",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_4",
+      "name": "Asgardian Inspiration",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "God",
+      "description": "A blessing of Asgard.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_5",
+      "name": "Mjölnir's Might",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_6",
+      "name": "Lightning Strike",
+      "type": "instant",
+      "cost": 2,
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_7",
+      "name": "Mjölnir, Hammer of Thor",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "Swift. After your hero attacks, deal 1 to a random enemy.",
+      "keywords": [
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_8",
+      "name": "Loki's Scepter",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_9",
+      "name": "Origin of Thor",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thor",
+      "id": "mv_thor_10",
+      "name": "Asgardian Citadel",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_1",
+      "name": "Hulk, Strongest There Is",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Monster",
+      "description": "Trample. Limit Break: the first time this is damaged, gain +3/+0.",
+      "keywords": [
+        "trample"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 3,
+            "health": 0
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_2",
+      "name": "Gamma Grotesque",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Monster",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_3",
+      "name": "Professional Wrestler",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Human",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_4",
+      "name": "Damage Control Crew",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Human",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_5",
+      "name": "It's Clobberin' Time!",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_6",
+      "name": "HULK SMASH!",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +3/+0.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 2,
+      "description": "A demolition wrecking ball.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_8",
+      "name": "Heart-Shaped Herb",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_9",
+      "name": "Origin of the Hulk",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hulk",
+      "id": "mv_hulk_10",
+      "name": "Training Compound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +2/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +2/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_1",
+      "name": "Wolverine, Claws Out",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Mutant",
+      "description": "Swift. Lifesteal. Limit Break: the first time this is damaged, gain +2/+0.",
+      "keywords": [
+        "first_strike",
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_2",
+      "name": "Knight of Wundagore",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Mutant",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_3",
+      "name": "Feral Ferocity",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Beast",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_4",
+      "name": "Guerrilla Gorilla",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Beast",
+      "description": "A savage ape.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_5",
+      "name": "Epic Fight",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_6",
+      "name": "Punishing Punch",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +2/+0 and Lifesteal.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_7",
+      "name": "Vibranium Energy Daggers",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_8",
+      "name": "Super Strength",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2 and Rush.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          },
+          {
+            "type": "grant",
+            "keyword": "rush",
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2 and Rush.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_9",
+      "name": "Training Regimen",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Wolverine",
+      "id": "mv_wolverine_10",
+      "name": "Savage Mansion",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +2/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +2/+0.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_1",
+      "name": "Doctor Strange, Surgeon",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Sorcerer",
+      "description": "Battlecry: Destroy an enemy creature; deal 2 damage to your hero.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_2",
+      "name": "Living Lies of Loki",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Illusion",
+      "description": "A conjured deception.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_3",
+      "name": "Mist-Cloaked Herald",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_4",
+      "name": "Mysterio's Phantasm",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Illusion",
+      "description": "A spectral mirage.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_5",
+      "name": "Multiversal Incursion",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_6",
+      "name": "Hex Magic",
+      "type": "instant",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_7",
+      "name": "The Ten Rings",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 3,
+      "durability": 3,
+      "description": "Ancient rings of power.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_8",
+      "name": "Cosmic Cube",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 3 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 3 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_9",
+      "name": "Glorious Purpose",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "own-hero"
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card and deal 1 damage to your hero.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Strange",
+      "id": "mv_strange_10",
+      "name": "Sinister Hideout",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_1",
+      "name": "Black Panther, Claws of Bast",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Hero",
+      "description": "Rush. Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_2",
+      "name": "Wakandan Royal Guard",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Warrior",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_3",
+      "name": "Warriors of Wakanda",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Warrior",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_4",
+      "name": "Panther Robot",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "A vibranium sentry.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_5",
+      "name": "Wakanda Forever!",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Give your creatures +1/+1 and Rush.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_6",
+      "name": "Panther Pounce",
+      "type": "instant",
+      "cost": 2,
+      "description": "Deal 3 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_7",
+      "name": "The Spear of Bashenga",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_8",
+      "name": "Kimoyo Beads",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "text": "Draw a card.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Draw a card.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_9",
+      "name": "Claim the Kingdom",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Black Panther",
+      "id": "mv_panther_10",
+      "name": "Birnin Zana Plaza",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +1/+1.",
+          "effects": [
+            {
+              "type": "bolster",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +1/+1.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Storm",
+      "id": "mv_storm_1",
+      "name": "Storm, Windrider",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Mutant",
+      "description": "Battlecry: Deal 2 damage to all enemy creatures; gain a Mana Crystal this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_2",
+      "name": "Loyal Guardian",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Beast",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_3",
+      "name": "Flora Colossus",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Treefolk",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_4",
+      "name": "Birds of Paradise",
+      "type": "creature",
+      "cost": 2,
+      "attack": 1,
+      "health": 2,
+      "tribe": "Bird",
+      "description": "Battlecry: Gain a Mana Crystal this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_5",
+      "name": "Cultivate",
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Gain two Mana Crystals this turn and draw a card.",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_6",
+      "name": "Giant Growth",
+      "type": "instant",
+      "cost": 1,
+      "description": "Give a friendly creature +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_7",
+      "name": "Vibranium Strike Gauntlets",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 3,
+      "description": "Charged gauntlets.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_8",
+      "name": "Conduit of Worlds",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Gain a Mana Crystal this turn.",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Gain a Mana Crystal this turn.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_9",
+      "name": "Accelerated Evolution",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, give a friendly creature +1/+1.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Storm",
+      "id": "mv_storm_10",
+      "name": "The Great Mound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Beast.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Savage Beast",
+              "tribe": "Beast"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Beast.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_1",
+      "name": "Captain Marvel, Earth's Protector",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Hero",
+      "description": "Battlecry: Deal 3 damage to an enemy creature and gain 3 life.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_2",
+      "name": "Photon, Lady of Light",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Hero",
+      "description": "Lifesteal.",
+      "keywords": [
+        "lifesteal"
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_3",
+      "name": "Valkyrior Skyrider",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "God",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_4",
+      "name": "Hero in Training",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Soldier",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_5",
+      "name": "Cleansing Nova",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 4 damage to all enemy creatures and gain 4 life.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_6",
+      "name": "Hyperion's Atomic Vision",
+      "type": "instant",
+      "cost": 3,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_7",
+      "name": "Infinity Formula",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 3,
+      "description": "Cosmic energy.",
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_8",
+      "name": "The Mind Stone",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Gain 3 life and draw a card.",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 3,
+            "target": "self"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Gain 3 life and draw a card.",
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_9",
+      "name": "Gift of Immortality",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "description": "At the start of your turn, gain 2 life.",
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Captain Marvel",
+      "id": "mv_marvel_10",
+      "name": "University Campus",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain 2 life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain 2 life.",
+      "colors": [],
+      "cardClass": "priest",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_1",
+      "name": "Silver Surfer, Cosmic Voyager",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Cosmic Being",
+      "description": "Battlecry: Deal 2 damage to all enemy creatures; draw a card.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_2",
+      "name": "Imperial Cosmographer",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Cosmic Being",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_3",
+      "name": "Shi'ar Soldier",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Soldier",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_4",
+      "name": "Titan of Littjara",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Cosmic Being",
+      "description": "A shifting colossus.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_5",
+      "name": "Photon Blast Barrage",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_6",
+      "name": "Nova Flame",
+      "type": "instant",
+      "cost": 3,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_7",
+      "name": "Cosmic Power",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "The Power Cosmic.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_8",
+      "name": "Progenitor's Icon",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_9",
+      "name": "Worlds Within Worlds",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Silver Surfer",
+      "id": "mv_surfer_10",
+      "name": "Multiversal Passage",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "hero"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_1",
+      "name": "Green Goblin, Revenant",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Rush. Battlecry: Deal 2 damage to your enemy hero.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-heroes"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_2",
+      "name": "Inner Demons Gangsters",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "A goblin gang.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_3",
+      "name": "Raging Goblinoids",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Goblin",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_4",
+      "name": "Rocket-Powered Goblin Glider",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Vehicle",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_5",
+      "name": "Pumpkin Bombardment",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_6",
+      "name": "Sadistic Slash",
+      "type": "instant",
+      "cost": 2,
+      "description": "Destroy an enemy creature with 3 or less Attack.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "maxAttack": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_7",
+      "name": "Voltaic Whip",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A crackling whip.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_8",
+      "name": "Grim Reaper's Scythe",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to any target.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_9",
+      "name": "Shadow of the Goblin",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 1 damage to the enemy hero.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Green Goblin",
+      "id": "mv_e_goblin_10",
+      "name": "Oscorp Industries",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_1",
+      "name": "Venom, Evil Unleashed",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Symbiote",
+      "description": "Lifesteal. Battlecry: Destroy an enemy creature with 3 or less Attack.",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "maxAttack": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_2",
+      "name": "Venomized Cat",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Symbiote",
+      "description": "Lifesteal.",
+      "keywords": [
+        "lifesteal"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_3",
+      "name": "Roxxon Brutes",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "A brute squad.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_4",
+      "name": "Undead Hand Ninja",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Ninja",
+      "description": "Reborn.",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_5",
+      "name": "Venom's Hunger",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Destroy an enemy creature. Gain 3 life.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_6",
+      "name": "Withering Torment",
+      "type": "instant",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_7",
+      "name": "HYDRA Disintegrator",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A corrosive blade.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_8",
+      "name": "Eerie Gravestone",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Summon a 2/2 Symbiote with Lifesteal.",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Symbiote Spawn",
+            "tribe": "Symbiote",
+            "keywords": [
+              "lifesteal"
+            ]
+          }
+        ]
+      },
+      "description": "{T}: Summon a 2/2 Symbiote with Lifesteal.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_9",
+      "name": "Alien Symbiosis",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+1.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Venom",
+      "id": "mv_e_venom_10",
+      "name": "Sinister Hideout",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain 2 life.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "self"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain 2 life.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_1",
+      "name": "Carnage, Crimson Chaos",
+      "type": "creature",
+      "cost": 5,
+      "attack": 6,
+      "health": 3,
+      "tribe": "Symbiote",
+      "description": "Swift. Lifesteal.",
+      "keywords": [
+        "first_strike",
+        "lifesteal"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_2",
+      "name": "Merciless Enforcers",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_3",
+      "name": "Armed Assailant",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_4",
+      "name": "Common Crook",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "A petty criminal.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_5",
+      "name": "Maximum Carnage",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_6",
+      "name": "Scorpion's Sting",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +2/+0 and Lifesteal.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "lifesteal",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_7",
+      "name": "Grim Reaper's Scythe",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 4,
+      "durability": 2,
+      "description": "A cruel scythe.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_8",
+      "name": "Talisman of Indulgence",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+0 and Swift.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 0,
+            "target": "friendly-creature"
+          },
+          {
+            "type": "grant",
+            "keyword": "first_strike",
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+0 and Swift.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_9",
+      "name": "Death to Our Enemies",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Carnage",
+      "id": "mv_e_carnage_10",
+      "name": "Hell's Kitchen",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +2/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +2/+0.",
+      "colors": [],
+      "cardClass": "demon_hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_1",
+      "name": "Doctor Octopus, Master Planner",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Battlecry: Deal 4 damage split among enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 4,
+          "pool": "enemies",
+          "count": 4
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_2",
+      "name": "Doc Ock's Henchmen",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_3",
+      "name": "Flying Octobot",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Robot",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_4",
+      "name": "Aerial Doombot",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_5",
+      "name": "Behold the Sinister Six!",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Summon three 2/2 Villains.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 2,
+          "name": "Sinister Henchman",
+          "tribe": "Villain"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_6",
+      "name": "Void Helix",
+      "type": "instant",
+      "cost": 3,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_7",
+      "name": "Doc Ock's Tentacles",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 3,
+      "description": "After your hero attacks, deal 1 to a random enemy.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_8",
+      "name": "Futurist Forge",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_9",
+      "name": "Robot Domination",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Octopus",
+      "id": "mv_e_ock_10",
+      "name": "A.I.M. Labs",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_1",
+      "name": "Mysterio, Master of Illusion",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Battlecry: Summon two 3/2 Illusions with Elusive.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 2,
+          "name": "Phantasm",
+          "tribe": "Illusion",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_2",
+      "name": "Mysterio's Phantasm",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Illusion",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_3",
+      "name": "Living Lies of Loki",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Illusion",
+      "description": "A conjured double.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_4",
+      "name": "Spark Double",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Illusion",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_5",
+      "name": "Multiversal Incursion",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_6",
+      "name": "Fantastic Bounce",
+      "type": "instant",
+      "cost": 2,
+      "description": "Return an enemy creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_7",
+      "name": "Falcon's Wing Harness",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 3,
+      "description": "A holographic rig.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_8",
+      "name": "Mirage Mirror",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_9",
+      "name": "Mysterio's Mirage",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, freeze a random enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Mysterio",
+      "id": "mv_e_mysterio_10",
+      "name": "Surveillance Room",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Draw a card.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_1",
+      "name": "Electro, Assaulting Battery",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Battlecry: Deal 3 damage split among enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_2",
+      "name": "Machinesmith Automaton",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_3",
+      "name": "HYDRA Assault Robot",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Robot",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_4",
+      "name": "Kree Sentinel",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Robot",
+      "description": "A charged sentry.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_5",
+      "name": "Electro's Bolt",
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Deal 5 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_6",
+      "name": "Lightning Bolt",
+      "type": "instant",
+      "cost": 1,
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "A wrecking sphere.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_8",
+      "name": "Loki's Scepter",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to any target.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to any target.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_9",
+      "name": "Super Speed",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 2,
+            "pool": "enemies",
+            "count": 2
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 2 damage split among enemies.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Electro",
+      "id": "mv_e_electro_10",
+      "name": "Los Diablos Missile Base",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "shaman",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_1",
+      "name": "Rhino, Barreling Brute",
+      "type": "creature",
+      "cost": 5,
+      "attack": 6,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Trample. Rush.",
+      "keywords": [
+        "trample",
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_2",
+      "name": "Professional Wrestler",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_3",
+      "name": "Roxxon Brutes",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "A hired muscle crew.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_4",
+      "name": "Gamma Grotesque",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Monster",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_5",
+      "name": "Rhino's Rampage",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_6",
+      "name": "Truck Toss",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +3/+0 and Trample.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "trample",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 2,
+      "description": "A demolition ball.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_8",
+      "name": "Experimental Armor",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_9",
+      "name": "Furious Strength",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Rhino",
+      "id": "mv_e_rhino_10",
+      "name": "Training Compound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +2/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +2/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_1",
+      "name": "Sandman, Shifting Scoundrel",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Taunt. Reborn.",
+      "keywords": [
+        "taunt",
+        "reborn"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_2",
+      "name": "Damage Control Crew",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_3",
+      "name": "Guerrilla Gorilla",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Beast",
+      "description": "A brute.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_4",
+      "name": "Savage Land Dinosaur",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dinosaur",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_5",
+      "name": "Colossal Collision",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 3 damage to an enemy creature and gain 3 Armor.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_6",
+      "name": "Punishing Punch",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +2/+2.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "A wrecking ball.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_8",
+      "name": "Sandman's Quicksand",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Freeze an enemy creature.",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "{T}: Freeze an enemy creature.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_9",
+      "name": "Super Strength",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 0,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +0/+1.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Sandman",
+      "id": "mv_e_sandman_10",
+      "name": "The Great Mound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain 3 Armor.",
+          "effects": [
+            {
+              "type": "armor",
+              "value": 3
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain 3 Armor.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_1",
+      "name": "Vulture, Scheming Scavenger",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Elusive. Rush.",
+      "keywords": [
+        "elusive",
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_2",
+      "name": "MACH-1, Swooping Scoundrel",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_3",
+      "name": "Skyward Spider",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_4",
+      "name": "Valkyrior Skyrider",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_5",
+      "name": "Big Score",
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Draw two cards and gain two Coins.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "gain-coin",
+          "value": 2
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_6",
+      "name": "Deadly Dispute",
+      "type": "instant",
+      "cost": 2,
+      "description": "Draw a card and gain a Coin.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_7",
+      "name": "Stolen Stark Tech",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Salvaged weaponry.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_8",
+      "name": "Currency Converter",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "text": "Gain a Coin and draw a card.",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Gain a Coin and draw a card.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_9",
+      "name": "Criminal Enterprise",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, gain a Coin.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Vulture",
+      "id": "mv_e_vulture_10",
+      "name": "Sinister Hideout",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Gain a Coin.",
+          "effects": [
+            {
+              "type": "gain-coin",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Gain a Coin.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_1",
+      "name": "Kraven the Hunter",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Rush. Battlecry: Deal 3 damage to an enemy creature.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_2",
+      "name": "Kraven's Cats",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Beast",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_3",
+      "name": "Savage Land Dinosaur",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dinosaur",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_4",
+      "name": "Serpent Specialist",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Beast",
+      "description": "A trained hunter.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_5",
+      "name": "Epic Fight",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_6",
+      "name": "Feral Ferocity",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +2/+0 and Rush.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_7",
+      "name": "Vibranium Energy Daggers",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Hunting blades.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_8",
+      "name": "Kraven's Last Hunt",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 3 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 3 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_9",
+      "name": "Path of Discovery",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, give a friendly creature +1/+1.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kraven",
+      "id": "mv_e_kraven_10",
+      "name": "Savage Mansion",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 2 damage to an enemy creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 2 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "hunter",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_1",
+      "name": "Scorpion, Seething Striker",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Swift. Poisonous.",
+      "keywords": [
+        "first_strike",
+        "poisonous"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_2",
+      "name": "Merciless Enforcers",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_3",
+      "name": "Ninja of the Hand",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Ninja",
+      "description": "Poisonous.",
+      "keywords": [
+        "poisonous"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_4",
+      "name": "Undead Hand Ninja",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Ninja",
+      "description": "Reborn.",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_5",
+      "name": "Bionic Blow",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_6",
+      "name": "Widow's Bite",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature Poisonous and +1/+0.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "poisonous",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_7",
+      "name": "Scorpion's Sting",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A venom-tipped tail.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_8",
+      "name": "Talisman of Indulgence",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+0 and Swift.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 0,
+            "target": "friendly-creature"
+          },
+          {
+            "type": "grant",
+            "keyword": "first_strike",
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+0 and Swift.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_9",
+      "name": "Furious Strength",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Scorpion",
+      "id": "mv_e_scorpion_10",
+      "name": "Fogwell's Gym",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +2/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +2/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_1",
+      "name": "Shocker, Unshakable",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Battlecry: Deal 3 damage to an enemy creature and freeze it.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_2",
+      "name": "Extremis Elite",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_3",
+      "name": "Crimson Operative",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "A hired gunhand.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_4",
+      "name": "HYDRA Troopers",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Soldier",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_5",
+      "name": "Repulsor Rays",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage split among enemy creatures.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 4,
+          "pool": "enemies",
+          "count": 4
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_6",
+      "name": "Shock",
+      "type": "instant",
+      "cost": 1,
+      "description": "Deal 2 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_7",
+      "name": "Voltaic Whip",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A vibro-shock gauntlet.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_8",
+      "name": "Steel Wrecking Ball",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to an enemy creature and freeze it.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          },
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to an enemy creature and freeze it.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_9",
+      "name": "Power Boost",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 1 damage to a random enemy.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Shocker",
+      "id": "mv_e_shocker_10",
+      "name": "Fogwell's Gym",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_1",
+      "name": "Hobgoblin, Mantled Marauder",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Rush. Battlecry: Deal 2 damage to all enemy creatures.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_2",
+      "name": "Inner Demons Gangsters",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "A marauding gang.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_3",
+      "name": "Raging Goblinoids",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Goblin",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_4",
+      "name": "Volcanic Villain",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_5",
+      "name": "Pumpkin Bombardment",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_6",
+      "name": "Blazing Crescendo",
+      "type": "instant",
+      "cost": 2,
+      "description": "Deal 3 damage to any target.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_7",
+      "name": "Rocket-Powered Goblin Glider",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A jet-glider.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_8",
+      "name": "Grim Reaper's Scythe",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Deal 2 damage to any target.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "any"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_9",
+      "name": "Shadow of the Goblin",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 1 damage to the enemy hero.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Hobgoblin",
+      "id": "mv_e_hobgoblin_10",
+      "name": "Los Diablos Missile Base",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_1",
+      "name": "Lizard, Connors's Curse",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Villain",
+      "description": "Trample. Battlecry: Give your other creatures +1/+1.",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_2",
+      "name": "Lurking Lizards",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Lizard",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_3",
+      "name": "Voracious Brood",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Lizard",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_4",
+      "name": "Savage Land Dinosaur",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dinosaur",
+      "description": "A primeval reptile.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_5",
+      "name": "Overwhelming Stampede",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Give your creatures +2/+2 and Trample.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 2,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "grant",
+          "keyword": "trample",
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_6",
+      "name": "Beast Mode",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +3/+3.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 3,
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_7",
+      "name": "Vibranium Strike Gauntlets",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Reptilian claws.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_8",
+      "name": "Conduit of Worlds",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_9",
+      "name": "Return of the Mole Man",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+1.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Lizard",
+      "id": "mv_e_lizard_10",
+      "name": "The Great Mound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Lizard.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Lizard Spawn",
+              "tribe": "Lizard"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Lizard.",
+      "colors": [],
+      "cardClass": "druid",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_1",
+      "name": "Kingpin, Wilson Fisk",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 6,
+      "tribe": "Villain",
+      "description": "Taunt. Battlecry: Draw a card and gain two Coins.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "gain-coin",
+          "value": 2
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_2",
+      "name": "Kingpin's Enforcers",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_3",
+      "name": "Merciless Enforcers",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_4",
+      "name": "Armed Assailant",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Villain",
+      "description": "A gun for hire.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_5",
+      "name": "Prison Break",
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Summon two 3/3 Villains.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Enforcer",
+          "tribe": "Villain"
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_6",
+      "name": "Deadly Dispute",
+      "type": "instant",
+      "cost": 2,
+      "description": "Draw a card and gain a Coin.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ],
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_7",
+      "name": "Stolen Stark Tech",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Underworld arsenal.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_8",
+      "name": "Black Market Connections",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Draw a card and gain a Coin.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "{T}: Draw a card and gain a Coin.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_9",
+      "name": "Criminal Enterprise",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, gain a Coin.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kingpin",
+      "id": "mv_e_kingpin_10",
+      "name": "Fisk Tower",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Draw a card.",
+      "colors": [],
+      "cardClass": "rogue",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_1",
+      "name": "Doctor Doom, King of Latveria",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Villain",
+      "description": "Battlecry: Destroy an enemy creature and summon a 4/4 Doombot.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Doombot",
+          "tribe": "Robot"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_2",
+      "name": "Doombot Harbinger",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_3",
+      "name": "Doom's Servo-Guards",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Robot",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_4",
+      "name": "Aerial Doombot",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_5",
+      "name": "Doomsday",
+      "type": "sorcery",
+      "cost": 6,
+      "description": "Destroy an enemy creature and deal 3 damage to all other enemy creatures.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_6",
+      "name": "Doom Blade",
+      "type": "instant",
+      "cost": 2,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_7",
+      "name": "HYDRA Disintegrator",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "Latverian battle-plate.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_8",
+      "name": "Damocles Base, Sword of Kang",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "text": "Deal 3 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 3 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_9",
+      "name": "Doom Reigns Supreme",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Doombot",
+            "tribe": "Robot"
+          }
+        ]
+      },
+      "description": "At the start of your turn, summon a 2/2 Doombot.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Doctor Doom",
+      "id": "mv_e_doom_10",
+      "name": "Castle Doom",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_1",
+      "name": "Loki, God of Mischief",
+      "type": "creature",
+      "cost": 6,
+      "attack": 5,
+      "health": 6,
+      "tribe": "God",
+      "description": "Battlecry: Summon copies as two 4/4 Illusions of himself with Elusive.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 4,
+          "health": 4,
+          "name": "Loki's Illusion",
+          "tribe": "Illusion",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_2",
+      "name": "Living Lies of Loki",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Illusion",
+      "description": "A deceiving double.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_3",
+      "name": "Mist-Cloaked Herald",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Spirit",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_4",
+      "name": "TVA Bureaucrat",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_5",
+      "name": "Into the Time Vortex",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 4 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_6",
+      "name": "Trickster's Stratagem",
+      "type": "instant",
+      "cost": 3,
+      "description": "Return an enemy creature to its owner's hand and freeze a creature.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_7",
+      "name": "Loki's Scepter",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 3,
+      "durability": 3,
+      "description": "The Chitauri sceptre.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_8",
+      "name": "The Mind Stone",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "text": "Deal 3 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 3 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_9",
+      "name": "Glorious Purpose",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Loki's Illusion",
+            "tribe": "Illusion",
+            "keywords": [
+              "elusive"
+            ]
+          }
+        ]
+      },
+      "description": "At the start of your turn, summon a 2/2 Illusion with Elusive.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Loki",
+      "id": "mv_e_loki_10",
+      "name": "Surveillance Room",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Draw a card.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_1",
+      "name": "Kang the Conqueror",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Villain",
+      "description": "Battlecry: Freeze all enemy creatures and deal 2 damage to each.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_2",
+      "name": "Aerial Doombot",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Robot",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_3",
+      "name": "TVA Bureaucrat",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_4",
+      "name": "Titanium Man",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "A time-plated juggernaut.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_5",
+      "name": "Multiversal Incursion",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_6",
+      "name": "Quantum Reduction",
+      "type": "instant",
+      "cost": 3,
+      "description": "Return an enemy creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_7",
+      "name": "Damocles Base, Sword of Kang",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "A conqueror's blade.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_8",
+      "name": "Doom's Time Platform",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "text": "Freeze an enemy creature and deal 2 damage to it.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creature"
+          },
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "{T}: Deal 2 to an enemy creature and freeze it.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_9",
+      "name": "Kang Dynasty",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, freeze a random enemy creature.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Kang the Conqueror",
+      "id": "mv_e_kang_10",
+      "name": "A.I.M. Labs",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "mage",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_1",
+      "name": "Abomination, World Ravager",
+      "type": "creature",
+      "cost": 6,
+      "attack": 7,
+      "health": 6,
+      "tribe": "Monster",
+      "description": "Trample. Limit Break: the first time this is damaged, gain +3/+0.",
+      "keywords": [
+        "trample"
+      ],
+      "ongoing": {
+        "on": "self-damaged",
+        "once": true,
+        "survives": true,
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 3,
+            "health": 0
+          }
+        ]
+      },
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_2",
+      "name": "Gamma Grotesque",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Monster",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_3",
+      "name": "Roxxon Brutes",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "A brutish crew.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_4",
+      "name": "Professional Wrestler",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_5",
+      "name": "World War Hulk",
+      "type": "sorcery",
+      "cost": 6,
+      "description": "Deal 3 damage to all enemy creatures and give your creatures +2/+0.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_6",
+      "name": "HULK SMASH!",
+      "type": "instant",
+      "cost": 2,
+      "description": "Give a friendly creature +3/+0 and Trample.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "trample",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 2,
+      "description": "A gamma-charged fist.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_8",
+      "name": "Experimental Armor",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_9",
+      "name": "Origin of the Hulk",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Abomination",
+      "id": "mv_e_abomination_10",
+      "name": "Training Compound",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Give a friendly creature +3/+0.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 3,
+              "health": 0,
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Give a friendly creature +3/+0.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_1",
+      "name": "Thanos, the Mad Titan",
+      "type": "creature",
+      "cost": 7,
+      "attack": 7,
+      "health": 7,
+      "tribe": "Titan",
+      "description": "Battlecry: Destroy all creatures with 3 or less Attack (yours and the enemy's).",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "all-creatures",
+          "maxAttack": 3
+        }
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_2",
+      "name": "Titanium Man",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Villain",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_3",
+      "name": "Undead Hand Ninja",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Undead",
+      "description": "Reborn.",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_4",
+      "name": "Unliving Legionnaire",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Undead",
+      "description": "Reborn.",
+      "keywords": [
+        "reborn"
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_5",
+      "name": "Toxic Deluge",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 4 damage to all creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "all-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_6",
+      "name": "Withering Torment",
+      "type": "instant",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_7",
+      "name": "The Ten Rings",
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "The Infinity Gauntlet.",
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_8",
+      "name": "The Soul Stone",
+      "type": "artifact",
+      "cost": 4,
+      "tapAbility": {
+        "text": "Destroy an enemy creature with 4 or less Attack.",
+        "effects": [
+          {
+            "type": "destroy",
+            "target": "enemy-creature",
+            "maxAttack": 4
+          }
+        ]
+      },
+      "description": "{T}: Destroy an enemy creature with 4 or less Attack.",
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_9",
+      "name": "Too Evil to Stay Dead",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Undead Servant",
+            "tribe": "Undead"
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature dies, summon a 2/2 Undead.",
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Thanos",
+      "id": "mv_e_thanos_10",
+      "name": "Crumbling Necropolis",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 2 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 2 damage to any target.",
+      "colors": [],
+      "cardClass": "death_knight",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_1",
+      "name": "Galactus, Devourer of Worlds",
+      "type": "creature",
+      "cost": 8,
+      "attack": 9,
+      "health": 9,
+      "tribe": "Cosmic Being",
+      "description": "Trample. Battlecry: Deal 5 damage to all enemy creatures.",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 5,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_2",
+      "name": "Meteor Golem",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Golem",
+      "description": "Battlecry: Destroy an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_3",
+      "name": "Metalwork Colossus",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Golem",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_4",
+      "name": "Tri-Sentinel, Act of Vengeance",
+      "type": "creature",
+      "cost": 6,
+      "attack": 5,
+      "health": 6,
+      "tribe": "Robot",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_5",
+      "name": "Genesis Ultimatum",
+      "type": "sorcery",
+      "cost": 6,
+      "description": "Deal 4 damage to all enemy creatures and summon a 5/5 Cosmic Being.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 5,
+          "name": "Herald of Galactus",
+          "tribe": "Cosmic Being"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_6",
+      "name": "Truck Toss",
+      "type": "instant",
+      "cost": 3,
+      "description": "Give a friendly creature +4/+0 and Trample.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 4,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "trample",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_7",
+      "name": "Steel Wrecking Ball",
+      "type": "weapon",
+      "cost": 5,
+      "attack": 6,
+      "durability": 2,
+      "description": "World-Ship power.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_8",
+      "name": "N'Yami-Class Mother Ship",
+      "type": "artifact",
+      "cost": 5,
+      "tapAbility": {
+        "text": "Deal 4 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 4,
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "{T}: Deal 4 damage to an enemy creature.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_9",
+      "name": "The Coming of Galactus",
+      "type": "enchantment",
+      "cost": 5,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 2,
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, deal 2 damage to all enemy creatures.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "mvDeck": "Galactus",
+      "id": "mv_e_galactus_10",
+      "name": "Vibranium Mining Mech",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 2 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 2,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 2 damage to any target.",
+      "colors": [],
+      "cardClass": "warrior",
+      "mvSide": "enemy"
     }
   ]
 }
