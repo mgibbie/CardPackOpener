@@ -316,6 +316,12 @@ function loadSwordcoast() {
   if (!swordcoastPromise) swordcoastPromise = import('../battlecards/swordcoast.js' + CB);
   return swordcoastPromise;
 }
+// Lorequest: Final Fantasy data (FF — hero/enemy rosters, rungs, class map, hero powers)
+let finalfantasyPromise = null;
+function loadFinalfantasy() {
+  if (!finalfantasyPromise) finalfantasyPromise = import('../battlecards/finalfantasy.js' + CB);
+  return finalfantasyPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -1751,6 +1757,91 @@ async function swordCoastDeckDetail(slug) {
     cardSizeControl(grid), grid);
 }
 
+// ── Lorequest: Final Fantasy (FF) — mirrors the Sword Coast surfaces, tagged ffDeck/ffSide ──
+function ffDeckCards(cards, ch) {
+  return cards.filter(c => c.ffDeck === ch && !c.token)
+    .sort((a, b) => ((b.rarity === 'legendary') - (a.rarity === 'legendary'))
+      || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+}
+function ffTile(ch, deck, clsName, pw, colors) {
+  const canvas = CardArt.drawCardFace(lqSig(deck));
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
+  return h('a', { class: 'wiki-card lq-tile', href: '#/final-fantasy/' + lqSlug(ch), title: pw ? `${pw.name}: ${pw.text}` : ch },
+    img,
+    h('div', { class: 'lq-name' }, ch),
+    h('div', { class: 'lq-sub' }, colorPips(colors), h('span', { class: 'lq-cls' }, clsName)));
+}
+async function finalFantasyView() {
+  content.replaceChildren(h('h1', null, 'Lorequest: Final Fantasy'), h('p', { class: 'muted' }, 'Loading decks…'));
+  let FF, classes, cards;
+  try { [FF, classes, cards] = await Promise.all([loadFinalfantasy(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest: Final Fantasy'), h('p', { class: 'muted' }, 'Could not load the Final Fantasy data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'final-fantasy') return;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase((id || '').replace(/_/g, ' '));
+  const heroes = [...FF.HEROES, ...FF.SECRET_HEROES];
+  const allChars = [...heroes, ...FF.ENEMIES];
+  const decks = {}; for (const ch of allChars) decks[ch] = ffDeckCards(cards, ch);
+  await CardArt.preloadArt(allChars.map(ch => lqSig(decks[ch])?.id).filter(Boolean));
+  const group = (title, blurb, names) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
+      h('p', { class: 'muted' }, blurb)),
+    h('div', { class: 'card-grid size-small' },
+      ...names.map(ch => ffTile(ch, decks[ch], clsName(FF.classOf(ch)), FF.powerOf(ch), FF.colorsOf(ch)))));
+  const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Lorequest: Final Fantasy'),
+        h('p', { class: 'muted' }, 'A dungeon run built from the MAGIC: THE GATHERING — FINAL FANTASY set art. Pick an FF hero (a 10-card starter deck) and battle the villains to 12 wins or 3 losses. Its signature mechanics are ', h('strong', null, 'Spritsummon'), ' (call a random Sprit — Ifrit, Shiva, Bahamut…) and ', h('strong', null, 'Limit Break'), '. Like ', h('a', { href: '#/sword-coast' }, 'Sword Coast'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30) with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+    group('Heroes — Warriors of Light', '11 heroes (Gilgamesh is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you climb.', heroes),
+    group('Rung A — Henchmen', 'Your first fights (wins 0–2). Reno & Rude and Ultros appear only as your very first encounter.', FF.ENEMY_RUNGS.A),
+    group('Rung B — Lieutenants', 'Empire generals and sorcerers (wins 3–6).', FF.ENEMY_RUNGS.B),
+    group('Rung C — Archvillains', 'The named archvillains (wins 7–10).', FF.ENEMY_RUNGS.C),
+    group('Rung D — Final Boss', 'The 12th-win final boss — Sephiroth and Chaos rotate for replay variety.', FF.ENEMY_RUNGS.D));
+}
+async function finalFantasyDeckDetail(slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let FF, classes, cards;
+  try { [FF, classes, cards] = await Promise.all([loadFinalfantasy(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Final Fantasy Deck'), h('p', { class: 'muted' }, 'Could not load the Final Fantasy data.')); }
+  const allChars = [...FF.HEROES, ...FF.SECRET_HEROES, ...FF.ENEMIES];
+  const ch = allChars.find(x => lqSlug(x) === slug);
+  if (!ch) return content.replaceChildren(h('h1', null, 'Deck not found'),
+    h('p', null, h('a', { href: '#/final-fantasy' }, '← Back to Lorequest: Final Fantasy')));
+  const deck = ffDeckCards(cards, ch);
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'final-fantasy') return;
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  await CardArt.preloadArt(deck.map(c => c.id));
+  const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const grid = await deckGrid(deck.map(c => c.id), byId);
+  const clsName = (classes.find(c => c.id === FF.classOf(ch))?.name) || titleCase(FF.classOf(ch).replace(/_/g, ' '));
+  const isEnemy = FF.isEnemy(ch);
+  const secret = FF.SECRET_HEROES.includes(ch);
+  const pw = FF.powerOf(ch);
+  const rung = !isEnemy ? null
+    : FF.ENEMY_RUNGS.A.includes(ch) ? 'A — Henchman' : FF.ENEMY_RUNGS.B.includes(ch) ? 'B — Lieutenant'
+      : FF.ENEMY_RUNGS.C.includes(ch) ? 'C — Archvillain' : 'D — Final Boss';
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/final-fantasy' }, '← All Final Fantasy decks')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, ch),
+        h('div', { class: 'lp-detail-meta' },
+          colorPips(FF.colorsOf(ch)),
+          h('span', { class: 'lq-cls' }, clsName),
+          isEnemy ? h('span', { class: 'lq-cls' }, 'Rung ' + rung) : null,
+          h('span', { class: 'lp-count' }, isEnemy ? (deck.length + ' cards · 2 copies each = 30-card deck') : (deck.length + '-card singleton starter deck'))),
+        pw ? h('p', { class: 'muted' }, h('strong', null, 'Hero Power — ' + pw.name + ': '), pw.text) : null,
+        h('p', { class: 'muted' }, isEnemy
+          ? `A static enemy faced as you climb — no win-parity loot; its signature hero power gives it teeth.`
+          : (secret ? `A secret hero, unlocked by clearing a full run (12 wins). Its loot buckets come from the ${clsName} class.`
+            : `A Warrior of Light — one of the 10 offered at the start of a run. You grow this 10-card deck via a spoils draft + an alternating treasure/bucket each win. Its loot buckets come from the ${clsName} class.`)))),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, '(' + deck.length + ' cards' + (isEnemy ? ' · ×2 = 30' : '') + ')')),
+    cardSizeControl(grid), grid);
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1774,6 +1865,7 @@ function route() {
   if (section === 'lore-decks') return id ? lorequestDeckDetail(id) : lorequestView();
   if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
   if (section === 'sword-coast') return id ? swordCoastDeckDetail(id) : swordCoastView();
+  if (section === 'final-fantasy') return id ? finalFantasyDeckDetail(id) : finalFantasyView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);

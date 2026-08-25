@@ -11,6 +11,7 @@ import * as Duels from './duels.js';
 import * as Lorequest from './lorequest.js';
 import * as Middleearth from './middleearth.js';
 import * as Swordcoast from './swordcoast.js';
+import * as Finalfantasy from './finalfantasy.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
 import { safeLoad, safeSave } from './safestore.js';
@@ -80,9 +81,12 @@ const middleearthRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && 
 const SWORDCOAST_KEY = 'magepunk_swordcoast_v1';
 const SWORDCOAST_UNLOCK_KEY = 'magepunk_swordcoast_gale_unlocked'; // Gale secret hero
 const swordcoastRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && new URLSearchParams(location.search).has('swordcoast');
+const FINALFANTASY_KEY = 'magepunk_finalfantasy_v1';
+const FINALFANTASY_UNLOCK_KEY = 'magepunk_finalfantasy_gilgamesh_unlocked'; // Gilgamesh secret hero
+const finalfantasyRunMode = !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && new URLSearchParams(location.search).has('finalfantasy');
 let dungeonBossId = (id => Dungeon.BOSSES[id] ? id : null)(
 	new URLSearchParams(location.search).get('boss'));
-if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode) playerCount = 2;
+if (dungeonBossId || dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode) playerCount = 2;
 
 // ?spectate=<friend> (MP only): render a friend's live dungeon-run/battle board
 // read-only from the snapshots they publish — no input, no AI.
@@ -139,6 +143,10 @@ const loadSwordcoast = () => safeLoad(SWORDCOAST_KEY, null);
 const saveSwordcoast = run => safeSave(SWORDCOAST_KEY, run);
 const clearSwordcoast = () => { localStorage.removeItem(SWORDCOAST_KEY); serverClearRun(SWORDCOAST_KEY); };
 const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
+const loadFinalfantasy = () => safeLoad(FINALFANTASY_KEY, null);
+const saveFinalfantasy = run => safeSave(FINALFANTASY_KEY, run);
+const clearFinalfantasy = () => { localStorage.removeItem(FINALFANTASY_KEY); serverClearRun(FINALFANTASY_KEY); };
+const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
 // ---------- deterministic mid-fight resume (Phase 1) ----------
 // Single-player run fights used to re-deal a fresh hand on every resume because the boot re-ran
@@ -160,6 +168,7 @@ function activeRunIO() {
 	if (lorequestRunMode) return { load: loadLorequest, save: saveLorequest, key: LOREQUEST_KEY };
 	if (middleearthRunMode) return { load: loadMiddleearth, save: saveMiddleearth, key: MIDDLEEARTH_KEY };
 	if (swordcoastRunMode) return { load: loadSwordcoast, save: saveSwordcoast, key: SWORDCOAST_KEY };
+	if (finalfantasyRunMode) return { load: loadFinalfantasy, save: saveFinalfantasy, key: FINALFANTASY_KEY };
 	return null;
 }
 // persist the live board into the active run so a resume restores the exact fight (localStorage only —
@@ -1161,7 +1170,7 @@ function panelEl(pi) { return pi === HUMAN ? $('my-panel') : foePanelEls.get(pi)
 function classPowerOf(pi) {
 	const p = state.players[pi];
 	return p.heroPowers.find(c => c.id === (p.heroClass || '') + '_power')
-		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena/lorequest/middleearth/swordcoast alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
+		|| ((heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode) ? p.heroPowers[0] : null) || null; // heist/tombs/duels/arena/lorequest/middleearth/swordcoast/finalfantasy alt powers live in slot 0 (for EVERY player — opponents included, so their orb renders instead of leaking onto the table)
 }
 
 function activateHeroPower(card, ev) {
@@ -2262,7 +2271,7 @@ let mulliganModalOpen = false;
 let mulliganPicks = null;
 // mulligan is a Quick Match / AI / duel feature; the PvE run modes keep their
 // tuned openings (boss decks, treasures) untouched.
-const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode;
+const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode;
 function maybeOfferMulligan() {
 	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
 	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
@@ -2901,6 +2910,10 @@ function nextEvent() {
 					const run = loadSwordcoast();
 					if (run) delete run.snapshot;
 					if (run?.active) setTimeout(() => { (won ? swordCoastVictory : swordCoastDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
+				} else if (finalfantasyRunMode) {
+					const run = loadFinalfantasy();
+					if (run) delete run.snapshot;
+					if (run?.active) setTimeout(() => { (won ? finalFantasyVictory : finalFantasyDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (arenaRunMode) {
 				const run = loadArena();
 				if (run) delete run.snapshot;
@@ -3762,11 +3775,11 @@ $('restart').addEventListener('click', () => start());
 $('concede').addEventListener('click', () => {
 	if (!state || state.over) return;
 	// run modes keep their own copy (a conceded run clears the save + pays no pack)
-	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode) {
-		const run = swordcoastRunMode ? loadSwordcoast() : middleearthRunMode ? loadMiddleearth() : lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
+	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode) {
+		const run = finalfantasyRunMode ? loadFinalfantasy() : swordcoastRunMode ? loadSwordcoast() : middleearthRunMode ? loadMiddleearth() : lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
 		const el = dungeonOverlay('CONCEDE?', 'Walking away ends the run. A conceded run never pays a pack.');
 		el.appendChild(overlayButton('Concede the run', () => {
-			if (swordcoastRunMode) clearSwordcoast(); else if (middleearthRunMode) clearMiddleearth(); else if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
+			if (finalfantasyRunMode) clearFinalfantasy(); else if (swordcoastRunMode) clearSwordcoast(); else if (middleearthRunMode) clearMiddleearth(); else if (lorequestRunMode) clearLorequest(); else if (arenaRunMode) clearArena(); else if (duelsRunMode) clearDuels(); else if (tombsRunMode) clearTombs(); else if (heistRunMode) clearHeist(); else clearRun();
 			state.over = true; // freezes play without firing the defeat payout path
 			const done = dungeonOverlay('RUN CONCEDED', `You walked away at level ${run?.level ?? 1}. No pack this time.`);
 			done.appendChild(overlayButton('New Run', () => location.reload()));
@@ -4033,7 +4046,7 @@ function startPublishLoop() {
 	// the mode drives the friends-list "in a … run" label + the Watch button
 	const mode = duel.on ? 'pvp'
 		: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : 'battle';
+			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : 'battle';
 	const label = () => {
 		if (duel.on) return 'Card Duel';
 		if (dungeonBossId) return `${Dungeon.BOSSES[dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
@@ -4044,6 +4057,7 @@ function startPublishLoop() {
 		if (lorequestRunMode) { const r = loadLorequest(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Lorequest'; }
 		if (middleearthRunMode) { const r = loadMiddleearth(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Middle-earth'; }
 		if (swordcoastRunMode) { const r = loadSwordcoast(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Sword Coast'; }
+		if (finalfantasyRunMode) { const r = loadFinalfantasy(); return r ? `${r.wins || 0}W / ${r.losses || 0}L` : 'Final Fantasy'; }
 		return 'Card Battle';
 	};
 	let publishedOver = false; // pushed the final (over) board once, then go quiet
@@ -4843,6 +4857,7 @@ async function start() {
 		if (mode === 'lorequest') { location.href = '?lorequest=1'; return; }
 		if (mode === 'middleearth') { location.href = '?middleearth=1'; return; }
 		if (mode === 'swordcoast') { location.href = '?swordcoast=1'; return; }
+		if (mode === 'finalfantasy') { location.href = '?finalfantasy=1'; return; }
 		menuChosen = true;
 	}
 	await hydrateRunsFromServer(); // server-authoritative: refresh the localStorage run caches from D1 before booting
@@ -4964,6 +4979,18 @@ async function start() {
 				saveSwordcoast(run);
 			}
 			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
+		} else if (finalfantasyRunMode) {
+			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
+			let run = loadFinalfantasy();
+			if (run && run.active && !(await resumeFinalFantasyOverlay(run))) { clearFinalfantasy(); run = null; }
+			if (!run || !run.active) {
+				const characterId = await pickFinalFantasyHeroOverlay(cardsById);
+				const deck = Finalfantasy.deckOf(cardsById, characterId);
+				run = { active: true, characterId, cls: Finalfantasy.classOf(characterId), deck, wins: 0, losses: 0,
+					enemy: genFinalFantasyEnemy(cardsById, 0, null) };
+				saveFinalfantasy(run);
+			}
+			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
@@ -5346,6 +5373,8 @@ function mainMenu() {
 			() => resolve('middleearth')));
 		col.appendChild(big('LOREQUEST: SWORD COAST 🐉', 'pick a Companion of the Realms — Advance through the Sword Coast’s villains (henchmen → Tiamat) to 12 wins or 3 losses; loot the fallen',
 			() => resolve('swordcoast')));
+		col.appendChild(big('LOREQUEST: FINAL FANTASY ⭐', 'pick a Final Fantasy hero — Spritsummon & Limit Break through the villains (henchmen → Sephiroth & Chaos) to 12 wins or 3 losses; loot the fallen',
+			() => resolve('finalfantasy')));
 		el.appendChild(col);
 	});
 }
@@ -5370,7 +5399,7 @@ async function dungeonStarterDeck(clsId) {
 
 // a finished run pays out one pack, win or lose
 // which run mode is this? (drives the per-mode achievement counters server-side)
-const runModeName = () => swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
+const runModeName = () => finalfantasyRunMode ? 'finalfantasy' : swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
 	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
 async function mpRunReward(el, result) {
 	if (!MP_ON) return;
@@ -6767,6 +6796,161 @@ function swordCoastRunOver(run) {
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
+// ---------- Lorequest: Final Fantasy ----------
+// Mirror of Sword Coast: pick 1 FF hero (10-card starter), battle FF villains (rung-gated static
+// 30-card decks) to 12 wins or 3 losses. Signature mechanics = Spritsummon (random Sprit) + Limit
+// Break. Data tagged ffDeck/ffSide, ids ff_*.
+let finalfantasyCardsById = null;
+
+function resumeFinalFantasyOverlay(run) {
+	return new Promise(resolve => {
+		const el = dungeonOverlay('FINAL FANTASY RUN IN PROGRESS',
+			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
+		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
+	});
+}
+
+// full choice of all 10 heroes (+ Gilgamesh once unlocked), each showing its signature + power
+function pickFinalFantasyHeroOverlay(cardsById) {
+	return new Promise(resolve => {
+		const heroes = [...Finalfantasy.HEROES];
+		if (finalfantasyGilgameshUnlocked()) heroes.push(...Finalfantasy.SECRET_HEROES);
+		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
+		const row = document.createElement('div');
+		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
+		for (const ch of heroes) {
+			const cls = Finalfantasy.classOf(ch);
+			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
+			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.ffSide === 'hero' && d.rarity === 'legendary');
+			const pw = Finalfantasy.powerOf(ch);
+			const box = document.createElement('div');
+			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
+			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
+				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '');
+			if (sig) box.appendChild(miniFace(sig, 120));
+			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
+			row.appendChild(box);
+		}
+		el.appendChild(row);
+	});
+}
+
+function genFinalFantasyEnemy(cardsById, wins, avoidId) {
+	const character = Finalfantasy.randomEnemy(wins, Math.random, avoidId);
+	return Finalfantasy.generateEnemy(cardsById, character);
+}
+
+function finalFantasySeat(character) {
+	const cls = Finalfantasy.classOf(character);
+	const def = classRegistry.find(c => c.id === cls) || { id: cls, power: null };
+	return { ...def, id: cls, name: character, power: Finalfantasy.powerOf(character) };
+}
+
+function bootFinalFantasyEncounter(cardsById, run) {
+	finalfantasyCardsById = cardsById;
+	const enemy = run.enemy || (run.enemy = genFinalFantasyEnemy(cardsById, run.wins || 0, null));
+	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
+	const picks = [finalFantasySeat(run.characterId), finalFantasySeat(enemy.name)];
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	state.classPicks = picks;
+	E.resetDeckAndHand(state, 1, [...enemy.deck]);
+	E.drawCards(state, 1, 4);
+	E.stripLoadouts(state);
+	log(`Lorequest: Final Fantasy - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
+	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
+}
+
+function finalFantasyVictory(run) { afterFinalFantasyGame(run, true); }
+function finalFantasyDefeat(run) { afterFinalFantasyGame(run, false); }
+
+function afterFinalFantasyGame(run, won) {
+	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	saveFinalfantasy(run);
+	if (run.wins >= Finalfantasy.WINS_TO_CLEAR) { finalFantasyRunComplete(run); return; }
+	if (run.losses >= Finalfantasy.LOSSES_TO_END) { finalFantasyRunOver(run); return; }
+	if (won) finalFantasyLoot(run); else advanceFinalFantasy(run);
+}
+
+function finalFantasyLoot(run) {
+	const fallen = run.enemy ? run.enemy.name : null;
+	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, Math.random, 3) : [];
+	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
+	const rowr = document.createElement('div');
+	rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+	for (const id of options) {
+		if (!state.cardsById[id]) continue;
+		const box = document.createElement('div');
+		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(document.createElement('br'));
+		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterFinalFantasyReward(run); }));
+		rowr.appendChild(box);
+	}
+	el.appendChild(rowr);
+	el.appendChild(overlayButton('Take none', () => afterFinalFantasyReward(run)));
+}
+
+function afterFinalFantasyReward(run) {
+	if (Finalfantasy.rewardForWin(run.wins) === 'bucket') {
+		const cls = [run.cls];
+		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
+		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, Math.random, 3);
+		const rowr = document.createElement('div');
+		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (const bucket of offered) {
+			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, Math.random, 3);
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
+			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			box.appendChild(document.createElement('br'));
+			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceFinalFantasy(run); }));
+			rowr.appendChild(box);
+		}
+		el.appendChild(rowr);
+	} else {
+		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
+		const options = Finalfantasy.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const rowr = document.createElement('div');
+		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
+		for (let i = 0; i < 3 && options.length; i++) {
+			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const box = document.createElement('div');
+			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.appendChild(miniFace(d));
+			box.appendChild(document.createElement('br'));
+			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceFinalFantasy(run); }));
+			rowr.appendChild(box);
+		}
+		el.appendChild(rowr);
+	}
+}
+
+function advanceFinalFantasy(run) {
+	run.enemy = genFinalFantasyEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	saveFinalfantasy(run);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
+	el.appendChild(overlayButton('Fight!', () => location.reload()));
+}
+
+function finalFantasyRunComplete(run) {
+	try { localStorage.setItem(FINALFANTASY_UNLOCK_KEY, '1'); } catch (e) { }
+	const el = dungeonOverlay('12 WINS - THE VOID IS SEALED!',
+		`${run.characterId} clears Final Fantasy with a ${run.deck.length}-card deck. Gilgamesh is now a playable hero!`);
+	Col.earnGold(1000);
+	mpRunReward(el, 'win');
+	clearFinalfantasy();
+	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
+}
+
+function finalFantasyRunOver(run) {
+	const el = dungeonOverlay('3 LOSSES - GAME OVER', `${run.characterId} falls at ${run.wins || 0} wins.`);
+	clearFinalfantasy();
+	mpRunReward(el, 'loss');
+	el.appendChild(overlayButton('New Run', () => location.reload()));
+}
+
 // ---------- Arena (draft) run ----------
 // Draft a 30-card deck up front, then play it against fresh AI opponents until 3
 // losses (12 wins = a flawless run). Reuses the Duels draft pool + rival roster;
@@ -6917,7 +7101,7 @@ let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = nul
 
 function deriveReplayMeta() {
 	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
+		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
 	const heroes = (state && state.players || []).map((p, i) => ({
 		classId: (state.classPicks && state.classPicks[i] && state.classPicks[i].id) || p.heroClass || null,
 		name: nameOf(i),
