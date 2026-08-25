@@ -193,7 +193,11 @@ const ART_DIR = new URL('art/', import.meta.url).href; // relative path — 302-
 const _artLocal = typeof location === 'undefined' || location.protocol === 'file:'
 	|| /^(localhost$|127\.|0\.0\.0\.0$|\[?::1)/.test(location.hostname);
 const ART_BASE = _artLocal ? ART_DIR : 'https://magepunk-cardart.pages.dev/';
-const artUrl = id => ART_BASE + id + '.jpg';
+// per-image cache-bust: art jpgs cache hard (7 days) on the host, so a re-cropped/retinted image
+// keeps serving stale to returning visitors. Bump an entry here (only for CHANGED art) to force a
+// fresh fetch of just that image — the other ~11k stay cached.
+const ART_REVS = { sauron_lord_of_the_rings: 2 };
+const artUrl = id => ART_BASE + id + '.jpg' + (ART_REVS[id] ? '?v=' + ART_REVS[id] : '');
 function withArtFallback(img, id) {
 	if (ART_BASE === ART_DIR) return img; // already the relative fallback path
 	img.addEventListener('error', () => { img.src = ART_DIR + id + '.jpg'; }, { once: true });
