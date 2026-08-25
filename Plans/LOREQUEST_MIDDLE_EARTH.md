@@ -78,13 +78,16 @@ Color drives the Magepunk **class** (hero power + which loot buckets/treasures a
 | 4 | **Gimli, Counter of Kills** | R | warrior | Aggressive Dwarf melee; grows as it trades (kill-counter). |
 | 5 | **Frodo Baggins** | GW | rogue | Stealth/evasion + the Ring; survive-and-chip. |
 | 6 | **Samwise Gamgee** | GW | priest | Lifegain + defensive Taunt; loyalty "don't you leave him". |
-| 7 | **Éowyn, Shieldmaiden** | RW | warrior | Anti-Wraith aggro; first-strike + charge cavalry. |
-| 8 | **Galadriel, Light of Valinor** | GU | druid | Elf tokens + ramp/control; Lothlórien value. |
-| 9 | **Théoden, King of Rohan** | RW | warrior | Rohan go-wide cavalry (Knight tokens + anthem: "Ride now!"). |
-| 10 | **Elrond, Master of Healing** | GU | priest | Healing + counters + card advantage; Rivendell control. |
+| 7 | **Éowyn, Shieldmaiden** | RW | `demon_hunter` | Anti-Wraith aggro; agile self-reliant striker — she slays the Witch-king ("I am no man"). |
+| 8 | **Galadriel, Light of Valinor** | GU | `druid` | Elf tokens + ramp/control; Lothlórien value. |
+| 9 | **Théoden, King of Rohan** | RW | `shaman` | Rohan go-wide rally (Knight tokens + the horns of the Rohirrim: "Ride now!"). |
+| 10 | **Elrond, Master of Healing** | GU | `priest` | Healing + counters + card advantage; Rivendell control. |
 
-*(Two RW warriors, Éowyn & Théoden, differentiate as anti-wraith tempo vs. cavalry go-wide. Frodo/Sam
-share GW but split rogue-evasion vs. priest-lifegain.)*
+**✅ LOCKED (2026-08-24).** Class strings are the engine's real values from `lorequest.js CLASS_OF`
+(lowercase; `demon_hunter` underscored). The 10 heroes span **9 distinct classes** — `paladin, mage,
+hunter, warrior, rogue, priest ×2 (Sam + Elrond, both healers), demon_hunter, druid, shaman`. The two
+"dark" classes — **`warlock` and `death_knight` — are intentionally reserved for the enemy roster**
+(Nazgûl, necromancers, Sauron), giving a clean Free-Peoples / Shadow class split.
 
 **Secret 11th hero — Tom Bombadil (unlockable):**
 
@@ -294,6 +297,9 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
    of the North** to Rung B, **Azog, Moria's Ruin** to Rung C. **Tom Bombadil** added as the hidden 11th
    (secret) hero, unlocked by clearing a run; class 'any' (all buckets). See §2 + §3.
 
-**STILL OPEN (confirm before Phase A):**
-8. **Class assignments** — the hero→class map in §2 (drives which loot buckets each hero drafts) — happy
-   with it, or re-theme any?
+8. ✅ **Class assignments LOCKED (2026-08-24):** hero→class map finalized in §2 — Aragorn `paladin`,
+   Gandalf `mage`, Legolas `hunter`, Gimli `warrior`, Frodo `rogue`, Samwise `priest`, Éowyn
+   `demon_hunter`, Galadriel `druid`, Théoden `shaman`, Elrond `priest`, Tom Bombadil `any`. Real engine
+   class strings; `warlock`/`death_knight` reserved for villains.
+
+**→ ALL DECISIONS RESOLVED. Plan is ready for Phase A (card authoring) on your go.**
