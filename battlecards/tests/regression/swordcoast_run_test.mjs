@@ -66,6 +66,13 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].scDeck === 'Bhaal, Lord of Murder'), sp); }
 ok('treasurePool returns DUELS treasures', SC.treasurePool(cardsById).length > 0
   && SC.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.scTreasure));
+// 20 Sword Coast treasures: neutral, NO rarity, uncollectible, scTreasure:true, in the pool, but
+// treasure:false so they don't leak into the shared heist/tombs/duels pools.
+{ const pool = SC.treasurePool(cardsById);
+  const scT = Object.values(cardsById).filter(d => d.scTreasure && d.id.startsWith('sc_treasure_'));
+  ok('20 SC treasures (neutral, no rarity, uncollectible)', scT.length === 20
+    && scT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [scT.length, scT.filter(t => t.rarity).map(t => t.id)]);
+  ok('SC treasures are in the SC pool but treasure:false (no cross-mode leak)', scT.every(t => pool.some(d => d.id === t.id) && t.treasure === false)); }
 
 // ───────────────────────── engine integration: install + fire all 38 powers ─────────────────────────
 function bootWith(seatChar, oppChar = 'Drizzt') {

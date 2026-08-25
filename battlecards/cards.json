@@ -275279,6 +275279,465 @@
           "target": "enemy-creatures"
         }
       ]
+    },
+    {
+      "id": "sc_treasure_hand_of_vecna",
+      "name": "Hand of Vecna",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 2,
+      "description": "Deathtouch. Lifesteal.",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "sc_treasure_vorpal_sword",
+      "name": "Vorpal Sword",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "Deathtouch (it lops off heads).",
+      "keywords": [
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "sc_treasure_blade_of_selves",
+      "name": "Blade of Selves",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "After your hero attacks, summon a 2/2 Duplicate.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Duplicate",
+            "tribe": "Construct"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_colossus_hammer",
+      "name": "Colossus Hammer",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 5,
+      "attack": 8,
+      "durability": 1,
+      "description": "A crushing one-swing maul."
+    },
+    {
+      "id": "sc_treasure_moonsilver_spear",
+      "name": "Moonsilver Spear",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 3,
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "sc_treasure_sword_of_the_animist",
+      "name": "Sword of the Animist",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 3,
+      "description": "After your hero attacks, gain a Mana Crystal this turn.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_wand_of_orcus",
+      "name": "Wand of Orcus",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 4,
+      "attack": 4,
+      "durability": 2,
+      "description": "Deathtouch. After your hero attacks, summon a 1/1 Undead.",
+      "keywords": [
+        "deathtouch"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Risen Undead",
+            "tribe": "Zombie"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_basilisk_collar",
+      "name": "Basilisk Collar",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 2,
+      "attack": 2,
+      "durability": 3,
+      "description": "Deathtouch. Lifesteal.",
+      "keywords": [
+        "deathtouch",
+        "lifesteal"
+      ]
+    },
+    {
+      "id": "sc_treasure_deck_of_many_things",
+      "name": "The Deck of Many Things",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "{T}: Roll two dice; Discover a card of each rolled Cost.",
+      "tapAbility": {
+        "text": "Roll two dice; Discover a card of each rolled Cost.",
+        "effects": [
+          {
+            "type": "roll-dice-discover"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_eye_of_vecna",
+      "name": "Eye of Vecna",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw a card and deal 1 damage to your hero.",
+      "tapAbility": {
+        "text": "Draw a card and deal 1 damage to your hero.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "own-hero"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_book_of_vile_darkness",
+      "name": "The Book of Vile Darkness",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Summon two 2/2 Undead with Deathtouch.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Vile Undead",
+          "tribe": "Zombie",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_sol_ring",
+      "name": "Sol Ring",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "Battlecry: Gain two Mana Crystals this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_bag_of_holding",
+      "name": "Bag of Holding",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "{T}: Draw a card.",
+      "tapAbility": {
+        "text": "Draw a card.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_sphere_of_annihilation",
+      "name": "Sphere of Annihilation",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Destroy an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_blackstaff",
+      "name": "The Blackstaff of Waterdeep",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Deal 3 damage to an enemy creature.",
+      "tapAbility": {
+        "text": "Deal 3 damage to an enemy creature.",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 3,
+            "target": "enemy-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sc_treasure_rod_of_absorption",
+      "name": "Rod of Absorption",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Draw two cards.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_portable_hole",
+      "name": "Portable Hole",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Return an enemy creature to its owner's hand.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_immovable_rod",
+      "name": "Immovable Rod",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Summon a 0/8 Barrier with Taunt.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 0,
+          "health": 8,
+          "name": "Immovable Barrier",
+          "tribe": "Construct",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_mirror_of_life_trapping",
+      "name": "Mirror of Life Trapping",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 5,
+      "description": "Battlecry: Take control of an enemy creature with 4 or less Attack.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "mind-control",
+          "maxAttack": 4
+        }
+      ]
+    },
+    {
+      "id": "sc_treasure_dragons_hoard",
+      "name": "Dragon's Hoard",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "scTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain two Coins and draw a card.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
     }
   ]
 }

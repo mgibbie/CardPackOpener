@@ -1714,16 +1714,26 @@ async function swordCoastView() {
     h('div', { class: 'card-grid size-small' },
       ...names.map(ch => scTile(ch, decks[ch], clsName(SC.classOf(ch)), SC.powerOf(ch), SC.colorsOf(ch)))));
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  // SC-specific treasures — neutral rewards drafted on odd wins
+  const treasures = cards.filter(c => c.scTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt(treasures.map(c => c.id));
+  const treasureSection = h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
+      h('p', { class: 'muted' }, 'Powerful neutral treasures drafted on odd wins (with the shared treasure pool). Legendary D&D magic items & relics.')),
+    h('div', { class: 'card-grid size-small' },
+      ...treasures.map(c => { const canvas = CardArt.drawCardFace(c); return h('div', { class: 'wiki-card' }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy', title: c.description || c.name }), h('div', { class: 'lq-name' }, c.name)); })));
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
       h('div', null, h('h1', null, 'Lorequest: Sword Coast'),
         h('p', { class: 'muted' }, 'A Dungeons & Dragons dungeon run built from the AFR/CLB card art. Pick a Companion of the Realms (a 10-card starter deck) and Advance through the Sword Coast’s villains to 12 wins or 3 losses. Its signature mechanic is ', h('strong', null, 'Advance'), ' (venture into the dungeon) with a sprinkle of d20 rolls. Like ', h('a', { href: '#/middle-earth' }, 'Middle-earth'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30) with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
-      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards · ' + treasures.length + ' treasures'))),
     group('Heroes — Companions of the Realms', '11 heroes (Gale, Waterdeep Prodigy is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you Advance.', heroes),
     group('Rung A — Henchmen', 'Your first fights (wins 0–2). Gut & Baeloth appear only as your very first encounter.', SC.ENEMY_RUNGS.A),
     group('Rung B — Lieutenants', 'Beholders, giants, and warlords (wins 3–6).', SC.ENEMY_RUNGS.B),
     group('Rung C — Commanders', 'The Dead Three and archfiends (wins 7–10).', SC.ENEMY_RUNGS.C),
-    group('Rung D — Archfiend', 'The 12th-win final boss — Tiamat and Asmodeus rotate for replay variety.', SC.ENEMY_RUNGS.D));
+    group('Rung D — Archfiend', 'The 12th-win final boss — Tiamat and Asmodeus rotate for replay variety.', SC.ENEMY_RUNGS.D),
+    treasureSection);
 }
 async function swordCoastDeckDetail(slug) {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
