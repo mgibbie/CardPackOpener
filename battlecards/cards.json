@@ -95032,7 +95032,8 @@
         ]
       },
       "description": "Quest: Play 3 Pirates.\nReward: Draw a weapon.",
-      "set": "hsx"
+      "set": "hsx",
+      "collectible": false
     },
     {
       "id": "rise_to_the_occasion",
@@ -95057,7 +95058,8 @@
         ]
       },
       "description": "Quest: Play 3 different 1-Cost cards.\nReward: Equip a 1/4 Light's Justice.",
-      "set": "hsx"
+      "set": "hsx",
+      "collectible": false
     },
     {
       "id": "scavenger_drake",
@@ -197220,7 +197222,7 @@
       "cost": 1,
       "rarity": "legendary",
       "set": "STORMWIND",
-      "collectible": true,
+      "collectible": false,
       "description": "Questline: Draw 4 cards in one turn.\nReward: Reduce the Cost of the cards drawn by (1).",
       "keywords": [
         "quest"
@@ -209201,7 +209203,7 @@
       "cardClass": "warlock",
       "rarity": "legendary",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Shadow",
       "description": "Draw 3 cards. They are Temporary.",
       "effects": [
@@ -217289,7 +217291,7 @@
       "cardClass": "death_knight",
       "rarity": "legendary",
       "set": "PLACEHOLDER_202204",
-      "collectible": true,
+      "collectible": false,
       "tribe": "Shadow",
       "description": "Fill your board with random Undead.",
       "effects": [
@@ -224407,7 +224409,8 @@
             "health": 1
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "story_of_galvadon",
@@ -224559,7 +224562,8 @@
             "target": "friendly-creatures"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "the_last_kaleidosaur_r5",
@@ -224596,7 +224600,8 @@
             "target": "friendly-creature"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "sea_shanty",
@@ -224898,7 +224903,8 @@
             "fromDeck": true
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "elekk_mount",
@@ -225143,7 +225149,8 @@
             "target": "self"
           }
         ]
-      }
+      },
+      "collectible": false
     },
     {
       "id": "sensory_deprivation",
@@ -226751,7 +226758,8 @@
       },
       "keywords": [
         "quest"
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "fire_plumes_heart_ql",
@@ -226779,7 +226787,8 @@
       },
       "keywords": [
         "quest"
-      ]
+      ],
+      "collectible": false
     },
     {
       "id": "char",
