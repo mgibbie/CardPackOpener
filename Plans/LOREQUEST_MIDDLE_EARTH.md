@@ -97,7 +97,9 @@ share GW but split rogue-evasion vs. priest-lifegain.)*
   you've walked deep into Middle-earth.
 - **Class = "any":** because he's 5-color, his loot **buckets draw from ALL classes** (the reward for the
   hardest hero to unlock). Deck stays a 10-card singleton like the others.
-- **Hero power — Ring the Ring** *(placeholder name)* / see table below.
+- **Hero power — "Ho! Merry Dol!"** (loot: draw a card, then discard one). Deliberately **modest** — a
+  card-neutral smoother that helps a 5-color deck hit its colors, NOT a bomb. His real reward is
+  **all-bucket loot access**, so the power stays fair. (Earlier "draw + face-immunity" was too strong.)
 
 **Unique hero powers (decided with the user — each hero gets its OWN, not a class-default; the class
 still keys which loot BUCKETS are offered).** ~2-mana, once/turn, slot-0:
@@ -114,7 +116,7 @@ still keys which loot BUCKETS are offered).** ~2-mana, once/turn, slot-0:
 | Galadriel | **Gift of Lórien** — Summon a 1/1 Elf with Elusive. |
 | Théoden | **Forth Eorlingas!** — Give your creatures +1/+0 this turn. |
 | Elrond | **Rivendell's Grace** — Restore 2 health and scry 1. |
-| Tom Bombadil 🔒 | **Fear No Ring** — Draw a card; your hero can't lose health next turn (Ring-proof). |
+| Tom Bombadil 🔒 | **Ho! Merry Dol!** — Draw a card, then discard a card (loot). |
 
 **Enemy hero powers — EVERY one of the 27 enemies gets its OWN unique signature power** (decided with the
 user; no class-defaults). These are the enemy's whole "loot advantage" — since enemies are otherwise
