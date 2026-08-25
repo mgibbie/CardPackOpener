@@ -72,7 +72,7 @@ ok('treasurePool returns DUELS treasures + The One Ring', ME.treasurePool(cardsB
 // leaking into the shared (heist/tombs/duels) treasure pool (treasure:false).
 { const pool = ME.treasurePool(cardsById);
   const hobT = Object.values(cardsById).filter(d => d.meTreasure && d.id.startsWith('me_treasure_'));
-  ok('13 Hobbit treasures (neutral, no rarity, uncollectible)', hobT.length === 13
+  ok('20 Hobbit treasures (neutral, no rarity, uncollectible)', hobT.length === 20
     && hobT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [hobT.length, hobT.filter(t => t.rarity).map(t => t.id)]);
   ok('Hobbit treasures are in the ME pool but treasure:false (no cross-mode leak)', hobT.every(t => pool.some(d => d.id === t.id) && t.treasure === false)); }
 ok('The Master of Lake-town is a Rung A enemy with a 30-card deck', ME.ENEMY_RUNGS.A.includes('The Master of Lake-town') && ME.deckOf(cardsById, 'The Master of Lake-town').length === 30 && new Set(ME.deckOf(cardsById, 'The Master of Lake-town')).size === 15);
