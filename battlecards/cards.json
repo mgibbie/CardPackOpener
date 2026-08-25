@@ -276010,6 +276010,1012 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ltr_boromir_warden",
+      "name": "Boromir, Warden of the Tower",
+      "set": "LTR",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Soldier",
+      "description": "Taunt. Battlecry: Give your other creatures +0/+2.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 0,
+          "health": 2,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ltr_eomer",
+      "name": "Éomer of the Riddermark",
+      "set": "LTR",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "description": "Rush. Battlecry: Give your creatures +1/+0.",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ltr_assault_osgiliath",
+      "name": "Assault on Osgiliath",
+      "set": "LTR",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 3 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ltr_ringsight",
+      "name": "Ringsight",
+      "set": "LTR",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Scry 3, then draw a card.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 3
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ltr_doors_of_durin",
+      "name": "Doors of Durin",
+      "set": "LTR",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "druid",
+      "colors": [],
+      "type": "artifact",
+      "cost": 1,
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ltc_legolas_greenleaf",
+      "name": "Legolas Greenleaf",
+      "set": "LTC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "hunter",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf Archer",
+      "description": "Elusive. Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "ltc_gimli_caves",
+      "name": "Gimli of the Glittering Caves",
+      "set": "LTC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Dwarf Warrior",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "ltc_fell_the_mighty",
+      "name": "Fell the Mighty",
+      "set": "LTC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Destroy all enemy creatures.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ltc_deep_analysis",
+      "name": "Deep Analysis",
+      "set": "LTC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Draw two cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ltc_marshals_anthem",
+      "name": "Marshal's Anthem",
+      "set": "LTC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+1."
+    },
+    {
+      "id": "hob_thranduil_liege",
+      "name": "Thranduil, Sindarin Liege",
+      "set": "HOB",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Elf Noble",
+      "description": "Elusive. Battlecry: Freeze an enemy creature.",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "hob_beorn_fierce",
+      "name": "Beorn the Fierce",
+      "set": "HOB",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "druid",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Bear Warrior",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ]
+    },
+    {
+      "id": "hob_eagles_coming",
+      "name": "The Eagles Are Coming!",
+      "set": "HOB",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "instant",
+      "cost": 5,
+      "description": "Summon two 3/3 Eagles with Rush and Elusive.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Great Eagle",
+          "tribe": "Bird",
+          "keywords": [
+            "rush",
+            "elusive"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hob_gathering_darkness",
+      "name": "Gathering of Darkness",
+      "set": "HOB",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Summon two 2/2 Shades with Deathtouch. Deal 2 damage to your hero.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 2,
+          "name": "Shade",
+          "tribe": "Spirit",
+          "keywords": [
+            "deathtouch"
+          ]
+        },
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "own-hero"
+        }
+      ]
+    },
+    {
+      "id": "hob_forest_gate",
+      "name": "Through the Forest Gate",
+      "set": "HOB",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "druid",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Gain two Mana Crystals this turn and draw a card.",
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "hoc_gandalf_shadowsfoe",
+      "name": "Gandalf, Shadow's Foe",
+      "set": "HOC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Wizard",
+      "description": "Battlecry: Deal 2 damage to all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "hoc_celeborn_wise",
+      "name": "Celeborn the Wise",
+      "set": "HOC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "druid",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 6,
+      "tribe": "Elf Noble",
+      "description": "Taunt. Battlecry: Give your other creatures +1/+1.",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ]
+    },
+    {
+      "id": "hoc_banishing_light",
+      "name": "Banishing Light",
+      "set": "HOC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "hoc_dragons_desire",
+      "name": "Dragon's Desire",
+      "set": "HOC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 2,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "hoc_lorien_revealed",
+      "name": "Lórien Revealed",
+      "set": "HOC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Draw three cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "afr_delina_wildmage",
+      "name": "Delina, Wild Mage",
+      "set": "AFR",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Wizard",
+      "description": "Battlecry: Deal 3 damage split among random enemies.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "afr_icingdeath",
+      "name": "Icingdeath, Frost Tyrant",
+      "set": "AFR",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "creature",
+      "cost": 6,
+      "attack": 5,
+      "health": 5,
+      "tribe": "Dragon",
+      "description": "Battlecry: Freeze all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "afr_magic_missile",
+      "name": "Magic Missile",
+      "set": "AFR",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 2,
+      "description": "Deal 3 damage split among random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "afr_warlock_class",
+      "name": "Warlock Class",
+      "set": "AFR",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 2,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "own-hero"
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card and deal 1 damage to your hero."
+    },
+    {
+      "id": "afr_dragons_fire",
+      "name": "Dragon's Fire",
+      "set": "AFR",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "hunter",
+      "colors": [],
+      "type": "instant",
+      "cost": 3,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "afc_lorcan_collector",
+      "name": "Lorcan, Warlock Collector",
+      "set": "AFC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Devil Warlock",
+      "description": "Battlecry: Summon a 3/3 Demon with Deathtouch.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Collected Demon",
+          "tribe": "Demon",
+          "keywords": [
+            "deathtouch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "afc_atarka_worldrender",
+      "name": "Atarka, World Render",
+      "set": "AFC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 8,
+      "attack": 8,
+      "health": 6,
+      "tribe": "Dragon",
+      "description": "Trample. Battlecry: Deal 4 damage to an enemy creature.",
+      "keywords": [
+        "trample",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "afc_terminate",
+      "name": "Terminate",
+      "set": "AFC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "instant",
+      "cost": 2,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "afc_serum_visions",
+      "name": "Serum Visions",
+      "set": "AFC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 1,
+      "description": "Scry 2, then draw a card.",
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "afc_rishkars_expertise",
+      "name": "Rishkar's Expertise",
+      "set": "AFC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "druid",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Draw three cards.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "clb_shadowheart_justiciar",
+      "name": "Shadowheart, Dark Justiciar",
+      "set": "CLB",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "priest",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Human Cleric",
+      "description": "Lifesteal. Battlecry: Restore 4 Health to your hero.",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "clb_wyll_frontiers",
+      "name": "Wyll, Blade of Frontiers",
+      "set": "CLB",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Warlock",
+      "description": "Battlecry: Summon a 4/4 Fiend with Rush.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Bound Fiend",
+          "tribe": "Demon",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clb_murder",
+      "name": "Murder",
+      "set": "CLB",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "instant",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "clb_mizzium_mortars",
+      "name": "Mizzium Mortars",
+      "set": "CLB",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Deal 4 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "clb_stoneskin",
+      "name": "Stoneskin",
+      "set": "CLB",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 0,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give a friendly creature +0/+2."
+    },
+    {
+      "id": "fin_barret_wallace",
+      "name": "Barret Wallace",
+      "set": "FIN",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Soldier",
+      "description": "Battlecry: Deal 3 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "fin_tifa_lockhart",
+      "name": "Tifa Lockhart",
+      "set": "FIN",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "demon_hunter",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Monk",
+      "description": "Rush. Windfury.",
+      "keywords": [
+        "rush",
+        "windfury"
+      ]
+    },
+    {
+      "id": "fin_slash_of_light",
+      "name": "Slash of Light",
+      "set": "FIN",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "instant",
+      "cost": 2,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "fin_aerith_rescue",
+      "name": "Aerith Rescue Mission",
+      "set": "FIN",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "priest",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Restore 8 Health to your hero and give a friendly creature Taunt.",
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "fin_world_map",
+      "name": "World Map",
+      "set": "FIN",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "artifact",
+      "cost": 2,
+      "description": "{T}: Draw a card.",
+      "tapAbility": {
+        "text": "Draw a card.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "fic_cyan_samurai",
+      "name": "Cyan, Vengeful Samurai",
+      "set": "FIC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Human Samurai",
+      "description": "Swift. Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "fic_shadow_assassin",
+      "name": "Shadow, Mysterious Assassin",
+      "set": "FIC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 5,
+      "health": 2,
+      "tribe": "Human Rogue",
+      "description": "Stealth. Deathtouch.",
+      "keywords": [
+        "stealth",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "fic_dispatch",
+      "name": "Dispatch",
+      "set": "FIC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "instant",
+      "cost": 2,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "fic_cleansing_nova",
+      "name": "Cleansing Nova",
+      "set": "FIC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "priest",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 4 damage to all enemy creatures and restore 4 Health to your hero.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "fic_heros_blade",
+      "name": "Hero's Blade",
+      "set": "FIC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ]
     }
   ]
 }
