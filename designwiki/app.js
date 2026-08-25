@@ -1581,13 +1581,13 @@ function meDeckCards(cards, ch) {
     .sort((a, b) => (b.id.endsWith('_sig') - a.id.endsWith('_sig'))
       || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
 }
-function meTile(ch, deck, clsName, pw) {
+function meTile(ch, deck, clsName, pw, colors) {
   const canvas = CardArt.drawCardFace(lqSig(deck));
   const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
   return h('a', { class: 'wiki-card lq-tile', href: '#/middle-earth/' + lqSlug(ch), title: pw ? `${pw.name}: ${pw.text}` : ch },
     img,
     h('div', { class: 'lq-name' }, ch),
-    h('div', { class: 'lq-sub' }, h('span', { class: 'lq-cls' }, clsName)));
+    h('div', { class: 'lq-sub' }, colorPips(colors), h('span', { class: 'lq-cls' }, clsName)));
 }
 async function middleEarthView() {
   content.replaceChildren(h('h1', null, 'Lorequest: Middle-earth'), h('p', { class: 'muted' }, 'Loading decks…'));
@@ -1605,7 +1605,7 @@ async function middleEarthView() {
       h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
       h('p', { class: 'muted' }, blurb)),
     h('div', { class: 'card-grid size-small' },
-      ...names.map(ch => meTile(ch, decks[ch], clsName(ME.classOf(ch)), ME.powerOf(ch)))));
+      ...names.map(ch => meTile(ch, decks[ch], clsName(ME.classOf(ch)), ME.powerOf(ch), ME.colorsOf(ch)))));
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
@@ -1647,6 +1647,7 @@ async function middleEarthDeckDetail(slug) {
       h('div', { class: 'lp-detail-info' },
         h('h1', null, ch),
         h('div', { class: 'lp-detail-meta' },
+          colorPips(ME.colorsOf(ch)),
           h('span', { class: 'lq-cls' }, clsName),
           isEnemy ? h('span', { class: 'lq-cls' }, 'Rung ' + rung) : null,
           h('span', { class: 'lp-count' }, isEnemy ? (deck.length + ' cards · 2 copies each = 30-card deck') : (deck.length + '-card singleton starter deck'))),

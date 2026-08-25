@@ -45,6 +45,25 @@ export const classOf = ch => CLASS_OF[ch] || 'neutral';
 export const isEnemy = ch => ENEMIES.includes(ch);
 export const isHero = ch => HEROES.includes(ch) || SECRET_HEROES.includes(ch);
 
+// each character's MTG colour identity (from the source Scryfall cards) — the DECK cards are colourless
+// class cards, so this drives the wiki's mana-symbol badges (parallel to Lorequest's per-deck colours).
+export const COLOR_IDENTITY = {
+	// heroes
+	Aragorn: ['G', 'W'], Gandalf: ['U', 'R'], Legolas: ['G'], Gimli: ['R'], Frodo: ['G', 'W'],
+	Samwise: ['G', 'W'], 'Éowyn': ['R', 'W'], Galadriel: ['G', 'U'], 'Théoden': ['R', 'W'], Elrond: ['G', 'U'],
+	'Tom Bombadil': ['W', 'U', 'B', 'R', 'G'],
+	// enemies
+	'Bill Ferny': ['U'], Lotho: ['B', 'W'], 'Gríma Wormtongue': ['B'], 'Grishnákh': ['R'],
+	Gorbag: ['B'], Shagrat: ['B', 'R'], 'Old Man Willow': ['B', 'G'], 'Tom, Bert & William': ['B', 'G'],
+	'The Chief Warg': ['B', 'G'], 'Uglúk': ['B', 'R'], 'Mauhúr': ['B', 'R'], Gothmog: ['B'],
+	'The Watcher in the Water': ['U'], 'The Mouth of Sauron': ['B', 'U'], 'King of the Oathbreakers': ['B', 'W'],
+	Shelob: ['B', 'G'], 'The Great Goblin': ['B', 'R'], Bolg: ['B', 'R'], Saruman: ['U'],
+	'The Balrog': ['B', 'R'], 'Witch-king of Angmar': ['B'], 'Sauron the Necromancer': ['B'],
+	Gollum: ['B', 'G'], Smaug: ['B', 'R'], Azog: ['B'],
+	'Sauron the Dark Lord': ['B', 'R', 'U'], 'Sauron the Lidless Eye': ['B', 'R'],
+};
+export const colorsOf = ch => COLOR_IDENTITY[ch] || [];
+
 // ── 38 unique hero powers ({ name, cost, text, effects }) — installed via each seat's `power` ──
 // Effects use the standard engine DSL; targeted powers (enemy-creature/friendly-creature/any) are
 // resolved by the UI (human) or ai.js (enemy), exactly like class-default powers.
