@@ -24,11 +24,25 @@ reuse names + art only, never WOTC rules text.
 | Win condition | **12 wins** | Clears the run (defeat Sauron as the 12th). |
 | Loss condition | **3 losses** | Ends the run. |
 | Enemy roster | **~21 enemies, split into RUNGS** | Which enemies can appear is gated by your win count. |
-| Growth | **Loot on each win** (buckets + milestone treasures) | Reuse Duels/Lorequest loot infra; this is how a 10-card deck catches a 30-card deck. |
+| Growth (per win) | **Spoils draft + alternating reward** | See the loot sequence below. This is how a 10-card deck catches a 30-card deck. |
 
-**The dungeon-run curve:** hero deck starts at 10 cards and *grows* as you win (draft a card / add a
-treasure each victory), while enemies scale in power by rung. This is the classic "start weak, snowball"
-dungeon shape — distinct from Duels' symmetric drafts.
+**Loot sequence — every win grants BOTH (decided with the user):**
+1. **Spoils of war** — pick **1 of 3 cards drawn from the vanquished enemy's own 15-card deck**, OR
+   take none. (Roguelike-deckbuilder flavor: you loot the fallen foe's arsenal — Uruk warbands, Nazgûl
+   tricks, etc. Each added card is +1 copy to your growing deck.)
+2. **Alternating aid — TREASURE / BUCKET, starting with a treasure:** win 1 → treasure, win 2 → bucket,
+   win 3 → treasure, … (odd wins = treasure, even wins = class **bucket**). Buckets are drawn from the
+   hero's **class** pool (§2). Reuse Duels/Lorequest `offerBuckets`/`rollBucket` + the DUELS treasure set.
+
+**Enemies are STATIC (decided with the user):** the whole Duels/Lorequest **win-parity** system — where
+the enemy gains buckets/treasures matched to your win count — is **removed for Middle-earth**. Each enemy
+is just its fixed **15×2 = 30-card deck + its one unique signature hero power** (§2). Difficulty scales by
+which RUNG you're facing, not by dynamic loot. (Simpler to build and to balance; the loot economy is
+entirely player-side.)
+
+**The dungeon-run curve:** hero deck starts at 10 and grows every win (spoils card + alternating
+treasure/bucket) while enemies get tougher by rung — the classic "start weak, snowball" shape, distinct
+from Duels' symmetric drafts.
 
 **Enemy tiering (the "some enemies only appear first" ask):** `enemyRosterFor(wins)` returns a
 rung-filtered pool:
@@ -61,6 +75,31 @@ Color drives the Magepunk **class** (hero power + which loot buckets/treasures a
 
 *(Two RW warriors, Éowyn & Théoden, differentiate as anti-wraith tempo vs. cavalry go-wide. Frodo/Sam
 share GW but split rogue-evasion vs. priest-lifegain.)*
+
+**Unique hero powers (decided with the user — each hero gets its OWN, not a class-default; the class
+still keys which loot BUCKETS are offered).** ~2-mana, once/turn, slot-0:
+
+| Hero | Hero power (name — effect) |
+|---|---|
+| Aragorn | **Elessar** — Give a friendly creature +1/+1. |
+| Gandalf the Grey | **You Shall Not Pass!** — Freeze an enemy creature. |
+| Legolas | **Elf-shot** — Deal 1 damage to any target. |
+| Gimli | **And My Axe!** — Give a friendly creature +2/+0. |
+| Frodo | **Slip Away** — Give a friendly creature Elusive. |
+| Samwise | **Don't You Leave Him** — Restore 3 health to a creature or your hero. |
+| Éowyn | **I Am No Man** — Deal 2 damage to an enemy creature. |
+| Galadriel | **Gift of Lórien** — Summon a 1/1 Elf with Elusive. |
+| Théoden | **Forth Eorlingas!** — Give your creatures +1/+0 this turn. |
+| Elrond | **Rivendell's Grace** — Restore 2 health and scry 1. |
+
+**Enemy hero powers — EVERY one of the 21 enemies gets its OWN unique signature power** (decided with the
+user; no class-defaults). These are the enemy's whole "loot advantage" — since enemies are otherwise
+**STATIC** (see §1: no win-parity buckets/treasures), the signature power is what gives each foe teeth and
+personality. Examples: Balrog **Flame of Udûn** — Deal 2 to all enemy creatures; Witch-king **Morgul
+Blade** — a creature you damage this turn can't be healed; Shelob **Ensnare** — Freeze a creature and
+give it −1/−0; Saruman **Voice of Isengard** — Summon a 1/1 Uruk; Gríma **Poison Words** — an opponent
+discards a random card; Sauron **The Eye** — Draw a card, then each opponent discards one. **All 31 powers
+(10 heroes + 21 enemies) enumerated in Phase A.**
 
 ---
 
@@ -138,9 +177,13 @@ treasure/curse rather than per-card:
 
 lorequest.js is a 76-line data+helper module; Middle-earth mirrors it as **`battlecards/middleearth.js`**:
 - `HEROES` (10) / `ENEMIES` (21) / `ENEMY_RUNGS` (A/B/C/D arrays + `FIRST_ONLY` set) / `CLASS_OF`
-  (hero→class) / `heroChoices()` (returns all 10) / `deckOf(cardsById, ch)` (hero → 10 singleton;
-  enemy → 2×15) / `enemyRosterFor(wins)` (rung-gated) / `generateEnemy(rng, wins, avoidId)` /
-  `WINS_TO_CLEAR=12` / `LOSSES_TO_END=3` / `TREASURE_WINS` / `enemyLoot(wins)`.
+  (hero→class, drives buckets) / `HERO_POWER` (all 31 characters → their unique power id) /
+  `heroChoices()` (returns all 10) / `deckOf(cardsById, ch)` (hero → 10 singleton; enemy → 2×15) /
+  `enemyRosterFor(wins)` (rung-gated) / `generateEnemy(rng, wins, avoidId)` / `WINS_TO_CLEAR=12` /
+  `LOSSES_TO_END=3`.
+- **NO parity:** drop Lorequest's `TREASURE_WINS`/`enemyLoot`/parity budget entirely — enemies are static.
+  Player rewards each win: `spoilsChoices(rng, defeatedEnemy)` (3 from the fallen deck) + an alternating
+  `treasure`(odd win)/`bucket`(even win) via `rewardForWin(wins)`. Buckets come from the hero's class.
 - **game.js** wiring at ALL run hooks (the Lorequest block ~game.js 5751-6008 is the template):
   `?middleearth=1` route + menu button, `MIDDLEEARTH_KEY='magepunk_middleearth_v1'`,
   `middleearthRunMode` flag (added LAST in the exclusion chain), load/save/clear, hero-power slot-0,
@@ -183,13 +226,23 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 
 ---
 
-## 9. Open decisions (confirm before Phase A)
+## 9. Decisions
 
-1. **Hero deck growth** — how does a 10-card hero deck keep pace with 30-card enemies? Proposed:
-   loot-a-card + milestone-treasures on each win (dungeon snowball). Confirm the loot model.
-2. **Final boss** — one fixed Sauron, or rotate #20/#21 for replay? (Proposed: rotate.)
-3. **The One Ring mechanic** — in for v1, or defer to v2? (Proposed: defer.)
-4. **Roster swaps** — any must-have characters missing (Bilbo, Smaug — no MTG Smaug; Tom Bombadil as a
-   secret hero?), or any of the 31 listed you want cut/replaced?
-5. **Class assignments** — the hero→class map (drives hero powers/loot buckets) — happy with the table
-   in §2, or re-theme any?
+**RESOLVED with the user (2026-08-24):**
+1. ✅ **Hero deck growth** — every win grants BOTH: (a) **spoils draft** — pick 1 of 3 cards drawn from
+   the vanquished enemy's own 15-card deck (or take none), and (b) **alternating aid** — TREASURE on odd
+   wins / class **BUCKET** on even wins, starting with a treasure (win 1). See §1 loot sequence.
+2. ✅ **Enemies are STATIC** — the Duels/Lorequest **win-parity** budget (enemy matches your buckets/
+   treasures) is **removed**. Each enemy = fixed 30-card deck + one unique signature hero power; difficulty
+   scales by RUNG only. See §1 + §2.
+3. ✅ **Hero powers are unique per character** — all **31** (10 heroes + 21 enemies) get their OWN
+   signature power (no class-defaults). Class is retained only to pick which loot BUCKETS a hero drafts.
+   See §2 table (10 heroes enumerated; 21 enemy powers enumerated in Phase A).
+4. ✅ **Final boss** — **rotate two Saurons** (#20/#21) for replay variety. (In roster §4.)
+5. ✅ **The One Ring mechanic** — **deferred to v2** (Phase D stretch goal; base run doesn't block on it).
+
+**STILL OPEN (confirm before Phase A):**
+6. **Roster swaps** — any must-have characters missing (Bilbo; Tom Bombadil as a secret hero? no MTG
+   Smaug exists), or any of the 31 listed you want cut/replaced?
+7. **Class assignments** — the hero→class map in §2 (drives which loot buckets each hero drafts) — happy
+   with it, or re-theme any?
