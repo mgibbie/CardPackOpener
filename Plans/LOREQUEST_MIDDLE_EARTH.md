@@ -269,6 +269,14 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 - **Phase A — Cards + art:** author ~515 cards (11 heroes ×10 + 27 enemies ×15) into cards.json with
   `meDeck` tags + signatures; source + deploy all art. Test `middleearth_decks_test.mjs` (11 heroes =10,
   27 enemies =15, legendary sig, plays-clean, 6+ types/deck).
+  - ✅ **Deck cards DONE (2026-08-25):** 10 hero decks (100 cards, colorless class cards, commit b3ed9358)
+    + **27 enemy decks (405 cards, commit 627f020c)** = **505 cards** in cards.json, all colorless
+    non-collectible CLASS cards (`meDeck` + `meSide`), all art deployed to magepunk-cardart.pages.dev.
+    Tests `pool_middleearth_heroes_test.mjs` (278) + `pool_middleearth_enemies_test.mjs` (1012); suite
+    431/431 green. Enemy→class map locked (warlock 8 / warrior 6 / death_knight 5 / rogue 3 / hunter 2 /
+    mage 2 / druid 1).
+  - ⏳ **Remaining Phase A:** the **38 unique HERO-POWER cards** (`type:'heropower'`, 11 heroes + 27
+    enemies) — powers enumerated in §2; author + wire into the HERO_POWER map with Phase B.
 - **Phase B — Run module:** `middleearth.js` + game.js hooks + `?middleearth=1` + boot/run blocks +
   loot growth. Test `middleearth_run_test.mjs` (rung gating, 12W/3L, enemy-gen, engine-boot).
 - **Phase C — Surfaces:** in-game + start.html menus, spectate maps, designwiki section, news regen,
