@@ -74207,6 +74207,15 @@
       "description": "An Advance dungeon. Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect; reach the final room for the payoff."
     },
     {
+      "id": "amber_temple",
+      "name": "Amber Temple",
+      "type": "dungeon",
+      "cost": 0,
+      "collectible": false,
+      "cardClass": "neutral",
+      "description": "An Advance dungeon (Curse of Strahd’s vault of dark gifts). Each Advance ventures to the next room (branching rooms are a choice) and triggers its effect — several vestiges grant power at a cost in life; reach the final room for the payoff."
+    },
+    {
       "id": "exuberant_conspirator",
       "name": "Exuberant Conspirator",
       "type": "creature",

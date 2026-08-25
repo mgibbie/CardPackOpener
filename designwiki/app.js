@@ -352,12 +352,15 @@ const colorsOf = c => Array.isArray(c.colors) ? c.colors : (c.colors ? String(c.
 const categoryColorsOf = c => c.type === 'land' ? [] : colorsOf(c);
 const displayColorsOf = c => c.type === 'land' ? ['C'] : colorsOf(c);
 const colorName = code => COLOR_NAMES[code] || code;
-const colorChip = (code, card) => h('a', { class: 'tag-chip color', href: card?.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code));
+const colorChip = (code, card) => h('a', { class: 'tag-chip color', title: colorName(code), href: card?.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, manaSym(code, 13), ' ', colorName(code));
 // small WUBRG(C) mana pips for the Land Pools views
 const COLOR_PIP_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'];
+// authentic MTG mana symbols (Andrew Gioia's Mana font — loaded in index.html), not plain colour dots
+const MS_OF = { W: 'ms-w', U: 'ms-u', B: 'ms-b', R: 'ms-r', G: 'ms-g', C: 'ms-c' };
+const manaSym = (code, size = 15) => h('i', { class: 'ms ms-cost ' + (MS_OF[code] || 'ms-c'), title: colorName(code), style: `font-size:${size}px;vertical-align:-2px;margin:0 1px;` });
 function colorPips(cols) {
   const use = COLOR_PIP_ORDER.filter(c => (cols || []).includes(c));
-  return h('span', { class: 'lp-pips' }, ...(use.length ? use : ['C']).map(c => h('span', { class: 'pip pip-' + c, title: colorName(c) })));
+  return h('span', { class: 'lp-pips' }, ...(use.length ? use : ['C']).map(c => manaSym(c)));
 }
 // derive a land's pool set + colour identity + tier from its taps
 function landInfo(c, allCards) {
@@ -709,7 +712,7 @@ async function cardDetail(id) {
   const metaClassValue = metaSystem ? metaSystem[0] : canonClass(c);
   const metaClassLabel = metaSystem ? metaSystem[1] : CardArt.classNameOf(c.cardClass);
   const colorMeta = displayColorsOf(c).filter(code => COLOR_NAMES[code]).map((code, i) =>
-    [i ? ' / ' : ' · ', h('a', { href: c.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, colorName(code))]).flat();
+    [i ? ' / ' : ' · ', h('a', { title: colorName(code), href: c.type === 'land' ? '#/cards?class=__land__' : '#/cards?color=' + encodeURIComponent(code) }, manaSym(code, 13), ' ', colorName(code))]).flat();
   content.replaceChildren(
     h('div', { class: 'card-page' },
       h('div', { class: 'card-page-face' }, face),
