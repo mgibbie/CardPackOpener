@@ -211,15 +211,20 @@ fight yourself" guard as `generateEnemy`.
 
 ---
 
-## 5. The One Ring (optional signature dungeon mechanic)
+## 5. The One Ring — the "Tempt" mechanic ✅ DONE (2026-08-25, commits f60985a4 + 17bc1479)
 
-LTR's flavor hook worth stealing for the dungeon-run: **"The Ring tempts you."** Proposed as a run-wide
-treasure/curse rather than per-card:
-- On certain wins the run offers **the One Ring** as a treasure: a powerful passive (e.g. your hero
-  gains Stealth/Elusive + a draw each turn) that also **accrues corruption** (a small escalating
-  downside — Sauron's decks get +1 card quality per corruption, or the Nazgûl appear a rung early).
-- Frodo/Sam heroes interact with it (bear it safely longer); most heroes are tempted.
-- **Status: OPTIONAL / v2.** Ships as a stretch goal so the base run doesn't block on it.
+Built as MTG's **"The Ring tempts you"** (all-upside, NOT the earlier corruption-curse idea — the
+faithful version is more fun). A general engine mechanic (structural twin of Advance/Venture):
+- Per-player **`p.ring`** (level 0–4) + **`p.ringBearer`** (uid). The **`{type:'tempt'}`** effect levels
+  the Ring once (cap 4) and lets you (re)choose a Ring-bearer among your creatures (auto if 1, none →
+  level-only). Four CUMULATIVE tiers (faithful-adaptation to our no-block combat, user-approved):
+  **L1** bearer gains Stealth · **L2** on its attack, draw then discard · **L3** Deathtouch + +1/+1 ·
+  **L4** when it damages a hero, each opponent loses 3. Statics ride the bearer via `recomputeAuras`
+  (auto-lapse on change); a bearer leaving play drops the designation but keeps the level. Serializes
+  free. Pick modal + AI bearer choice + keyword tooltips wired. Test `ring_test.mjs` (47 checks).
+- **Middle-earth hooks:** Frodo's & Gollum's *One Ring to Rule Them All* tempt at each turn-start; the
+  villain *The One Ring* artifacts tempt on tap; a draftable **The One Ring** treasure (`me_the_one_ring`,
+  `meTreasure`) tempts on play + on tap, and is in `treasurePool` (offered in the alternating reward).
 
 ---
 
@@ -294,7 +299,8 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
   meDeck/meSide + middleearth.js live) with app.js `?v=` bumped; news regen (gen-magepunknews GAME_FILES
   += lorequest/middleearth; news.json 1150→1154 with the 4 Middle-earth releases). Full suite 432/432.
   **→ THE MODE IS SHIPPED.**
-- **Phase D (optional) — The One Ring** corruption mechanic. (Not built; v2 stretch.)
+- **Phase D — The One Ring (Tempt mechanic):** ✅ **DONE (2026-08-25).** Built MTG-faithful (all-upside,
+  not corruption). See §5. Engine mechanic + Middle-earth wiring + tests; full suite 433/433.
 
 ---
 
