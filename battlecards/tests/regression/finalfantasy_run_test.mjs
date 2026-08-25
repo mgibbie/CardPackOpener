@@ -70,7 +70,7 @@ ok('treasurePool returns DUELS treasures', FF.treasurePool(cardsById).length > 0
 // treasure:false so they don't leak into the shared heist/tombs/duels pools.
 { const pool = FF.treasurePool(cardsById);
   const ffT = Object.values(cardsById).filter(d => d.ffTreasure && d.id.startsWith('ff_treasure_'));
-  ok('15 FF treasures (neutral, no rarity, uncollectible)', ffT.length === 15
+  ok('20 FF treasures (neutral, no rarity, uncollectible)', ffT.length === 20
     && ffT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [ffT.length, ffT.filter(t => t.rarity).map(t => t.id)]);
   ok('FF treasures are in the FF pool but treasure:false (no cross-mode leak)', ffT.every(t => pool.some(d => d.id === t.id) && t.treasure === false)); }
 

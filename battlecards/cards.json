@@ -273900,409 +273900,6 @@
       "ffSide": "enemy"
     },
     {
-      "id": "ff_treasure_ultima_weapon",
-      "name": "Ultima Weapon",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "weapon",
-      "cost": 4,
-      "attack": 6,
-      "durability": 2,
-      "description": "Swift. The ultimate blade.",
-      "keywords": [
-        "first_strike"
-      ]
-    },
-    {
-      "id": "ff_treasure_genji_glove",
-      "name": "Genji Glove",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "weapon",
-      "cost": 3,
-      "attack": 3,
-      "durability": 3,
-      "description": "Windfury (your hero can attack twice — dual wield).",
-      "keywords": [
-        "windfury"
-      ]
-    },
-    {
-      "id": "ff_treasure_lion_heart",
-      "name": "Lion Heart",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "weapon",
-      "cost": 3,
-      "attack": 4,
-      "durability": 2,
-      "description": "Swift. Squall's gunblade.",
-      "keywords": [
-        "first_strike"
-      ]
-    },
-    {
-      "id": "ff_treasure_conformer",
-      "name": "Conformer Shuriken",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "weapon",
-      "cost": 2,
-      "attack": 3,
-      "durability": 2,
-      "description": "After your hero attacks, gain a Coin.",
-      "ongoing": {
-        "on": "hero-attacks",
-        "effects": [
-          {
-            "type": "gain-coin",
-            "value": 1
-          }
-        ]
-      }
-    },
-    {
-      "id": "ff_treasure_aettir_priwen",
-      "name": "Aettir and Priwen",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "weapon",
-      "cost": 3,
-      "attack": 3,
-      "durability": 3,
-      "description": "After your hero attacks, gain 2 Armor.",
-      "ongoing": {
-        "on": "hero-attacks",
-        "effects": [
-          {
-            "type": "armor",
-            "value": 2
-          }
-        ]
-      }
-    },
-    {
-      "id": "ff_treasure_ring_of_the_lucii",
-      "name": "Ring of the Lucii",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 4,
-      "description": "Battlecry: Deal 3 damage to all enemy creatures (Armiger).",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "damage",
-          "value": 3,
-          "target": "enemy-creatures"
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_the_regalia",
-      "name": "The Regalia",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 3,
-      "description": "{T}: Draw two cards.",
-      "tapAbility": {
-        "text": "Draw two cards.",
-        "effects": [
-          {
-            "type": "draw",
-            "value": 2
-          }
-        ]
-      }
-    },
-    {
-      "id": "ff_treasure_elixir",
-      "name": "Elixir",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 2,
-      "description": "Battlecry: Gain 8 life.",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 8,
-          "target": "self"
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_ether",
-      "name": "Ether",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 1,
-      "description": "Battlecry: Gain two Mana Crystals this turn.",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "gain-mana",
-          "value": 2
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_lunatic_pandora",
-      "name": "Lunatic Pandora",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 5,
-      "description": "Battlecry: Spiritsummon a random Spirit.",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "options": [
-            {
-              "name": "Ifrit",
-              "attack": 3,
-              "health": 2,
-              "tribe": "Spirit",
-              "keywords": [
-                "rush"
-              ]
-            },
-            {
-              "name": "Shiva",
-              "attack": 3,
-              "health": 3,
-              "tribe": "Spirit",
-              "keywords": [
-                "elusive"
-              ]
-            },
-            {
-              "name": "Ramuh",
-              "attack": 4,
-              "health": 2,
-              "tribe": "Spirit"
-            },
-            {
-              "name": "Titan",
-              "attack": 2,
-              "health": 5,
-              "tribe": "Spirit",
-              "keywords": [
-                "taunt"
-              ]
-            },
-            {
-              "name": "Bahamut",
-              "attack": 5,
-              "health": 5,
-              "tribe": "Spirit",
-              "keywords": [
-                "trample"
-              ]
-            },
-            {
-              "name": "Phoenix",
-              "attack": 3,
-              "health": 3,
-              "tribe": "Spirit",
-              "keywords": [
-                "reborn"
-              ]
-            },
-            {
-              "name": "Odin",
-              "attack": 4,
-              "health": 3,
-              "tribe": "Spirit",
-              "keywords": [
-                "deathtouch"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_phoenix_down",
-      "name": "Phoenix Down",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 3,
-      "description": "Battlecry: Summon a 3/3 Phoenix with Reborn.",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 3,
-          "health": 3,
-          "name": "Phoenix",
-          "tribe": "Spirit",
-          "keywords": [
-            "reborn"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_coveted_jewel",
-      "name": "Coveted Jewel",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 3,
-      "description": "{T}: Draw three cards.",
-      "tapAbility": {
-        "text": "Draw three cards.",
-        "effects": [
-          {
-            "type": "draw",
-            "value": 3
-          }
-        ]
-      }
-    },
-    {
-      "id": "ff_treasure_instant_ramen",
-      "name": "Instant Ramen",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 1,
-      "description": "Battlecry: Gain 3 life and draw a card (a hearty Cup Noodles).",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "heal",
-          "value": 3,
-          "target": "self"
-        },
-        {
-          "type": "draw",
-          "value": 1
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_lunar_whale",
-      "name": "The Lunar Whale",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "artifact",
-      "cost": 4,
-      "description": "Battlecry: Summon a 4/4 with Rush.",
-      "keywords": [
-        "battlecry"
-      ],
-      "effects": [
-        {
-          "type": "summon",
-          "count": 1,
-          "attack": 4,
-          "health": 4,
-          "name": "Lunar Whale",
-          "tribe": "Construct",
-          "keywords": [
-            "rush"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "ff_treasure_ultima",
-      "name": "Ultima",
-      "set": "paper",
-      "collectible": false,
-      "colors": [],
-      "cardClass": "neutral",
-      "ffTreasure": true,
-      "treasure": false,
-      "type": "sorcery",
-      "cost": 3,
-      "description": "Deal 4 damage to all enemy creatures.",
-      "effects": [
-        {
-          "type": "damage",
-          "value": 4,
-          "target": "enemy-creatures"
-        }
-      ]
-    },
-    {
       "id": "sc_treasure_hand_of_vecna",
       "name": "Hand of Vecna",
       "set": "paper",
@@ -275893,6 +275490,526 @@
       "description": "{T}: Deal 2 damage to an enemy creature.",
       "colors": [],
       "cardClass": "hunter"
+    },
+    {
+      "id": "ff_treasure_ultima_weapon",
+      "name": "Ultima Weapon",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 4,
+      "attack": 6,
+      "durability": 2,
+      "description": "Swift. The ultimate blade.",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "ff_treasure_genji_glove",
+      "name": "Genji Glove",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 3,
+      "description": "Windfury (your hero can attack twice — dual wield).",
+      "keywords": [
+        "windfury"
+      ]
+    },
+    {
+      "id": "ff_treasure_lion_heart",
+      "name": "Lion Heart",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 4,
+      "durability": 2,
+      "description": "Swift. Squall's gunblade.",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "ff_treasure_conformer",
+      "name": "Conformer Shuriken",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 2,
+      "attack": 3,
+      "durability": 2,
+      "description": "After your hero attacks, gain a Coin.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ff_treasure_aettir_priwen",
+      "name": "Aettir and Priwen",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 3,
+      "description": "After your hero attacks, gain 2 Armor.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ff_treasure_ring_of_the_lucii",
+      "name": "Ring of the Lucii",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Deal 3 damage to all enemy creatures (Armiger).",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_the_regalia",
+      "name": "The Regalia",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw two cards.",
+      "tapAbility": {
+        "text": "Draw two cards.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "ff_treasure_elixir",
+      "name": "Elixir",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain 8 life.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 8,
+          "target": "self"
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_ether",
+      "name": "Ether",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "Battlecry: Gain two Mana Crystals this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_lunatic_pandora",
+      "name": "Lunatic Pandora",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 5,
+      "description": "Battlecry: Spiritsummon a random Spirit.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "options": [
+            {
+              "name": "Ifrit",
+              "attack": 3,
+              "health": 2,
+              "tribe": "Spirit",
+              "keywords": [
+                "rush"
+              ]
+            },
+            {
+              "name": "Shiva",
+              "attack": 3,
+              "health": 3,
+              "tribe": "Spirit",
+              "keywords": [
+                "elusive"
+              ]
+            },
+            {
+              "name": "Ramuh",
+              "attack": 4,
+              "health": 2,
+              "tribe": "Spirit"
+            },
+            {
+              "name": "Titan",
+              "attack": 2,
+              "health": 5,
+              "tribe": "Spirit",
+              "keywords": [
+                "taunt"
+              ]
+            },
+            {
+              "name": "Bahamut",
+              "attack": 5,
+              "health": 5,
+              "tribe": "Spirit",
+              "keywords": [
+                "trample"
+              ]
+            },
+            {
+              "name": "Phoenix",
+              "attack": 3,
+              "health": 3,
+              "tribe": "Spirit",
+              "keywords": [
+                "reborn"
+              ]
+            },
+            {
+              "name": "Odin",
+              "attack": 4,
+              "health": 3,
+              "tribe": "Spirit",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_phoenix_down",
+      "name": "Phoenix Down",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "Battlecry: Summon a 3/3 Phoenix with Reborn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Phoenix",
+          "tribe": "Spirit",
+          "keywords": [
+            "reborn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_coveted_jewel",
+      "name": "Coveted Jewel",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw three cards.",
+      "tapAbility": {
+        "text": "Draw three cards.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "ff_treasure_instant_ramen",
+      "name": "Instant Ramen",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "Battlecry: Gain 3 life and draw a card (a hearty Cup Noodles).",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_lunar_whale",
+      "name": "The Lunar Whale",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Summon a 4/4 with Rush.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Lunar Whale",
+          "tribe": "Construct",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_ultima",
+      "name": "Ultima",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Deal 4 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_wrecking_ball",
+      "name": "Wrecking Ball Arm",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 4,
+      "durability": 2,
+      "description": "Cleave (also hits the creatures beside your target).",
+      "keywords": [
+        "cleave"
+      ]
+    },
+    {
+      "id": "ff_treasure_monks_fist",
+      "name": "Monk's Fist",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 2,
+      "attack": 3,
+      "durability": 2,
+      "description": "Windfury (your hero can attack twice).",
+      "keywords": [
+        "windfury"
+      ]
+    },
+    {
+      "id": "ff_treasure_prima_vista",
+      "name": "The Prima Vista",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Draw two cards and gain 3 Armor.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "ff_treasure_the_falcon",
+      "name": "The Falcon, Airship Restored",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw a card and gain a Coin.",
+      "tapAbility": {
+        "text": "Draw a card and gain a Coin.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "ff_treasure_phantom_train",
+      "name": "Phantom Train",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "ffTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 5,
+      "description": "Battlecry: Summon a 5/4 Phantom Train with Taunt.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 5,
+          "health": 4,
+          "name": "Phantom Train",
+          "tribe": "Construct",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
     }
   ]
 }
