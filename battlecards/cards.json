@@ -236046,6 +236046,2754 @@
       ],
       "landSet": "Surtland",
       "collectible": false
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_sig",
+      "name": "Aragorn, Company Leader",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Noble",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 1,
+          "name": "Soldier of Gondor",
+          "tribe": "Human",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ],
+      "description": "Taunt. Battlecry: Summon two 1/1 Soldiers with Taunt."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_dunedain",
+      "name": "Dúnedain Rangers",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Ranger",
+      "keywords": [
+        "first_strike",
+        "reborn"
+      ],
+      "description": "First Strike. Reborn."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_protector",
+      "name": "Protector of Gondor",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 6,
+      "tribe": "Human Soldier",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ],
+      "description": "Taunt. Divine Shield."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_ithilien",
+      "name": "Rangers of Ithilien",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Ranger",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "first_strike",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Battlecry: Give a friendly creature First Strike."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_banish",
+      "name": "Banish from Edoras",
+      "type": "sorcery",
+      "cost": 4,
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Destroy an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_rally",
+      "name": "Rally at the Hornburg",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Give your creatures +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_minastirith",
+      "name": "Minas Tirith",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 2/2 Human Guard with Taunt.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 2,
+              "health": 2,
+              "name": "Citadel Guard",
+              "tribe": "Human",
+              "keywords": [
+                "taunt"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Summon a 2/2 Human Guard with Taunt."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_anduril",
+      "name": "Andúril, Flame of the West",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "First Strike. After your hero attacks, give your creatures +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_whitetree",
+      "name": "Flowering of the White Tree",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Aragorn",
+      "id": "me_aragorn_palantir",
+      "name": "Palantír of Orthanc",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Scry 1, then draw a card."
+      },
+      "description": "{T}: Scry 1, then draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "U",
+        "R"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_sig",
+      "name": "Gandalf the Grey",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Avatar Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "any"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Deal 3 damage to any target and draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_shadowfax",
+      "name": "Shadowfax, Lord of Horses",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Horse",
+      "keywords": [
+        "rush",
+        "elusive"
+      ],
+      "description": "Rush. Elusive."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_secretfire",
+      "name": "Gandalf of the Secret Fire",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Avatar Wizard",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Battlecry: Freeze an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_radagast",
+      "name": "Radagast, Wizard of Wilds",
+      "type": "creature",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "tribe": "Avatar Wizard",
+      "ongoing": {
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, gain +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_sanction",
+      "name": "Gandalf's Sanction",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "Deal 4 damage to an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_flameofanor",
+      "name": "Flame of Anor",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Deal 2 damage to any target. Scry 1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_orthanc",
+      "name": "Great Hall of the Citadel",
+      "type": "location",
+      "cost": 3,
+      "durability": 2,
+      "taps": [
+        {
+          "colors": [],
+          "text": "Deal 1 damage to all enemy creatures.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "enemy-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 2. {T}: Deal 1 damage to all enemy creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_glamdring",
+      "name": "Glamdring",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creatures"
+          }
+        ]
+      },
+      "description": "First Strike. After your hero attacks, freeze all enemy creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_storm",
+      "name": "Storm of Saruman",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "colors": [
+          "U"
+        ],
+        "on": "spell-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "enemy-heroes"
+          }
+        ]
+      },
+      "description": "Whenever you cast a spell, deal 1 damage to each opponent."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Gandalf",
+      "id": "me_gandalf_staff",
+      "name": "Wizard's Staff",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "any"
+          }
+        ],
+        "text": "Deal 1 damage to any target."
+      },
+      "description": "{T}: Deal 1 damage to any target."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_sig",
+      "name": "Legolas, Master Archer",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elf Archer",
+      "keywords": [
+        "rush",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "any"
+        }
+      ],
+      "description": "Rush. Battlecry: Deal 2 damage to any target."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_spider",
+      "name": "Mirkwood Spider",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spider",
+      "keywords": [
+        "deathtouch"
+      ],
+      "description": "Deathtouch."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_bowmaster",
+      "name": "Orcish Bowmasters",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Orc Archer",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Battlecry: Deal 1 damage to all enemy creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_pathmaker",
+      "name": "Mirkwood Pathmaker",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf Scout",
+      "keywords": [
+        "rush",
+        "poisonous"
+      ],
+      "description": "Rush. Poisonous."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_arrows",
+      "name": "Shower of Arrows",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Deal 2 damage to all enemy creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_reflexes",
+      "name": "Legolas's Quick Reflexes",
+      "type": "instant",
+      "cost": 1,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature +2/+0 and Elusive."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B",
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_mirkwood",
+      "name": "Mirkwood",
+      "type": "location",
+      "cost": 2,
+      "durability": 3,
+      "taps": [
+        {
+          "colors": [
+            "B",
+            "G"
+          ],
+          "text": "Deal 2 damage to a random enemy.",
+          "effects": [
+            {
+              "type": "random-damage",
+              "value": 2,
+              "pool": "enemies",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 2 damage to a random enemy."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_bow",
+      "name": "Galadhrim Bow",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 1,
+      "durability": 3,
+      "keywords": [
+        "poisonous"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "random-enemy"
+          }
+        ]
+      },
+      "description": "Poisonous. After your hero attacks, deal 1 damage to a random enemy."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Legolas",
+      "id": "me_legolas_hunt",
+      "name": "Long List of the Ents",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "random-enemy"
+          }
+        ]
+      },
+      "description": "Whenever you play a creature, deal 1 damage to a random enemy."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Legolas",
+      "id": "me_legolas_blackarrow",
+      "name": "The Black Arrow",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "destroy",
+            "target": "enemy-creature",
+            "maxHealth": 4
+          }
+        ],
+        "text": "Destroy an enemy creature with 4 or less Health."
+      },
+      "description": "{T}: Destroy an enemy creature with 4 or less Health."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_sig",
+      "name": "Gimli, Counter of Kills",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "charge"
+      ],
+      "ongoing": {
+        "on": "self-kills-creature",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 1
+          }
+        ]
+      },
+      "description": "Charge. Whenever this kills a creature, it gains +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_mauler",
+      "name": "Dwarven Mauler",
+      "type": "creature",
+      "cost": 3,
+      "attack": 4,
+      "health": 2,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "trample"
+      ],
+      "description": "Trample."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_stalwart",
+      "name": "Iron Hills Stalwart",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Dwarf Warrior",
+      "keywords": [
+        "overkill"
+      ],
+      "overkill": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Overkill: Draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_flamesmith",
+      "name": "Erebor Flamesmith",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Dwarf Warrior",
+      "ongoing": {
+        "on": "self-damaged",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 2,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Whenever this is damaged, it gains +2/+0 (Enrage)."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_swarm",
+      "name": "Swarming of Moria",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 1,
+          "health": 1,
+          "name": "Goblin of Moria",
+          "tribe": "Goblin",
+          "keywords": [
+            "charge"
+          ]
+        }
+      ],
+      "description": "Summon three 1/1 Goblins with Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_fury",
+      "name": "Gimli's Fury",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "trample",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature +3/+0 and Trample."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_moria",
+      "name": "Mines of Moria",
+      "type": "location",
+      "cost": 3,
+      "durability": 2,
+      "taps": [
+        {
+          "text": "Deal 3 damage to an enemy creature.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 3,
+              "target": "enemy-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 2. {T}: Deal 3 damage to an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_axe",
+      "name": "Gimli's Axe",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 3,
+      "durability": 2,
+      "keywords": [
+        "cleave"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff-weapon",
+            "attack": 1,
+            "durability": 0
+          }
+        ]
+      },
+      "description": "Cleave. After your hero attacks, this weapon gains +1 Attack."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Gimli",
+      "id": "me_gimli_might",
+      "name": "Gimli's Reckless Might",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "friendly-creature-died",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature dies, give your creatures +2/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Gimli",
+      "id": "me_gimli_mattock",
+      "name": "Dwarven Mattock",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "armor",
+            "value": 2
+          }
+        ],
+        "text": "Gain 2 Armor."
+      },
+      "description": "{T}: Gain 2 Armor."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_sig",
+      "name": "Frodo Baggins",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Halfling Rogue",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Stealth. Battlecry: Draw a card. (While Frodo bears the Ring, foes cannot see him.)"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_nimble",
+      "name": "Nimble Hobbit",
+      "type": "creature",
+      "cost": 1,
+      "attack": 2,
+      "health": 1,
+      "tribe": "Halfling",
+      "keywords": [
+        "elusive"
+      ],
+      "description": "Elusive."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_shirriff",
+      "name": "Shire Shirriff",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Halfling",
+      "keywords": [
+        "stealth",
+        "combo"
+      ],
+      "combo": [
+        {
+          "type": "buff-self",
+          "attack": 1,
+          "health": 1
+        }
+      ],
+      "description": "Stealth. Combo: Gain +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_porter",
+      "name": "Bag End Porter",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Halfling",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Deathrattle: Draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_claim",
+      "name": "Claim the Precious",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ],
+      "description": "Return an enemy creature to its owner’s hand. Draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_gambit",
+      "name": "Bilbo's Gambit",
+      "type": "instant",
+      "cost": 1,
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Give a friendly creature Stealth and +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Frodo",
+      "id": "me_frodo_bagend",
+      "name": "Hobbit Hole",
+      "type": "location",
+      "cost": 2,
+      "durability": 3,
+      "taps": [
+        {
+          "colors": [],
+          "text": "Draw a card.",
+          "effects": [
+            {
+              "type": "draw",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Frodo",
+      "id": "me_frodo_sting",
+      "name": "Sting, the Glinting Dagger",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "stealth"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "Stealth. After your hero attacks, draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Frodo",
+      "id": "me_frodo_onering",
+      "name": "One Ring to Rule Them All",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "colors": [
+          "B"
+        ],
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "stealth",
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures Stealth. (The Ring hides its bearers — and corrupts.)"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Frodo",
+      "id": "me_frodo_mithril",
+      "name": "Mithril Coat",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "divine_shield",
+            "target": "friendly-creature"
+          }
+        ],
+        "text": "Give a friendly creature Divine Shield."
+      },
+      "description": "{T}: Give a friendly creature Divine Shield."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G",
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_sig",
+      "name": "Samwise Gamgee",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Halfling",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "description": "Taunt. Battlecry: Restore 4 Health to your hero. (\"Don’t you leave him, Samwise Gamgee.\")"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_rosie",
+      "name": "Rosie Cotton of South Lane",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Halfling",
+      "keywords": [
+        "lifesteal",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "description": "Lifesteal. Battlecry: Restore 2 Health to your hero."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_gaffer",
+      "name": "The Gaffer",
+      "type": "creature",
+      "cost": 2,
+      "attack": 1,
+      "health": 4,
+      "tribe": "Halfling",
+      "keywords": [
+        "taunt",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Taunt. Battlecry: Restore 3 Health to a friendly creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_stouthearted",
+      "name": "Samwise the Stouthearted",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Halfling",
+      "keywords": [
+        "divine_shield",
+        "reborn"
+      ],
+      "description": "Divine Shield. Reborn."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_rescue",
+      "name": "Sam's Desperate Rescue",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "taunt",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Restore 3 Health to a friendly creature and give it Taunt."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_breakfast",
+      "name": "Second Breakfast",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 2,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "self"
+        }
+      ],
+      "description": "Give a friendly creature +1/+2 and restore 2 Health to your hero."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_shire",
+      "name": "The Shire",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "colors": [
+            "G"
+          ],
+          "text": "Restore 3 Health to your hero and gain 1 Armor.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 3,
+              "target": "self"
+            },
+            {
+              "type": "armor",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Restore 3 Health to your hero and gain 1 Armor."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Samwise",
+      "id": "me_samwise_pan",
+      "name": "Field-Tested Frying Pan",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "Lifesteal. After your hero attacks, restore 1 Health to your creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Samwise",
+      "id": "me_samwise_herbs",
+      "name": "Of Herbs and Stewed Rabbit",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, restore 2 Health to your creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Samwise",
+      "id": "me_samwise_lembas",
+      "name": "Lembas",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ],
+        "text": "Restore 2 Health to your hero and draw a card."
+      },
+      "description": "{T}: Restore 2 Health to your hero and draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_sig",
+      "name": "Éowyn, Shieldmaiden",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Human Noble",
+      "keywords": [
+        "rush",
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature",
+          "minAttack": 5
+        }
+      ],
+      "description": "Rush. First Strike. Battlecry: Destroy an enemy creature with 5 or more Attack. (\"I am no man.\")"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_rohirrim",
+      "name": "Relentless Rohirrim",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Knight",
+      "keywords": [
+        "rush",
+        "windfury"
+      ],
+      "description": "Rush. Windfury."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_lancer",
+      "name": "Rohirrim Lancer",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Human Knight",
+      "keywords": [
+        "first_strike",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "description": "First Strike. Battlecry: Deal 2 damage to an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_westfold",
+      "name": "Westfold Rider",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Knight",
+      "keywords": [
+        "cleave"
+      ],
+      "description": "Cleave (deals excess damage to the creatures beside its target)."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_riseofthewitchking",
+      "name": "Rise of the Witch-king",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creature"
+        },
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-heroes"
+        }
+      ],
+      "description": "Deal 3 damage to an enemy creature and 3 damage to each opponent."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_shriek",
+      "name": "Fell Beast's Shriek",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ],
+      "description": "Freeze all enemy creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_edoras",
+      "name": "Battlefield Forge",
+      "type": "location",
+      "cost": 3,
+      "durability": 2,
+      "taps": [
+        {
+          "colors": [
+            "R",
+            "W"
+          ],
+          "text": "Give a friendly creature +2/+0 and Rush.",
+          "effects": [
+            {
+              "type": "buff",
+              "attack": 2,
+              "health": 0,
+              "target": "friendly-creature"
+            },
+            {
+              "type": "grant",
+              "keyword": "rush",
+              "target": "friendly-creature"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 2. {T}: Give a friendly creature +2/+0 and Rush."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_blade",
+      "name": "Dúnedain Blade",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 2,
+      "durability": 3,
+      "keywords": [
+        "first_strike"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "damage",
+            "value": 1,
+            "target": "all-creatures"
+          }
+        ]
+      },
+      "description": "First Strike. After your hero attacks, deal 1 damage to all creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_animosity",
+      "name": "Shared Animosity",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "friendly-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "Whenever a friendly creature attacks, give your creatures +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Éowyn",
+      "id": "me_eowyn_horn",
+      "name": "Horn of the Mark",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 2,
+            "health": 2,
+            "name": "Rider of Rohan",
+            "tribe": "Human",
+            "keywords": [
+              "charge"
+            ]
+          }
+        ],
+        "text": "Summon a 2/2 Rider with Charge."
+      },
+      "description": "{T}: Summon a 2/2 Human Rider with Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_sig",
+      "name": "Galadriel, Light of Valinor",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Elf Noble",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creatures"
+        },
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ],
+      "description": "Elusive. Battlecry: Give your creatures +1/+1 and gain an empty Mana Crystal."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_arborelf",
+      "name": "Arbor Elf",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Elf",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ],
+      "description": "Battlecry: Gain 1 Mana this turn."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_brigade",
+      "name": "Galadhrim Brigade",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Elf",
+      "keywords": [
+        "taunt"
+      ],
+      "ongoing": {
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff-self",
+            "attack": 1,
+            "health": 0
+          }
+        ]
+      },
+      "description": "Taunt. Whenever you play a creature, this gains +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_lookout",
+      "name": "Lothlórien Lookout",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Elf",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "scry",
+          "value": 2
+        }
+      ],
+      "description": "Elusive. Battlecry: Scry 2."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_ambush",
+      "name": "Galadhrim Ambush",
+      "type": "sorcery",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 1,
+          "health": 2,
+          "name": "Galadhrim Warrior",
+          "tribe": "Elf",
+          "keywords": [
+            "elusive"
+          ]
+        }
+      ],
+      "description": "Summon two 1/2 Elves with Elusive."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_dismissal",
+      "name": "Galadriel's Dismissal",
+      "type": "instant",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Return an enemy creature to its owner’s hand. Scry 1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_lorien",
+      "name": "Elvenking’s Halls",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "colors": [
+            "G",
+            "U"
+          ],
+          "text": "Summon a 1/1 Elf and give your creatures +1/+1.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Galadhrim Guide",
+              "tribe": "Elf"
+            },
+            {
+              "type": "buff",
+              "attack": 1,
+              "health": 1,
+              "target": "friendly-creatures"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Summon a 1/1 Elf and give your creatures +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_blade",
+      "name": "Lothlórien Blade",
+      "type": "weapon",
+      "cost": 2,
+      "attack": 1,
+      "durability": 3,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      },
+      "description": "After your hero attacks, give your weakest creature +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_chorus",
+      "name": "Elven Chorus",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "colors": [
+          "G"
+        ],
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, Scry 1, then draw a card."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Galadriel",
+      "id": "me_galadriel_mirror",
+      "name": "Mirror of Galadriel",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "scry",
+            "value": 2
+          },
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ],
+        "text": "Scry 2 and gain 1 Mana this turn."
+      },
+      "description": "{T}: Scry 2 and gain 1 Mana this turn."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_sig",
+      "name": "Théoden, King of Rohan",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Human Noble",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 2,
+          "health": 1,
+          "name": "Rider of the Mark",
+          "tribe": "Human",
+          "keywords": [
+            "charge"
+          ]
+        },
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Summon two 2/1 Riders with Charge, then give your creatures +1/+0. (\"Ride now, ride now! Ride for ruin!\")"
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "W"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_chargers",
+      "name": "Rohirrim Chargers",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Knight",
+      "keywords": [
+        "charge"
+      ],
+      "description": "Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "rare",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_eomer",
+      "name": "Éomer, Marshal of Rohan",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Noble",
+      "keywords": [
+        "charge",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Charge. Battlecry: Give your creatures +2/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_lancer2",
+      "name": "Riders of Rohan",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Human Knight",
+      "keywords": [
+        "charge",
+        "windfury"
+      ],
+      "description": "Charge. Windfury."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "B"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_muster",
+      "name": "Mordor Muster",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 2,
+          "health": 2,
+          "name": "Rohirrim Soldier",
+          "tribe": "Human"
+        }
+      ],
+      "description": "Summon three 2/2 Human Soldiers."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "G"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_rally2",
+      "name": "Overwhelming Stampede",
+      "type": "instant",
+      "cost": 4,
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 3,
+          "health": 0,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Give your creatures +3/+0 this turn (a full cavalry charge)."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_edoras",
+      "name": "Iron Hills",
+      "type": "location",
+      "cost": 3,
+      "durability": 2,
+      "taps": [
+        {
+          "colors": [
+            "R",
+            "W"
+          ],
+          "text": "Summon two 1/1 Riders with Charge.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 2,
+              "attack": 1,
+              "health": 1,
+              "name": "Éored Rider",
+              "tribe": "Human",
+              "keywords": [
+                "charge"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Durability 2. {T}: Summon two 1/1 Human Riders with Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Théoden",
+      "id": "me_theoden_horn",
+      "name": "Herald’s Horn",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "summon",
+            "count": 1,
+            "attack": 1,
+            "health": 1,
+            "name": "Rohirrim Recruit",
+            "tribe": "Human",
+            "keywords": [
+              "charge"
+            ]
+          }
+        ]
+      },
+      "description": "After your hero attacks, summon a 1/1 Human Recruit with Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "R"
+      ],
+      "meDeck": "Théoden",
+      "id": "me_theoden_oath",
+      "name": "Oath of Eorl",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "colors": [
+          "R",
+          "W"
+        ],
+        "on": "creature-played",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "Whenever you play a creature, give your creatures +1/+0."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Théoden",
+      "id": "me_theoden_amethyst",
+      "name": "Thorn of Amethyst",
+      "type": "artifact",
+      "cost": 2,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "grant",
+            "keyword": "charge",
+            "target": "friendly-creatures"
+          }
+        ],
+        "text": "Give your creatures Charge."
+      },
+      "description": "{T}: Give your creatures Charge."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_sig",
+      "name": "Elrond, Master of Healing",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 6,
+      "tribe": "Elf Noble",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "self"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Battlecry: Restore 4 Health to your hero and give your creatures Divine Shield."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_ioreth",
+      "name": "Ioreth of the Healing House",
+      "type": "creature",
+      "cost": 2,
+      "attack": 1,
+      "health": 3,
+      "tribe": "Human",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 3,
+          "target": "self"
+        }
+      ],
+      "description": "Battlecry: Restore 3 Health to your hero."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_councillors",
+      "name": "Master's Councillors",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 4,
+      "tribe": "Elf Advisor",
+      "keywords": [
+        "taunt",
+        "reborn"
+      ],
+      "description": "Taunt. Reborn."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "rare",
+      "colors": [
+        "G",
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_arwen",
+      "name": "Arwen Undómiel",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Elf Noble",
+      "keywords": [
+        "divine_shield",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 2,
+          "target": "friendly-creatures"
+        }
+      ],
+      "description": "Divine Shield. Battlecry: Restore 2 Health to your creatures."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_gift",
+      "name": "Arwen's Gift",
+      "type": "sorcery",
+      "cost": 3,
+      "effects": [
+        {
+          "type": "heal",
+          "value": 4,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "divine_shield",
+          "target": "friendly-creature"
+        }
+      ],
+      "description": "Restore 4 Health to a friendly creature and give it Divine Shield."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_council",
+      "name": "Council's Deliberation",
+      "type": "instant",
+      "cost": 2,
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "scry",
+          "value": 1
+        }
+      ],
+      "description": "Draw two cards, then Scry 1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Elrond",
+      "id": "me_elrond_rivendell",
+      "name": "Rivendell",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "colors": [],
+          "text": "Restore 2 Health to all friendly characters and Scry 1.",
+          "effects": [
+            {
+              "type": "heal",
+              "value": 2,
+              "target": "friendly-all"
+            },
+            {
+              "type": "scry",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Restore 2 Health to all friendly characters and Scry 1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Elrond",
+      "id": "me_elrond_asfaloth",
+      "name": "Barrow-Blade",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 2,
+      "durability": 2,
+      "keywords": [
+        "lifesteal"
+      ],
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "freeze",
+            "target": "enemy-creature"
+          }
+        ]
+      },
+      "description": "Lifesteal. After your hero attacks, freeze an enemy creature."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [
+        "U"
+      ],
+      "meDeck": "Elrond",
+      "id": "me_elrond_council2",
+      "name": "Fealty to the Realm",
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "colors": [
+          "U"
+        ],
+        "on": "healed",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "Whenever you restore Health, give your creatures +1/+1."
+    },
+    {
+      "cardClass": "magepunk",
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "colors": [],
+      "meDeck": "Elrond",
+      "id": "me_elrond_vilya",
+      "name": "Phial of Galadriel",
+      "type": "artifact",
+      "cost": 3,
+      "tapAbility": {
+        "effects": [
+          {
+            "type": "heal",
+            "value": 2,
+            "target": "self"
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ],
+        "text": "Restore 2 Health to your hero and Scry 1."
+      },
+      "description": "{T}: Restore 2 Health to your hero and Scry 1."
     }
   ]
 }
