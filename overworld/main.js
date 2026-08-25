@@ -27,7 +27,7 @@ import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
 import * as Frontier from './frontier.js';
-import { getImage } from './engine.js';
+import { getImage, drawOwMon } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Pvp } from './pvp.js';
@@ -2104,7 +2104,7 @@ function drawLegendary(ctx, camX, camY) {
 		const img = owMonSprite(e.species);
 		if (!img) continue;
 		const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
-		ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+		drawOwMon(ctx, img, cx, by, camX, camY);
 	}
 }
 
@@ -2183,7 +2183,7 @@ function drawAwakening(ctx, camX, camY) {
 		const img = owMonSprite(species);
 		if (!img) return;
 		const cx = pos.x * META + META / 2, by = pos.y * META + META;
-		ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+		drawOwMon(ctx, img, cx, by, camX, camY);
 	};
 	put('groudon', awObjPos(/GROUDON/));
 	put('kyogre', awObjPos(/KYOGRE/));

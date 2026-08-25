@@ -9,7 +9,7 @@
 // Terrain obstacles (cut trees / Rock Smash rocks / Strength boulders) are NOT here —
 // they are seeded via items.js CODE_FIELD_OBJS so they reuse the existing HM clear
 // pipeline. Quest.blocked stays as a silent strand-safety backstop behind all this.
-import { getImage, META } from './engine.js';
+import { getImage, META, drawOwMon } from './engine.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
@@ -249,7 +249,7 @@ export class Blockers {
 				const img = this.mons[s.img];
 				if (!img) continue; // invisible blocker (e.g. Kecleon) still blocks via solid
 				const cx = b.tx * META + META / 2, by = b.ty * META + META;
-				ctx.drawImage(img, Math.round(cx - img.width / 2 - camX), Math.round(by - img.height - camY));
+				drawOwMon(ctx, img, cx, by, camX, camY);
 			} else if (s.img) {
 				const img = this.people[s.img];
 				if (!img) continue;

@@ -6,6 +6,16 @@
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
 export const TILE = 8, META = 16, VIEW_W = 240, VIEW_H = 160;
+
+// Overworld Pokémon sprites (data/pokemon_ow/*.png — legendaries, awakenings, walk-up blockers) are
+// authored at ~2× the intended overworld size (uniformly 40px tall). Every other actor is size-controlled
+// (humans 16×32; the party follower downscales its 32px frame to 26), so drawing these 1:1 makes them
+// render twice as big and overhang neighbouring tiles. This helper halves the sprite (preserving each
+// mon's relative bulk) and anchors it bottom-centre (feet on the tile) — the shared draw for all three sites.
+export function drawOwMon(ctx, img, cx, by, camX, camY) {
+	const dw = Math.round(img.width / 2), dh = Math.round(img.height / 2);
+	ctx.drawImage(img, Math.round(cx - dw / 2 - camX), Math.round(by - dh - camY), dw, dh);
+}
 const METATILE_MASK = 0x3FF, COLLISION_MASK = 0x0C00, BEHAVIOR_MASK = 0x1FF;
 const TILE_INDEX_MASK = 0x3FF, FLIP_X = 0x400, FLIP_Y = 0x800, PAL_MASK = 0xF000;
 const LAYER_COVERED = 1;
