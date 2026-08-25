@@ -273869,6 +273869,967 @@
       "colors": [],
       "cardClass": "warlock",
       "ffSide": "enemy"
+    },
+    {
+      "id": "me_treasure_anduril",
+      "name": "Andúril, Narsil Reforged",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 4,
+      "durability": 3,
+      "description": "After your hero attacks, give your creatures +1/+0.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "me_treasure_sting",
+      "name": "Sting, Bilbo's Sword",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 1,
+      "attack": 2,
+      "durability": 3,
+      "description": "After your hero attacks, deal 1 damage to a random enemy.",
+      "ongoing": {
+        "on": "hero-attacks",
+        "effects": [
+          {
+            "type": "random-damage",
+            "value": 1,
+            "pool": "enemies",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "me_treasure_orcrist",
+      "name": "Orcrist, Goblin-cleaver",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 3,
+      "attack": 4,
+      "durability": 2,
+      "description": "Cleave (also hits the creatures beside your target).",
+      "keywords": [
+        "cleave"
+      ]
+    },
+    {
+      "id": "me_treasure_glamdring",
+      "name": "Glamdring",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "weapon",
+      "cost": 4,
+      "attack": 5,
+      "durability": 2,
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ]
+    },
+    {
+      "id": "me_treasure_mithril",
+      "name": "Mithril Coat",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain 8 Armor.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "armor",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_arkenstone",
+      "name": "The Arkenstone",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw a card and gain a Coin.",
+      "tapAbility": {
+        "text": "Draw a card and gain a Coin.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "me_treasure_throrsmap",
+      "name": "Thrór's Map",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "{T}: Scry 2, then draw a card.",
+      "tapAbility": {
+        "text": "Scry 2, then draw a card.",
+        "effects": [
+          {
+            "type": "scry",
+            "value": 2
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "me_treasure_moxamber",
+      "name": "Mox Amber",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 0,
+      "description": "Battlecry: Gain an empty Mana Crystal.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-empty-mana-crystal",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_relic",
+      "name": "Relic of Sauron",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Deal 3 damage to all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 3,
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_bilboring",
+      "name": "Bilbo's Ring",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 1,
+      "description": "Battlecry: Give a friendly creature Stealth and Elusive.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_necklace",
+      "name": "Necklace of Girion",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain two Coins.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_blackarrow",
+      "name": "The Black Arrow",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "sorcery",
+      "cost": 2,
+      "description": "Deal 8 damage to an enemy creature (the last of the black arrows).",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 8,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "me_treasure_getaway",
+      "name": "Getaway Barrel",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "meTreasure": true,
+      "treasure": false,
+      "type": "instant",
+      "cost": 2,
+      "description": "Return an enemy creature to its owner's hand and draw a card.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_1",
+      "name": "The Master of Lake-town",
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 5,
+      "tribe": "Human Noble",
+      "description": "Battlecry: Gain two Coins (he hoards Esgaroth's gold).",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 2
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_2",
+      "name": "Merciless Executioner",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Human Soldier",
+      "description": "Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_3",
+      "name": "Desolation Prowler",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Orc",
+      "description": "A scavenger of the ruin.",
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_4",
+      "name": "Orcish Bowmasters",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Orc Archer",
+      "description": "Battlecry: Deal 1 damage to an enemy creature.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 1,
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_5",
+      "name": "Nighthowl Pursuer",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Wolf",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_6",
+      "name": "Troll of Khazad-dûm",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 5,
+      "tribe": "Troll",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_7",
+      "name": "Haunt of the Dead Marshes",
+      "type": "creature",
+      "cost": 3,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Spirit",
+      "description": "Deathrattle: Summon a 1/1 Spirit.",
+      "keywords": [
+        "deathrattle"
+      ],
+      "deathrattle": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 1,
+          "health": 1,
+          "name": "Marsh Wight",
+          "tribe": "Spirit"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_8",
+      "name": "Front Porch Sentries",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 3,
+      "tribe": "Human Soldier",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_9",
+      "name": "Rhovanion Rampager",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Beast",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_10",
+      "name": "Stony-Voiced Goblins",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Goblin",
+      "description": "A gravel-throated warband.",
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_11",
+      "name": "Bitter Downfall",
+      "type": "instant",
+      "cost": 3,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_12",
+      "name": "Languish",
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Deal 4 damage to all enemy creatures.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        }
+      ],
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_13",
+      "name": "Minas Morgul, Dark Fortress",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Deal 1 damage to any target.",
+          "effects": [
+            {
+              "type": "damage",
+              "value": 1,
+              "target": "any"
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Deal 1 damage to any target.",
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_14",
+      "name": "Crude Bent Blade",
+      "type": "weapon",
+      "cost": 3,
+      "attack": 3,
+      "durability": 2,
+      "description": "A rusty confiscator's blade.",
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "The Master of Lake-town",
+      "meSide": "enemy",
+      "id": "me_mlt_15",
+      "name": "Along the Crooked Way",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, gain a Coin.",
+      "colors": [],
+      "cardClass": "warlock"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "legendary",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_1",
+      "name": "Chief of the Wilds",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Warg",
+      "description": "Battlecry: Summon a 3/3 Warg with Rush.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 3,
+          "health": 3,
+          "name": "Wild Warg",
+          "tribe": "Wolf",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_2",
+      "name": "Ravening Warg",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Wolf",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_3",
+      "name": "Bejeweled Warg",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Wolf",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_4",
+      "name": "Attercop",
+      "type": "creature",
+      "cost": 2,
+      "attack": 2,
+      "health": 2,
+      "tribe": "Spider",
+      "description": "Deathtouch.",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_5",
+      "name": "Old Fat Spider",
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 5,
+      "tribe": "Spider",
+      "description": "Deathtouch.",
+      "keywords": [
+        "deathtouch"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_6",
+      "name": "Large Bear",
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 4,
+      "tribe": "Bear",
+      "description": "A hulking wild bear.",
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_7",
+      "name": "Duskwatch Hunter",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 2,
+      "tribe": "Beast",
+      "description": "Swift.",
+      "keywords": [
+        "first_strike"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_8",
+      "name": "Chief Warg's Company",
+      "type": "creature",
+      "cost": 5,
+      "attack": 5,
+      "health": 4,
+      "tribe": "Wolf",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_9",
+      "name": "Mirkwood Elk",
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Elk",
+      "description": "A great-antlered stag.",
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_10",
+      "name": "Gigantic Big Bear",
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 5,
+      "tribe": "Bear",
+      "description": "Trample.",
+      "keywords": [
+        "trample"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_11",
+      "name": "Wargling",
+      "type": "creature",
+      "cost": 1,
+      "attack": 1,
+      "health": 1,
+      "tribe": "Wolf",
+      "description": "Rush.",
+      "keywords": [
+        "rush"
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_12",
+      "name": "Warg Tactics",
+      "type": "instant",
+      "cost": 3,
+      "description": "Give a friendly creature +2/+0 and Rush.",
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 2,
+          "health": 0,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_13",
+      "name": "Supper for Spiders",
+      "type": "instant",
+      "cost": 4,
+      "description": "Destroy an enemy creature.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creature"
+        }
+      ],
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_14",
+      "name": "Mirkwood",
+      "type": "location",
+      "cost": 3,
+      "durability": 3,
+      "taps": [
+        {
+          "text": "Summon a 1/1 Spider with Deathtouch.",
+          "effects": [
+            {
+              "type": "summon",
+              "count": 1,
+              "attack": 1,
+              "health": 1,
+              "name": "Mirkwood Spider",
+              "tribe": "Spider",
+              "keywords": [
+                "deathtouch"
+              ]
+            }
+          ]
+        }
+      ],
+      "description": "Durability 3. {T}: Summon a 1/1 Spider with Deathtouch.",
+      "colors": [],
+      "cardClass": "hunter"
+    },
+    {
+      "set": "paper",
+      "collectible": false,
+      "rarity": "common",
+      "meDeck": "Chief of the Wilds",
+      "meSide": "enemy",
+      "id": "me_cotw_15",
+      "name": "Down in the Valley",
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "bolster",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, give a friendly creature +1/+1.",
+      "colors": [],
+      "cardClass": "hunter"
     }
   ]
 }

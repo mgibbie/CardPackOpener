@@ -18,8 +18,8 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 // ───────────────────────── rosters ─────────────────────────
 ok('10 base heroes', ME.HEROES.length === 10);
 ok('secret hero = Tom Bombadil', ME.SECRET_HEROES.length === 1 && ME.SECRET_HEROES[0] === 'Tom Bombadil');
-ok('27 enemies total', ME.ENEMIES.length === 27, ME.ENEMIES.length);
-ok('rung sizes A9 B9 C7 D2', ME.ENEMY_RUNGS.A.length === 9 && ME.ENEMY_RUNGS.B.length === 9 && ME.ENEMY_RUNGS.C.length === 7 && ME.ENEMY_RUNGS.D.length === 2,
+ok('29 enemies total', ME.ENEMIES.length === 29, ME.ENEMIES.length);
+ok('rung sizes A10 B10 C7 D2', ME.ENEMY_RUNGS.A.length === 10 && ME.ENEMY_RUNGS.B.length === 10 && ME.ENEMY_RUNGS.C.length === 7 && ME.ENEMY_RUNGS.D.length === 2,
   [ME.ENEMY_RUNGS.A.length, ME.ENEMY_RUNGS.B.length, ME.ENEMY_RUNGS.C.length, ME.ENEMY_RUNGS.D.length]);
 ok('heroes and enemies are disjoint', ME.HEROES.every(h => !ME.ENEMIES.includes(h)) && ME.ENEMIES.every(e => !ME.isHero(e)));
 ok('every enemy has a class', ME.ENEMIES.every(e => ME.classOf(e) !== 'neutral'), ME.ENEMIES.filter(e => ME.classOf(e) === 'neutral'));
@@ -28,9 +28,9 @@ ok('WINS_TO_CLEAR=12 / LOSSES_TO_END=3', ME.WINS_TO_CLEAR === 12 && ME.LOSSES_TO
 
 // ───────────────────────── hero powers (38) ─────────────────────────
 const ALL_CHARS = [...ME.HEROES, ...ME.SECRET_HEROES, ...ME.ENEMIES];
-ok('38 characters total (11 heroes + 27 enemies)', ALL_CHARS.length === 38, ALL_CHARS.length);
+ok('40 characters total (11 heroes + 29 enemies)', ALL_CHARS.length === 40, ALL_CHARS.length);
 ok('every character has a unique hero power', ALL_CHARS.every(ch => ME.HERO_POWERS[ch]), ALL_CHARS.filter(ch => !ME.HERO_POWERS[ch]));
-ok('all 38 power NAMES are distinct', new Set(ALL_CHARS.map(ch => ME.HERO_POWERS[ch].name)).size === 38, new Set(ALL_CHARS.map(ch => ME.HERO_POWERS[ch].name)).size);
+ok('all 40 power NAMES are distinct', new Set(ALL_CHARS.map(ch => ME.HERO_POWERS[ch].name)).size === 40, new Set(ALL_CHARS.map(ch => ME.HERO_POWERS[ch].name)).size);
 ok('every power has {name,cost,text,effects[]}', ALL_CHARS.every(ch => { const p = ME.HERO_POWERS[ch]; return p.name && typeof p.cost === 'number' && p.text && Array.isArray(p.effects) && p.effects.length; }));
 ok('seatOf carries class id + name + power', (() => { const s = ME.seatOf('Aragorn'); return s.id === 'paladin' && s.name === 'Aragorn' && s.power === ME.HERO_POWERS['Aragorn']; })());
 
@@ -44,14 +44,14 @@ for (const e of ME.ENEMIES) {
 }
 
 // ───────────────────────── rung gating ─────────────────────────
-ok('win 0 roster = all of Rung A (incl. first-only)', ME.enemyRosterFor(0).length === 9 && ME.FIRST_ONLY.size === 2 && [...ME.FIRST_ONLY].every(f => ME.enemyRosterFor(0).includes(f)));
-ok('wins 1–2 roster = Rung A minus first-only (7)', ME.enemyRosterFor(1).length === 7 && ME.enemyRosterFor(2).length === 7 && [...ME.FIRST_ONLY].every(f => !ME.enemyRosterFor(1).includes(f)));
-ok('wins 3–6 = Rung B (9)', [3, 4, 5, 6].every(w => ME.enemyRosterFor(w).length === 9 && ME.enemyRosterFor(w).every(e => ME.ENEMY_RUNGS.B.includes(e))));
+ok('win 0 roster = all of Rung A (incl. first-only)', ME.enemyRosterFor(0).length === 10 && ME.FIRST_ONLY.size === 2 && [...ME.FIRST_ONLY].every(f => ME.enemyRosterFor(0).includes(f)));
+ok('wins 1–2 roster = Rung A minus first-only (8)', ME.enemyRosterFor(1).length === 8 && ME.enemyRosterFor(2).length === 8 && [...ME.FIRST_ONLY].every(f => !ME.enemyRosterFor(1).includes(f)));
+ok('wins 3–6 = Rung B (10)', [3, 4, 5, 6].every(w => ME.enemyRosterFor(w).length === 10 && ME.enemyRosterFor(w).every(e => ME.ENEMY_RUNGS.B.includes(e))));
 ok('wins 7–10 = Rung C (7)', [7, 8, 9, 10].every(w => ME.enemyRosterFor(w).length === 7 && ME.enemyRosterFor(w).every(e => ME.ENEMY_RUNGS.C.includes(e))));
 ok('win 11 = Rung D final boss (2 Saurons)', ME.enemyRosterFor(11).length === 2 && ME.enemyRosterFor(11).every(e => ME.ENEMY_RUNGS.D.includes(e)));
 // every enemy is reachable somewhere across a 12-fight run (wins 0..11)
 { const reachable = new Set(); for (let w = 0; w <= 11; w++) for (const e of ME.enemyRosterFor(w)) reachable.add(e);
-  ok('all 27 enemies reachable across wins 0..11', reachable.size === 27, reachable.size); }
+  ok('all 29 enemies reachable across wins 0..11', reachable.size === 29, reachable.size); }
 // randomEnemy stays in-rung and avoids the immediate repeat
 { const rng = seededRng(5); let last = null, okAll = true;
   for (let w = 0; w <= 11; w++) { const e = ME.randomEnemy(w, rng, last); if (!ME.enemyRosterFor(w).includes(e) || e === last) okAll = false; last = e; }
@@ -68,6 +68,15 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
 ok('treasurePool returns DUELS treasures + The One Ring', ME.treasurePool(cardsById).length > 0
   && ME.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.meTreasure)
   && ME.treasurePool(cardsById).some(d => d.id === 'me_the_one_ring'));
+// Hobbit-set treasures: 13 new, neutral, NO rarity, uncollectible, all in the ME treasure pool but NOT
+// leaking into the shared (heist/tombs/duels) treasure pool (treasure:false).
+{ const pool = ME.treasurePool(cardsById);
+  const hobT = Object.values(cardsById).filter(d => d.meTreasure && d.id.startsWith('me_treasure_'));
+  ok('13 Hobbit treasures (neutral, no rarity, uncollectible)', hobT.length === 13
+    && hobT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [hobT.length, hobT.filter(t => t.rarity).map(t => t.id)]);
+  ok('Hobbit treasures are in the ME pool but treasure:false (no cross-mode leak)', hobT.every(t => pool.some(d => d.id === t.id) && t.treasure === false)); }
+ok('The Master of Lake-town is a Rung A enemy with a 30-card deck', ME.ENEMY_RUNGS.A.includes('The Master of Lake-town') && ME.deckOf(cardsById, 'The Master of Lake-town').length === 30 && new Set(ME.deckOf(cardsById, 'The Master of Lake-town')).size === 15);
+ok('Chief of the Wilds is a Rung B enemy with a 30-card deck', ME.ENEMY_RUNGS.B.includes('Chief of the Wilds') && ME.deckOf(cardsById, 'Chief of the Wilds').length === 30 && new Set(ME.deckOf(cardsById, 'Chief of the Wilds')).size === 15);
 
 // ───────────────────────── engine integration: install + fire all 38 powers ─────────────────────────
 function bootWith(seatChar, oppChar = 'Aragorn') {

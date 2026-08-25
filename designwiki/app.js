@@ -1619,16 +1619,26 @@ async function middleEarthView() {
     h('div', { class: 'card-grid size-small' },
       ...names.map(ch => meTile(ch, decks[ch], clsName(ME.classOf(ch)), ME.powerOf(ch), ME.colorsOf(ch)))));
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  // Treasures — neutral rewards drafted on odd wins (The One Ring + the Hobbit-set treasures)
+  const treasures = cards.filter(c => c.meTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt(treasures.map(c => c.id));
+  const treasureSection = h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
+      h('p', { class: 'muted' }, 'Powerful neutral treasures drafted on odd wins (with The One Ring). Rendered from The Hobbit set art.')),
+    h('div', { class: 'card-grid size-small' },
+      ...treasures.map(c => { const canvas = CardArt.drawCardFace(c); return h('div', { class: 'wiki-card' }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy', title: c.description || c.name }), h('div', { class: 'lq-name' }, c.name)); })));
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
       h('div', null, h('h1', null, 'Lorequest: Middle-earth'),
         h('p', { class: 'muted' }, 'A LOTR/Hobbit dungeon run. Pick a hero of the Free Peoples (a 10-card starter deck) and climb the rungs of Sauron’s forces to 12 wins or 3 losses. Unlike ', h('a', { href: '#/duels' }, 'Duels'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30), with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
-      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards · ' + treasures.length + ' treasures'))),
     group('Heroes — Free Peoples', '11 heroes (Tom Bombadil is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you win.', heroes),
     group('Rung A — Mooks', 'Your first fights (wins 0–2). Bill Ferny & Lotho appear only as your very first encounter.', ME.ENEMY_RUNGS.A),
     group('Rung B — Lieutenants', 'Captains and monsters (wins 3–6).', ME.ENEMY_RUNGS.B),
     group('Rung C — Commanders', 'The named boss commanders (wins 7–10).', ME.ENEMY_RUNGS.C),
-    group('Rung D — The Dark Lord', 'The 12th-win final boss — the two Saurons rotate for replay variety.', ME.ENEMY_RUNGS.D));
+    group('Rung D — The Dark Lord', 'The 12th-win final boss — the two Saurons rotate for replay variety.', ME.ENEMY_RUNGS.D),
+    treasureSection);
 }
 async function middleEarthDeckDetail(slug) {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));

@@ -17,8 +17,8 @@ export const SECRET_HEROES = ['Tom Bombadil']; // unlocked by clearing a run (12
 
 // 27 enemies, split into rungs. ★ FIRST_ONLY = only spawns as your very first fight (win 0).
 export const ENEMY_RUNGS = {
-	A: ['Bill Ferny', 'Lotho', 'Gríma Wormtongue', 'Grishnákh', 'Gorbag', 'Shagrat', 'Old Man Willow', 'Tom, Bert & William', 'The Chief Warg'],
-	B: ['Uglúk', 'Mauhúr', 'Gothmog', 'The Watcher in the Water', 'The Mouth of Sauron', 'King of the Oathbreakers', 'Shelob', 'The Great Goblin', 'Bolg'],
+	A: ['Bill Ferny', 'Lotho', 'Gríma Wormtongue', 'Grishnákh', 'Gorbag', 'Shagrat', 'Old Man Willow', 'Tom, Bert & William', 'The Chief Warg', 'The Master of Lake-town'],
+	B: ['Uglúk', 'Mauhúr', 'Gothmog', 'The Watcher in the Water', 'The Mouth of Sauron', 'King of the Oathbreakers', 'Shelob', 'The Great Goblin', 'Bolg', 'Chief of the Wilds'],
 	C: ['Saruman', 'The Balrog', 'Witch-king of Angmar', 'Sauron the Necromancer', 'Gollum', 'Smaug', 'Azog'],
 	D: ['Sauron the Dark Lord', 'Sauron the Lidless Eye'],
 };
@@ -40,6 +40,8 @@ export const CLASS_OF = {
 	'The Balrog': 'warlock', 'Witch-king of Angmar': 'death_knight', 'Sauron the Necromancer': 'death_knight',
 	Gollum: 'rogue', Smaug: 'warrior', Azog: 'warrior',
 	'Sauron the Dark Lord': 'warlock', 'Sauron the Lidless Eye': 'warlock',
+	// Hobbit-set additions
+	'The Master of Lake-town': 'warlock', 'Chief of the Wilds': 'hunter',
 };
 export const classOf = ch => CLASS_OF[ch] || 'neutral';
 export const isEnemy = ch => ENEMIES.includes(ch);
@@ -61,6 +63,8 @@ export const COLOR_IDENTITY = {
 	'The Balrog': ['B', 'R'], 'Witch-king of Angmar': ['B'], 'Sauron the Necromancer': ['B'],
 	Gollum: ['B', 'G'], Smaug: ['B', 'R'], Azog: ['B'],
 	'Sauron the Dark Lord': ['B', 'R', 'U'], 'Sauron the Lidless Eye': ['B', 'R'],
+	// Hobbit-set additions
+	'The Master of Lake-town': ['B'], 'Chief of the Wilds': ['B', 'G'],
 };
 export const colorsOf = ch => COLOR_IDENTITY[ch] || [];
 
@@ -112,6 +116,9 @@ export const HERO_POWERS = {
 	// enemies (Rung D — final bosses)
 	'Sauron the Dark Lord': P('The Eye Searches', 2, 'Draw a card, then each opponent discards one.', [{ type: 'draw', value: 1 }, { type: 'enemy-discard', count: 1 }]),
 	'Sauron the Lidless Eye': P('Lidless Gaze', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
+	// Hobbit-set additions
+	'The Master of Lake-town': P('Hoard the Gold', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
+	'Chief of the Wilds': P('Hunt as One', 2, 'Summon a 2/2 Spider with Deathtouch.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Hunting Spider', tribe: 'Spider', keywords: ['deathtouch'] }]),
 };
 export const powerOf = ch => HERO_POWERS[ch] || null;
 
