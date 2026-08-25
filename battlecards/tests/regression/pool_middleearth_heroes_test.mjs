@@ -20,7 +20,7 @@ const HEROES = ['Aragorn', 'Gandalf', 'Legolas', 'Gimli', 'Frodo', 'Samwise', '�
 const CLASS_OF = { Aragorn: 'paladin', Gandalf: 'mage', Legolas: 'hunter', Gimli: 'warrior',
   Frodo: 'rogue', Samwise: 'priest', 'Éowyn': 'demon_hunter', Galadriel: 'druid',
   'Théoden': 'shaman', Elrond: 'priest' };
-const pool = raw.cards.filter(c => c.meDeck);
+const pool = raw.cards.filter(c => c.meDeck && c.meSide === 'hero');
 
 // ───────────────────────── structure ─────────────────────────
 ok('exactly 100 hero-deck cards tagged meDeck', pool.length === 100, pool.length);
