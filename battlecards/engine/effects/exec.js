@@ -92,7 +92,9 @@ export function execEffects(state, pi, effects, target, source) {
 	const velen = source && (source.type === 'sorcery' || source.type === 'instant' || source.type === 'heropower')
 		? staticValue(state.players[pi], 'double-spell') : 0;
 	const boost = v0 => v0 * (2 ** velen);
-	for (const e0 of effects || []) {
+	const _effs = effects || [];
+	for (let _i = 0; _i < _effs.length; _i++) {
+		const e0 = _effs[_i];
 		// "improve" instruments (Festival of Legends weapons): a Deathrattle number
 		// that grows with source.improveCount. improveScaled names which field scales.
 		let e = e0;
@@ -109,7 +111,18 @@ export function execEffects(state, pi, effects, target, source) {
 		// (the old bare-`return`-from-execEffects semantics).
 		const _h = getEffectHandler(e.type);
 		if (_h) {
+			const _qBefore = state.scryQueue.length;
 			if (_h({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) === ABORT) return;
+			// Scry/Gaze queues an ASYNC decision (the chooser keeps/bottoms the top card via resolveScry).
+			// Any effects AFTER it must wait for that decision — otherwise "Scry 1, then draw a card" draws
+			// the card BENEATH the scried one instead of the one you kept on top. Defer the rest onto the
+			// pending scry, and resolveScry runs it once the choice is made.
+			if ((e.type === 'scry' || e.type === 'gaze') && state.scryQueue.length > _qBefore) {
+				const rest = _effs.slice(_i + 1);
+				if (rest.length) state.scryQueue[state.scryQueue.length - 1].then = { pi, effects: rest, target, source };
+				recomputeAuras(state);
+				return;
+			}
 			continue;
 		}
 		if (state.debug && state.debug.strictEffects && e.type && !getTriggerHandler(e.type)) {

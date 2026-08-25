@@ -75,7 +75,7 @@ for (const c of pool) {
 // ---- reconnaissance artifact: tap scry + draw ----
 { const st = game(); play(st, 0, 'brokers_reconnaissance', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'brokers_reconnaissance').uid, null);
-  ok('Reconnaissance taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Reconnaissance taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- resourcefulness location: tap for a shielded Citizen ----
 { const st = game(); play(st, 0, 'brokers_resourcefulness', null); const loc = st.players[0].board.find(c => c.id === 'brokers_resourcefulness'); const c0 = citizens(st, 0);

@@ -53,8 +53,8 @@ const grave = (st, pi, id) => { const c = E.instantiate(byId[id], pi); c.zone = 
 // Bahamut Deathrattle — Scry 2 & Gain 5 Armor
 { const st = game(); st.players[0].deck = ['_v', '_v', '_v']; const bah = put(st, 0, 'bahamut_the_grey'); const ar0 = st.players[0].armor || 0;
   runDeathrattle(st, 0, bah);
-  ok('Bahamut Deathrattle gains 5 Armor', (st.players[0].armor || 0) === ar0 + 5, st.players[0].armor);
-  ok('Bahamut Deathrattle queues a Scry', st.scryQueue.length > 0, st.scryQueue.length); }
+  ok('Bahamut Deathrattle queues a Scry', st.scryQueue.length > 0, st.scryQueue.length);
+  E.resolveScry(st, []); ok('Bahamut Deathrattle gains 5 Armor (after the Scry resolves)', (st.players[0].armor || 0) === ar0 + 5, st.players[0].armor); }
 
 // play-without-throw + valid-state sweep
 for (const id of WAVE) {

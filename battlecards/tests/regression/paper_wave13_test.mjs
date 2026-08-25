@@ -52,7 +52,7 @@ const tappedLand = (st, pi) => { const l = { uid: 90000 + pi, id: '_land', name:
 // Flowersoul Guardian — Scry 1 & Harvest
 { const st = game(); st.players[0].deck = ['_v', '_v', '_v']; playBC(st, 0, 'flowersoul_guardian');
   ok('Flowersoul Guardian queues a Scry', st.scryQueue.length > 0, st.scryQueue.length);
-  ok('Flowersoul Guardian also queues a Harvest pick', st.pickQueue.some(p => p.mode === 'harvest'), st.pickQueue.map(p => p.mode)); }
+  E.resolveScry(st, []); ok('Flowersoul Guardian also queues a Harvest pick', st.pickQueue.some(p => p.mode === 'harvest'), st.pickQueue.map(p => p.mode)); }
 
 // Beanstalk Giant — Swing: Harvest (fires on attack)
 { const st = game(); const bg = put(st, 0, 'beanstalk_giant'); bg.sick = false;

@@ -78,7 +78,7 @@ for (const c of pool) {
 // ---- puzzlebox artifact: tap to scry + draw ----
 { const st = game(); play(st, 0, 'kefnets_puzzlebox', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'kefnets_puzzlebox').uid, null);
-  ok('Puzzlebox taps to draw a card (after Scry 1)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Puzzlebox taps to draw a card (after Scry 1)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- cluestone location: tap to draw ----
 { const st = game(); play(st, 0, 'cluestone_of_kefnet', null); const loc = st.players[0].board.find(c => c.id === 'cluestone_of_kefnet'); const h0 = st.players[0].hand.length;

@@ -3505,6 +3505,9 @@ export function resolveScry(state, picks) {
 	// Sphere of Sapience: lose 1 Durability only when you actually bottom the card
 	if (pending.degradeWeaponOnBottom && bottoms.length > 0) degradeWeapon(state, pending.chooser);
 	emit(state, { type: 'scryDone', chooser: pending.chooser, deckOwner: pending.deckOwner, bottomed: bottoms.length });
+	// run any effects that were deferred until this scry resolved (e.g. "Scry 1, THEN draw a card" —
+	// so the draw now pulls the card you kept on top). Threaded pi/target/source from execEffects.
+	if (pending.then) execEffects(state, pending.then.pi, pending.then.effects, pending.then.target, pending.then.source);
 	return true;
 }
 

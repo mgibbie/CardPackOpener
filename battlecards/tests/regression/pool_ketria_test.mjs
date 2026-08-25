@@ -86,7 +86,7 @@ for (const c of pool) {
 // ---- gemstone amalgam: scry + draw ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'ketria_gemstone_amalgam', null);
-  ok('Gemstone Amalgam draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Gemstone Amalgam draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

@@ -74,7 +74,7 @@ for (const c of pool) {
 // ---- search for glory artifact: tap draw ----
 { const st = game(); play(st, 0, 'search_for_glory', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'search_for_glory').uid, null);
-  ok('Search for Glory taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Search for Glory taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- doomskar: board wipe ----
 { const st = game(); const a = put(st, 1, '_v'); const b = put(st, 1, '_wall');

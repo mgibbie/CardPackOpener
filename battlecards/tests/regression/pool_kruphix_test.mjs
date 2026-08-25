@@ -74,7 +74,7 @@ for (const c of pool) {
 // ---- puzzlebox artifact: tap to scry + draw ----
 { const st = game(); play(st, 0, 'kruphix_puzzlebox', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'kruphix_puzzlebox').uid, null);
-  ok('Puzzlebox taps to draw a card (after Scry 1)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Puzzlebox taps to draw a card (after Scry 1)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- enigma: draw + buff ----
 { const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack; const h0 = st.players[0].hand.length;

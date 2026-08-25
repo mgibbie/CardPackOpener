@@ -39,7 +39,7 @@ const merfolk = (st, pi) => st.players[pi].board.filter(c => c.name === 'Merfolk
 // ---- lumengrid_warden ARTIFACT: tap draw ----
 { const st = game(); play(st, 0, 'lumengrid_warden', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'lumengrid_warden').uid, null);
-  ok('Lumengrid Warden (artifact) taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Lumengrid Warden (artifact) taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- fortress_crab LOCATION: tap for a Merfolk ----
 { const st = game(); play(st, 0, 'fortress_crab', null); const loc = st.players[0].board.find(c => c.id === 'fortress_crab'); const m0 = merfolk(st, 0);

@@ -66,10 +66,10 @@ for (const c of pool) {
 // ---- ambition: metalcraft extra draw ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'tezzeret_ambition', null);
-  const noArt = st.players[0].hand.length - h0;
+  E.resolveScry(st, []); const noArt = st.players[0].hand.length - h0;
   const st2 = game(); putArt(st2, 0, 'tezzeret_gambit'); const h1 = st2.players[0].hand.length;
   play(st2, 0, 'tezzeret_ambition', null);
-  ok('Ambition draws an extra card only when you control an artifact', (st2.players[0].hand.length - h1) === (noArt + 1), [noArt, st2.players[0].hand.length - h1]); }
+  E.resolveScry(st2, []); ok('Ambition draws an extra card only when you control an artifact', (st2.players[0].hand.length - h1) === (noArt + 1), [noArt, st2.players[0].hand.length - h1]); }
 
 // ---- gatebreaker: metalcraft +2/+2 ----
 { const st = game(); putArt(st, 0, 'tezzeret_gambit'); const { c: g } = play(st, 0, 'tezzeret_gatebreaker', null);

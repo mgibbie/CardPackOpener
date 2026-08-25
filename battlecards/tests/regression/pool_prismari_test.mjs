@@ -76,7 +76,7 @@ for (const c of pool) {
 // ---- puzzlebox artifact: tap to scry + draw ----
 { const st = game(); play(st, 0, 'prismari_puzzlebox', null); const h0 = st.players[0].hand.length;
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'prismari_puzzlebox').uid, null);
-  ok('Puzzlebox taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Puzzlebox taps to draw', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- expression enchantment: magecraft sweep ----
 { const st = game(); const foe = put(st, 1, '_wall'); play(st, 0, 'prismari_expression', null);

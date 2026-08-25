@@ -65,7 +65,7 @@ for (const c of pool) {
 // ---- informant: scry + draw ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'dimir_informant', null);
-  ok('Informant draws a card (after Scry 2)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Informant draws a card (after Scry 2)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 // ---- charm modal: mill 3 (mode 1) ----
 { const st = game(); const d0 = st.players[1].deck.length;

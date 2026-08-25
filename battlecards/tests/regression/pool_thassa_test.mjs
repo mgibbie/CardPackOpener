@@ -43,7 +43,7 @@ for (const c of pool) {
 // ---- the god: scry + draw + turn-start scry ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'thassa_god_of_the_sea', null);
-  ok('Thassa draws a card on entry', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]);
+  E.resolveScry(st, []); ok('Thassa draws a card on entry (after the Scry resolves)', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]);
   let threw = null; try { E.fireOngoing(st, 0, 'turn-start'); } catch (e) { threw = e; }
   ok('Thassa turn-start Scry does not throw', !threw, threw && threw.message); }
 
@@ -70,7 +70,7 @@ for (const c of pool) {
 // ---- intervention: dig ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'thassas_intervention', null);
-  ok('Intervention draws 2 (after Scry 2)', st.players[0].hand.length === h0 + 2, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Intervention draws 2 (after Scry 2)', st.players[0].hand.length === h0 + 2, [h0, st.players[0].hand.length]); }
 
 // ---- rebuff: bounce ----
 { const st = game(); const foe = put(st, 1, '_v'); const eh0 = st.players[1].hand.length;

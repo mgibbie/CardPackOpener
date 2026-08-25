@@ -84,7 +84,7 @@ for (const c of pool) {
 // ---- taigam: scry + draw ----
 { const st = game(); const h0 = st.players[0].hand.length;
   play(st, 0, 'taigam_ojutai_master', null);
-  ok('Taigam draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+  E.resolveScry(st, []); ok('Taigam draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
