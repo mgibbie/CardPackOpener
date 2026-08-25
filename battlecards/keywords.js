@@ -56,6 +56,8 @@ const K = [
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
 	{ p: ['Coven'], t: 'Active while you control three or more creatures with different Attack values.' },
 	{ p: ['Advance'], t: 'Venture into a dungeon — enter one (your choice) or move to the next room, triggering its effect.' },
+	{ p: ['Tempt', 'The Ring tempts you', 'the Ring tempts you'], t: 'The Ring tempts you: level up your Ring (once each) and choose a creature you control as your Ring-bearer. L1 it gains Stealth; L2 it loots (draw, then discard) when it attacks; L3 it gains Deathtouch and +1/+1; L4 whenever it damages a hero, each opponent loses 3.' },
+	{ p: ['Ring-bearer', 'Ring-Bearer'], t: 'The creature carrying your Ring. It gains the Ring’s unlocked tiers; if it leaves play the Ring keeps its level and you choose a new bearer the next time you’re tempted.' },
 	{ p: ['Assemble'], t: 'Add a random Contraption to a Sprocket slot of your choice (overwriting). An indicator cycles 1 → 2 → 3 → 1 each of your turns, firing the Contraption in the slot it lands on.' },
 	{ p: ['Contraption'], t: 'A gadget loaded into your Sprocket. It stays in its slot and activates each time the indicator cycles onto it.' },
 	{ p: ['Overkill'], t: 'When this deals more than enough damage to kill a minion on your turn, the excess triggers a bonus effect.' },

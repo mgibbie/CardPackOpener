@@ -2,10 +2,12 @@
 // Handler bodies are the verbatim registry migrations (PRs 13–39); this file
 // only re-homes them. Imported for its registration side effects by index.js.
 import { register, registerTrigger, ABORT } from './registry.js';
-import { spendCorpses, advance, assemble, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote, startHarvest, startGraveyardVote } from '../../engine.js';
+import { spendCorpses, advance, assemble, tempt, grantKeywordToChoice, targetOpponent, buffCreatureChoice, rollDie, startVote, startHarvest, startGraveyardVote } from '../../engine.js';
 
 // Advance (MTG's "Venture into the Dungeon"): enter a dungeon or advance to the next room.
 register('advance', ({ state, pi }) => { advance(state, pi); });
+// Tempt (MTG's "The Ring tempts you"): level up your Ring emblem + (re)choose a Ring-bearer.
+register('tempt', ({ state, pi }) => { tempt(state, pi); });
 // Voting ("will of the council"): each player votes among options; the winner resolves.
 register('vote', ({ state, pi, target, source }, e) => { startVote(state, pi, e.options, e.tie || 0, source); });
 register('harvest', ({ state, pi, source }) => { startHarvest(state, pi, source); });

@@ -14,6 +14,8 @@ export function recomputeAuras(state) {
 		}
 	}
 	for (const p of state.players) {
+		// The Ring: a bearer that left play (died/bounced) drops the designation; the level persists.
+		if (p.ringBearer && !p.board.some(c => c.uid === p.ringBearer && !isDead(c))) p.ringBearer = null;
 		const sources = [...p.board, ...p.enchantments, ...p.emblems, ...p.artifacts]
 			.filter(c => c.aura && !c.aura.global && !(c.zone === 'board' && isDead(c)));
 		const covenActive = hasCoven(p); // 3+ distinct Attack values among your creatures (on/off)
@@ -115,6 +117,14 @@ export function recomputeAuras(state) {
 				hBonus += planeAura.health || 0;
 				for (const k of planeAura.keywords || []) granted.add(k);
 			}
+			// The Ring: its cumulative STATIC tiers ride on the Ring-bearer — L1 Stealth (the Ring
+			// hides its bearer), L3 Deathtouch + +1/+1. (L2 loot-on-attack and L4 each-opponent-
+			// loses-3 are triggered from the combat path, not here.)
+			if ((p.ring || 0) > 0 && c.uid === p.ringBearer) {
+				granted.add(KW.STEALTH);
+				if (p.ring >= 3) { granted.add(KW.DEATHTOUCH); aBonus += 1; hBonus += 1; }
+				c.isRingBearer = true;
+			} else if (c.isRingBearer) c.isRingBearer = false;
 			const dA = aBonus - c.auraAttack, dH = hBonus - c.auraHealth;
 			if (dA || dH) {
 				c.attack = Math.max(0, c.attack + dA);

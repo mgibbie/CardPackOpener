@@ -1858,6 +1858,34 @@ function openPickModal() {
 		modal.style.display = 'block';
 		return;
 	}
+	if (pend.mode === 'tempt') {
+		// The Ring tempts you: choose which of your creatures bears the Ring
+		const board = state.players[HUMAN].board;
+		const lvl = state.players[HUMAN].ring || 1;
+		modal.innerHTML = `<div class="wm-title">The Ring tempts you (level ${lvl}) — choose your Ring-bearer</div><div class="scry-row"></div>`;
+		const row = modal.querySelector('.scry-row');
+		pend.ids.forEach(id => {
+			const cr = board.find(x => x.uid === id);
+			const current = cr && cr.uid === state.players[HUMAN].ringBearer ? ' · current' : '';
+			const cell = document.createElement('div');
+			cell.className = 'scry-cell';
+			cell.innerHTML = `<div class="adapt-opt"><b>${(cr && cr.name) || '?'}</b>${cr ? `<br><span style="font-size:.85em">${cr.attack}/${E.hp(cr)}${current}</span>` : ''}</div>`;
+			const btn = document.createElement('button');
+			btn.textContent = 'Bear the Ring';
+			btn.addEventListener('pointerdown', e => {
+				e.stopPropagation();
+				modal.style.display = 'none';
+				if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
+				E.resolvePick(state, id);
+				pump();
+				if (duel.on) publishDuel();
+			});
+			cell.appendChild(btn);
+			row.appendChild(cell);
+		});
+		modal.style.display = 'block';
+		return;
+	}
 	if (pend.mode === 'vote') {
 		// Voting (will of the council): choose the option you vote for. Opponents vote too.
 		modal.innerHTML = `<div class="wm-title">${pend.title || 'Vote'}</div><div class="scry-row"></div>`;

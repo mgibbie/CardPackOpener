@@ -196,6 +196,13 @@ export function step(state, pi = 1) {
 			E.resolvePick(state, state.players[pi].lands?.some(l => l.tapped) ? '0' : '1');
 			return true;
 		}
+		if (pend.mode === 'tempt') {
+			// bear the Ring on your biggest threat — its Attack drives the L2 loot + L4 burn
+			const board = state.players[pi].board;
+			const best = [...pend.ids].sort((a, b) => (board.find(c => c.uid === b)?.attack || 0) - (board.find(c => c.uid === a)?.attack || 0))[0];
+			E.resolvePick(state, best);
+			return true;
+		}
 		const best = [...pend.ids].sort((a, b) => (state.cardsById[b]?.cost || 0) - (state.cardsById[a]?.cost || 0))[0];
 		E.resolvePick(state, best);
 		return true;

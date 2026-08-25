@@ -590,6 +590,8 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		coins: 0,
 		dungeon: null,          // Advance: { id, room } while in a dungeon, else null
 		completedDungeons: [],  // dungeon ids you've finished (some payoffs care)
+		ring: 0,                // Tempt (The Ring): emblem level 0-4 (cumulative tiers)
+		ringBearer: null,       // uid of the creature bearing the Ring, else null
 		sprocket: [null, null, null], // Contraption slots (persistent); the indicator fires one per turn
 		sprocketPointer: 0,     // indicator: which slot fires at your next turn-start; cycles 0->1->2->0
 		diedThisTurn: 0,
@@ -3037,6 +3039,9 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
+	// The Ring, tier 2: whenever your Ring-bearer attacks, draw a card, then discard one
+	if ((state.players[pi].ring || 0) >= 2 && attacker.uid === state.players[pi].ringBearer)
+		execEffects(state, pi, [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }], null, null);
 	// Paralyzed: the target is chosen, but the swing fails on a coin flip
 	if (attacker.paralyzed && state.rng() < 0.5) {
 		emit(state, { type: 'attackFizzled', attackerUid, name: attacker.name });
@@ -3101,6 +3106,11 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		const slash = has(attacker, KW.SLASHING) ? 2 : 1; // Rampaging Ceratops: double to players
 		const dealt = damageHero(state, target.player, attacker.attack * cmult * slash, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+		// The Ring, tier 4: whenever your Ring-bearer deals combat damage to a player, each opponent loses 3
+		if (dealt > 0 && (state.players[pi].ring || 0) >= 4 && attacker.uid === state.players[pi].ringBearer) {
+			for (const o of opponentsOf(state, pi)) damageHero(state, o, 3, pi, false);
+			emit(state, { type: 'ringDevours', player: pi });
+		}
 		// Connect: combat damage to a player
 		if (dealt > 0 && attacker.ongoing?.on === 'self-hit-player') {
 			runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
@@ -3592,6 +3602,34 @@ export function advance(state, pi) {
 	emit(state, { type: 'pickStart', player: pi, count: next.length });
 }
 
+// ---- Tempt (MTG's "The Ring tempts you"). A single per-player emblem (`p.ring`, level 0-4)
+// with four CUMULATIVE tiers that ride on a chosen Ring-bearer (`p.ringBearer`). Each temptation
+// unlocks the next tier (top-down, capped at 4) and lets you (re)choose the bearer from your
+// creatures — with no creatures you still level up but choose none; the bearer's static tiers
+// (L1 Stealth, L3 Deathtouch +1/+1) are applied in recomputeAuras, its triggered tiers (L2 loot on
+// attack, L4 each-opponent-loses-3 on hitting a hero) fire from the combat path. ----
+export function tempt(state, pi) {
+	const p = state.players[pi];
+	if (!p || p.eliminated) return;
+	p.ring = Math.min(4, (p.ring || 0) + 1);
+	emit(state, { type: 'ringTempts', player: pi, level: p.ring });
+	recomputeAuras(state); // the new tier's static grant takes effect immediately
+	// choose (or keep) a Ring-bearer among your creatures; none -> just the level-up
+	const creatures = p.board.filter(c => c.type === 'creature' && !isDead(c) && c.dormantLeft <= 0);
+	if (creatures.length === 0) return;
+	if (creatures.length === 1) { setRingBearer(state, pi, creatures[0].uid); return; }
+	state.pickQueue.push({ player: pi, mode: 'tempt', ids: creatures.map(c => c.uid) });
+	emit(state, { type: 'pickStart', player: pi, count: creatures.length });
+}
+export function setRingBearer(state, pi, uid) {
+	const p = state.players[pi];
+	if (!p) return;
+	const c = p.board.find(x => x.uid === uid && !isDead(x));
+	p.ringBearer = c ? c.uid : null;
+	emit(state, { type: 'ringBearer', player: pi, uid: p.ringBearer });
+	recomputeAuras(state); // move the tiers onto the new bearer (old one lapses)
+}
+
 // ---------- Sprocket / Contraptions ----------
 // A Sprocket is 3 slots and an indicator that cycles 1 -> 2 -> 3 -> 1. Assemble gives
 // a RANDOM Contraption that you place into a slot of your choice (overwriting whatever's
@@ -3754,6 +3792,10 @@ export function resolvePick(state, id) {
 		const pi = pend.player, chosen = pend.ids.includes(id) ? id : pend.ids[0];
 		if (pend.advance === 'enter') enterRoom(state, pi, chosen, DUNGEONS[chosen] && DUNGEONS[chosen].start);
 		else enterRoom(state, pi, pend.dungeonId, chosen);
+		return true;
+	}
+	if (pend.mode === 'tempt') { // choose which creature bears the Ring
+		setRingBearer(state, pend.player, pend.ids.includes(id) ? id : pend.ids[0]);
 		return true;
 	}
 	// Treasure Token sacrifice: a small chain of choices
