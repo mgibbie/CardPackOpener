@@ -310,6 +310,12 @@ function loadMiddleearth() {
   if (!middleearthPromise) middleearthPromise = import('../battlecards/middleearth.js' + CB);
   return middleearthPromise;
 }
+// Lorequest: Sword Coast data (D&D — hero/enemy rosters, rungs, class map, hero powers)
+let swordcoastPromise = null;
+function loadSwordcoast() {
+  if (!swordcoastPromise) swordcoastPromise = import('../battlecards/swordcoast.js' + CB);
+  return swordcoastPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -1660,6 +1666,91 @@ async function middleEarthDeckDetail(slug) {
     cardSizeControl(grid), grid);
 }
 
+// ── Lorequest: Sword Coast (D&D) — mirrors the Middle-earth surfaces, tagged scDeck/scSide ──
+function scDeckCards(cards, ch) {
+  return cards.filter(c => c.scDeck === ch && !c.token)
+    .sort((a, b) => ((b.rarity === 'legendary') - (a.rarity === 'legendary'))
+      || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+}
+function scTile(ch, deck, clsName, pw, colors) {
+  const canvas = CardArt.drawCardFace(lqSig(deck));
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
+  return h('a', { class: 'wiki-card lq-tile', href: '#/sword-coast/' + lqSlug(ch), title: pw ? `${pw.name}: ${pw.text}` : ch },
+    img,
+    h('div', { class: 'lq-name' }, ch),
+    h('div', { class: 'lq-sub' }, colorPips(colors), h('span', { class: 'lq-cls' }, clsName)));
+}
+async function swordCoastView() {
+  content.replaceChildren(h('h1', null, 'Lorequest: Sword Coast'), h('p', { class: 'muted' }, 'Loading decks…'));
+  let SC, classes, cards;
+  try { [SC, classes, cards] = await Promise.all([loadSwordcoast(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest: Sword Coast'), h('p', { class: 'muted' }, 'Could not load the Sword Coast data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'sword-coast') return;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase((id || '').replace(/_/g, ' '));
+  const heroes = [...SC.HEROES, ...SC.SECRET_HEROES];
+  const allChars = [...heroes, ...SC.ENEMIES];
+  const decks = {}; for (const ch of allChars) decks[ch] = scDeckCards(cards, ch);
+  await CardArt.preloadArt(allChars.map(ch => lqSig(decks[ch])?.id).filter(Boolean));
+  const group = (title, blurb, names) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
+      h('p', { class: 'muted' }, blurb)),
+    h('div', { class: 'card-grid size-small' },
+      ...names.map(ch => scTile(ch, decks[ch], clsName(SC.classOf(ch)), SC.powerOf(ch), SC.colorsOf(ch)))));
+  const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Lorequest: Sword Coast'),
+        h('p', { class: 'muted' }, 'A Dungeons & Dragons dungeon run built from the AFR/CLB card art. Pick a Companion of the Realms (a 10-card starter deck) and Advance through the Sword Coast’s villains to 12 wins or 3 losses. Its signature mechanic is ', h('strong', null, 'Advance'), ' (venture into the dungeon) with a sprinkle of d20 rolls. Like ', h('a', { href: '#/middle-earth' }, 'Middle-earth'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30) with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+    group('Heroes — Companions of the Realms', '11 heroes (Gale, Waterdeep Prodigy is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you Advance.', heroes),
+    group('Rung A — Henchmen', 'Your first fights (wins 0–2). Gut & Baeloth appear only as your very first encounter.', SC.ENEMY_RUNGS.A),
+    group('Rung B — Lieutenants', 'Beholders, giants, and warlords (wins 3–6).', SC.ENEMY_RUNGS.B),
+    group('Rung C — Commanders', 'The Dead Three and archfiends (wins 7–10).', SC.ENEMY_RUNGS.C),
+    group('Rung D — Archfiend', 'The 12th-win final boss — Tiamat and Asmodeus rotate for replay variety.', SC.ENEMY_RUNGS.D));
+}
+async function swordCoastDeckDetail(slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let SC, classes, cards;
+  try { [SC, classes, cards] = await Promise.all([loadSwordcoast(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Sword Coast Deck'), h('p', { class: 'muted' }, 'Could not load the Sword Coast data.')); }
+  const allChars = [...SC.HEROES, ...SC.SECRET_HEROES, ...SC.ENEMIES];
+  const ch = allChars.find(x => lqSlug(x) === slug);
+  if (!ch) return content.replaceChildren(h('h1', null, 'Deck not found'),
+    h('p', null, h('a', { href: '#/sword-coast' }, '← Back to Lorequest: Sword Coast')));
+  const deck = scDeckCards(cards, ch);
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'sword-coast') return;
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  await CardArt.preloadArt(deck.map(c => c.id));
+  const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const grid = await deckGrid(deck.map(c => c.id), byId);
+  const clsName = (classes.find(c => c.id === SC.classOf(ch))?.name) || titleCase(SC.classOf(ch).replace(/_/g, ' '));
+  const isEnemy = SC.isEnemy(ch);
+  const secret = SC.SECRET_HEROES.includes(ch);
+  const pw = SC.powerOf(ch);
+  const rung = !isEnemy ? null
+    : SC.ENEMY_RUNGS.A.includes(ch) ? 'A — Henchman' : SC.ENEMY_RUNGS.B.includes(ch) ? 'B — Lieutenant'
+      : SC.ENEMY_RUNGS.C.includes(ch) ? 'C — Commander' : 'D — Archfiend';
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/sword-coast' }, '← All Sword Coast decks')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, ch),
+        h('div', { class: 'lp-detail-meta' },
+          colorPips(SC.colorsOf(ch)),
+          h('span', { class: 'lq-cls' }, clsName),
+          isEnemy ? h('span', { class: 'lq-cls' }, 'Rung ' + rung) : null,
+          h('span', { class: 'lp-count' }, isEnemy ? (deck.length + ' cards · 2 copies each = 30-card deck') : (deck.length + '-card singleton starter deck'))),
+        pw ? h('p', { class: 'muted' }, h('strong', null, 'Hero Power — ' + pw.name + ': '), pw.text) : null,
+        h('p', { class: 'muted' }, isEnemy
+          ? `A static enemy faced as you Advance — no win-parity loot; its signature hero power gives it teeth.`
+          : (secret ? `A secret hero, unlocked by clearing a full run (12 wins). Its loot buckets come from the ${clsName} class.`
+            : `A Companion hero — one of the 10 offered at the start of a run. You grow this 10-card deck via a spoils draft + an alternating treasure/bucket each win. Its loot buckets come from the ${clsName} class.`)))),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, '(' + deck.length + ' cards' + (isEnemy ? ' · ×2 = 30' : '') + ')')),
+    cardSizeControl(grid), grid);
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1682,6 +1773,7 @@ function route() {
   if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();
   if (section === 'lore-decks') return id ? lorequestDeckDetail(id) : lorequestView();
   if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
+  if (section === 'sword-coast') return id ? swordCoastDeckDetail(id) : swordCoastView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
