@@ -1799,16 +1799,26 @@ async function finalFantasyView() {
     h('div', { class: 'card-grid size-small' },
       ...names.map(ch => ffTile(ch, decks[ch], clsName(FF.classOf(ch)), FF.powerOf(ch), FF.colorsOf(ch)))));
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  // FF-specific treasures — neutral rewards drafted on odd wins
+  const treasures = cards.filter(c => c.ffTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt(treasures.map(c => c.id));
+  const treasureSection = h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
+      h('p', { class: 'muted' }, 'Powerful neutral treasures drafted on odd wins (with the shared treasure pool). Iconic FINAL FANTASY armaments & relics.')),
+    h('div', { class: 'card-grid size-small' },
+      ...treasures.map(c => { const canvas = CardArt.drawCardFace(c); return h('div', { class: 'wiki-card' }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy', title: c.description || c.name }), h('div', { class: 'lq-name' }, c.name)); })));
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
       h('div', null, h('h1', null, 'Lorequest: Final Fantasy'),
         h('p', { class: 'muted' }, 'A dungeon run built from the MAGIC: THE GATHERING — FINAL FANTASY set art. Pick an FF hero (a 10-card starter deck) and battle the villains to 12 wins or 3 losses. Its signature mechanics are ', h('strong', null, 'Spiritsummon'), ' (call a random Spirit — Ifrit, Shiva, Bahamut…) and ', h('strong', null, 'Limit Break'), '. Like ', h('a', { href: '#/sword-coast' }, 'Sword Coast'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30) with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
-      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards · ' + treasures.length + ' treasures'))),
     group('Heroes — Warriors of Light', '11 heroes (Gilgamesh is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you climb.', heroes),
     group('Rung A — Henchmen', 'Your first fights (wins 0–2). Reno & Rude and Ultros appear only as your very first encounter.', FF.ENEMY_RUNGS.A),
     group('Rung B — Lieutenants', 'Empire generals and sorcerers (wins 3–6).', FF.ENEMY_RUNGS.B),
     group('Rung C — Archvillains', 'The named archvillains (wins 7–10).', FF.ENEMY_RUNGS.C),
-    group('Rung D — Final Boss', 'The 12th-win final boss — Sephiroth and Chaos rotate for replay variety.', FF.ENEMY_RUNGS.D));
+    group('Rung D — Final Boss', 'The 12th-win final boss — Sephiroth and Chaos rotate for replay variety.', FF.ENEMY_RUNGS.D),
+    treasureSection);
 }
 async function finalFantasyDeckDetail(slug) {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));

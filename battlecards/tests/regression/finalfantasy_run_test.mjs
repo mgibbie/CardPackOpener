@@ -66,6 +66,13 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].ffDeck === 'Kefka, Dancing Mad'), sp); }
 ok('treasurePool returns DUELS treasures', FF.treasurePool(cardsById).length > 0
   && FF.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.ffTreasure));
+// 15 FF-specific treasures: neutral, NO rarity, uncollectible, ffTreasure:true, in the pool, but
+// treasure:false so they don't leak into the shared heist/tombs/duels pools.
+{ const pool = FF.treasurePool(cardsById);
+  const ffT = Object.values(cardsById).filter(d => d.ffTreasure && d.id.startsWith('ff_treasure_'));
+  ok('15 FF treasures (neutral, no rarity, uncollectible)', ffT.length === 15
+    && ffT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [ffT.length, ffT.filter(t => t.rarity).map(t => t.id)]);
+  ok('FF treasures are in the FF pool but treasure:false (no cross-mode leak)', ffT.every(t => pool.some(d => d.id === t.id) && t.treasure === false)); }
 
 // ───────────────────────── engine integration: install + fire all 38 powers ─────────────────────────
 function bootWith(seatChar, oppChar = 'Cloud') {
