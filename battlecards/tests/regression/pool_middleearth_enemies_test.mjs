@@ -1,4 +1,4 @@
-// pool_middleearth_enemies_test.mjs — Lorequest Middle-earth: the 27 ENEMY decks (15 cards each).
+// pool_middleearth_enemies_test.mjs — Lorequest Middle-earth: the 29 ENEMY decks (15 cards each).
 // Composition per deck: 8 creatures (1 legendary sig) + 3 spells + 1 location + 1 weapon + 1 enchantment
 // + 1 artifact. Verifies structure, colorless/class/enemy tagging, keyword/type breadth, that every card
 // plays without throwing and leaves a valid game state, and spot-checks several boss signatures.
@@ -26,16 +26,18 @@ const ENEMY_CLASS = {
   'The Balrog': 'warlock', 'Witch-king of Angmar': 'death_knight', 'Sauron the Necromancer': 'death_knight',
   'Gollum': 'rogue', 'Smaug': 'warrior', 'Azog': 'warrior',
   'Sauron the Dark Lord': 'warlock', 'Sauron the Lidless Eye': 'warlock',
+  // Hobbit-set additions
+  'The Master of Lake-town': 'warlock', 'Chief of the Wilds': 'hunter',
 };
 const ENEMIES = Object.keys(ENEMY_CLASS);
 const pool = raw.cards.filter(c => c.meDeck && c.meSide === 'enemy');
 
 // ───────────────────────── structure ─────────────────────────
-ok('exactly 405 enemy-deck cards (meSide enemy)', pool.length === 405, pool.length);
-ok('all 27 enemies present', ENEMIES.every(e => pool.some(c => c.meDeck === e)), ENEMIES.filter(e => !pool.some(c => c.meDeck === e)));
-ok('no stray meDeck values beyond the 27 enemies', pool.every(c => ENEMIES.includes(c.meDeck)), [...new Set(pool.map(c => c.meDeck))].filter(m => !ENEMIES.includes(m)));
+ok('exactly 435 enemy-deck cards (meSide enemy)', pool.length === 435, pool.length);
+ok('all 29 enemies present', ENEMIES.every(e => pool.some(c => c.meDeck === e)), ENEMIES.filter(e => !pool.some(c => c.meDeck === e)));
+ok('no stray meDeck values beyond the 29 enemies', pool.every(c => ENEMIES.includes(c.meDeck)), [...new Set(pool.map(c => c.meDeck))].filter(m => !ENEMIES.includes(m)));
 ok('every enemy card is colorless, non-collectible, paper', pool.every(c => c.collectible === false && (c.colors || []).length === 0 && c.set === 'paper'), pool.find(c => (c.colors || []).length)?.id);
-ok('all ids prefixed me_ and globally unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 405, new Set(pool.map(c => c.id)).size);
+ok('all ids prefixed me_ and globally unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 435, new Set(pool.map(c => c.id)).size);
 // enemy ids must not collide with the 100 hero ids
 const heroIds = new Set(raw.cards.filter(c => c.meSide === 'hero').map(c => c.id));
 ok('no enemy id collides with a hero id', pool.every(c => !heroIds.has(c.id)));
@@ -56,9 +58,9 @@ for (const e of ENEMIES) {
   ok(`${e}: spans >=6 distinct types`, new Set(d.map(c => c.type)).size >= 6, [...new Set(d.map(c => c.type))]);
 }
 
-// ───────────────────────── breadth (across all 405) ─────────────────────────
+// ───────────────────────── breadth (across all 435) ─────────────────────────
 const kws = new Set(pool.flatMap(c => c.keywords || []));
-ok('uses >=15 distinct keywords across the 405', kws.size >= 15, [...kws].sort());
+ok('uses >=15 distinct keywords across the 435', kws.size >= 15, [...kws].sort());
 for (const need of ['taunt', 'rush', 'charge', 'first_strike', 'divine_shield', 'lifesteal', 'deathtouch',
   'elusive', 'stealth', 'windfury', 'reborn', 'poisonous', 'overkill', 'combo', 'cleave', 'trample', 'deathrattle'])
   ok(`keyword present: ${need}`, kws.has(need));
@@ -90,7 +92,7 @@ function targetKind(c) {
   return null;
 }
 
-// ---- play-without-throw sweep over all 405 ----
+// ---- play-without-throw sweep over all 435 ----
 for (const c of pool) {
   const st = game(); const fr = put(st, 0, '_v'); const foe = put(st, 1, '_foe'); let threw = null;
   const kind = targetKind(c);
