@@ -2,6 +2,576 @@
 	"generated": "2026-08-25",
 	"entries": [
 		{
+			"sha": "fbfae90",
+			"date": "2026-08-25",
+			"kind": "cards",
+			"title": "Add 45 collectible class cards — 5 from each of the 9 source sets",
+			"body": "Five new collectible cards per Scryfall set (LTR, LTC, HOB, HOC, AFR, AFC,\nCLB, FIN, FIC), art sourced from that exact set and NOT already used by any\nLorequest card. Constraints honored per set: <=2 creatures (exactly 2 each),\nrarity uncommon/rare/epic only (no common/legendary), non-neutral with the\neffect fitting the assigned class's identity.\n\nExamples: Boromir (paladin taunt), Legolas Greenleaf (hunter), Gandalf,\nShadow's Foe (mage board-damage), Icingdeath (mage freeze), Shadowheart\n(priest lifesteal), Wyll (warlock summon), Barret Wallace (warrior), Tifa\n(demon hunter windfury), Shadow (rogue stealth+deathtouch), plus class\nspells/weapons/artifacts/enchantments (Fell the Mighty, Terminate, Mizzium\nMortars, Marshal's Anthem, Warlock Class, Rishkar's Expertise, etc.).\n\nValidated: in-set art, unused art, no collectible name collisions, no id\ncollisions. Art fetched + deployed; gallery cache-bust sets45. Full suite\n438/438.",
+			"cards": [
+				{
+					"id": "ltr_boromir_warden",
+					"name": "Boromir, Warden of the Tower",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "ltr_eomer",
+					"name": "Éomer of the Riddermark",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "ltr_assault_osgiliath",
+					"name": "Assault on Osgiliath",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "ltr_ringsight",
+					"name": "Ringsight",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ltr_doors_of_durin",
+					"name": "Doors of Durin",
+					"type": "artifact",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 1
+				},
+				{
+					"id": "ltc_legolas_greenleaf",
+					"name": "Legolas Greenleaf",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ltc_gimli_caves",
+					"name": "Gimli of the Glittering Caves",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "ltc_fell_the_mighty",
+					"name": "Fell the Mighty",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ltc_deep_analysis",
+					"name": "Deep Analysis",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ltc_marshals_anthem",
+					"name": "Marshal's Anthem",
+					"type": "enchantment",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hob_thranduil_liege",
+					"name": "Thranduil, Sindarin Liege",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hob_beorn_fierce",
+					"name": "Beorn the Fierce",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "uncommon",
+					"cost": 5
+				},
+				{
+					"id": "hob_eagles_coming",
+					"name": "The Eagles Are Coming!",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hob_gathering_darkness",
+					"name": "Gathering of Darkness",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hob_forest_gate",
+					"name": "Through the Forest Gate",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "hoc_gandalf_shadowsfoe",
+					"name": "Gandalf, Shadow's Foe",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "hoc_celeborn_wise",
+					"name": "Celeborn the Wise",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hoc_banishing_light",
+					"name": "Banishing Light",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "hoc_dragons_desire",
+					"name": "Dragon's Desire",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "hoc_lorien_revealed",
+					"name": "Lórien Revealed",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "afr_delina_wildmage",
+					"name": "Delina, Wild Mage",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "afr_icingdeath",
+					"name": "Icingdeath, Frost Tyrant",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "afr_magic_missile",
+					"name": "Magic Missile",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "afr_warlock_class",
+					"name": "Warlock Class",
+					"type": "enchantment",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "afr_dragons_fire",
+					"name": "Dragon's Fire",
+					"type": "instant",
+					"class": "hunter",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "afc_lorcan_collector",
+					"name": "Lorcan, Warlock Collector",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "afc_atarka_worldrender",
+					"name": "Atarka, World Render",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 8
+				},
+				{
+					"id": "afc_terminate",
+					"name": "Terminate",
+					"type": "instant",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "afc_serum_visions",
+					"name": "Serum Visions",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 1
+				},
+				{
+					"id": "afc_rishkars_expertise",
+					"name": "Rishkar's Expertise",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "clb_shadowheart_justiciar",
+					"name": "Shadowheart, Dark Justiciar",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "clb_wyll_frontiers",
+					"name": "Wyll, Blade of Frontiers",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "clb_murder",
+					"name": "Murder",
+					"type": "instant",
+					"class": "rogue",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "clb_mizzium_mortars",
+					"name": "Mizzium Mortars",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "clb_stoneskin",
+					"name": "Stoneskin",
+					"type": "enchantment",
+					"class": "paladin",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "fin_barret_wallace",
+					"name": "Barret Wallace",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "fin_tifa_lockhart",
+					"name": "Tifa Lockhart",
+					"type": "creature",
+					"class": "demon_hunter",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "fin_slash_of_light",
+					"name": "Slash of Light",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "fin_aerith_rescue",
+					"name": "Aerith Rescue Mission",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "fin_world_map",
+					"name": "World Map",
+					"type": "artifact",
+					"class": "rogue",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "fic_cyan_samurai",
+					"name": "Cyan, Vengeful Samurai",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "fic_shadow_assassin",
+					"name": "Shadow, Mysterious Assassin",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "fic_dispatch",
+					"name": "Dispatch",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "fic_cleansing_nova",
+					"name": "Cleansing Nova",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "fic_heros_blade",
+					"name": "Hero's Blade",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "89cd93b",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Final Fantasy — bump treasures 15 -> 20",
+			"body": "Add 5 more FF-set treasures so all three themed runs have 20: Wrecking Ball\nArm (Cleave), Monk's Fist (Windfury), The Prima Vista (draw 2 + 3 armor),\nThe Falcon, Airship Restored (draw + coin tap), Phantom Train (5/4 Taunt).\nSame neutral / no-rarity / uncollectible / ffTreasure:true + treasure:false\nshape. Run test 15->20; art deployed; wiki count auto-updates (cache-bust\nfft20). Full suite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "89e9607",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Middle-earth — bump treasures 13 -> 20",
+			"body": "Add 7 more Hobbit-set treasures so the themed set matches Sword Coast's 20\n(plus the special One Ring): My Precious (coin on attack), Dúnedain Blade\n(Swift), The Reaver Cleaver (Cleave), Dwarven Mattock (ramp on attack),\nWizard's Staff (3 dmg tap), Great Gilded Boat (draw 2 + 4 armor), Key to\nthe Side-Door (draw). Same neutral / no-rarity / uncollectible /\nmeTreasure:true + treasure:false shape. Run test 13->20; art deployed;\nwiki count auto-updates (cache-bust met20). Full suite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "7ecdd61",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Sword Coast — add 20 run-specific treasures",
+			"body": "20 D&D magic-item treasures for the Sword Coast dungeon run: neutral, no\nrarity, uncollectible, scTreasure:true + treasure:false so they join ONLY\nthe SC odd-win treasure draft (via SC.treasurePool = DUELS + scTreasure)\nand never leak into the heist/tombs/duels pools. ids sc_treasure_*, art\nfrom the D&D (AFR/CLB) set.\n\n- Weapons: Hand of Vecna, Vorpal Sword, Blade of Selves, Colossus Hammer,\n  Moonsilver Spear, Sword of the Animist, Wand of Orcus, Basilisk Collar.\n- Artifacts: The Deck of Many Things (roll-dice Discover), Eye of Vecna,\n  The Book of Vile Darkness, Sol Ring (ramp), Bag of Holding, Sphere of\n  Annihilation (destroy), The Blackstaff of Waterdeep, Rod of Absorption,\n  Portable Hole (bounce), Immovable Rod (0/8 wall), Mirror of Life\n  Trapping (mind-control <=4), Dragon's Hoard.\n\nWiki #/sword-coast gained a Treasures section (cache-bust sct1); run test\n+2 checks (212). Art deployed. Full suite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "5e324dd",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Final Fantasy — add 15 run-specific treasures",
+			"body": "15 FF-themed treasures for the Final Fantasy dungeon run: neutral, no\nrarity, uncollectible, ffTreasure:true + treasure:false so they join ONLY\nthe FF odd-win treasure draft (via FF.treasurePool = DUELS + ffTreasure)\nand never leak into the heist/tombs/duels pools. ids ff_treasure_*, art\nfrom the FINAL FANTASY set.\n\n- Weapons: Ultima Weapon (6/2 Swift), Genji Glove (Windfury), Lion Heart\n  (Swift), Conformer Shuriken (coin on attack), Aettir and Priwen (armor).\n- Artifacts: Ring of the Lucii (3 to all enemies), The Regalia (draw 2),\n  Elixir (+8 life), Ether (+2 mana), Lunatic Pandora (Spiritsummon),\n  Phoenix Down (3/3 Reborn), Coveted Jewel (draw 3), Instant Ramen,\n  The Lunar Whale (4/4 Rush).\n- Sorcery: Ultima (4 to all enemy creatures).\n\nWiki #/final-fantasy gained a Treasures section (cache-bust fft1); run test\n+2 checks (212). Art deployed. Full suite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "0e95712",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Retire 30 more duplicate collectibles + resolve 2 name collisions",
+			"body": "Full scan of collectible cards (all rarities) found 32 duplicate names.\nRetired the non-canonical copy of 30 true dups / wrong imports via\ncollectible:false (keep the real-set / correct-\"creature\"-wording version):\nPLACEHOLDER_202204 copies, _core/_legacy/_vanilla/_wonders reprints, id\ntypos (Utgarde Grapplesniper, Pharaoh's/Forest's), the \"minion\"-worded\nSanctuary/Initiation, and a fabricated 10/10 creature \"Idol of Y'Shaarj\"\n(keep the real Darkmoon Faire sorcery).\n\nThe 2 genuinely-distinct name collisions handled per user:\n- Dead Man's Hand: the Bounty Hunter quest renamed to \"Dead Man's Bounty\"\n  (keeps both cards; frees the name for the real Warrior card).\n- Incanter's Flow: keep the enchantment (MTG-faithful), retire the sorcery.\n\nZero duplicate-name collectible cards remain (6490 -> 6459 collectible).\nSeed-sensitive tests (paper/duel) green. Wiki cache-bust -> hob3.",
+			"cards": []
+		},
+		{
+			"sha": "a31cc98",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Retire 12 duplicate collectible legendaries (fix wiki double-listing)",
+			"body": "The wiki's collectible-legendary view showed 12 cards twice — Hearthstone\nquest/questline re-imports, placeholder-set copies, and one bad class\nstring. Set collectible:false on the non-canonical copy of each (the\nestablished dup-retirement convention), keeping the canonical version:\n\n- The Scourge: keep PATH_OF_ARTHAS, retire PLACEHOLDER_202204\n- The Soularium: keep BOOMSDAY, retire placeholder\n- Final Showdown: keep cls demon_hunter, retire cls \"demonhunter\"\n- Raid the Docks / Rise to the Occasion: keep STORMWIND Questline, retire hsx\n- Last Kaleidosaur / Awaken the Makers / Fire Plume's Heart / Making Mummies:\n  keep the \"creatures\"-worded copy, retire the raw \"minions\" re-import\n- Dive the Golakka Depths / Hack the System / Seek Guidance: retire the\n  _r5/_ql/_priest duplicate\n\nGameplay-neutral (identical cards); each name is now unique in the\ncollectible view. Seed-sensitive tests (paper/duel) verified green. Wiki\ncache-bust → hob2.",
+			"cards": []
+		},
+		{
+			"sha": "b996d16",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Discover/scry modal: repaint card faces when their art loads",
+			"body": "Discover/Draft options pulled from an external pool (notably the advanced-\nland pools) aren't preloaded like deck cards, so drawCardFace first paints\nthe procedural fallback and the modal never updated when the art image\narrived — the discovered cards showed no art. Register an artListeners\ncallback (same pattern as the inspect panel) that repaints each face in\nplace once its image loads, in both the pick/Discover modal and the scry\nmodal; cleared when the modal closes.\n\nNote: the Palantir of Orthanc scry-before-draw fix (commit e551fe7e) is\nalready live and verified correct (engine defers the draw onto the scry's\n.then, resolveScry reorders the deck before drawing). A stale tab needs a\nhard refresh to pick it up.",
+			"cards": []
+		},
+		{
+			"sha": "2c2d869",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Middle-earth Hobbit enemies: conform to canonical deck template",
+			"body": "The 2 new Hobbit enemies were built with a 10-creature/2-spell shape and\n_N ids, which broke pool_middleearth_enemies_test (it enforces the ME enemy\ntemplate: 8 creatures + 3 spells + 1 location + 1 weapon + 1 enchantment +\n1 artifact = 15, sig id ending _sig, plus its own ENEMY_CLASS map + a 405\ncard count). Reshaped both decks to that template with descriptive _sig ids\nand registered the 2 enemies in the test (ENEMY_CLASS + 405→435). Art\nre-fetched for the new ids + redeployed. Full suite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "7ca8d4a",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Middle-earth — Hobbit-set enhancement (2 enemies + 13 treasures)",
+			"body": "Enriches the shipped Middle-earth run with The Hobbit set (hob/hoc) art.\n\n- +2 enemies (27→29): The Master of Lake-town (Rung A, warlock) and Chief\n  of the Wilds (Rung B, hunter), each a 15-card Hobbit-art deck with a\n  unique hero power. Rung windows unchanged (still 12 fights); roster now\n  A10/B10/C7/D2 = 29 enemies, 40 characters.\n- +13 powerful treasures — neutral, no rarity, uncollectible, meTreasure:true\n  + treasure:false so they join ONLY the Middle-earth odd-win treasure draft\n  (no leak into heist/tombs/duels). Andúril, Sting, Orcrist, Glamdring,\n  Mithril Coat, The Arkenstone, Thrór's Map, Mox Amber, Relic of Sauron,\n  Bilbo's Ring, Necklace of Girion, The Black Arrow, Getaway Barrel.\n- middleearth.js roster/powers, run test (223 checks), wiki #/middle-earth\n  Treasures section (cache-bust hob1). Hobbit art fetched face-aware +\n  deployed to magepunk-cardart.",
+			"cards": []
+		},
+		{
+			"sha": "b60f1f0",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest: Final Fantasy — rename Sprit → Spirit",
+			"body": "Mechanic/tribe renamed per feedback: Spritsummon → Spiritsummon, the\nsummoned token tribe Sprit → Spirit (Ifrit/Shiva/Bahamut…). Touches only\nthe 515 ff_* cards' tribe/description text, finalfantasy.js (SPIRITS /\nspiritSummon), the run test, and the wiki blurb. Cache-bust → ff2.\nSuite 438/438.",
+			"cards": []
+		},
+		{
+			"sha": "351bf4a",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Add Lorequest: Final Fantasy — FF MTG dungeon-run mode",
+			"body": "A twin of Lorequest: Sword Coast built from the MAGIC: THE GATHERING —\nFINAL FANTASY set art. Signature mechanics = Spritsummon (call a random\nSprit — Ifrit/Shiva/Bahamut…, named Sprit since \"Esper\" is the Alara\nshard concept) + Limit Break (self-damaged payoff). No engine change.\n\n- 515 cards in cards.json (ffDeck/ffSide tags, ids ff_*): 11 FF hero\n  starter decks (10 singleton) + 27 static villain decks (15x2=30),\n  art == real FF card names (face-aware fetch for DFC back-faces like\n  One-Winged Angel / Chaos), deployed to magepunk-cardart.\n- battlecards/finalfantasy.js run module (rosters/rungs/class map/38\n  unique hero powers/deckOf/loot), mirroring swordcoast.js.\n- game.js wiring for ?finalfantasy=1 (flag, load/save/clear, boot dispatch,\n  resume + pick-hero overlays, spoils/treasure/bucket loot, game-over).\n- designwiki: #/final-fantasy route + sidebar link + mana pips + cache-bust.\n- tests/regression/finalfantasy_run_test.mjs (210 assertions; suite 438/438).",
+			"cards": []
+		},
+		{
+			"sha": "41f4939",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Add Lorequest: Sword Coast — D&D dungeon-run mode",
+			"body": "A twin of Lorequest: Middle-earth built from AFR/CLB \"D&D MTG\" art.\nSignature mechanic = Advance (venture into the dungeon) + d20 rolls.\n\n- 515 cards in cards.json (scDeck/scSide tags, ids sc_*): 11 hero\n  starter decks (10 singleton cards) + 27 static enemy decks (15x2=30),\n  art == real D&D card names, deployed to magepunk-cardart.\n- battlecards/swordcoast.js run module (rosters/rungs/class map/38 unique\n  hero powers/deckOf/loot), mirroring middleearth.js.\n- game.js wiring for ?swordcoast=1 (flag, load/save/clear, boot dispatch,\n  resume + pick-hero overlays, spoils/treasure/bucket loot, game-over).\n- designwiki: #/sword-coast route + sidebar link + mana pips + cache-bust.\n- tests/regression/swordcoast_run_test.mjs (210 assertions; suite 437/437).",
+			"cards": []
+		},
+		{
+			"sha": "18a206c",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Wiki: show Middle-earth character colour identities before their class",
+			"body": "The Middle-earth deck cards are colourless class cards, so the wiki showed\nno colour badge — unlike the OG Lorequest page, which shows each deck's\nmana pips before the class. Added COLOR_IDENTITY (each character's source\nMTG colour identity, e.g. Aragorn GW / Gandalf UR / Sauron the Dark Lord\nBRU / Tom Bombadil WUBRG) + colorsOf() to middleearth.js, and the wiki's\nMiddle-earth tiles + deck detail now render the mana symbols before the\nclass name, matching the Lorequest layout. Bumped the wiki ?v=.\n\nAll 38 characters have a colour identity; full suite 436/436.",
+			"cards": []
+		},
+		{
+			"sha": "a75ddf3",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Finish the 5 Alara shard land pools to 30 cards each",
+			"body": "The wiki correctly showed these pools UNDER 30 because the data was never\nfinished: the three-colour shard pools were meant to be 30 but sat at\nBant 26 / Esper 25 / Naya 28 / Grixis 28 / Jund 27 (the 10 Kaldheim + 4\nwedge pools were already 30). Added +16 real-MTG-name Alara cards\n(cardClass magepunk, colours = shard identity in each pool's exact array\norder, landSet tag, collectible:false) matching the existing pool shape,\nwith art_crop sourced + deployed:\n\n- Bant (+4): Empyrial Archangel, Aerie Mystics, Bant Sojourners, Giltspire Avenger\n- Esper (+5): Enigma Sphinx, Magister Sphinx, Arsenal Thresher, Brilliant Ultimatum, Etherwrought Page\n- Naya (+2): Gloryscale Viashino, Marisi's Twinclaws\n- Grixis (+2): Fire-Field Ogre, Kederekt Creeper\n- Jund (+3): Broodmate Dragon, Charnelhoard Wurm, Hellkite Overlord\n\nAll five pools now exactly 30. Bumped the wiki ?v= so it refetches the\nupdated cards.json. Full suite 436/436 (the *_pool_test tri-colour +\ncount checks pass with the new cards).",
+			"cards": []
+		},
+		{
+			"sha": "38ddeed",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Wiki: real MTG mana symbols + list Amber Temple in the dungeons view",
+			"body": "- Mana symbols: the wiki showed plain coloured dots (.pip) and color NAMES.\n  Now it renders authentic MTG mana symbols via Andrew Gioia's Mana font\n  (the same one the card faces already use) — colorPips uses the ms-w/ms-u/\n  ... icon classes, and the gallery color chips + card-detail color meta\n  show the symbol alongside the name. Loaded the mana.min.css in the wiki\n  <head>; bumped app.js ?v=.\n\n- Amber Temple missing from #/dungeons: the wiki lists dungeons by filtering\n  cards.json for type==='dungeon' (each dungeon needs a matching card whose\n  id equals its DUNGEONS key). Amber Temple was only in engine/dungeons.js,\n  so it had no card. Added the amber_temple dungeon card (matching lost_mine\n  /tomb/mad_mage), so it now appears with its full room flowchart.\n\nFull suite 436/436.",
+			"cards": []
+		},
+		{
+			"sha": "e551fe7",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Fix scry ordering: resolve the Scry before the draw (Palantir of Orthanc)",
+			"body": "\"Scry N, then draw a card\" drew the WRONG card: the scry handler pops the\ntop card(s) into an async decision (scryQueue), then execEffects ran the\nfollowing `draw` immediately — pulling the card BENEATH the scried one,\nwhile the scried card was only placed on top/bottom later by resolveScry.\n\nFix: when a scry/gaze queues a decision, DEFER the remaining effects onto\nthe pending scry (exec.js), and run them in resolveScry once the choice is\nmade (core.js). So the draw now pulls the card you kept on top (or the next\none, if you bottomed it). Correct for every \"Scry then <effect>\" card.\n\nNew scry_order_test.mjs (11 checks: kept-on-top draws the scried card,\nbottomed draws the next, Palantir's tapAbility, empty/short-deck). Updated\n13 pool/paper tests that asserted the old immediate ordering to resolve the\nscry first (the behavior they now get in play). Full suite 436/436.",
+			"cards": []
+		},
+		{
+			"sha": "f12517b",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Phase 2: server-authoritative run + overworld state (Cloudflare D1)",
+			"body": "A logged-in player's run progress and overworld save (which starter, which\nregion, position) lived only in localStorage, so a different device/browser\nshowed stale data. Now the server (D1, via /api/mp) is the source of truth.\n\nserver/mp.mjs: new authenticated actions run-save/run-load/run-clear (per\nrun key) + ow-save/ow-load, stored under durable dedicated keys run:<user>\n/ ow:<user> (off the user row, never GC-swept), size-capped, with\nupdated_at.\n\nbattlecards/game.js: on boot, hydrateRunsFromServer() overwrites the\nlocalStorage run caches from D1 (server authoritative). To keep server\nwrites cheap, per-frame snapshots stay LOCAL; a deduped metadata heartbeat\n(~5s) + a full push (with the mid-fight snapshot) on visibilitychange/\npagehide keep the server current; clearRun/etc. also clear the server.\n\noverworld/main.js: hydrateOw() pulls starter(party)/region/position/boxes\nfrom D1 before the boot reads them; pushOw() (deduped, ~10s + on leave)\nkeeps them current. Reuses the same MPX layer.\n\nserver_runstate_test.mjs (21 checks: action shape, validation/caps,\ndurability, last-write reconciliation). Everything degrades to localStorage\nwhen logged out/offline. Full suite 435/435; overworld tests green.",
+			"cards": []
+		},
+		{
+			"sha": "6c56628",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Phase 1: deterministic mid-fight resume for single-player runs",
+			"body": "Leaving and resuming a run fight used to re-deal a different hand: the boot\nre-ran E.createGame with an unseeded Math.random and no in-fight state was\never saved. Now the live fight is snapshotted into the run and restored\nexactly on resume — the same mechanism the MP duel-resume already uses.\n\n- Seed all 7 single-player run createGame sites (dungeon/heist/tombs/duels/\n  lorequest/middleearth/arena) with seededGame() (a random seed, but a\n  SNAPSHOT-ABLE stream) instead of Math.random, so the rng position\n  round-trips.\n- saveRunSnapshot(): deep-copied E.toSnapshot(state) persisted onto the run\n  on every settled frame (via maybeRecordFrame) + on visibilitychange/\n  pagehide, size-capped (600KB).\n- resumeRunSnapshot(): on \"Continue the run\", if the run has a valid\n  snapshot (schema-version-guarded), E.fromSnapshot + ensureUidsAbove +\n  restore the enemy name, instead of a fresh deal; falls back to a fresh\n  boot on any failure. Wired into all 7 boot dispatch branches.\n- Clear the snapshot when a fight resolves (game-over hook) so the next\n  fight boots fresh, not into the finished one.\n\nNew resume_test.mjs (13 checks): mid-fight snapshot -> restore returns BOTH\nplayers' hands (cards + uids) AND deck order identical, board/mana/turn\nidentical, seeded fights are reproducible, and post-resume seeded play\nstays on the same timeline. Full suite 434/434.",
+			"cards": []
+		},
+		{
+			"sha": "36939b4",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Phase 0: fix oversized/misaligned overworld Pokémon sprites",
+			"body": "data/pokemon_ow/*.png (legendaries, awakenings, walk-up blockers) are\nauthored ~2x the intended overworld size (uniformly 40px tall) and were\ndrawn 1:1 while every other actor is size-controlled — so they rendered\ntwice as big and overhung neighbouring tiles. Added a shared\nengine.drawOwMon() that halves the sprite (preserving each mon's relative\nbulk) and anchors it bottom-centre (feet on tile), replacing the identical\nraw drawImage at blockers.js:252, main.js:2107 (drawLegendary), and\nmain.js:2186 (drawAwakening).\n\nOverworld blockers/awakening tests pass (70 + 7 + 15, \"no uncaught client\nerrors\"). Also adds Plans/STATE_PERSISTENCE_FIX_PLAN.md (the 4-phase plan\nfor deterministic resume + server-authoritative state + this sprite fix).",
+			"cards": []
+		},
+		{
+			"sha": "263db65",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Wording: \"First Strike\" -> \"Swift\"; \"restore X Health to your hero\" -> \"gain X life\"",
+			"body": "Match the paper-rules terminology throughout the DISPLAY text (the engine\nkeyword id `first_strike` and cards' keywords[] arrays are unchanged — the\nboost table already maps Swift->first_strike).\n\n- cards.json: 100 \"First Strike\"->\"Swift\" + 16 \"restore X Health to your\n  hero\"->\"gain X life\" across all description/text fields (tapAbility/taps\n  included). No card names touched.\n- middleearth.js: Samwise's \"Don't You Leave Him\" and Elrond's \"Rivendell's\n  Grace\" hero-power text reworded to \"gain N life\".\n- keywords.js: glossary lists Swift first (First Strike kept as an alias so\n  any stray text still tooltips). designwiki ?v= bumped.\n\nTest uses of \"First Strike\" are keyword-assertions (has(c,'first_strike'))\nand comments — unaffected. Full suite 433/433.",
+			"cards": []
+		},
+		{
+			"sha": "2e422f8",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Fix Middle-earth \"Take N damage\" costs: damage self -> own-hero",
+			"body": "5 spots used `damage target:'self'`, which targets the SOURCE creature\n(null in a battlecry/deathrattle/hero-power) and silently no-ops — so the\npromised life cost never happened. Corrected to `own-hero` (the hero\nself-damage token): me_lo_feed (Feed the Swarm), me_gm_whisper (Night's\nWhisper), me_go_persecutor (Abyssal Persecutor deathrattle), me_mo_inside\n(Inside Information), and Gorbag's \"Cruel Bargain\" hero power. Full suite\n433/433.",
+			"cards": []
+		},
+		{
+			"sha": "f303bd4",
+			"date": "2026-08-25",
+			"kind": "cards",
+			"title": "Collectible Sauron (paper import) with Tempt + the Amber Temple dungeon",
+			"body": "- Sauron, Lord of the Rings (paper OCR 4525.png), now buildable since\n  Tempt exists: a collectible 5-mana 4/4 Legendary Horror God (Neutral).\n  \"Battlecry: Tempt. Swing: Tempt & Plunder\" — effects [{tempt}] +\n  ongoing self-attacks [{tempt},{plunder}]. The user's original card\n  scan deployed as its art. ring_test T12.\n\n- Amber Temple dungeon added to the Advance mechanic (engine/dungeons.js,\n  now 4 dungeons). Curse of Strahd's temple of dark gifts: an 8-room\n  branch-and-converge dungeon (Temple Doors → Amber Sarcophagi → Vault of\n  Vampyr / Shrine of Delban → Hall of Vestiges → Shrine of Zhudun /\n  Shrine of Savnok → Heart of Amber), several vestiges granting power at\n  a life cost (target:'own-hero'). Auto-resolving effects only. The\n  designwiki #/dungeons view reads DUNGEONS live, so it appears there too\n  (app.js ?v= bumped). dungeon_test walks both branches end-to-end.\n\n- Fixed paper_wave35_test seed-drift: its game() passed the companion\n  loadout in the wrong createGame arg (playerDeckIds slot, not loadouts),\n  falling back to a RANDOM companion pick — adding a collectible card\n  shifted that RNG. Now passes the loadout deterministically.\n\nFull suite 433/433.",
+			"cards": [
+				{
+					"id": "sauron_lord_of_the_rings",
+					"name": "Sauron, Lord of the Rings",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
+		},
+		{
+			"sha": "17bc147",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Wire the Ring (Tempt) into Middle-earth: One-Ring cards + a treasure",
+			"body": "- Frodo's & Gollum's \"One Ring to Rule Them All\" (enchantments) now\n  tempt you at the start of each turn (bear the Ring, grow its power).\n- The villains' \"The One Ring\" artifacts (Mouth of Sauron, Sauron the\n  Dark Lord) tempt on tap (keeping their draw/discard kit).\n- NEW draftable treasure \"The One Ring\" (me_the_one_ring, meTreasure):\n  Battlecry tempts you; {T} tempts again — four taps -> a level-4 Ring on\n  your chosen bearer. middleearth.treasurePool now includes meTreasure\n  cards, so it appears in the alternating treasure reward. Art deployed.\n\nring_test +5 (The One Ring on-play + Frodo/Gollum turn-start tempt),\nmiddleearth_run treasurePool assertion updated. Full suite 433/433.",
+			"cards": []
+		},
+		{
+			"sha": "f60985a",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Tempt (MTG's \"The Ring tempts you\"): a per-player Ring emblem mechanic",
+			"body": "A structural twin of Advance/Venture. Per-player state p.ring (0-4) +\np.ringBearer (uid); the {type:'tempt'} effect (register in handlers-misc)\nlevels the Ring once (cap 4) and lets you (re)choose a Ring-bearer among\nyour creatures (auto if 1, none -> level-only). Four CUMULATIVE tiers,\nfaithful-adaptation to our no-block combat:\n  L1  bearer gains Stealth (the Ring hides its bearer)   [static, auras.js]\n  L2  on the bearer's attack: draw a card, then discard  [attack() hook]\n  L3  bearer gains Deathtouch and +1/+1                   [static, auras.js]\n  L4  when the bearer damages a hero, each opponent -3    [resolveCombat hook]\nStatics ride the bearer via recomputeAuras (auto-lapse when it changes);\na bearer that leaves play drops the designation but the level persists.\nSerializes free (JSON-safe player fields, like p.dungeon).\n\n- core.js: player init, tempt()/setRingBearer(), resolvePick 'tempt'\n  branch, L2 attack hook, L4 resolveCombat hook.\n- auras.js: bearer static grants + dead-bearer clear.\n- game.js: 'tempt' pick modal (choose your Ring-bearer). ai.js: AI bears\n  the Ring on its biggest attacker. keywords.js: Tempt/Ring-bearer tooltips.\n- ring_test.mjs (42 checks: all 4 tiers, bearer pick, cap, no-creature\n  path, death clears bearer, moving grants, JSON round-trip, effect).\n  effect_registry count 1137 -> 1138. Full suite 433/433.",
+			"cards": []
+		},
+		{
 			"sha": "5b02143",
 			"date": "2026-08-25",
 			"kind": "patch",
