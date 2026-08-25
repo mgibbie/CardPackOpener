@@ -25,7 +25,7 @@ const K = [
 	{ p: ['Poisoned'], t: "At the end of its controller's turn, a Poisoned creature takes 2 damage. The condition stays until it's cleansed or dies.", tag: 'poisoned' },
 	{ p: ['Elusive', 'Hexproof'], t: "Can't be targeted by spells or Hero Powers.", tag: 'elusive' },
 	{ p: ['Trample'], t: 'Excess lethal damage carries over to the hero.', tag: 'trample' },
-	{ p: ['First Strike', 'Swift'], t: 'Deals its combat damage first.', tag: 'first_strike' },
+	{ p: ['Swift', 'First Strike'], t: 'Deals its combat damage first.', tag: 'first_strike' },
 	{ p: ['Piercing'], t: 'Its attacks ignore Taunt.', tag: 'piercing' },
 	{ p: ['Slashing'], t: 'Deals double combat damage to players & planeswalkers.', tag: 'slashing' },
 	{ p: ['Cleave'], t: 'Combat damage also hits the creatures beside the target.', tag: 'cleave' },

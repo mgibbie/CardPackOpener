@@ -56,11 +56,11 @@ export const HERO_POWERS = {
 	Legolas: P('Elf-shot', 2, 'Deal 1 damage to any target.', [{ type: 'damage', value: 1, target: 'any' }]),
 	Gimli: P('And My Axe!', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
 	Frodo: P('Slip Away', 2, 'Give a friendly creature Elusive.', [{ type: 'grant', keyword: 'elusive', target: 'friendly-creature' }]),
-	Samwise: P("Don't You Leave Him", 2, 'Restore 3 Health to your hero.', [{ type: 'heal', value: 3, target: 'self' }]),
+	Samwise: P("Don't You Leave Him", 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	'Éowyn': P('I Am No Man', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	Galadriel: P('Gift of Lórien', 2, 'Summon a 1/1 Elf with Elusive.', [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Elf of Lórien', tribe: 'Elf', keywords: ['elusive'] }]),
 	'Théoden': P('Forth Eorlingas!', 2, 'Give your creatures +1/+0.', [{ type: 'buff', attack: 1, health: 0, target: 'friendly-creatures' }]),
-	Elrond: P("Rivendell's Grace", 2, 'Restore 2 Health to your hero and Scry 1.', [{ type: 'heal', value: 2, target: 'self' }, { type: 'scry', value: 1 }]),
+	Elrond: P("Rivendell's Grace", 2, 'Gain 2 life and Scry 1.', [{ type: 'heal', value: 2, target: 'self' }, { type: 'scry', value: 1 }]),
 	'Tom Bombadil': P('Ho! Merry Dol!', 2, 'Draw a card, then discard a card.', [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }]),
 	// enemies (Rung A)
 	'Bill Ferny': P('Con the Traveller', 2, 'Each opponent discards a random card.', [{ type: 'enemy-discard', count: 1 }]),

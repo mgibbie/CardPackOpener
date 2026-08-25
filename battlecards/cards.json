@@ -7,7 +7,7 @@
       "cardClass": "neutral",
       "cost": 2,
       "rarity": "uncommon",
-      "description": "First strike.",
+      "description": "Swift.",
       "attack": 2,
       "health": 2,
       "keywords": [
@@ -5178,7 +5178,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Divine Shield. First Strike. After your hero attacks, give your creatures +1/+0.",
+      "description": "Divine Shield. Swift. After your hero attacks, give your creatures +1/+0.",
       "type": "weapon",
       "colors": [
         "W"
@@ -5380,7 +5380,7 @@
       "cost": 7,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Divine Shield. Battlecry: Summon two 2/2 Warriors with First Strike. Whenever you play a creature, summon a 2/2 Warrior with First Strike.",
+      "description": "Divine Shield. Battlecry: Summon two 2/2 Warriors with Swift. Whenever you play a creature, summon a 2/2 Warrior with Swift.",
       "type": "creature",
       "colors": [
         "W"
@@ -5487,7 +5487,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "First Strike. Battlecry: Summon two 1/1 Warriors with First Strike.",
+      "description": "Swift. Battlecry: Summon two 1/1 Warriors with Swift.",
       "type": "creature",
       "colors": [
         "W"
@@ -5521,7 +5521,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. Deathrattle: Summon a 1/1 Warrior with First Strike.",
+      "description": "Taunt. Deathrattle: Summon a 1/1 Warrior with Swift.",
       "type": "creature",
       "colors": [
         "W"
@@ -5603,7 +5603,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "Give a creature +1/+1 and First Strike. Summon a 1/1 Warrior.",
+      "description": "Give a creature +1/+1 and Swift. Summon a 1/1 Warrior.",
       "type": "instant",
       "colors": [
         "W"
@@ -5662,7 +5662,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Durability 3. {T}: Summon a 1/1 Warrior with First Strike.",
+      "description": "Durability 3. {T}: Summon a 1/1 Warrior with Swift.",
       "type": "location",
       "colors": [
         "W"
@@ -5672,7 +5672,7 @@
       "durability": 3,
       "taps": [
         {
-          "text": "Summon a 1/1 Warrior with First Strike.",
+          "text": "Summon a 1/1 Warrior with Swift.",
           "effects": [
             {
               "type": "summon",
@@ -5786,7 +5786,7 @@
       "cost": 4,
       "rarity": "rare",
       "set": "paper",
-      "description": "After your hero attacks, summon a 1/1 Warrior with First Strike.",
+      "description": "After your hero attacks, summon a 1/1 Warrior with Swift.",
       "type": "weapon",
       "colors": [
         "W"
@@ -7792,7 +7792,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "First Strike. Charge.",
+      "description": "Swift. Charge.",
       "type": "creature",
       "colors": [
         "R"
@@ -8207,7 +8207,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "colors": [
         "R"
@@ -9604,7 +9604,7 @@
       "cost": 4,
       "rarity": "common",
       "set": "paper",
-      "description": "Divine Shield. Taunt. First Strike.",
+      "description": "Divine Shield. Taunt. Swift.",
       "type": "creature",
       "colors": [
         "W",
@@ -10703,7 +10703,7 @@
       "cost": 6,
       "rarity": "legendary",
       "set": "paper",
-      "description": "Charge. Divine Shield. Battlecry: Give your creatures +2/+2 and First Strike.",
+      "description": "Charge. Divine Shield. Battlecry: Give your creatures +2/+2 and Swift.",
       "type": "creature",
       "colors": [
         "R",
@@ -10766,7 +10766,7 @@
       "cost": 3,
       "rarity": "rare",
       "set": "paper",
-      "description": "Taunt. First Strike.",
+      "description": "Taunt. Swift.",
       "type": "creature",
       "colors": [
         "R",
@@ -10869,7 +10869,7 @@
       "cost": 2,
       "rarity": "common",
       "set": "paper",
-      "description": "First Strike. Windfury.",
+      "description": "Swift. Windfury.",
       "type": "creature",
       "colors": [
         "R",
@@ -10914,7 +10914,7 @@
       "cost": 1,
       "rarity": "common",
       "set": "paper",
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "colors": [
         "R",
@@ -11479,7 +11479,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "Taunt. First Strike.",
+      "description": "Taunt. Swift.",
       "type": "creature",
       "colors": [
         "G",
@@ -12852,7 +12852,7 @@
       "cost": 3,
       "rarity": "common",
       "set": "paper",
-      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
+      "description": "Swift. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "colors": [
         "R",
@@ -16176,7 +16176,7 @@
       ],
       "landSet": "Ephara",
       "collectible": false,
-      "description": "Taunt. Divine Shield. First Strike.",
+      "description": "Taunt. Divine Shield. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 5,
@@ -16729,7 +16729,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Charge. Battlecry: Give your creatures +2/+0 and First Strike.",
+      "description": "Charge. Battlecry: Give your creatures +2/+0 and Swift.",
       "type": "creature",
       "attack": 5,
       "health": 4,
@@ -16790,7 +16790,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Rush. First Strike.",
+      "description": "Rush. Swift.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -16866,7 +16866,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -16948,7 +16948,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -17019,12 +17019,12 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "Durability 3. {T}: Summon a 2/1 Soldier with First Strike.",
+      "description": "Durability 3. {T}: Summon a 2/1 Soldier with Swift.",
       "type": "location",
       "durability": 3,
       "taps": [
         {
-          "text": "Summon a 2/1 Soldier with First Strike.",
+          "text": "Summon a 2/1 Soldier with Swift.",
           "effects": [
             {
               "type": "summon",
@@ -17097,7 +17097,7 @@
       ],
       "landSet": "Iroas",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 2,
       "health": 1,
@@ -17454,7 +17454,7 @@
       ],
       "landSet": "Karametra",
       "collectible": false,
-      "description": "Trample. Taunt. First Strike.",
+      "description": "Trample. Taunt. Swift.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -18005,7 +18005,7 @@
       ],
       "landSet": "Keranos",
       "collectible": false,
-      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
+      "description": "Swift. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -19145,7 +19145,7 @@
       ],
       "landSet": "Mogis",
       "collectible": false,
-      "description": "Rush. First Strike.",
+      "description": "Rush. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -19977,7 +19977,7 @@
       ],
       "landSet": "Xenagos",
       "collectible": false,
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -20132,7 +20132,7 @@
       ],
       "landSet": "Klothys",
       "collectible": false,
-      "description": "First Strike. Battlecry: A friendly creature fights an enemy creature.",
+      "description": "Swift. Battlecry: A friendly creature fights an enemy creature.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -20682,7 +20682,7 @@
       ],
       "landSet": "Silverquill",
       "collectible": false,
-      "description": "Lifesteal. First Strike. Whenever you cast a spell, deal 1 damage to each opponent and gain 1 life.",
+      "description": "Lifesteal. Swift. Whenever you cast a spell, deal 1 damage to each opponent and gain 1 life.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -20948,7 +20948,7 @@
       ],
       "landSet": "Prismari",
       "collectible": false,
-      "description": "First Strike. Battlecry: Deal 2 damage to a creature.",
+      "description": "Swift. Battlecry: Deal 2 damage to a creature.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -22234,7 +22234,7 @@
       ],
       "landSet": "Quandrix",
       "collectible": false,
-      "description": "Elusive. Trample. First Strike.",
+      "description": "Elusive. Trample. Swift.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -22422,7 +22422,7 @@
       ],
       "landSet": "Lorehold",
       "collectible": false,
-      "description": "Rush. First Strike.",
+      "description": "Rush. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -22746,7 +22746,7 @@
       ],
       "landSet": "Ojutai",
       "collectible": false,
-      "description": "Elusive. Taunt. First Strike.",
+      "description": "Elusive. Taunt. Swift.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -23842,7 +23842,7 @@
       ],
       "landSet": "Silumgar",
       "collectible": false,
-      "description": "Deathtouch. Trample. First Strike.",
+      "description": "Deathtouch. Trample. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -23945,7 +23945,7 @@
       ],
       "landSet": "Kolaghan",
       "collectible": false,
-      "description": "Rush. First Strike.",
+      "description": "Rush. Swift.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -24735,7 +24735,7 @@
       ],
       "landSet": "Istfell",
       "collectible": false,
-      "description": "Elusive. First Strike.",
+      "description": "Elusive. Swift.",
       "type": "creature",
       "attack": 1,
       "health": 2,
@@ -25551,7 +25551,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -25797,7 +25797,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -28810,7 +28810,7 @@
       ],
       "landSet": "Bant",
       "collectible": false,
-      "description": "Elusive. First Strike. Battlecry: Give a creature +2/+2.",
+      "description": "Elusive. Swift. Battlecry: Give a creature +2/+2.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -29006,7 +29006,7 @@
       ],
       "landSet": "Bant",
       "collectible": false,
-      "description": "First Strike. Divine Shield.",
+      "description": "Swift. Divine Shield.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -29249,7 +29249,7 @@
       ],
       "landSet": "Esper",
       "collectible": false,
-      "description": "Elusive. Lifesteal. First Strike.",
+      "description": "Elusive. Lifesteal. Swift.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -29633,7 +29633,7 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. First Strike. Battlecry: Draw 2 cards.",
+      "description": "Elusive. Swift. Battlecry: Draw 2 cards.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -29956,7 +29956,7 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. First Strike.",
+      "description": "Elusive. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -30069,7 +30069,7 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Rush. First Strike. Battlecry: Give your creatures +1/+0 and Rush.",
+      "description": "Rush. Swift. Battlecry: Give your creatures +1/+0 and Rush.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -30127,7 +30127,7 @@
       ],
       "landSet": "Mardu",
       "collectible": false,
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "attack": 7,
       "health": 2,
@@ -32194,7 +32194,7 @@
       ],
       "landSet": "Temur",
       "collectible": false,
-      "description": "Trample. First Strike. Battlecry: Give your creatures +1/+1.",
+      "description": "Trample. Swift. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 6,
       "health": 6,
@@ -34895,7 +34895,7 @@
       ],
       "landSet": "Axgard",
       "collectible": false,
-      "description": "Battlecry: Give a creature +2/+0 and First Strike.",
+      "description": "Battlecry: Give a creature +2/+0 and Swift.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -37373,7 +37373,7 @@
       ],
       "landSet": "Bant",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -37869,7 +37869,7 @@
       ],
       "landSet": "Jeskai",
       "collectible": false,
-      "description": "Elusive. First Strike. Battlecry: Deal 2 damage to a creature. Whenever you cast a spell, give your creatures +1/+0.",
+      "description": "Elusive. Swift. Battlecry: Deal 2 damage to a creature. Whenever you cast a spell, give your creatures +1/+0.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -39964,7 +39964,7 @@
       ],
       "landSet": "Brokers",
       "collectible": false,
-      "description": "First Strike. Divine Shield.",
+      "description": "Swift. Divine Shield.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -41778,7 +41778,7 @@
       ],
       "landSet": "Cabaretti",
       "collectible": false,
-      "description": "First Strike. Battlecry: Give your creatures +1/+1.",
+      "description": "Swift. Battlecry: Give your creatures +1/+1.",
       "type": "creature",
       "attack": 2,
       "health": 3,
@@ -42878,7 +42878,7 @@
       ],
       "landSet": "Raugrin",
       "collectible": false,
-      "description": "Elusive. First Strike. Battlecry: Deal 3 damage to a creature. Whenever you cast a spell, give your creatures +1/+0.",
+      "description": "Elusive. Swift. Battlecry: Deal 3 damage to a creature. Whenever you cast a spell, give your creatures +1/+0.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -43318,7 +43318,7 @@
       ],
       "landSet": "Savai",
       "collectible": false,
-      "description": "Rush. First Strike. Battlecry: Give your creatures +2/+0 and Rush.",
+      "description": "Rush. Swift. Battlecry: Give your creatures +2/+0 and Rush.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -45983,7 +45983,7 @@
       ],
       "loreDeck": "Elspeth",
       "collectible": false,
-      "description": "First Strike.",
+      "description": "Swift.",
       "type": "creature",
       "attack": 2,
       "health": 2,
@@ -46236,7 +46236,7 @@
       ],
       "loreDeck": "Garruk",
       "collectible": false,
-      "description": "Rush. Trample. First Strike.",
+      "description": "Rush. Trample. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 3,
@@ -46546,7 +46546,7 @@
       ],
       "loreDeck": "Gideon",
       "collectible": false,
-      "description": "Taunt. First Strike. Has +1 Attack for each other Soldier you control.",
+      "description": "Taunt. Swift. Has +1 Attack for each other Soldier you control.",
       "type": "creature",
       "attack": 2,
       "health": 4,
@@ -48359,7 +48359,7 @@
       ],
       "loreDeck": "Lukka",
       "collectible": false,
-      "description": "Elusive. Rush. First Strike.",
+      "description": "Elusive. Rush. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 2,
@@ -51504,7 +51504,7 @@
       ],
       "loreDeck": "Vivian",
       "collectible": false,
-      "description": "Deathtouch. First Strike.",
+      "description": "Deathtouch. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -51605,7 +51605,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "First Strike. Lifesteal. Whenever Drana attacks, give your creatures +1/+1.",
+      "description": "Swift. Lifesteal. Whenever Drana attacks, give your creatures +1/+1.",
       "type": "creature",
       "attack": 5,
       "health": 5,
@@ -51638,7 +51638,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "First Strike. Your other Vampires have +1/+1.",
+      "description": "Swift. Your other Vampires have +1/+1.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -51793,7 +51793,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Choose One — Deal 4 damage to a creature; or give your creatures +2/+1 and First Strike; or Summon a 4/4 Vampire with Lifesteal.",
+      "description": "Choose One — Deal 4 damage to a creature; or give your creatures +2/+1 and Swift; or Summon a 4/4 Vampire with Lifesteal.",
       "type": "sorcery",
       "choices": [
         {
@@ -51807,7 +51807,7 @@
           ]
         },
         {
-          "text": "Give your creatures +2/+1 and First Strike.",
+          "text": "Give your creatures +2/+1 and Swift.",
           "effects": [
             {
               "type": "buff",
@@ -51901,7 +51901,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Trample. First Strike. Has +1 Attack for each other Vampire you control.",
+      "description": "Trample. Swift. Has +1 Attack for each other Vampire you control.",
       "type": "creature",
       "attack": 4,
       "health": 5,
@@ -51982,7 +51982,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 3,
@@ -52004,7 +52004,7 @@
       ],
       "loreDeck": "Drana",
       "collectible": false,
-      "description": "Quest: Play 5 cards. Reward: Summon a 5/5 Vampire with First Strike and Lifesteal, and give your creatures +1/+1.",
+      "description": "Quest: Play 5 cards. Reward: Summon a 5/5 Vampire with Swift and Lifesteal, and give your creatures +1/+1.",
       "type": "quest",
       "quest": {
         "goal": {
@@ -58487,7 +58487,7 @@
       ],
       "loreDeck": "Urabrask",
       "collectible": false,
-      "description": "Charge. First Strike.",
+      "description": "Charge. Swift.",
       "type": "creature",
       "attack": 4,
       "health": 4,
@@ -58735,7 +58735,7 @@
       ],
       "loreDeck": "Urza",
       "collectible": false,
-      "description": "Elusive. First Strike.",
+      "description": "Elusive. Swift.",
       "type": "creature",
       "attack": 3,
       "health": 4,
@@ -92594,7 +92594,7 @@
           }
         ]
       },
-      "description": "First Strike.\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token.",
+      "description": "Swift.\nWhenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token.",
       "landSet": "Plains",
       "collectible": false
     },
@@ -92669,7 +92669,7 @@
         "first_strike",
         "lifesteal"
       ],
-      "description": "First Strike.\nLifesteal.",
+      "description": "Swift.\nLifesteal.",
       "landSet": "Plains",
       "collectible": false
     },
@@ -112739,7 +112739,7 @@
         "first_strike",
         "charge"
       ],
-      "description": "First Strike.\nCharge.",
+      "description": "Swift.\nCharge.",
       "effects": [],
       "landSet": "Mountain",
       "collectible": false
@@ -112787,7 +112787,7 @@
         "first_strike",
         "charge"
       ],
-      "description": "First Strike.\nCharge.",
+      "description": "Swift.\nCharge.",
       "effects": [],
       "landSet": "Mountain",
       "collectible": false
@@ -113124,7 +113124,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "effects": [],
       "landSet": "Plains",
       "collectible": false
@@ -115075,7 +115075,7 @@
         "amount": 1,
         "scope": "all"
       },
-      "description": "First strike.\nNoncreature spells cost 1 more to cast.",
+      "description": "Swift.\nNoncreature spells cost 1 more to cast.",
       "landSet": "Plains",
       "collectible": false
     },
@@ -115365,7 +115365,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First strike.",
+      "description": "Swift.",
       "landSet": "Plains",
       "collectible": false
     },
@@ -115379,7 +115379,7 @@
       ],
       "cardClass": "neutral",
       "set": "wubrg",
-      "description": "Elusive. First Strike.",
+      "description": "Elusive. Swift.",
       "landSet": "Plains",
       "collectible": false,
       "attack": 3,
@@ -116378,7 +116378,7 @@
       ],
       "cardClass": "neutral",
       "set": "wubrg",
-      "description": "First Strike.",
+      "description": "Swift.",
       "activated": [
         {
           "cost": 3,
@@ -117947,7 +117947,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First strike.",
+      "description": "Swift.",
       "landSet": "Mountain",
       "collectible": false
     },
@@ -118368,7 +118368,7 @@
       ],
       "cardClass": "neutral",
       "set": "wubrg",
-      "description": "First strike.",
+      "description": "Swift.",
       "landSet": "Forest",
       "collectible": false,
       "attack": 2,
@@ -235092,7 +235092,7 @@
         "elusive",
         "first_strike"
       ],
-      "description": "Elusive. First Strike.",
+      "description": "Elusive. Swift.",
       "cardClass": "magepunk",
       "set": "paper",
       "colors": [
@@ -235115,7 +235115,7 @@
         "divine_shield",
         "first_strike"
       ],
-      "description": "Divine Shield. First Strike.",
+      "description": "Divine Shield. Swift.",
       "cardClass": "magepunk",
       "set": "paper",
       "colors": [
@@ -236098,7 +236098,7 @@
         "first_strike",
         "reborn"
       ],
-      "description": "First Strike. Reborn.",
+      "description": "Swift. Reborn.",
       "cardClass": "paladin",
       "meSide": "hero"
     },
@@ -236145,7 +236145,7 @@
           "target": "friendly-creature"
         }
       ],
-      "description": "Battlecry: Give a friendly creature First Strike.",
+      "description": "Battlecry: Give a friendly creature Swift.",
       "colors": [],
       "cardClass": "paladin",
       "meSide": "hero"
@@ -236250,7 +236250,7 @@
           }
         ]
       },
-      "description": "First Strike. After your hero attacks, give your creatures +1/+0.",
+      "description": "Swift. After your hero attacks, give your creatures +1/+0.",
       "colors": [],
       "cardClass": "paladin",
       "meSide": "hero"
@@ -236510,7 +236510,7 @@
           }
         ]
       },
-      "description": "First Strike. After your hero attacks, freeze all enemy creatures.",
+      "description": "Swift. After your hero attacks, freeze all enemy creatures.",
       "cardClass": "mage",
       "meSide": "hero"
     },
@@ -237356,7 +237356,7 @@
           "target": "self"
         }
       ],
-      "description": "Taunt. Battlecry: Restore 4 Health to your hero. (\"Don’t you leave him, Samwise Gamgee.\")",
+      "description": "Taunt. Battlecry: Gain 4 life. (\"Don’t you leave him, Samwise Gamgee.\")",
       "cardClass": "priest",
       "meSide": "hero"
     },
@@ -237383,7 +237383,7 @@
           "target": "self"
         }
       ],
-      "description": "Lifesteal. Battlecry: Restore 2 Health to your hero.",
+      "description": "Lifesteal. Battlecry: Gain 2 life.",
       "colors": [],
       "cardClass": "priest",
       "meSide": "hero"
@@ -237485,7 +237485,7 @@
           "target": "self"
         }
       ],
-      "description": "Give a friendly creature +1/+2 and restore 2 Health to your hero.",
+      "description": "Give a friendly creature +1/+2 and gain 2 life.",
       "colors": [],
       "cardClass": "priest",
       "meSide": "hero"
@@ -237505,7 +237505,7 @@
           "colors": [
             "G"
           ],
-          "text": "Restore 3 Health to your hero and gain 1 Armor.",
+          "text": "Gain 3 life and gain 1 Armor.",
           "effects": [
             {
               "type": "heal",
@@ -237520,7 +237520,7 @@
         }
       ],
       "colors": [],
-      "description": "Durability 3. {T}: Restore 3 Health to your hero and gain 1 Armor.",
+      "description": "Durability 3. {T}: Gain 3 life and gain 1 Armor.",
       "cardClass": "priest",
       "meSide": "hero"
     },
@@ -237599,9 +237599,9 @@
             "value": 1
           }
         ],
-        "text": "Restore 2 Health to your hero and draw a card."
+        "text": "Gain 2 life and draw a card."
       },
-      "description": "{T}: Restore 2 Health to your hero and draw a card.",
+      "description": "{T}: Gain 2 life and draw a card.",
       "cardClass": "priest",
       "meSide": "hero"
     },
@@ -237630,7 +237630,7 @@
           "minAttack": 5
         }
       ],
-      "description": "Rush. First Strike. Battlecry: Destroy an enemy creature with 5 or more Attack. (\"I am no man.\")",
+      "description": "Rush. Swift. Battlecry: Destroy an enemy creature with 5 or more Attack. (\"I am no man.\")",
       "cardClass": "demon_hunter",
       "meSide": "hero"
     },
@@ -237678,7 +237678,7 @@
           "target": "enemy-creature"
         }
       ],
-      "description": "First Strike. Battlecry: Deal 2 damage to an enemy creature.",
+      "description": "Swift. Battlecry: Deal 2 damage to an enemy creature.",
       "colors": [],
       "cardClass": "demon_hunter",
       "meSide": "hero"
@@ -237811,7 +237811,7 @@
           }
         ]
       },
-      "description": "First Strike. After your hero attacks, deal 1 damage to all creatures.",
+      "description": "Swift. After your hero attacks, deal 1 damage to all creatures.",
       "cardClass": "demon_hunter",
       "meSide": "hero"
     },
@@ -238464,7 +238464,7 @@
           "target": "friendly-creatures"
         }
       ],
-      "description": "Battlecry: Restore 4 Health to your hero and give your creatures Divine Shield.",
+      "description": "Battlecry: Gain 4 life and give your creatures Divine Shield.",
       "cardClass": "priest",
       "meSide": "hero"
     },
@@ -238490,7 +238490,7 @@
           "target": "self"
         }
       ],
-      "description": "Battlecry: Restore 3 Health to your hero.",
+      "description": "Battlecry: Gain 3 life.",
       "colors": [],
       "cardClass": "priest",
       "meSide": "hero"
@@ -238704,9 +238704,9 @@
             "value": 1
           }
         ],
-        "text": "Restore 2 Health to your hero and Scry 1."
+        "text": "Gain 2 life and Scry 1."
       },
-      "description": "{T}: Restore 2 Health to your hero and Scry 1.",
+      "description": "{T}: Gain 2 life and Scry 1.",
       "cardClass": "priest",
       "meSide": "hero"
     },
@@ -240476,7 +240476,7 @@
           }
         ]
       },
-      "description": "Whenever a friendly creature dies, restore 2 Health to your hero.",
+      "description": "Whenever a friendly creature dies, gain 2 life.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -242775,7 +242775,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -243923,7 +243923,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -244058,7 +244058,7 @@
           "target": "self"
         }
       ],
-      "description": "Restore 6 Health to your hero.",
+      "description": "Gain 6 life.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246066,7 +246066,7 @@
           "minAttack": 4
         }
       ],
-      "description": "First Strike. Deathtouch. Battlecry: Destroy an enemy creature with 4 or more Attack. (\"No living man may hinder me.\")",
+      "description": "Swift. Deathtouch. Battlecry: Destroy an enemy creature with 4 or more Attack. (\"No living man may hinder me.\")",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246120,7 +246120,7 @@
         "first_strike",
         "lifesteal"
       ],
-      "description": "First Strike. Lifesteal.",
+      "description": "Swift. Lifesteal.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246140,7 +246140,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246506,7 +246506,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246650,7 +246650,7 @@
           "target": "self"
         }
       ],
-      "description": "Deal 4 to all creatures; restore 4 Health to your hero.",
+      "description": "Deal 4 to all creatures; gain 4 life.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -246671,7 +246671,7 @@
           "target": "self"
         }
       ],
-      "description": "Restore 6 Health to your hero.",
+      "description": "Gain 6 life.",
       "colors": [],
       "cardClass": "death_knight"
     },
@@ -247978,7 +247978,7 @@
         "first_strike",
         "deathtouch"
       ],
-      "description": "First Strike. Deathtouch.",
+      "description": "Swift. Deathtouch.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -248038,7 +248038,7 @@
       "keywords": [
         "first_strike"
       ],
-      "description": "First Strike.",
+      "description": "Swift.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -248899,7 +248899,7 @@
         ],
         "text": "Draw a card and restore 2 Health."
       },
-      "description": "{T}: Draw a card and restore 2 Health to your hero.",
+      "description": "{T}: Draw a card and gain 2 life.",
       "colors": [],
       "cardClass": "druid"
     },
