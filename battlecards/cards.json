@@ -239308,7 +239308,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "self"
+          "target": "own-hero"
         }
       ],
       "description": "Destroy an enemy creature. Take 2 damage.",
@@ -239675,7 +239675,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "self"
+          "target": "own-hero"
         }
       ],
       "description": "Draw two cards. Take 2 damage.",
@@ -240339,7 +240339,7 @@
         {
           "type": "damage",
           "value": 2,
-          "target": "self"
+          "target": "own-hero"
         }
       ],
       "description": "Trample. Deathrattle: Take 2 damage.",
@@ -243680,7 +243680,7 @@
         {
           "type": "damage",
           "value": 3,
-          "target": "self"
+          "target": "own-hero"
         }
       ],
       "description": "Draw three cards. Take 3 damage.",
