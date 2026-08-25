@@ -839,6 +839,7 @@ function openScryModal() {
 	modal.innerHTML = `<div class="wm-title">${pend.deckOwner === HUMAN ? 'Scry' : 'Gaze'} — top of ${who} (first card is drawn first)</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	const picks = pend.ids.map(id => ({ id, bottom: false }));
+	const artEntries = [];
 	pend.ids.forEach((id, i) => {
 		const def = state.cardsById[id];
 		const cell = document.createElement('div');
@@ -846,6 +847,7 @@ function openScryModal() {
 		const face = drawCardFace(def);
 		face.style.width = '130px';
 		cell.appendChild(face);
+		artEntries.push({ def, cell, width: '130px' });
 		const btn = document.createElement('button');
 		btn.textContent = 'Top';
 		btn.addEventListener('pointerdown', e => {
@@ -863,12 +865,14 @@ function openScryModal() {
 	done.addEventListener('pointerdown', e => {
 		e.stopPropagation();
 		modal.style.display = 'none';
+		clearModalArt();
 		if (isGuest()) { guestApply(() => E.resolveScry(state, picks), { k: 'scry', picks }); return; }
 		E.resolveScry(state, picks);
 		pump();
 		if (duel.on) publishDuel();
 	});
 	modal.appendChild(done);
+	wireModalArt(artEntries); // repaint faces when their art loads (e.g. gaze/scry over external cards)
 	modal.style.display = 'block';
 }
 
@@ -2240,18 +2244,22 @@ function openPickModal() {
 	}
 	modal.innerHTML = `<div class="wm-title">${pend.title || (pend.ids.length > 3 ? 'Draft' : 'Discover')} — take one</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
+	const artEntries = [];
+	const faceW = pend.ids.length > 3 ? '105px' : '130px';
 	pend.ids.forEach(id => {
 		const def = state.cardsById[id];
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
-		face.style.width = pend.ids.length > 3 ? '105px' : '130px';
+		face.style.width = faceW;
 		cell.appendChild(face);
+		artEntries.push({ def, cell, width: faceW });
 		const btn = document.createElement('button');
 		btn.textContent = 'Take';
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			modal.style.display = 'none';
+			clearModalArt();
 			if (isGuest()) { guestApply(() => E.resolvePick(state, id), { k: 'pick', id }); return; }
 			E.resolvePick(state, id);
 			pump();
@@ -2260,6 +2268,7 @@ function openPickModal() {
 		cell.appendChild(btn);
 		row.appendChild(cell);
 	});
+	wireModalArt(artEntries); // repaint faces when pool/discover art loads
 	modal.style.display = 'block';
 }
 
@@ -3080,6 +3089,24 @@ function clearModes() {
 
 // ---------- click-to-inspect (look closely at a hand card without playing it) ----------
 let inspectUid = null, inspectPrev = null, inspectArtFn = null;
+// The scry/discover modal draws card faces with a procedural fallback until their art loads.
+// Deck cards are preloaded, but Discover/Draft options pulled from an external pool (e.g. the
+// advanced-land pools) are NOT — so their art arrives after the first paint. Repaint those faces
+// in place when their image loads (same idea as the inspect panel's artListener).
+let modalArtFn = null;
+function wireModalArt(entries) {
+	clearModalArt();
+	modalArtFn = id => {
+		for (const en of entries) {
+			if (id !== '*' && id !== en.def.id) continue;
+			const fresh = drawCardFace(en.def);
+			if (en.width) fresh.style.width = en.width;
+			if (en.cell.firstChild) en.cell.replaceChild(fresh, en.cell.firstChild); else en.cell.appendChild(fresh);
+		}
+	};
+	artListeners.add(modalArtFn);
+}
+function clearModalArt() { if (modalArtFn) { artListeners.delete(modalArtFn); modalArtFn = null; } }
 
 // mirror the stat opts the 3D faces use — without them a hand creature's health
 // (which lives in maxHealth, not card.health) renders as 0
