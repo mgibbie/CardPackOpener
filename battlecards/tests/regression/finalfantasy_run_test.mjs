@@ -1,7 +1,7 @@
 // finalfantasy_run_test.mjs — Lorequest Final Fantasy run module (finalfantasy.js) + the 38 hero powers.
 // Covers pure run logic (rosters, rung gating, deck sizes, static enemy gen, loot, spoils) AND engine
 // integration: every one of the 38 unique hero powers installs at createGame and fires through
-// useHeroPower without throwing / leaving an invalid state. Also checks the SPRITSUMMON hero powers.
+// useHeroPower without throwing / leaving an invalid state. Also checks the SPIRITSUMMON hero powers.
 import fs from 'fs';
 import * as FF from '../../finalfantasy.js';
 import * as E from '../../engine.js';
@@ -105,7 +105,7 @@ for (const ch of ALL_CHARS) {
 { const st = bootWith('Yuna'); const b0 = st.players[0].board.length;
   const hp = st.players[0].heroPowers.find(h => h.name === 'Grand Summon');
   E.useHeroPower(st, 0, hp.uid, null, null);
-  ok('Yuna Spritsummon adds a Sprit token', st.players[0].board.length === b0 + 1 && st.players[0].board.some(c => c.tribe === 'Sprit'), st.players[0].board.map(c => c.tribe)); }
+  ok('Yuna Spiritsummon adds a Spirit token', st.players[0].board.length === b0 + 1 && st.players[0].board.some(c => c.tribe === 'Spirit'), st.players[0].board.map(c => c.tribe)); }
 { const st = bootWith('Cecil'); st.players[0].life -= 5; const l0 = st.players[0].life;
   const hp = st.players[0].heroPowers.find(h => h.name === 'Cover');
   E.useHeroPower(st, 0, hp.uid, null, null);

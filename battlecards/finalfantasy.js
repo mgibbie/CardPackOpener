@@ -7,7 +7,7 @@
 // alternating treasure/class-bucket reward.
 //
 // Signature mechanics:
-//   • SPRITSUMMON — call a random Sprit (Ifrit/Shiva/Ramuh/Titan/Bahamut/Phoenix/Odin) via the
+//   • SPIRITSUMMON — call a random Spirit (Ifrit/Shiva/Ramuh/Titan/Bahamut/Phoenix/Odin) via the
 //     existing summon `options` (no engine change). ("Esper" is reserved for the Alara shards.)
 //   • LIMIT BREAK — a payoff on the existing `self-damaged` trigger, plus named Limit Break spells.
 // Card data lives in cards.json (tagged `ffDeck:<Character>` + `ffSide` + ids `ff_*`). Hero powers
@@ -65,17 +65,17 @@ export const COLOR_IDENTITY = {
 };
 export const colorsOf = ch => COLOR_IDENTITY[ch] || [];
 
-// ── the Sprit pool (SPRITSUMMON — a random Sprit, via summon options) ──
-export const SPRITS = [
-	{ name: 'Ifrit', attack: 3, health: 2, tribe: 'Sprit', keywords: ['rush'] },
-	{ name: 'Shiva', attack: 3, health: 3, tribe: 'Sprit', keywords: ['elusive'] },
-	{ name: 'Ramuh', attack: 4, health: 2, tribe: 'Sprit' },
-	{ name: 'Titan', attack: 2, health: 5, tribe: 'Sprit', keywords: ['taunt'] },
-	{ name: 'Bahamut', attack: 5, health: 5, tribe: 'Sprit', keywords: ['trample'] },
-	{ name: 'Phoenix', attack: 3, health: 3, tribe: 'Sprit', keywords: ['reborn'] },
-	{ name: 'Odin', attack: 4, health: 3, tribe: 'Sprit', keywords: ['deathtouch'] },
+// ── the Spirit pool (SPIRITSUMMON — a random Spirit, via summon options) ──
+export const SPIRITS = [
+	{ name: 'Ifrit', attack: 3, health: 2, tribe: 'Spirit', keywords: ['rush'] },
+	{ name: 'Shiva', attack: 3, health: 3, tribe: 'Spirit', keywords: ['elusive'] },
+	{ name: 'Ramuh', attack: 4, health: 2, tribe: 'Spirit' },
+	{ name: 'Titan', attack: 2, health: 5, tribe: 'Spirit', keywords: ['taunt'] },
+	{ name: 'Bahamut', attack: 5, health: 5, tribe: 'Spirit', keywords: ['trample'] },
+	{ name: 'Phoenix', attack: 3, health: 3, tribe: 'Spirit', keywords: ['reborn'] },
+	{ name: 'Odin', attack: 4, health: 3, tribe: 'Spirit', keywords: ['deathtouch'] },
 ];
-const spritSummon = { type: 'summon', count: 1, options: SPRITS };
+const spiritSummon = { type: 'summon', count: 1, options: SPIRITS };
 
 // ── 38 unique hero powers ({ name, cost, text, effects }) — installed via each seat's `power` ──
 const P = (name, cost, text, effects) => ({ name, cost, text, effects });
@@ -84,8 +84,8 @@ export const HERO_POWERS = {
 	Cloud: P('Cross-Slash', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	Cecil: P('Cover', 2, 'Gain 3 life.', [{ type: 'heal', value: 3, target: 'self' }]),
 	Tidus: P('Blitz Ace', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
-	Yuna: P('Grand Summon', 2, 'Spritsummon a random Sprit.', [spritSummon]),
-	Terra: P('Riot Blade', 2, 'Spritsummon a random Sprit.', [spritSummon]),
+	Yuna: P('Grand Summon', 2, 'Spiritsummon a random Spirit.', [spiritSummon]),
+	Terra: P('Riot Blade', 2, 'Spiritsummon a random Spirit.', [spiritSummon]),
 	Vivi: P('Focus', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	Lightning: P('Army of One', 2, 'Give a friendly creature +1/+1 and Rush.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }, { type: 'grant', keyword: 'rush', target: 'friendly-creature' }]),
 	Zidane: P('Thievery', 2, 'Gain a Coin.', [{ type: 'gain-coin', value: 1 }]),
@@ -97,7 +97,7 @@ export const HERO_POWERS = {
 	'Rufus Shinra': P('Shinra Command', 2, 'Summon a 2/2 Trooper.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Shinra Guard', tribe: 'Soldier' }]),
 	'Seifer Almasy': P('Fire Cross', 2, 'Give a friendly creature +2/+0.', [{ type: 'buff', attack: 2, health: 0, target: 'friendly-creature' }]),
 	'Black Waltz No. 3': P('Thundara', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
-	'Queen Brahne': P('Extract Eidolon', 2, 'Spritsummon a random Sprit.', [spritSummon]),
+	'Queen Brahne': P('Extract Eidolon', 2, 'Spiritsummon a random Spirit.', [spiritSummon]),
 	'Professor Hojo': P('Specimen Injection', 2, 'Summon a 2/2 Specimen.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Mako Specimen', tribe: 'Beast' }]),
 	'Ultros, Obnoxious Octopus': P('Tentacle', 2, 'Freeze an enemy creature.', [{ type: 'freeze', target: 'enemy-creature' }]),
 	'Garland, Royal Kidnapper': P('Soul of Chaos', 2, 'Give a friendly creature +1/+1.', [{ type: 'buff', attack: 1, health: 1, target: 'friendly-creature' }]),
@@ -117,7 +117,7 @@ export const HERO_POWERS = {
 	'Exdeath, Void Warlock': P('Void Grip', 2, 'Deal 3 damage to an enemy creature.', [{ type: 'damage', value: 3, target: 'enemy-creature' }]),
 	'Ultimecia, Time Sorceress': P('Hell\'s Judgment', 2, 'Freeze an enemy creature and draw a card.', [{ type: 'freeze', target: 'enemy-creature' }, { type: 'draw', value: 1 }]),
 	'Ardyn, the Usurper': P('Daemonify', 2, 'Summon a 2/2 Daemon with Lifesteal.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Daemon', tribe: 'Demon', keywords: ['lifesteal'] }]),
-	'Emet-Selch, Unsundered': P('Ascian\'s Grip', 2, 'Spritsummon a random Sprit.', [spritSummon]),
+	'Emet-Selch, Unsundered': P('Ascian\'s Grip', 2, 'Spiritsummon a random Spirit.', [spiritSummon]),
 	'Cloud of Darkness': P('Particle Beam', 2, 'Deal 2 damage to an enemy creature.', [{ type: 'damage', value: 2, target: 'enemy-creature' }]),
 	'Jenova, Ancient Calamity': P('Reunion', 2, 'Summon a 2/2 with Reborn.', [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Jenova Cell', tribe: 'Alien', keywords: ['reborn'] }]),
 	// enemies (Rung D — final bosses)

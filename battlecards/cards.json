@@ -261749,8 +261749,8 @@
       "cost": 4,
       "attack": 3,
       "health": 3,
-      "tribe": "Sprit",
-      "description": "Battlecry: Spritsummon a random Sprit.",
+      "tribe": "Spirit",
+      "description": "Battlecry: Spiritsummon a random Spirit.",
       "keywords": [
         "battlecry"
       ],
@@ -261763,7 +261763,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -261772,7 +261772,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -261781,13 +261781,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -261796,7 +261796,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -261805,7 +261805,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -261814,7 +261814,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -262240,7 +262240,7 @@
       "attack": 4,
       "health": 4,
       "tribe": "Human Athlete",
-      "description": "Rush. Battlecry: Spritsummon a random Sprit.",
+      "description": "Rush. Battlecry: Spiritsummon a random Spirit.",
       "keywords": [
         "rush",
         "battlecry"
@@ -262254,7 +262254,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -262263,7 +262263,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -262272,13 +262272,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -262287,7 +262287,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -262296,7 +262296,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -262305,7 +262305,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -262519,7 +262519,7 @@
       "attack": 3,
       "health": 5,
       "tribe": "Human Summoner",
-      "description": "Battlecry: Spritsummon a random Sprit and gain 3 life.",
+      "description": "Battlecry: Spiritsummon a random Spirit and gain 3 life.",
       "keywords": [
         "battlecry"
       ],
@@ -262532,7 +262532,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -262541,7 +262541,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -262550,13 +262550,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -262565,7 +262565,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -262574,7 +262574,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -262583,7 +262583,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -262676,7 +262676,7 @@
       "name": "Retrieve the Esper",
       "type": "sorcery",
       "cost": 4,
-      "description": "Spritsummon a random Sprit.",
+      "description": "Spiritsummon a random Spirit.",
       "effects": [
         {
           "type": "summon",
@@ -262686,7 +262686,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -262695,7 +262695,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -262704,13 +262704,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -262719,7 +262719,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -262728,7 +262728,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -262737,7 +262737,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -262847,7 +262847,7 @@
       "type": "artifact",
       "cost": 3,
       "tapAbility": {
-        "text": "Spritsummon a random Sprit.",
+        "text": "Spiritsummon a random Spirit.",
         "effects": [
           {
             "type": "summon",
@@ -262857,7 +262857,7 @@
                 "name": "Ifrit",
                 "attack": 3,
                 "health": 2,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "rush"
                 ]
@@ -262866,7 +262866,7 @@
                 "name": "Shiva",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "elusive"
                 ]
@@ -262875,13 +262875,13 @@
                 "name": "Ramuh",
                 "attack": 4,
                 "health": 2,
-                "tribe": "Sprit"
+                "tribe": "Spirit"
               },
               {
                 "name": "Titan",
                 "attack": 2,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "taunt"
                 ]
@@ -262890,7 +262890,7 @@
                 "name": "Bahamut",
                 "attack": 5,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "trample"
                 ]
@@ -262899,7 +262899,7 @@
                 "name": "Phoenix",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "reborn"
                 ]
@@ -262908,7 +262908,7 @@
                 "name": "Odin",
                 "attack": 4,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "deathtouch"
                 ]
@@ -262917,7 +262917,7 @@
           }
         ]
       },
-      "description": "{T}: Spritsummon a random Sprit.",
+      "description": "{T}: Spiritsummon a random Spirit.",
       "colors": [],
       "cardClass": "priest",
       "ffSide": "hero"
@@ -262934,7 +262934,7 @@
       "attack": 4,
       "health": 4,
       "tribe": "Human Wizard",
-      "description": "Battlecry: Deal 3 damage to an enemy creature; summon a random Sprit.",
+      "description": "Battlecry: Deal 3 damage to an enemy creature; summon a random Spirit.",
       "keywords": [
         "battlecry"
       ],
@@ -262952,7 +262952,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -262961,7 +262961,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -262970,13 +262970,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -262985,7 +262985,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -262994,7 +262994,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -263003,7 +263003,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -264152,7 +264152,7 @@
       "type": "artifact",
       "cost": 3,
       "tapAbility": {
-        "text": "Spritsummon a random Sprit.",
+        "text": "Spiritsummon a random Spirit.",
         "effects": [
           {
             "type": "summon",
@@ -264162,7 +264162,7 @@
                 "name": "Ifrit",
                 "attack": 3,
                 "health": 2,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "rush"
                 ]
@@ -264171,7 +264171,7 @@
                 "name": "Shiva",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "elusive"
                 ]
@@ -264180,13 +264180,13 @@
                 "name": "Ramuh",
                 "attack": 4,
                 "health": 2,
-                "tribe": "Sprit"
+                "tribe": "Spirit"
               },
               {
                 "name": "Titan",
                 "attack": 2,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "taunt"
                 ]
@@ -264195,7 +264195,7 @@
                 "name": "Bahamut",
                 "attack": 5,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "trample"
                 ]
@@ -264204,7 +264204,7 @@
                 "name": "Phoenix",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "reborn"
                 ]
@@ -264213,7 +264213,7 @@
                 "name": "Odin",
                 "attack": 4,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "deathtouch"
                 ]
@@ -264222,7 +264222,7 @@
           }
         ]
       },
-      "description": "{T}: Spritsummon a random Sprit.",
+      "description": "{T}: Spiritsummon a random Spirit.",
       "colors": [],
       "cardClass": "druid",
       "ffSide": "hero"
@@ -264452,7 +264452,7 @@
       "type": "artifact",
       "cost": 3,
       "tapAbility": {
-        "text": "Spritsummon a random Sprit.",
+        "text": "Spiritsummon a random Spirit.",
         "effects": [
           {
             "type": "summon",
@@ -264462,7 +264462,7 @@
                 "name": "Ifrit",
                 "attack": 3,
                 "health": 2,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "rush"
                 ]
@@ -264471,7 +264471,7 @@
                 "name": "Shiva",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "elusive"
                 ]
@@ -264480,13 +264480,13 @@
                 "name": "Ramuh",
                 "attack": 4,
                 "health": 2,
-                "tribe": "Sprit"
+                "tribe": "Spirit"
               },
               {
                 "name": "Titan",
                 "attack": 2,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "taunt"
                 ]
@@ -264495,7 +264495,7 @@
                 "name": "Bahamut",
                 "attack": 5,
                 "health": 5,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "trample"
                 ]
@@ -264504,7 +264504,7 @@
                 "name": "Phoenix",
                 "attack": 3,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "reborn"
                 ]
@@ -264513,7 +264513,7 @@
                 "name": "Odin",
                 "attack": 4,
                 "health": 3,
-                "tribe": "Sprit",
+                "tribe": "Spirit",
                 "keywords": [
                   "deathtouch"
                 ]
@@ -264522,7 +264522,7 @@
           }
         ]
       },
-      "description": "{T}: Spritsummon a random Sprit.",
+      "description": "{T}: Spiritsummon a random Spirit.",
       "colors": [],
       "cardClass": "shaman",
       "ffSide": "hero"
@@ -265537,7 +265537,7 @@
       "cost": 4,
       "attack": 3,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Battlecry: Deal 2 damage to an enemy creature (Judgment Bolt).",
       "keywords": [
         "battlecry"
@@ -265584,7 +265584,7 @@
       "cost": 5,
       "attack": 4,
       "health": 4,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Rush.",
       "keywords": [
         "rush"
@@ -265604,7 +265604,7 @@
       "cost": 4,
       "attack": 4,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "An elemental bull.",
       "colors": [],
       "cardClass": "warrior",
@@ -266081,7 +266081,7 @@
       "attack": 3,
       "health": 4,
       "tribe": "Human Noble",
-      "description": "Battlecry: Spritsummon a random Sprit (extracted eidolon).",
+      "description": "Battlecry: Spiritsummon a random Spirit (extracted eidolon).",
       "keywords": [
         "battlecry"
       ],
@@ -266094,7 +266094,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -266103,7 +266103,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -266112,13 +266112,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -266127,7 +266127,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -266136,7 +266136,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -266145,7 +266145,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -266168,7 +266168,7 @@
       "cost": 4,
       "attack": 3,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Battlecry: Deal 2 damage to an enemy creature (Judgment Bolt).",
       "keywords": [
         "battlecry"
@@ -266215,7 +266215,7 @@
       "cost": 5,
       "attack": 4,
       "health": 4,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Rush.",
       "keywords": [
         "rush"
@@ -266235,7 +266235,7 @@
       "cost": 4,
       "attack": 4,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "An elemental bull.",
       "colors": [],
       "cardClass": "warlock",
@@ -266615,7 +266615,7 @@
       "cost": 4,
       "attack": 3,
       "health": 5,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Taunt.",
       "keywords": [
         "taunt"
@@ -266689,7 +266689,7 @@
       "name": "Clash of the Eikons",
       "type": "sorcery",
       "cost": 5,
-      "description": "Spritsummon a random Sprit.",
+      "description": "Spiritsummon a random Spirit.",
       "effects": [
         {
           "type": "summon",
@@ -266699,7 +266699,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -266708,7 +266708,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -266717,13 +266717,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -266732,7 +266732,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -266741,7 +266741,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -266750,7 +266750,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -266889,7 +266889,7 @@
       "cost": 6,
       "attack": 5,
       "health": 5,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Battlecry: Return an enemy creature to its owner's hand (Tidal Wave).",
       "keywords": [
         "battlecry"
@@ -266915,7 +266915,7 @@
       "cost": 4,
       "attack": 3,
       "health": 4,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Battlecry: Freeze an enemy creature (Diamond Dust).",
       "keywords": [
         "battlecry"
@@ -267528,7 +267528,7 @@
           "attack": 3,
           "health": 3,
           "name": "Anima",
-          "tribe": "Sprit",
+          "tribe": "Spirit",
           "keywords": [
             "deathtouch"
           ]
@@ -269487,7 +269487,7 @@
       "attack": 4,
       "health": 4,
       "tribe": "Human Noble",
-      "description": "Battlecry: Spritsummon a random Sprit.",
+      "description": "Battlecry: Spiritsummon a random Spirit.",
       "keywords": [
         "battlecry"
       ],
@@ -269500,7 +269500,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -269509,7 +269509,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -269518,13 +269518,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -269533,7 +269533,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -269542,7 +269542,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -269551,7 +269551,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
@@ -269574,7 +269574,7 @@
       "cost": 4,
       "attack": 3,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Battlecry: Deal 2 damage to an enemy creature (Judgment Bolt).",
       "keywords": [
         "battlecry"
@@ -269621,7 +269621,7 @@
       "cost": 5,
       "attack": 4,
       "health": 4,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "Rush.",
       "keywords": [
         "rush"
@@ -269641,7 +269641,7 @@
       "cost": 4,
       "attack": 4,
       "health": 3,
-      "tribe": "Sprit",
+      "tribe": "Spirit",
       "description": "An elemental bull.",
       "colors": [],
       "cardClass": "warlock",
@@ -272198,7 +272198,7 @@
       "attack": 5,
       "health": 5,
       "tribe": "Ascian",
-      "description": "Battlecry: Spritsummon a random Sprit and draw a card.",
+      "description": "Battlecry: Spiritsummon a random Spirit and draw a card.",
       "keywords": [
         "battlecry"
       ],
@@ -272211,7 +272211,7 @@
               "name": "Ifrit",
               "attack": 3,
               "health": 2,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "rush"
               ]
@@ -272220,7 +272220,7 @@
               "name": "Shiva",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "elusive"
               ]
@@ -272229,13 +272229,13 @@
               "name": "Ramuh",
               "attack": 4,
               "health": 2,
-              "tribe": "Sprit"
+              "tribe": "Spirit"
             },
             {
               "name": "Titan",
               "attack": 2,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "taunt"
               ]
@@ -272244,7 +272244,7 @@
               "name": "Bahamut",
               "attack": 5,
               "health": 5,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "trample"
               ]
@@ -272253,7 +272253,7 @@
               "name": "Phoenix",
               "attack": 3,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "reborn"
               ]
@@ -272262,7 +272262,7 @@
               "name": "Odin",
               "attack": 4,
               "health": 3,
-              "tribe": "Sprit",
+              "tribe": "Spirit",
               "keywords": [
                 "deathtouch"
               ]
