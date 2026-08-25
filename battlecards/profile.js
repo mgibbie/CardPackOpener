@@ -4,7 +4,7 @@
 // (never the collection/deck contents). Pure DOM overlay; used by game.js + chat.js.
 import * as MP from './mpmode.js';
 
-const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', pvp: 'a card duel', battle: 'a card battle' };
+const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', pvp: 'a card duel', battle: 'a card battle' };
 function activityText(p) {
 	const st = p.status || '';
 	if (st.startsWith('card:')) { const m = st.slice(5); return 'in ' + (CARD_MODE[m] || 'a card game') + (p.region ? ' · ' + p.region : ''); }

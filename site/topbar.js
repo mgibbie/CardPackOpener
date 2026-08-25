@@ -574,7 +574,7 @@ async function addFriend(raw) {
 // Overworld heartbeat / the card client's publish-cardstate):
 //   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
-const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run' };
+const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run' };
 function friendActivity(f) {
 	const st = f.status || '';
 	if (st.startsWith('battling:')) return { live: true, kind: 'pokemon', matchId: st.slice('battling:'.length), label: 'in a Pokémon battle' };
@@ -878,7 +878,7 @@ function analyticsLabel() {
 		if (q.has('cardpvp')) return 'bc:duel';
 		if (q.has('aimatch')) return 'bc:ai';
 		if (q.has('spectate') || q.has('watch')) return 'bc:spectate';
-		for (const m of ['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest']) if (q.has(m)) return 'bc:' + m;
+		for (const m of ['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth']) if (q.has(m)) return 'bc:' + m;
 		if (p.includes('deck')) return 'bc:deck';
 		if (p.includes('packs')) return 'bc:packs';
 		if (p.includes('viewer')) return 'bc:gallery';

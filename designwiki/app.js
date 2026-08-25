@@ -304,6 +304,12 @@ function loadLorequest() {
   if (!lorequestPromise) lorequestPromise = import('../battlecards/lorequest.js' + CB);
   return lorequestPromise;
 }
+// Lorequest: Middle-earth data (hero/enemy rosters, rungs, class map, hero powers)
+let middleearthPromise = null;
+function loadMiddleearth() {
+  if (!middleearthPromise) middleearthPromise = import('../battlecards/middleearth.js' + CB);
+  return middleearthPromise;
+}
 // build (once) an index: keyword slug -> { label, text, cards: [] } across the pool
 function keywordIndex(cards) {
   if (kwIndex) return kwIndex;
@@ -1564,6 +1570,92 @@ async function lorequestDeckDetail(slug) {
     cardSizeControl(grid), grid);
 }
 
+// ---- Lorequest: Middle-earth decks — 11 heroes (10-card singletons) + 27 rung-split
+// enemies (15 cards ×2 = 30). Data mirrors the meDeck/meSide tags in cards.json + the
+// rosters/rungs/class map/hero powers in battlecards/middleearth.js.
+function meDeckCards(cards, ch) {
+  return cards.filter(c => c.meDeck === ch && !c.token)
+    .sort((a, b) => (b.id.endsWith('_sig') - a.id.endsWith('_sig'))
+      || Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+}
+function meTile(ch, deck, clsName, pw) {
+  const canvas = CardArt.drawCardFace(lqSig(deck));
+  const img = h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: ch, loading: 'lazy' });
+  return h('a', { class: 'wiki-card lq-tile', href: '#/middle-earth/' + lqSlug(ch), title: pw ? `${pw.name}: ${pw.text}` : ch },
+    img,
+    h('div', { class: 'lq-name' }, ch),
+    h('div', { class: 'lq-sub' }, h('span', { class: 'lq-cls' }, clsName)));
+}
+async function middleEarthView() {
+  content.replaceChildren(h('h1', null, 'Lorequest: Middle-earth'), h('p', { class: 'muted' }, 'Loading decks…'));
+  let ME, classes, cards;
+  try { [ME, classes, cards] = await Promise.all([loadMiddleearth(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Lorequest: Middle-earth'), h('p', { class: 'muted' }, 'Could not load the Middle-earth data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'middle-earth') return;
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase((id || '').replace(/_/g, ' '));
+  const heroes = [...ME.HEROES, ...ME.SECRET_HEROES];
+  const allChars = [...heroes, ...ME.ENEMIES];
+  const decks = {}; for (const ch of allChars) decks[ch] = meDeckCards(cards, ch);
+  await CardArt.preloadArt(allChars.map(ch => lqSig(decks[ch])?.id).filter(Boolean));
+  const group = (title, blurb, names) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + names.length + ')')),
+      h('p', { class: 'muted' }, blurb)),
+    h('div', { class: 'card-grid size-small' },
+      ...names.map(ch => meTile(ch, decks[ch], clsName(ME.classOf(ch)), ME.powerOf(ch)))));
+  const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Lorequest: Middle-earth'),
+        h('p', { class: 'muted' }, 'A LOTR/Hobbit dungeon run. Pick a hero of the Free Peoples (a 10-card starter deck) and climb the rungs of Sauron’s forces to 12 wins or 3 losses. Unlike ', h('a', { href: '#/duels' }, 'Duels'), ', enemies are STATIC — each a 15-card deck run as 2 copies (30), with its own signature hero power; you grow your deck via a spoils draft + alternating treasure/bucket each win. Tap one to see its cards.')),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' cards'))),
+    group('Heroes — Free Peoples', '11 heroes (Tom Bombadil is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter deck you grow as you win.', heroes),
+    group('Rung A — Mooks', 'Your first fights (wins 0–2). Bill Ferny & Lotho appear only as your very first encounter.', ME.ENEMY_RUNGS.A),
+    group('Rung B — Lieutenants', 'Captains and monsters (wins 3–6).', ME.ENEMY_RUNGS.B),
+    group('Rung C — Commanders', 'The named boss commanders (wins 7–10).', ME.ENEMY_RUNGS.C),
+    group('Rung D — The Dark Lord', 'The 12th-win final boss — the two Saurons rotate for replay variety.', ME.ENEMY_RUNGS.D));
+}
+async function middleEarthDeckDetail(slug) {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
+  let ME, classes, cards;
+  try { [ME, classes, cards] = await Promise.all([loadMiddleearth(), loadClasses(), loadCards(), loadCardart()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Middle-earth Deck'), h('p', { class: 'muted' }, 'Could not load the Middle-earth data.')); }
+  const allChars = [...ME.HEROES, ...ME.SECRET_HEROES, ...ME.ENEMIES];
+  const ch = allChars.find(x => lqSlug(x) === slug);
+  if (!ch) return content.replaceChildren(h('h1', null, 'Deck not found'),
+    h('p', null, h('a', { href: '#/middle-earth' }, '← Back to Lorequest: Middle-earth')));
+  const deck = meDeckCards(cards, ch);
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'middle-earth') return;
+  const byId = {}; for (const c of cards) byId[c.id] = c;
+  await CardArt.preloadArt(deck.map(c => c.id));
+  const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
+  const grid = await deckGrid(deck.map(c => c.id), byId);
+  const clsName = (classes.find(c => c.id === ME.classOf(ch))?.name) || titleCase(ME.classOf(ch).replace(/_/g, ' '));
+  const isEnemy = ME.isEnemy(ch);
+  const secret = ME.SECRET_HEROES.includes(ch);
+  const pw = ME.powerOf(ch);
+  const rung = !isEnemy ? null
+    : ME.ENEMY_RUNGS.A.includes(ch) ? 'A — Mook' : ME.ENEMY_RUNGS.B.includes(ch) ? 'B — Lieutenant'
+      : ME.ENEMY_RUNGS.C.includes(ch) ? 'C — Commander' : 'D — The Dark Lord';
+  content.replaceChildren(
+    h('p', { class: 'lp-back' }, h('a', { href: '#/middle-earth' }, '← All Middle-earth decks')),
+    h('div', { class: 'lp-detail-head' },
+      h('div', { class: 'lp-detail-face' }, face),
+      h('div', { class: 'lp-detail-info' },
+        h('h1', null, ch),
+        h('div', { class: 'lp-detail-meta' },
+          h('span', { class: 'lq-cls' }, clsName),
+          isEnemy ? h('span', { class: 'lq-cls' }, 'Rung ' + rung) : null,
+          h('span', { class: 'lp-count' }, isEnemy ? (deck.length + ' cards · 2 copies each = 30-card deck') : (deck.length + '-card singleton starter deck'))),
+        pw ? h('p', { class: 'muted' }, h('strong', null, 'Hero Power — ' + pw.name + ': '), pw.text) : null,
+        h('p', { class: 'muted' }, isEnemy
+          ? `A static enemy faced as you climb — no win-parity loot; its signature hero power gives it teeth.`
+          : (secret ? `A secret hero, unlocked by clearing a full run (12 wins). Its loot buckets come from the ${clsName} class.`
+            : `A Free Peoples hero — one of the 10 offered at the start of a run. You grow this 10-card deck via a spoils draft + an alternating treasure/bucket each win. Its loot buckets come from the ${clsName} class.`)))),
+    h('h2', null, 'Deck ', h('span', { class: 'num' }, '(' + deck.length + ' cards' + (isEnemy ? ' · ×2 = 30' : '') + ')')),
+    cardSizeControl(grid), grid);
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -1585,6 +1677,7 @@ function route() {
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();
   if (section === 'lore-decks') return id ? lorequestDeckDetail(id) : lorequestView();
+  if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);

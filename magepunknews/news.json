@@ -1,6 +1,38 @@
 {
-	"generated": "2026-08-24",
+	"generated": "2026-08-25",
 	"entries": [
+		{
+			"sha": "5b02143",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest Middle-earth Phase B: run module + 38 hero powers + secret hero",
+			"body": "- middleearth.js: the run module (mirrors lorequest.js, static enemies /\n  no win-parity). Rosters (10 heroes + secret Tom Bombadil, 27 enemies in\n  rungs A/B/C/D + FIRST_ONLY), CLASS_OF, deckOf (hero 10 singleton /\n  enemy 15x2=30), enemyRosterFor(wins) rung gating (3A/4B/4C/1D over 12\n  fights), randomEnemy, generateEnemy (static), rewardForWin (odd=treasure/\n  even=bucket), spoilsChoices (draft from the fallen foe), seatOf, and the\n  38 UNIQUE hero powers (HERO_POWERS: 11 heroes + 27 enemies) as inline\n  power data — installed at createGame via each seat's `power` (no\n  heropower cards needed). WINS_TO_CLEAR=12 / LOSSES_TO_END=3.\n\n- Tom Bombadil (secret 11th hero): 10-card druid deck added to cards.json\n  (me_tom_*, colorless class cards, meSide:'hero'), art deployed. Unlocked\n  by clearing a run. Heroes test now 11 heroes / 110 cards.\n\n- game.js: full ?middleearth=1 run wiring mirroring the lorequest block —\n  MIDDLEEARTH_KEY + unlock flag, middleearthRunMode (last in the exclusion\n  chain), load/save/clear, playerCount, slot-0 hero power, mulligan gate,\n  game-over hook, resume/clear-on-load, mode/label/replay-meta = 'middleearth',\n  menu route + \"LOREQUEST: MIDDLE-EARTH\" tile, and the run block: pick-hero\n  overlay (11 heroes, shows signature + power), resume overlay, static enemy\n  gen, seat carrying the unique power, bootMiddleEarthEncounter, spoils draft\n  + alternating treasure/bucket loot, advance, run-complete (unlocks Tom) /\n  run-over.\n\n- middleearth_run_test.mjs (209 checks): rosters, rung gating, deck sizes,\n  static enemy shape, reward alternation, spoils draft, AND engine\n  integration - all 38 hero powers install at createGame + fire via\n  useHeroPower without throwing / leaving invalid state. Full suite 432/432.",
+			"cards": []
+		},
+		{
+			"sha": "627f020",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Lorequest Middle-earth Phase A: author the 27 enemy decks (405 cards)",
+			"body": "27 enemy decks x 15 cards = 405 new cards in cards.json, tag meDeck +\nmeSide:'enemy', ids me_<slug>_*. Composition per deck: 8 creatures\n(1 legendary _sig) + 3 spells + 1 location + 1 weapon + 1 enchantment +\n1 artifact. All colorless, non-collectible CLASS cards of each enemy's\nassigned class (villains lean warlock/death_knight/warrior; mage/rogue/\nhunter/druid for flavor). Real LTR/LTC/HOB/HOC card names (all art-\nsourceable); original Magepunk mechanics; all 17 gameplay keywords + 7\ncard types covered across the pool.\n\nRungs: A mooks (Bill Ferny, Lotho, Grima, Grishnakh, Gorbag, Shagrat,\nOld Man Willow, the Trolls, Chief Warg), B lieutenants (Ugluk, Mauhur,\nGothmog, Watcher, Mouth of Sauron, King of the Oathbreakers, Shelob,\nGreat Goblin, Bolg), C commanders (Saruman, Balrog, Witch-king, Sauron\nthe Necromancer, Gollum, Smaug, Azog), D final boss (Sauron the Dark\nLord / the Lidless Eye).\n\nAlso backfill meSide:'hero' on the 100 hero-deck cards so both pools\nfilter cleanly. New regression test pool_middleearth_enemies_test.mjs\n(1012 checks: structure, colorless/class/enemy tagging, keyword+type+\nclass breadth, play-without-throw sweep over all 405, boss spot-checks).\nUpdate heroes test filter to meSide==='hero'. Full suite 431/431 green.\nArt for all 405 sourced + deployed to magepunk-cardart.pages.dev.",
+			"cards": []
+		},
+		{
+			"sha": "b3ed935",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "Middle-earth hero decks: colorless class cards + art deployed",
+			"body": "- Per user: all 100 hero-deck cards are now COLORLESS, non-collectible CLASS\n  cards of each character's assigned class (Aragorn=paladin, Gandalf=mage,\n  Legolas=hunter, Gimli=warrior, Frodo=rogue, Samwise=priest, Eowyn=\n  demon_hunter, Galadriel=druid, Theoden=shaman, Elrond=priest) — no longer\n  cardClass magepunk, no colors\n- Test updated to assert colorless + correct per-hero class (278 checks green)\n- Full suite 430/430\n- Art: sourced art_crop for all 100 (real LTR/LTC/HOB/HOC names via Scryfall\n  /cards/collection) and deployed to magepunk-cardart.pages.dev (verified 200)",
+			"cards": []
+		},
+		{
+			"sha": "20221ed",
+			"date": "2026-08-24",
+			"kind": "patch",
+			"title": "Lorequest Middle-earth Phase A: 10 hero starter decks (100 cards)",
+			"body": "Author the 10 hero 10-card starter decks. Each deck = 4 creatures (1 legendary\nsignature) + 2 spells + 1 location + 1 weapon + 1 enchantment + 1 artifact.\nReal Middle-earth card names (LTR/LTC/HOB/HOC, art-sourceable); ORIGINAL\nMagepunk mechanics, class-flavored per the locked hero->class map.\n\n- meDeck tag, collectible:false, magepunk/paper; ids prefixed me_\n- Broad keyword spread: taunt/rush/charge/first_strike/divine_shield/lifesteal/\n  deathtouch/elusive/stealth/windfury/reborn/poisonous/overkill/combo/cleave/\n  trample/deathrattle + freeze/bounce/destroy/summon/bolster/ramp/scry triggers\n- New pool_middleearth_heroes_test.mjs: 278 checks (composition, breadth,\n  play-without-throw sweep over all 100 + validateGameState, signature spot-checks)\n- Full suite 429 -> 430 suites, all green\n\nArt sourcing/deploy + enemy decks + run module still to come.",
+			"cards": []
+		},
 		{
 			"sha": "24d9740",
 			"date": "2026-08-24",
