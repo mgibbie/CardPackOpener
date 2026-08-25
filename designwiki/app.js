@@ -1890,7 +1890,7 @@ async function temptView() {
   const faceOf = c => { const canvas = CardArt.drawCardFace(c); return h('a', { class: 'wiki-card', href: '#/cards/' + c.id, title: c.description || c.name }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy' }), h('div', { class: 'lq-name' }, c.name)); };
   content.replaceChildren(
     h('div', { class: 'gallery-heading' }, h('div', null,
-      h('h1', null, 'Tempt — “The Ring tempts you”'),
+      h('h1', null, 'Tempt'),
       h('p', { class: 'muted' }, 'Tempt is Magepunk’s take on Magic: The Gathering’s ', h('em', null, 'The Ring tempts you'), ': a per-player Ring that levels up and rides on one of your creatures — its ', h('b', null, 'Ring-bearer'), '.'))),
     h('section', { class: 'lp-tier' },
       h('div', { class: 'lp-tier-head' }, h('h2', null, 'How it works')),

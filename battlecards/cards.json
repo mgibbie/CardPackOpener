@@ -237341,7 +237341,7 @@
           }
         ]
       },
-      "description": "At the start of your turn, the Ring tempts you. (Bear it — and grow in its power.)",
+      "description": "At the start of your turn, Tempt. (Bear it — and grow in its power.)",
       "colors": [],
       "cardClass": "rogue",
       "meSide": "hero"
@@ -243845,9 +243845,9 @@
             "count": 1
           }
         ],
-        "text": "The Ring tempts you; each opponent discards a card."
+        "text": "Tempt; each opponent discards a card."
       },
-      "description": "{T}: The Ring tempts you; each opponent discards a card.",
+      "description": "{T}: Tempt; each opponent discards a card.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -247158,7 +247158,7 @@
           }
         ]
       },
-      "description": "At the start of your turn, the Ring tempts you. (Bear it — and grow in its power.)",
+      "description": "At the start of your turn, Tempt. (Bear it — and grow in its power.)",
       "colors": [],
       "cardClass": "rogue"
     },
@@ -248301,9 +248301,9 @@
             "value": 1
           }
         ],
-        "text": "The Ring tempts you; draw a card."
+        "text": "Tempt; draw a card."
       },
-      "description": "{T}: The Ring tempts you; draw a card.",
+      "description": "{T}: Tempt; draw a card.",
       "colors": [],
       "cardClass": "warlock"
     },
@@ -248967,13 +248967,13 @@
             "type": "tempt"
           }
         ],
-        "text": "The Ring tempts you."
+        "text": "Tempt."
       },
-      "description": "Battlecry: The Ring tempts you. {T}: The Ring tempts you. (One Ring to rule them all.)"
+      "description": "Battlecry: Tempt. {T}: Tempt. (One Ring to rule them all.)"
     },
     {
       "id": "sauron_lord_of_the_rings",
-      "name": "Sauron, Lord of the Rings",
+      "name": "Sauron, Servant of Morgoth",
       "type": "creature",
       "cost": 5,
       "attack": 4,
@@ -249003,7 +249003,7 @@
           }
         ]
       },
-      "description": "Battlecry: The Ring tempts you. Swing: The Ring tempts you, and Plunder (steal the top card of your opponent's deck)."
+      "description": "Battlecry: Tempt. Swing: Tempt, and Plunder (steal the top card of your opponent's deck)."
     },
     {
       "cardClass": "magepunk",
