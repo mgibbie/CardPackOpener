@@ -132,6 +132,65 @@ const saveMiddleearth = run => safeSave(MIDDLEEARTH_KEY, run);
 const clearMiddleearth = () => localStorage.removeItem(MIDDLEEARTH_KEY);
 const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
+// ---------- deterministic mid-fight resume (Phase 1) ----------
+// Single-player run fights used to re-deal a fresh hand on every resume because the boot re-ran
+// createGame with an UNSEEDED Math.random and no in-fight state was ever saved. Fix: (a) seed each
+// run fight so randomness is snapshot-able, (b) persist E.toSnapshot(state) onto the run as you play,
+// (c) rehydrate via E.fromSnapshot on resume instead of re-dealing (the exact mechanism the MP duel
+// resume already uses). The snapshot captures BOTH players' hands (with uids), deck order, board,
+// mana, secrets, ring/dungeon progress, turn/current — everything needed to restore the fight.
+const RUN_SNAP_MAX = 600_000; // bytes; skip persisting a pathologically large board (localStorage safety)
+// a seeded RNG for a run fight (random seed at boot, but the STREAM is snapshot-able so resume is exact)
+const seededGame = () => E.seededRng((Math.random() * 0x100000000) >>> 0);
+// the active single-player run mode's load/save (null outside a run)
+function activeRunIO() {
+	if (dungeonRunMode) return { load: loadRun, save: saveRun };
+	if (heistRunMode) return { load: loadHeist, save: saveHeist };
+	if (tombsRunMode) return { load: loadTombs, save: saveTombs };
+	if (duelsRunMode) return { load: loadDuels, save: saveDuels };
+	if (arenaRunMode) return { load: loadArena, save: saveArena };
+	if (lorequestRunMode) return { load: loadLorequest, save: saveLorequest };
+	if (middleearthRunMode) return { load: loadMiddleearth, save: saveMiddleearth };
+	return null;
+}
+// persist the live board into the active run so a resume restores the exact fight
+function saveRunSnapshot() {
+	const io = activeRunIO();
+	if (!io || !state || state.over || (typeof isGuest === 'function' && isGuest())) return;
+	const run = io.load();
+	if (!run || !run.active) return;
+	try {
+		const json = JSON.stringify(E.toSnapshot(state));
+		if (json.length > RUN_SNAP_MAX) return; // don't persist absurd sizes
+		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
+		io.save(run);
+	} catch (e) { /* never let a save break play */ }
+}
+// drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
+function clearRunSnapshot() {
+	const io = activeRunIO();
+	if (!io) return;
+	const run = io.load();
+	if (run && run.snapshot) { delete run.snapshot; io.save(run); }
+}
+// restore the live `state` from a run's snapshot; returns true on success (else caller boots fresh)
+function resumeRunSnapshot(run, byId) {
+	if (!run || !run.snapshot) return false;
+	try {
+		const snap = run.snapshot;
+		if ((snap.schemaVersion || 0) !== E.SCHEMA_VERSION) return false; // version guard -> fresh boot
+		state = E.fromSnapshot(snap, byId);
+		E.ensureUidsAbove(E.maxSnapshotUid(snap));
+		heistBossName = state.classPicks?.[1]?.name || heistBossName; // enemy name for nameOf()
+		return true;
+	} catch (e) { console.warn('resume: snapshot restore failed, booting fresh', e); return false; }
+}
+// leaving the page / hiding the tab mid-fight should capture the current board even between settled frames
+try {
+	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveRunSnapshot(); });
+	window.addEventListener('pagehide', () => saveRunSnapshot());
+} catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
+
 const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
@@ -2777,24 +2836,31 @@ function nextEvent() {
 				el.appendChild(overlayButton('Back to your world', () => { location.href = '/overworld/?mp=1'; }));
 			} else if (dungeonRunMode) {
 				const run = loadRun();
+				if (run) delete run.snapshot; // fight resolved -> drop the in-fight snapshot so the next fight boots fresh
 				if (run?.active) setTimeout(() => { (won ? dungeonVictory : dungeonDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (heistRunMode) {
 				const run = loadHeist();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? heistVictory : heistDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (tombsRunMode) {
 				const run = loadTombs();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? tombsVictory : tombsDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (duelsRunMode) {
 				const run = loadDuels();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? duelsVictory : duelsDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (lorequestRunMode) {
 				const run = loadLorequest();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? lorequestVictory : lorequestDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (middleearthRunMode) {
 				const run = loadMiddleearth();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? middleEarthVictory : middleEarthDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else if (arenaRunMode) {
 				const run = loadArena();
+				if (run) delete run.snapshot;
 				if (run?.active) setTimeout(() => { (won ? arenaVictory : arenaDefeat)(run); addReplayButtons($('dungeon-overlay')); }, 1200);
 			} else {
 				showPostGameSummary(ev.winner); // Quick Match / AI: result + stats + next steps
@@ -4750,7 +4816,8 @@ async function start() {
 			};
 			saveRun(run);
 		}
-		bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level);
+		if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
+		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level);
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadHeist();
@@ -4771,7 +4838,7 @@ async function start() {
 			};
 			saveHeist(run);
 		}
-		bootHeistEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Heist fight.'); else bootHeistEncounter(cardsById, run);
 	} else if (tombsRunMode) {
 		tombsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadTombs();
@@ -4791,7 +4858,7 @@ async function start() {
 			};
 			saveTombs(run);
 		}
-		bootTombsEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Tombs fight.'); else bootTombsEncounter(cardsById, run);
 	} else if (duelsRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadDuels();
@@ -4814,7 +4881,7 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
-		bootDuelsEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
@@ -4826,7 +4893,7 @@ async function start() {
 				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
 			saveLorequest(run);
 		}
-		bootLorequestEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
@@ -4838,7 +4905,7 @@ async function start() {
 				enemy: genMiddleEarthEnemy(cardsById, 0, null) };
 			saveMiddleearth(run);
 		}
-		bootMiddleEarthEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
@@ -4853,7 +4920,7 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly: null, deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
 			saveArena(run);
 		}
-		bootArenaEncounter(cardsById, run);
+		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
 	} else if (dungeonBossId) {
 		// one-off encounter: ?class= if it has a starter deck, else saved, else mage
 		const wanted = new URLSearchParams(location.search).get('class');
@@ -4890,7 +4957,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 		|| { id: clsId, name: clsId, power: null };
 	const bossPick = { id: bossId, name: boss.name, power: boss.power || null };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, Math.random, [...deckIds], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...deckIds], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	// boss surgery: its recorded deck, no western corner zones. In a dungeon
 	// run both heroes share a scaling life total (15 at level 1, +5 each level);
@@ -5482,7 +5549,7 @@ function bootHeistEncounter(cardsById, run) {
 		|| { id: hero.heroClass, name: hero.name, power: null };
 	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
@@ -5781,7 +5848,7 @@ function bootTombsEncounter(cardsById, run) {
 		|| { id: explorer.heroClass, name: explorer.name, power: null };
 	const bossPick = { id: run.bossId, name: boss.name, power: boss.power };
 	const picks = [clsPick, bossPick];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
@@ -6058,7 +6125,7 @@ function bootDuelsEncounter(cardsById, run) {
 	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
 	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
 	const picks = [playerCls, enemyCls];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
@@ -6234,7 +6301,7 @@ function bootLorequestEncounter(cardsById, run) {
 	const enemy = run.enemy || (run.enemy = genLorequestEnemy(cardsById, games, run.wins || 0, null, run.characterId));
 	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [lorequestSeat(run.characterId), lorequestSeat(enemy.name)];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
@@ -6380,7 +6447,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	const enemy = run.enemy || (run.enemy = genMiddleEarthEnemy(cardsById, run.wins || 0, null));
 	heistBossName = enemy.name; // shared enemy-name slot for nameOf()
 	const picks = [middleEarthSeat(run.characterId), middleEarthSeat(enemy.name)];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
@@ -6516,7 +6583,7 @@ function bootArenaEncounter(cardsById, run) {
 	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
 	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
 	const picks = [playerCls, enemyCls];
-	state = E.createGame(cardsById, Math.random, [...run.deck], 2, picks);
+	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
 	if (run.powerId && cardsById[run.powerId]) { const pw = E.instantiate(cardsById[run.powerId], HUMAN); pw.zone = 'heropower'; pw.usedThisTurn = false; state.players[HUMAN].heroPowers = [pw]; }
 	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
@@ -6643,6 +6710,7 @@ function maybeRecordFrame() {
 	if (replayMode || spectateMode || !state || !Array.isArray(state.players)) return;
 	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
 	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim());
+	saveRunSnapshot(); // persist the live fight into the active run so resume restores this exact board
 }
 function finalizeReplay(winner, resultOverride) {
 	if (replayMode || spectateMode || !Rec.isRecording()) return;
