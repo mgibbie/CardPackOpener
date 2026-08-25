@@ -93,16 +93,17 @@ hunter, warrior, rogue, priest ×2 (Sam + Elrond, both healers), demon_hunter, d
 
 | # | Hero (signature / art) | Colors | Class | Deck identity |
 |---|---|---|---|---|
-| 🔒 | **Tom Bombadil** (HOC) | WUBRG (5-color) | *any* (all buckets) | "Old Tom Bombadil is a merry fellow" — a whimsical, Ring-immune toolbox that dips into every color. Elemental/Old-Forest value; the Ring simply doesn't touch him. |
+| 🔒 | **Tom Bombadil** (HOC) | WUBRG (5-color) | `druid` | "Old Tom Bombadil is a merry fellow" — a whimsical, Ring-immune toolbox that dips into every color. Elemental/Old-Forest nature value (Master of Wood, Water & Hill); the Ring simply doesn't touch him. |
 
 - **Unlock:** hidden — not in the pick-1-of-10 lineup until earned (proposed: **clear one full run** (12 wins)
   with any hero → Tom is offered as an 11th choice thereafter). Flavor: you only "find" Bombadil once
   you've walked deep into Middle-earth.
-- **Class = "any":** because he's 5-color, his loot **buckets draw from ALL classes** (the reward for the
-  hardest hero to unlock). Deck stays a 10-card singleton like the others.
+- **Class = `druid`:** even though he's 5-color, his loot buckets draw from the **druid** pool (nature —
+  Master of Wood, Water & Hill). That makes **two druids** (with Galadriel) — fine by design. Deck stays a
+  10-card singleton like the others.
 - **Hero power — "Ho! Merry Dol!"** (loot: draw a card, then discard one). Deliberately **modest** — a
-  card-neutral smoother that helps a 5-color deck hit its colors, NOT a bomb. His real reward is
-  **all-bucket loot access**, so the power stays fair. (Earlier "draw + face-immunity" was too strong.)
+  card-neutral smoother that helps a 5-color deck hit its colors, NOT a bomb. (Earlier "draw +
+  face-immunity" was too strong.)
 
 **Unique hero powers (decided with the user — each hero gets its OWN, not a class-default; the class
 still keys which loot BUCKETS are offered).** ~2-mana, once/turn, slot-0:
@@ -226,8 +227,8 @@ treasure/curse rather than per-card:
 
 lorequest.js is a 76-line data+helper module; Middle-earth mirrors it as **`battlecards/middleearth.js`**:
 - `HEROES` (10 base + `SECRET_HEROES`=[Tom Bombadil], gated by a run-cleared flag) / `ENEMIES` (27) /
-  `ENEMY_RUNGS` (A/B/C/D arrays + `FIRST_ONLY` set) / `CLASS_OF` (hero→class, drives buckets; Tom = 'any'
-  → all buckets) / `HERO_POWER` (all 38 characters → their unique power id) /
+  `ENEMY_RUNGS` (A/B/C/D arrays + `FIRST_ONLY` set) / `CLASS_OF` (hero→class, drives buckets; Tom =
+  `druid`, a 2nd druid) / `HERO_POWER` (all 38 characters → their unique power id) /
   `heroChoices()` (returns all 10) / `deckOf(cardsById, ch)` (hero → 10 singleton; enemy → 2×15) /
   `enemyRosterFor(wins)` (rung-gated) / `generateEnemy(rng, wins, avoidId)` / `WINS_TO_CLEAR=12` /
   `LOSSES_TO_END=3`.
@@ -295,11 +296,11 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
 7. ✅ **Hobbit villains + secret hero added (2026-08-24):** roster grew **22 → 27 enemies** — added the
    three Trolls (**Tom, Bert & William**) + **The Chief Warg** to Rung A, **The Great Goblin** + **Bolg
    of the North** to Rung B, **Azog, Moria's Ruin** to Rung C. **Tom Bombadil** added as the hidden 11th
-   (secret) hero, unlocked by clearing a run; class 'any' (all buckets). See §2 + §3.
+   (secret) hero, unlocked by clearing a run; class `druid` (a 2nd druid). See §2 + §3.
 
 8. ✅ **Class assignments LOCKED (2026-08-24):** hero→class map finalized in §2 — Aragorn `paladin`,
    Gandalf `mage`, Legolas `hunter`, Gimli `warrior`, Frodo `rogue`, Samwise `priest`, Éowyn
-   `demon_hunter`, Galadriel `druid`, Théoden `shaman`, Elrond `priest`, Tom Bombadil `any`. Real engine
-   class strings; `warlock`/`death_knight` reserved for villains.
+   `demon_hunter`, Galadriel `druid`, Théoden `shaman`, Elrond `priest`, Tom Bombadil `druid` (2nd druid,
+   OK). Real engine class strings; `warlock`/`death_knight` reserved for villains.
 
 **→ ALL DECISIONS RESOLVED. Plan is ready for Phase A (card authoring) on your go.**
