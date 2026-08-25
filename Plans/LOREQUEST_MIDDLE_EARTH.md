@@ -287,9 +287,14 @@ Same flow used for the 13 pool expansions (see memory `magepunk-pool-redesign`):
   loot, advance, run-complete/over + Tom unlock). Test `middleearth_run_test.mjs` (209 checks: rung
   gating, 12W/3L, static enemy-gen, all 38 powers install+fire via the engine). Suite 432/432. A
   44-encounter node boot sanity (every hero × 4 rung enemies) is clean.
-- **Phase C — Surfaces:** in-game + start.html menus, spectate maps, designwiki section, news regen,
-  cache-busts. Ship.
-- **Phase D (optional) — The One Ring** corruption mechanic.
+- **Phase C — Surfaces:** ✅ **DONE (2026-08-25, commit 8f8d0f57).** In-game menu tile (Phase B) +
+  start.html "Lorequest: Middle-earth 💍" run tile; spectate/replay label+icon maps updated everywhere
+  (profile.js/replays.js/topbar.js/start.html — 💍 / "a Middle-earth run"); designwiki `#/middle-earth`
+  section (nav + router + overview by rung + deck detail with signature/class/hero-power, reads
+  meDeck/meSide + middleearth.js live) with app.js `?v=` bumped; news regen (gen-magepunknews GAME_FILES
+  += lorequest/middleearth; news.json 1150→1154 with the 4 Middle-earth releases). Full suite 432/432.
+  **→ THE MODE IS SHIPPED.**
+- **Phase D (optional) — The One Ring** corruption mechanic. (Not built; v2 stretch.)
 
 ---
 
