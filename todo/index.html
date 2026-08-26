@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Magepunk — Design To-Do</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="noindex">
+	<link rel="icon" href="data:,">
+	<style>
+		html, body { margin: 0; min-height: 100%; background: #0d0a14; color: #e8e2f4; font: 14px 'Segoe UI', system-ui, sans-serif; }
+		.wrap { max-width: 860px; margin: 0 auto; padding: 22px 16px 60px; }
+		header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+		h1 { font-size: 22px; margin: 0; letter-spacing: 0.5px; }
+		header .count { color: #ffd25f; font-weight: 700; }
+		header .spacer { flex: 1; }
+		a { color: #9d8fd4; }
+		.hint { color: #8b82a8; font-size: 12.5px; margin: 4px 0 18px; }
+		button { background: #2a2440; color: #e8e2f4; border: 1px solid #6a5f8a; border-radius: 8px; padding: 7px 14px; cursor: pointer; font: 600 13px 'Segoe UI', sans-serif; }
+		button:hover { background: #3a3258; }
+		button.danger { border-color: #a05a5a; color: #f0b8b8; }
+		button.danger:hover { background: #4a2a2a; }
+		.note { display: flex; gap: 14px; align-items: flex-start; background: #171226; border: 1px solid #352c52; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+		.note .art { width: 92px; height: 92px; object-fit: cover; border-radius: 10px; border: 1px solid #4a3f6b; flex: none; background: #241b38; }
+		.note .art.none { display: grid; place-items: center; font-size: 30px; color: #5a5078; }
+		.note .body { flex: 1; min-width: 0; }
+		.note .card-line { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 5px; }
+		.note .card-name { font-weight: 700; font-size: 15px; }
+		.note .when { color: #8b82a8; font-size: 12px; }
+		.note .text { white-space: pre-wrap; overflow-wrap: break-word; color: #d9d2ea; line-height: 1.5; }
+		.note .done { flex: none; align-self: flex-start; }
+		#empty { text-align: center; color: #8b82a8; padding: 60px 0 30px; font-size: 15px; }
+		#composer { display: flex; gap: 10px; margin: 26px 0 8px; }
+		#composer textarea { flex: 1; min-height: 44px; resize: vertical; background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 8px; padding: 9px 11px; font: 13.5px 'Segoe UI', sans-serif; }
+		#msg { min-height: 18px; color: #9fd8b0; font-size: 13px; }
+		@media (max-width: 560px) { .note { flex-wrap: wrap; } .note .done { order: 3; } }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<header>
+			<a href="/" title="Magepunk home" style="text-decoration:none;font-size:20px;">⚙️</a>
+			<h1>Design To-Do <span class="count" id="count"></span></h1>
+			<span class="spacer"></span>
+			<button id="refresh">↻ Refresh</button>
+			<button id="clear" class="danger" hidden>🗑 Clear all</button>
+		</header>
+		<div class="hint">Design-change notes filed from the wiki's card pages (the "New Version Description" box).
+			Newest first. Tell Claude to "check the internal to do list" to have them applied.</div>
+		<div id="list"><div id="empty">Loading…</div></div>
+		<div id="composer">
+			<textarea id="new-note" placeholder="Add a general note (not attached to a card)…"></textarea>
+			<button id="add">File it</button>
+		</div>
+		<div id="msg"></div>
+	</div>
+	<script type="module">
+	import * as MP from '/battlecards/mpmode.js';
+	const OWNER = 'mgibbie';
+	const $ = id => document.getElementById(id);
+	const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+	async function requireOwner() {
+		if (!MP.requireLogin()) return false;
+		try {
+			const r = await MP.call('state');
+			if ((r?.state?.username || '') === OWNER) return true;
+		} catch (e) {}
+		document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#e8e2f4;font:16px \'Segoe UI\',sans-serif;">'
+			+ '<div style="text-align:center;">🔒 The Design To-Do is an owner tool.<br><br><a href="/" style="color:#9d8fd4;">← back home</a></div></div>';
+		return false;
+	}
+
+	let todos = [];
+	function render() {
+		const list = $('list');
+		$('count').textContent = todos.length ? '(' + todos.length + ')' : '';
+		$('clear').hidden = !todos.length;
+		if (!todos.length) { list.innerHTML = '<div id="empty">The inbox is clear. 🎉</div>'; return; }
+		list.innerHTML = '';
+		for (const t of [...todos].sort((a, b) => b.ts - a.ts)) {
+			const el = document.createElement('div');
+			el.className = 'note';
+			const art = t.cardId
+				? `<img class="art" src="/battlecards/art/${esc(t.cardId)}.jpg" alt="" onerror="this.outerHTML='<div class=&quot;art none&quot;>🃏</div>'">`
+				: '<div class="art none">📝</div>';
+			const name = t.cardId
+				? `<a class="card-name" href="/designwiki/#/cards/${esc(t.cardId)}">${esc(t.cardName || t.cardId)}</a>`
+				: '<span class="card-name">General note</span>';
+			el.innerHTML = `${art}
+				<div class="body">
+					<div class="card-line">${name}<span class="when">${esc(new Date(t.ts).toLocaleString())}</span></div>
+					<div class="text">${esc(t.text)}</div>
+				</div>
+				<button class="done" title="Remove this note">✓ Done</button>`;
+			el.querySelector('.done').addEventListener('click', async () => {
+				el.style.opacity = '0.4';
+				try {
+					const r = await MP.call('todo-done', { ts: t.ts });
+					todos = todos.filter(x => x.ts !== t.ts);
+					render();
+					$('msg').textContent = 'removed — ' + (r.count ?? todos.length) + ' left';
+				} catch (e) { el.style.opacity = ''; $('msg').textContent = 'remove failed: ' + String(e.message || e).slice(0, 80); }
+			});
+			list.appendChild(el);
+		}
+	}
+
+	async function load() {
+		$('msg').textContent = '';
+		try {
+			const r = await MP.call('todo-list');
+			todos = Array.isArray(r.todos) ? r.todos : [];
+			render();
+		} catch (e) { $('list').innerHTML = '<div id="empty">Could not load the inbox: ' + esc(String(e.message || e).slice(0, 100)) + '</div>'; }
+	}
+
+	if (await requireOwner()) {
+		$('refresh').addEventListener('click', load);
+		$('clear').addEventListener('click', async () => {
+			if (!confirm('Clear the whole inbox (' + todos.length + ' notes)?')) return;
+			try { await MP.call('todo-done', { all: true }); todos = []; render(); $('msg').textContent = 'inbox cleared'; }
+			catch (e) { $('msg').textContent = 'clear failed: ' + String(e.message || e).slice(0, 80); }
+		});
+		$('add').addEventListener('click', async () => {
+			const text = $('new-note').value.trim();
+			if (!text) return;
+			$('add').disabled = true;
+			try {
+				await MP.call('todo-add', { text });
+				$('new-note').value = '';
+				$('msg').textContent = 'filed ✓';
+				await load();
+			} catch (e) { $('msg').textContent = 'file failed: ' + String(e.message || e).slice(0, 80); }
+			$('add').disabled = false;
+		});
+		load();
+	}
+	</script>
+</body>
+</html>
