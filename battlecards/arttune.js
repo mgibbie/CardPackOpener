@@ -4,12 +4,13 @@
 // the local dev server (/dev/save); elsewhere Save falls back to clipboard.
 // The previews render through the REAL painters (drawCardFace/drawBoardToken),
 // so what you frame here is exactly what the game shows.
-import { drawCardFace, drawBoardToken, preloadArt, hasArt, artIndexReady, ART_TUNING } from './cardart.js';
+import { drawCardFace, drawBoardToken, preloadArt, hasArt, artIndexReady, ART_TUNING, setArtOverride } from './cardart.js';
 
 const TUNING_FILE = 'battlecards/art_tuning.json';
 const $ = id => document.getElementById(id);
-let cards = [];         // [{id, name, type, attack, health}] with art, name-sorted
+let cards = [];         // every card def, name-sorted (art-less ones can be given art)
 let sel = null;         // selected card def
+const pendingArt = new Map(); // id -> jpeg dataURL, previewed live, written on Save
 
 const r3 = v => Math.round(v * 1000) / 1000;
 function cleaned() {
@@ -45,6 +46,28 @@ function repaint() {
 	$('json').textContent = `"${sel.id}": ` + JSON.stringify(c[sel.id] || '(default framing)') + `\n${Object.keys(c).length} cards tuned`;
 	const row = document.querySelector(`#list .row[data-id="${CSS.escape(sel.id)}"]`);
 	row?.querySelector('.tuned')?.replaceChildren(c[sel.id] ? '●' : '');
+	$('artstate').textContent = pendingArt.has(sel.id) ? '● new image — unsaved'
+		: pendingArt.size ? `${pendingArt.size} unsaved image${pendingArt.size > 1 ? 's' : ''} on other cards` : '';
+}
+
+// normalize an uploaded image to the pipeline's format (jpg, max side 768),
+// preview it through the REAL art cache, and queue it for Save
+async function replaceArt(file) {
+	if (!sel || !file || !file.type.startsWith('image/')) return;
+	const bmp = await createImageBitmap(file);
+	const k = Math.min(1, 768 / Math.max(bmp.width, bmp.height));
+	const cv = document.createElement('canvas');
+	cv.width = Math.round(bmp.width * k);
+	cv.height = Math.round(bmp.height * k);
+	cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+	const dataUrl = cv.toDataURL('image/jpeg', 0.9);
+	const img = new Image();
+	img.src = dataUrl;
+	await img.decode();
+	pendingArt.set(sel.id, dataUrl);
+	setArtOverride(sel.id, img); // the preview now paints exactly what Save writes
+	document.querySelector(`#list .row[data-id="${CSS.escape(sel.id)}"]`)?.classList.remove('noart');
+	repaint();
 }
 
 async function select(def) {
@@ -64,8 +87,9 @@ function buildList(filter = '') {
 	const c = cleaned();
 	for (const def of cards) {
 		if (q && !def.name.toLowerCase().includes(q) && !def.id.includes(q)) continue;
+		const noart = !hasArt(def.id) && !pendingArt.has(def.id);
 		const row = document.createElement('div');
-		row.className = 'row' + (sel?.id === def.id ? ' sel' : '');
+		row.className = 'row' + (sel?.id === def.id ? ' sel' : '') + (noart ? ' noart' : '');
 		row.dataset.id = def.id;
 		row.innerHTML = `<span class="tuned">${c[def.id] ? '●' : ''}</span> ${def.name} <div class="id">${def.id} · ${def.type}</div>`;
 		row.addEventListener('click', () => select(def));
@@ -107,12 +131,21 @@ function wirePreview(canvas) {
 	const raw = await fetch('cards.json').then(r => r.json());
 	const all = Array.isArray(raw) ? raw : raw.cards;
 	await artIndexReady;
-	cards = all.filter(c => c && c.id && hasArt(c.id))
+	cards = all.filter(c => c && c.id)
 		.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
-	$('msg').textContent = `${cards.length} cards with art`;
+	const withArt = cards.filter(c => hasArt(c.id)).length;
+	$('msg').textContent = `${cards.length} cards (${withArt} with art)`;
 	buildList();
 	wirePreview($('face'));
 	wirePreview($('token'));
+
+	// replacement images: picker button or drop a file on a preview
+	$('upload').addEventListener('click', () => $('file').click());
+	$('file').addEventListener('change', () => { replaceArt($('file').files[0]); $('file').value = ''; });
+	for (const cv of [$('face'), $('token')]) {
+		cv.addEventListener('dragover', e => e.preventDefault());
+		cv.addEventListener('drop', e => { e.preventDefault(); replaceArt(e.dataTransfer.files?.[0]); });
+	}
 
 	$('search').addEventListener('input', () => buildList($('search').value));
 	$('zoom').addEventListener('input', () => { if (sel) { entry(sel.id).z = +$('zoom').value; repaint(); } });
@@ -128,15 +161,34 @@ function wirePreview(canvas) {
 		$('msg').textContent = 'copied full tuning JSON';
 	});
 	$('save').addEventListener('click', async () => {
+		// replacement images first (each write also bumps the id's ART_REVS
+		// cache-bust so the CDN can't serve the stale image after a deploy)
+		let artMsg = '';
+		if (pendingArt.size) {
+			let saved = 0;
+			for (const [id, dataUrl] of [...pendingArt]) {
+				try {
+					const r = await fetch('/dev/save-art', { method: 'POST', body: JSON.stringify({ id, dataUrl }) });
+					if (!r.ok) throw new Error(await r.text());
+					pendingArt.delete(id);
+					saved++;
+				} catch (e) {
+					artMsg = ` · image save FAILED (${id}): ${String(e.message).slice(0, 80)}`;
+					break;
+				}
+			}
+			if (saved) artMsg = ` · ${saved} image${saved > 1 ? 's' : ''} written — deploy art with: npm run deploy-art` + artMsg;
+		}
 		const content = cleaned();
 		try {
 			const r = await fetch('/dev/save', { method: 'POST', body: JSON.stringify({ file: TUNING_FILE, content }) });
 			if (!r.ok) throw new Error(await r.text());
-			$('msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} cards)`;
+			$('msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} cards)` + artMsg;
 		} catch (e) {
 			await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
-			$('msg').textContent = 'no dev server — JSON copied to clipboard instead';
+			$('msg').textContent = 'no dev server — tuning JSON copied to clipboard instead' + artMsg;
 		}
+		repaint();
 	});
 	addEventListener('keydown', e => {
 		if (!sel || /INPUT|TEXTAREA/.test(document.activeElement?.tagName || '')) return;

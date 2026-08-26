@@ -67,6 +67,38 @@ createServer(async (req, res) => {
 		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
 		return;
 	}
+	// arttune.html "replace image": writes battlecards/art/<id>.jpg, adds the id
+	// to art/index.json, and bumps the id's ART_REVS cache-bust in cardart.js so
+	// the 7-day CDN cache can't serve the stale image after the next art deploy.
+	if (url.pathname === '/dev/save-art' && req.method === 'POST') {
+		const chunks = [];
+		for await (const c of req) chunks.push(c);
+		try {
+			const { id, dataUrl } = JSON.parse(Buffer.concat(chunks));
+			if (!/^[a-z0-9_]+$/.test(id || '')) throw new Error('bad card id');
+			const m = /^data:image\/jpeg;base64,(.+)$/.exec(dataUrl || '');
+			if (!m) throw new Error('expected a base64 jpeg data URL');
+			writeFileSync(`battlecards/art/${id}.jpg`, Buffer.from(m[1], 'base64'));
+			// index.json: array of ids with art
+			let index = [];
+			try { index = JSON.parse(readFileSync('battlecards/art/index.json', 'utf8')); } catch (e) {}
+			if (!index.includes(id)) { index.push(id); index.sort(); writeFileSync('battlecards/art/index.json', JSON.stringify(index)); }
+			// ART_REVS bump (single-line object literal in cardart.js)
+			const srcPath = 'battlecards/cardart.js';
+			const src = readFileSync(srcPath, 'utf8');
+			const lit = /const ART_REVS = \{[^}]*\};/.exec(src);
+			if (!lit) throw new Error('ART_REVS literal not found in cardart.js');
+			const revs = new Function('return ' + lit[0].slice('const ART_REVS = '.length, -1))();
+			const rev = (revs[id] || 1) + 1;
+			revs[id] = rev;
+			const body = Object.keys(revs).sort().map(k => `${/^[a-z_][a-z0-9_]*$/.test(k) ? k : JSON.stringify(k)}: ${revs[k]}`).join(', ');
+			writeFileSync(srcPath, src.replace(lit[0], `const ART_REVS = { ${body} };`));
+			console.log(`saved art ${id}.jpg (${Buffer.from(m[1], 'base64').length} bytes, rev ${rev})`);
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end(JSON.stringify({ ok: true, rev }));
+		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
+		return;
+	}
 	if (url.pathname === '/api/mp') {
 		const chunks = [];
 		for await (const c of req) chunks.push(c);

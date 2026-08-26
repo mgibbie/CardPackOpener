@@ -16,6 +16,8 @@
 		#list .row.sel { background: #33265c; }
 		#list .row .id { opacity: 0.55; font-size: 11px; }
 		#list .row .tuned { color: #ffd25f; }
+		#list .row.noart { opacity: 0.55; }
+		#list .row.noart .id::after { content: ' · no art'; color: #d98a8a; }
 		#main { flex: 1; overflow-y: auto; padding: 18px; }
 		#previews { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 		.pv { text-align: center; }
@@ -55,6 +57,12 @@
 					<button id="copy">Copy all</button>
 					<button id="save">Save</button>
 				</div>
+				<div class="rowc">
+					<button id="upload">Replace image…</button>
+					<input id="file" type="file" accept="image/*" style="display:none;">
+					<span id="artstate" style="color:#ffd25f;"></span>
+				</div>
+				<div class="hint">…or drop an image file onto a preview. Uploads are re-encoded to jpg (max 768px) and saved to battlecards/art/&lt;id&gt;.jpg on Save.</div>
 				<div id="msg"></div>
 				<pre id="json">{}</pre>
 			</div>
