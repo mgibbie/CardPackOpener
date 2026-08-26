@@ -3129,9 +3129,12 @@ export class Battle {
 		// keeps bottom-anchoring consistent so feet sit on the platform. `battleScale` then
 		// restores authentic relative size per species (Diglett small, Wailord huge); absent = 1.
 		const bScale = this.data.species[mon.speciesId]?.battleScale || 1;
-		const norm = (96 / Math.max(img.width, img.height)) * bScale;
+		// hand-tuned per-species adjustment (spritetune overlay): scale multiplier
+		// + x/y nudge in scene units, keyed by which sprite variant is shown
+		const tune = UI.SPRITE_TUNING[mon.speciesId]?.[side === 'foe' ? 'front' : 'back'];
+		const norm = (96 / Math.max(img.width, img.height)) * bScale * (tune?.s || 1);
 		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
-		ctx.drawImage(img, pose.x + pose.dx - w / 2, pose.y + pose.dy - h + 10 * u, w, h);
+		ctx.drawImage(img, pose.x + pose.dx - w / 2 + (tune?.x || 0) * u, pose.y + pose.dy - h + (10 + (tune?.y || 0)) * u, w, h);
 		ctx.restore();
 	}
 

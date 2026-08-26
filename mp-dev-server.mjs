@@ -6,7 +6,7 @@
 //   node mp-dev-server.mjs [port]     (default 8767)
 //   MP_DEV_DB=/path/to.sqlite  to keep accounts between runs (default: temp file)
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync, mkdtempSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { join, extname, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
@@ -48,8 +48,25 @@ const MIME = {
 };
 
 const port = +(process.argv[2] || 8767);
+// local-only save target for the art/sprite tuning editors (arttune.html and
+// the ?spritetune=1 overlay). Allowlisted — production has no such endpoint,
+// so the tools fall back to copy-to-clipboard there.
+const SAVABLE = new Set(['overworld/sprite_tuning.json', 'battlecards/art_tuning.json']);
 createServer(async (req, res) => {
 	const url = new URL(req.url, `http://localhost:${port}`);
+	if (url.pathname === '/dev/save' && req.method === 'POST') {
+		const chunks = [];
+		for await (const c of req) chunks.push(c);
+		try {
+			const { file, content } = JSON.parse(Buffer.concat(chunks));
+			if (!SAVABLE.has(file)) { res.writeHead(403); res.end('not an allowed tuning file'); return; }
+			writeFileSync(file, JSON.stringify(content, null, '\t') + '\n');
+			console.log('saved', file, `(${Object.keys(content).length} entries)`);
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end('{"ok":true}');
+		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
+		return;
+	}
 	if (url.pathname === '/api/mp') {
 		const chunks = [];
 		for await (const c of req) chunks.push(c);
