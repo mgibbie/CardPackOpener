@@ -45,7 +45,7 @@ export function mount(ow) {
 
 	const panel = document.createElement('div');
 	panel.id = 'spritetune';
-	panel.style.cssText = 'position:fixed;top:56px;right:8px;z-index:200;width:270px;max-height:calc(100vh - 70px);'
+	panel.style.cssText = 'position:fixed;top:56px;right:8px;z-index:200;width:min(270px, calc(100vw - 16px));max-height:calc(100vh - 70px);'
 		+ 'overflow-y:auto;background:rgba(16,12,28,0.95);border:1px solid #6a5f8a;border-radius:12px;'
 		+ 'padding:12px;color:#e8e2f4;font:12px "Segoe UI",sans-serif;user-select:none;touch-action:pan-y;';
 	panel.innerHTML = `

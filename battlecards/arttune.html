@@ -33,6 +33,14 @@
 		pre { background: #100c1e; border: 1px solid #352c52; border-radius: 8px; padding: 8px; white-space: pre-wrap; word-break: break-all; }
 		#msg { min-height: 16px; color: #9fd8b0; }
 		.hint { opacity: 0.6; font-size: 12px; margin-top: 4px; }
+		/* phones: stack the card list above the previews */
+		@media (max-width: 700px) {
+			#app { flex-direction: column; }
+			#side { width: 100%; flex: none; border-right: 0; border-bottom: 1px solid #352c52; }
+			#list { max-height: 34vh; }
+			#main { padding: 12px; }
+			#previews .pv canvas { width: min(300px, 78vw) !important; }
+		}
 	</style>
 </head>
 <body>

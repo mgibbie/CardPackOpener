@@ -4648,12 +4648,23 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
 	// the mgibbie account only — the username is verified SERVER-side (the
 	// 'state' action derives it from the token), so a spoofed localStorage
-	// state doesn't pass. Everyone else just plays the overworld normally.
+	// state doesn't pass. Feedback goes through an on-screen toast, NOT the
+	// hud — the hud line is display:none on touch devices, which made every
+	// gate/mount failure look like "nothing happened" on phones.
 	if (new URLSearchParams(location.search).has('spritetune')) {
+		const note = t => {
+			const d = document.createElement('div');
+			d.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;max-width:88vw;'
+				+ 'background:rgba(20,15,34,0.95);color:#ffd25f;border:1px solid #6a5f8a;border-radius:10px;'
+				+ 'padding:10px 16px;font:13px "Segoe UI",sans-serif;text-align:center;';
+			d.textContent = t;
+			document.body.appendChild(d);
+			setTimeout(() => d.remove(), 8000);
+		};
 		MP.call('state').then(r => {
-			if ((r?.state?.username || '') !== 'mgibbie') { hud.textContent = 'The Sprite Tuner is an owner tool.'; return; }
+			if ((r?.state?.username || '') !== 'mgibbie') { note('The Sprite Tuner is an owner tool.'); return; }
 			return import('./spritetune.js').then(m => m.mount(window.__ow));
-		}).catch(e => console.warn('spritetune failed', e));
+		}).catch(e => { console.warn('spritetune failed', e); note('Sprite Tuner failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
