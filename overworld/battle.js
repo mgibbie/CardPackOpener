@@ -456,19 +456,20 @@ export class Battle {
 			return await getImage(`data/pokemon/${name}`).catch(() =>
 				getImage(`data/pokemon/${file}`).catch(() => null));
 		};
-		const backSprites = new Map();
-		const [foeImg] = await Promise.all([
-			loadSprite(foe.sprite, false),
-			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
-		]);
+		// build the ally pair FIRST so every sprite — foe, allies, party backs —
+		// loads in ONE parallel round (two serialized rounds doubled the frozen
+		// pre-battle wait on cold caches)
 		let foeAlly = null, meAlly = null;
 		if (second && party.filter(m => m.curHP > 0).length >= 2) {
 			foeAlly = buildMon(second.id, second.level, this.data);
 			meAlly = party.filter(m => m.curHP > 0)[1];
 		}
-		const [foeAllyImg, meAllyImg] = await Promise.all([
+		const backSprites = new Map();
+		const [foeImg, foeAllyImg, meAllyImg] = await Promise.all([
+			loadSprite(foe.sprite, false),
 			foeAlly ? loadSprite(foeAlly.sprite, false) : null,
 			meAlly ? loadSprite(meAlly.sprite, true) : null,
+			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
 		]);
 		this.active = {
 			double: !!foeAlly,
@@ -2067,7 +2068,7 @@ export class Battle {
 		const a = this.active;
 		if (!a) return;
 		// advance message
-		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { a.msgT = 99; return; }
+		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { this.fastForward(); return; }
 		if (a.phase === 'menu') {
 			// 2x2: FIGHT(0) BAG(1) / PKMN(2) RUN(3)
 			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
@@ -2122,6 +2123,11 @@ export class Battle {
 				if (this.moveUsable(who, mv, 'me')) {
 					if (a.double) this.planMove(mv);
 					else this.startQueue(() => this.resolveTurn(mv));
+				} else {
+					// silent no-op on a blocked move reads as a missed tap — say why
+					this.startQueue(() => this.pushMsg(mv.pp <= 0
+						? `There's no PP left for ${mv.name}!`
+						: `${mv.name} can't be used right now!`));
 				}
 			}
 		} else if (a.phase === 'target') {
@@ -3133,12 +3139,15 @@ export class Battle {
 		}
 		ctx.save();
 		if (a.shakeT > 0) ctx.translate((Math.random() - 0.5) * 8 * u, (Math.random() - 0.5) * 8 * u);
-		// backdrop
-		const g = ctx.createLinearGradient(0, 0, 0, H);
-		g.addColorStop(0, '#7db8e0');
-		g.addColorStop(0.55, '#b8d8b8');
-		g.addColorStop(1, '#5f8f5f');
-		ctx.fillStyle = g;
+		// backdrop (static — cache the gradient instead of rebuilding it per frame)
+		if (!this._bg || this._bgH !== H) {
+			this._bg = ctx.createLinearGradient(0, 0, 0, H);
+			this._bg.addColorStop(0, '#7db8e0');
+			this._bg.addColorStop(0.55, '#b8d8b8');
+			this._bg.addColorStop(1, '#5f8f5f');
+			this._bgH = H;
+		}
+		ctx.fillStyle = this._bg;
 		ctx.fillRect(0, 0, W, H);
 
 		if (a.weather) {
@@ -3324,6 +3333,27 @@ export class Battle {
 		}
 	}
 
+	// tap/Z while a turn plays out: finish the current animation stage, snap the
+	// HP-bar easing, and release the message hold. The blinking ▼ always
+	// advertised tap-to-advance, but two hidden gates (a playing fx and the
+	// bar ease) used to swallow the tap — each turn had ~2.4s of dead time no
+	// amount of tapping could shorten.
+	fastForward() {
+		const a = this.active;
+		if (!a) return;
+		if (a.fx) {
+			const fx = a.fx;
+			a.fx = null; // clear FIRST: fx.done() may queue the next stage
+			fx.t = fx.dur;
+			fx.done?.();
+		}
+		a.foeShownHP = a.foe.curHP;
+		a.meShownHP = a.me.curHP;
+		if (a.foeAlly) a.foeAllyShownHP = a.foeAlly.curHP;
+		if (a.meAlly) a.meAllyShownHP = a.meAlly.curHP;
+		if (a.phase === 'msg') a.msgT = 99;
+	}
+
 	tap(x, y) {
 		const a = this.active;
 		if (!a) return;
@@ -3333,7 +3363,7 @@ export class Battle {
 		}
 		if (!hit) return;
 		const [kind, arg] = hit.id.split(':');
-		if (kind === 'advance') { if (a.phase === 'msg') a.msgT = 99; return; }
+		if (kind === 'advance') { this.fastForward(); return; }
 		if (kind === 'back') { this.key('x'); return; }
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }

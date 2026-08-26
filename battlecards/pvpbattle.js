@@ -1,7 +1,7 @@
 // pvpbattle.js — a compact, self-contained, deterministic-per-call Pokemon
-// battle engine for live PvP. It is PURE DATA (no images/DOM), so the Netlify
-// function bundles it and resolves turns server-authoritatively while both
-// clients just submit actions and render the published state.
+// battle engine for live PvP. It is PURE DATA (no images/DOM), so the
+// Cloudflare Pages Function bundles it and resolves turns server-authoritatively
+// while both clients just submit actions and render the published state.
 //
 // A "mon" snapshot carries everything a turn needs:
 //   { speciesId, name, level, types:[..], sprite,

@@ -191,12 +191,15 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	// click a chat author's name → their profile popup
 	el.addEventListener('click', e => { const w = e.target.closest('.mc-who[data-user]'); if (w && w.dataset.user) openProfile(w.dataset.user); });
 	document.body.appendChild(el);
-	tick();
-	timer = setInterval(tick, poll);
+	// self-rescheduling instead of setInterval: an async tick on a slow link
+	// otherwise stacks overlapping requests (the interval doesn't wait for the
+	// previous poll to finish)
+	const loop = async () => { await tick().catch(() => {}); if (el) timer = setTimeout(loop, poll); };
+	loop();
 }
 
 export function unmount() {
-	if (timer) clearInterval(timer);
+	if (timer) clearTimeout(timer);
 	timer = null;
 	if (el && el.parentNode) el.parentNode.removeChild(el);
 	el = null; room = null; specRoom = null; seen = new Set(); lastTs = 0; lastSpecTs = 0;

@@ -12,8 +12,9 @@ let mpPacks = 0;
 let mpPulls = null; // ids the server rolled for the pack being torn open
 
 const container = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+const DPR = Math.min(window.devicePixelRatio || 1, 2); // DPR-3 phones: 2x is visually identical at ~half the fill cost
+const renderer = new THREE.WebGLRenderer({ antialias: DPR < 2, powerPreference: 'high-performance' });
+renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
 container.appendChild(renderer.domElement);
 
@@ -454,7 +455,7 @@ function animate() {
 animate();
 
 // ---------- boot ----------
-fetch('cards.json', { cache: 'no-cache' }).then(r => r.json()).then(async data => {
+fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let the _headers 5-min cache skip the revalidation RTT
 	cards = data.cards;
 	for (const d of cards) cardsById[d.id] = d;
 	if (MP_ON) {

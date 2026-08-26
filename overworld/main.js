@@ -44,16 +44,36 @@ let friends = [];       // last friends-poll result
 let visiting = null;    // when set: { username, sprite } — roaming a friend's world
 let friendGhost = null; // a friend's live sprite while we visit their map
 
-const SCALE = 3;
+// Integer-scale the GBA screen to DEVICE pixels. The old fixed 3x canvas was
+// CSS-stretched by a fractional factor on phones (720 -> 1146 device px on an
+// iPhone), so nearest-neighbour doubled some pixel columns and not others and
+// the grid visibly crawled while walking. An integer device-pixel scale keeps
+// every game pixel the same size; it also sizes battle/menu text to the screen.
+let SCALE = 3;
 const screen = document.getElementById('screen');
-screen.width = VIEW_W * SCALE;
-screen.height = VIEW_H * SCALE;
-const sctx = screen.getContext('2d');
-sctx.imageSmoothingEnabled = false;
+const sctx = screen.getContext('2d', { alpha: false }); // fully repainted opaque every frame
+function fitCanvas() {
+	const dpr = window.devicePixelRatio || 1;
+	const barRoom = document.body.classList.contains('touch') ? 8 : 56; // desktop keeps the caption bar visible
+	const s = Math.max(2, Math.min(6, Math.floor(Math.min(
+		(innerWidth * 0.98 * dpr) / VIEW_W,
+		((innerHeight - barRoom) * dpr) / VIEW_H,
+	))));
+	if (s === SCALE && screen.width === VIEW_W * s) return;
+	SCALE = s;
+	screen.width = VIEW_W * s;
+	screen.height = VIEW_H * s;
+	screen.style.width = (VIEW_W * s / dpr) + 'px';
+	screen.style.height = (VIEW_H * s / dpr) + 'px';
+	sctx.imageSmoothingEnabled = false; // resizing resets context state
+}
+fitCanvas();
+let fitT = null; // rotations/keyboard fire resize in bursts — settle first
+addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
 
 const frame = document.createElement('canvas'); // native 240x160
 frame.width = VIEW_W; frame.height = VIEW_H;
-const ctx = frame.getContext('2d');
+const ctx = frame.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;
 
 const hud = document.getElementById('hud');
@@ -1635,6 +1655,16 @@ screen.addEventListener('pointermove', e => {
 		for (const b of menuUi) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) menuHover = b.id;
 	}
 });
+// touch leaves the last pointermove hover latched on a button forever — clear
+// it when the finger lifts so nothing stays falsely highlighted
+const clearHovers = e => {
+	if (e.pointerType === 'mouse') return; // a mouse keeps hovering after release
+	if (battle.active) battle.active.hover = null;
+	if (pvp.active) pvp.active.hover = null;
+	menuHover = null;
+};
+screen.addEventListener('pointerup', clearHovers);
+screen.addEventListener('pointercancel', clearHovers);
 screen.addEventListener('pointerdown', e => {
 	e.preventDefault();
 	if (factorySpec.blocking) { factorySpec.tap(...screenPos(e)); return; }
@@ -1665,6 +1695,22 @@ async function loadMapScripts(stem) {
 	mapScripts = c.scr || {}; mapStrings = c.str || {};
 }
 
+// fire-and-forget: warm the sprites a battle on THIS map would need (party
+// back-sprites + the local encounter table's fronts) so a wild encounter
+// doesn't stall on cold sprite fetches with the screen frozen. getImage
+// memoizes, so battle start() finds these already resolved.
+function warmBattleSprites() {
+	try {
+		const warm = f => { if (f) getImage(`data/pokemon/${f}`).catch(() => {}); };
+		for (const m of party || []) if (m?.sprite) warm(m.sprite.replace(/\.(png|gif)$/, '-b.$1'));
+		const groups = encounters.data?.[world.current?.map?.id] || {};
+		const ids = new Set();
+		for (const kind of ['land', 'water']) for (const s of groups[kind]?.slots || []) if (s.id != null) ids.add(s.id);
+		let n = 0;
+		for (const id of ids) { if (n++ >= 12) break; warm(battle.data?.species?.[id]?.sprite); }
+	} catch { /* prefetch is best-effort */ }
+}
+
 async function refreshMapContent(label) {
 	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	await npcs.loadForMap();
@@ -1682,6 +1728,7 @@ async function refreshMapContent(label) {
 	savePos();
 	loading = false;
 	refreshFollower();
+	warmBattleSprites();
 	// run this map's ON_TRANSITION script (story vars, scene setup), then check
 	// for an ON_FRAME auto-cutscene now that the map is set up. Guard the ported
 	// plot triggers: a throwing story script must not break map entry itself
@@ -3033,27 +3080,33 @@ function tick(now) {
 		updateFollower(dt);
 	}
 
-	const [camX, camY] = cameraPos();
-	ctx.clearRect(0, 0, VIEW_W, VIEW_H);
-	world.drawLayer(ctx, 'bottom', camX, camY);
-	services.draw(ctx, camX, camY);
-	arcade.draw(ctx, camX, camY);
-	items.draw(ctx, camX, camY);
-	drawLegendary(ctx, camX, camY);
-	drawAwakening(ctx, camX, camY);
-	portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
-	blockers.draw(ctx, camX, camY);
-	// sprites in y order so overlaps stack correctly
-	const sprites = [...npcs.list, ...trainers.list, player];
-	if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
-	sprites.sort((a, b) => a.py - b.py);
-	for (const s of sprites) s.draw(ctx, camX, camY);
-	drawFriendGhosts(ctx, camX, camY);
-	world.drawLayer(ctx, 'top', camX, camY);
-	drawDayNightTint(ctx);
-	if (!battle.blocking) evolution.draw(ctx);
+	// battle/pvp/factory screens repaint every pixel of the canvas themselves —
+	// rendering the whole overworld underneath them was pure discarded work
+	// (two map blits + every NPC/item/portal + a full-canvas upscale, per frame)
+	const overlayOwnsFrame = battle.blocking || pvp.blocking || factorySpec.blocking;
+	if (!overlayOwnsFrame) {
+		const [camX, camY] = cameraPos();
+		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+		world.drawLayer(ctx, 'bottom', camX, camY);
+		services.draw(ctx, camX, camY);
+		arcade.draw(ctx, camX, camY);
+		items.draw(ctx, camX, camY);
+		drawLegendary(ctx, camX, camY);
+		drawAwakening(ctx, camX, camY);
+		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
+		blockers.draw(ctx, camX, camY);
+		// sprites in y order so overlaps stack correctly
+		const sprites = [...npcs.list, ...trainers.list, player];
+		if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
+		sprites.sort((a, b) => a.py - b.py);
+		for (const s of sprites) s.draw(ctx, camX, camY);
+		drawFriendGhosts(ctx, camX, camY);
+		world.drawLayer(ctx, 'top', camX, camY);
+		drawDayNightTint(ctx);
+		evolution.draw(ctx);
 
-	sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
+		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
+	}
 	// battle, menus, and dialogs all render at full canvas resolution
 	const SW = screen.width, SH = screen.height;
 	if (battle.blocking) {
