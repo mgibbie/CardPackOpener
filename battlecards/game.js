@@ -6620,6 +6620,10 @@ function bootLorequestEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (Karn -> Wastes only,
+	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
+	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
+	state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	log(`Lorequest - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${tier}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
