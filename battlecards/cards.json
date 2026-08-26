@@ -284288,6 +284288,824 @@
       "colors": [],
       "cardClass": "warrior",
       "mvSide": "enemy"
+    },
+    {
+      "id": "mv_treasure_gilded_lotus",
+      "name": "Gilded Lotus",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Gain three Mana Crystals this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-mana",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_spider_mobile",
+      "name": "Spider-Mobile",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain two Coins and draw a card.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "gain-coin",
+          "value": 2
+        },
+        {
+          "type": "draw",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_hot_dog_cart",
+      "name": "Hot Dog Cart",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Gain 5 life and a Coin.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "heal",
+          "value": 5,
+          "target": "self"
+        },
+        {
+          "type": "gain-coin",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_the_thanos_copter",
+      "name": "The Thanos-Copter",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Draw two cards.",
+      "tapAbility": {
+        "text": "Draw two cards.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_mind_s_eye",
+      "name": "Mind's Eye",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "{T}: Draw a card and Scry 1.",
+      "tapAbility": {
+        "text": "Draw a card and Scry 1.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          },
+          {
+            "type": "scry",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_tome_of_legends",
+      "name": "Tome of Legends",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "{T}: Draw a card.",
+      "tapAbility": {
+        "text": "Draw a card.",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_the_fantasticar",
+      "name": "The Fantasticar",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 4,
+      "description": "Battlecry: Summon a 4/4 with Rush.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 1,
+          "attack": 4,
+          "health": 4,
+          "name": "Fantastic Four",
+          "tribe": "Vehicle",
+          "keywords": [
+            "rush"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_negative_zone_portal",
+      "name": "Negative Zone Portal",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 5,
+      "description": "Battlecry: Summon two 3/3 creatures with Taunt.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Annihilation Wave",
+          "tribe": "Alien",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_s_h_i_e_l_d_helicarrier",
+      "name": "S.H.I.E.L.D. Helicarrier",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 6,
+      "description": "Battlecry: Deal 4 damage to all enemy creatures and gain 5 Armor.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creatures"
+        },
+        {
+          "type": "armor",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_interdimensional_web_watch",
+      "name": "Interdimensional Web Watch",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "Battlecry: Freeze all enemy creatures.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "freeze",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_vanquish_the_horde",
+      "name": "Vanquish the Horde",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "sorcery",
+      "cost": 6,
+      "description": "Destroy all enemy creatures.",
+      "effects": [
+        {
+          "type": "destroy",
+          "target": "enemy-creatures"
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_multiversal_recruitment",
+      "name": "Multiversal Recruitment",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Summon three 3/3 creatures.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 3,
+          "attack": 3,
+          "health": 3,
+          "name": "Recruit",
+          "tribe": "Hero"
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_shuri_s_fabricator",
+      "name": "Shuri's Fabricator",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Give a friendly creature +2/+2.",
+      "tapAbility": {
+        "text": "Give a friendly creature +2/+2.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 2,
+            "health": 2,
+            "target": "friendly-creature"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_trading_post",
+      "name": "Trading Post",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Gain 3 Armor and a Coin.",
+      "tapAbility": {
+        "text": "Gain 3 Armor and a Coin.",
+        "effects": [
+          {
+            "type": "armor",
+            "value": 3
+          },
+          {
+            "type": "gain-coin",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_team_transmitter",
+      "name": "Team Transmitter",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Give a friendly creature +1/+1 and Rush.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "buff",
+          "attack": 1,
+          "health": 1,
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "rush",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_dependable_quinjet",
+      "name": "Dependable Quinjet",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "Battlecry: Draw a card and gain 3 Armor.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "armor",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "mv_treasure_fellwar_stone",
+      "name": "Fellwar Stone",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "{T}: Gain a Mana Crystal this turn.",
+      "tapAbility": {
+        "text": "Gain a Mana Crystal this turn.",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_relic_of_legends",
+      "name": "Relic of Legends",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Gain a Mana Crystal this turn and draw a card.",
+      "tapAbility": {
+        "text": "Gain a Mana Crystal this turn and draw a card.",
+        "effects": [
+          {
+            "type": "gain-mana",
+            "value": 1
+          },
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_patchwork_banner",
+      "name": "Patchwork Banner",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 3,
+      "description": "{T}: Give your creatures +1/+0.",
+      "tapAbility": {
+        "text": "Give your creatures +1/+0.",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mv_treasure_thought_vessel",
+      "name": "Thought Vessel",
+      "set": "paper",
+      "collectible": false,
+      "colors": [],
+      "cardClass": "neutral",
+      "mvTreasure": true,
+      "treasure": false,
+      "type": "artifact",
+      "cost": 2,
+      "description": "Battlecry: Draw a card and gain a Mana Crystal this turn.",
+      "keywords": [
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "draw",
+          "value": 1
+        },
+        {
+          "type": "gain-mana",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "spm_spider_man_2099",
+      "name": "Spider-Man 2099",
+      "set": "SPM",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 3,
+      "health": 4,
+      "tribe": "Spider Hero",
+      "description": "Elusive. Battlecry: Give a friendly creature Stealth.",
+      "keywords": [
+        "elusive",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "spm_silk_web_weaver",
+      "name": "Silk, Web Weaver",
+      "set": "SPM",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "hunter",
+      "colors": [],
+      "type": "creature",
+      "cost": 3,
+      "attack": 3,
+      "health": 3,
+      "tribe": "Spider Hero",
+      "description": "Elusive.",
+      "keywords": [
+        "elusive"
+      ]
+    },
+    {
+      "id": "spm_secret_identity",
+      "name": "Secret Identity",
+      "set": "SPM",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "instant",
+      "cost": 1,
+      "description": "Give a friendly creature Stealth and Elusive.",
+      "effects": [
+        {
+          "type": "grant",
+          "keyword": "stealth",
+          "target": "friendly-creature"
+        },
+        {
+          "type": "grant",
+          "keyword": "elusive",
+          "target": "friendly-creature"
+        }
+      ]
+    },
+    {
+      "id": "spm_with_great_power",
+      "name": "With Great Power . . .",
+      "set": "SPM",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 4,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 1,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+1."
+    },
+    {
+      "id": "spm_kapow",
+      "name": "Kapow!",
+      "set": "SPM",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 2,
+      "description": "Deal 4 damage to an enemy creature.",
+      "effects": [
+        {
+          "type": "damage",
+          "value": 4,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "msh_black_widow_super_spy",
+      "name": "Black Widow, Super Spy",
+      "set": "MSH",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Agent",
+      "description": "Stealth. Battlecry: Deal 2 damage to an enemy creature.",
+      "keywords": [
+        "stealth",
+        "battlecry"
+      ],
+      "effects": [
+        {
+          "type": "damage",
+          "value": 2,
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "msh_luke_cage_power_man",
+      "name": "Luke Cage, Power Man",
+      "set": "MSH",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 5,
+      "attack": 4,
+      "health": 6,
+      "tribe": "Human Hero",
+      "description": "Taunt.",
+      "keywords": [
+        "taunt"
+      ]
+    },
+    {
+      "id": "msh_we_say_thee_nay",
+      "name": "We Say Thee Nay!",
+      "set": "MSH",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "instant",
+      "cost": 2,
+      "description": "Return an enemy creature to its owner's hand.",
+      "effects": [
+        {
+          "type": "bounce",
+          "target": "enemy-creature"
+        }
+      ]
+    },
+    {
+      "id": "msh_earths_mightiest_heroes",
+      "name": "Earth's Mightiest Heroes",
+      "set": "MSH",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "paladin",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 5,
+      "description": "Summon two 3/3 Heroes with Taunt.",
+      "effects": [
+        {
+          "type": "summon",
+          "count": 2,
+          "attack": 3,
+          "health": 3,
+          "name": "Avenger",
+          "tribe": "Hero",
+          "keywords": [
+            "taunt"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "msh_super_intelligence",
+      "name": "Super Intelligence",
+      "set": "MSH",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "draw",
+            "value": 1
+          }
+        ]
+      },
+      "description": "At the start of your turn, draw a card."
+    },
+    {
+      "id": "msc_colossus_steel_stalwart",
+      "name": "Colossus, Steel Stalwart",
+      "set": "MSC",
+      "collectible": true,
+      "rarity": "epic",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "creature",
+      "cost": 6,
+      "attack": 6,
+      "health": 6,
+      "tribe": "Mutant",
+      "description": "Taunt. Divine Shield.",
+      "keywords": [
+        "taunt",
+        "divine_shield"
+      ]
+    },
+    {
+      "id": "msc_elektra_femme_fatale",
+      "name": "Elektra, Femme Fatale",
+      "set": "MSC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "rogue",
+      "colors": [],
+      "type": "creature",
+      "cost": 4,
+      "attack": 4,
+      "health": 3,
+      "tribe": "Human Assassin",
+      "description": "Swift. Deathtouch.",
+      "keywords": [
+        "first_strike",
+        "deathtouch"
+      ]
+    },
+    {
+      "id": "msc_syphon_mind",
+      "name": "Syphon Mind",
+      "set": "MSC",
+      "collectible": true,
+      "rarity": "rare",
+      "cardClass": "warlock",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 4,
+      "description": "Draw two cards; each opponent discards a random card.",
+      "effects": [
+        {
+          "type": "draw",
+          "value": 2
+        },
+        {
+          "type": "enemy-discard",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "msc_grapeshot",
+      "name": "Grapeshot",
+      "set": "MSC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "mage",
+      "colors": [],
+      "type": "sorcery",
+      "cost": 3,
+      "description": "Deal 3 damage split among random enemies.",
+      "effects": [
+        {
+          "type": "random-damage",
+          "value": 3,
+          "pool": "enemies",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "msc_pick_up_the_pace",
+      "name": "Pick Up the Pace",
+      "set": "MSC",
+      "collectible": true,
+      "rarity": "uncommon",
+      "cardClass": "warrior",
+      "colors": [],
+      "type": "enchantment",
+      "cost": 3,
+      "ongoing": {
+        "on": "turn-start",
+        "effects": [
+          {
+            "type": "buff",
+            "attack": 1,
+            "health": 0,
+            "target": "friendly-creatures"
+          }
+        ]
+      },
+      "description": "At the start of your turn, give your creatures +1/+0."
     }
   ]
 }

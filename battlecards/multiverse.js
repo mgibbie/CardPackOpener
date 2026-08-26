@@ -147,12 +147,13 @@ export function generateEnemy(cardsById, character, wins, rng) {
 		const bk = Duels.offerBuckets(cardsById, [cls], rng, 1)[0];
 		if (bk) deck.push(...Duels.rollBucket(cardsById, [cls], bk, rng, 3));
 	}
-	const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
-	for (let t = 0; t < loot.treasures && treasurePool.length; t++) deck.push(treasurePool[Math.floor(rng() * treasurePool.length)].id);
+	const pool = treasurePool(cardsById); // same pool YOU draw from — the Marvel treasures + shared DUELS treasures
+	for (let t = 0; t < loot.treasures && pool.length; t++) deck.push(pool[Math.floor(rng() * pool.length)].id);
 	return { id: character, name: character, cls, deck, loot, rung: rungFor(wins) };
 }
 
-// the treasure pool for YOUR milestone rewards — the shared DUELS treasures (same pool the enemy draws).
+// the treasure pool for YOUR milestone rewards — the 20 Marvel-specific treasures (mvTreasure)
+// plus the shared DUELS treasures. The enemy draws from the SAME pool at parity.
 export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
+	return Object.values(cardsById).filter(d => d.mvTreasure || (d.treasure && d.set === 'DUELS'));
 }

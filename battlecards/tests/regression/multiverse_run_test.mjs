@@ -73,7 +73,16 @@ ok('enemyLoot budget = 1 bucket/win + treasure per milestone', (() => {
 { // parity: the deck grows monotonically with wins, matching a player who loots one bucket per win
   const sizes = [0, 1, 2, 5, 8, 11].map(w => MV.generateEnemy(cardsById, 'Thanos', w, seededRng(7)).deck.length);
   ok('enemy deck size grows with wins (parity)', sizes.every((s, i) => i === 0 || s > sizes[i - 1]), sizes); }
-ok('treasurePool returns shared DUELS treasures', MV.treasurePool(cardsById).length > 0 && MV.treasurePool(cardsById).every(d => d.treasure && d.set === 'DUELS'));
+ok('treasurePool = mvTreasure + shared DUELS treasures', MV.treasurePool(cardsById).length > 0
+  && MV.treasurePool(cardsById).every(d => d.mvTreasure || (d.treasure && d.set === 'DUELS')));
+// 20 Multiverse-specific treasures: neutral, NO rarity, uncollectible, mvTreasure:true, in the pool,
+// but treasure:false so they never leak into the shared heist/tombs/duels pools.
+{ const pool = MV.treasurePool(cardsById);
+  const mvT = Object.values(cardsById).filter(d => d.mvTreasure && d.id.startsWith('mv_treasure_'));
+  ok('20 MV treasures (neutral, no rarity, uncollectible)', mvT.length === 20
+    && mvT.every(t => t.cardClass === 'neutral' && !t.rarity && t.collectible === false), [mvT.length, mvT.filter(t => t.rarity).map(t => t.id)]);
+  ok('MV treasures are in the pool but treasure:false (no cross-mode leak)', mvT.every(t => pool.some(d => d.id === t.id) && t.treasure === false));
+  ok('MV treasures have unique names, not shared with any other card', mvT.every(t => cardsById && Object.values(cardsById).filter(c => c.name === t.name).length === 1)); }
 ok('NO spoilsChoices export (parity mode has no spoils draft)', MV.spoilsChoices === undefined);
 
 // ───────────────────────── engine integration: install + fire all 32 powers ─────────────────────────

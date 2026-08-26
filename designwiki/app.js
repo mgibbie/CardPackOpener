@@ -1949,15 +1949,25 @@ async function multiverseView() {
     h('div', { class: 'card-grid size-small' },
       ...names.map(ch => mvTile(ch, decks[ch], clsName(MV.classOf(ch)), MV.powerOf(ch), MV.colorsOf(ch)))));
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
+  // Multiverse-specific treasures — neutral rewards drafted at milestone wins (2/5/8/11)
+  const treasures = cards.filter(c => c.mvTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt(treasures.map(c => c.id));
+  const treasureSection = h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' },
+      h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
+      h('p', { class: 'muted' }, 'Powerful neutral treasures drafted at milestone wins (2/5/8/11), alongside the shared treasure pool. Iconic MARVEL relics, vehicles & tech — and the enemy draws from the same pool at parity.')),
+    h('div', { class: 'card-grid size-small' },
+      ...treasures.map(c => { const canvas = CardArt.drawCardFace(c); return h('div', { class: 'wiki-card' }, h('img', { class: 'wiki-face', src: canvas.toDataURL(), alt: c.name, loading: 'lazy', title: c.description || c.name }), h('div', { class: 'lq-name' }, c.name)); })));
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
       h('div', null, h('h1', null, 'Lorequest: Multiverse'),
         h('p', { class: 'muted' }, 'A dungeon run built from the MARVEL Magic: The Gathering set art (Spider-Man & Marvel Super Heroes). Pick a Marvel hero — a ', h('strong', null, '10-card'), ' starter deck with a unique hero power — and climb to 12 wins or 3 losses. Unlike the other Lorequest runs, Multiverse ', h('strong', null, 'returns to WIN-PARITY'), ': there is no spoils draft — every win YOU pick a class bucket (+ a treasure at wins 2/5/8/11), and the next villain is regenerated to hold the ', h('em', null, 'exact same'), ' bucket & treasure count you do, layered on its own 10-card base. So the enemy always scales with your loot. Tap one to see its cards.')),
-      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' base cards'))),
+      h('div', { class: 'result-count' }, allChars.length, h('span', null, ' decks · ' + totalCards + ' base cards · ' + treasures.length + ' treasures'))),
     group('Heroes — Earth’s Mightiest', '11 heroes (Silver Surfer is a secret, unlocked by clearing a full run). Each is a 10-card singleton starter you grow via buckets & treasures.', heroes),
     group('Street-Level — Rogues’ Gallery', 'Your first eight fights (wins 0–7). The classic Spider-Man rogues and street villains.', MV.ENEMY_RUNGS.STREET),
     group('Masterminds', 'The bigger threats (wins 8–10) — Doom, Loki, Kang, Abomination.', MV.ENEMY_RUNGS.MASTERMIND),
-    group('Cosmic Threat — Final Boss', 'The 12th-win final boss — Thanos and Galactus rotate for replay variety.', MV.ENEMY_RUNGS.COSMIC));
+    group('Cosmic Threat — Final Boss', 'The 12th-win final boss — Thanos and Galactus rotate for replay variety.', MV.ENEMY_RUNGS.COSMIC),
+    treasureSection);
 }
 async function multiverseDeckDetail(slug) {
   content.replaceChildren(h('p', { class: 'muted' }, 'Loading deck…'));
