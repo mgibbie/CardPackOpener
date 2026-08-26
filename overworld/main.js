@@ -1,5 +1,5 @@
 // main.js — game loop, input, camera, warps, connection crossing.
-import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
+import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -74,12 +74,30 @@ function fitCanvas() {
 		sctx.imageSmoothingEnabled = false;
 		return;
 	}
-	const barRoom = document.body.classList.contains('touch') ? 8 : 56; // desktop keeps the caption bar visible
+	const touch = document.body.classList.contains('touch');
+	const barRoom = touch ? 8 : 56; // desktop keeps the caption bar visible
+	// Portrait screens: the GBA 3:2 window left ~70% of a tall phone black.
+	// Keep the 240px logical width (15 metatiles, same integer-scale rules) and
+	// open the VERTICAL view to fill the space between the topbar and the touch
+	// pad, capped at 2x GBA height. body.ow-tall top-anchors the canvas so the
+	// budgeted space is actually where the canvas ends up.
+	const portraitWorld = innerHeight > innerWidth;
+	const availH = (portraitWorld
+		? innerHeight - 54 - (touch ? 206 : barRoom)
+		: innerHeight - barRoom) * dpr;
 	const s = Math.max(2, Math.min(6, Math.floor(Math.min(
-		(innerWidth * 0.98 * dpr) / VIEW_W,
-		((innerHeight - barRoom) * dpr) / VIEW_H,
+		(innerWidth * 0.98 * dpr) / 240,
+		availH / 160,
 	))));
-	if (s === SCALE && screen.width === VIEW_W * s) return;
+	const vh = portraitWorld ? Math.max(160, Math.min(320, Math.floor(availH / s))) : 160;
+	setViewSize(240, vh);
+	document.body.classList.toggle('ow-tall', portraitWorld);
+	if (frame.width !== VIEW_W || frame.height !== VIEW_H) {
+		frame.width = VIEW_W;
+		frame.height = VIEW_H;
+		ctx.imageSmoothingEnabled = false; // resizing resets context state
+	}
+	if (s === SCALE && screen.width === VIEW_W * s && screen.height === VIEW_H * s) return;
 	SCALE = s;
 	screen.width = VIEW_W * s;
 	screen.height = VIEW_H * s;
@@ -87,14 +105,13 @@ function fitCanvas() {
 	screen.style.height = (VIEW_H * s / dpr) + 'px';
 	sctx.imageSmoothingEnabled = false; // resizing resets context state
 }
-fitCanvas();
-let fitT = null; // rotations/keyboard fire resize in bursts — settle first
-addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
-
-const frame = document.createElement('canvas'); // native 240x160
+const frame = document.createElement('canvas'); // native view-sized (240x160 landscape)
 frame.width = VIEW_W; frame.height = VIEW_H;
 const ctx = frame.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;
+fitCanvas();
+let fitT = null; // rotations/keyboard fire resize in bursts — settle first
+addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
 
 const hud = document.getElementById('hud');
 const objectiveEl = document.getElementById('objective');
@@ -1635,7 +1652,7 @@ addEventListener('keydown', e => {
 
 // ---------- touch controls ----------
 // d-pad + A/B + PARTY/BAG buttons drive the same code paths as the keyboard
-if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+if (matchMedia('(pointer: coarse)').matches) { document.body.classList.add('touch'); fitCanvas(); } // re-fit: the touch pad reserves canvas room
 const DPAD = { 't-up': 'up', 't-down': 'down', 't-left': 'left', 't-right': 'right' };
 const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 for (const [id, dir] of Object.entries(DPAD)) {

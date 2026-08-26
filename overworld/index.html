@@ -49,6 +49,10 @@
 		/* the shared battle chat (chat.js) docks bottom-left, where the touch
 		   d-pad lives on this page — lift it clear */
 		body.touch #mp-chat { bottom: 205px; }
+		/* portrait overworld: the canvas grows downward (fitCanvas budgets the
+		   space below the topbar and above the touch pad) — anchor it to the top
+		   so that budget lands where the canvas actually is */
+		body.ow-tall:not(.scene-tall) { justify-content: flex-start; padding-top: max(54px, env(safe-area-inset-top, 0px)); }
 		/* portrait battle/pvp: main.js grows the canvas to fill the screen
 		   (body.scene-tall); the on-canvas buttons are thumb-sized so the
 		   virtual pad is redundant — hide it and pin the canvas under the topbar */

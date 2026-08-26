@@ -5,7 +5,13 @@
 //   MapCollision.lua-> grid collision bits, behaviors, ledges
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
-export const TILE = 8, META = 16, VIEW_W = 240, VIEW_H = 160;
+export const TILE = 8, META = 16;
+// The logical view. 240x160 is the GBA window; portrait phones open the
+// vertical view (main.js fitCanvas drives this through setViewSize). These are
+// live ESM bindings, so every importer — the culling below, dialog/evolution
+// boxes, the camera — reads the current size at draw time.
+export let VIEW_W = 240, VIEW_H = 160;
+export function setViewSize(w, h) { VIEW_W = w; VIEW_H = h; }
 
 // Overworld Pokémon sprites (data/pokemon_ow/*.png — legendaries, awakenings, walk-up blockers) are
 // authored at ~2× the intended overworld size (uniformly 40px tall). Every other actor is size-controlled
