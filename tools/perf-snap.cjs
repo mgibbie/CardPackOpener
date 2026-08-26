@@ -270,6 +270,12 @@ async function scenarioBoard(browser, vp) {
 		!!(window.__game && window.__game.state && window.__game.state.players?.length)), 45000);
 	if (!booted) throw new Error('battlecards did not boot');
 	await sleep(3000); // opening hands settle, art streams in
+	// dismiss the mulligan overlay so the board is the only thing on screen
+	await page.evaluate(() => {
+		const b = [...document.querySelectorAll('button')].find(x => /keep hand/i.test(x.textContent));
+		if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); }
+	});
+	await sleep(800);
 	// fill EVERY board: 7 distinct real minions per player via the engine's summon
 	const filled = await page.evaluate(() => {
 		const g = window.__game, s = g.state, E = g.E;

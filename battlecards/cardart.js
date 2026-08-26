@@ -998,10 +998,14 @@ export const TOKEN_W = 512, TOKEN_H = 640;
 export const TOKEN_GEM = { x: 0.5, y: 560 / TOKEN_H, r: 42 / TOKEN_W };
 
 // opts: { attack, hp, maxHealth, baseAttack, baseHealth, taunt, shield, stealthed }
-export function drawBoardToken(card, opts = {}) {
+// scale renders the same 512x640 layout onto a smaller canvas — board tokens
+// are never shown large (card text lives on the hand/inspect faces), so the
+// GPU texture doesn't need full card resolution
+export function drawBoardToken(card, opts = {}, scale = 1) {
 	const c = document.createElement('canvas');
-	c.width = TOKEN_W; c.height = TOKEN_H;
+	c.width = Math.round(TOKEN_W * scale); c.height = Math.round(TOKEN_H * scale);
 	const ctx = c.getContext('2d');
+	ctx.scale(scale, scale);
 	const cx = TOKEN_W / 2, cy = 288, rx = 200, ry = 258;
 
 	// taunt: a heavy stone shield ring around the whole token
@@ -1049,7 +1053,9 @@ export function drawBoardToken(card, opts = {}) {
 }
 
 export function makeTokenTexture(card, opts) {
-	const tex = new THREE.CanvasTexture(drawBoardToken(card, opts));
+	// 320x400 (0.625x): a board token displays at well under 300 device px even
+	// on a zoomed phone — full 512x640 was pure VRAM waste (1.3MB -> 0.5MB each)
+	const tex = new THREE.CanvasTexture(drawBoardToken(card, opts, 0.625));
 	tex.colorSpace = THREE.SRGBColorSpace;
 	tex.anisotropy = 4;
 	return tex;

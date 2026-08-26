@@ -349,9 +349,54 @@ function buildTable() {
 const backTex = makeBackTexture();
 const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
 const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
-// per-entity face textures are disposed on repaint/removal — the shared card
-// back must never be (every hidden enemy hand card points at the same texture)
-const disposeFaceMap = map => { if (map && map !== backTex) map.dispose(); };
+
+// ---------- face-texture cache ----------
+// Identical faces share one GPU texture. A face is fully determined by the
+// card's identity + everything faceSig tracks (stats, keywords, cost, form),
+// so that string is the cache key; refcounts drop a texture the moment its
+// last user releases it. Before this, every entity painted its own 512-wide
+// canvas — a full 4-player table held ~180 of them (~120MB). Duplicate
+// summons (tokens especially: Wisps, recruits, treants) now cost one texture.
+const faceTexCache = new Map(); // key -> { tex, refs, key }
+const faceTexEntries = new WeakMap(); // tex -> its entry (survives cache eviction)
+function faceTexKey(card) {
+	const shownId = card.disguised ? 'disguised' : card.id;
+	// name/description can be rewritten mid-game and both are painted on card
+	// faces, so they belong in the key
+	return `${shownId}|${card.name}|${card.description || ''}|${faceSig(card)}`;
+}
+function acquireFaceTex(card) {
+	if (card.zone === 'hand' && card.controller !== HUMAN) return backTex; // hidden info: shared back
+	const key = faceTexKey(card);
+	let e = faceTexCache.get(key);
+	if (!e) {
+		e = { tex: paintFaceTex(card), refs: 0, key };
+		faceTexCache.set(key, e);
+		faceTexEntries.set(e.tex, e);
+	}
+	e.refs++;
+	return e.tex;
+}
+// release a face texture: cached ones dispose at zero refs (entries evicted by
+// an art-arrival invalidation keep their refcount and still dispose correctly)
+const disposeFaceMap = map => {
+	if (!map || map === backTex) return;
+	const e = faceTexEntries.get(map);
+	if (e) {
+		if (--e.refs <= 0) {
+			if (faceTexCache.get(e.key) === e) faceTexCache.delete(e.key);
+			map.dispose();
+		}
+	} else map.dispose();
+};
+// real art arrived for `id` ('*' = the Mana font, i.e. every face): evict the
+// affected keys so the next acquire repaints — live references keep their
+// texture until their own queued repaint releases it
+function invalidateFaceTexFor(id) {
+	for (const key of faceTexCache.keys()) {
+		if (id === '*' || key.startsWith(id + '|')) faceTexCache.delete(key);
+	}
+}
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
 
@@ -376,17 +421,15 @@ function formFor(card) {
 	return card.zone === 'board' && card.type === 'creature' ? 'token' : 'card';
 }
 
-function faceMaterialFor(card) {
-	// enemy hand cards are hidden information: always show the card back, whatever
-	// the camera angle or game mode (never the real face)
-	if (card.zone === 'hand' && card.controller !== HUMAN) return new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+// paint one face texture (cache miss path — see acquireFaceTex)
+function paintFaceTex(card) {
 	// disguised creatures render anonymously: neutral art seed, no identity
 	const shown = card.disguised
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
 		: card;
 	if (formFor(card) === 'token') {
 		const def = state?.cardsById?.[card.id];
-		const tex = makeTokenTexture(shown, {
+		return makeTokenTexture(shown, {
 			attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth,
 			baseAttack: card.disguised ? card.attack : def?.attack,
 			baseHealth: card.disguised ? card.maxHealth : def?.health,
@@ -394,9 +437,8 @@ function faceMaterialFor(card) {
 			shield: !!card.shield,
 			stealthed: !!card.stealthed,
 		});
-		return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.1, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide });
 	}
-	const tex = makeFaceTexture(
+	return makeFaceTexture(
 		{ ...shown, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
 			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
@@ -404,7 +446,16 @@ function faceMaterialFor(card) {
 			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
 			: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {}
 	);
-	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
+}
+
+function faceMaterialFor(card) {
+	// enemy hand cards are hidden information: always show the card back, whatever
+	// the camera angle or game mode (never the real face)
+	const tex = acquireFaceTex(card);
+	if (tex === backTex) return new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+	return formFor(card) === 'token'
+		? new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.1, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide })
+		: new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
 
 // everything the rendered face shows, as a compact string — when it changes the
@@ -464,10 +515,13 @@ function entityFor(card) {
 }
 
 function refreshFace(ent) {
-	disposeFaceMap(ent.faceMat.map);
-	const nm = faceMaterialFor(ent.card);
-	ent.faceMat.map = nm.map;
+	// acquire BEFORE releasing: a same-key refresh then just bumps the shared
+	// texture's refcount instead of repainting (art-arrival repaints DO repaint
+	// because invalidateFaceTexFor evicted the key first)
+	const old = ent.faceMat.map;
+	ent.faceMat.map = acquireFaceTex(ent.card);
 	ent.faceMat.needsUpdate = true;
+	disposeFaceMap(old);
 	ent.faceSig = faceSig(ent.card); // keep the sync-check in step with event-driven repaints
 }
 
@@ -478,6 +532,7 @@ function refreshFace(ent) {
 // the ents and let the render loop spread the repaints over frames.
 const artRefreshQueue = new Set();
 artListeners.add(id => {
+	invalidateFaceTexFor(id); // stale pixels: force the queued repaints below to actually repaint
 	for (const ent of entities.values()) {
 		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) artRefreshQueue.add(ent);
 	}
@@ -4048,6 +4103,8 @@ window.__game = {
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
+	// perf harness (tools/perf-snap.cjs): live GPU-texture count + face-cache size
+	rendererInfo() { return { textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, faceCache: faceTexCache.size, entities: entities.size }; },
 	get duel() { return duel; },           // seat/size/aiSeats — the relay-fuzz harness reads these
 	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
 	E, AI,
