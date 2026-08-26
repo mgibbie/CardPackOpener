@@ -210,6 +210,10 @@
 				<div class="glyph">🎨</div>
 				<div><h3>Art Tuner <span class="arrow">→</span></h3><p>Owner tools — reframe or replace card art on the live renderers.</p></div>
 			</a>
+			<a class="tile" id="tile-spritetune" href="overworld/?spritetune=1" hidden>
+				<div class="glyph">🦴</div>
+				<div><h3>Sprite Tuner <span class="arrow">→</span></h3><p>Owner tools — size and position battle sprites in a live battle scene.</p></div>
+			</a>
 		</div>
 
 		<footer>
@@ -226,7 +230,9 @@
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
-	if (MP.cachedState()?.username === 'mgibbie') { const a = document.getElementById('tile-arttune'); if (a) a.hidden = false; }
+	if (MP.cachedState()?.username === 'mgibbie') {
+		for (const id of ['tile-arttune', 'tile-spritetune']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+	}
 	try {
 		const p = localStorage.getItem('magepunk_party_v1');
 		if (p && p !== '[]' && p !== 'null') { const m = document.getElementById('tile-monsters'); if (m) m.hidden = false; }
