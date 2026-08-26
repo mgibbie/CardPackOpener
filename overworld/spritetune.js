@@ -15,7 +15,9 @@ const AXES = [
 	['y', 'y', -60, 60, 1, 0],
 ];
 
-// drop default-valued axes / empty sides / empty species so the file stays sparse
+// drop default-valued axes / empty sides / empty species so the file stays
+// sparse — but always carry the measured `crop` box through (sprite-audit
+// generates it; the sliders only edit s/x/y on top)
 function cleaned() {
 	const out = {};
 	for (const [id, sides] of Object.entries(SPRITE_TUNING)) {
@@ -24,6 +26,7 @@ function cleaned() {
 			const t = sides?.[side];
 			if (!t) continue;
 			const s = {};
+			if (t.crop) s.crop = t.crop;
 			for (const [k, , , , , dflt] of AXES) {
 				const v = +t[k];
 				if (Number.isFinite(v) && v !== dflt) s[k] = v;

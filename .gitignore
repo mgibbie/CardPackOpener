@@ -14,3 +14,4 @@ server/__mp_harness_tmp.mjs
 # D1 database dumps — contain password hashes + user data; never commit
 backups/
 tools/perf-shots/
+tools/data/sprite_audit.json

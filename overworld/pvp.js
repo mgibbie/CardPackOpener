@@ -397,11 +397,15 @@ export class Pvp {
 		// regardless of export resolution, then apply the species' battleScale for authentic
 		// relative sizing (see battle.js drawSide). scaleBySprite is set by main.js on boot.
 		const bScale = m.battleScale ?? this.scaleBySprite?.get(m.sprite) ?? 1;
-		// hand-tuned per-species adjustment (spritetune overlay) — near shows the
-		// back sprite, far the front, matching the wild-battle keying
+		// per-species sprite tuning — crop anchors by visible pixels, s/x/y are
+		// hand tweaks (see battle.js drawSide); near shows the back sprite
 		const tune = UI.SPRITE_TUNING[m.speciesId]?.[near ? 'back' : 'front'];
-		const norm = (96 / Math.max(img.width, img.height)) * bScale * (tune?.s || 1);
+		const cb = tune?.crop;
+		const em = cb ? Math.max(img.width * cb[2], img.height * cb[3]) : Math.max(img.width, img.height);
+		const norm = (96 / em) * bScale * (tune?.s || 1);
 		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
-		ctx.drawImage(img, pose.x - w / 2 + (tune?.x || 0) * u, pose.y + bob - h + (10 + (tune?.y || 0)) * u, w, h);
+		const ax = cb ? (cb[0] + cb[2] / 2) * w : w / 2;
+		const ay = cb ? (cb[1] + cb[3]) * h : h;
+		ctx.drawImage(img, pose.x - ax + (tune?.x || 0) * u, pose.y + bob - ay + (10 + (tune?.y || 0)) * u, w, h);
 	}
 }
