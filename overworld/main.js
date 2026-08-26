@@ -4073,6 +4073,7 @@ function pvpParty() {
 	if (!party || !battle.data) return [];
 	return party.filter(m => m.curHP > 0).slice(0, 6).map(m => ({
 		speciesId: m.speciesId, name: m.name, level: m.level, types: m.types, sprite: m.sprite,
+		weightkg: battle.data.species[m.speciesId]?.weightkg || 50, // Low Kick family
 		stats: { ...m.stats }, maxHP: m.maxHP, curHP: m.curHP, status: m.status || null,
 		moves: m.moves.map(mv => {
 			const info = battle.data.moves[mv.id] || {};
