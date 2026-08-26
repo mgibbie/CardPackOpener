@@ -2089,8 +2089,9 @@ export class Battle {
 				}
 				else if (a.menuIdx === 1) { if (!a.double || a.actionFor === 0) { a.phase = 'bag'; a.bagIdx = 0; } }
 				else if (a.menuIdx === 2) {
-					const options = a.party.filter(m => m !== a.me && m.curHP > 0);
-					if (options.length) { a.phase = 'switch'; a.switchIdx = 0; }
+					// switchTo only swaps the lead slot, so like bag it is the lead's action
+					const options = a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
+					if (options.length && (!a.double || a.actionFor === 0)) { a.phase = 'switch'; a.switchIdx = 0; }
 				} else {
 					if (a.isTrainer) this.startQueue(() => this.pushMsg("There's no running from a trainer battle!"));
 					else this.startQueue(() => this.tryRun());
@@ -2104,7 +2105,7 @@ export class Battle {
 			if (k === 'x') a.phase = 'menu';
 			if (k === 'z' || k === 'Enter') this.useItem(items[a.bagIdx].id);
 		} else if (a.phase === 'switch') {
-			const options = a.party.filter(m => m !== a.me && m.curHP > 0);
+			const options = a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			if (!options.length) { a.phase = 'menu'; return; }
 			if (k === 'ArrowUp') a.switchIdx = (a.switchIdx + options.length - 1) % options.length;
 			if (k === 'ArrowDown') a.switchIdx = (a.switchIdx + 1) % options.length;
@@ -2891,6 +2892,7 @@ export class Battle {
 
 	switchTo(mon) {
 		const a = this.active;
+		if (mon === a.me || mon === a.meAlly || mon.curHP <= 0) return;
 		this.startQueue(() => {
 			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me, true));
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
@@ -3288,7 +3290,7 @@ export class Battle {
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems()
-				: a.party.filter(m => m !== a.me && m.curHP > 0);
+				: a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			const idx = isBag ? a.bagIdx : a.switchIdx;
 			// compact landscape: two 44px thumb rows instead of three 29px ones —
 			// three tall rows can't fit the bar, so the scroll window shrinks
@@ -3391,7 +3393,7 @@ export class Battle {
 			btn({ x: pad, y: barY + 196 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
-			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m.curHP > 0);
+			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			const idx = isBag ? a.bagIdx : a.switchIdx;
 			const start = Math.max(0, Math.min(idx - 1, rows.length - 3));
 			const arrows = rows.length > 3;
