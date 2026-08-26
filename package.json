@@ -8,6 +8,8 @@
     "puppeteer-core": "^25.3.0"
   },
   "scripts": {
-    "deploy-art": "wrangler pages deploy battlecards/art --project-name magepunk-cardart --branch main --commit-dirty=true"
+    "deploy-art": "wrangler pages deploy battlecards/art --project-name magepunk-cardart --branch main --commit-dirty=true",
+    "test": "node battlecards/tests/run-all.mjs",
+    "test-overworld": "node overworld/tests/run-all.mjs"
   }
 }
