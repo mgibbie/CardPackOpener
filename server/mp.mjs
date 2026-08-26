@@ -1516,7 +1516,8 @@ export default async function handler(req, env) {
 
 	// grant the caller a full playset of every collectible card (2 of each, 1 of
 	// each Legendary). Restricted to the realm owner — override the allowlist with
-	// MP_ADMINS (comma-separated usernames) in the Netlify env if it ever changes.
+	// MP_ADMINS (comma-separated usernames) in wrangler.jsonc / the Cloudflare
+	// Pages env if it ever changes.
 	if (action === 'grant-all') {
 		const admins = (process.env.MP_ADMINS || 'mgibbie').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 		if (!admins.includes(username)) return json({ error: 'not allowed' }, 403);

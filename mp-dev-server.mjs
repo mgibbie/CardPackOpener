@@ -63,7 +63,7 @@ createServer(async (req, res) => {
 		res.end(Buffer.from(await out.arrayBuffer()));
 		return;
 	}
-	// static: mirror Netlify's publish="." + directory index behavior
+	// static: mirror Cloudflare Pages' repo-root publish + directory index behavior
 	let p = normalize(decodeURIComponent(url.pathname)).replace(/^([/\\])+/, '');
 	if (p === '' || p.endsWith('/') || p.endsWith('\\')) p = join(p, 'index.html');
 	if (existsSync(p) && statSync(p).isDirectory()) p = join(p, 'index.html');
