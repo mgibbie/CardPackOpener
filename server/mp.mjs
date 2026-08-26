@@ -701,6 +701,16 @@ export default async function handler(req, env) {
 		return json({ code: rec.code });
 	}
 
+	// live art/sprite tuning overrides — PUBLIC read: every game client fetches
+	// these at boot and merges them over the committed tuning files, so an
+	// owner save from the live site (see tuning-save below) takes effect for
+	// everyone without a deploy. A dev session later folds them into the repo
+	// files (tools/pull-live-tuning.mjs) and clears these keys.
+	if (action === 'tuning-get') {
+		const [art, sprite] = await Promise.all([store.get('owner_tuning_art'), store.get('owner_tuning_sprite')]);
+		return json({ art: art || null, sprite: sprite || null });
+	}
+
 	// everything below requires a valid token
 	const username = verifyToken((req.headers.get('authorization') || '').replace(/^Bearer\s+/i, ''));
 	if (!username) return json({ error: 'not logged in' }, 401);
@@ -726,6 +736,19 @@ export default async function handler(req, env) {
 	// session later reads and clears ("check the internal to do list" — also
 	// readable directly via `wrangler d1 execute magepunk-users`). Owner-only:
 	// the username comes from the verified token above, not the client.
+	// owner save from the live tuners: stores the full tuning map as a server
+	// override (public via tuning-get above). kind: 'art' | 'sprite'.
+	if (action === 'tuning-save') {
+		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : null;
+		if (!kind) return json({ error: 'bad kind' }, 400);
+		const content = body.content;
+		if (!content || typeof content !== 'object' || Array.isArray(content)) return json({ error: 'bad content' }, 400);
+		if (JSON.stringify(content).length > 400000) return json({ error: 'too large' }, 400);
+		await store.setJSON('owner_tuning_' + kind, Object.keys(content).length ? content : null);
+		return json({ ok: true, count: Object.keys(content).length });
+	}
+
 	if (action === 'todo-add' || action === 'todo-list' || action === 'todo-done') {
 		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
 		const list = (await store.get('owner_todo')) || [];

@@ -7,6 +7,7 @@
 // (mp-dev-server /dev/save); elsewhere it falls back to copy-to-clipboard.
 import { SPRITE_TUNING } from './battleui.js';
 import { buildMon } from './battle.js';
+import * as MP from '../battlecards/mpmode.js';
 
 const TUNING_FILE = 'overworld/sprite_tuning.json';
 const AXES = [
@@ -155,12 +156,19 @@ export function mount(ow) {
 	$('st-save').addEventListener('click', async () => {
 		const content = cleaned();
 		try {
+			// local dev server: write straight into the repo
 			const r = await fetch('/dev/save', { method: 'POST', body: JSON.stringify({ file: TUNING_FILE, content }) });
 			if (!r.ok) throw new Error(await r.text());
 			$('st-msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} species)`;
 		} catch (e) {
-			await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
-			$('st-msg').textContent = 'no dev server — JSON copied to clipboard instead';
+			// live site: save as a server override — live for everyone immediately
+			try {
+				const r = await MP.call('tuning-save', { kind: 'sprite', content });
+				$('st-msg').textContent = `saved LIVE ✓ (${r.count} species as a server override)`;
+			} catch (e2) {
+				await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
+				$('st-msg').textContent = 'save failed (' + String(e2.message || e2).slice(0, 50) + ') — JSON copied to clipboard';
+			}
 		}
 	});
 

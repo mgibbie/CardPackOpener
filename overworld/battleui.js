@@ -33,7 +33,13 @@ export const STATUS_BADGE = {
 // mutates it and the battle scene picks the change up next frame.
 export const SPRITE_TUNING = {};
 const _stBase = (() => { try { return new URL('.', import.meta.url).href; } catch (e) { return ''; } })();
-fetch(_stBase + 'sprite_tuning.json').then(r => (r.ok ? r.json() : {})).then(t => Object.assign(SPRITE_TUNING, t)).catch(() => {});
+// committed file first, then the server override on top (per species) — the
+// override is what the owner saves from the LIVE ?spritetune=1 overlay
+Promise.allSettled([
+	fetch(_stBase + 'sprite_tuning.json').then(r => (r.ok ? r.json() : {})),
+	fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"action":"tuning-get"}' })
+		.then(r => (r.ok ? r.json() : {})).then(d => d.sprite || {}),
+]).then(([f, o]) => Object.assign(SPRITE_TUNING, f.value || {}, o.value || {}));
 
 // Scene geometry, shared by battle.js and pvp.js. Landscape keeps the GBA
 // 3:2 layout (unit = height/480, 118u bottom bar) byte-for-byte. On portrait
