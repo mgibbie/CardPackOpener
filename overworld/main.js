@@ -4645,9 +4645,15 @@ function drawFriendGhosts(ctx, camX, camY) {
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
-	// dev tooling: ?spritetune=1 mounts the battle-sprite tuning overlay
+	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
+	// the mgibbie account only — the username is verified SERVER-side (the
+	// 'state' action derives it from the token), so a spoofed localStorage
+	// state doesn't pass. Everyone else just plays the overworld normally.
 	if (new URLSearchParams(location.search).has('spritetune')) {
-		import('./spritetune.js').then(m => m.mount(window.__ow)).catch(e => console.warn('spritetune failed', e));
+		MP.call('state').then(r => {
+			if ((r?.state?.username || '') !== 'mgibbie') { hud.textContent = 'The Sprite Tuner is an owner tool.'; return; }
+			return import('./spritetune.js').then(m => m.mount(window.__ow));
+		}).catch(e => console.warn('spritetune failed', e));
 	}
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
