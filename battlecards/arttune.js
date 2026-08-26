@@ -5,8 +5,25 @@
 // The previews render through the REAL painters (drawCardFace/drawBoardToken),
 // so what you frame here is exactly what the game shows.
 import { drawCardFace, drawBoardToken, preloadArt, hasArt, artIndexReady, ART_TUNING, setArtOverride } from './cardart.js';
+import * as MP from './mpmode.js';
 
 const TUNING_FILE = 'battlecards/art_tuning.json';
+const OWNER = 'mgibbie';
+
+// owner-only: the tuner reframes/replaces live game art. No token bounces to
+// the login door; any other account gets a polite lock screen. The username is
+// verified SERVER-side (action 'state' derives it from the token) — a spoofed
+// localStorage state doesn't pass.
+async function requireOwner() {
+	if (!MP.requireLogin()) return false;
+	try {
+		const r = await MP.call('state');
+		if ((r?.state?.username || '') === OWNER) return true;
+	} catch (e) {}
+	document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#e8e2f4;font:16px \'Segoe UI\',sans-serif;">'
+		+ '<div style="text-align:center;">🔒 The Art Tuner is an owner tool.<br><br><a href="/" style="color:#9d8fd4;">← back home</a></div></div>';
+	return false;
+}
 const $ = id => document.getElementById(id);
 let cards = [];         // every card def, name-sorted (art-less ones can be given art)
 let sel = null;         // selected card def
@@ -128,6 +145,7 @@ function wirePreview(canvas) {
 
 // ---------- boot ----------
 (async () => {
+	if (!await requireOwner()) return;
 	const raw = await fetch('cards.json').then(r => r.json());
 	const all = Array.isArray(raw) ? raw : raw.cards;
 	await artIndexReady;

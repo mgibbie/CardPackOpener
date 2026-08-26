@@ -206,6 +206,10 @@
 				<div class="glyph">📖</div>
 				<div><h3>Design Wiki <span class="arrow">→</span></h3><p>The living design bible — mechanics, keywords, and the world's lore.</p></div>
 			</a>
+			<a class="tile" id="tile-arttune" href="battlecards/arttune.html" hidden>
+				<div class="glyph">🎨</div>
+				<div><h3>Art Tuner <span class="arrow">→</span></h3><p>Owner tools — reframe or replace card art on the live renderers.</p></div>
+			</a>
 		</div>
 
 		<footer>
@@ -217,10 +221,12 @@
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
-	<!-- the Collection tile is logged-in only; Monsters shows once you have a party -->
+	<!-- the Collection tile is logged-in only; Monsters shows once you have a party;
+	     the Art Tuner is owner-only (the page itself re-verifies server-side) -->
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
+	if (MP.cachedState()?.username === 'mgibbie') { const a = document.getElementById('tile-arttune'); if (a) a.hidden = false; }
 	try {
 		const p = localStorage.getItem('magepunk_party_v1');
 		if (p && p !== '[]' && p !== 'null') { const m = document.getElementById('tile-monsters'); if (m) m.hidden = false; }
