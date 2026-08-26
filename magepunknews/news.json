@@ -2,6 +2,167 @@
 	"generated": "2026-08-25",
 	"entries": [
 		{
+			"sha": "3dfd11c",
+			"date": "2026-08-25",
+			"kind": "cards",
+			"title": "Multiverse: 20 unique treasures + 15 collectibles (5/set)",
+			"body": "Treasures (20): Marvel-specific run rewards drafted at milestone wins (2/5/8/11)\nand matched by the enemy at parity. Neutral, no rarity, uncollectible,\nmvTreasure:true + treasure:false (no leak into heist/tombs/duels). Iconic Marvel\nrelics/vehicles/tech (Sol Ring, S.H.I.E.L.D. Helicarrier, The Fantasticar…).\nWired into multiverse.js treasurePool + generateEnemy; wiki Treasures section.\n\nCollectibles (15): 5 per Marvel source set (SPM/MSH/MSC). Rarity uncommon/rare/\nepic, <=2 creatures per set, non-neutral & class-appropriate, art from that exact\nset and not already used by any Lorequest/Multiverse card. colors:[] so they\nsurface in the Card Gallery. No default-deck seed drift (seed tests still pass).\n\nFull suite 439/439 (multiverse test 164). Art fetched + deployed to\nmagepunk-cardart.pages.dev.",
+			"cards": [
+				{
+					"id": "spm_spider_man_2099",
+					"name": "Spider-Man 2099",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "spm_silk_web_weaver",
+					"name": "Silk, Web Weaver",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "spm_secret_identity",
+					"name": "Secret Identity",
+					"type": "instant",
+					"class": "rogue",
+					"rarity": "uncommon",
+					"cost": 1
+				},
+				{
+					"id": "spm_with_great_power",
+					"name": "With Great Power . . .",
+					"type": "enchantment",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "spm_kapow",
+					"name": "Kapow!",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "msh_black_widow_super_spy",
+					"name": "Black Widow, Super Spy",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "msh_luke_cage_power_man",
+					"name": "Luke Cage, Power Man",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "msh_we_say_thee_nay",
+					"name": "We Say Thee Nay!",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "msh_earths_mightiest_heroes",
+					"name": "Earth's Mightiest Heroes",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "msh_super_intelligence",
+					"name": "Super Intelligence",
+					"type": "enchantment",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "msc_colossus_steel_stalwart",
+					"name": "Colossus, Steel Stalwart",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "msc_elektra_femme_fatale",
+					"name": "Elektra, Femme Fatale",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "msc_syphon_mind",
+					"name": "Syphon Mind",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "msc_grapeshot",
+					"name": "Grapeshot",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "msc_pick_up_the_pace",
+					"name": "Pick Up the Pace",
+					"type": "enchantment",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "dc0431f",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Multiverse: give every card a unique name (fix 95 name conflicts)",
+			"body": "95 new Multiverse cards shared a name with another new card (reused art across\ndecks) or collided with an existing game card. Renamed each to a distinct,\nunused Marvel card name matched by colour + type, and re-fetched its art so name\nand art stay coherent (legendary signature cards were already unique — untouched).\n\n- cards.json: 320 Multiverse cards now have 320 unique names; 0 within-set dups,\n  0 collisions with existing cards. Pure-flavor vanilla creatures/weapons that\n  were renamed got a neutral flavor line.\n- cardart.js: ART_REVS cache-bust (?v=2) for the 95 re-arted ids so the 7-day\n  CDN cache serves the new images. Art redeployed to magepunk-cardart.pages.dev.",
+			"cards": []
+		},
+		{
+			"sha": "3c40dcb",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Add Lorequest: Multiverse — Marvel WIN-PARITY dungeon run",
+			"body": "New run mode (?multiverse=1) built from the Marvel MTG set art (Spider-Man +\nMarvel Super Heroes). Unlike Middle-earth/Sword Coast/Final Fantasy (static\n30-card foes), Multiverse returns to Duels/Lorequest WIN-PARITY with 10-card\ndecks: every win you pick a class bucket (+ a treasure at wins 2/5/8/11) and the\nnext villain is regenerated to match your exact bucket+treasure count on its own\n10-card base — no spoils draft.\n\n- multiverse.js: parity module (enemyLoot/generateEnemy) + middleearth-style\n  unique hero powers + hero picker/seat. 10 heroes (Silver Surfer secret) + 21\n  villains (Street-Level -> Masterminds -> Thanos/Galactus). 32 unique powers.\n- 320 cards (mvDeck/mvSide, mv_*), all collectible:false (no gallery/news/seed\n  drift). Real Marvel card names as art; original Magepunk effect text.\n- game.js: full ?multiverse=1 wiring (flag last in every chain, IO, boot,\n  parity loot flow, game-over/concede, menu card, resume).\n- designwiki: #/multiverse route + view/deck-detail + sidebar + cache-bust.\n- multiverse_run_test.mjs (161 assertions). Full suite 439/439.",
+			"cards": []
+		},
+		{
+			"sha": "25640d7",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Sauron card: fix art cache-bust, blue tint, description formatting",
+			"body": "- Art re-cropped correctly but browsers kept serving the old jpg (art host\n  caches 7 days, no cache-bust on image URLs). Add a per-image cache-bust\n  map (ART_REVS) in cardart.js so a changed image force-refreshes without\n  re-downloading the other ~11k. sauron_lord_of_the_rings -> v2.\n- Re-tinted the Sauron art blue to differentiate it from the red Lorequest\n  boss art (crop + 42% blue overlay via sharp), redeployed.\n- Description: line break after \"Battlecry: Tempt.\" and dropped the Plunder\n  parenthetical -> \"Battlecry: Tempt.\\nSwing: Tempt and Plunder.\"\nCache-bust tempt3.",
+			"cards": []
+		},
+		{
+			"sha": "f715df8",
+			"date": "2026-08-25",
+			"kind": "patch",
+			"title": "Tempt polish: rename Sauron, shorten wording, re-crop art",
+			"body": "- Rename the collectible \"Sauron, Lord of the Rings\" -> \"Sauron, Servant of\n  Morgoth\".\n- Shorten card text \"The Ring tempts you\" -> \"Tempt\" on all 6 tempt cards\n  (the One Rings + Sauron) and in the keyword tooltip; wiki page title\n  shortened to \"Tempt\".\n- Re-crop Sauron's art: the source was a full custom-card scan being squished\n  into the art window; cropped to just the artwork with sharp and redeployed\n  to magepunk-cardart. Cache-bust tempt2. Full suite 438/438.",
+			"cards": []
+		},
+		{
 			"sha": "fbfae90",
 			"date": "2026-08-25",
 			"kind": "cards",
