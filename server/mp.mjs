@@ -720,6 +720,35 @@ export default async function handler(req, env) {
 
 	if (action === 'state') return json({ state: publicState(user, username) });
 
+	// ---------- owner to-do inbox (Design Wiki "New Version" notes) ----------
+	// Every card page on the wiki shows the owner a note box; submissions land
+	// here as a single JSON list (key 'owner_todo', newest last) that a dev
+	// session later reads and clears ("check the internal to do list" — also
+	// readable directly via `wrangler d1 execute magepunk-users`). Owner-only:
+	// the username comes from the verified token above, not the client.
+	if (action === 'todo-add' || action === 'todo-list' || action === 'todo-done') {
+		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		const list = (await store.get('owner_todo')) || [];
+		if (action === 'todo-add') {
+			const text = String(body.text || '').trim().slice(0, 2000);
+			if (!text) return json({ error: 'empty note' }, 400);
+			list.push({
+				ts: Date.now(),
+				cardId: String(body.cardId || '').slice(0, 80),
+				cardName: String(body.cardName || '').slice(0, 120),
+				text,
+			});
+			while (list.length > 500) list.shift(); // bounded; oldest notes yield
+			await store.setJSON('owner_todo', list);
+			return json({ ok: true, count: list.length });
+		}
+		if (action === 'todo-list') return json({ todos: list });
+		// todo-done: {ts} removes one note; {all:true} clears the inbox
+		const next = body.all ? [] : list.filter(e => e.ts !== +body.ts);
+		await store.setJSON('owner_todo', next.length ? next : null);
+		return json({ ok: true, count: next.length });
+	}
+
 	// a SAFE public profile of ANY player (clicked from the watcher list / chat).
 	// Public-safe subset only — never the collection contents, decks, packs, or
 	// friends list (those stay in the owner's publicState).

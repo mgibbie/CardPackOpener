@@ -758,7 +758,44 @@ async function cardDetail(id) {
         createdBy.length ? h('div', { class: 'card-tags' }, createdBy.map(cardLink)) : null)),
     // the card's illustration on its own, no frame
     h('div', { class: 'card-art-section' }, h('h2', null, 'Art'), artCanvas),
+    ownerTodoBox(c),
     h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')));
+}
+
+// ---------- owner-only "New Version" note box ----------
+// Shows on every card page for the mgibbie account only: a note filed here
+// lands in the server's owner to-do inbox (a dev session later reads it with
+// "check the internal to do list" and applies the card change). The server
+// re-verifies the account on submit — the cached-login check is just for show.
+function ownerTodoBox(card) {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null'); } catch (e) { /* no login */ }
+  if (cached?.username !== 'mgibbie') return null;
+  const ta = h('textarea', {
+    class: 'todo-text', rows: '4', maxlength: '2000',
+    placeholder: 'Describe the new version of ' + card.name + ' — stat changes, new text, rework…',
+  });
+  const msg = h('span', { class: 'muted', style: 'margin-left:10px;' });
+  const btn = h('button', { class: 'todo-submit' }, 'File for next version');
+  btn.addEventListener('click', async () => {
+    const text = ta.value.trim();
+    if (!text) { msg.textContent = 'write the note first'; return; }
+    btn.disabled = true;
+    msg.textContent = 'filing…';
+    try {
+      const MP = await import('/battlecards/mpmode.js');
+      const r = await MP.call('todo-add', { cardId: card.id, cardName: card.name, text });
+      ta.value = '';
+      msg.textContent = `filed ✓ (${r.count} note${r.count === 1 ? '' : 's'} in the inbox)`;
+    } catch (e) {
+      msg.textContent = 'failed: ' + String(e.message || e).slice(0, 60);
+    }
+    btn.disabled = false;
+  });
+  return h('div', { class: 'owner-todo' },
+    h('h2', null, 'New Version', h('span', { class: 'muted', style: 'font-size:12px;margin-left:8px;' }, 'owner only — files to the internal to-do list')),
+    ta,
+    h('div', { style: 'margin-top:8px;display:flex;align-items:center;' }, btn, msg));
 }
 
 // a filtered subset of cards (by keyword / tribe / type), rendered as faces
