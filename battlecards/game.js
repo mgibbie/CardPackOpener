@@ -265,9 +265,16 @@ const sliceQuat = (localEuler, pi) => new THREE.Quaternion()
 
 // ---------- scene ----------
 const container = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+// cap the drawbuffer at 2x: DPR-3 phones would otherwise rasterize ~3.5x the
+// pixels for no visible gain, and MSAA on top of >=2x supersampling is waste
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const renderer = new THREE.WebGLRenderer({ antialias: DPR < 2, powerPreference: 'high-performance' });
+renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
+// the render loop idles when the table is still (see animate()); anything that
+// changes what's on screen outside the entity/target pipeline calls wake()
+let lastActivity = performance.now();
+const wake = () => { lastActivity = performance.now(); };
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -342,6 +349,9 @@ function buildTable() {
 const backTex = makeBackTexture();
 const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
 const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+// per-entity face textures are disposed on repaint/removal — the shared card
+// back must never be (every hidden enemy hand card points at the same texture)
+const disposeFaceMap = map => { if (map && map !== backTex) map.dispose(); };
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
 
@@ -369,7 +379,7 @@ function formFor(card) {
 function faceMaterialFor(card) {
 	// enemy hand cards are hidden information: always show the card back, whatever
 	// the camera angle or game mode (never the real face)
-	if (card.zone === 'hand' && card.controller !== HUMAN) return new THREE.MeshStandardMaterial({ map: makeBackTexture(), roughness: 0.5 });
+	if (card.zone === 'hand' && card.controller !== HUMAN) return new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
 	// disguised creatures render anonymously: neutral art seed, no identity
 	const shown = card.disguised
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
@@ -430,7 +440,7 @@ function entityFor(card) {
 		mesh.quaternion.copy(ent.mesh.quaternion);
 		mesh.scale.copy(ent.mesh.scale);
 		scene.remove(ent.mesh);
-		ent.faceMat.map?.dispose();
+		disposeFaceMap(ent.faceMat.map);
 		scene.add(mesh);
 		ent.mesh = mesh;
 		ent.faceMat = faceMat;
@@ -454,18 +464,24 @@ function entityFor(card) {
 }
 
 function refreshFace(ent) {
-	ent.faceMat.map?.dispose();
+	disposeFaceMap(ent.faceMat.map);
 	const nm = faceMaterialFor(ent.card);
 	ent.faceMat.map = nm.map;
 	ent.faceMat.needsUpdate = true;
 	ent.faceSig = faceSig(ent.card); // keep the sync-check in step with event-driven repaints
 }
 
-// when a real art crop finishes loading, live faces using it repaint
+// when a real art crop finishes loading, live faces using it repaint. Each
+// repaint is a full 512x716 canvas render + GPU upload, and the Mana-font
+// arrival broadcasts '*' (= every live face at once) — so instead of repainting
+// synchronously (a multi-frame freeze right as the opening hand appears), queue
+// the ents and let the render loop spread the repaints over frames.
+const artRefreshQueue = new Set();
 artListeners.add(id => {
 	for (const ent of entities.values()) {
-		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) refreshFace(ent);
+		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) artRefreshQueue.add(ent);
 	}
+	wake();
 });
 
 function removeEntity(uid) {
@@ -473,7 +489,8 @@ function removeEntity(uid) {
 	if (!ent) return;
 	scene.remove(ent.mesh);
 	scene.remove(ent.ring);
-	ent.faceMat.map?.dispose();
+	disposeFaceMap(ent.faceMat.map);
+	artRefreshQueue.delete(ent);
 	entities.delete(uid);
 }
 
@@ -1261,6 +1278,8 @@ function buildPanels() {
 	const myCls = classNameOf(state.players[HUMAN].heroClass);
 	$('my-title').textContent = myCls ? `You — ${myCls}` : 'Your Hero';
 	// normal play uses the 3D hero panel; spectators keep the DOM one
+	// (#my-panel ships display:none — only spectate ever reveals it)
+	mine.style.display = spectateMode ? 'block' : '';
 	document.body.classList.toggle('threed-hero', !spectateMode);
 	if (!spectateMode) drawHeroPanel();
 }
@@ -1456,6 +1475,7 @@ function updateDungeonPanel() {
 }
 
 function updateHud() {
+	wake(); // any HUD refresh means on-screen state changed — resume rendering
 	if (!state) return;
 	if (spectateMode || replayMode) { updateHudSpectate(); return; }
 	// the pinned inspect closes itself once its card leaves play entirely
@@ -1589,11 +1609,15 @@ function drawTargetArrow() {
 		if (arrowDrawn) { ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height); arrowDrawn = false; }
 		return;
 	}
-	if (arrowCanvas.width !== innerWidth || arrowCanvas.height !== innerHeight) {
-		arrowCanvas.width = innerWidth;
-		arrowCanvas.height = innerHeight;
+	// back the overlay at device resolution (capped like the renderer) so the
+	// arrow — the game's core combat affordance — isn't blurry on retina phones
+	if (arrowCanvas.width !== Math.round(innerWidth * DPR) || arrowCanvas.height !== Math.round(innerHeight * DPR)) {
+		arrowCanvas.width = Math.round(innerWidth * DPR);
+		arrowCanvas.height = Math.round(innerHeight * DPR);
 	}
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
 	ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
+	ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 	arrowDrawn = true;
 	const v = src.project(camera);
 	const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
@@ -1698,6 +1722,7 @@ function resolveAIScries() {
 }
 
 function pump() {
+	wake();
 	if (!state) return;
 	resolveAIScries();
 	resolveAIDiscards();
@@ -3076,17 +3101,24 @@ function updateTooltip(ev) {
 	tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
 }
 
+let lastHoverPickT = 0;
 addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
+	wake();
 	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
+	// hover raycasts + tooltip layout at ~40Hz is plenty; 120Hz pointers
+	// (ProMotion) would otherwise raycast the whole scene per input event
+	if (ev.timeStamp - lastHoverPickT < 25) return;
+	lastHoverPickT = ev.timeStamp;
 	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
 	// reaching down toward your hand pops it back up
 	if (handMini && mouseY > innerHeight * 0.82) handMini = false;
 	if (placing && placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
-	renderer.domElement.style.cursor = (placing && placing.dragging) ? 'grabbing'
+	const cursor = (placing && placing.dragging) ? 'grabbing'
 		: (hoverUid != null && cardOf(hoverUid)?.zone === 'hand' && cardOf(hoverUid)?.controller === HUMAN) ? 'grab' : '';
+	if (renderer.domElement.style.cursor !== cursor) renderer.domElement.style.cursor = cursor;
 });
 
 function clearModes() {
@@ -3585,21 +3617,21 @@ function placementIndexAt(x) {
 }
 
 function updatePlaceMarker() {
+	// one raycast per frame, shared by the hand-cancel check and the Magnetic
+	// merge check below (each used to run its own full-scene pick)
+	const overCard = placing && placing.dragging
+		? cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid)) : null;
 	// releasing anywhere but back on your own hand counts as a play, so the drag
 	// hint/marker follow the same rule instead of a fixed height cutoff
-	const overOwnHand = placing && placing.dragging && (() => {
-		const cc = cardOf(pick({ clientX: mouseX, clientY: mouseY }, placing.card.uid));
-		return !!cc && cc.zone === 'hand' && cc.controller === HUMAN;
-	})();
+	const overOwnHand = !!overCard && overCard.zone === 'hand' && overCard.controller === HUMAN;
 	// dragging a Magnetic creature over a valid friendly target? it will MERGE onto that
 	// creature instead of taking a board slot — surface that so the play is discoverable
 	const magTarget = (placing && placing.dragging && !longPressFired && state && state.current === HUMAN && (() => {
 		const c = placing.card;
 		if (!c.magnetic || c.type !== 'creature' || !E.canPlay(state, HUMAN, c)) return null;
-		const over = cardOf(pick({ clientX: mouseX, clientY: mouseY }, c.uid));
-		if (!over || over.zone !== 'board' || over.controller !== HUMAN) return null;
+		if (!overCard || overCard.zone !== 'board' || overCard.controller !== HUMAN) return null;
 		const magTribes = c.magnetizeTribes?.length ? c.magnetizeTribes : ['Mech'];
-		return magTribes.some(tr => (over.tribe || '').includes(tr)) ? over : null;
+		return magTribes.some(tr => (overCard.tribe || '').includes(tr)) ? overCard : null;
 	})()) || null;
 	// live hint while dragging a card out of the hand (suppressed once a press-and-
 	// hold turns the gesture into a preview)
@@ -3607,12 +3639,14 @@ function updatePlaceMarker() {
 		const c = placing.card;
 		const yours = state.current === HUMAN;
 		const inPlay = !overOwnHand && mouseY < innerHeight * 0.94;
-		$('hint').textContent = !inPlay ? 'drag onto the field to play · release on your hand to cancel'
+		const hint = !inPlay ? 'drag onto the field to play · release on your hand to cancel'
 			: !yours ? "can't play on your opponent's turn"
 			: magTarget ? `release to Magnetize ${c.name} onto ${magTarget.name}`
 			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
 			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
 			: `not enough mana for ${c.name}`;
+		const hintEl = $('hint');
+		if (hintEl.textContent !== hint) hintEl.textContent = hint; // unguarded writes force a style recalc every frame
 	}
 	const isCreature = placing && (placing.card.type === 'creature' || placing.card.type === 'location');
 	// a Magnetic merge doesn't take a slot, so hide the between-minions gap marker for it
@@ -3865,12 +3899,24 @@ $('player-count').addEventListener('change', ev => {
 	start();
 });
 
-addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); });
+addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
+// mobile browsers fire resize in bursts (rotation, keyboard, URL-bar); each
+// setSize reallocates the whole drawbuffer, so coalesce to one per frame and
+// skip no-op sizes entirely
+let resizeQueued = false, appliedW = innerWidth, appliedH = innerHeight;
 addEventListener('resize', () => {
-	camera.aspect = innerWidth / innerHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(innerWidth, innerHeight);
-	frameCamera();
+	if (resizeQueued) return;
+	resizeQueued = true;
+	requestAnimationFrame(() => {
+		resizeQueued = false;
+		if (innerWidth === appliedW && innerHeight === appliedH) return;
+		appliedW = innerWidth; appliedH = innerHeight;
+		camera.aspect = innerWidth / innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(innerWidth, innerHeight);
+		frameCamera();
+		wake();
+	});
 });
 
 // ---------- ring highlighting (computed per frame) ----------
@@ -3925,7 +3971,33 @@ function animate() {
 	requestAnimationFrame(animate);
 	const dt = Math.min(clock.getDelta(), 0.05);
 	const now = performance.now();
-	layoutTargets();
+	layoutTargets(); // always: keeps targets tracking state, so the idle check below is self-correcting
+	// spread queued art repaints (each = a 512x716 canvas paint + GPU upload)
+	// over frames instead of freezing on a burst
+	if (artRefreshQueue.size) {
+		let n = 0;
+		for (const ent of artRefreshQueue) {
+			artRefreshQueue.delete(ent);
+			if (entities.has(ent.card.uid)) refreshFace(ent);
+			if (++n >= 2) break;
+		}
+		wake();
+	}
+	// idle gate: when every entity has settled onto its target and nothing
+	// interactive is live (drag, targeting arrow, floaters), stop re-rendering —
+	// a waiting turn is mostly a still image, and redrawing it at 60fps just
+	// burns phone battery. Pointer input, pumps, resizes and art all wake() us.
+	let busy = !!(placing || pending || selectedAttacker || floaters.length);
+	if (!busy) {
+		for (const ent of entities.values()) {
+			if (ent.dying || ent.lunge
+				|| ent.mesh.position.distanceToSquared(ent.target.pos) > 1e-6
+				|| Math.abs(ent.mesh.scale.x - ent.target.scale) > 1e-4
+				|| ent.mesh.quaternion.angleTo(ent.target.quat) > 1e-3) { busy = true; break; }
+		}
+	}
+	if (busy) lastActivity = now;
+	else if (now - lastActivity > 500) return;
 	for (const [uid, ent] of entities) {
 		// death animation
 		if (ent.dying) {
@@ -4848,6 +4920,21 @@ function actPlaneswalk() {
 	const ok = E.planeswalk(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 
+// cards.json is ~6.6MB raw / ~670KB gzipped — fetch and parse it ONCE per page
+// and reuse across restarts ("Play again" used to refetch and reparse the whole
+// thing). The old {cache:'no-cache'} also forced a revalidation round-trip on
+// every game, defeating the 5-minute JSON cache _headers sets up.
+let cardsDataPromise = null;
+function loadCardsData() {
+	if (!cardsDataPromise) {
+		banner('Shuffling the card library…', 0); // the parse takes a beat on phones — say so instead of hanging silently
+		cardsDataPromise = fetch('cards.json').then(r => r.json())
+			.then(d => { $('banner').style.opacity = 0; return d; })
+			.catch(e => { cardsDataPromise = null; $('banner').style.opacity = 0; throw e; });
+	}
+	return cardsDataPromise;
+}
+
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
@@ -4861,7 +4948,7 @@ async function start() {
 	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
-	const data = await (await fetch('cards.json', { cache: 'no-cache' })).json();
+	const data = await loadCardsData();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
 	Rec.cancel(); // a new game (or restart) discards any half-recorded tape

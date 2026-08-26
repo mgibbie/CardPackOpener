@@ -217,7 +217,7 @@ const MANA_CP = { tap: 0xe61a, W: 0xe600, U: 0xe601, B: 0xe602, R: 0xe603, G: 0x
 const MANA_BG = { tap: '#cececa', W: '#f0f2c0', U: '#b5cde3', B: '#aca29a', R: '#db8664', G: '#93b483', C: '#ccc5b9', N: '#ccc5b9' };
 let manaReady = false;
 if (typeof document !== 'undefined' && typeof FontFace !== 'undefined') {
-	const ff = new FontFace('Mana', 'url(https://cdn.jsdelivr.net/npm/mana-font@1.18.0/fonts/mana.woff2) format("woff2")');
+	const ff = new FontFace('Mana', 'url(/battlecards/vendor/mana.woff2) format("woff2")'); // self-hosted: no third-party CDN on the card-render path
 	ff.load().then(f => { document.fonts.add(f); manaReady = true; for (const fn of artListeners) fn('*'); }).catch(() => {});
 }
 

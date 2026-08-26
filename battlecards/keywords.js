@@ -176,8 +176,9 @@ export function richTokens(text) {
 
 // authentic MTG symbols come from the open-source Mana font (Andrew Gioia, OFL).
 // Loading its stylesheet gives us both the .ms icon classes (tooltips) and the
-// @font-face the canvas card faces draw with.
-export const MANA_CSS = 'https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css';
+// @font-face the canvas card faces draw with. Self-hosted (vendor/) so no
+// third-party CDN sits on the card-render path.
+export const MANA_CSS = '/battlecards/vendor/mana.min.css';
 if (typeof document !== 'undefined' && !document.getElementById('mana-font-css')) {
 	const l = document.createElement('link');
 	l.id = 'mana-font-css'; l.rel = 'stylesheet'; l.href = MANA_CSS;

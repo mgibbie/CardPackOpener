@@ -24,6 +24,9 @@ export function requireLogin() {
 }
 
 export async function call(action, payload = {}) {
+	// hard 20s timeout: without one, a hung fetch wedges every caller that
+	// awaits it (the PvP submit/poll loops most painfully — the player would sit
+	// on "Waiting…" forever with no way out)
 	const res = await fetch(API, {
 		method: 'POST',
 		headers: {
@@ -31,6 +34,7 @@ export async function call(action, payload = {}) {
 			authorization: 'Bearer ' + (localStorage.getItem(TOKEN_KEY) || ''),
 		},
 		body: JSON.stringify({ action, ...payload }),
+		signal: AbortSignal.timeout ? AbortSignal.timeout(20000) : undefined,
 	});
 	const data = await res.json().catch(() => ({ error: 'bad response' }));
 	if (res.status === 401 && action !== 'login' && action !== 'register') {
