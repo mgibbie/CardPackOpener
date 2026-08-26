@@ -225,6 +225,15 @@ fetch(_tuneBase + 'art_tuning.json').then(r => (r.ok ? r.json() : {})).then(t =>
 export function hasArt(id) { return !!(artIndex && artIndex.has(id)); }
 export { artIndexReady };
 
+// arttune.html: preview a replacement image before it's saved. The override
+// slots straight into the normal art cache so every painter picks it up, and
+// the id joins the index so a previously art-less card renders it too.
+export function setArtOverride(id, img) {
+	artImgs.set(id, img);
+	if (artIndex) artIndex.add(id);
+	for (const fn of artListeners) fn(id);
+}
+
 // the Mana font (Andrew Gioia, OFL) so card faces can draw real MTG symbols.
 // Its glyph codepoints + the authentic 'cost' circle colours; we load the font
 // then repaint every face (artListeners('*')) so the pips upgrade in place.
