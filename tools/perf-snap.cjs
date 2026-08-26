@@ -255,12 +255,18 @@ async function scenarioBattle(browser, vp) {
 	await page.evaluate(() => { const b = window.__ow.battle; b.key('x'); b.active.menuIdx = 1; b.key('z'); });
 	await sleep(300);
 	await shot(page, 'battle', vp, 'bag');
+	const bagGeom = await page.evaluate(() => {
+		const b = window.__ow.battle;
+		const screen = document.getElementById('screen');
+		const k = screen.getBoundingClientRect().width / screen.width;
+		return (b.ui || []).filter(x => x.id !== 'advance').map(x => ({ id: x.id, cssH: +(x.h * k).toFixed(1) }));
+	});
 	// switch
 	await page.evaluate(() => { const b = window.__ow.battle; b.key('x'); b.active.menuIdx = 2; b.key('z'); });
 	await sleep(300);
 	await shot(page, 'battle', vp, 'switch');
 	await page.close();
-	return { ...metrics, geom, movesGeom, errors: errors.slice(0, 4) };
+	return { ...metrics, geom, movesGeom, bagGeom, errors: errors.slice(0, 4) };
 }
 
 async function scenarioBoard(browser, vp) {

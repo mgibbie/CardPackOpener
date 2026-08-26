@@ -223,6 +223,7 @@ export class Pvp {
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
 		if (kind === 'sw') { a.switchIdx = +arg; this.key('z'); return; }
+		if (kind === 'scroll') { this.key(+arg > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 		if (kind === 'back') this.key('x');
 	}
 
@@ -231,8 +232,8 @@ export class Pvp {
 		const a = this.active;
 		if (!a) return;
 		// ub scales the bottom bar only (== u everywhere except wide-short
-		// landscape-phone canvases — see battleui.layout)
-		const { portrait, u, ubar: ub, barY, barH } = UI.layout(W, H);
+		// landscape-phone canvases, where `compact` is also set — battleui.layout)
+		const { portrait, compact, u, ubar: ub, barY, barH } = UI.layout(W, H);
 		a.ui = [];
 		// static backdrop — cache the gradient instead of rebuilding it per frame
 		if (!this._bg || this._bgH !== H) {
@@ -280,12 +281,22 @@ export class Pvp {
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'switch') {
 			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
-			bench.slice(0, 3).forEach((pIdx, i) => {
+			// windowed like the wild-battle list: a 4+ bench used to be tap-dead
+			// past row 3; compact landscape shows two 44px thumb rows
+			const vis = compact ? 2 : 3;
+			const rh = compact ? 44 * ub : 28 * ub;
+			const rstep = compact ? rh + 6 * ub : 32 * ub;
+			const start = Math.max(0, Math.min(a.switchIdx - 1, bench.length - vis));
+			bench.slice(start, start + vis).forEach((pIdx, i) => {
 				const m = sd.party[pIdx];
-				btn({ x: 20 * ub, y: barY + 9 * ub + i * 32 * ub, w: W * 0.58, h: 28 * ub,
-					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === i }, 'sw:' + i);
+				btn({ x: 20 * ub, y: barY + 9 * ub + i * rstep, w: W * 0.58, h: rh,
+					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === start + i }, 'sw:' + (start + i));
 			});
 			if (!bench.length) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`; ctx.fillText('No one else can fight!', 24 * ub, barY + 34 * ub); }
+			if (bench.length > vis) {
+				btn({ x: W * 0.58 + 32 * ub, y: barY + 9 * ub, w: 40 * ub, h: 44 * ub, label: '▲', center: true }, 'scroll:-1');
+				btn({ x: W * 0.58 + 32 * ub, y: barY + 61 * ub, w: 40 * ub, h: 44 * ub, label: '▼', center: true }, 'scroll:1');
+			}
 			if (!a.forcedSwitch) btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else {
 			// wait / anim / watch / done: message with a tap-to-advance hint
@@ -327,17 +338,25 @@ export class Pvp {
 			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'switch') {
 			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
-			bench.slice(0, 3).forEach((pIdx, i) => {
+			// windowed like the wild-battle list — a 4+ bench used to be tap-dead past row 3
+			const start = Math.max(0, Math.min(a.switchIdx - 1, bench.length - 3));
+			const arrows = bench.length > 3;
+			const rw = fullW - (arrows ? 72 * u : 0);
+			bench.slice(start, start + 3).forEach((pIdx, i) => {
 				const m = sd.party[pIdx];
-				btn({ x: pad, y: barY + 12 * u + i * (58 * u + 6 * u), w: fullW, h: 58 * u,
-					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === i }, 'sw:' + i);
+				btn({ x: pad, y: barY + 12 * u + i * (59 * u + 6 * u), w: rw, h: 59 * u,
+					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === start + i }, 'sw:' + (start + i));
 			});
 			if (!bench.length) {
 				ctx.fillStyle = UI.C.dim;
 				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
 				ctx.fillText('No one else can fight!', 24 * u, barY + 40 * u);
 			}
-			if (!a.forcedSwitch) btn({ x: pad, y: barY + 202 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+			if (arrows) {
+				btn({ x: W - pad - 64 * u, y: barY + 12 * u, w: 64 * u, h: 90 * u, label: '▲', center: true }, 'scroll:-1');
+				btn({ x: W - pad - 64 * u, y: barY + 108 * u, w: 64 * u, h: 90 * u, label: '▼', center: true }, 'scroll:1');
+			}
+			if (!a.forcedSwitch) btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true }, 'back');
 		} else {
 			// wait / anim / watch / done: message with a tap-to-advance hint
 			ctx.fillStyle = UI.C.text;
