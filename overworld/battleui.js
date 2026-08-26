@@ -26,6 +26,19 @@ export const STATUS_BADGE = {
 	par: '#f2d933', brn: '#f26633', psn: '#b34dcc', slp: '#9999b3', frz: '#66ccf2',
 };
 
+// Scene geometry, shared by battle.js and pvp.js. Landscape keeps the GBA
+// 3:2 layout (unit = height/480, 118u bottom bar) byte-for-byte. On portrait
+// phones main.js frees the canvas from the 3:2 frame and lets it fill the
+// screen; there the unit comes from the WIDTH (the constraining axis) and the
+// bottom bar becomes a tall thumb deck — 512 units across means a 390px-wide
+// phone gets ~0.76 CSS px per unit, so a 58u button clears the 44px minimum.
+export function layout(W, H) {
+	const portrait = H > W;
+	const u = portrait ? W / 512 : H / 480;
+	const barH = portrait ? 270 * u : 118 * u;
+	return { portrait, u, barH, barY: H - barH };
+}
+
 export function rr(ctx, x, y, w, h, r) {
 	ctx.beginPath();
 	ctx.roundRect(x, y, w, h, r);

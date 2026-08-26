@@ -46,6 +46,13 @@
 		#t-party { right: 12px; top: max(104px, calc(env(safe-area-inset-top, 0px) + 94px)); width: 62px; height: 40px; font-size: 13px; }
 		#t-bag   { right: 12px; top: max(150px, calc(env(safe-area-inset-top, 0px) + 140px)); width: 62px; height: 40px; font-size: 13px; }
 		body.touch #bar { display: none; }
+		/* portrait battle/pvp: main.js grows the canvas to fill the screen
+		   (body.scene-tall); the on-canvas buttons are thumb-sized so the
+		   virtual pad is redundant — hide it and pin the canvas under the topbar */
+		body.scene-tall { justify-content: flex-end; padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)); }
+		body.scene-tall .tbtn { display: none !important; }
+		body.scene-tall #bar { display: none; }
+		body.scene-tall #screen { border-radius: 0; border-left: none; border-right: none; }
 		/* on desktop (fine pointer) the d-pad/A/B stay keyboard-only, but keep the
 		   top-right utility buttons clickable. Mouse hover for affordance. */
 		@media (pointer: fine) {

@@ -50,10 +50,30 @@ let friendGhost = null; // a friend's live sprite while we visit their map
 // the grid visibly crawled while walking. An integer device-pixel scale keeps
 // every game pixel the same size; it also sizes battle/menu text to the screen.
 let SCALE = 3;
+// Portrait battles: battle/pvp scenes are vector-drawn at full canvas
+// resolution, so while one is blocking on a portrait screen the canvas breaks
+// out of the GBA 3:2 frame and fills the viewport (tick() flips this; the
+// scene lays itself out for the tall aspect via battleui.layout). Without it a
+// portrait phone letterboxed the whole battle into a ~220px-tall band with
+// ~20px touch targets and left 70% of the screen black.
+let sceneTall = false;
 const screen = document.getElementById('screen');
 const sctx = screen.getContext('2d', { alpha: false }); // fully repainted opaque every frame
 function fitCanvas() {
 	const dpr = window.devicePixelRatio || 1;
+	if (sceneTall) {
+		const bdpr = Math.min(dpr, 2); // match the battlecards DPR cap — no visible gain past 2
+		const cssW = innerWidth - 4;   // room for the canvas border
+		const cssH = innerHeight - 68; // topbar clearance (flex-end pins the canvas to the bottom)
+		const w = Math.round(cssW * bdpr), h = Math.round(cssH * bdpr);
+		if (screen.width === w && screen.height === h) return;
+		screen.width = w;
+		screen.height = h;
+		screen.style.width = cssW + 'px';
+		screen.style.height = cssH + 'px';
+		sctx.imageSmoothingEnabled = false;
+		return;
+	}
 	const barRoom = document.body.classList.contains('touch') ? 8 : 56; // desktop keeps the caption bar visible
 	const s = Math.max(2, Math.min(6, Math.floor(Math.min(
 		(innerWidth * 0.98 * dpr) / VIEW_W,
@@ -3036,6 +3056,14 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// portrait battle/pvp: swap the canvas between the GBA frame and full-screen
+	// (see fitCanvas); the touch d-pad hides too — battles are entirely tap-driven
+	const tallNow = (battle.blocking || pvp.blocking) && innerHeight > innerWidth;
+	if (tallNow !== sceneTall) {
+		sceneTall = tallNow;
+		document.body.classList.toggle('scene-tall', sceneTall);
+		fitCanvas();
+	}
 	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
 	// If a map load hangs (never resolves) or a handler after it wedged, recover.
 	if (loading) {

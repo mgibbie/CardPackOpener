@@ -230,7 +230,7 @@ export class Pvp {
 	draw(ctx, W, H) {
 		const a = this.active;
 		if (!a) return;
-		const u = H / 480;
+		const { portrait, u, barY, barH } = UI.layout(W, H);
 		a.ui = [];
 		// static backdrop — cache the gradient instead of rebuilding it per frame
 		if (!this._bg || this._bgH !== H) {
@@ -246,17 +246,18 @@ export class Pvp {
 
 		UI.monPanel(ctx, this.withShown(top), 14 * u, 14 * u, 272 * u, u, { shownHP: a.shown[top], boosts: this.monAt(top).boosts });
 		UI.teamDots(ctx, a.match.sides[top].party, this.monAt(top), 30 * u, 106 * u, u);
-		const meY = H - 124 * u - 112 * u;
+		const meY = barY - 118 * u;
 		UI.monPanel(ctx, this.withShown(bottom), W - 14 * u - 300 * u, meY, 300 * u, u,
 			{ shownHP: a.shown[bottom], boosts: this.monAt(bottom).boosts, showNumbers: true });
 		UI.teamDots(ctx, a.match.sides[bottom].party, this.monAt(bottom),
 			W - 14 * u - 10 * u - (a.match.sides[bottom].party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
 
-		const barY = H - 118 * u;
-		UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
+		UI.panel(ctx, 8 * u, barY, W - 16 * u, barH - 8 * u, 10 * u);
 		const btn = (b, id) => { b.id = id; a.ui.push(b); UI.button(ctx, b, a.hover === id || b.kbSel, u); };
 
-		if (a.phase === 'menu') {
+		if (portrait) {
+			this.drawBarPortrait(ctx, a, W, H, u, barY, btn);
+		} else if (a.phase === 'menu') {
 			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 			UI.wrap(ctx, a.msg, W - 300 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 32 * u + i * 22 * u));
 			['FIGHT', 'SWITCH', '', 'FORFEIT'].forEach((lab, i) => {
@@ -293,11 +294,72 @@ export class Pvp {
 			a.ui.push({ id: 'adv:0', x: 0, y: 0, w: W, h: barY });
 		}
 	}
+
+	// portrait control deck — mirrors battle.js drawBarPortrait (u is W/512 here,
+	// so every button clears the 44 CSS px touch minimum; see battleui.layout)
+	drawBarPortrait(ctx, a, W, H, u, barY, btn) {
+		const pad = 14 * u, gap = 8 * u;
+		const fullW = W - 2 * pad;
+		if (a.phase === 'menu') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(19 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 2).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 30 * u + i * 24 * u));
+			const bw = (fullW - 10 * u) / 2, bh = 82 * u;
+			['FIGHT', 'SWITCH', '', 'FORFEIT'].forEach((lab, i) => {
+				if (!lab) return;
+				btn({ x: pad + (i % 2) * (bw + 10 * u), y: barY + 74 * u + Math.floor(i / 2) * (bh + 10 * u),
+					w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+			});
+		} else if (a.phase === 'moves') {
+			const bw = (fullW - gap) / 2, bh = 72 * u;
+			this.mine().moves.forEach((mv, i) => {
+				btn({
+					x: pad + (i % 2) * (bw + gap), y: barY + 12 * u + Math.floor(i / 2) * (bh + gap),
+					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
+					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp <= 0 ? UI.C.hpRed : UI.C.dim,
+					right: mv.power ? `Pwr ${mv.power}` : (mv.category || ''),
+					type: mv.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i,
+				}, 'move:' + i);
+			});
+			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'switch') {
+			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
+			bench.slice(0, 3).forEach((pIdx, i) => {
+				const m = sd.party[pIdx];
+				btn({ x: pad, y: barY + 12 * u + i * (58 * u + 6 * u), w: fullW, h: 58 * u,
+					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === i }, 'sw:' + i);
+			});
+			if (!bench.length) {
+				ctx.fillStyle = UI.C.dim;
+				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+				ctx.fillText('No one else can fight!', 24 * u, barY + 40 * u);
+			}
+			if (!a.forcedSwitch) btn({ x: pad, y: barY + 202 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+		} else {
+			// wait / anim / watch / done: message with a tap-to-advance hint
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(20 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 4).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 38 * u + i * 27 * u));
+			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) {
+				ctx.fillStyle = UI.C.accent;
+				ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+				ctx.fillText('▼', W - 38 * u, H - 24 * u);
+			}
+			if (a.phase === 'done') btn({ x: pad, y: barY + 120 * u, w: fullW, h: 64 * u, label: 'LEAVE', center: true }, 'done:0');
+			a.ui.push({ id: 'adv:0', x: 0, y: 0, w: W, h: barY });
+		}
+	}
+
 	withShown(s) { const m = this.monAt(s); return m; }
 	drawMon(ctx, W, H, u, s, near) {
 		const a = this.active;
 		const m = this.monAt(s);
-		const pose = near ? { x: W * 0.235, y: H - 140 * u, scale: 4.2 * u } : { x: W * 0.70, y: H * 0.42, scale: 3.4 * u };
+		const { portrait, barY } = UI.layout(W, H);
+		const pose = near
+			? (portrait ? { x: W * 0.26, y: barY - 24 * u, scale: 3.8 * u } : { x: W * 0.235, y: H - 140 * u, scale: 4.2 * u })
+			: (portrait ? { x: W * 0.68, y: barY * 0.40, scale: 3.1 * u } : { x: W * 0.70, y: H * 0.42, scale: 3.4 * u });
 		const tc = UI.TYPE_COLORS[m.types[0]] || '#888';
 		ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = tc;
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 118 * u, 30 * u, 0, 0, Math.PI * 2); ctx.fill();
