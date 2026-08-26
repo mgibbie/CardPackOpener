@@ -79,6 +79,8 @@
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
 	</script>
-	<script type="module" src="arttune.js"></script>
+	<!-- ?v busts the custom domain's 4h browser-cache TTL on .js — bump on changes
+	     (the zone-level fix is Browser Cache TTL -> Respect Existing Headers) -->
+	<script type="module" src="arttune.js?v=3"></script>
 </body>
 </html>
