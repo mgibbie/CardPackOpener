@@ -3,6 +3,9 @@ import { VIEW_W, VIEW_H } from './engine.js';
 import * as Settings from './settings.js';
 
 const WRAP = 36;
+// the tall portrait view (VIEW_H is live — see engine.setViewSize) has room
+// for a deeper text box: 4 lines per page instead of the GBA 2
+const linesPerPage = () => (VIEW_H > VIEW_W ? 4 : 2);
 
 // characters shown so far on a page, given its total length
 function pageLen(page) { return page.reduce((s, l) => s + l.length, 0); }
@@ -10,6 +13,7 @@ function pageLen(page) { return page.reduce((s, l) => s + l.length, 0); }
 function paginate(text) {
 	// paragraphs (blank-line separated) become pages; long lines wrap
 	const pages = [];
+	const lpp = linesPerPage();
 	for (const para of text.split(/\n\s*\n/)) {
 		const lines = [];
 		for (const raw of para.split('\n')) {
@@ -20,7 +24,7 @@ function paginate(text) {
 			}
 			lines.push(line.trimEnd());
 		}
-		for (let i = 0; i < lines.length; i += 2) pages.push(lines.slice(i, i + 2));
+		for (let i = 0; i < lines.length; i += lpp) pages.push(lines.slice(i, i + lpp));
 	}
 	return pages.length ? pages : [['...']];
 }
@@ -90,8 +94,12 @@ export class Dialog {
 	// full-resolution text box: same GBA cream styling, crisp pixel font
 	drawHi(ctx, W, H) {
 		if (!this.pages) return;
-		const u = H / 480;
-		const bh = 108 * u, y = H - bh - 10 * u;
+		// height-derived u overflows the box on the tall portrait canvas (the
+		// font grows with H while the 36-char wrap width tracks W) — cap by
+		// width; on the 3:2 landscape frame min() picks H/480 exactly as before
+		const u = Math.min(H / 480, W / 512);
+		// the box deepens to fit the page (portrait pages hold up to 4 lines)
+		const bh = (48 + 30 * Math.max(2, this.pages[this.idx].length)) * u, y = H - bh - 10 * u;
 		ctx.fillStyle = '#f8f8e0';
 		ctx.beginPath(); ctx.roundRect(12 * u, y, W - 24 * u, bh, 10 * u); ctx.fill();
 		ctx.strokeStyle = '#28283a';

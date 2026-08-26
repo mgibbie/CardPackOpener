@@ -302,13 +302,14 @@
 			#log-full { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); max-height: 64vh; }
 			#end-turn { padding: 10px 20px; font-size: 14px; }
 			#hint { font-size: 12px; bottom: 4px; }
-			/* 3+ foe panels share ~840px — compact them, and drop the class name
-			   (it wrapped the text to 4 lines and pushed panels into each other;
-			   the class stays visible on the portrait) */
+			/* 3+ foe panels share ~840px — compact them and restack the text as
+			   narrow lines (name / class / mana): the inline form wrapped to 4
+			   ragged lines and pushed panels into each other */
 			.panel.foe-sm { max-width: 190px; min-width: 96px; padding: 4px 9px; }
 			.panel.foe-sm .life { font-size: 17px; }
 			.panel.foe-sm .sub, .panel.foe-sm .gear { font-size: 10.5px; }
-			.panel.foe-sm .cls { display: none; }
+			.panel.foe-sm .cls { display: block; font-weight: 400; font-size: 9.5px; color: #9d8fd4; line-height: 1.25; }
+			.panel.foe-sm .clsdot { display: none; }
 			.panel.foe-sm .sub b { white-space: nowrap; }
 			.panel.foe-sm .mrow { display: block; }
 			.panel.foe-sm .portrait { width: 32px !important; height: 32px !important; }

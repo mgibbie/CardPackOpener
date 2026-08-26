@@ -1325,10 +1325,10 @@ function buildPanels() {
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
-		// the class name + its separator sit in .cls spans and the mana readout in
-		// .mrow, so short screens can hide the class and stack the mana on its own
-		// line (CSS in index.html) — the class stays visible on the portrait
-		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}<span class="cls">${cls ? ` (${cls})` : ''}</span></b><span class="cls"> · </span><span class="mrow">Mana <span class="mana"></span></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
+		// the class name (.cls), its separator (.clsdot), and the mana readout
+		// (.mrow) sit in their own spans so short screens can restack them —
+		// name / class / mana as separate narrow lines (CSS in index.html)
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}<span class="cls">${cls ? ` (${cls})` : ''}</span></b><span class="clsdot"> · </span><span class="mrow">Mana <span class="mana"></span></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
 		el.prepend(portraitBlock(pi, false));
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);

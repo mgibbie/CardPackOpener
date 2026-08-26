@@ -1637,10 +1637,12 @@ function pressKey(k) {
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
-const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || factorySpec.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
-	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+// just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
+const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
+	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -3157,6 +3159,13 @@ function tick(now) {
 	}
 	// battle, menus, and dialogs all render at full canvas resolution
 	const SW = screen.width, SH = screen.height;
+	// The full-res menus lay themselves out for the 3:2 frame (unit = H/480
+	// with columns spanning ~720 units). On the tall portrait canvas that unit
+	// would blow past the right edge, so menus get a 3:2 band across the top of
+	// the canvas instead — identical geometry to the pre-tall portrait canvas;
+	// the live world stays visible beneath. Dialogs keep the full height (they
+	// bottom-anchor near the thumbs and are width-capped — dialog.drawHi).
+	const MH = Math.min(SH, Math.round(SW / 1.5));
 	if (battle.blocking) {
 		battle.draw(sctx, SW, SH);
 	} else if (pvp.blocking) {
@@ -3164,29 +3173,36 @@ function tick(now) {
 	} else if (factorySpec.blocking) {
 		factorySpec.draw(sctx, SW, SH);
 	} else {
-		if (partyMenu.open) drawPartyMenu(SW, SH);
-		else if (shopMenu.open) drawShopMenu(SW, SH);
-		else if (bagMenu.open) drawBagMenu(SW, SH);
-		else if (pcMenu.open) drawPcMenu(SW, SH);
-		else if (dexMenu.open) drawDexMenu(SW, SH);
-		else if (townMap.open) drawTownMap(SW, SH);
-		else if (daycareMenu.open) drawDaycare(SW, SH);
-		else if (nameRater.open) drawNameRater(SW, SH);
-		else if (moveShop.open) drawMoveShop(SW, SH);
-		else if (optionsMenu.open) drawOptions(SW, SH);
-		else if (questMenu.open) drawQuest(SW, SH);
-		else if (trainerCard.open) drawTrainerCard(SW, SH);
-		else if (starterMenu.open) drawStarterMenu(SW, SH);
-		else if (ferryMenu.open) drawFerryMenu(SW, SH);
-		else if (portalMenu.open) drawPortalMenu(SW, SH);
-		else if (bpShopMenu.open) drawBpShopMenu(SW, SH);
-		else if (trade.open) drawTrade(SW, SH);
-		else if (playerMenu.open) drawPlayerMenu(SW, SH);
-		else if (deckSelect.open) drawDeckSelect(SW, SH);
-		else if (startMenu.open) drawStartMenu(SW, SH);
-		else if (cardsMenu.open) drawCardsMenu(SW, SH);
-		else if (runMenu.open) drawRunMenu(SW, SH);
-		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
+		// extend the menus' dim backdrop over the world below the band, and hide
+		// the side MENU/PARTY/BAG buttons that would overlap the band's corner
+		document.body.classList.toggle('ow-menu', canvasMenuOpen());
+		if (canvasMenuOpen() && SH > MH) {
+			sctx.fillStyle = 'rgba(10,8,18,0.82)';
+			sctx.fillRect(0, MH, SW, SH - MH);
+		}
+		if (partyMenu.open) drawPartyMenu(SW, MH);
+		else if (shopMenu.open) drawShopMenu(SW, MH);
+		else if (bagMenu.open) drawBagMenu(SW, MH);
+		else if (pcMenu.open) drawPcMenu(SW, MH);
+		else if (dexMenu.open) drawDexMenu(SW, MH);
+		else if (townMap.open) drawTownMap(SW, MH);
+		else if (daycareMenu.open) drawDaycare(SW, MH);
+		else if (nameRater.open) drawNameRater(SW, MH);
+		else if (moveShop.open) drawMoveShop(SW, MH);
+		else if (optionsMenu.open) drawOptions(SW, MH);
+		else if (questMenu.open) drawQuest(SW, MH);
+		else if (trainerCard.open) drawTrainerCard(SW, MH);
+		else if (starterMenu.open) drawStarterMenu(SW, MH);
+		else if (ferryMenu.open) drawFerryMenu(SW, MH);
+		else if (portalMenu.open) drawPortalMenu(SW, MH);
+		else if (bpShopMenu.open) drawBpShopMenu(SW, MH);
+		else if (trade.open) drawTrade(SW, MH);
+		else if (playerMenu.open) drawPlayerMenu(SW, MH);
+		else if (deckSelect.open) drawDeckSelect(SW, MH);
+		else if (startMenu.open) drawStartMenu(SW, MH);
+		else if (cardsMenu.open) drawCardsMenu(SW, MH);
+		else if (runMenu.open) drawRunMenu(SW, MH);
+		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 	// while your run is being spectated, show a live "N watching" badge on top

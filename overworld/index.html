@@ -53,6 +53,9 @@
 		   space below the topbar and above the touch pad) — anchor it to the top
 		   so that budget lands where the canvas actually is */
 		body.ow-tall:not(.scene-tall) { justify-content: flex-start; padding-top: max(54px, env(safe-area-inset-top, 0px)); }
+		/* while a canvas menu is open on the tall canvas, its band sits right
+		   under these buttons — hide them (CLOSE / Escape closes the menu) */
+		body.ow-tall.ow-menu #t-start, body.ow-tall.ow-menu #t-party, body.ow-tall.ow-menu #t-bag { display: none !important; }
 		/* portrait battle/pvp: main.js grows the canvas to fill the screen
 		   (body.scene-tall); the on-canvas buttons are thumb-sized so the
 		   virtual pad is redundant — hide it and pin the canvas under the topbar */
