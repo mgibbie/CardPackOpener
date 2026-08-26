@@ -46,6 +46,23 @@
 		#t-party { right: 12px; top: max(104px, calc(env(safe-area-inset-top, 0px) + 94px)); width: 62px; height: 40px; font-size: 13px; }
 		#t-bag   { right: 12px; top: max(150px, calc(env(safe-area-inset-top, 0px) + 140px)); width: 62px; height: 40px; font-size: 13px; }
 		body.touch #bar { display: none; }
+		/* the shared battle chat (chat.js) docks bottom-left, where the touch
+		   d-pad lives on this page — lift it clear */
+		body.touch #mp-chat { bottom: 205px; }
+		/* portrait overworld: the canvas grows downward (fitCanvas budgets the
+		   space below the topbar and above the touch pad) — anchor it to the top
+		   so that budget lands where the canvas actually is */
+		body.ow-tall:not(.scene-tall) { justify-content: flex-start; padding-top: max(54px, env(safe-area-inset-top, 0px)); }
+		/* while a canvas menu is open on the tall canvas, its band sits right
+		   under these buttons — hide them (CLOSE / Escape closes the menu) */
+		body.ow-tall.ow-menu #t-start, body.ow-tall.ow-menu #t-party, body.ow-tall.ow-menu #t-bag { display: none !important; }
+		/* portrait battle/pvp: main.js grows the canvas to fill the screen
+		   (body.scene-tall); the on-canvas buttons are thumb-sized so the
+		   virtual pad is redundant — hide it and pin the canvas under the topbar */
+		body.scene-tall { justify-content: flex-end; padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)); }
+		body.scene-tall .tbtn { display: none !important; }
+		body.scene-tall #bar { display: none; }
+		body.scene-tall #screen { border-radius: 0; border-left: none; border-right: none; }
 		/* on desktop (fine pointer) the d-pad/A/B stay keyboard-only, but keep the
 		   top-right utility buttons clickable. Mouse hover for affordance. */
 		@media (pointer: fine) {

@@ -258,10 +258,15 @@ const nameOf = pi => pi === HUMAN ? 'You'
 const angleOf = pi => (((pi - HUMAN + playerCount) % playerCount) / playerCount) * TAU;
 // radial push so 3+ slices don't overlap at the center
 const sliceOff = () => playerCount <= 2 ? 0 : (playerCount - 2) * 0.9;
-const toWorld = (x, y, z, pi) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, angleOf(pi));
-const sliceQuat = (localEuler, pi) => new THREE.Quaternion()
+// both take an optional `out` — layoutTargets runs per entity per FRAME, and
+// allocating a fresh Vector3 + two Quaternions (+ an Euler) per card per frame
+// churned the GC on phones; with `out` the targets mutate in place
+const _sliceTmpQuat = new THREE.Quaternion();
+const _layoutEuler = new THREE.Euler(); // reusable scratch for per-frame hand tilts
+const toWorld = (x, y, z, pi, out) => (out || new THREE.Vector3()).set(x, y, z).applyAxisAngle(UP, angleOf(pi));
+const sliceQuat = (localEuler, pi, out) => (out || new THREE.Quaternion())
 	.setFromAxisAngle(UP, angleOf(pi))
-	.multiply(new THREE.Quaternion().setFromEuler(localEuler));
+	.multiply(_sliceTmpQuat.setFromEuler(localEuler));
 
 // ---------- scene ----------
 const container = document.getElementById('scene');
@@ -349,9 +354,54 @@ function buildTable() {
 const backTex = makeBackTexture();
 const edgeMat = new THREE.MeshStandardMaterial({ color: '#241b38', roughness: 0.8 });
 const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
-// per-entity face textures are disposed on repaint/removal — the shared card
-// back must never be (every hidden enemy hand card points at the same texture)
-const disposeFaceMap = map => { if (map && map !== backTex) map.dispose(); };
+
+// ---------- face-texture cache ----------
+// Identical faces share one GPU texture. A face is fully determined by the
+// card's identity + everything faceSig tracks (stats, keywords, cost, form),
+// so that string is the cache key; refcounts drop a texture the moment its
+// last user releases it. Before this, every entity painted its own 512-wide
+// canvas — a full 4-player table held ~180 of them (~120MB). Duplicate
+// summons (tokens especially: Wisps, recruits, treants) now cost one texture.
+const faceTexCache = new Map(); // key -> { tex, refs, key }
+const faceTexEntries = new WeakMap(); // tex -> its entry (survives cache eviction)
+function faceTexKey(card) {
+	const shownId = card.disguised ? 'disguised' : card.id;
+	// name/description can be rewritten mid-game and both are painted on card
+	// faces, so they belong in the key
+	return `${shownId}|${card.name}|${card.description || ''}|${faceSig(card)}`;
+}
+function acquireFaceTex(card) {
+	if (card.zone === 'hand' && card.controller !== HUMAN) return backTex; // hidden info: shared back
+	const key = faceTexKey(card);
+	let e = faceTexCache.get(key);
+	if (!e) {
+		e = { tex: paintFaceTex(card), refs: 0, key };
+		faceTexCache.set(key, e);
+		faceTexEntries.set(e.tex, e);
+	}
+	e.refs++;
+	return e.tex;
+}
+// release a face texture: cached ones dispose at zero refs (entries evicted by
+// an art-arrival invalidation keep their refcount and still dispose correctly)
+const disposeFaceMap = map => {
+	if (!map || map === backTex) return;
+	const e = faceTexEntries.get(map);
+	if (e) {
+		if (--e.refs <= 0) {
+			if (faceTexCache.get(e.key) === e) faceTexCache.delete(e.key);
+			map.dispose();
+		}
+	} else map.dispose();
+};
+// real art arrived for `id` ('*' = the Mana font, i.e. every face): evict the
+// affected keys so the next acquire repaints — live references keep their
+// texture until their own queued repaint releases it
+function invalidateFaceTexFor(id) {
+	for (const key of faceTexCache.keys()) {
+		if (id === '*' || key.startsWith(id + '|')) faceTexCache.delete(key);
+	}
+}
 const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
 
@@ -376,17 +426,15 @@ function formFor(card) {
 	return card.zone === 'board' && card.type === 'creature' ? 'token' : 'card';
 }
 
-function faceMaterialFor(card) {
-	// enemy hand cards are hidden information: always show the card back, whatever
-	// the camera angle or game mode (never the real face)
-	if (card.zone === 'hand' && card.controller !== HUMAN) return new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+// paint one face texture (cache miss path — see acquireFaceTex)
+function paintFaceTex(card) {
 	// disguised creatures render anonymously: neutral art seed, no identity
 	const shown = card.disguised
 		? { ...card, id: 'disguised', name: 'Disguised', description: '', cardClass: 'neutral' }
 		: card;
 	if (formFor(card) === 'token') {
 		const def = state?.cardsById?.[card.id];
-		const tex = makeTokenTexture(shown, {
+		return makeTokenTexture(shown, {
 			attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth,
 			baseAttack: card.disguised ? card.attack : def?.attack,
 			baseHealth: card.disguised ? card.maxHealth : def?.health,
@@ -394,9 +442,8 @@ function faceMaterialFor(card) {
 			shield: !!card.shield,
 			stealthed: !!card.stealthed,
 		});
-		return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.1, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide });
 	}
-	const tex = makeFaceTexture(
+	return makeFaceTexture(
 		{ ...shown, health: card.maxHealth },
 		card.type === 'creature' ? { attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth }
 			: card.type === 'weapon' ? { attack: card.attack, durability: card.durability }
@@ -404,7 +451,16 @@ function faceMaterialFor(card) {
 			: card.type === 'quest' ? { progress: card.progress || 0, goal: card.quest?.goal?.count }
 			: card.type === 'planeswalker' ? { loyalty: card.loyalty } : {}
 	);
-	return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
+}
+
+function faceMaterialFor(card) {
+	// enemy hand cards are hidden information: always show the card back, whatever
+	// the camera angle or game mode (never the real face)
+	const tex = acquireFaceTex(card);
+	if (tex === backTex) return new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
+	return formFor(card) === 'token'
+		? new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.1, transparent: true, alphaTest: 0.05, side: THREE.DoubleSide })
+		: new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.12 });
 }
 
 // everything the rendered face shows, as a compact string — when it changes the
@@ -464,10 +520,13 @@ function entityFor(card) {
 }
 
 function refreshFace(ent) {
-	disposeFaceMap(ent.faceMat.map);
-	const nm = faceMaterialFor(ent.card);
-	ent.faceMat.map = nm.map;
+	// acquire BEFORE releasing: a same-key refresh then just bumps the shared
+	// texture's refcount instead of repainting (art-arrival repaints DO repaint
+	// because invalidateFaceTexFor evicted the key first)
+	const old = ent.faceMat.map;
+	ent.faceMat.map = acquireFaceTex(ent.card);
 	ent.faceMat.needsUpdate = true;
+	disposeFaceMap(old);
 	ent.faceSig = faceSig(ent.card); // keep the sync-check in step with event-driven repaints
 }
 
@@ -478,6 +537,7 @@ function refreshFace(ent) {
 // the ents and let the render loop spread the repaints over frames.
 const artRefreshQueue = new Set();
 artListeners.add(id => {
+	invalidateFaceTexFor(id); // stale pixels: force the queued repaints below to actually repaint
 	for (const ent of entities.values()) {
 		if ((id === '*' || ent.card.id === id) && !ent.card.disguised) artRefreshQueue.add(ent);
 	}
@@ -974,7 +1034,7 @@ function layoutTargets() {
 				if (placing && placing.dragging && card.uid === placing.card.uid) {
 					const wp = screenToGround(mouseX, mouseY, 1.35);
 					ent.target.pos.set(wp.x, 1.35, wp.z);
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.62, 0, 0), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
 					ent.target.scale = 0.9;
 					return;
 				}
@@ -984,21 +1044,21 @@ function layoutTargets() {
 				if (handMini && !hovered) {
 					// tucked down below the hero panel so the panel reads clearly
 					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03);
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = 0.5;
 				} else {
 					// a hovered card lifts up AND pulls toward the camera (+z) so it sits
 					// in FRONT of its neighbors — pushing it back (-z) let siblings, whose
 					// forward-tilted bottom edges are nearer the camera, cover its lower half
 					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = hovered ? 1.0 : 0.68;
 				}
 			} else {
 				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
-				ent.target.pos = toWorld(x, 1.1 + i * 0.012, off + 7.1, pi);
-				ent.target.quat = sliceQuat(new THREE.Euler(0.95 + Math.PI, 0, 0), pi); // back to the table
+				toWorld(x, 1.1 + i * 0.012, off + 7.1, pi, ent.target.pos);
+				sliceQuat(_layoutEuler.set(0.95 + Math.PI, 0, 0), pi, ent.target.quat); // back to the table
 				ent.target.scale = 0.58;
 			}
 		});
@@ -1006,9 +1066,9 @@ function layoutTargets() {
 		p.lands.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi);
+			toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi, ent.target.pos);
 			// tapped lands turn sideways, MTG-style
-			ent.target.quat = sliceQuat(card.tapped ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
+			sliceQuat(card.tapped ? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// Sprocket: Contraptions sit in fixed slots to the right of the lands; a ring
@@ -1019,14 +1079,13 @@ function layoutTargets() {
 				if (!card) return;
 				const ent = entityFor(card);
 				seen.add(card.uid);
-				ent.target.pos = toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi);
-				ent.target.quat = sliceQuat(FLAT, pi);
+				toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi, ent.target.pos);
+				sliceQuat(FLAT, pi, ent.target.quat);
 				ent.target.scale = 0.32;
 			});
 			if (pi === HUMAN) {
 				if (!sprocketRing) sprocketRing = makeRing('#ffd25f');
-				const rp = toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi);
-				sprocketRing.position.set(rp.x, rp.y, rp.z);
+				toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi, sprocketRing.position);
 				sprocketRing.scale.setScalar(0.34);
 				sprocketRing.visible = true;
 			}
@@ -1034,8 +1093,8 @@ function layoutTargets() {
 		p.traps.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi);
-			ent.target.quat = sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi);
+			toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi, ent.target.pos);
+			sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// hero powers mirror the trap row on the left; quests sit outside them.
@@ -1046,15 +1105,15 @@ function layoutTargets() {
 		p.heroPowers.filter(c => c !== orbPow && c.id !== (p.heroClass || '') + '_power').forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.quests.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// planeswalkers: center row between the land slots and the hero
@@ -1063,30 +1122,30 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			const x = (i - (wn - 1) / 2) * 1.45;
-			ent.target.pos = toWorld(x, 0.07, off + 5.55, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(x, 0.07, off + 5.55, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.5;
 		});
 		// right-outer corner: companion, command zone, then emblem markers
 		if (p.companion) {
 			const ent = entityFor(p.companion);
 			seen.add(p.companion.uid);
-			ent.target.pos = toWorld(1.6, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(1.6, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		}
 		p.command.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(2.8 + i * 1.2, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(2.8 + i * 1.2, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.emblems.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(4.0 + i * 0.95, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(4.0 + i * 0.95, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.34;
 		});
 		// unlimited permanent rows: enchantments left, artifacts right
@@ -1094,15 +1153,15 @@ function layoutTargets() {
 		p.enchantments.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(3.55 + i * rowSpread(p.enchantments.length)), 0.05, off + 2.7, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(3.55 + i * rowSpread(p.enchantments.length)), 0.05, off + 2.7, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.artifacts.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi);
-			ent.target.quat = sliceQuat(card.tapped && card.tapAbility ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
+			toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi, ent.target.pos);
+			sliceQuat(card.tapped && card.tapAbility ? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// creature row (unlimited: compress spacing inside the slice arc).
@@ -1114,10 +1173,10 @@ function layoutTargets() {
 			seen.add(card.uid);
 			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
 			const x = (i - (bn - 1) / 2) * spread;
-			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi);
+			toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi, ent.target.pos);
 			// tapped locations turn sideways like tapped lands
-			ent.target.quat = sliceQuat(card.type === 'location' && card.tapped
-				? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN);
+			sliceQuat(card.type === 'location' && card.tapped
+				? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN, ent.target.quat);
 			// tokens shrink to their spacing so neighbors never overlap
 			ent.target.scale = Math.min(0.8, (spread * 0.97) / (CARD_W * TOKEN_SCALE));
 		});
@@ -1154,9 +1213,10 @@ function creaturePos(uid) {
 	const ent = entities.get(uid);
 	return ent ? ent.mesh.position.clone() : new THREE.Vector3(0, 1, 0);
 }
-function heroPos(pi) {
-	return toWorld(0, 1.4, sliceOff() + 4.8, pi);
+function heroPos(pi, out) {
+	return toWorld(0, 1.4, sliceOff() + 4.8, pi, out);
 }
+const _panelVec = new THREE.Vector3(); // per-frame scratch for positionPanels
 
 // ---------- HUD ----------
 const $ = id => document.getElementById(id);
@@ -1265,7 +1325,10 @@ function buildPanels() {
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
-		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
+		// the class name (.cls), its separator (.clsdot), and the mana readout
+		// (.mrow) sit in their own spans so short screens can restack them —
+		// name / class / mana as separate narrow lines (CSS in index.html)
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}<span class="cls">${cls ? ` (${cls})` : ''}</span></b><span class="clsdot"> · </span><span class="mrow">Mana <span class="mana"></span></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
 		el.prepend(portraitBlock(pi, false));
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);
@@ -1546,10 +1609,19 @@ function updateHud() {
 // projected screen positions + hero-target highlighting, refreshed per frame
 function positionPanels() {
 	if (!state) return;
+	// batch the size reads before any style writes (interleaving them forces a
+	// reflow per panel), then clamp every panel fully on-screen — slices at the
+	// table's left/right edges used to project half their panel off a portrait
+	// viewport. The anchor is bottom-center (translate(-50%,-100%)), so x clamps
+	// by half-width and y keeps the panel's top edge below the ~52px topbar.
+	const put = [];
 	for (const [pi, el] of foePanelEls) {
-		const v = heroPos(pi).project(camera);
-		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
-		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+		const v = heroPos(pi, _panelVec).project(camera);
+		put.push([el, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, el.offsetWidth, el.offsetHeight]);
+	}
+	for (const [el, x, y, w, h] of put) {
+		el.style.left = `${Math.max(w / 2 + 6, Math.min(innerWidth - w / 2 - 6, x))}px`;
+		el.style.top = `${Math.max(h + 56, Math.min(innerHeight - 6, y))}px`;
 	}
 	// your own hero panel is a 3D object in the scene (billboarded to the camera),
 	// sitting between your land row and hand so the hand cards depth-sort in front
@@ -1557,7 +1629,7 @@ function positionPanels() {
 		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false; // a fresh turn raises your hand
 		lastCurrent = state.current;
 		heroPanelMesh.visible = true;
-		heroPanelMesh.position.copy(toWorld(0, 0.92, sliceOff() + 5.15, HUMAN));
+		toWorld(0, 0.92, sliceOff() + 5.15, HUMAN, heroPanelMesh.position);
 		heroPanelMesh.quaternion.copy(camera.quaternion);
 	}
 	const heroTargets = new Set();
@@ -4048,6 +4120,8 @@ window.__game = {
 	get recording() { return Rec.isRecording(); }, // replay smoke: recording fires during live play
 	_replayButtonLabels() { const el = dungeonOverlay('TEST', ''); addReplayButtons(el); const out = [...el.querySelectorAll('button')].map(b => b.textContent); hideDungeonOverlay(); return out; }, // smoke: the Watch/Copy buttons render into a run/post-game overlay
 	get duelDebug() { return duelDebug; }, // relay harness asserts desyncs === 0
+	// perf harness (tools/perf-snap.cjs): live GPU-texture count + face-cache size
+	rendererInfo() { return { textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries, faceCache: faceTexCache.size, entities: entities.size }; },
 	get duel() { return duel; },           // seat/size/aiSeats — the relay-fuzz harness reads these
 	applyGuestIntent,                      // relay-fuzz harness feeds this adversarial guest intents
 	E, AI,

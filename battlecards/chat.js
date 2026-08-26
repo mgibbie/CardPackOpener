@@ -33,8 +33,9 @@ let el = null, timer = null, room = null, specRoom = null, me = null, seen = new
 let primed = true;
 
 const STYLE = `
-#mp-chat{position:fixed;left:10px;bottom:10px;width:290px;max-width:44vw;z-index:9000;
+#mp-chat{position:fixed;left:10px;bottom:66px;width:290px;max-width:44vw;z-index:9000;
  font-family:'m6x11plus',monospace,sans-serif;color:#f2f2f6;pointer-events:none;}
+ /* bottom:66px — the mana HUD owns the bottom-left corner; the chat stacks above it */
 #mp-chat *{box-sizing:border-box;}
 #mp-chat .mc-log{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;max-height:34vh;
  overflow:hidden;pointer-events:none;}  /* click-through: never blocks the game */
@@ -191,6 +192,11 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	// click a chat author's name → their profile popup
 	el.addEventListener('click', e => { const w = e.target.closest('.mc-who[data-user]'); if (w && w.dataset.user) openProfile(w.dataset.user); });
 	document.body.appendChild(el);
+	// phones: the expanded emote tray + input covered the hand cards, so start as
+	// just the 💬 pill (it flashes on new messages; one tap expands)
+	try {
+		if (matchMedia('(pointer: coarse)').matches || innerWidth < 760 || innerHeight < 500) setMin(true);
+	} catch (e) {}
 	// self-rescheduling instead of setInterval: an async tick on a slow link
 	// otherwise stacks overlapping requests (the interval doesn't wait for the
 	// previous poll to finish)

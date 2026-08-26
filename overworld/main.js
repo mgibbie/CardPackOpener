@@ -1,5 +1,5 @@
 // main.js — game loop, input, camera, warps, connection crossing.
-import { World, Player, VIEW_W, VIEW_H, META } from './engine.js';
+import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -50,16 +50,54 @@ let friendGhost = null; // a friend's live sprite while we visit their map
 // the grid visibly crawled while walking. An integer device-pixel scale keeps
 // every game pixel the same size; it also sizes battle/menu text to the screen.
 let SCALE = 3;
+// Portrait battles: battle/pvp scenes are vector-drawn at full canvas
+// resolution, so while one is blocking on a portrait screen the canvas breaks
+// out of the GBA 3:2 frame and fills the viewport (tick() flips this; the
+// scene lays itself out for the tall aspect via battleui.layout). Without it a
+// portrait phone letterboxed the whole battle into a ~220px-tall band with
+// ~20px touch targets and left 70% of the screen black.
+let sceneTall = false;
 const screen = document.getElementById('screen');
 const sctx = screen.getContext('2d', { alpha: false }); // fully repainted opaque every frame
 function fitCanvas() {
 	const dpr = window.devicePixelRatio || 1;
-	const barRoom = document.body.classList.contains('touch') ? 8 : 56; // desktop keeps the caption bar visible
+	if (sceneTall) {
+		const bdpr = Math.min(dpr, 2); // match the battlecards DPR cap — no visible gain past 2
+		const cssW = innerWidth - 4;   // room for the canvas border
+		const cssH = innerHeight - 68; // topbar clearance (flex-end pins the canvas to the bottom)
+		const w = Math.round(cssW * bdpr), h = Math.round(cssH * bdpr);
+		if (screen.width === w && screen.height === h) return;
+		screen.width = w;
+		screen.height = h;
+		screen.style.width = cssW + 'px';
+		screen.style.height = cssH + 'px';
+		sctx.imageSmoothingEnabled = false;
+		return;
+	}
+	const touch = document.body.classList.contains('touch');
+	const barRoom = touch ? 8 : 56; // desktop keeps the caption bar visible
+	// Portrait screens: the GBA 3:2 window left ~70% of a tall phone black.
+	// Keep the 240px logical width (15 metatiles, same integer-scale rules) and
+	// open the VERTICAL view to fill the space between the topbar and the touch
+	// pad, capped at 2x GBA height. body.ow-tall top-anchors the canvas so the
+	// budgeted space is actually where the canvas ends up.
+	const portraitWorld = innerHeight > innerWidth;
+	const availH = (portraitWorld
+		? innerHeight - 54 - (touch ? 206 : barRoom)
+		: innerHeight - barRoom) * dpr;
 	const s = Math.max(2, Math.min(6, Math.floor(Math.min(
-		(innerWidth * 0.98 * dpr) / VIEW_W,
-		((innerHeight - barRoom) * dpr) / VIEW_H,
+		(innerWidth * 0.98 * dpr) / 240,
+		availH / 160,
 	))));
-	if (s === SCALE && screen.width === VIEW_W * s) return;
+	const vh = portraitWorld ? Math.max(160, Math.min(320, Math.floor(availH / s))) : 160;
+	setViewSize(240, vh);
+	document.body.classList.toggle('ow-tall', portraitWorld);
+	if (frame.width !== VIEW_W || frame.height !== VIEW_H) {
+		frame.width = VIEW_W;
+		frame.height = VIEW_H;
+		ctx.imageSmoothingEnabled = false; // resizing resets context state
+	}
+	if (s === SCALE && screen.width === VIEW_W * s && screen.height === VIEW_H * s) return;
 	SCALE = s;
 	screen.width = VIEW_W * s;
 	screen.height = VIEW_H * s;
@@ -67,14 +105,13 @@ function fitCanvas() {
 	screen.style.height = (VIEW_H * s / dpr) + 'px';
 	sctx.imageSmoothingEnabled = false; // resizing resets context state
 }
-fitCanvas();
-let fitT = null; // rotations/keyboard fire resize in bursts — settle first
-addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
-
-const frame = document.createElement('canvas'); // native 240x160
+const frame = document.createElement('canvas'); // native view-sized (240x160 landscape)
 frame.width = VIEW_W; frame.height = VIEW_H;
 const ctx = frame.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;
+fitCanvas();
+let fitT = null; // rotations/keyboard fire resize in bursts — settle first
+addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
 
 const hud = document.getElementById('hud');
 const objectiveEl = document.getElementById('objective');
@@ -1600,10 +1637,12 @@ function pressKey(k) {
 	if (k === 'z' && !loading) interact();
 }
 // any menu that consumes direction presses instead of walking
-const menuBlocking = () => starterMenu.open || dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || factorySpec.blocking || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
-	|| trade.open || trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+// just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
+const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
+	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -1615,7 +1654,7 @@ addEventListener('keydown', e => {
 
 // ---------- touch controls ----------
 // d-pad + A/B + PARTY/BAG buttons drive the same code paths as the keyboard
-if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+if (matchMedia('(pointer: coarse)').matches) { document.body.classList.add('touch'); fitCanvas(); } // re-fit: the touch pad reserves canvas room
 const DPAD = { 't-up': 'up', 't-down': 'down', 't-left': 'left', 't-right': 'right' };
 const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 for (const [id, dir] of Object.entries(DPAD)) {
@@ -3036,6 +3075,17 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
+	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
+	// hides too — battles are entirely tap-driven. Landscape phones get the
+	// full-width canvas + the scaled bar from battleui.layout (aspect > 1.7).
+	const tallNow = (battle.blocking || pvp.blocking)
+		&& (innerHeight > innerWidth || document.body.classList.contains('touch'));
+	if (tallNow !== sceneTall) {
+		sceneTall = tallNow;
+		document.body.classList.toggle('scene-tall', sceneTall);
+		fitCanvas();
+	}
 	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
 	// If a map load hangs (never resolves) or a handler after it wedged, recover.
 	if (loading) {
@@ -3109,6 +3159,13 @@ function tick(now) {
 	}
 	// battle, menus, and dialogs all render at full canvas resolution
 	const SW = screen.width, SH = screen.height;
+	// The full-res menus lay themselves out for the 3:2 frame (unit = H/480
+	// with columns spanning ~720 units). On the tall portrait canvas that unit
+	// would blow past the right edge, so menus get a 3:2 band across the top of
+	// the canvas instead — identical geometry to the pre-tall portrait canvas;
+	// the live world stays visible beneath. Dialogs keep the full height (they
+	// bottom-anchor near the thumbs and are width-capped — dialog.drawHi).
+	const MH = Math.min(SH, Math.round(SW / 1.5));
 	if (battle.blocking) {
 		battle.draw(sctx, SW, SH);
 	} else if (pvp.blocking) {
@@ -3116,29 +3173,36 @@ function tick(now) {
 	} else if (factorySpec.blocking) {
 		factorySpec.draw(sctx, SW, SH);
 	} else {
-		if (partyMenu.open) drawPartyMenu(SW, SH);
-		else if (shopMenu.open) drawShopMenu(SW, SH);
-		else if (bagMenu.open) drawBagMenu(SW, SH);
-		else if (pcMenu.open) drawPcMenu(SW, SH);
-		else if (dexMenu.open) drawDexMenu(SW, SH);
-		else if (townMap.open) drawTownMap(SW, SH);
-		else if (daycareMenu.open) drawDaycare(SW, SH);
-		else if (nameRater.open) drawNameRater(SW, SH);
-		else if (moveShop.open) drawMoveShop(SW, SH);
-		else if (optionsMenu.open) drawOptions(SW, SH);
-		else if (questMenu.open) drawQuest(SW, SH);
-		else if (trainerCard.open) drawTrainerCard(SW, SH);
-		else if (starterMenu.open) drawStarterMenu(SW, SH);
-		else if (ferryMenu.open) drawFerryMenu(SW, SH);
-		else if (portalMenu.open) drawPortalMenu(SW, SH);
-		else if (bpShopMenu.open) drawBpShopMenu(SW, SH);
-		else if (trade.open) drawTrade(SW, SH);
-		else if (playerMenu.open) drawPlayerMenu(SW, SH);
-		else if (deckSelect.open) drawDeckSelect(SW, SH);
-		else if (startMenu.open) drawStartMenu(SW, SH);
-		else if (cardsMenu.open) drawCardsMenu(SW, SH);
-		else if (runMenu.open) drawRunMenu(SW, SH);
-		else if (friendsMenu.open) drawFriendsMenu(SW, SH);
+		// extend the menus' dim backdrop over the world below the band, and hide
+		// the side MENU/PARTY/BAG buttons that would overlap the band's corner
+		document.body.classList.toggle('ow-menu', canvasMenuOpen());
+		if (canvasMenuOpen() && SH > MH) {
+			sctx.fillStyle = 'rgba(10,8,18,0.82)';
+			sctx.fillRect(0, MH, SW, SH - MH);
+		}
+		if (partyMenu.open) drawPartyMenu(SW, MH);
+		else if (shopMenu.open) drawShopMenu(SW, MH);
+		else if (bagMenu.open) drawBagMenu(SW, MH);
+		else if (pcMenu.open) drawPcMenu(SW, MH);
+		else if (dexMenu.open) drawDexMenu(SW, MH);
+		else if (townMap.open) drawTownMap(SW, MH);
+		else if (daycareMenu.open) drawDaycare(SW, MH);
+		else if (nameRater.open) drawNameRater(SW, MH);
+		else if (moveShop.open) drawMoveShop(SW, MH);
+		else if (optionsMenu.open) drawOptions(SW, MH);
+		else if (questMenu.open) drawQuest(SW, MH);
+		else if (trainerCard.open) drawTrainerCard(SW, MH);
+		else if (starterMenu.open) drawStarterMenu(SW, MH);
+		else if (ferryMenu.open) drawFerryMenu(SW, MH);
+		else if (portalMenu.open) drawPortalMenu(SW, MH);
+		else if (bpShopMenu.open) drawBpShopMenu(SW, MH);
+		else if (trade.open) drawTrade(SW, MH);
+		else if (playerMenu.open) drawPlayerMenu(SW, MH);
+		else if (deckSelect.open) drawDeckSelect(SW, MH);
+		else if (startMenu.open) drawStartMenu(SW, MH);
+		else if (cardsMenu.open) drawCardsMenu(SW, MH);
+		else if (runMenu.open) drawRunMenu(SW, MH);
+		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 	// while your run is being spectated, show a live "N watching" badge on top

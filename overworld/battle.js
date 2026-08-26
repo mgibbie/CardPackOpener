@@ -3038,12 +3038,21 @@ export class Battle {
 	// ---------- full-resolution scene (Love2D-style presentation) ----------
 	// sprite base positions + fx offsets; side: 'me' | 'foe'
 	spritePose(a, side, W, H, u, slot = 0) {
-		const bar = 124 * u;
+		const { portrait, compact, barY } = UI.layout(W, H);
 		const off = a.double ? (slot === 0 ? -0.08 : 0.1) * W : 0;
 		const shrink = a.double ? 0.8 : 1;
+		// positions hang off the scene area (0..barY), not the full canvas — on
+		// the classic 3:2 frame barY - 22u equals the old H - 140u exactly, and
+		// it stays correct when the bar grows (portrait deck, landscape phones).
+		// compact (wide-short landscape phone): sprites shrink a notch and move
+		// toward the middle so they clear the corner info panels
 		const base = side === 'foe'
-			? { x: W * 0.70 + off, y: H * 0.42, scale: 3.4 * u * shrink }
-			: { x: W * 0.235 + off, y: H - bar - 16 * u, scale: 4.2 * u * shrink };
+			? (portrait
+				? { x: W * 0.68 + off, y: barY * 0.40, scale: 3.1 * u * shrink }
+				: { x: W * (compact ? 0.62 : 0.70) + off, y: H * 0.42, scale: (compact ? 2.8 : 3.4) * u * shrink })
+			: (portrait
+				? { x: W * 0.26 + off, y: barY - 24 * u, scale: 3.8 * u * shrink }
+				: { x: W * (compact ? 0.30 : 0.235) + off, y: barY - (compact ? 16 : 22) * u, scale: (compact ? 3.2 : 4.2) * u * shrink });
 		let dx = 0, dy = 0, alpha = 1, blink = false, wob = 0;
 		// entry slide on battle start
 		const k = Math.min(1, (a.introT || 0) / 0.6);
@@ -3129,7 +3138,9 @@ export class Battle {
 	draw(ctx, W, H) {
 		const a = this.active;
 		if (!a) return;
-		const u = H / 480;
+		// ub scales the bottom bar only (== u everywhere except wide-short
+		// landscape-phone canvases, where `compact` is also set — battleui.layout)
+		const { portrait, compact, u, ubar: ub, barY, barH } = UI.layout(W, H);
 		this.ui = [];
 		if (a.phase === 'flash') {
 			const k = Math.floor(a.t / 0.1);
@@ -3200,8 +3211,9 @@ export class Battle {
 				{ shownHP: a.foeAllyShownHP, boosts: a.foeAllyBoosts });
 		}
 		if (a.double && a.meAlly && a.meAlly.curHP > 0) {
-			const myY = H - 124 * u - 112 * u;
-			UI.monPanel(ctx, a.meAlly, W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
+			const myY = barY - 118 * u;
+			// portrait has no width for two side-by-side panels — the ally goes left
+			UI.monPanel(ctx, a.meAlly, portrait ? 14 * u : W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
 				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true,
 					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? a.meAlly.level ** 3)) });
 		}
@@ -3209,7 +3221,7 @@ export class Battle {
 			{ shownHP: a.foeShownHP, boosts: a.foeBoosts, abilityName: this.abilityName(a.foe.ability),
 				itemName: a.foe.heldItem ? this.itemName(a.foe) : null });
 		if (a.isTrainer) UI.teamDots(ctx, a.foes, a.foe, 30 * u, 106 * u, u);
-		const meY = H - 124 * u - 112 * u;
+		const meY = barY - 118 * u;
 		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
 			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true,
 				expFrac: this.expFracFor(a.me, a.meShownExp ?? (a.me.exp ?? a.me.level ** 3)), abilityName: this.abilityName(a.me.ability),
@@ -3219,30 +3231,31 @@ export class Battle {
 			W - 14 * u - 10 * u - (a.party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
 
 		// bottom bar
-		const barY = H - 118 * u;
-		UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
+		UI.panel(ctx, 8 * ub, barY, W - 16 * ub, barH - 8 * ub, 10 * ub);
 		const hov = a.hover;
-		const btn = (b, id) => { b.id = id; this.ui.push(b); UI.button(ctx, b, hov === id || b.kbSel, u); };
+		const btn = (b, id) => { b.id = id; this.ui.push(b); UI.button(ctx, b, hov === id || b.kbSel, ub); };
 
-		if (a.phase === 'menu') {
+		if (portrait) {
+			this.drawBarPortrait(ctx, a, W, H, u, barY, btn);
+		} else if (a.phase === 'menu') {
 			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 300 * u).slice(0, 3).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 32 * u + i * 22 * u));
+			ctx.font = `${Math.round(17 * ub)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) =>
+				ctx.fillText(l, 24 * ub, barY + 32 * ub + i * 22 * ub));
 			const labels = ['FIGHT', 'BAG', 'PKMN', 'RUN'];
 			labels.forEach((lab, i) => {
-				const bw = 120 * u, bh = 44 * u;
-				const x = W - 24 * u - (2 - i % 2) * (bw + 8 * u) + 8 * u;
-				const y = barY + 10 * u + Math.floor(i / 2) * (bh + 8 * u);
+				const bw = 120 * ub, bh = 44 * ub;
+				const x = W - 24 * ub - (2 - i % 2) * (bw + 8 * ub) + 8 * ub;
+				const y = barY + 10 * ub + Math.floor(i / 2) * (bh + 8 * ub);
 				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
-			const backW = 86 * u;
-			const bw = (W - 16 * u - backW - 40 * u) / 2, bh = 44 * u;
+			const backW = 86 * ub;
+			const bw = (W - 16 * ub - backW - 40 * ub) / 2, bh = 44 * ub;
 			(a.double ? this.chooser() : a.me).moves.forEach((mv, i) => {
 				const info = this.data.moves[mv.id] || {};
-				const x = 20 * u + (i % 2) * (bw + 8 * u);
-				const y = barY + 9 * u + Math.floor(i / 2) * (bh + 8 * u);
+				const x = 20 * ub + (i % 2) * (bw + 8 * ub);
+				const y = barY + 9 * ub + Math.floor(i / 2) * (bh + 8 * ub);
 				btn({
 					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
@@ -3250,69 +3263,74 @@ export class Battle {
 					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
-			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 9 * u, w: backW, h: 96 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-			ctx.fillText('Attack which foe?', 24 * u, barY + 30 * u);
+			ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
+			ctx.fillText('Attack which foe?', 24 * ub, barY + 30 * ub);
 			this.livingFoes().forEach((f, i) => {
 				btn({
-					x: 24 * u + i * 250 * u, y: barY + 44 * u, w: 236 * u, h: 52 * u,
+					x: 24 * ub + i * 250 * ub, y: barY + 44 * ub, w: 236 * ub, h: 52 * ub,
 					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, kbSel: a.targetIdx === i,
 				}, 'target:' + i);
 			});
-			btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems()
 				: a.party.filter(m => m !== a.me && m.curHP > 0);
 			const idx = isBag ? a.bagIdx : a.switchIdx;
-			const start = Math.max(0, Math.min(idx - 1, rows.length - 3));
-			rows.slice(start, start + 3).forEach((r, i) => {
+			// compact landscape: two 44px thumb rows instead of three 29px ones —
+			// three tall rows can't fit the bar, so the scroll window shrinks
+			const vis = compact ? 2 : 3;
+			const rh = compact ? 44 * ub : 28 * ub;
+			const rstep = compact ? rh + 6 * ub : 32 * ub;
+			const start = Math.max(0, Math.min(idx - 1, rows.length - vis));
+			rows.slice(start, start + vis).forEach((r, i) => {
 				const ri = start + i;
 				const label = isBag ? `${r.name}  x${r.n}` : `${r.name}  Lv${r.level}`;
 				btn({
-					x: 20 * u, y: barY + 9 * u + i * 32 * u, w: W * 0.58, h: 28 * u, label,
+					x: 20 * ub, y: barY + 9 * ub + i * rstep, w: W * 0.58, h: rh, label,
 					right: isBag ? '' : `${r.curHP}/${r.maxHP} HP`, kbSel: ri === idx,
 				}, (isBag ? 'bag:' : 'switch:') + ri);
 			});
 			if (!rows.length) {
 				ctx.fillStyle = UI.C.dim;
-				ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
-				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * u, barY + 34 * u);
+				ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`;
+				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * ub, barY + 34 * ub);
 			}
-			if (rows.length > 3) {
-				btn({ x: W * 0.58 + 32 * u, y: barY + 9 * u, w: 40 * u, h: 44 * u, label: '▲', center: true }, 'scroll:-1');
-				btn({ x: W * 0.58 + 32 * u, y: barY + 61 * u, w: 40 * u, h: 44 * u, label: '▼', center: true }, 'scroll:1');
+			if (rows.length > vis) {
+				btn({ x: W * 0.58 + 32 * ub, y: barY + 9 * ub, w: 40 * ub, h: 44 * ub, label: '▲', center: true }, 'scroll:-1');
+				btn({ x: W * 0.58 + 32 * ub, y: barY + 61 * ub, w: 40 * ub, h: 44 * ub, label: '▼', center: true }, 'scroll:1');
 			}
-			btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'learn') {
 			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
-			ctx.fillText(`Which move should be forgotten for ${a.learn.name}?`, 20 * u, barY + 20 * u);
-			const backW = 96 * u;
-			const bw = (W - 16 * u - backW - 44 * u) / 2, bh = 37 * u;
+			ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`;
+			ctx.fillText(`Which move should be forgotten for ${a.learn.name}?`, 20 * ub, barY + 20 * ub);
+			const backW = 96 * ub;
+			const bw = (W - 16 * ub - backW - 44 * ub) / 2, bh = 37 * ub;
 			a.learn.mon.moves.forEach((mv, i) => {
 				const info = this.data.moves[mv.id] || {};
 				btn({
-					x: 20 * u + (i % 2) * (bw + 8 * u),
-					y: barY + 28 * u + Math.floor(i / 2) * (bh + 7 * u),
+					x: 20 * ub + (i % 2) * (bw + 8 * ub),
+					y: barY + 28 * ub + Math.floor(i / 2) * (bh + 7 * ub),
 					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					type: info.type, kbSel: a.learnIdx === i,
 				}, 'learn:' + i);
 			});
-			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 28 * u, w: backW, h: 2 * bh + 7 * u,
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 28 * ub, w: backW, h: 2 * bh + 7 * ub,
 				label: 'GIVE UP', center: true, kbSel: a.learnIdx === 4 }, 'learn:skip');
 		} else {
 			// message phase (and 'done' fadeout)
 			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 70 * u).slice(0, 3).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
+			ctx.font = `${Math.round(18 * ub)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 70 * ub).slice(0, 3).forEach((l, i) =>
+				ctx.fillText(l, 24 * ub, barY + 34 * ub + i * 24 * ub));
 			if (a.phase === 'msg' && Math.floor(a.t * 2) % 2 === 0) {
 				ctx.fillStyle = UI.C.accent;
-				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-				ctx.fillText('▼', W - 34 * u, barY + 96 * u);
+				ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
+				ctx.fillText('▼', W - 34 * ub, barY + 96 * ub);
 			}
 			this.ui.push({ id: 'advance', x: 0, y: 0, w: W, h: H });
 		}
@@ -3321,6 +3339,95 @@ export class Battle {
 			ctx.fillRect(0, 0, W, H);
 		}
 		ctx.restore();
+	}
+
+	// The portrait control deck: same phases as the landscape bar, laid out as
+	// full-width thumb rows/grids (u is W/512 here — see battleui.layout — so
+	// every button clears the 44 CSS px touch minimum on a 390px-wide phone).
+	drawBarPortrait(ctx, a, W, H, u, barY, btn) {
+		const pad = 14 * u, gap = 8 * u;
+		const fullW = W - 2 * pad;
+		if (a.phase === 'menu') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(19 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 2).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 30 * u + i * 24 * u));
+			const bw = (fullW - 10 * u) / 2, bh = 82 * u;
+			['FIGHT', 'BAG', 'PKMN', 'RUN'].forEach((lab, i) => {
+				btn({ x: pad + (i % 2) * (bw + 10 * u), y: barY + 74 * u + Math.floor(i / 2) * (bh + 10 * u),
+					w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+			});
+		} else if (a.phase === 'moves') {
+			const bw = (fullW - gap) / 2, bh = 72 * u;
+			(a.double ? this.chooser() : a.me).moves.forEach((mv, i) => {
+				const info = this.data.moves[mv.id] || {};
+				btn({
+					x: pad + (i % 2) * (bw + gap), y: barY + 12 * u + Math.floor(i / 2) * (bh + gap),
+					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
+					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
+					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
+					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
+				}, 'move:' + i);
+			});
+			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'target') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+			ctx.fillText('Attack which foe?', 24 * u, barY + 28 * u);
+			this.livingFoes().forEach((f, i) => {
+				btn({ x: pad, y: barY + 42 * u + i * (64 * u + gap), w: fullW, h: 64 * u,
+					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, kbSel: a.targetIdx === i }, 'target:' + i);
+			});
+			btn({ x: pad, y: barY + 196 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'bag' || a.phase === 'switch') {
+			const isBag = a.phase === 'bag';
+			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m.curHP > 0);
+			const idx = isBag ? a.bagIdx : a.switchIdx;
+			const start = Math.max(0, Math.min(idx - 1, rows.length - 3));
+			const arrows = rows.length > 3;
+			const rw = fullW - (arrows ? 72 * u : 0);
+			rows.slice(start, start + 3).forEach((r, i) => {
+				const ri = start + i;
+				const label = isBag ? `${r.name}  x${r.n}` : `${r.name}  Lv${r.level}`;
+				btn({ x: pad, y: barY + 12 * u + i * (59 * u + 6 * u), w: rw, h: 59 * u, label,
+					right: isBag ? '' : `${r.curHP}/${r.maxHP} HP`, kbSel: ri === idx }, (isBag ? 'bag:' : 'switch:') + ri);
+			});
+			if (!rows.length) {
+				ctx.fillStyle = UI.C.dim;
+				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * u, barY + 40 * u);
+			}
+			if (arrows) {
+				btn({ x: W - pad - 64 * u, y: barY + 12 * u, w: 64 * u, h: 90 * u, label: '▲', center: true }, 'scroll:-1');
+				btn({ x: W - pad - 64 * u, y: barY + 108 * u, w: 64 * u, h: 90 * u, label: '▼', center: true }, 'scroll:1');
+			}
+			btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true }, 'back');
+		} else if (a.phase === 'learn') {
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, `Which move should be forgotten for ${a.learn.name}?`, fullW).slice(0, 2).forEach((l, i) =>
+				ctx.fillText(l, 20 * u, barY + 22 * u + i * 17 * u));
+			const bw = (fullW - gap) / 2, bh = 54 * u;
+			a.learn.mon.moves.forEach((mv, i) => {
+				const info = this.data.moves[mv.id] || {};
+				btn({ x: pad + (i % 2) * (bw + gap), y: barY + 58 * u + Math.floor(i / 2) * (bh + 7 * u),
+					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16), type: info.type, kbSel: a.learnIdx === i }, 'learn:' + i);
+			});
+			btn({ x: pad, y: barY + 58 * u + 2 * (bh + 7 * u) + 4 * u, w: fullW, h: 54 * u,
+				label: 'GIVE UP', center: true, kbSel: a.learnIdx === 4 }, 'learn:skip');
+		} else {
+			// message phase (and 'done' fadeout)
+			ctx.fillStyle = UI.C.text;
+			ctx.font = `${Math.round(20 * u)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 4).forEach((l, i) =>
+				ctx.fillText(l, 24 * u, barY + 38 * u + i * 27 * u));
+			if (a.phase === 'msg' && Math.floor(a.t * 2) % 2 === 0) {
+				ctx.fillStyle = UI.C.accent;
+				ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+				ctx.fillText('▼', W - 38 * u, H - 24 * u);
+			}
+			this.ui.push({ id: 'advance', x: 0, y: 0, w: W, h: H });
+		}
 	}
 
 	// ---------- pointer input (tap/click + hover) ----------

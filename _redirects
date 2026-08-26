@@ -1,7 +1,9 @@
 # Large asset folders live in their own Cloudflare Pages projects so the main
 # project stays well under the 20,000-file deployment limit. Served cross-origin
 # with CORS (Access-Control-Allow-Origin: *) so canvas draws stay untainted.
-/battlecards/art/* https://magepunk-cardart.pages.dev/:splat 302
-/overworld/data/* https://magepunk-owdata.pages.dev/:splat 302
-/designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 302
+# 301 (not 302): browsers cache permanent redirects, so every repeat asset
+# load skips the redirect round-trip instead of paying it forever.
+/battlecards/art/* https://magepunk-cardart.pages.dev/:splat 301
+/overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
+/designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
 # Design Wiki and Learn Magepunk are served directly from the main Cloudflare project.
