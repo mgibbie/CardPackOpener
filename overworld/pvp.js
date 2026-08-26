@@ -36,30 +36,43 @@ export class Pvp {
 	bottomSide() { return this.active.spectator ? 0 : this.active.mySide; }
 
 	async loadSprites(match) {
+		// all sprites in ONE parallel round — the old nested for/await chain was up
+		// to 24 sequential cross-origin fetches before the first battle frame drew
+		const jobs = [];
 		for (const sd of match.sides) for (const m of sd.party) {
-			if (m.sprite && !this.sprites.has(m.sprite)) {
-				const img = await getImage('data/pokemon/' + m.sprite).catch(() => null);
-				this.sprites.set(m.sprite, img);
-				// a back sprite for the near mon
-				const back = m.sprite.replace(/\.(png|gif)$/, '-b.$1');
-				if (!this.sprites.has(back)) this.sprites.set(back, await getImage('data/pokemon/' + back).catch(() => img));
-			}
+			if (!m.sprite || this.sprites.has(m.sprite)) continue;
+			this.sprites.set(m.sprite, null); // claim so duplicate mons don't double-fetch
+			jobs.push(getImage('data/pokemon/' + m.sprite).catch(() => null)
+				.then(img => {
+					this.sprites.set(m.sprite, img);
+					const back = m.sprite.replace(/\.(png|gif)$/, '-b.$1');
+					if (!this.sprites.has(back)) {
+						return getImage('data/pokemon/' + back).catch(() => img)
+							.then(bimg => { this.sprites.set(back, bimg); });
+					}
+				}));
 		}
+		await Promise.all(jobs);
 	}
 
 	// ---------- networking ----------
 	async pollLoop() {
+		let errStreak = 0;
 		while (this.active && this.active.polling) {
 			// adaptive: poll fast while waiting on the opponent / spectating,
-			// relax while you're the one deciding in a menu
+			// relax while you're the one deciding in a menu — and while the client
+			// is busy ANIMATING the last update (nothing actionable can land then)
 			const a = this.active;
-			const fast = a.spectator || a.phase === 'wait' || a.phase === 'anim';
-			await new Promise(r => setTimeout(r, fast ? 400 : 1100));
+			const fast = a.spectator || a.phase === 'wait';
+			const base = fast ? 400 : a.phase === 'anim' ? 1500 : 1100;
+			// exponential backoff on errors so a down server isn't hammered at 2.5Hz
+			await new Promise(r => setTimeout(r, Math.min(8000, base * (1 << Math.min(errStreak, 4)))));
 			if (!this.active || !this.active.polling) break;
 			try {
 				const data = await MP.call('match', { id: this.active.matchId });
 				if (data.match) this.ingest(data.match);
-			} catch (e) {}
+				errStreak = 0;
+			} catch (e) { errStreak++; }
 		}
 	}
 	ingest(match) {
@@ -219,9 +232,13 @@ export class Pvp {
 		if (!a) return;
 		const u = H / 480;
 		a.ui = [];
-		const g = ctx.createLinearGradient(0, 0, 0, H);
-		g.addColorStop(0, '#7db8e0'); g.addColorStop(0.55, '#b8d8b8'); g.addColorStop(1, '#5f8f5f');
-		ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+		// static backdrop — cache the gradient instead of rebuilding it per frame
+		if (!this._bg || this._bgH !== H) {
+			this._bg = ctx.createLinearGradient(0, 0, 0, H);
+			this._bg.addColorStop(0, '#7db8e0'); this._bg.addColorStop(0.55, '#b8d8b8'); this._bg.addColorStop(1, '#5f8f5f');
+			this._bgH = H;
+		}
+		ctx.fillStyle = this._bg; ctx.fillRect(0, 0, W, H);
 
 		const bottom = this.bottomSide(), top = 1 - bottom;
 		this.drawMon(ctx, W, H, u, top, false);

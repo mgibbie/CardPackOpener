@@ -69,17 +69,23 @@ async function loadTilesetsFor(layout) {
 
 	async function side(name, isPrimary) {
 		if (!name) return null;
-		const img = await getImage(tilesetPng(name, game)).catch(() => null);
+		// the PNG and its metatile JSON don't depend on each other — fetch both at
+		// once (each request also pays the _redirects hop, so serial hops add up)
+		const [img, meta] = await Promise.all([
+			getImage(tilesetPng(name, game)).catch(() => null),
+			getJSON(metatileJson(name, isPrimary, game)).catch(() => null), // some primaries have none
+		]);
 		if (!img) return null;
 		const bandH = img.height / 16;                       // 16 palette bands
 		const tilesPerBand = (bandH / TILE) * (img.width / TILE);
-		let meta = null;
-		try { meta = await getJSON(metatileJson(name, isPrimary, game)); } catch (e) { /* some primaries have none */ }
 		return { img, bandH, tilesPerBand, metatiles: meta?.metatiles || null, attributes: meta?.attributes || null };
 	}
 
-	ts.primary = await side(layout.primary_tileset, true);
-	ts.secondary = await side(layout.secondary_tileset, false);
+	// primary and secondary are independent too
+	[ts.primary, ts.secondary] = await Promise.all([
+		side(layout.primary_tileset, true),
+		side(layout.secondary_tileset, false),
+	]);
 	// split threshold = primary tile capacity (NOT #primaryMetatiles) — MapShared invariant
 	ts.primaryTileCount = ts.primary ? ts.primary.tilesPerBand : 640;
 	ts.primaryMetatileCount = ts.primaryTileCount;
@@ -192,6 +198,11 @@ export class World {
 		this.connections = {};  // dir -> { map, layout, ts, canvases, offset, name }
 		this.warps = [];
 		this.lastWarpSource = null; // for Crystal -1 back-warps
+		// fully-fetched-and-rendered bundles by map name (LRU). Crossing a route
+		// edge used to refetch + re-render the very map you were just standing on
+		// (a multi-second frozen screen on phones); with this, walking back and
+		// forth between maps is instant after the first visit.
+		this._rendered = new Map();
 	}
 
 	async init() {
@@ -207,10 +218,25 @@ export class World {
 		return { name, map, layout, ts };
 	}
 
+	// fetch + render one map, through the LRU cache (8 maps ≈ the current map,
+	// its neighbours, and where you just came from; canvases are read-only so
+	// sharing them between `current` and `connections` entries is safe)
+	async _renderedBundle(name) {
+		let b = this._rendered.get(name);
+		if (b) {
+			this._rendered.delete(name); // refresh recency
+		} else {
+			b = await this.loadBundle(name);
+			b.canvases = renderSection(b.layout, b.ts);
+			b.borderCv = renderBorder(b.layout, b.ts);
+		}
+		this._rendered.set(name, b);
+		while (this._rendered.size > 8) this._rendered.delete(this._rendered.keys().next().value);
+		return b;
+	}
+
 	async load(name) {
-		const b = await this.loadBundle(name);
-		b.canvases = renderSection(b.layout, b.ts);
-		b.borderCv = renderBorder(b.layout, b.ts);
+		const b = await this._renderedBundle(name);
 		this.current = b;
 		this.warps = (b.map.warp_events || []).map(w => ({ ...w, x: +w.x, y: +w.y }));
 		this.connections = {};
@@ -219,8 +245,7 @@ export class World {
 			const file = this.fileFor(c.map);
 			if (!file) return;
 			try {
-				const cb = await this.loadBundle(file);
-				cb.canvases = renderSection(cb.layout, cb.ts);
+				const cb = await this._renderedBundle(file);
 				this.connections[normDir(c.direction)] = { ...cb, offset: c.offset || 0 };
 			} catch (e) { console.warn('connection failed', c.map, e); }
 		}));
@@ -343,9 +368,11 @@ export class World {
 				}
 			}
 		}
-		// main map
+		// main map — blit only the visible 240x160 window instead of submitting the
+		// whole (possibly 640x1920+) map canvas and letting the driver clip it;
+		// with 4 connections that was up to 10 full-size texture binds per frame
 		const cv = layer === 'bottom' ? this.current.canvases.bottom : this.current.canvases.top;
-		ctx.drawImage(cv, -camX, -camY);
+		blitVisible(ctx, cv, -camX, -camY);
 		// deep water you can DIVE beneath reads a touch darker + shimmers, so the
 		// dive-able sea is visually distinct from ordinary water (see isDiveMap)
 		if (layer === 'bottom' && this.isDiveMap()) {
@@ -354,8 +381,10 @@ export class World {
 				for (let tx = startX; tx <= endX; tx++) {
 					if (tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) continue;
 					if (!this.isSurfable(tx, ty)) continue;
+					// quantized alpha from a lookup table: the old per-tile template
+					// literal parsed ~200 fresh fillStyle strings every frame
 					const a = 0.15 + 0.035 * Math.sin(t * 1.3 + (tx + ty) * 0.35);
-					ctx.fillStyle = `rgba(6, 22, 66, ${a})`;
+					ctx.fillStyle = DIVE_TINTS[Math.max(0, Math.min(DIVE_TINTS.length - 1, Math.round((a - 0.115) / 0.07 * (DIVE_TINTS.length - 1))))];
 					ctx.fillRect(tx * META - camX, ty * META - camY, META, META);
 				}
 			}
@@ -365,9 +394,19 @@ export class World {
 			const conn = this.connections[dir];
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const ccv = layer === 'bottom' ? conn.canvases.bottom : conn.canvases.top;
-			ctx.drawImage(ccv, ox * META - camX, oy * META - camY);
+			blitVisible(ctx, ccv, ox * META - camX, oy * META - camY);
 		}
 	}
+}
+
+// draw only the part of `cv` that overlaps the 240x160 viewport (cv's top-left
+// sits at screen-space offX/offY)
+const DIVE_TINTS = Array.from({ length: 13 }, (_, i) => `rgba(6, 22, 66, ${(0.115 + i * 0.07 / 12).toFixed(3)})`);
+function blitVisible(ctx, cv, offX, offY) {
+	const sx = Math.max(0, -offX), sy = Math.max(0, -offY);
+	const dx = Math.max(0, offX), dy = Math.max(0, offY);
+	const w = Math.min(cv.width - sx, VIEW_W - dx), h = Math.min(cv.height - sy, VIEW_H - dy);
+	if (w > 0 && h > 0) ctx.drawImage(cv, sx, sy, w, h, dx, dy, w, h);
 }
 
 // ---------- player ----------
@@ -455,12 +494,23 @@ export class Player {
 			const pace = this.biking ? 2.2 : this.run ? 1.85 : 1;
 			this.moveT += (SPEED * pace * dt) / this.moveDist;
 			if (this.moveT >= 1) {
+				// carry the sub-frame overshoot into the next tile: discarding it made
+				// walk speed display-Hz dependent (a 120Hz phone walked ~3% faster)
+				const spill = Math.min(this.moveT - 1, 0.5);
+				const prevDist = this.moveDist;
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
 				if (this.surfing && !this.world.isSurfable(this.tx, this.ty)) this.surfing = false;
 				this.onArrive?.();
 				// keep walking if a key is held
-				if (held) this.tryMove(held);
+				if (held) {
+					this.tryMove(held);
+					if (this.moving && spill > 0) {
+						this.moveT = spill * prevDist / this.moveDist;
+						this.px = this.moveFrom[0] + (this.moveTo[0] - this.moveFrom[0]) * this.moveT;
+						this.py = this.moveFrom[1] + (this.moveTo[1] - this.moveFrom[1]) * this.moveT;
+					}
+				}
 			} else {
 				this.px = this.moveFrom[0] + (this.moveTo[0] - this.moveFrom[0]) * this.moveT;
 				this.py = this.moveFrom[1] + (this.moveTo[1] - this.moveFrom[1]) * this.moveT;
