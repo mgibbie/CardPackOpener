@@ -97,13 +97,20 @@ async function select(def) {
 	repaint();
 }
 
+// Cap the rendered rows: the full set is 11.6k, and building that many DOM
+// nodes froze phones for seconds (which also made the search box feel dead).
+const LIST_CAP = 400;
 function buildList(filter = '') {
 	const q = filter.trim().toLowerCase();
 	const list = $('list');
 	list.innerHTML = '';
 	const c = cleaned();
+	let shown = 0, matched = 0;
 	for (const def of cards) {
 		if (q && !def.name.toLowerCase().includes(q) && !def.id.includes(q)) continue;
+		matched++;
+		if (shown >= LIST_CAP) continue;
+		shown++;
 		const noart = !hasArt(def.id) && !pendingArt.has(def.id);
 		const row = document.createElement('div');
 		row.className = 'row' + (sel?.id === def.id ? ' sel' : '') + (noart ? ' noart' : '');
@@ -111,6 +118,13 @@ function buildList(filter = '') {
 		row.innerHTML = `<span class="tuned">${c[def.id] ? '●' : ''}</span> ${def.name} <div class="id">${def.id} · ${def.type}</div>`;
 		row.addEventListener('click', () => select(def));
 		list.appendChild(row);
+	}
+	if (matched > shown) {
+		const more = document.createElement('div');
+		more.className = 'row';
+		more.style.opacity = '0.6';
+		more.textContent = `…${matched - shown} more — type to narrow`;
+		list.appendChild(more);
 	}
 }
 
@@ -145,15 +159,26 @@ function wirePreview(canvas) {
 
 // ---------- boot ----------
 (async () => {
+	// wire the UI FIRST so the page is responsive (and failures visible) while
+	// the 6.6MB card DB + art index stream in — on phones that load takes a
+	// while, and a dead search box reads as "broken"
+	$('search').addEventListener('input', () => buildList($('search').value));
+	$('msg').textContent = 'checking access…';
 	if (!await requireOwner()) return;
-	const raw = await fetch('cards.json').then(r => r.json());
-	const all = Array.isArray(raw) ? raw : raw.cards;
-	await artIndexReady;
-	cards = all.filter(c => c && c.id)
-		.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+	$('msg').textContent = 'loading the card database…';
+	try {
+		const raw = await fetch('cards.json').then(r => r.json());
+		const all = Array.isArray(raw) ? raw : raw.cards;
+		await artIndexReady;
+		cards = all.filter(c => c && c.id)
+			.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+	} catch (e) {
+		$('msg').textContent = 'failed to load the card database: ' + String(e.message || e).slice(0, 80);
+		return;
+	}
 	const withArt = cards.filter(c => hasArt(c.id)).length;
 	$('msg').textContent = `${cards.length} cards (${withArt} with art)`;
-	buildList();
+	buildList($('search').value);
 	wirePreview($('face'));
 	wirePreview($('token'));
 
@@ -164,8 +189,6 @@ function wirePreview(canvas) {
 		cv.addEventListener('dragover', e => e.preventDefault());
 		cv.addEventListener('drop', e => { e.preventDefault(); replaceArt(e.dataTransfer.files?.[0]); });
 	}
-
-	$('search').addEventListener('input', () => buildList($('search').value));
 	$('zoom').addEventListener('input', () => { if (sel) { entry(sel.id).z = +$('zoom').value; repaint(); } });
 	const step = dir => {
 		const i = cards.findIndex(cd => cd.id === sel?.id);
