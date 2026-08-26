@@ -6,6 +6,7 @@
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
 	<link rel="dns-prefetch" href="https://magepunk-cardart.pages.dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
 	<link rel="icon" href="data:,">
 	<meta name="description" content="Browse the full Magepunk Battlecards gallery — every card in the game, searchable by class, cost, and keyword.">
 	<link rel="canonical" href="https://www.michaelgibalerio.com/battlecards/viewer.html">
@@ -27,7 +28,8 @@
 			background: radial-gradient(ellipse at 50% -10%, #241a3e 0%, #0d0a14 60%);
 			display: flex; flex-direction: column;
 		}
-		#topbar { padding: 12px 20px 4px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+		/* right padding clears the floating home/inbox cluster (site/topbar.js compact) */
+		#topbar { padding: 12px 104px 4px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 		#topbar h1 { font-size: 17px; letter-spacing: 1px; margin: 0; }
 		#topbar a { color: #9d8fd4; font-size: 13px; text-decoration: none; }
 		#topbar a:hover { text-decoration: underline; }
@@ -127,7 +129,8 @@
 
 		/* phones: 2x3 grid, stacked zoom, bigger touch targets */
 		@media (max-width: 760px) {
-			#topbar { padding: 8px 10px 2px; gap: 10px; }
+			/* left clears the fixed Back button (nav.js), right clears the floating topbar cluster */
+			#topbar { padding: 8px 104px 2px 96px; gap: 10px; }
 			#topbar h1 { font-size: 14px; }
 			#filters { padding: 4px 10px 6px; gap: 6px; }
 			#search { width: 130px; font-size: 12px; padding: 6px 9px; }
@@ -202,6 +205,7 @@
 	<!-- bump ?v=… (here and on the ./cardart.js / ./keywords.js imports in
 	     viewer.js) on a release to push fresh gallery code+data to all clients -->
 	<script type="module" src="viewer.js?v=20261071a"></script>
+	<script type="module" src="/site/topbar.js"></script>
 	<script type="module" src="nav.js?v=20260848a"></script>
 </body>
 </html>

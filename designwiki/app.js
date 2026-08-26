@@ -1457,11 +1457,16 @@ async function designCardDetail(slug) {
 
 function notFound() { content.replaceChildren(h('h1', null, 'Not found')); }
 function home() {
-  content.replaceChildren(h('h1', null, 'Magepunk66 Design Wiki'),
-    h('p', null, 'Reference for Pokémon, moves, abilities, and per-region encounters & trainers.'),
-    h('p', { class: 'muted' }, Object.keys(DB.pokemon).length + ' Pokémon · ' +
-      Object.keys(DB.moves).length + ' moves · ' + Object.keys(DB.abilities).length + ' abilities'),
-    h('p', { class: 'muted' }, 'To change content, edit the JSON files in designwiki/data/ in the repository.'));
+  const counts = h('p', { class: 'muted' }, Object.keys(DB.pokemon).length + ' Pokémon · ' +
+    Object.keys(DB.moves).length + ' moves · ' + Object.keys(DB.abilities).length + ' abilities');
+  content.replaceChildren(h('h1', null, 'Magepunk Design Wiki'),
+    h('p', null, 'The reference for everything in Magepunk — the ', h('a', { href: '#/pokemon' }, 'Pokémon side'),
+      ' (Pokédex, moves, abilities, per-region encounters & trainers) and the ', h('a', { href: '#/cards' }, 'Battlecards side'),
+      ' (the full card gallery, land pools, and every run mode from the Dungeon to the Lorequests).'),
+    counts,
+    h('p', null, h('a', { href: '/' }, '← Back to michaelgibalerio.com')));
+  // the card count loads lazily — cards.json is heavy and the home page shouldn't wait on it
+  loadCards().then(cards => { counts.append(' · ' + cards.filter(c => c.collectible !== false).length + ' collectible cards'); }).catch(() => {});
 }
 
 // ---- Land Pools: a tier-grouped index of every land + its themed card set ----
@@ -2047,6 +2052,35 @@ async function multiverseDeckDetail(slug) {
     cardSizeControl(grid), grid);
 }
 
+// ---- Arena: the pure-draft run (rules page; heroes/pool shared with Duels) ----
+async function arenaView() {
+  content.replaceChildren(h('p', { class: 'muted' }, 'Loading arena…'));
+  let Du, classes;
+  try { [Du, classes] = await Promise.all([loadDuels(), loadClasses()]); }
+  catch (e) { return content.replaceChildren(h('h1', null, 'Arena'), h('p', { class: 'muted' }, 'Could not load the duels data.')); }
+  const clsName = id => (classes.find(c => c.id === id)?.name) || titleCase(id);
+  const heroCards = Du.HEROES.map(hero => h('a', {
+    class: 'wiki-card', href: '#/duels/hero/' + hero.id, title: hero.flavor,
+    style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
+  },
+    duelsPortrait(hero.id, 88),
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classChoicesOf(hero)
+      ? `choose 1 of ${Du.classChoicesOf(hero).length} classes`
+      : Du.classesOf(hero).map(clsName).join(' / '))));
+  content.replaceChildren(
+    h('h1', null, 'Arena'),
+    h('p', null, 'The pure draft gauntlet: pick a hero, draft a 30-card deck one pick at a time (1 of 3 per pick, ',
+      'rarity-weighted from your classes), then run it against auto-drafted rivals until 3 losses. ',
+      '12 wins is a flawless run.'),
+    h('p', { class: 'muted' }, 'Unlike ', h('a', { href: '#/duels' }, 'Duels'),
+      ', your deck is FIXED at the drafted 30 — no loot buckets, treasures, or passives between fights. ',
+      'Rivals draft the same way you do, so every game is decks-even. Runs post to the in-game leaderboard.'),
+    h('h2', null, 'Heroes ', h('span', { class: 'num' }, '(' + Du.HEROES.length + ')')),
+    h('p', { class: 'muted' }, 'The hero roster and draft pool are shared with Duels — hero pages list each one’s powers and classes.'),
+    h('div', { style: 'display:flex;flex-wrap:wrap;gap:14px;' }, ...heroCards));
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -2073,6 +2107,7 @@ function route() {
   if (section === 'final-fantasy') return id ? finalFantasyDeckDetail(id) : finalFantasyView();
   if (section === 'multiverse') return id ? multiverseDeckDetail(id) : multiverseView();
   if (section === 'tempt') return temptView();
+  if (section === 'arena') return arenaView();
   if (section === 'missing-art') return missingArtView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);

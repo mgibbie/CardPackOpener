@@ -574,7 +574,7 @@ async function addFriend(raw) {
 // Overworld heartbeat / the card client's publish-cardstate):
 //   battling:<matchId> → in a Pokémon battle (spectate via the Overworld)
 //   card:<mode>        → in a card duel / run (spectate on the Battlecards page)
-const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run' };
+const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
 	const st = f.status || '';
 	if (st.startsWith('battling:')) return { live: true, kind: 'pokemon', matchId: st.slice('battling:'.length), label: 'in a Pokémon battle' };

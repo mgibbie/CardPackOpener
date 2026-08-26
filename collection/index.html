@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mp-topbar" content="compact">
 <title>Magepunk — Your Collection</title>
 <link rel="canonical" href="https://www.michaelgibalerio.com/collection/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
@@ -16,6 +17,9 @@
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
 </script>
 <style>
+	/* the page keeps its own single header; the floating compact topbar cluster
+	   (site/topbar.js) sits top-right, so clear room for it */
+	header { padding-right: 104px; }
 	header .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
 	header .right a { color: #ffe9a8; font-weight: 600; }
 	#content { max-width: 1180px; margin: 0 auto; }

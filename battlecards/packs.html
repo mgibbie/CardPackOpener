@@ -5,7 +5,8 @@
 	<meta charset="UTF-8">
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
 	<link rel="dns-prefetch" href="https://magepunk-cardart.pages.dev">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
 	<link rel="icon" href="data:,">
 	<meta name="description" content="Crack open 3D card packs and spend your gold to grow your Magepunk Battlecards collection.">
 	<link rel="canonical" href="https://www.michaelgibalerio.com/battlecards/packs.html">
@@ -25,11 +26,14 @@
 		html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0b16; font-family: 'Segoe UI', sans-serif; user-select: none; }
 		#scene { position: fixed; inset: 0; }
 		.hud { position: fixed; color: #e8e2f4; text-shadow: 0 2px 6px #000; pointer-events: none; }
-		#title { top: 12px; left: 18px; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
-		#title a { color: #9d8fd4; font-weight: 400; font-size: 13px; text-decoration: none; margin-left: 12px; pointer-events: auto; }
+		#title { top: max(12px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); font-size: 17px; font-weight: 700; letter-spacing: 1px; max-width: calc(100vw - 130px); }
+		#title a { color: #9d8fd4; font-weight: 400; font-size: 13px; text-decoration: none; margin-left: 12px; pointer-events: auto; display: inline-block; }
 		#title a:hover { text-decoration: underline; }
-		#gold { top: 14px; right: 20px; font-size: 16px; font-weight: 700; color: #ffd25f; }
-		#hint { bottom: 22px; left: 50%; transform: translateX(-50%); font-size: 15px; color: #c9b8ff; }
+		/* right inset clears the floating home/inbox cluster (site/topbar.js compact) */
+		#gold { top: max(20px, env(safe-area-inset-top) + 8px); right: max(116px, env(safe-area-inset-right) + 106px); font-size: 16px; font-weight: 700; color: #ffd25f; }
+		/* narrow screens: the wrapped title needs the top row — drop the gold count below the cluster */
+		@media (max-width: 700px) { #gold { top: max(60px, env(safe-area-inset-top) + 48px); right: max(14px, env(safe-area-inset-right) + 4px); } }
+		#hint { bottom: max(22px, env(safe-area-inset-bottom) + 8px); left: 50%; transform: translateX(-50%); font-size: 15px; color: #c9b8ff; width: max-content; max-width: 94vw; text-align: center; }
 		#toast {
 			top: 18%; left: 50%; transform: translateX(-50%);
 			font-size: 30px; font-weight: 900; letter-spacing: 2px; color: #ffd25f;
@@ -37,7 +41,7 @@
 			opacity: 0; transition: opacity 0.3s;
 		}
 		#next-btn {
-			position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+			position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); left: 50%; transform: translateX(-50%);
 			padding: 12px 26px; border-radius: 10px; border: 1px solid #6a5a9a;
 			background: linear-gradient(180deg, #4d3c80, #33285c); color: #f2ecff;
 			font: 600 16px 'Segoe UI', sans-serif; letter-spacing: 0.5px; cursor: pointer;
@@ -58,5 +62,6 @@
 	<button id="next-btn" hidden>Open another pack</button>
 	<script type="module" src="packs.js"></script>
 	<script type="module" src="nav.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
 </body>
 </html>

@@ -11,8 +11,8 @@
 		#wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
 		#board { max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); background: #1a1626; }
 		#bar { display: flex; gap: 10px; align-items: center; }
-		button { background: #2a2440; color: #e8e0d0; border: 1px solid #6a5f8a; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px; }
-		button:hover { background: #3a3258; }
+		button, #bar a { background: #2a2440; color: #e8e0d0; border: 1px solid #6a5f8a; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px; text-decoration: none; }
+		button:hover, #bar a:hover { background: #3a3258; }
 		h1 { font-size: 18px; letter-spacing: 2px; margin: 0; opacity: 0.85; }
 		.hint { font-size: 12px; opacity: 0.6; text-align: center; max-width: 640px; }
 	</style>
@@ -21,7 +21,7 @@
 	<div id="wrap">
 		<h1>POKéCHESS</h1>
 		<canvas id="board"></canvas>
-		<div id="bar"><button id="leave">← Back to overworld</button></div>
+		<div id="bar"><button id="leave">← Back to overworld</button><a href="/" title="Magepunk home">⚙️ Home</a></div>
 		<div class="hint">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.</div>
 	</div>
 	<script type="module" src="./pokechess/game.js"></script>
