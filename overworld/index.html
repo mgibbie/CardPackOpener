@@ -46,6 +46,9 @@
 		#t-party { right: 12px; top: max(104px, calc(env(safe-area-inset-top, 0px) + 94px)); width: 62px; height: 40px; font-size: 13px; }
 		#t-bag   { right: 12px; top: max(150px, calc(env(safe-area-inset-top, 0px) + 140px)); width: 62px; height: 40px; font-size: 13px; }
 		body.touch #bar { display: none; }
+		/* the shared battle chat (chat.js) docks bottom-left, where the touch
+		   d-pad lives on this page — lift it clear */
+		body.touch #mp-chat { bottom: 205px; }
 		/* portrait battle/pvp: main.js grows the canvas to fill the screen
 		   (body.scene-tall); the on-canvas buttons are thumb-sized so the
 		   virtual pad is redundant — hide it and pin the canvas under the topbar */

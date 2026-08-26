@@ -39,9 +39,13 @@
 		.panel .power-orb.usable { box-shadow: 0 0 10px rgba(87,227,137,0.9); }
 		.panel .power-orb.spent { filter: grayscale(1) brightness(0.6); cursor: default; }
 
-		/* small projected panels, one per opponent, centered on their slice */
+		/* small projected panels, one per opponent, centered on their slice.
+		   width: max-content — a fixed element's auto width shrinks to fit the
+		   space right of its `left`, so panels near the viewport edge wrapped
+		   their text into a tall column; max-width caps them on tiny screens
+		   (positionPanels clamps them fully on-screen) */
 		.panel.foe-sm {
-			left: auto; width: auto; min-width: 118px; padding: 6px 10px;
+			left: auto; width: max-content; max-width: min(46vw, 250px); min-width: 118px; padding: 6px 10px;
 			transform: translate(-50%, -100%);
 		}
 		.panel.foe-sm .life { font-size: 21px; }
@@ -207,7 +211,7 @@
 		@media (max-width: 760px) { #dungeon-panel { width: 128px; left: 6px; padding: 5px; } #dungeon-panel .dp-title { font-size: 9px; } }
 
 		#log {
-			position: fixed; right: 18px; top: 52px; width: 250px; font-size: 12.5px; color: #b9b0d4;
+			position: fixed; right: 18px; top: 130px; width: 250px; font-size: 12.5px; color: #b9b0d4;
 			text-shadow: 0 1px 4px #000; pointer-events: none; line-height: 1.55;
 		}
 		#hint {
@@ -225,22 +229,24 @@
 			padding: 14px 34px; font-size: 19px; font-weight: 700;
 			background: #6b4fd4; color: #fff; border: none; border-radius: 12px; cursor: pointer;
 		}
+		/* the site topbar's gear/bell cluster owns the top-right ~52px — the
+		   concede/log stack starts below it, and the inline log below them */
 		#concede {
-			position: fixed; right: 12px; top: 44px; z-index: 40;
+			position: fixed; right: 12px; top: 60px; top: max(60px, calc(env(safe-area-inset-top) + 50px)); z-index: 40;
 			padding: 5px 12px; font-size: 12px; letter-spacing: 1px;
 			background: #3a2f57; color: #cbb8e8; border: 1px solid #5a4a80;
 			border-radius: 8px; cursor: pointer; opacity: 0.8;
 		}
 		#concede:hover { opacity: 1; }
 		#log-btn {
-			position: fixed; right: 12px; top: 76px; z-index: 40;
+			position: fixed; right: 12px; top: 94px; top: max(94px, calc(env(safe-area-inset-top) + 84px)); z-index: 40;
 			padding: 5px 10px; font-size: 12px; letter-spacing: .5px;
 			background: #3a2f57; color: #cbb8e8; border: 1px solid #5a4a80;
 			border-radius: 8px; cursor: pointer; opacity: 0.8;
 		}
 		#log-btn:hover { opacity: 1; }
 		#log-full {
-			position: fixed; right: 12px; top: 110px; width: 300px; max-height: 56vh; z-index: 60;
+			position: fixed; right: 12px; top: 132px; width: 300px; max-height: 56vh; z-index: 60;
 			display: none; flex-direction: column;
 			background: rgba(20,15,34,0.95); border: 1px solid #5a4a80; border-radius: 10px;
 			box-shadow: 0 14px 44px rgba(0,0,0,0.6); overflow: hidden;
@@ -265,27 +271,53 @@
 			.panel .sub, .panel .gear { font-size: 11px; }
 			#end-turn, #coin-btn { right: 10px; padding: 14px 18px; font-size: 15px; }
 			#autopass-btn { right: 10px; bottom: 10px; padding: 7px 12px; font-size: 12px; }
-			/* concede + log sit stacked in the top-right: at desktop size they're
-			   ~24px tall with an 8px gap — a mis-tap between "read the log" and
-			   "give up the match" is costly, so make both finger-sized and spaced */
-			#concede { top: 48px; min-height: 44px; padding: 0 16px; font-size: 13px; }
-			#log-btn { top: 102px; top: max(102px, calc(env(safe-area-inset-top) + 92px)); min-height: 44px; padding: 0 14px; font-size: 13px; }
-			#log-full { top: 152px; top: max(152px, calc(env(safe-area-inset-top) + 142px)); }
+			/* concede + log sit stacked in the top-right below the topbar cluster:
+			   at desktop size they're ~24px tall with an 8px gap — a mis-tap between
+			   "read the log" and "give up the match" is costly, so make both
+			   finger-sized and spaced */
+			#concede { top: 60px; top: max(60px, calc(env(safe-area-inset-top) + 50px)); min-height: 44px; padding: 0 16px; font-size: 13px; }
+			#log-btn { top: 114px; top: max(114px, calc(env(safe-area-inset-top) + 104px)); min-height: 44px; padding: 0 14px; font-size: 13px; }
+			#log-full { top: 168px; top: max(168px, calc(env(safe-area-inset-top) + 158px)); }
 			#rotate-hint button { font-size: 19px; padding: 10px 12px; margin: -8px -4px; }
 			#mana-hud { left: 10px; bottom: 10px; padding: 6px 11px; }
 			#mana-hud .mh-val { font-size: 19px; }
 			#log { display: none; }
-			#log-full { right: 8px; left: 8px; width: auto; top: 96px; max-height: 62vh; }
+			#log-full { right: 8px; left: 8px; width: auto; max-height: 62vh; }
 			#hint { font-size: 12.5px; bottom: 6px; width: 94%; text-align: center; }
 			#banner { font-size: 34px; }
 			#tooltip { width: 216px; }
 			#inspect { width: 158px; left: 8px; padding: 7px; }
 			#inspect .ins-kw { display: none; }
 		}
+		/* landscape phones are WIDER than the 760px phone breakpoint, so they got
+		   the full desktop chrome — on a ~390px-tall screen the inline summon log
+		   ran straight through the foe panels. Height is the tell, not width. */
+		@media (max-height: 500px) {
+			#log { display: none; }
+			#title { font-size: 13px; }
+			#title a:not(:first-of-type) { display: none; }
+			#concede { min-height: 40px; padding: 0 14px; }
+			/* the 40px-tall buttons outgrow the desktop 34px stack rhythm */
+			#log-btn { top: 108px; top: max(108px, calc(env(safe-area-inset-top) + 98px)); min-height: 40px; padding: 0 12px; }
+			#log-full { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); max-height: 64vh; }
+			#end-turn { padding: 10px 20px; font-size: 14px; }
+			#hint { font-size: 12px; bottom: 4px; }
+			/* 3+ foe panels share ~840px — compact them, and drop the class name
+			   (it wrapped the text to 4 lines and pushed panels into each other;
+			   the class stays visible on the portrait) */
+			.panel.foe-sm { max-width: 190px; min-width: 96px; padding: 4px 9px; }
+			.panel.foe-sm .life { font-size: 17px; }
+			.panel.foe-sm .sub, .panel.foe-sm .gear { font-size: 10.5px; }
+			.panel.foe-sm .cls { display: none; }
+			.panel.foe-sm .sub b { white-space: nowrap; }
+			.panel.foe-sm .mrow { display: block; }
+			.panel.foe-sm .portrait { width: 32px !important; height: 32px !important; }
+			.panel.foe-sm .power-orb { width: 26px !important; height: 26px !important; }
+		}
 		/* keep corner controls clear of notches / the home indicator */
 		@supports (padding: max(0px)) {
 			#title { top: max(8px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); }
-			#concede { top: max(44px, calc(env(safe-area-inset-top) + 34px)); right: max(12px, env(safe-area-inset-right)); }
+			#concede { right: max(12px, env(safe-area-inset-right)); }
 			#end-turn, #coin-btn, #planeswalk-btn { right: max(10px, env(safe-area-inset-right)); }
 			#autopass-btn { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); }
 			#mana-hud { left: max(10px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); }

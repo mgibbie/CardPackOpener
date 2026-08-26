@@ -1325,7 +1325,10 @@ function buildPanels() {
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
 		const cls = state?.classPicks?.[pi]?.name;
-		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}${cls ? ` (${cls})` : ''}</b> · Mana <span class="mana"></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
+		// the class name + its separator sit in .cls spans and the mana readout in
+		// .mrow, so short screens can hide the class and stack the mana on its own
+		// line (CSS in index.html) — the class stays visible on the portrait
+		el.innerHTML = `<div class="life"></div><div class="sub"><b>${nameOf(pi)}<span class="cls">${cls ? ` (${cls})` : ''}</span></b><span class="cls"> · </span><span class="mrow">Mana <span class="mana"></span></span><br>Hand <span class="hand"></span> · Deck <span class="deck"></span></div><div class="identity" style="display:flex;gap:3px;margin:2px 0;"></div><div class="gear"></div>`;
 		el.prepend(portraitBlock(pi, false));
 		el.addEventListener('pointerdown', () => panelClick(pi));
 		cont.appendChild(el);
@@ -1606,10 +1609,19 @@ function updateHud() {
 // projected screen positions + hero-target highlighting, refreshed per frame
 function positionPanels() {
 	if (!state) return;
+	// batch the size reads before any style writes (interleaving them forces a
+	// reflow per panel), then clamp every panel fully on-screen — slices at the
+	// table's left/right edges used to project half their panel off a portrait
+	// viewport. The anchor is bottom-center (translate(-50%,-100%)), so x clamps
+	// by half-width and y keeps the panel's top edge below the ~52px topbar.
+	const put = [];
 	for (const [pi, el] of foePanelEls) {
 		const v = heroPos(pi, _panelVec).project(camera);
-		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
-		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
+		put.push([el, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, el.offsetWidth, el.offsetHeight]);
+	}
+	for (const [el, x, y, w, h] of put) {
+		el.style.left = `${Math.max(w / 2 + 6, Math.min(innerWidth - w / 2 - 6, x))}px`;
+		el.style.top = `${Math.max(h + 56, Math.min(innerHeight - 6, y))}px`;
 	}
 	// your own hero panel is a 3D object in the scene (billboarded to the camera),
 	// sitting between your land row and hand so the hand cards depth-sort in front
