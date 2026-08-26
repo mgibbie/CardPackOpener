@@ -56,6 +56,51 @@ const FX = {
 const STATUS_MSG = { brn: 'was burned!', psn: 'was poisoned!', par: 'is paralyzed!', slp: 'fell asleep!', frz: 'was frozen solid!' };
 const STATUS_IMMUNE = { brn: ['Fire'], frz: ['Ice'], psn: ['Poison', 'Steel'], par: [], slp: [] };
 
+// ---------- dynamic-power + fixed-damage moves ----------
+// The 2026-08 audit: moves shipped with power:0 fell into the status branch and
+// printed 'But nothing happened!' in PvP too. Mirrors overworld/battle.js.
+const kg = m => m.weightkg || 50; // snapshot-embedded; old-client snapshots default mid-tier
+const wTier = w => w < 10 ? 20 : w < 25 ? 40 : w < 50 ? 60 : w < 100 ? 80 : w < 200 ? 100 : 120;
+const rTier = r => r > 0.5 ? 40 : r > 1 / 3 ? 60 : r > 0.25 ? 80 : r > 0.2 ? 100 : 120;
+const pinch = u => { const x = Math.floor(u.curHP * 48 / u.maxHP); return x < 2 ? 200 : x < 5 ? 150 : x < 10 ? 100 : x < 17 ? 80 : x < 33 ? 40 : 20; };
+// power computed from battle state; the normal damage formula then runs on it
+const DYN = {
+	wringout: (u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
+	crushgrip: (u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
+	hardpress: (u, t) => Math.max(1, Math.floor(100 * t.curHP / t.maxHP)),
+	flail: u => pinch(u), reversal: u => pinch(u),
+	return: () => 102, frustration: () => 102, veeveevolley: () => 102, pikapapow: () => 102,
+	gyroball: (u, t) => Math.min(150, Math.floor(25 * statOf(t, 'spe') / Math.max(1, statOf(u, 'spe'))) + 1),
+	electroball: (u, t) => { const r = statOf(u, 'spe') / Math.max(1, statOf(t, 'spe')); return r >= 4 ? 150 : r >= 3 ? 120 : r >= 2 ? 80 : r >= 1 ? 60 : 40; },
+	punishment: (u, t) => Math.min(200, 60 + 20 * Object.values(t.boosts).reduce((s, v) => s + Math.max(0, v || 0), 0)),
+	lowkick: (u, t) => wTier(kg(t)), grassknot: (u, t) => wTier(kg(t)),
+	heavyslam: (u, t) => rTier(kg(t) / kg(u)), heatcrash: (u, t) => rTier(kg(t) / kg(u)),
+	trumpcard: (u, t, move) => [200, 80, 60, 50][move.pp] ?? 40,
+	magnitude: (u, t, move, ev) => {
+		const r = Math.random() * 100;
+		const [m, p] = r < 5 ? [4, 10] : r < 15 ? [5, 30] : r < 35 ? [6, 50] : r < 65 ? [7, 70]
+			: r < 85 ? [8, 90] : r < 95 ? [9, 110] : [10, 150];
+		ev.push(`Magnitude ${m}!`);
+		return p;
+	},
+	beatup: (u, t, move, ev, party) => party.filter(m => m.curHP > 0 && !m.status).reduce(s => s + 15, 5),
+};
+// raw damage instead of the formula — no crit/STAB/roll; type immunity still applies
+const FIXED = {
+	seismictoss: u => u.level, nightshade: u => u.level,
+	dragonrage: () => 40, sonicboom: () => 20,
+	psywave: u => Math.max(1, Math.floor(u.level * (0.5 + Math.random()))),
+	superfang: (u, t) => Math.max(1, Math.floor(t.curHP / 2)),
+	naturesmadness: (u, t) => Math.max(1, Math.floor(t.curHP / 2)),
+	ruination: (u, t) => Math.max(1, Math.floor(t.curHP / 2)),
+	endeavor: (u, t) => Math.max(0, t.curHP - u.curHP),
+	finalgambit: u => u.curHP,
+	counter: u => u._lastTaken?.phys ? u._lastTaken.amt * 2 : 0,
+	mirrorcoat: u => u._lastTaken && !u._lastTaken.phys ? u._lastTaken.amt * 2 : 0,
+	metalburst: u => u._lastTaken ? Math.floor(u._lastTaken.amt * 1.5) : 0,
+	comeuppance: u => u._lastTaken ? Math.floor(u._lastTaken.amt * 1.5) : 0,
+};
+
 // ---------- match lifecycle ----------
 export function createMatch(id, hostName, hostParty, guestName, guestParty) {
 	const side = (name, party) => ({
@@ -129,7 +174,52 @@ function doMove(state, atkS, ev) {
 		ev.push(`${user.name}'s attack missed!`);
 		return;
 	}
-	if (move.category === 'Status' || !move.power) {
+	// Bide: first press stores energy; the next press releases 2x the damage taken
+	if (move.id === 'bide') {
+		if (user._bide == null) { user._bide = 0; ev.push(`${user.name} is storing energy!`); return; }
+		const stored = user._bide * 2;
+		delete user._bide;
+		if (stored <= 0 || effectiveness(move.type, target.types) === 0) { ev.push('But it failed!'); return; }
+		const dmg = Math.min(stored, target.curHP);
+		target.curHP -= dmg;
+		target._lastTaken = { amt: dmg, phys: true };
+		ev.push({ hit: true, side: defS, dmg, name: target.name });
+		return;
+	}
+	// Present: usually a 40/80/120 bomb, sometimes a healing gift
+	let presentPw = 0;
+	if (move.id === 'present') {
+		if (Math.random() < 0.2) {
+			const amt = Math.max(1, Math.floor(target.maxHP / 4));
+			const applied = Math.min(target.maxHP, target.curHP + amt) - target.curHP;
+			target.curHP += applied;
+			if (applied > 0) ev.push({ hit: true, side: defS, dmg: -applied, name: target.name });
+			ev.push(`${target.name} received a gift!`);
+			return;
+		}
+		const r = Math.random();
+		presentPw = r < 0.5 ? 40 : r < 0.875 ? 80 : 120;
+	}
+	// fixed-damage family (level damage, halving, retaliation, sacrifice)
+	const fixedFn = FIXED[move.id];
+	if (fixedFn) {
+		if (effectiveness(move.type, target.types) === 0) { ev.push(`It doesn't affect ${target.name}...`); return; }
+		const raw = Math.floor(fixedFn(user, target));
+		if (raw <= 0) { ev.push('But it failed!'); return; }
+		const dmg = Math.min(raw, target.curHP);
+		target.curHP -= dmg;
+		target._lastTaken = { amt: dmg, phys: move.category === 'Physical' };
+		if (target._bide != null) target._bide += dmg;
+		ev.push({ hit: true, side: defS, dmg, name: target.name });
+		if (move.id === 'finalgambit') {
+			const paid = user.curHP;
+			user.curHP = 0;
+			ev.push({ hit: true, side: atkS, dmg: paid, name: user.name });
+		}
+		return;
+	}
+	const dyn = DYN[move.id];
+	if (move.category === 'Status' || (!move.power && !dyn && !presentPw)) {
 		if (fx.heal) {
 			const amt = Math.floor(user.maxHP * fx.heal);
 			const applied = Math.min(user.maxHP, user.curHP + amt) - user.curHP;
@@ -154,12 +244,16 @@ function doMove(state, atkS, ev) {
 	const D = statOf(target, phys ? 'def' : 'spd');
 	const eff = effectiveness(move.type, target.types);
 	if (eff === 0) { ev.push(`It doesn't affect ${target.name}...`); return; }
+	const power = dyn ? dyn(user, target, move, ev, state.sides[atkS].party) : (presentPw || move.power);
+	if (!(power > 0)) { ev.push('But it failed!'); return; }
 	const stab = user.types.includes(move.type) ? 1.5 : 1;
 	const crit = Math.random() < 1 / 16;
-	let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * move.power * A / D) / 50) + 2;
+	let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * power * A / D) / 50) + 2;
 	dmg = Math.max(1, Math.floor(dmg * (crit ? 2 : 1) * stab * eff * (0.85 + Math.random() * 0.15)));
 	dmg = Math.min(dmg, target.curHP);
 	target.curHP -= dmg;
+	target._lastTaken = { amt: dmg, phys };
+	if (target._bide != null) target._bide += dmg;
 	ev.push({ hit: true, side: defS, dmg, name: target.name });
 	if (crit) ev.push('A critical hit!');
 	if (eff > 1) ev.push("It's super effective!");
@@ -184,6 +278,7 @@ function resolveTurn(state) {
 			const to = state.sides[s].party[a.partyIdx];
 			if (to && to.curHP > 0 && a.partyIdx !== state.sides[s].active) {
 				activeMon(state, s).boosts = freshBoosts();
+				delete to._lastTaken; delete to._bide; // damage memory doesn't survive re-entry
 				state.sides[s].active = a.partyIdx;
 				ev.push(`${state.sides[s].name} sent out ${to.name}!`);
 			}
@@ -235,6 +330,7 @@ export function replaceFainted(state, s, partyIdx) {
 	if (!to || to.curHP <= 0) return state;
 	state.sides[s].active = partyIdx;
 	to.boosts = freshBoosts();
+	delete to._lastTaken; delete to._bide;
 	if (state.needsSwitch) delete state.needsSwitch[s];
 	if (state.needsSwitch && !Object.keys(state.needsSwitch).length) state.needsSwitch = null;
 	state.events = [`${state.sides[s].name} sent out ${to.name}!`];
