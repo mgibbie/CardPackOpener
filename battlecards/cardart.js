@@ -210,6 +210,21 @@ let artIndex = null;
 const artImgs = new Map(); // id -> HTMLImageElement
 export const artListeners = new Set(); // fn(id) called when an image (or the mana font) arrives
 
+// Per-card art framing, hand-tuned in arttune.html: { id: {z, fx, fy} } where
+// z >= 1 zooms past the cover fit and fx/fy (0..1) pick the focal point kept
+// centered. Sparse — untuned cards keep the plain centered cover fit. The map
+// is a live singleton (the tuner mutates it for instant preview); when the
+// committed file arrives, every live face repaints via artListeners('*').
+export const ART_TUNING = {};
+const _tuneBase = (() => { try { return new URL('.', import.meta.url).href; } catch (e) { return ''; } })();
+fetch(_tuneBase + 'art_tuning.json').then(r => (r.ok ? r.json() : {})).then(t => {
+	Object.assign(ART_TUNING, t);
+	if (Object.keys(t).length) for (const fn of artListeners) fn('*');
+}).catch(() => {});
+// does this id have real art? (the tuner only lists tunable cards)
+export function hasArt(id) { return !!(artIndex && artIndex.has(id)); }
+export { artIndexReady };
+
 // the Mana font (Andrew Gioia, OFL) so card faces can draw real MTG symbols.
 // Its glyph codepoints + the authentic 'cost' circle colours; we load the font
 // then repaint every face (artListeners('*')) so the pips upgrade in place.
@@ -428,12 +443,20 @@ function paintEmblem(ctx, card, x, y, w, h) {
 
 // deterministic per-card generative art, painted inside the art window clip
 function paintArt(ctx, card, x, y, w, h) {
-	// real art wins when it's ready: cover-fit the crop into the window
+	// real art wins when it's ready: cover-fit the crop into the window,
+	// then apply the card's hand-tuned framing ({z, fx, fy} — see ART_TUNING)
 	const img = artFor(card.id);
 	if (img) {
-		const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+		const t = ART_TUNING[card.id];
+		const z = Math.max(1, t?.z || 1); // z < 1 would break the cover fit (gaps)
+		const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight) * z;
 		const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
-		ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+		// keep the focal point (image-space, 0..1) centered in the window, but
+		// never slide the crop far enough to uncover an edge
+		const fx = t?.fx ?? 0.5, fy = t?.fy ?? 0.5;
+		const dx = Math.min(x, Math.max(x + w - dw, x + w / 2 - fx * dw));
+		const dy = Math.min(y, Math.max(y + h - dh, y + h / 2 - fy * dh));
+		ctx.drawImage(img, dx, dy, dw, dh);
 		return;
 	}
 	// The Coin: an original procedurally-drawn gold coin (no external art)

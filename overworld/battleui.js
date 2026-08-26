@@ -26,6 +26,15 @@ export const STATUS_BADGE = {
 	par: '#f2d933', brn: '#f26633', psn: '#b34dcc', slp: '#9999b3', frz: '#66ccf2',
 };
 
+// Per-species battle-sprite tuning, hand-adjusted in the ?spritetune=1 overlay:
+// { speciesId: { front: {s, x, y}, back: {s, x, y} } } — s multiplies the
+// sprite's drawn scale (on top of battleScale), x/y nudge it in scene units (u).
+// Sparse: untuned species render exactly as before. Live singleton — the tuner
+// mutates it and the battle scene picks the change up next frame.
+export const SPRITE_TUNING = {};
+const _stBase = (() => { try { return new URL('.', import.meta.url).href; } catch (e) { return ''; } })();
+fetch(_stBase + 'sprite_tuning.json').then(r => (r.ok ? r.json() : {})).then(t => Object.assign(SPRITE_TUNING, t)).catch(() => {});
+
 // Scene geometry, shared by battle.js and pvp.js. Landscape keeps the GBA
 // 3:2 layout (unit = height/480, 118u bottom bar) byte-for-byte. On portrait
 // phones main.js frees the canvas from the 3:2 frame and lets it fill the

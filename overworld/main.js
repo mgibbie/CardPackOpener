@@ -4645,6 +4645,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
+	// dev tooling: ?spritetune=1 mounts the battle-sprite tuning overlay
+	if (new URLSearchParams(location.search).has('spritetune')) {
+		import('./spritetune.js').then(m => m.mount(window.__ow)).catch(e => console.warn('spritetune failed', e));
+	}
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
 		setInterval(pushOw, 10000);
