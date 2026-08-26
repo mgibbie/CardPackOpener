@@ -33,17 +33,19 @@ const scaleFor = h => +Math.max(MIN, Math.min(MAX, Math.pow(h / REF, K))).toFixe
 // hand overrides (id -> scale), for mons with no/odd height data or a deliberate look
 const OVERRIDES = {};
 
-// ---- parse Showdown heights: each top-level "\n\tid: { ... heightm: X," block ----
+// ---- parse Showdown heights + weights: each top-level "\n\tid: { ... heightm: X," block ----
 const dex = fs.readFileSync(DEX, 'utf8');
-const H = {};
+const H = {}, W = {};
 const re = /\n\t([a-z0-9]+): \{[\s\S]*?heightm: ([\d.]+),/g;
 let m; while ((m = re.exec(dex))) H[m[1]] = parseFloat(m[2]);
+const rw = /\n\t([a-z0-9]+): \{[\s\S]*?weightkg: ([\d.]+),/g;
+while ((m = rw.exec(dex))) W[m[1]] = parseFloat(m[2]);
 
 // ---- apply to species_battle.json ----
 const S = JSON.parse(fs.readFileSync(SPB, 'utf8'));
 if (!fs.existsSync(SPB + '.pre_battlescale.bak')) fs.writeFileSync(SPB + '.pre_battlescale.bak', fs.readFileSync(SPB));
 
-let written = 0, cleared = 0, fromHeight = 0, fromOverride = 0;
+let written = 0, cleared = 0, fromHeight = 0, fromOverride = 0, weights = 0;
 for (const id in S) {
 	const sp = S[id];
 	let scale = null;
@@ -52,8 +54,13 @@ for (const id in S) {
 	// write only when it meaningfully deviates from the 1.0 default; strip otherwise (idempotent)
 	if (scale != null && Math.abs(scale - 1) >= 0.03) { sp.battleScale = scale; written++; }
 	else if ('battleScale' in sp) { delete sp.battleScale; cleared++; }
+	// canonical weight for the weight-based moves (Low Kick / Heavy Slam ...);
+	// fakemon and unknowns stay absent — the engine defaults to 50kg
+	if ((sp.num || 0) > 0 && W[id] != null) { sp.weightkg = W[id]; weights++; }
+	else if ('weightkg' in sp) { delete sp.weightkg; }
 }
 
 fs.writeFileSync(SPB, JSON.stringify(S));
 console.log(`battleScale: wrote ${written} species (${fromHeight} height-derived candidates, ${fromOverride} overrides), cleared ${cleared} stale.`);
-console.log(`Heights parsed: ${Object.keys(H).length}. Absent field => 1.0. Deploy species_battle.json to owdata.`);
+console.log(`weightkg: wrote ${weights} species (absent => engine default 50kg).`);
+console.log(`Heights parsed: ${Object.keys(H).length}, weights ${Object.keys(W).length}. Absent battleScale => 1.0. Deploy species_battle.json to owdata.`);
