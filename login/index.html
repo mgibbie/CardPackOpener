@@ -61,11 +61,12 @@
 <script type="module">
 import * as MP from '../battlecards/mpmode.js';
 
-// where to go after signing in — the page that sent you here, else the overworld.
+// where to go after signing in — the page that sent you here, else the
+// Battlecards hub (the flagship, with the tour + every mode on one page).
 // only same-origin absolute paths are honored, so ?next can't bounce off-site.
 const params = new URLSearchParams(location.search);
-const raw = params.get('next') || '/overworld/';
-const next = /^\/(?!\/)/.test(raw) ? raw : '/overworld/';
+const raw = params.get('next') || '/battlecards/start.html';
+const next = /^\/(?!\/)/.test(raw) ? raw : '/battlecards/start.html';
 
 // already signed in? skip the door.
 if (MP.hasToken()) location.replace(next);

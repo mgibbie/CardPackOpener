@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mp-topbar" content="compact">
 <title>Magepunk — Profile</title>
 <meta name="description" content="Your Magepunk player profile — friend code, stats, and achievements.">
 <meta name="robots" content="noindex">
@@ -10,6 +11,9 @@
 <!-- shares the Design Wiki's look -->
 <link rel="stylesheet" href="../designwiki/style.css?v=20260817">
 <style>
+	/* the page keeps its own single header; the floating compact topbar cluster
+	   (site/topbar.js) sits top-right, so clear room for it */
+	header { padding-right: 104px; }
 	header .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
 	header .right a { color: #ffe9a8; font-weight: 600; }
 	header button.logout { background: #3a4a74; padding: 5px 12px; font-size: 12.5px; }

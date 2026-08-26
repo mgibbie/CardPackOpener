@@ -6,6 +6,7 @@
 	<link rel="preconnect" href="https://magepunk-cardart.pages.dev" crossorigin>
 	<link rel="dns-prefetch" href="https://magepunk-cardart.pages.dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
 	<link rel="icon" href="data:,">
 	<meta name="description" content="Build and tune Magepunk Battlecards decks — filter thousands of cards by class, cost, and keyword, and save decks for PvP and solo runs.">
 	<link rel="canonical" href="https://www.michaelgibalerio.com/battlecards/deck.html">
@@ -26,7 +27,8 @@
 		html, body { margin: 0; height: 100%; background: #0e0b16; font-family: 'Segoe UI', system-ui, sans-serif; color: #e8e2f4; -webkit-text-size-adjust: 100%; }
 		body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 
-		#topbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #2a2340; flex-wrap: wrap; }
+		/* right padding clears the floating home/inbox cluster (site/topbar.js compact) */
+		#topbar { display: flex; align-items: center; gap: 10px; padding: 10px 104px 10px 14px; border-bottom: 1px solid #2a2340; flex-wrap: wrap; }
 		#topbar .brand { font-size: 16px; letter-spacing: 1px; font-weight: 700; margin: 0; }
 		#topbar a { color: #9d8fd4; text-decoration: none; font-size: 13px; }
 		#topbar a:hover { text-decoration: underline; }
@@ -302,5 +304,6 @@
 	</style>
 	<script type="module" src="deck.js"></script>
 	<script type="module" src="nav.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
 </body>
 </html>
