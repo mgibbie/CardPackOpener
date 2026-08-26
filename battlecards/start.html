@@ -235,6 +235,21 @@
 				<div class="glyph">💍</div>
 				<div><h3>Lorequest: Middle-earth <span class="arrow">→</span></h3><p>Pick a hero of the Free Peoples and climb the rungs of Sauron&rsquo;s forces to 12 wins — loot the fallen as you go.</p></div>
 			</a>
+			<a class="tile" href="index.html?swordcoast=1" data-run="magepunk_swordcoast_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">🐉</div>
+				<div><h3>Lorequest: Sword Coast <span class="arrow">→</span></h3><p>Pick a Companion of the Realms and Advance through the Sword Coast&rsquo;s villains to Tiamat — loot the fallen as you go.</p></div>
+			</a>
+			<a class="tile" href="index.html?finalfantasy=1" data-run="magepunk_finalfantasy_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">⭐</div>
+				<div><h3>Lorequest: Final Fantasy <span class="arrow">→</span></h3><p>Pick a Final Fantasy hero — Spiritsummon and Limit Break through the villains to Sephiroth &amp; Chaos.</p></div>
+			</a>
+			<a class="tile" href="index.html?multiverse=1" data-run="magepunk_multiverse_v1">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph">🕸️</div>
+				<div><h3>Lorequest: Multiverse <span class="arrow">→</span></h3><p>Pick a Marvel hero — win-parity fights matched to your power, from street-level thugs to Thanos &amp; Galactus.</p></div>
+			</a>
 			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1">
 				<span class="resume">▸ Resume</span>
 				<div class="glyph">⚔️</div>
@@ -502,8 +517,8 @@
 	<script type="module">
 	import * as MP from './mpmode.js';
 	import { openProfile } from './profile.js';
-	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
-	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴' };
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	async function refreshLive() {
 		if (!MP.hasToken()) return;
