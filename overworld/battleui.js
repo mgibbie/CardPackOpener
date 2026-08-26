@@ -35,8 +35,14 @@ export const STATUS_BADGE = {
 export function layout(W, H) {
 	const portrait = H > W;
 	const u = portrait ? W / 512 : H / 480;
-	const barH = portrait ? 270 * u : 118 * u;
-	return { portrait, u, barH, barY: H - barH };
+	// ubar scales ONLY the bottom bar. A wide-short canvas (aspect > 1.7 = a
+	// landscape phone freed from the 3:2 frame; the GBA frame is exactly 1.5,
+	// so desktop stays untouched) keeps the scene unit but draws the bar half
+	// again as large, lifting its buttons from ~29 to ~44 CSS px.
+	const compact = !portrait && W / H > 1.7;
+	const ubar = compact ? u * 1.5 : u;
+	const barH = portrait ? 270 * u : 118 * ubar;
+	return { portrait, compact, u, ubar, barH, barY: H - barH };
 }
 
 export function rr(ctx, x, y, w, h, r) {
@@ -88,12 +94,14 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 		ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 		ctx.fillText(mon.gender === 'M' ? '♂' : '♀', x + pad + nw + 5 * u, y + pad + 13 * u);
 	}
-	// ability + held item under the level, dim (matches the Love2D panel)
+	// ability + held item under the level, dim (matches the Love2D panel).
+	// Baseline 43u: at 46u the text sat on the HP bar's top edge whenever the
+	// bar ran full width (no showNumbers gutter — every foe panel).
 	if (opts.abilityName) {
 		ctx.fillStyle = C.faint;
 		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
 		ctx.textAlign = 'right';
-		ctx.fillText(opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : ''), x + w - pad, y + pad + 46 * u);
+		ctx.fillText(opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : ''), x + w - pad, y + pad + 43 * u);
 		ctx.textAlign = 'left';
 	}
 	ctx.fillStyle = C.dim;

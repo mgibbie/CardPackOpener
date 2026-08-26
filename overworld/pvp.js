@@ -230,7 +230,9 @@ export class Pvp {
 	draw(ctx, W, H) {
 		const a = this.active;
 		if (!a) return;
-		const { portrait, u, barY, barH } = UI.layout(W, H);
+		// ub scales the bottom bar only (== u everywhere except wide-short
+		// landscape-phone canvases — see battleui.layout)
+		const { portrait, u, ubar: ub, barY, barH } = UI.layout(W, H);
 		a.ui = [];
 		// static backdrop — cache the gradient instead of rebuilding it per frame
 		if (!this._bg || this._bgH !== H) {
@@ -252,45 +254,45 @@ export class Pvp {
 		UI.teamDots(ctx, a.match.sides[bottom].party, this.monAt(bottom),
 			W - 14 * u - 10 * u - (a.match.sides[bottom].party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
 
-		UI.panel(ctx, 8 * u, barY, W - 16 * u, barH - 8 * u, 10 * u);
-		const btn = (b, id) => { b.id = id; a.ui.push(b); UI.button(ctx, b, a.hover === id || b.kbSel, u); };
+		UI.panel(ctx, 8 * ub, barY, W - 16 * ub, barH - 8 * ub, 10 * ub);
+		const btn = (b, id) => { b.id = id; a.ui.push(b); UI.button(ctx, b, a.hover === id || b.kbSel, ub); };
 
 		if (portrait) {
 			this.drawBarPortrait(ctx, a, W, H, u, barY, btn);
 		} else if (a.phase === 'menu') {
-			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 300 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 32 * u + i * 22 * u));
+			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(17 * ub)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * ub, barY + 32 * ub + i * 22 * ub));
 			['FIGHT', 'SWITCH', '', 'FORFEIT'].forEach((lab, i) => {
 				if (!lab) return;
-				const bw = 120 * u, bh = 44 * u;
-				const x = W - 24 * u - (2 - i % 2) * (bw + 8 * u) + 8 * u;
-				const y = barY + 10 * u + Math.floor(i / 2) * (bh + 8 * u);
+				const bw = 120 * ub, bh = 44 * ub;
+				const x = W - 24 * ub - (2 - i % 2) * (bw + 8 * ub) + 8 * ub;
+				const y = barY + 10 * ub + Math.floor(i / 2) * (bh + 8 * ub);
 				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
-			const moves = this.mine().moves, backW = 86 * u, bw = (W - 16 * u - backW - 40 * u) / 2, bh = 44 * u;
+			const moves = this.mine().moves, backW = 86 * ub, bw = (W - 16 * ub - backW - 40 * ub) / 2, bh = 44 * ub;
 			moves.forEach((mv, i) => {
-				btn({ x: 20 * u + (i % 2) * (bw + 8 * u), y: barY + 9 * u + Math.floor(i / 2) * (bh + 8 * u),
+				btn({ x: 20 * ub + (i % 2) * (bw + 8 * ub), y: barY + 9 * ub + Math.floor(i / 2) * (bh + 8 * ub),
 					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16), sub: `PP ${mv.pp}/${mv.maxPp}`,
 					subColor: mv.pp <= 0 ? UI.C.hpRed : UI.C.dim, right: mv.power ? `Pwr ${mv.power}` : (mv.category || ''),
 					type: mv.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i }, 'move:' + i);
 			});
-			btn({ x: W - 8 * u - backW - 8 * u, y: barY + 9 * u, w: backW, h: 96 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'switch') {
 			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
 			bench.slice(0, 3).forEach((pIdx, i) => {
 				const m = sd.party[pIdx];
-				btn({ x: 20 * u, y: barY + 9 * u + i * 32 * u, w: W * 0.58, h: 28 * u,
+				btn({ x: 20 * ub, y: barY + 9 * ub + i * 32 * ub, w: W * 0.58, h: 28 * ub,
 					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === i }, 'sw:' + i);
 			});
-			if (!bench.length) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; ctx.fillText('No one else can fight!', 24 * u, barY + 34 * u); }
-			if (!a.forcedSwitch) btn({ x: W - 8 * u - 94 * u, y: barY + 9 * u, w: 86 * u, h: 96 * u, label: 'BACK', center: true }, 'back');
+			if (!bench.length) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`; ctx.fillText('No one else can fight!', 24 * ub, barY + 34 * ub); }
+			if (!a.forcedSwitch) btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
 		} else {
 			// wait / anim / watch / done: message with a tap-to-advance hint
-			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 70 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
-			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) { ctx.fillStyle = UI.C.accent; ctx.fillText('▼', W - 34 * u, barY + 96 * u); }
-			if (a.phase === 'done') btn({ x: W / 2 - 90 * u, y: barY + 60 * u, w: 180 * u, h: 40 * u, label: 'LEAVE', center: true }, 'done:0');
+			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * ub)}px m6x11plus, monospace`;
+			UI.wrap(ctx, a.msg, W - 70 * ub).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * ub, barY + 34 * ub + i * 24 * ub));
+			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) { ctx.fillStyle = UI.C.accent; ctx.fillText('▼', W - 34 * ub, barY + 96 * ub); }
+			if (a.phase === 'done') btn({ x: W / 2 - 90 * ub, y: barY + 60 * ub, w: 180 * ub, h: 40 * ub, label: 'LEAVE', center: true }, 'done:0');
 			a.ui.push({ id: 'adv:0', x: 0, y: 0, w: W, h: barY });
 		}
 	}
@@ -356,10 +358,12 @@ export class Pvp {
 	drawMon(ctx, W, H, u, s, near) {
 		const a = this.active;
 		const m = this.monAt(s);
-		const { portrait, barY } = UI.layout(W, H);
+		const { portrait, compact, barY } = UI.layout(W, H);
 		const pose = near
-			? (portrait ? { x: W * 0.26, y: barY - 24 * u, scale: 3.8 * u } : { x: W * 0.235, y: H - 140 * u, scale: 4.2 * u })
-			: (portrait ? { x: W * 0.68, y: barY * 0.40, scale: 3.1 * u } : { x: W * 0.70, y: H * 0.42, scale: 3.4 * u });
+			? (portrait ? { x: W * 0.26, y: barY - 24 * u, scale: 3.8 * u }
+				: { x: W * (compact ? 0.30 : 0.235), y: barY - (compact ? 16 : 22) * u, scale: (compact ? 3.2 : 4.2) * u })
+			: (portrait ? { x: W * 0.68, y: barY * 0.40, scale: 3.1 * u }
+				: { x: W * (compact ? 0.62 : 0.70), y: H * 0.42, scale: (compact ? 2.8 : 3.4) * u });
 		const tc = UI.TYPE_COLORS[m.types[0]] || '#888';
 		ctx.save(); ctx.globalAlpha = 0.28; ctx.fillStyle = tc;
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 118 * u, 30 * u, 0, 0, Math.PI * 2); ctx.fill();

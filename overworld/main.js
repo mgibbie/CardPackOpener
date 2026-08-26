@@ -3056,9 +3056,12 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
-	// portrait battle/pvp: swap the canvas between the GBA frame and full-screen
-	// (see fitCanvas); the touch d-pad hides too — battles are entirely tap-driven
-	const tallNow = (battle.blocking || pvp.blocking) && innerHeight > innerWidth;
+	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
+	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
+	// hides too — battles are entirely tap-driven. Landscape phones get the
+	// full-width canvas + the scaled bar from battleui.layout (aspect > 1.7).
+	const tallNow = (battle.blocking || pvp.blocking)
+		&& (innerHeight > innerWidth || document.body.classList.contains('touch'));
 	if (tallNow !== sceneTall) {
 		sceneTall = tallNow;
 		document.body.classList.toggle('scene-tall', sceneTall);
