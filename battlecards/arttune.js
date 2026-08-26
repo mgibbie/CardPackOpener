@@ -222,12 +222,20 @@ function wirePreview(canvas) {
 		}
 		const content = cleaned();
 		try {
+			// local dev server: write straight into the repo
 			const r = await fetch('/dev/save', { method: 'POST', body: JSON.stringify({ file: TUNING_FILE, content }) });
 			if (!r.ok) throw new Error(await r.text());
 			$('msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} cards)` + artMsg;
 		} catch (e) {
-			await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
-			$('msg').textContent = 'no dev server — tuning JSON copied to clipboard instead' + artMsg;
+			// live site: save as a server override — takes effect for everyone
+			// immediately (tuning-get merges it over the committed file)
+			try {
+				const r = await MP.call('tuning-save', { kind: 'art', content });
+				$('msg').textContent = `saved LIVE ✓ (${r.count} cards as a server override)` + artMsg;
+			} catch (e2) {
+				await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
+				$('msg').textContent = 'save failed (' + String(e2.message || e2).slice(0, 60) + ') — JSON copied to clipboard' + artMsg;
+			}
 		}
 		repaint();
 	});

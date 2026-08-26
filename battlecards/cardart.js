@@ -217,10 +217,17 @@ export const artListeners = new Set(); // fn(id) called when an image (or the ma
 // committed file arrives, every live face repaints via artListeners('*').
 export const ART_TUNING = {};
 const _tuneBase = (() => { try { return new URL('.', import.meta.url).href; } catch (e) { return ''; } })();
-fetch(_tuneBase + 'art_tuning.json').then(r => (r.ok ? r.json() : {})).then(t => {
-	Object.assign(ART_TUNING, t);
-	if (Object.keys(t).length) for (const fn of artListeners) fn('*');
-}).catch(() => {});
+// committed file first, then the server override on top (per card id) — the
+// override is what the owner saves from the LIVE arttune page, so a phone-side
+// save takes effect for everyone without a deploy
+Promise.allSettled([
+	fetch(_tuneBase + 'art_tuning.json').then(r => (r.ok ? r.json() : {})),
+	fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"action":"tuning-get"}' })
+		.then(r => (r.ok ? r.json() : {})).then(d => d.art || {}),
+]).then(([f, o]) => {
+	Object.assign(ART_TUNING, f.value || {}, o.value || {});
+	if (Object.keys(ART_TUNING).length) for (const fn of artListeners) fn('*');
+});
 // does this id have real art? (the tuner only lists tunable cards)
 export function hasArt(id) { return !!(artIndex && artIndex.has(id)); }
 export { artIndexReady };
