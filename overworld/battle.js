@@ -194,6 +194,12 @@ const MOVE_FX = {
 	seismictoss: { fixed: 'level' }, nightshade: { fixed: 'level' },
 	dragonrage: { fixed: 40 }, sonicboom: { fixed: 20 }, psywave: { fixed: 'psywave' },
 	superfang: { fixed: 'half' }, endeavor: { fixed: 'endeavor' },
+	naturesmadness: { fixed: 'half' }, ruination: { fixed: 'half' },
+	finalgambit: { fixed: 'userHP', sacrifice: true },
+	// retaliation: pay back the last hit taken (category-gated, else it fails)
+	counter: { fixed: 'counter' }, mirrorcoat: { fixed: 'mirrorcoat' },
+	metalburst: { fixed: 'metalburst' }, comeuppance: { fixed: 'metalburst' },
+	bide: { chargeText: 'is storing energy!', fixed: 'bide' },
 	fissure: { ohko: true }, guillotine: { ohko: true }, horndrill: { ohko: true }, sheercold: { ohko: true },
 	// two-turn charge / recharge / self-KO
 	fly: { chargeText: 'flew up high!' }, dig: { chargeText: 'burrowed underground!' },
@@ -329,12 +335,54 @@ const POWER_FX = {
 	smellingsalts: (b, u, t) => t.status === 'par' ? 140 : 70,
 	wakeupslap: (b, u, t) => t.status === 'slp' ? 140 : 70,
 	return: () => 102, frustration: () => 102,
+	veeveevolley: () => 102, pikapapow: () => 102,
+	// scale with the TARGET's remaining HP (opposite of Flail)
+	wringout: (b, u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
+	crushgrip: (b, u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
+	hardpress: (b, u, t) => Math.max(1, Math.floor(100 * t.curHP / t.maxHP)),
+	// pp is already decremented for this use: 0 left => the 200-power last card
+	trumpcard: (b, u, t, ub, tb, mv) => [200, 80, 60, 50][mv?.pp] ?? 40,
+	magnitude: (b) => {
+		const r = Math.random() * 100;
+		const [m, p] = r < 5 ? [4, 10] : r < 15 ? [5, 30] : r < 35 ? [6, 50] : r < 65 ? [7, 70]
+			: r < 85 ? [8, 90] : r < 95 ? [9, 110] : [10, 150];
+		b.pushMsg(`Magnitude ${m}!`);
+		return p;
+	},
+	// one combined hit standing in for the per-ally flurry
+	beatup: (b, u) => b.partyOf(u).filter(m => m.curHP > 0 && !m.status)
+		.reduce((s, m) => s + 5 + Math.floor((b.data.species[m.speciesId]?.baseStats?.atk || 50) / 10), 0) || 10,
+	// target's weight sets the power
+	lowkick: (b, u, t) => { const w = b.weightOf(t); return w < 10 ? 20 : w < 25 ? 40 : w < 50 ? 60 : w < 100 ? 80 : w < 200 ? 100 : 120; },
+	grassknot: (b, u, t) => { const w = b.weightOf(t); return w < 10 ? 20 : w < 25 ? 40 : w < 50 ? 60 : w < 100 ? 80 : w < 200 ? 100 : 120; },
+	// heavier user vs lighter target
+	heavyslam: (b, u, t) => { const r = b.weightOf(t) / b.weightOf(u); return r > 0.5 ? 40 : r > 1 / 3 ? 60 : r > 0.25 ? 80 : r > 0.2 ? 100 : 120; },
+	heatcrash: (b, u, t) => { const r = b.weightOf(t) / b.weightOf(u); return r > 0.5 ? 40 : r > 1 / 3 ? 60 : r > 0.25 ? 80 : r > 0.2 ? 100 : 120; },
+	// held-item moves fail empty-handed (or under Klutz); the item is consumed post-gate
+	fling: (b, u) => u.heldItem && b.abilityOf(u) !== 'klutz' ? 60 : 0,
+	naturalgift: (b, u) => NATURAL_GIFT[u.heldItem] && b.abilityOf(u) !== 'klutz' ? 80 : 0,
 	weatherball: (b) => b.weatherKind() ? 100 : 50,
 	solarbeam: (b) => { const wk = b.weatherKind(); return wk && wk !== 'sun' ? 60 : 120; },
 	solarblade: (b) => { const wk = b.weatherKind(); return wk && wk !== 'sun' ? 62 : 125; },
 };
 // Weather Ball takes on the weather's element
 const WEATHERBALL_TYPE = { rain: 'Water', sun: 'Fire', sand: 'Rock', hail: 'Ice' };
+// Natural Gift: the held berry sets the element (canonical types, gen-6 power 80)
+const NATURAL_GIFT = {
+	cheriberry: 'Fire', chestoberry: 'Water', pechaberry: 'Electric', rawstberry: 'Grass',
+	aspearberry: 'Ice', oranberry: 'Poison', persimberry: 'Ground', lumberry: 'Flying',
+	sitrusberry: 'Psychic',
+};
+// expected powers so the trainer AI can weigh dynamic-power moves it would
+// otherwise skip (`if (!mv.power) continue`); situational ones (Counter, Bide,
+// Final Gambit, Fling ...) stay unlisted — random-pick only, like before
+const AI_EST_POWER = {
+	seismictoss: 60, nightshade: 60, dragonrage: 45, sonicboom: 30, psywave: 50,
+	superfang: 70, endeavor: 70, gyroball: 60, electroball: 70, flail: 50, reversal: 50,
+	return: 102, frustration: 102, veeveevolley: 102, pikapapow: 102,
+	wringout: 80, crushgrip: 80, hardpress: 70, magnitude: 71, beatup: 40, trumpcard: 40,
+	lowkick: 60, grassknot: 60, heavyslam: 80, heatcrash: 80,
+};
 
 const STATUS_NAMES = { brn: 'BRN', psn: 'PSN', par: 'PAR', slp: 'SLP', frz: 'FRZ' };
 const STATUS_APPLIED_MSG = {
@@ -605,6 +653,15 @@ export class Battle {
 		const a = this.active;
 		return (mon === a.me || mon === a.meAlly) ? 'me' : 'foe';
 	}
+	// the full party behind a mon (wild foes fight alone) — Beat Up counts it
+	partyOf(mon) {
+		const a = this.active;
+		return this.sideOfMon(mon) === 'me' ? a.party : (a.foes || [a.foe]);
+	}
+	// canonical weight in kg for the weight-based moves; fakemon default mid-tier
+	weightOf(mon) {
+		return this.data.species[mon.speciesId]?.weightkg || 50;
+	}
 	// which slot (0 = lead, 1 = ally) a mon occupies — so double-battle animations
 	// only move the mon that's actually acting
 	slotOfMon(mon) {
@@ -811,6 +868,8 @@ export class Battle {
 			mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.floor(mon.maxHP / 3));
 		}
 		delete mon.confuseTurns;
+		delete mon.lastTaken;
+		delete mon.bideDmg;
 		delete mon.seeded;
 		delete mon.badPsn;
 		delete mon.toxicN;
@@ -958,6 +1017,7 @@ export class Battle {
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
 			user.chargeMove = move.id;
+			if (move.id === 'bide') user.bideDmg = 0;
 			move.pp = Math.min(move.maxPp, move.pp + 1);
 			this.pushMsg(`${user.name} ${fx.chargeText}`);
 			return;
@@ -1221,11 +1281,33 @@ export class Battle {
 		// state-dependent power (Gyro Ball, Flail, Hex, Weather Ball, ...)
 		const L = user.level;
 		let Pw = mv.power || 0;
-		if (POWER_FX[move.id]) Pw = POWER_FX[move.id](this, user, target, userBoosts, targetBoosts);
+		if (POWER_FX[move.id]) Pw = POWER_FX[move.id](this, user, target, userBoosts, targetBoosts, move);
 		if (move.id === 'weatherball' && WEATHERBALL_TYPE[this.weatherKind()]) {
 			mv = { ...mv, type: WEATHERBALL_TYPE[this.weatherKind()] };
 		}
+		// Present: usually a 40/80/120 bomb, sometimes a healing gift
+		if (move.id === 'present') {
+			if (Math.random() < 0.2) {
+				this.pushMsg(`${target.name} received a gift!`, () => {
+					const healed = Math.max(1, Math.floor(target.maxHP / 4));
+					target.curHP = Math.min(target.maxHP, target.curHP + healed);
+					this.float(isFoe ? 'me' : 'foe', `+${healed}`, '#6be08a');
+				});
+				return;
+			}
+			const r = Math.random();
+			Pw = r < 0.5 ? 40 : r < 0.875 ? 80 : 120;
+		}
 		if (Pw <= 0 && !fx.fixed && !fx.ohko) { this.pushMsg('But nothing happened!'); return; }
+		// the flung/gifted item is spent once the move is definitely happening
+		if (move.id === 'fling') {
+			this.pushMsg(`${user.name} flung its ${this.itemName(user)}!`);
+			this.consumeItem(user);
+		}
+		if (move.id === 'naturalgift') {
+			mv = { ...mv, type: NATURAL_GIFT[user.heldItem] || 'Normal' };
+			this.consumeItem(user);
+		}
 		// absorbing / immune abilities take the hit instead
 		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${target.name} floats with Levitate!`); return; }
 		const absorb = AB_ABSORB[tAb];
@@ -1340,7 +1422,13 @@ export class Battle {
 				: fx.fixed === 'half' ? Math.max(1, Math.floor(target.curHP / 2))
 				: fx.fixed === 'psywave' ? Math.max(1, Math.floor(user.level * (0.5 + Math.random())))
 				: fx.fixed === 'endeavor' ? Math.max(0, target.curHP - user.curHP)
+				: fx.fixed === 'userHP' ? user.curHP
+				: fx.fixed === 'counter' ? (user.lastTaken?.phys ? user.lastTaken.amt * 2 : 0)
+				: fx.fixed === 'mirrorcoat' ? (user.lastTaken && !user.lastTaken.phys ? user.lastTaken.amt * 2 : 0)
+				: fx.fixed === 'metalburst' ? (user.lastTaken ? Math.floor(user.lastTaken.amt * 1.5) : 0)
+				: fx.fixed === 'bide' ? (user.bideDmg || 0) * 2
 				: fx.fixed;
+			if (fx.fixed === 'bide') delete user.bideDmg;
 			if (total <= 0) { this.pushMsg('But it failed!'); return; }
 		} else {
 			for (let h = 0; h < nHits; h++) {
@@ -1388,6 +1476,10 @@ export class Battle {
 			}
 			target.curHP = Math.max(0, target.curHP - dealt);
 			this.float(targetSide, `-${dealt}`, crits ? '#ffd23f' : '#ff7a6b');
+			// damage memory for Counter / Mirror Coat / Metal Burst / Bide
+			// (substitute and disguise hits returned above and don't count)
+			target.lastTaken = { amt: dealt, phys, from: user };
+			if (target.bideDmg != null) target.bideDmg += dealt;
 			// on-hit reaction abilities (Stamina, Gooey, Justified, ...)
 			const rAb = this.abilityOf(target);
 			const rx = AB_ONHIT[rAb];
@@ -1540,7 +1632,7 @@ export class Battle {
 				}
 			});
 		}
-		if (fx.selfKO) {
+		if (fx.selfKO || fx.sacrifice) {
 			this.pushMsg('', () => {
 				user.curHP = 0;
 				this.float(isFoe ? 'foe' : 'me', 'KO', '#ff7a6b');
@@ -1856,8 +1948,9 @@ export class Battle {
 		let best = null, bestScore = 0;
 		for (const m of usable) {
 			const mv = this.data.moves[m.id] || {};
-			if (!mv.power) continue;
-			const score = mv.power
+			const pw = mv.power || AI_EST_POWER[m.id] || 0;
+			if (!pw) continue;
+			const score = pw
 				* (a.foe.types.includes(mv.type) ? 1.5 : 1)
 				* effectiveness(mv.type, a.me.types);
 			if (score > bestScore) { bestScore = score; best = m; }
@@ -2089,8 +2182,9 @@ export class Battle {
 				}
 				else if (a.menuIdx === 1) { if (!a.double || a.actionFor === 0) { a.phase = 'bag'; a.bagIdx = 0; } }
 				else if (a.menuIdx === 2) {
-					const options = a.party.filter(m => m !== a.me && m.curHP > 0);
-					if (options.length) { a.phase = 'switch'; a.switchIdx = 0; }
+					// switchTo only swaps the lead slot, so like bag it is the lead's action
+					const options = a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
+					if (options.length && (!a.double || a.actionFor === 0)) { a.phase = 'switch'; a.switchIdx = 0; }
 				} else {
 					if (a.isTrainer) this.startQueue(() => this.pushMsg("There's no running from a trainer battle!"));
 					else this.startQueue(() => this.tryRun());
@@ -2104,7 +2198,7 @@ export class Battle {
 			if (k === 'x') a.phase = 'menu';
 			if (k === 'z' || k === 'Enter') this.useItem(items[a.bagIdx].id);
 		} else if (a.phase === 'switch') {
-			const options = a.party.filter(m => m !== a.me && m.curHP > 0);
+			const options = a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			if (!options.length) { a.phase = 'menu'; return; }
 			if (k === 'ArrowUp') a.switchIdx = (a.switchIdx + options.length - 1) % options.length;
 			if (k === 'ArrowDown') a.switchIdx = (a.switchIdx + 1) % options.length;
@@ -2891,6 +2985,7 @@ export class Battle {
 
 	switchTo(mon) {
 		const a = this.active;
+		if (mon === a.me || mon === a.meAlly || mon.curHP <= 0) return;
 		this.startQueue(() => {
 			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me, true));
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
@@ -3288,7 +3383,7 @@ export class Battle {
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems()
-				: a.party.filter(m => m !== a.me && m.curHP > 0);
+				: a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			const idx = isBag ? a.bagIdx : a.switchIdx;
 			// compact landscape: two 44px thumb rows instead of three 29px ones —
 			// three tall rows can't fit the bar, so the scroll window shrinks
@@ -3391,7 +3486,7 @@ export class Battle {
 			btn({ x: pad, y: barY + 196 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
-			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m.curHP > 0);
+			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
 			const idx = isBag ? a.bagIdx : a.switchIdx;
 			const start = Math.max(0, Math.min(idx - 1, rows.length - 3));
 			const arrows = rows.length > 3;
