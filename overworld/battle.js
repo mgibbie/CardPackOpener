@@ -3129,12 +3129,19 @@ export class Battle {
 		// keeps bottom-anchoring consistent so feet sit on the platform. `battleScale` then
 		// restores authentic relative size per species (Diglett small, Wailord huge); absent = 1.
 		const bScale = this.data.species[mon.speciesId]?.battleScale || 1;
-		// hand-tuned per-species adjustment (spritetune overlay): scale multiplier
-		// + x/y nudge in scene units, keyed by which sprite variant is shown
+		// per-species sprite tuning (sprite_tuning.json): `crop` is the measured
+		// visible-pixel box ([x,y,w,h] as canvas fractions, from sprite-audit) —
+		// sprites exported with big transparent margins normalize and anchor by
+		// their VISIBLE pixels, so they draw at intended size, feet on the
+		// platform, centred. s/x/y are hand tweaks on top (spritetune overlay).
 		const tune = UI.SPRITE_TUNING[mon.speciesId]?.[side === 'foe' ? 'front' : 'back'];
-		const norm = (96 / Math.max(img.width, img.height)) * bScale * (tune?.s || 1);
+		const cb = tune?.crop;
+		const em = cb ? Math.max(img.width * cb[2], img.height * cb[3]) : Math.max(img.width, img.height);
+		const norm = (96 / em) * bScale * (tune?.s || 1);
 		const w = img.width * pose.scale * norm, h = img.height * pose.scale * norm;
-		ctx.drawImage(img, pose.x + pose.dx - w / 2 + (tune?.x || 0) * u, pose.y + pose.dy - h + (10 + (tune?.y || 0)) * u, w, h);
+		const ax = cb ? (cb[0] + cb[2] / 2) * w : w / 2; // anchor: visible bottom-centre
+		const ay = cb ? (cb[1] + cb[3]) * h : h;
+		ctx.drawImage(img, pose.x + pose.dx - ax + (tune?.x || 0) * u, pose.y + pose.dy - ay + (10 + (tune?.y || 0)) * u, w, h);
 		ctx.restore();
 	}
 
