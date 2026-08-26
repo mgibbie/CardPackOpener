@@ -258,10 +258,15 @@ const nameOf = pi => pi === HUMAN ? 'You'
 const angleOf = pi => (((pi - HUMAN + playerCount) % playerCount) / playerCount) * TAU;
 // radial push so 3+ slices don't overlap at the center
 const sliceOff = () => playerCount <= 2 ? 0 : (playerCount - 2) * 0.9;
-const toWorld = (x, y, z, pi) => new THREE.Vector3(x, y, z).applyAxisAngle(UP, angleOf(pi));
-const sliceQuat = (localEuler, pi) => new THREE.Quaternion()
+// both take an optional `out` — layoutTargets runs per entity per FRAME, and
+// allocating a fresh Vector3 + two Quaternions (+ an Euler) per card per frame
+// churned the GC on phones; with `out` the targets mutate in place
+const _sliceTmpQuat = new THREE.Quaternion();
+const _layoutEuler = new THREE.Euler(); // reusable scratch for per-frame hand tilts
+const toWorld = (x, y, z, pi, out) => (out || new THREE.Vector3()).set(x, y, z).applyAxisAngle(UP, angleOf(pi));
+const sliceQuat = (localEuler, pi, out) => (out || new THREE.Quaternion())
 	.setFromAxisAngle(UP, angleOf(pi))
-	.multiply(new THREE.Quaternion().setFromEuler(localEuler));
+	.multiply(_sliceTmpQuat.setFromEuler(localEuler));
 
 // ---------- scene ----------
 const container = document.getElementById('scene');
@@ -1029,7 +1034,7 @@ function layoutTargets() {
 				if (placing && placing.dragging && card.uid === placing.card.uid) {
 					const wp = screenToGround(mouseX, mouseY, 1.35);
 					ent.target.pos.set(wp.x, 1.35, wp.z);
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.62, 0, 0), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
 					ent.target.scale = 0.9;
 					return;
 				}
@@ -1039,21 +1044,21 @@ function layoutTargets() {
 				if (handMini && !hovered) {
 					// tucked down below the hero panel so the panel reads clearly
 					ent.target.pos.set(x, 1.32 + i * 0.012, off + 7.5 - Math.abs(x) * 0.03);
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = 0.5;
 				} else {
 					// a hovered card lifts up AND pulls toward the camera (+z) so it sits
 					// in FRONT of its neighbors — pushing it back (-z) let siblings, whose
 					// forward-tilted bottom edges are nearer the camera, cover its lower half
 					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
-					ent.target.quat = sliceQuat(new THREE.Euler(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN);
+					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = hovered ? 1.0 : 0.68;
 				}
 			} else {
 				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
 				const x = (i - (n - 1) / 2) * spread;
-				ent.target.pos = toWorld(x, 1.1 + i * 0.012, off + 7.1, pi);
-				ent.target.quat = sliceQuat(new THREE.Euler(0.95 + Math.PI, 0, 0), pi); // back to the table
+				toWorld(x, 1.1 + i * 0.012, off + 7.1, pi, ent.target.pos);
+				sliceQuat(_layoutEuler.set(0.95 + Math.PI, 0, 0), pi, ent.target.quat); // back to the table
 				ent.target.scale = 0.58;
 			}
 		});
@@ -1061,9 +1066,9 @@ function layoutTargets() {
 		p.lands.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi);
+			toWorld((i - 2) * LAND_SPREAD, 0.05, off + LAND_Z, pi, ent.target.pos);
 			// tapped lands turn sideways, MTG-style
-			ent.target.quat = sliceQuat(card.tapped ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
+			sliceQuat(card.tapped ? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// Sprocket: Contraptions sit in fixed slots to the right of the lands; a ring
@@ -1074,14 +1079,13 @@ function layoutTargets() {
 				if (!card) return;
 				const ent = entityFor(card);
 				seen.add(card.uid);
-				ent.target.pos = toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi);
-				ent.target.quat = sliceQuat(FLAT, pi);
+				toWorld(3.7 + i * 0.85, 0.05, off + LAND_Z, pi, ent.target.pos);
+				sliceQuat(FLAT, pi, ent.target.quat);
 				ent.target.scale = 0.32;
 			});
 			if (pi === HUMAN) {
 				if (!sprocketRing) sprocketRing = makeRing('#ffd25f');
-				const rp = toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi);
-				sprocketRing.position.set(rp.x, rp.y, rp.z);
+				toWorld(3.7 + (p.sprocketPointer || 0) * 0.85, 0.03, off + LAND_Z, pi, sprocketRing.position);
 				sprocketRing.scale.setScalar(0.34);
 				sprocketRing.visible = true;
 			}
@@ -1089,8 +1093,8 @@ function layoutTargets() {
 		p.traps.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi);
-			ent.target.quat = sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi);
+			toWorld(TRAP_X + (i - 1) * TRAP_SPREAD, 0.05, off + TRAP_Z, pi, ent.target.pos);
+			sliceQuat(pi === HUMAN ? FLAT : FACEDOWN, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// hero powers mirror the trap row on the left; quests sit outside them.
@@ -1101,15 +1105,15 @@ function layoutTargets() {
 		p.heroPowers.filter(c => c !== orbPow && c.id !== (p.heroClass || '') + '_power').forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(TRAP_X + (i - 1) * TRAP_SPREAD), 0.05, off + TRAP_Z, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.quests.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(1.6 + i * 1.15), 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// planeswalkers: center row between the land slots and the hero
@@ -1118,30 +1122,30 @@ function layoutTargets() {
 			const ent = entityFor(card);
 			seen.add(card.uid);
 			const x = (i - (wn - 1) / 2) * 1.45;
-			ent.target.pos = toWorld(x, 0.07, off + 5.55, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(x, 0.07, off + 5.55, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.5;
 		});
 		// right-outer corner: companion, command zone, then emblem markers
 		if (p.companion) {
 			const ent = entityFor(p.companion);
 			seen.add(p.companion.uid);
-			ent.target.pos = toWorld(1.6, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(1.6, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		}
 		p.command.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(2.8 + i * 1.2, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(2.8 + i * 1.2, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.emblems.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(4.0 + i * 0.95, 0.05, off + 6.35, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(4.0 + i * 0.95, 0.05, off + 6.35, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.34;
 		});
 		// unlimited permanent rows: enchantments left, artifacts right
@@ -1149,15 +1153,15 @@ function layoutTargets() {
 		p.enchantments.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(-(3.55 + i * rowSpread(p.enchantments.length)), 0.05, off + 2.7, pi);
-			ent.target.quat = sliceQuat(FLAT, pi);
+			toWorld(-(3.55 + i * rowSpread(p.enchantments.length)), 0.05, off + 2.7, pi, ent.target.pos);
+			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		p.artifacts.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			ent.target.pos = toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi);
-			ent.target.quat = sliceQuat(card.tapped && card.tapAbility ? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi);
+			toWorld(3.55 + i * rowSpread(p.artifacts.length), 0.05, off + 2.7, pi, ent.target.pos);
+			sliceQuat(card.tapped && card.tapAbility ? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
 		// creature row (unlimited: compress spacing inside the slice arc).
@@ -1169,10 +1173,10 @@ function layoutTargets() {
 			seen.add(card.uid);
 			const spread = Math.min(2.35, rowWidth / Math.max(bn, 1));
 			const x = (i - (bn - 1) / 2) * spread;
-			ent.target.pos = toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi);
+			toWorld(x, 0.06 + i * 0.002, off + CREATURE_Z, pi, ent.target.pos);
 			// tapped locations turn sideways like tapped lands
-			ent.target.quat = sliceQuat(card.type === 'location' && card.tapped
-				? new THREE.Euler(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN);
+			sliceQuat(card.type === 'location' && card.tapped
+				? _layoutEuler.set(-Math.PI / 2, 0, -Math.PI / 2) : FLAT, HUMAN, ent.target.quat);
 			// tokens shrink to their spacing so neighbors never overlap
 			ent.target.scale = Math.min(0.8, (spread * 0.97) / (CARD_W * TOKEN_SCALE));
 		});
@@ -1209,9 +1213,10 @@ function creaturePos(uid) {
 	const ent = entities.get(uid);
 	return ent ? ent.mesh.position.clone() : new THREE.Vector3(0, 1, 0);
 }
-function heroPos(pi) {
-	return toWorld(0, 1.4, sliceOff() + 4.8, pi);
+function heroPos(pi, out) {
+	return toWorld(0, 1.4, sliceOff() + 4.8, pi, out);
 }
+const _panelVec = new THREE.Vector3(); // per-frame scratch for positionPanels
 
 // ---------- HUD ----------
 const $ = id => document.getElementById(id);
@@ -1602,7 +1607,7 @@ function updateHud() {
 function positionPanels() {
 	if (!state) return;
 	for (const [pi, el] of foePanelEls) {
-		const v = heroPos(pi).project(camera);
+		const v = heroPos(pi, _panelVec).project(camera);
 		el.style.left = `${(v.x + 1) / 2 * innerWidth}px`;
 		el.style.top = `${(1 - v.y) / 2 * innerHeight}px`;
 	}
@@ -1612,7 +1617,7 @@ function positionPanels() {
 		if (state.current === HUMAN && lastCurrent !== HUMAN) handMini = false; // a fresh turn raises your hand
 		lastCurrent = state.current;
 		heroPanelMesh.visible = true;
-		heroPanelMesh.position.copy(toWorld(0, 0.92, sliceOff() + 5.15, HUMAN));
+		toWorld(0, 0.92, sliceOff() + 5.15, HUMAN, heroPanelMesh.position);
 		heroPanelMesh.quaternion.copy(camera.quaternion);
 	}
 	const heroTargets = new Set();
