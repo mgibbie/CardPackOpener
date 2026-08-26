@@ -53,6 +53,7 @@ const RATE_LIMITS = {
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
 const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
+const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game boot)
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -707,6 +708,7 @@ export default async function handler(req, env) {
 	// everyone without a deploy. A dev session later folds them into the repo
 	// files (tools/pull-live-tuning.mjs) and clears these keys.
 	if (action === 'tuning-get') {
+		if (!(await rateLimit(store, 'tget:' + clientIp(req), TGET_LIMIT[0], TGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
 		const [art, sprite] = await Promise.all([store.get('owner_tuning_art'), store.get('owner_tuning_sprite')]);
 		return json({ art: art || null, sprite: sprite || null });
 	}
