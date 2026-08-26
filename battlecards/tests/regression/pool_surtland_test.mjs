@@ -37,7 +37,7 @@ const cast = (st, pi, id) => { const c = E.instantiate(byId[id], pi); c.zone = '
 // ---- play-without-throw sweep (all 30) ----
 for (const c of pool) {
   const st = game(); const fr = put(st, 0, '_v'); const foe = put(st, 1, '_wall'); let threw = null;
-  const foeTgt = ['surtr_fire_giant', 'cinderheart_giant', 'surtland_stormcaller', 'surtland_elementalist', 'frost_giant', 'surtland_volcanic_cryomancer', 'surtland_firebolt', 'flame_of_surtr', 'surtland_iceflame_bolt', 'surtland_lava_blast', 'surtland_command'].includes(c.id);
+  const foeTgt = ['surtr_fire_giant', 'cinderheart_giant', 'surtland_stormcaller', 'surtland_elementalist', 'surtland_frost_giant', 'surtland_volcanic_cryomancer', 'surtland_firebolt', 'flame_of_surtr', 'surtland_iceflame_bolt', 'surtland_lava_blast', 'surtland_command'].includes(c.id);
   const tgt = foeTgt ? { type: 'creature', uid: foe.uid, player: 1 } : null;
   try { play(st, 0, c.id, tgt); } catch (e) { threw = e; }
   ok(`${c.id} plays without throwing`, !threw, threw && threw.message);

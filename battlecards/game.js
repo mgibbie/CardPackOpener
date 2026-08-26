@@ -474,7 +474,9 @@ function faceSig(card) {
 		: card.type === 'quest' ? `p${card.progress || 0}`
 		: card.type === 'planeswalker' ? `l${card.loyalty}`
 		: '';
-	return `${formFor(card)}|${card.cost}|${s}|${card.zone === 'hand' && card.controller !== HUMAN ? 'HID' : ''}`;
+	// name + description are part of what the face shows too — rename/text-change
+	// effects otherwise leave guests (snapshot-only sync) on the stale face
+	return `${formFor(card)}|${card.cost}|${s}|${card.name}|${card.description || ''}|${card.zone === 'hand' && card.controller !== HUMAN ? 'HID' : ''}`;
 }
 
 function buildBody(card, form, faceMat) {
@@ -497,6 +499,7 @@ function entityFor(card) {
 		mesh.scale.copy(ent.mesh.scale);
 		scene.remove(ent.mesh);
 		disposeFaceMap(ent.faceMat.map);
+		ent.faceMat.dispose(); // the material itself isn't refcounted — one per entity
 		scene.add(mesh);
 		ent.mesh = mesh;
 		ent.faceMat = faceMat;
@@ -550,6 +553,7 @@ function removeEntity(uid) {
 	scene.remove(ent.mesh);
 	scene.remove(ent.ring);
 	disposeFaceMap(ent.faceMat.map);
+	ent.faceMat.dispose(); // the material itself isn't refcounted — one per entity
 	artRefreshQueue.delete(ent);
 	entities.delete(uid);
 }
@@ -1620,7 +1624,10 @@ function positionPanels() {
 		put.push([el, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, el.offsetWidth, el.offsetHeight]);
 	}
 	for (const [el, x, y, w, h] of put) {
-		el.style.left = `${Math.max(w / 2 + 6, Math.min(innerWidth - w / 2 - 6, x))}px`;
+		// a panel wider than the viewport crosses the clamp bounds — center it
+		// (symmetric cut) instead of pinning left with all the overflow one side
+		const xLo = w / 2 + 6, xHi = innerWidth - w / 2 - 6;
+		el.style.left = `${xLo > xHi ? innerWidth / 2 : Math.max(xLo, Math.min(xHi, x))}px`;
 		el.style.top = `${Math.max(h + 56, Math.min(innerHeight - 6, y))}px`;
 	}
 	// your own hero panel is a 3D object in the scene (billboarded to the camera),

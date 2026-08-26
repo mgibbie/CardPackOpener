@@ -83,7 +83,7 @@ for (const c of pool) {
   ok('Ordeal gives +2/+2 and Elusive and draws', v.attack === a0 + 2 && has(v, 'elusive') && st.players[0].hand.length === h0 + 1, [a0, v.attack, v.keywords]); }
 
 // ---- tidal wave secret: freeze an attacker ----
-{ const st = game(); play(st, 0, 'tidal_wave', null);
+{ const st = game(); play(st, 0, 'thassas_tidal_wave', null);
   ok('Tidal Wave installs as a secret', st.players[0].secrets.length === 1, st.players[0].secrets.length);
   const foe = put(st, 1, '_v'); foe.sick = false; st.current = 1;
   E.attack(st, 1, foe.uid, { type: 'hero', player: 0 });

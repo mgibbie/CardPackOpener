@@ -42,7 +42,7 @@ export class Pvp {
 		for (const sd of match.sides) for (const m of sd.party) {
 			if (!m.sprite || this.sprites.has(m.sprite)) continue;
 			this.sprites.set(m.sprite, null); // claim so duplicate mons don't double-fetch
-			jobs.push(getImage('data/pokemon/' + m.sprite).catch(() => null)
+			jobs.push(getImage('data/pokemon/' + m.sprite)
 				.then(img => {
 					this.sprites.set(m.sprite, img);
 					const back = m.sprite.replace(/\.(png|gif)$/, '-b.$1');
@@ -50,7 +50,10 @@ export class Pvp {
 						return getImage('data/pokemon/' + back).catch(() => img)
 							.then(bimg => { this.sprites.set(back, bimg); });
 					}
-				}));
+				})
+				// a failed fetch un-claims instead of caching null, so the next
+				// poll's loadSprites retries rather than blanking the mon all match
+				.catch(() => { this.sprites.delete(m.sprite); }));
 		}
 		await Promise.all(jobs);
 	}
@@ -184,6 +187,7 @@ export class Pvp {
 		if (a.phase === 'menu') {
 			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
 			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
+			if (a.menuIdx === 2) a.menuIdx = 3; // the grid's blank cell — snap to FORFEIT
 			if (k === 'z' || k === 'Enter') {
 				if (a.menuIdx === 0) { a.phase = 'moves'; a.moveIdx = 0; }
 				else if (a.menuIdx === 1) { a.phase = 'switch'; a.switchIdx = 0; }
@@ -388,9 +392,14 @@ export class Pvp {
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 118 * u, 30 * u, 0, 0, Math.PI * 2); ctx.fill();
 		ctx.globalAlpha = 0.5; ctx.fillStyle = 'rgba(40,70,50,0.8)';
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 104 * u, 24 * u, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-		const key = near ? m.sprite.replace(/\.(png|gif)$/, '-b.$1') : m.sprite;
-		const img = this.sprites.get(key) || this.sprites.get(m.sprite);
-		if (m.curHP <= 0 || !img) return;
+		if (!m.sprite || m.curHP <= 0) return;
+		const front = this.sprites.get(m.sprite);
+		const img = near ? (this.sprites.get(m.sprite.replace(/\.(png|gif)$/, '-b.$1')) || front) : front;
+		if (!img) return;
+		// when the back art fell back to the front image (missing file, or cached
+		// as the front by loadSprites), use the FRONT crop — back crop boxes
+		// anchored into front art draw the mon visibly off its platform
+		const tuneSide = near && img !== front ? 'back' : 'front';
 		const bob = Math.sin(a.t * 2.1 + (near ? 0 : 1.7)) * 2.5 * u;
 		ctx.imageSmoothingEnabled = false;
 		// Fit each sprite into the 96px standard box so mons draw at a consistent size
@@ -399,7 +408,7 @@ export class Pvp {
 		const bScale = m.battleScale ?? this.scaleBySprite?.get(m.sprite) ?? 1;
 		// per-species sprite tuning — crop anchors by visible pixels, s/x/y are
 		// hand tweaks (see battle.js drawSide); near shows the back sprite
-		const tune = UI.SPRITE_TUNING[m.speciesId]?.[near ? 'back' : 'front'];
+		const tune = UI.SPRITE_TUNING[m.speciesId]?.[tuneSide];
 		const cb = tune?.crop;
 		const em = cb ? Math.max(img.width * cb[2], img.height * cb[3]) : Math.max(img.width, img.height);
 		const norm = (96 / em) * bScale * (tune?.s || 1);

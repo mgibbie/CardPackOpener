@@ -63,6 +63,7 @@ const K = [
 	{ p: ['Overkill'], t: 'When this deals more than enough damage to kill a minion on your turn, the excess triggers a bonus effect.' },
 	{ p: ['Dormant'], t: 'Enters asleep: it can’t attack or be targeted, and awakens (firing its effect) after a set number of your turns.' },
 	{ p: ['Silence'], t: 'Remove a minion’s card text, keywords, enchantments, and effects, leaving a plain minion.' },
+	{ p: ['Aura'], t: 'An enchantment that attaches to something (see its Enchant line) and applies its effect while attached.' },
 	{ p: ['Forgetful'], t: 'When it attacks, there is a 50% chance it hits the wrong target instead.' },
 	{ p: ['Time Travel'], t: 'Transform this location into its next era (Past → Present → Future).' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
