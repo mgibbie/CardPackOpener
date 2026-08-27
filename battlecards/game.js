@@ -15,6 +15,8 @@ import * as Finalfantasy from './finalfantasy.js';
 import * as Multiverse from './multiverse.js';
 import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
+import * as SFX from './sfx.js';
+import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 
@@ -1249,6 +1251,12 @@ function renderLogFull() {
 	logFullBody.scrollTop = logFullBody.scrollHeight;
 }
 if (logFull) {
+	{ // sfx mute toggle (persisted in sfx.js)
+		const b = $('sfx-btn');
+		const paint = () => { b.textContent = SFX.isMuted() ? '🔇' : '🔊'; b.classList.toggle('muted', SFX.isMuted()); };
+		paint();
+		b.addEventListener('click', () => { SFX.setMuted(!SFX.isMuted()); paint(); if (!SFX.isMuted()) SFX.play('click'); });
+	}
 	$('log-btn').addEventListener('click', () => {
 		logFull.classList.toggle('open');
 		if (logFull.classList.contains('open')) renderLogFull();
@@ -2568,6 +2576,7 @@ function nextEvent() {
 		case 'turnStart':
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
 			matchStats.turns = Math.max(matchStats.turns, ev.turnNumber || 0);
+			if (ev.player === HUMAN) SFX.play('turn');
 			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`);
 			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
@@ -2584,11 +2593,13 @@ function nextEvent() {
 		}
 		case 'play':
 			if (matchStats) statInc(matchStats.cards, ev.player);
+			SFX.play('cardPlay');
 			log(`${nameOf(ev.player)} played ${ev.card.name}`);
 			delay = 420;
 			break;
 		case 'summon':
 			if (matchStats) statInc(matchStats.summons, ev.player);
+			SFX.play('summon');
 			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
 			delay = 260;
 			break;
@@ -2598,6 +2609,7 @@ function nextEvent() {
 				const to = ev.target.type === 'hero' ? heroPos(ev.target.player) : creaturePos(ev.target.uid);
 				ent.lunge = { from: ent.mesh.position.clone(), to, start: performance.now() };
 			}
+			SFX.play('attack');
 			delay = 460;
 			break;
 		}
@@ -2605,10 +2617,12 @@ function nextEvent() {
 			if (matchStats && ev.targetType === 'hero') statInc(matchStats.heroDmgTaken, ev.player, ev.amount || 0);
 			const pos = ev.targetType === 'hero' ? heroPos(ev.player) : creaturePos(ev.uid);
 			floatText(`-${ev.amount}`, '#ff5f4f', pos);
+			SFX.play(ev.targetType === 'hero' ? 'heroDamage' : 'damage');
 			if (ev.targetType === 'creature') {
 				const ent = entities.get(ev.uid);
-				if (ent) refreshFace(ent);
+				if (ent) { refreshFace(ent); ent.hitT = performance.now(); } // recoil+flash in the render loop
 			} else {
+				shake(Math.min(0.5, 0.1 + (ev.amount || 0) * 0.03)); // hero hits rattle the camera
 				const panel = panelEl(ev.player);
 				if (panel) {
 					panel.classList.add('hit');
@@ -2620,6 +2634,7 @@ function nextEvent() {
 		}
 		case 'heal': {
 			const pos = ev.targetType === 'hero' ? heroPos(ev.player) : creaturePos(ev.uid);
+			SFX.play('heal');
 			floatText(`+${ev.amount}`, '#57e389', pos);
 			if (ev.targetType === 'creature') { const ent = entities.get(ev.uid); if (ent) refreshFace(ent); }
 			delay = 300;
@@ -2627,6 +2642,7 @@ function nextEvent() {
 		}
 		case 'buff': {
 			const ent = entities.get(ev.uid);
+			SFX.play('buff');
 			if (ent) { refreshFace(ent); floatText('▲', '#57e389', ent.mesh.position); }
 			delay = 240;
 			break;
@@ -2637,7 +2653,7 @@ function nextEvent() {
 			break;
 		}
 		case 'marked': floatText('☠', '#ffd25f', creaturePos(ev.uid)); delay = 220; break;
-		case 'freeze': floatText('❄', '#7fd8ff', creaturePos(ev.uid)); delay = 260; break;
+		case 'freeze': SFX.play('freeze'); floatText('❄', '#7fd8ff', creaturePos(ev.uid)); delay = 260; break;
 		case 'paralyzed': floatText('⚡', '#c9a0ff', creaturePos(ev.uid)); log(`${ev.name} is Paralyzed!`); delay = 300; break;
 		case 'attackFizzled': floatText('MISS', '#c9a0ff', creaturePos(ev.attackerUid)); log(`${ev.name}'s attack fizzled (Paralyzed)!`); delay = 320; break;
 		case 'thaw': floatText('❄', '#4a6a7a', creaturePos(ev.uid)); delay = 140; break;
@@ -2651,6 +2667,7 @@ function nextEvent() {
 		case 'destroy':
 		case 'death': {
 			const ent = entities.get(ev.uid);
+			SFX.play('death');
 			if (ent) { ent.dying = performance.now(); }
 			if (ev.name) log(`${ev.name} died`);
 			delay = 330;
@@ -2682,11 +2699,13 @@ function nextEvent() {
 			break;
 		}
 		case 'weaponBreak':
+			SFX.play('weaponBreak');
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
 			floatText('⚔', '#9b93b3', heroPos(ev.player));
 			delay = 300;
 			break;
 		case 'secretPlayed':
+			SFX.play('secret');
 			log(ev.player === HUMAN ? `You set a Secret: ${ev.card.name}` : `${nameOf(ev.player)} set a Secret`);
 			floatText('❓', '#c9b8ff', heroPos(ev.player));
 			delay = 350;
@@ -2696,11 +2715,13 @@ function nextEvent() {
 			delay = 350;
 			break;
 		case 'trapSprung':
+			SFX.play('trap');
 			banner(`Trap: ${ev.card.name}!`, 1600);
 			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Trap sprung: ${ev.card.name}`);
 			delay = 900;
 			break;
 		case 'landPlayed':
+			SFX.play('land');
 			log(`${nameOf(ev.player)} developed ${ev.card.name}`);
 			delay = 320;
 			break;
@@ -2713,7 +2734,7 @@ function nextEvent() {
 			delay = 350;
 			break;
 		case 'manaGained': delay = 120; break;
-		case 'coinGiven': log(`${nameOf(ev.player)} got The Coin`); delay = 120; break;
+		case 'coinGiven': SFX.play('coin'); log(`${nameOf(ev.player)} got The Coin`); delay = 120; break;
 		case 'conjure':
 			log(ev.player === HUMAN ? `You conjured ${ev.card.name}` : `${nameOf(ev.player)} conjured a card`);
 			delay = 350;
@@ -2993,10 +3014,15 @@ function nextEvent() {
 			// own overlays; the old Col.earnGold below is the offline wallet only)
 			if (won && MP_ON && cardPvpId) {
 				MPX.call('run-reward', { result: 'win', mode: 'pvp' })
-					.then(d => { if (!d.error && d.won) log(`🎁 duel won — +1 pack (${d.state.packs} waiting)`); })
+					.then(d => {
+						if (!d.error && d.won) log(`🎁 duel won — +1 pack (${d.state.packs} waiting)`);
+						if (d.state) achCheck(d.state);
+					})
 					.catch(() => {});
 			}
 			const mh = $('mana-hud'); if (mh) mh.style.display = 'none';
+			SFX.play(ev.winner == null ? 'turn' : won ? 'victory' : 'defeat');
+			if (!won && ev.winner != null) shake(0.35);
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
 			Col.earnGold(reward);
@@ -4076,12 +4102,13 @@ function animate() {
 	let busy = !!(placing || pending || selectedAttacker || floaters.length);
 	if (!busy) {
 		for (const ent of entities.values()) {
-			if (ent.dying || ent.lunge
+			if (ent.dying || ent.lunge || ent.hitT
 				|| ent.mesh.position.distanceToSquared(ent.target.pos) > 1e-6
 				|| Math.abs(ent.mesh.scale.x - ent.target.scale) > 1e-4
 				|| ent.mesh.quaternion.angleTo(ent.target.quat) > 1e-3) { busy = true; break; }
 		}
 	}
+	if (now < shakeEnd) busy = true; // camera shake keeps frames flowing
 	if (busy) lastActivity = now;
 	else if (now - lastActivity > 500) return;
 	for (const [uid, ent] of entities) {
@@ -4108,6 +4135,17 @@ function animate() {
 		ent.mesh.quaternion.slerp(ent.target.quat, 1 - Math.pow(0.001, dt));
 		const s = ent.mesh.scale.x + (ent.target.scale - ent.mesh.scale.x) * (1 - Math.pow(0.001, dt));
 		ent.mesh.scale.setScalar(s);
+		// struck-target reaction: a quick recoil pulse + white flash (the attacker
+		// already lunges; without this the victim just stood there)
+		if (ent.hitT) {
+			const t = (now - ent.hitT) / 260;
+			if (t >= 1) { ent.hitT = null; ent.faceMat.emissive?.setScalar(0); }
+			else {
+				const k = Math.sin(Math.PI * Math.min(1, t));
+				ent.mesh.scale.setScalar(s * (1 + 0.14 * k));
+				ent.faceMat.emissive?.setScalar(0.5 * k);
+			}
+		}
 	}
 	for (let i = floaters.length - 1; i >= 0; i--) {
 		const f = floaters[i];
@@ -4120,7 +4158,27 @@ function animate() {
 	positionPanels();
 	drawTargetArrow();
 	updatePlaceMarker();
-	renderer.render(scene, camera);
+	// camera shake: a decaying jitter applied around the render call only, so
+	// the camera's real position is never disturbed
+	const sh = now < shakeEnd ? shakeMag * ((shakeEnd - now) / SHAKE_MS) : 0;
+	if (sh > 0) {
+		const ox = (Math.random() * 2 - 1) * sh, oy = (Math.random() * 2 - 1) * sh * 0.6;
+		camera.position.x += ox; camera.position.y += oy;
+		renderer.render(scene, camera);
+		camera.position.x -= ox; camera.position.y -= oy;
+	} else {
+		renderer.render(scene, camera);
+	}
+}
+// hero damage / defeat rattle the camera briefly (skipped for reduced-motion users)
+const SHAKE_MS = 320;
+const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let shakeEnd = 0, shakeMag = 0;
+function shake(mag) {
+	if (REDUCED_MOTION) return;
+	shakeMag = performance.now() < shakeEnd ? Math.max(shakeMag, mag) : mag;
+	shakeEnd = performance.now() + SHAKE_MS;
+	wake();
 }
 animate();
 
@@ -5635,6 +5693,7 @@ const runModeName = () => multiverseRunMode ? 'multiverse' : finalfantasyRunMode
 async function mpRunReward(el, result) {
 	if (!MP_ON) return;
 	const data = await MPX.call('run-reward', { result, mode: runModeName() });
+	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
 	note.textContent = data.error ? data.error

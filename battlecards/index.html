@@ -245,6 +245,14 @@
 			border-radius: 8px; cursor: pointer; opacity: 0.8;
 		}
 		#log-btn:hover { opacity: 1; }
+		#sfx-btn {
+			position: fixed; right: 12px; top: 128px; top: max(128px, calc(env(safe-area-inset-top) + 118px)); z-index: 40;
+			padding: 5px 10px; font-size: 12px;
+			background: #3a2f57; color: #cbb8e8; border: 1px solid #5a4a80;
+			border-radius: 8px; cursor: pointer; opacity: 0.8;
+		}
+		#sfx-btn:hover { opacity: 1; }
+		#sfx-btn.muted { opacity: 0.5; }
 		#log-full {
 			position: fixed; right: 12px; top: 132px; width: 300px; max-height: 56vh; z-index: 60;
 			display: none; flex-direction: column;
@@ -277,6 +285,7 @@
 			   finger-sized and spaced */
 			#concede { top: 60px; top: max(60px, calc(env(safe-area-inset-top) + 50px)); min-height: 44px; padding: 0 16px; font-size: 13px; }
 			#log-btn { top: 114px; top: max(114px, calc(env(safe-area-inset-top) + 104px)); min-height: 44px; padding: 0 14px; font-size: 13px; }
+			#sfx-btn { top: 168px; top: max(168px, calc(env(safe-area-inset-top) + 158px)); min-height: 44px; padding: 0 14px; font-size: 13px; }
 			#log-full { top: 168px; top: max(168px, calc(env(safe-area-inset-top) + 158px)); }
 			#rotate-hint button { font-size: 19px; padding: 10px 12px; margin: -8px -4px; }
 			#mana-hud { left: 10px; bottom: 10px; padding: 6px 11px; }
@@ -299,6 +308,7 @@
 			#concede { min-height: 40px; padding: 0 14px; }
 			/* the 40px-tall buttons outgrow the desktop 34px stack rhythm */
 			#log-btn { top: 108px; top: max(108px, calc(env(safe-area-inset-top) + 98px)); min-height: 40px; padding: 0 12px; }
+			#sfx-btn { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); min-height: 40px; padding: 0 12px; }
 			#log-full { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); max-height: 64vh; }
 			#end-turn { padding: 10px 20px; font-size: 14px; }
 			#hint { font-size: 12px; bottom: 4px; }
@@ -373,6 +383,7 @@
 	<div id="dungeon-panel" style="display:none;"><div class="dp-title"></div><div class="dp-card"></div><div class="dp-room"></div></div>
 	<div id="log" class="hud"></div>
 	<button id="log-btn" title="Full game log">📜 Log</button>
+	<button id="sfx-btn" title="Toggle sound effects">🔊</button>
 	<div id="log-full"><div class="lf-head"><span>Game log</span><button class="lf-close" title="Close">✕</button></div><div class="lf-body"></div></div>
 	<div id="hint" class="hud"></div>
 	<div id="banner"></div>
