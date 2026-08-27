@@ -105,6 +105,60 @@ export const ITEMS = {
 	hm6: { name: 'HM06 ROCK SMASH', price: 0, kind: 'hm' },
 	hm7: { name: 'HM07 WATERFALL',  price: 0, kind: 'hm' },
 	hm8: { name: 'HM08 DIVE',       price: 0, kind: 'hm' },
+
+	// vitamins — +10 EVs in one stat (252/stat, 510 total; stats fold in on recalc)
+	hpup:    { name: 'HP UP',    price: 4900, kind: 'vitamin', stat: 'hp' },
+	protein: { name: 'PROTEIN',  price: 4900, kind: 'vitamin', stat: 'atk' },
+	iron:    { name: 'IRON',     price: 4900, kind: 'vitamin', stat: 'def' },
+	calcium: { name: 'CALCIUM',  price: 4900, kind: 'vitamin', stat: 'spa' },
+	zinc:    { name: 'ZINC',     price: 4900, kind: 'vitamin', stat: 'spd' },
+	carbos:  { name: 'CARBOS',   price: 4900, kind: 'vitamin', stat: 'spe' },
+
+	// late-gen evolution items — 12 species were unevolvable because these were
+	// never obtainable (the evo data referenced them; the bag never stocked them)
+	galaricacuff:      { name: 'GALARICA CUFF',      price: 3000, kind: 'stone' },
+	galaricawreath:    { name: 'GALARICA WREATH',    price: 3000, kind: 'stone' },
+	tartapple:         { name: 'TART APPLE',         price: 3000, kind: 'stone' },
+	sweetapple:        { name: 'SWEET APPLE',        price: 3000, kind: 'stone' },
+	syrupyapple:       { name: 'SYRUPY APPLE',       price: 3000, kind: 'stone' },
+	crackedpot:        { name: 'CRACKED POT',        price: 3000, kind: 'stone' },
+	chippedpot:        { name: 'CHIPPED POT',        price: 3000, kind: 'stone' },
+	auspiciousarmor:   { name: 'AUSPICIOUS ARMOR',   price: 3000, kind: 'stone' },
+	maliciousarmor:    { name: 'MALICIOUS ARMOR',    price: 3000, kind: 'stone' },
+	unremarkableteacup:{ name: 'UNREMARKABLE TEACUP', price: 3000, kind: 'stone' },
+	masterpieceteacup: { name: 'MASTERPIECE TEACUP', price: 3000, kind: 'stone' },
+	metalalloy:        { name: 'METAL ALLOY',        price: 3000, kind: 'stone' },
+
+	// TMs — reusable move discs sold at marts (id = tm + move id; the teach flow
+	// derives the move from the id and checks the machine-compat table)
+	tmthunderbolt:   { name: 'TM THUNDERBOLT',    price: 3000, kind: 'tm' },
+	tmflamethrower:  { name: 'TM FLAMETHROWER',   price: 3000, kind: 'tm' },
+	tmicebeam:       { name: 'TM ICE BEAM',       price: 3000, kind: 'tm' },
+	tmenergyball:    { name: 'TM ENERGY BALL',    price: 3000, kind: 'tm' },
+	tmsludgebomb:    { name: 'TM SLUDGE BOMB',    price: 3000, kind: 'tm' },
+	tmpsychic:       { name: 'TM PSYCHIC',        price: 3000, kind: 'tm' },
+	tmshadowball:    { name: 'TM SHADOW BALL',    price: 3000, kind: 'tm' },
+	tmdazzlinggleam: { name: 'TM DAZZLING GLEAM', price: 3000, kind: 'tm' },
+	tmdragonclaw:    { name: 'TM DRAGON CLAW',    price: 3000, kind: 'tm' },
+	tmearthquake:    { name: 'TM EARTHQUAKE',     price: 5000, kind: 'tm' },
+	tmrockslide:     { name: 'TM ROCK SLIDE',     price: 2500, kind: 'tm' },
+	tmbrickbreak:    { name: 'TM BRICK BREAK',    price: 2500, kind: 'tm' },
+	tmxscissor:      { name: 'TM X-SCISSOR',      price: 2500, kind: 'tm' },
+	tmaerialace:     { name: 'TM AERIAL ACE',     price: 2000, kind: 'tm' },
+	tmflashcannon:   { name: 'TM FLASH CANNON',   price: 2500, kind: 'tm' },
+	tmdarkpulse:     { name: 'TM DARK PULSE',     price: 2500, kind: 'tm' },
+	tmwaterpulse:    { name: 'TM WATER PULSE',    price: 2000, kind: 'tm' },
+	tmthunderwave:   { name: 'TM THUNDER WAVE',   price: 1500, kind: 'tm' },
+	tmwillowisp:     { name: 'TM WILL-O-WISP',    price: 1500, kind: 'tm' },
+	tmtoxic:         { name: 'TM TOXIC',          price: 1500, kind: 'tm' },
+	tmprotect:       { name: 'TM PROTECT',        price: 1500, kind: 'tm' },
+	tmsubstitute:    { name: 'TM SUBSTITUTE',     price: 2000, kind: 'tm' },
+	tmswordsdance:   { name: 'TM SWORDS DANCE',   price: 2500, kind: 'tm' },
+	tmcalmmind:      { name: 'TM CALM MIND',      price: 2500, kind: 'tm' },
+	tmnastyplot:     { name: 'TM NASTY PLOT',     price: 2500, kind: 'tm' },
+	tmbulkup:        { name: 'TM BULK UP',        price: 2500, kind: 'tm' },
+	tmroost:         { name: 'TM ROOST',          price: 2000, kind: 'tm' },
+	tmstealthrock:   { name: 'TM STEALTH ROCK',   price: 2500, kind: 'tm' },
 };
 
 // display names for arbitrary picked-up item ids (TMs, berries, key items...)
@@ -129,7 +183,16 @@ export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'supe
 	'shinystone', 'duskstone', 'dawnstone', 'icestone', 'linkingcord',
 	'oranberry', 'sitrusberry', 'lumberry', 'leftovers',
 	'choiceband', 'choicespecs', 'choicescarf', 'lifeorb', 'focussash', 'quickclaw',
-	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed'];
+	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed',
+	'hpup', 'protein', 'iron', 'calcium', 'zinc', 'carbos',
+	'galaricacuff', 'galaricawreath', 'tartapple', 'sweetapple', 'syrupyapple', 'crackedpot',
+	'chippedpot', 'auspiciousarmor', 'maliciousarmor', 'unremarkableteacup', 'masterpieceteacup', 'metalalloy',
+	// TMs (reusable — buy once, teach the whole party)
+	'tmthunderbolt', 'tmflamethrower', 'tmicebeam', 'tmenergyball', 'tmsludgebomb', 'tmpsychic',
+	'tmshadowball', 'tmdazzlinggleam', 'tmdragonclaw', 'tmearthquake', 'tmrockslide', 'tmbrickbreak',
+	'tmxscissor', 'tmaerialace', 'tmflashcannon', 'tmdarkpulse', 'tmwaterpulse', 'tmthunderwave',
+	'tmwillowisp', 'tmtoxic', 'tmprotect', 'tmsubstitute', 'tmswordsdance', 'tmcalmmind',
+	'tmnastyplot', 'tmbulkup', 'tmroost', 'tmstealthrock'];
 // held items a wild mon might be carrying (15% roll)
 export const WILD_HELD = ['oranberry', 'sitrusberry', 'lumberry', 'chestoberry', 'pechaberry',
 	'cheriberry', 'persimberry', 'leftovers', 'quickclaw', 'kingsrock'];
