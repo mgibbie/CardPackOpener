@@ -173,3 +173,56 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 export function treasurePool(cardsById) {
 	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.scTreasure);
 }
+
+// ---------- character progression ----------
+// 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
+// Enemies become playable only after every core hero is unlocked, each via a
+// hard feat: consecutive CLEARED runs (12 wins) as the linked hero. Secret
+// heroes keep their own unlock mechanics and join the pool once earned.
+export const STARTERS = ["Drizzt","Bruenor","Catti-brie"];
+export const CORE_UNLOCK_ORDER = ["Wulfgar","Minsc","Jaheira","Halsin","Mazzy","Nadaar","Volo"];
+// enemy -> [linked hero, consecutive run WINS required]
+export const ENEMY_UNLOCKS = {
+	"Targ Nar, Demon-Fang Gnoll": ["Drizzt", 2],
+	"Orcus, Prince of Undeath": ["Drizzt", 3],
+	"Tiamat": ["Drizzt", 4],
+	"Kazuul, Tyrant of the Cliffs": ["Bruenor", 2],
+	"Zalto, Fire Giant Duke": ["Bruenor", 2],
+	"Storvald, Frost Giant Jarl": ["Bruenor", 3],
+	"Grumgully, the Generous": ["Catti-brie", 2],
+	"Old Gnawbone": ["Catti-brie", 3],
+	"Myrkul, Lord of Bones": ["Catti-brie", 3],
+	"Burakos, Party Leader": ["Wulfgar", 2],
+	"Captain N'ghathrod": ["Wulfgar", 3],
+	"Sarevok, Deathbringer": ["Minsc", 3],
+	"Bhaal, Lord of Murder": ["Minsc", 3],
+	"Asmodeus the Archfiend": ["Minsc", 4],
+	"Nalia de'Arnise": ["Jaheira", 2],
+	"Jon Irenicus, Shattered One": ["Jaheira", 3],
+	"Gut, True Soul Zealot": ["Halsin", 2],
+	"Baba Lysaga, Night Witch": ["Halsin", 2],
+	"Raphael, Fiendish Savior": ["Halsin", 3],
+	"Safana, Calimport Cutthroat": ["Mazzy", 2],
+	"Karazikar, the Eye Tyrant": ["Mazzy", 3],
+	"Acererak the Archlich": ["Mazzy", 3],
+	"Ebondeath, Dracolich": ["Nadaar", 3],
+	"Bane, Lord of Darkness": ["Nadaar", 3],
+	"Baeloth Barrityl, Entertainer": ["Volo", 2],
+	"Kalain, Reclusive Painter": ["Volo", 2],
+	"Xanathar, Guild Kingpin": ["Volo", 3],
+};
+// which characters this account may play; stats = the server user.stats.
+// null (free play, no account) = the full roster.
+export function unlockedCharacters(stats) {
+	if (!stats) return [...HEROES, ...ENEMIES];
+	const runs = stats.modes?.swordcoast?.runs || 0;
+	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
+	const out = [...cores];
+	if (cores.length >= HEROES.length) {
+		const chars = stats.chars || {};
+		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
+			if ((chars['swordcoast|' + hero]?.best || 0) >= need) out.push(en);
+		}
+	}
+	return out;
+}

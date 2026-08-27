@@ -36,6 +36,31 @@ ok('a 3-streak unlocks Lolth too', u2.includes('Gix') && u2.includes('Lolth'));
 const early = unlockedCharacters({ modes: { lorequest: { runs: 2 } }, chars: { 'lorequest|Ob Nixilis': { best: 5 } } });
 ok('boss feats do nothing before the core roster completes', !early.includes('Gix'));
 
+// ---- the four sibling modes: table integrity + derivation, same rules ----
+const ME = await import('../../middleearth.js');
+const SC = await import('../../swordcoast.js');
+const FF = await import('../../finalfantasy.js');
+const MV = await import('../../multiverse.js');
+for (const [key, M] of [['middleearth', ME], ['swordcoast', SC], ['finalfantasy', FF], ['multiverse', MV]]) {
+	const { HEROES, ENEMIES, STARTERS: ST, CORE_UNLOCK_ORDER: ORD, ENEMY_UNLOCKS: EU, unlockedCharacters: uc } = M;
+	ok(`${key}: 3 starters, all real heroes`, ST.length === 3 && ST.every(c => HEROES.includes(c)));
+	ok(`${key}: starters + order = all ${HEROES.length} heroes, no dupes`,
+		new Set([...ST, ...ORD]).size === HEROES.length && [...ST, ...ORD].every(c => HEROES.includes(c)));
+	ok(`${key}: every enemy has an unlock entry`, ENEMIES.every(e => EU[e]), ENEMIES.filter(e => !EU[e]));
+	ok(`${key}: no entry for a non-enemy`, Object.keys(EU).every(e => ENEMIES.includes(e)));
+	ok(`${key}: every unlock links a real hero, streak >= 2`,
+		Object.values(EU).every(([h, n]) => HEROES.includes(h) && n >= 2));
+	ok(`${key}: free play = full roster`, uc(null).length === HEROES.length + ENEMIES.length);
+	ok(`${key}: fresh account = the starters`, uc({}).join(',') === ST.join(','));
+	const allCores = { modes: { [key]: { runs: ORD.length } } };
+	ok(`${key}: ${ORD.length} runs = all cores, no enemies`, uc(allCores).length === HEROES.length);
+	const [someEnemy, [linkedHero, need]] = Object.entries(EU)[0];
+	const withFeat = { ...allCores, chars: { [key + '|' + linkedHero]: { best: need } } };
+	ok(`${key}: the feat unlocks its enemy`, uc(withFeat).includes(someEnemy));
+	ok(`${key}: feats do nothing before the cores complete`,
+		!uc({ modes: { [key]: { runs: 1 } }, chars: { [key + '|' + linkedHero]: { best: 9 } } }).includes(someEnemy));
+}
+
 // ---- the offer helper ----
 const offer = Lorequest.offerFrom(['a', 'b', 'c', 'd'], () => 0.5, 3);
 ok('offerFrom gives 3 distinct picks', new Set(offer).size === 3);
