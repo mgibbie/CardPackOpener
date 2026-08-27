@@ -136,9 +136,15 @@
 	if (await requireOwner()) {
 		$('refresh').addEventListener('click', load);
 		$('clear').addEventListener('click', async () => {
-			if (!confirm('Clear the whole inbox (' + todos.length + ' notes)?')) return;
-			try { await MP.call('todo-done', { all: true }); todos = []; render(); $('msg').textContent = 'inbox cleared'; }
-			catch (e) { $('msg').textContent = 'clear failed: ' + String(e.message || e).slice(0, 80); }
+			if (!confirm('Clear these ' + todos.length + ' notes?')) return;
+			// clear exactly the notes ON SCREEN (by timestamp) — a note filed since
+			// this page rendered survives and shows up on the reload below
+			const shown = todos.map(t => t.ts);
+			try {
+				await MP.call('todo-done', { tsList: shown });
+				$('msg').textContent = 'cleared ' + shown.length + ' notes';
+				await load();
+			} catch (e) { $('msg').textContent = 'clear failed: ' + String(e.message || e).slice(0, 80); }
 		});
 		$('add').addEventListener('click', async () => {
 			const text = $('new-note').value.trim();
