@@ -27,6 +27,15 @@
 	.toolbar input[type=search] { flex: 1; min-width: 160px; max-width: 300px; padding: 7px 10px; border: 1px solid #cfd6e4; border-radius: 6px; font: inherit; }
 	.toolbar select { padding: 6px 8px; border: 1px solid #cfd6e4; border-radius: 6px; font: inherit; background: #fff; }
 	.own-summary { color: #565f7a; margin: 6px 0 0; }
+	.dust-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0 0; }
+	.dust-chip { background: #fff; border: 1px solid #e1e6f0; border-radius: 999px; padding: 5px 14px; color: #1f2a44; font-weight: 600; }
+	.dust-btn { background: #2b6cb0; color: #fff; border: 0; border-radius: 8px; padding: 7px 14px; font: 600 13px system-ui, sans-serif; cursor: pointer; }
+	.dust-btn:hover { filter: brightness(1.08); }
+	.dust-hint { color: #697396; font-size: 12.5px; }
+	.wiki-card .craft-btn { position: absolute; left: 50%; bottom: 26%; transform: translateX(-50%); z-index: 2;
+		background: #6b4fd4; color: #fff; border: 0; border-radius: 8px; padding: 5px 12px; font: 700 12px system-ui, sans-serif; cursor: pointer; opacity: 0; transition: opacity .15s; }
+	.wiki-card:hover .craft-btn, .wiki-card:focus-within .craft-btn { opacity: 1; }
+	.craft-btn:disabled { background: #8a93ad; cursor: default; }
 	.count-line { color: #697396; font-size: 12.5px; margin: 8px 0 0; }
 	/* completion meter + per-class breakdown */
 	.completion { margin: 10px 0 4px; }
@@ -86,6 +95,11 @@
 <div id="content">
 	<h1>Your Collection</h1>
 	<p class="own-summary" id="summary">Loading your collection…</p>
+	<p class="dust-row" id="dust-row" hidden>
+		<span class="dust-chip">💎 <b id="dust-amt">0</b> dust</span>
+		<button id="dust-extras" class="dust-btn" hidden>♻️ Dust extras <span id="dust-preview"></span></button>
+		<span class="dust-hint">Extra copies beyond a playset convert to dust; craft any missing card from its tile (Show: Missing).</span>
+	</p>
 	<div class="completion" id="completion" hidden>
 		<div class="meter"><div class="meter-fill" id="meter-fill"></div><span class="meter-label" id="meter-label"></span></div>
 		<details class="class-breakdown"><summary>Completion by class</summary><div class="cb-grid" id="cb-grid"></div></details>
@@ -126,7 +140,34 @@ const $ = id => document.getElementById(id);
 const grid = $('grid');
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'special'];
 
-let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, poolIds = [], state = null;
+let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, poolIds = [], state = null, poolData = null;
+
+// dust economy (mirror of the server's tables — server validates)
+const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+const capFor = r => r === 'legendary' ? 1 : 2;
+function extrasPreview() {
+	const col = state.collection || {};
+	let gained = 0;
+	for (const [id, n] of Object.entries(col)) {
+		const info = poolData?.[id];
+		if (!info || n <= 0) continue;
+		const extra = n - capFor(info[0]);
+		if (extra > 0 && DUST_VALUE[info[0]]) gained += extra * DUST_VALUE[info[0]];
+	}
+	return gained;
+}
+function refreshDustUi() {
+	$('dust-row').hidden = false;
+	$('dust-amt').textContent = (state.dust || 0).toLocaleString();
+	const gain = extrasPreview();
+	$('dust-extras').hidden = gain <= 0;
+	$('dust-preview').textContent = `(+${gain.toLocaleString()})`;
+}
+function refreshOwned() {
+	const col = state.collection || {};
+	owned = Object.entries(col).filter(([id, n]) => n > 0 && byId[id]).map(([id, n]) => ({ card: byId[id], count: n }));
+}
 
 (async () => {
 	// account state (server-owned collection) + the card database + the renderer
@@ -142,6 +183,7 @@ let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, poolIds = [], stat
 	CardArt = art;
 	cards = raw.cards;
 	for (const c of cards) byId[c.id] = c;
+	poolData = pool;
 	poolSize = pool ? Object.keys(pool).length : 0;
 
 	const col = state.collection || {};
@@ -187,6 +229,24 @@ let CardArt, cards = [], byId = {}, owned = [], poolSize = 0, poolIds = [], stat
 
 	for (const id of ['q', 'f-owned', 'f-class', 'f-type', 'f-rarity', 'f-sort']) $(id).addEventListener('input', render);
 	$('f-size').addEventListener('input', () => { grid.className = 'card-grid size-' + $('f-size').value; });
+	// dust & crafting
+	refreshDustUi();
+	$('dust-extras').addEventListener('click', async () => {
+		const btn = $('dust-extras');
+		btn.disabled = true;
+		try {
+			const r = await MP.call('dust-extras');
+			if (r.error) { $('summary').textContent = r.error; }
+			else {
+				if (r.state) state = r.state;
+				refreshOwned(); refreshDustUi(); render();
+				$('summary').textContent = r.dusted
+					? `♻️ Dusted ${r.dusted.toLocaleString()} extra cop${r.dusted === 1 ? 'y' : 'ies'} for 💎 ${r.gained.toLocaleString()} dust.`
+					: 'No extra copies to dust.';
+			}
+		} catch (e) { $('summary').textContent = 'Dusting failed: ' + String(e.message || e).slice(0, 80); }
+		btn.disabled = false;
+	});
 	render();
 })().catch(e => { $('summary').textContent = 'Could not load your collection: ' + e.message; });
 
@@ -242,6 +302,28 @@ async function render() {
 			a.dataset.cid = card.id; a.dataset.count = count;
 			a.href = '/designwiki/#/cards/' + card.id;
 			a.appendChild(img);
+			// craft a missing pool card in place (server validates cost + caps)
+			const cost = count === 0 && poolData?.[card.id] && CRAFT_COST[poolData[card.id][0]];
+			if (cost) {
+				const cb = document.createElement('button');
+				cb.className = 'craft-btn';
+				cb.textContent = `⚒ Craft (${cost})`;
+				cb.title = `Craft ${card.name} for ${cost} dust`;
+				cb.addEventListener('click', async (ev) => {
+					ev.preventDefault(); ev.stopPropagation();
+					cb.disabled = true;
+					try {
+						const r = await MP.call('craft', { id: card.id });
+						if (r.error) { cb.textContent = r.error.slice(0, 26); setTimeout(() => { cb.textContent = `⚒ Craft (${cost})`; cb.disabled = false; }, 1600); return; }
+						if (r.state) state = r.state;
+						refreshOwned(); refreshDustUi();
+						a.classList.remove('unowned'); a.dataset.count = r.count;
+						cb.textContent = '✓ Crafted!';
+						setTimeout(() => cb.remove(), 1200);
+					} catch (e) { cb.textContent = 'failed'; setTimeout(() => { cb.textContent = `⚒ Craft (${cost})`; cb.disabled = false; }, 1600); }
+				});
+				a.appendChild(cb);
+			}
 			frag.appendChild(a);
 		}
 		grid.appendChild(frag);
