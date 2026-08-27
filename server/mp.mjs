@@ -1939,6 +1939,18 @@ export default async function handler(req, env) {
 			const ms = user.stats.modes[mode] = user.stats.modes[mode] || { runs: 0, wins: 0 };
 			ms.runs += 1;
 			if (won) ms.wins += 1;
+			// per-character run record — drives the character-unlock feats
+			// ("win 2 runs in a row as X"). streak = consecutive WINS with that
+			// character; best = the high-water mark the unlock checks read.
+			const ch = [...String(body.character || '')].filter(c => c.charCodeAt(0) >= 32).join('').slice(0, 40).trim();
+			if (ch && mode !== 'pvp') {
+				user.stats.chars = user.stats.chars || {};
+				const key = mode + '|' + ch;
+				const cs = user.stats.chars[key] = user.stats.chars[key] || { runs: 0, wins: 0, streak: 0, best: 0 };
+				cs.runs += 1;
+				if (won) { cs.wins += 1; cs.streak += 1; cs.best = Math.max(cs.best, cs.streak); }
+				else cs.streak = 0;
+			}
 		}
 		user.stats.lastReward = Date.now();
 		await store.setJSON(username, user);

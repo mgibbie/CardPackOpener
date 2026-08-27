@@ -41,12 +41,53 @@ export function deckOf(cardsById, character) {
 	return deck;
 }
 
-// three distinct planeswalkers to offer as starter decks
-export function starterChoices(rng, count = 3) {
-	const pool = [...PLANESWALKERS];
-	const out = [];
-	for (let i = 0; i < count && pool.length; i++) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+// ---------- character progression ----------
+// You start with 3 planeswalkers; one more core unlocks per COMPLETED run
+// (win or lose), in a themed easy->hard order. The 21 bosses become playable
+// only after every planeswalker is unlocked, each via a hard character feat:
+// consecutive cleared runs (12 wins) as the thematically-linked planeswalker.
+export const STARTERS = ['Chandra', 'Ajani', 'Garruk'];
+export const CORE_UNLOCK_ORDER = ['Jace', 'Gideon', 'Liliana', 'Nissa', 'Sorin', 'Teferi', 'Elspeth',
+	'Vivian', 'Daretti', 'Lukka', 'Ob Nixilis', 'Tezzeret', 'Karn'];
+// boss -> [linked planeswalker, consecutive run WINS required]
+export const BOSS_UNLOCKS = {
+	'Elesh Norn': ['Ajani', 2], Urabrask: ['Chandra', 2], Vorinclex: ['Nissa', 2],
+	Emrakul: ['Jace', 2], Tekuthal: ['Jace', 3],
+	Urza: ['Teferi', 2],
+	Sheoldred: ['Liliana', 2], Yawgmoth: ['Liliana', 3],
+	Gix: ['Ob Nixilis', 2], Lolth: ['Ob Nixilis', 3],
+	'Edgar Markov': ['Sorin', 2], Drana: ['Sorin', 3],
+	Kozilek: ['Karn', 2], Ulamog: ['Karn', 3],
+	Mishra: ['Daretti', 2], 'Nicol Bolas': ['Tezzeret', 2], Mondrak: ['Gideon', 2],
+	Zopandrel: ['Garruk', 2], Solphim: ['Lukka', 2], Drivnod: ['Vivian', 2], Zhulodok: ['Elspeth', 2],
+};
+// which characters this account may play. stats = the server user.stats (modes +
+// chars records); null (free play, no account) = the full roster.
+export function unlockedCharacters(stats) {
+	if (!stats) return [...PLANESWALKERS, ...BOSSES];
+	const runs = stats.modes?.lorequest?.runs || 0;
+	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
+	const out = [...cores];
+	if (cores.length >= PLANESWALKERS.length) {
+		const chars = stats.chars || {};
+		for (const [boss, [pw, need]] of Object.entries(BOSS_UNLOCKS)) {
+			if ((chars['lorequest|' + pw]?.best || 0) >= need) out.push(boss);
+		}
+	}
 	return out;
+}
+
+// N distinct random characters from a pool (the run-start offer)
+export function offerFrom(pool, rng, count = 3) {
+	const bag = [...pool];
+	const out = [];
+	for (let i = 0; i < count && bag.length; i++) out.push(bag.splice(Math.floor(rng() * bag.length), 1)[0]);
+	return out;
+}
+
+// three distinct planeswalkers to offer as starter decks (free-play path)
+export function starterChoices(rng, count = 3) {
+	return offerFrom(PLANESWALKERS, rng, count);
 }
 
 // which roster the next enemy (at `games` = wins+losses played) is drawn from
