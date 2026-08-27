@@ -46,6 +46,7 @@ const RATE_LIMITS = {
 	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
 	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
 	'run-score': [20, 60_000], 'duel-result': [10, 60_000], // run boards + Elo reports — one per finished run/duel
+	'craft': [60, 60_000], 'dust-extras': [10, 60_000], // crafting sprees are fine; bulk dusting is rare
 	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
@@ -551,6 +552,7 @@ const publicState = (u, username) => ({
 	packTimerMs: PACK_TIMER_MS,
 	nextPackMs: packEtaMs(u, Date.now()),
 	stats: u.stats,
+	dust: u.dust || 0,
 	arenaBest: u.arenaBest || null,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
@@ -876,6 +878,47 @@ export default async function handler(req, env) {
 		const board = (await store.get('arena:board')) || [];
 		const rank = board.findIndex(e => e.name === username) + 1;
 		return json({ top: board.slice(0, 50), you: user.arenaBest ? { ...user.arenaBest, rank: rank || null } : null });
+	}
+
+	// ---------- dust & crafting ----------
+	// Extra copies beyond the deck cap (2, legendaries 1) were pure waste and a
+	// missing single was pure pack luck — the collection endgame dead-ended.
+	// Disenchanting extras pays dust; crafting spends it on the exact card.
+	if (action === 'dust-extras' || action === 'craft') {
+		if (TEST_PHASE) return json({ error: 'crafting is disabled during the test phase' }, 400);
+		const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+		const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+		user.dust = user.dust || 0;
+		if (action === 'dust-extras') {
+			let gained = 0, dusted = 0;
+			const col = user.collection || {};
+			for (const [id, n] of Object.entries(col)) {
+				const info = POOL[id];
+				if (!info || n <= 0) continue;
+				const cap = info[0] === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
+				const extra = n - cap;
+				const v = DUST_VALUE[info[0]];
+				if (extra <= 0 || !v) continue;
+				col[id] = cap;
+				gained += extra * v;
+				dusted += extra;
+			}
+			user.dust += gained;
+			if (gained) await store.setJSON(username, user);
+			return json({ ok: true, dusted, gained, dust: user.dust, state: publicState(user, username) });
+		}
+		const id = String(body.id || '');
+		const info = POOL[id];
+		const cost = info && CRAFT_COST[info[0]];
+		if (!cost) return json({ error: 'not a craftable card' }, 400);
+		const cap = info[0] === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
+		const col = user.collection || (user.collection = {});
+		if ((col[id] || 0) >= cap) return json({ error: 'you already have a full playset' }, 400);
+		if (user.dust < cost) return json({ error: `not enough dust (${cost} needed, you have ${user.dust})` }, 400);
+		user.dust -= cost;
+		col[id] = (col[id] || 0) + 1;
+		await store.setJSON(username, user);
+		return json({ ok: true, dust: user.dust, count: col[id], state: publicState(user, username) });
 	}
 
 	// ---------- run-mode leaderboards (the Duels-family 12-win climbs) ----------
