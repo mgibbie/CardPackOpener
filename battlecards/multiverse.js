@@ -157,3 +157,50 @@ export function generateEnemy(cardsById, character, wins, rng) {
 export function treasurePool(cardsById) {
 	return Object.values(cardsById).filter(d => d.mvTreasure || (d.treasure && d.set === 'DUELS'));
 }
+
+// ---------- character progression ----------
+// 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
+// Enemies become playable only after every core hero is unlocked, each via a
+// hard feat: consecutive CLEARED runs (12 wins) as the linked hero. Secret
+// heroes keep their own unlock mechanics and join the pool once earned.
+export const STARTERS = ["Spider-Man","Iron Man","Captain America"];
+export const CORE_UNLOCK_ORDER = ["Thor","Hulk","Wolverine","Storm","Black Panther","Doctor Strange","Captain Marvel"];
+// enemy -> [linked hero, consecutive run WINS required]
+export const ENEMY_UNLOCKS = {
+	"Venom": ["Spider-Man", 2],
+	"Doctor Octopus": ["Spider-Man", 2],
+	"Green Goblin": ["Spider-Man", 3],
+	"Vulture": ["Iron Man", 2],
+	"Shocker": ["Iron Man", 2],
+	"Kang the Conqueror": ["Iron Man", 3],
+	"Sandman": ["Captain America", 2],
+	"Kingpin": ["Captain America", 3],
+	"Loki": ["Thor", 3],
+	"Galactus": ["Thor", 4],
+	"Rhino": ["Hulk", 2],
+	"Abomination": ["Hulk", 3],
+	"Carnage": ["Wolverine", 2],
+	"Kraven": ["Wolverine", 2],
+	"Mysterio": ["Doctor Strange", 2],
+	"Doctor Doom": ["Doctor Strange", 3],
+	"Lizard": ["Black Panther", 2],
+	"Scorpion": ["Black Panther", 2],
+	"Electro": ["Storm", 2],
+	"Hobgoblin": ["Captain Marvel", 2],
+	"Thanos": ["Captain Marvel", 4],
+};
+// which characters this account may play; stats = the server user.stats.
+// null (free play, no account) = the full roster.
+export function unlockedCharacters(stats) {
+	if (!stats) return [...HEROES, ...ENEMIES];
+	const runs = stats.modes?.multiverse?.runs || 0;
+	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
+	const out = [...cores];
+	if (cores.length >= HEROES.length) {
+		const chars = stats.chars || {};
+		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
+			if ((chars['multiverse|' + hero]?.best || 0) >= need) out.push(en);
+		}
+	}
+	return out;
+}

@@ -6866,17 +6866,25 @@ function resumeMiddleEarthOverlay(run) {
 }
 
 // full choice of all 10 heroes (+ Tom Bombadil once unlocked), each showing its signature + power
-function pickMiddleEarthHeroOverlay(cardsById) {
+async function pickMiddleEarthHeroOverlay(cardsById) {
+	// account progression: 3 random UNLOCKED characters per run (secret heroes
+	// join the pool once their own unlock fires). Free play = the full roster.
+	let stats = null;
+	if (MP_ON) {
+		try { stats = (await MPX.freshState())?.stats || null; }
+		catch (e) { stats = MPX.cachedState()?.stats || null; }
+	}
+	const pool = Middleearth.unlockedCharacters(stats);
+	if (middleearthTomUnlocked()) for (const sh of Middleearth.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = [...Middleearth.HEROES];
-		if (middleearthTomUnlocked()) heroes.push(...Middleearth.SECRET_HEROES);
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a hero of the Free Peoples - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Middleearth.classOf(ch);
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.meDeck === ch && d.meSide === 'hero' && d.rarity === 'legendary');
+			const sig = Object.values(cardsById).find(d => d.meDeck === ch && d.rarity === 'legendary');
 			const pw = Middleearth.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
@@ -7030,17 +7038,25 @@ function resumeSwordCoastOverlay(run) {
 }
 
 // full choice of all 10 heroes (+ Gale once unlocked), each showing its signature + power
-function pickSwordCoastHeroOverlay(cardsById) {
+async function pickSwordCoastHeroOverlay(cardsById) {
+	// account progression: 3 random UNLOCKED characters per run (secret heroes
+	// join the pool once their own unlock fires). Free play = the full roster.
+	let stats = null;
+	if (MP_ON) {
+		try { stats = (await MPX.freshState())?.stats || null; }
+		catch (e) { stats = MPX.cachedState()?.stats || null; }
+	}
+	const pool = Swordcoast.unlockedCharacters(stats);
+	if (swordcoastGaleUnlocked()) for (const sh of Swordcoast.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = [...Swordcoast.HEROES];
-		if (swordcoastGaleUnlocked()) heroes.push(...Swordcoast.SECRET_HEROES);
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Companion of the Realms - a 10-card starter deck you grow as you Advance.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Swordcoast.classOf(ch);
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.scDeck === ch && d.scSide === 'hero' && d.rarity === 'legendary');
+			const sig = Object.values(cardsById).find(d => d.scDeck === ch && d.rarity === 'legendary');
 			const pw = Swordcoast.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
@@ -7194,17 +7210,25 @@ function resumeFinalFantasyOverlay(run) {
 }
 
 // full choice of all 10 heroes (+ Gilgamesh once unlocked), each showing its signature + power
-function pickFinalFantasyHeroOverlay(cardsById) {
+async function pickFinalFantasyHeroOverlay(cardsById) {
+	// account progression: 3 random UNLOCKED characters per run (secret heroes
+	// join the pool once their own unlock fires). Free play = the full roster.
+	let stats = null;
+	if (MP_ON) {
+		try { stats = (await MPX.freshState())?.stats || null; }
+		catch (e) { stats = MPX.cachedState()?.stats || null; }
+	}
+	const pool = Finalfantasy.unlockedCharacters(stats);
+	if (finalfantasyGilgameshUnlocked()) for (const sh of Finalfantasy.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = [...Finalfantasy.HEROES];
-		if (finalfantasyGilgameshUnlocked()) heroes.push(...Finalfantasy.SECRET_HEROES);
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Finalfantasy.classOf(ch);
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.ffSide === 'hero' && d.rarity === 'legendary');
+			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.rarity === 'legendary');
 			const pw = Finalfantasy.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
@@ -7355,17 +7379,25 @@ function resumeMultiverseOverlay(run) {
 }
 
 // full choice of all 10 heroes (+ Silver Surfer once unlocked), each showing its signature + power
-function pickMultiverseHeroOverlay(cardsById) {
+async function pickMultiverseHeroOverlay(cardsById) {
+	// account progression: 3 random UNLOCKED characters per run (secret heroes
+	// join the pool once their own unlock fires). Free play = the full roster.
+	let stats = null;
+	if (MP_ON) {
+		try { stats = (await MPX.freshState())?.stats || null; }
+		catch (e) { stats = MPX.cachedState()?.stats || null; }
+	}
+	const pool = Multiverse.unlockedCharacters(stats);
+	if (multiverseSurferUnlocked()) for (const sh of Multiverse.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = [...Multiverse.HEROES];
-		if (multiverseSurferUnlocked()) heroes.push(...Multiverse.SECRET_HEROES);
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Marvel hero - a 10-card starter deck you grow as you climb. Enemies always match your loot.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Multiverse.classOf(ch);
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
-			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.mvSide === 'hero' && d.rarity === 'legendary');
+			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.rarity === 'legendary');
 			const pw = Multiverse.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';

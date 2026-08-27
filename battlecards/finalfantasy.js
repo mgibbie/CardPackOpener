@@ -175,3 +175,56 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 export function treasurePool(cardsById) {
 	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.ffTreasure);
 }
+
+// ---------- character progression ----------
+// 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
+// Enemies become playable only after every core hero is unlocked, each via a
+// hard feat: consecutive CLEARED runs (12 wins) as the linked hero. Secret
+// heroes keep their own unlock mechanics and join the pool once earned.
+export const STARTERS = ["Cloud","Terra","Yuna"];
+export const CORE_UNLOCK_ORDER = ["Tidus","Vivi","Zidane","Cecil","Wakka","Red XIII","Lightning"];
+// enemy -> [linked hero, consecutive run WINS required]
+export const ENEMY_UNLOCKS = {
+	"Rufus Shinra": ["Cloud", 2],
+	"Jenova, Ancient Calamity": ["Cloud", 3],
+	"Sephiroth, One-Winged Angel": ["Cloud", 4],
+	"Gaius van Baelsar": ["Terra", 2],
+	"Kefka, Dancing Mad": ["Terra", 3],
+	"Seymour Flux": ["Yuna", 2],
+	"Ultimecia, Time Sorceress": ["Yuna", 3],
+	"Emet-Selch, Unsundered": ["Yuna", 3],
+	"Ultros, Obnoxious Octopus": ["Tidus", 2],
+	"Zenos yae Galvus": ["Tidus", 3],
+	"Ardyn, the Usurper": ["Tidus", 3],
+	"Black Waltz No. 3": ["Vivi", 2],
+	"Queen Brahne": ["Vivi", 2],
+	"Kuja, Genome Sorcerer": ["Vivi", 3],
+	"Garland, Royal Kidnapper": ["Zidane", 2],
+	"Xande, Dark Mage": ["Zidane", 3],
+	"Cloud of Darkness": ["Zidane", 3],
+	"Golbez, Crystal Collector": ["Cecil", 3],
+	"The Emperor of Palamecia": ["Cecil", 3],
+	"Chaos, the Endless": ["Cecil", 4],
+	"Seifer Almasy": ["Wakka", 2],
+	"Judge Magister Gabranth": ["Wakka", 2],
+	"Professor Hojo": ["Red XIII", 2],
+	"Reno and Rude": ["Red XIII", 2],
+	"Edea, Possessed Sorceress": ["Lightning", 2],
+	"Fandaniel, Telophoroi Ascian": ["Lightning", 3],
+	"Exdeath, Void Warlock": ["Lightning", 3],
+};
+// which characters this account may play; stats = the server user.stats.
+// null (free play, no account) = the full roster.
+export function unlockedCharacters(stats) {
+	if (!stats) return [...HEROES, ...ENEMIES];
+	const runs = stats.modes?.finalfantasy?.runs || 0;
+	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
+	const out = [...cores];
+	if (cores.length >= HEROES.length) {
+		const chars = stats.chars || {};
+		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
+			if ((chars['finalfantasy|' + hero]?.best || 0) >= need) out.push(en);
+		}
+	}
+	return out;
+}

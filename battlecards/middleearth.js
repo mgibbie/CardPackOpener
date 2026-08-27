@@ -183,3 +183,58 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 export function treasurePool(cardsById) {
 	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.meTreasure);
 }
+
+// ---------- character progression ----------
+// 3 starters; one more core hero unlocks per COMPLETED run (win or lose).
+// Enemies become playable only after every core hero is unlocked, each via a
+// hard feat: consecutive CLEARED runs (12 wins) as the linked hero. Secret
+// heroes keep their own unlock mechanics and join the pool once earned.
+export const STARTERS = ["Aragorn","Gandalf","Frodo"];
+export const CORE_UNLOCK_ORDER = ["Legolas","Gimli","Samwise","Éowyn","Théoden","Galadriel","Elrond"];
+// enemy -> [linked hero, consecutive run WINS required]
+export const ENEMY_UNLOCKS = {
+	"Bill Ferny": ["Aragorn", 2],
+	"King of the Oathbreakers": ["Aragorn", 2],
+	"Sauron the Dark Lord": ["Aragorn", 4],
+	"The Balrog": ["Gandalf", 3],
+	"Saruman": ["Gandalf", 3],
+	"Sauron the Necromancer": ["Gandalf", 3],
+	"The Great Goblin": ["Legolas", 2],
+	"Bolg": ["Legolas", 2],
+	"Azog": ["Legolas", 3],
+	"Tom, Bert & William": ["Gimli", 2],
+	"Uglúk": ["Gimli", 2],
+	"Mauhúr": ["Gimli", 2],
+	"Shelob": ["Frodo", 2],
+	"Gollum": ["Frodo", 3],
+	"Sauron the Lidless Eye": ["Frodo", 4],
+	"Shagrat": ["Samwise", 2],
+	"Gorbag": ["Samwise", 2],
+	"Old Man Willow": ["Samwise", 2],
+	"Grishnákh": ["Éowyn", 2],
+	"Gothmog": ["Éowyn", 2],
+	"Witch-king of Angmar": ["Éowyn", 3],
+	"The Watcher in the Water": ["Galadriel", 2],
+	"Smaug": ["Galadriel", 3],
+	"Gríma Wormtongue": ["Théoden", 2],
+	"The Chief Warg": ["Théoden", 2],
+	"Chief of the Wilds": ["Théoden", 2],
+	"Lotho": ["Elrond", 2],
+	"The Master of Lake-town": ["Elrond", 2],
+	"The Mouth of Sauron": ["Elrond", 2],
+};
+// which characters this account may play; stats = the server user.stats.
+// null (free play, no account) = the full roster.
+export function unlockedCharacters(stats) {
+	if (!stats) return [...HEROES, ...ENEMIES];
+	const runs = stats.modes?.middleearth?.runs || 0;
+	const cores = [...STARTERS, ...CORE_UNLOCK_ORDER.slice(0, Math.max(0, runs))];
+	const out = [...cores];
+	if (cores.length >= HEROES.length) {
+		const chars = stats.chars || {};
+		for (const [en, [hero, need]] of Object.entries(ENEMY_UNLOCKS)) {
+			if ((chars['middleearth|' + hero]?.best || 0) >= need) out.push(en);
+		}
+	}
+	return out;
+}
