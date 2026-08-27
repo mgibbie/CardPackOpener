@@ -6715,7 +6715,7 @@ async function pickLorequestDeckOverlay(cardsById) {
 	const unlocked = Lorequest.unlockedCharacters(stats);
 	const total = Lorequest.PLANESWALKERS.length + Lorequest.BOSSES.length;
 	return new Promise(resolve => {
-		const choices = Lorequest.offerFrom(unlocked, Math.random, 3);
+		const choices = Lorequest.offerFrom(unlocked, Math.random, 3, Lorequest.streakPins(unlocked, stats, 'lorequest'));
 		const sub = stats
 			? `Pick a 30-card starter deck. ${unlocked.length}/${total} characters unlocked — each finished run unlocks another; bosses unlock through character feats.`
 			: 'Pick a 30-card starter deck (2 copies of each of its 15 cards).';
@@ -6724,11 +6724,13 @@ async function pickLorequestDeckOverlay(cardsById) {
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const ch of choices) {
 			const cls = Lorequest.classOf(ch);
+			const stk = stats?.chars?.['lorequest|' + ch]?.streak || 0;
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.loreDeck === ch && d.rarity === 'legendary');
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:200px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`;
+			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`
+				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 130));
 			box.appendChild(overlayButton('Play this deck', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -6877,19 +6879,21 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 	const pool = Middleearth.unlockedCharacters(stats);
 	if (middleearthTomUnlocked()) for (const sh of Middleearth.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'middleearth')) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a hero of the Free Peoples - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Middleearth.classOf(ch);
+			const stk = stats?.chars?.['middleearth|' + ch]?.streak || 0;
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.meDeck === ch && d.rarity === 'legendary');
 			const pw = Middleearth.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '');
+				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 120));
 			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -7049,19 +7053,21 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 	const pool = Swordcoast.unlockedCharacters(stats);
 	if (swordcoastGaleUnlocked()) for (const sh of Swordcoast.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'swordcoast')) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Companion of the Realms - a 10-card starter deck you grow as you Advance.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Swordcoast.classOf(ch);
+			const stk = stats?.chars?.['swordcoast|' + ch]?.streak || 0;
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.scDeck === ch && d.rarity === 'legendary');
 			const pw = Swordcoast.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '');
+				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 120));
 			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -7221,19 +7227,21 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 	const pool = Finalfantasy.unlockedCharacters(stats);
 	if (finalfantasyGilgameshUnlocked()) for (const sh of Finalfantasy.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'finalfantasy')) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Final Fantasy hero - a 10-card starter deck you grow as you climb.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Finalfantasy.classOf(ch);
+			const stk = stats?.chars?.['finalfantasy|' + ch]?.streak || 0;
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.ffDeck === ch && d.rarity === 'legendary');
 			const pw = Finalfantasy.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '');
+				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 120));
 			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -7390,19 +7398,21 @@ async function pickMultiverseHeroOverlay(cardsById) {
 	const pool = Multiverse.unlockedCharacters(stats);
 	if (multiverseSurferUnlocked()) for (const sh of Multiverse.SECRET_HEROES) if (!pool.includes(sh)) pool.push(sh);
 	return new Promise(resolve => {
-		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3) : pool;
+		const heroes = stats ? Lorequest.offerFrom(pool, Math.random, 3, Lorequest.streakPins(pool, stats, 'multiverse')) : pool;
 		const el = dungeonOverlay('CHOOSE YOUR HERO', 'Pick a Marvel hero - a 10-card starter deck you grow as you climb. Enemies always match your loot.');
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:920px;';
 		for (const ch of heroes) {
 			const cls = Multiverse.classOf(ch);
+			const stk = stats?.chars?.['multiverse|' + ch]?.streak || 0;
 			const clsName = (classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.rarity === 'legendary');
 			const pw = Multiverse.powerOf(ch);
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '');
+				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 120));
 			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
