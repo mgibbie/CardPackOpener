@@ -107,11 +107,19 @@
 	}
 
 	// live tuner saves (art/sprite) sit as server overrides until a dev session
-	// folds them into the repo — surface how many are waiting
+	// folds them into the repo — surface how many are waiting. The editors save
+	// their FULL map, so most override entries just duplicate what's already
+	// committed: count only the ones that actually differ from the repo files.
 	async function loadPending() {
 		try {
-			const t = await MP.call('tuning-get');
-			const a = Object.keys(t.art || {}).length, s = Object.keys(t.sprite || {}).length;
+			const [t, artFile, spriteFile] = await Promise.all([
+				MP.call('tuning-get'),
+				fetch('/battlecards/art_tuning.json').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+				fetch('/overworld/sprite_tuning.json').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+			]);
+			const fresh = (ov, file) => Object.entries(ov || {})
+				.filter(([id, v]) => JSON.stringify(file[id]) !== JSON.stringify(v)).length;
+			const a = fresh(t.art, artFile), s = fresh(t.sprite, spriteFile);
 			const el = $('pending');
 			el.hidden = !(a + s);
 			if (a + s) {
