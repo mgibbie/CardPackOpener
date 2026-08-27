@@ -141,12 +141,16 @@ async function waitFor(fn, ms) {
 		// 3b) the pending-overrides counter: hidden with none, shown after a live save
 		A(await page.evaluate(() => document.getElementById('pending')?.hidden === true),
 			'pending-overrides banner hidden when the server has none');
-		await api('tuning-save', { kind: 'art', content: { cardx: { z: 1.5, fx: 0.3, fy: 0.3 }, cardy: { z: 2, fx: 0.5, fy: 0.1 } } }, owner);
+		// the editors re-upload their FULL map, so include an entry byte-identical
+		// to the committed art_tuning.json — the banner must count only the 2 new
+		const committedArt = JSON.parse(fs.readFileSync(path.join(ROOT, 'battlecards/art_tuning.json'), 'utf8'));
+		const [dupId, dupVal] = Object.entries(committedArt)[0] || ['cardz', { z: 9, fx: 0, fy: 0 }];
+		await api('tuning-save', { kind: 'art', content: { [dupId]: dupVal, cardx: { z: 1.5, fx: 0.3, fy: 0.3 }, cardy: { z: 2, fx: 0.5, fy: 0.1 } } }, owner);
 		await page.click('#refresh');
 		A(await waitFor(() => page.evaluate(() => {
 			const el = document.getElementById('pending');
 			return el && !el.hidden && /2 art overrides/.test(el.textContent);
-		}), 8000), 'banner counts the live art overrides after a save');
+		}), 8000), 'banner counts only overrides that differ from the committed file');
 		await api('tuning-save', { kind: 'art', content: {} }, owner); // clear for the next run
 
 		// 4) homepage tile is owner-only
