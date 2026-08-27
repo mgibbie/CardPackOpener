@@ -5152,15 +5152,16 @@ async function start() {
 		}
 		if (!run || !run.active) {
 			const clsId = await pickClassOverlay();
+			const wkAnom = await pickWeeklyAnomalyOverlay();
 			run = {
-				active: true, classId: clsId, level: 1,
+				active: true, classId: clsId, level: 1, anomaly: wkAnom,
 				deck: [...(await dungeonStarterDeck(clsId))],
 				passives: [], bossId: Dungeon.randomBoss(1),
 			};
 			saveRun(run);
 		}
 		if (resumeRunSnapshot(run, cardsById)) { dungeonBossId = run.bossId; log('Resumed your paused dungeon fight.'); }
-		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level);
+		else bootEncounter(cardsById, run.bossId, run.classId, run.deck, run.passives, run.level, run.anomaly);
 	} else if (heistRunMode) {
 		heistCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadHeist();
@@ -5194,8 +5195,9 @@ async function start() {
 			const explorerId = await pickExplorerOverlay();
 			const explorer = Tombs.EXPLORERS.find(h => h.id === explorerId);
 			const powerId = await pickTombsPowerOverlay(explorer);
+			const wkAnom = await pickWeeklyAnomalyOverlay();
 			run = {
-				active: true, explorerId, powerId, chapter, level: 1,
+				active: true, explorerId, powerId, chapter, level: 1, anomaly: wkAnom,
 				deck: [...Dungeon.STARTER_DECKS[explorer.heroClass]],
 				passives: [], bossId: tombsBossFor(chapter, 1),
 			};
@@ -5232,7 +5234,7 @@ async function start() {
 		if (!run || !run.active) {
 			const characterId = await pickLorequestDeckOverlay(cardsById);
 			const deck = Lorequest.deckOf(cardsById, characterId);
-			run = { active: true, characterId, cls: Lorequest.classOf(characterId), deck, wins: 0, losses: 0,
+			run = { active: true, characterId, cls: Lorequest.classOf(characterId), deck, anomaly: await pickWeeklyAnomalyOverlay(), wins: 0, losses: 0,
 				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
 			saveLorequest(run);
 		}
@@ -5244,7 +5246,7 @@ async function start() {
 		if (!run || !run.active) {
 			const characterId = await pickMiddleEarthHeroOverlay(cardsById);
 			const deck = Middleearth.deckOf(cardsById, characterId);
-			run = { active: true, characterId, cls: Middleearth.classOf(characterId), deck, wins: 0, losses: 0,
+			run = { active: true, characterId, cls: Middleearth.classOf(characterId), deck, anomaly: await pickWeeklyAnomalyOverlay(), wins: 0, losses: 0,
 				enemy: genMiddleEarthEnemy(cardsById, 0, null) };
 			saveMiddleearth(run);
 		}
@@ -5256,7 +5258,7 @@ async function start() {
 			if (!run || !run.active) {
 				const characterId = await pickSwordCoastHeroOverlay(cardsById);
 				const deck = Swordcoast.deckOf(cardsById, characterId);
-				run = { active: true, characterId, cls: Swordcoast.classOf(characterId), deck, wins: 0, losses: 0,
+				run = { active: true, characterId, cls: Swordcoast.classOf(characterId), deck, anomaly: await pickWeeklyAnomalyOverlay(), wins: 0, losses: 0,
 					enemy: genSwordCoastEnemy(cardsById, 0, null) };
 				saveSwordcoast(run);
 			}
@@ -5268,7 +5270,7 @@ async function start() {
 			if (!run || !run.active) {
 				const characterId = await pickFinalFantasyHeroOverlay(cardsById);
 				const deck = Finalfantasy.deckOf(cardsById, characterId);
-				run = { active: true, characterId, cls: Finalfantasy.classOf(characterId), deck, wins: 0, losses: 0,
+				run = { active: true, characterId, cls: Finalfantasy.classOf(characterId), deck, anomaly: await pickWeeklyAnomalyOverlay(), wins: 0, losses: 0,
 					enemy: genFinalFantasyEnemy(cardsById, 0, null) };
 				saveFinalfantasy(run);
 			}
@@ -5280,7 +5282,7 @@ async function start() {
 			if (!run || !run.active) {
 				const characterId = await pickMultiverseHeroOverlay(cardsById);
 				const deck = Multiverse.deckOf(cardsById, characterId);
-				run = { active: true, characterId, cls: Multiverse.classOf(characterId), deck, wins: 0, losses: 0,
+				run = { active: true, characterId, cls: Multiverse.classOf(characterId), deck, anomaly: await pickWeeklyAnomalyOverlay(), wins: 0, losses: 0,
 					enemy: genMultiverseEnemy(cardsById, 0, null) };
 				saveMultiverse(run);
 			}
@@ -5296,7 +5298,7 @@ async function start() {
 			if (Duels.classChoicesOf(hero)) { classChoice = await pickDuelsClassOverlay(hero); hero = { ...hero, heroClass: classChoice, classes: [classChoice] }; }
 			const powerId = await pickDuelsPowerOverlay(hero);
 			const deck = await pickDuelsDraftOverlay(Duels.classesOf(hero), 30);
-			run = { active: true, heroId, classChoice, powerId, anomaly: null, deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
+			run = { active: true, heroId, classChoice, powerId, anomaly: await pickWeeklyAnomalyOverlay(), deck, wins: 0, losses: 0, enemy: genArenaEnemy(cardsById) };
 			saveArena(run);
 		}
 		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Arena fight.'); else bootArenaEncounter(cardsById, run);
@@ -5306,7 +5308,7 @@ async function start() {
 		const clsId = Dungeon.STARTER_DECKS[wanted] ? wanted
 			: (Dungeon.STARTER_DECKS[localStorage.getItem('magepunk_class_v1')]
 				? localStorage.getItem('magepunk_class_v1') : 'mage');
-		bootEncounter(cardsById, dungeonBossId, clsId, Dungeon.STARTER_DECKS[clsId], [], null);
+		bootEncounter(cardsById, dungeonBossId, clsId, Dungeon.STARTER_DECKS[clsId], [], null, null);
 	} else {
 		const picks = pickClasses();
 		// use the saved deck when it's complete and valid; otherwise the demo deck
@@ -5329,7 +5331,7 @@ async function start() {
 }
 let publishStarted = false;
 
-function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
+function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anomalyId) {
 	dungeonBossId = bossId;
 	const boss = Dungeon.BOSSES[bossId];
 	const clsPick = classRegistry.find(c => c.id === clsId)
@@ -5351,7 +5353,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(anomalyId);
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -5698,19 +5700,30 @@ async function dungeonStarterDeck(clsId) {
 // which run mode is this? (drives the per-mode achievement counters server-side)
 const runModeName = () => multiverseRunMode ? 'multiverse' : finalfantasyRunMode ? 'finalfantasy' : swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
 	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
-// Anomaly of the Week: every PvE run mode WITHOUT its own anomaly pick (Heist
-// and Duels offer one at run start) plays under one shared weekly rule twist —
-// the same for everyone, rotating deterministically through Heist's ANOMALIES.
-// A fresh reason to re-run cleared content each week.
+// Anomaly of the Week: one shared weekly rule twist, rotating deterministically
+// through Heist's ANOMALIES — the same for everyone all week. Strictly OPT-IN:
+// every run mode offers it at run start (Heist and Duels keep their own full
+// anomaly pick instead), and declining runs a standard game.
 const weeklyAnomalyId = () => {
 	const keys = Object.keys(Heist.ANOMALIES).sort();
 	return keys[Math.floor(Date.now() / 604800000) % keys.length];
 };
-function applyWeeklyAnomaly() {
-	const id = weeklyAnomalyId();
-	const a = Heist.ANOMALIES[id];
+// asked once at run creation; the choice is stored on the run and applied to
+// every fight in it
+function pickWeeklyAnomalyOverlay() {
+	return new Promise(resolve => {
+		const id = weeklyAnomalyId();
+		const a = Heist.ANOMALIES[id];
+		if (!a) return resolve(null);
+		const el = dungeonOverlay('ANOMALY OF THE WEEK', `${a.name} — ${a.text}\nTake it on for an extra twist, or run clean.`);
+		el.appendChild(overlayButton(`🌀 Take it on — ${a.name}`, () => { hideDungeonOverlay(); resolve(id); }));
+		el.appendChild(overlayButton('No anomaly — standard run', () => { hideDungeonOverlay(); resolve(null); }));
+	});
+}
+function applyRunAnomaly(id) {
+	const a = id && Heist.ANOMALIES[id];
 	if (!a || !Heist.applyAnomaly(state, id)) return;
-	log(`🌀 Anomaly of the Week: ${a.name} — ${a.text}`);
+	log(`🌀 Anomaly: ${a.name} — ${a.text}`);
 }
 
 async function mpRunReward(el, result, score) {
@@ -6280,7 +6293,7 @@ function bootTombsEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -6723,7 +6736,7 @@ function bootLorequestEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	// basics are color-locked to each character's identity (Karn -> Wastes only,
 	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
 	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
@@ -6873,7 +6886,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
@@ -7036,7 +7049,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
@@ -7197,7 +7210,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
@@ -7359,7 +7372,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
@@ -7484,7 +7497,7 @@ function bootArenaEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
-	applyWeeklyAnomaly();
+	applyRunAnomaly(run.anomaly);
 	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with your drafted ${run.deck.length}-card deck.`);
 }
