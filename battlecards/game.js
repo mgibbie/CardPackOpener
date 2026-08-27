@@ -3019,6 +3019,13 @@ function nextEvent() {
 						if (d.state) achCheck(d.state);
 					})
 					.catch(() => {});
+				// Elo: 1v1 vs a REAL player adjusts both ratings (bots have no account)
+				const oppName = duel.size === 2 ? (duel.seat === 0 ? duel.config?.guest : duel.config?.host) : null;
+				if (oppName) {
+					MPX.call('duel-result', { opponent: oppName })
+						.then(d => { if (!d.error) log(`📈 rating ${d.rating} (+${d.delta})${d.rank ? ` — rank #${d.rank}` : ''}`); })
+						.catch(() => {});
+				}
 			}
 			const mh = $('mana-hud'); if (mh) mh.style.display = 'none';
 			SFX.play(ev.winner == null ? 'turn' : won ? 'victory' : 'defeat');
@@ -5344,6 +5351,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level) {
 	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -5690,9 +5698,36 @@ async function dungeonStarterDeck(clsId) {
 // which run mode is this? (drives the per-mode achievement counters server-side)
 const runModeName = () => multiverseRunMode ? 'multiverse' : finalfantasyRunMode ? 'finalfantasy' : swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
 	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
-async function mpRunReward(el, result) {
+// Anomaly of the Week: every PvE run mode WITHOUT its own anomaly pick (Heist
+// and Duels offer one at run start) plays under one shared weekly rule twist —
+// the same for everyone, rotating deterministically through Heist's ANOMALIES.
+// A fresh reason to re-run cleared content each week.
+const weeklyAnomalyId = () => {
+	const keys = Object.keys(Heist.ANOMALIES).sort();
+	return keys[Math.floor(Date.now() / 604800000) % keys.length];
+};
+function applyWeeklyAnomaly() {
+	const id = weeklyAnomalyId();
+	const a = Heist.ANOMALIES[id];
+	if (!a || !Heist.applyAnomaly(state, id)) return;
+	log(`🌀 Anomaly of the Week: ${a.name} — ${a.text}`);
+}
+
+async function mpRunReward(el, result, score) {
 	if (!MP_ON) return;
-	const data = await MPX.call('run-reward', { result, mode: runModeName() });
+	// the Duels-family climbs post their score to the mode's leaderboard
+	const mode = runModeName();
+	if (score && ['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) {
+		MPX.call('run-score', { mode, wins: score.wins, losses: score.losses, hero: String(score.hero || '') })
+			.then(r => {
+				if (!r || r.error || !r.better) return;
+				const lb = document.createElement('div');
+				lb.style.cssText = 'margin:6px 0;font-size:14px;color:#8fd8ff;';
+				lb.textContent = `🏆 New personal best — rank #${r.rank} on the ${mode} board!`;
+				el.appendChild(lb);
+			}).catch(() => {});
+	}
+	const data = await MPX.call('run-reward', { result, mode });
 	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
@@ -6245,6 +6280,7 @@ function bootTombsEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -6611,7 +6647,7 @@ function duelsRunComplete(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${hero.name} takes 12 wins with a ${run.deck.length}-card deck.`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.heroId });
 	clearDuels();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -6620,7 +6656,7 @@ function duelsRunOver(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
 	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero.name} bows out at ${run.wins || 0} wins.`);
 	clearDuels();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.heroId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -6687,6 +6723,7 @@ function bootLorequestEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	// basics are color-locked to each character's identity (Karn -> Wastes only,
 	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
 	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
@@ -6760,7 +6797,7 @@ function advanceLorequest(run) {
 function lorequestRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${run.characterId} takes 12 wins with a ${run.deck.length}-card deck.`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	clearLorequest();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -6768,7 +6805,7 @@ function lorequestRunComplete(run) {
 function lorequestRunOver(run) {
 	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${run.characterId} bows out at ${run.wins || 0} wins.`);
 	clearLorequest();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -6836,6 +6873,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
@@ -6923,7 +6961,7 @@ function middleEarthRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - SAURON IS THROWN DOWN!',
 		`${run.characterId} clears Middle-earth with a ${run.deck.length}-card deck. Tom Bombadil is now a playable hero!`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	clearMiddleearth();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -6931,7 +6969,7 @@ function middleEarthRunComplete(run) {
 function middleEarthRunOver(run) {
 	const el = dungeonOverlay('3 LOSSES - THE SHADOW PREVAILS', `${run.characterId} falls at ${run.wins || 0} wins.`);
 	clearMiddleearth();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -6998,6 +7036,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
@@ -7085,7 +7124,7 @@ function swordCoastRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - TIAMAT IS SLAIN!',
 		`${run.characterId} clears the Sword Coast with a ${run.deck.length}-card deck. Gale, Waterdeep Prodigy is now a playable hero!`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	clearSwordcoast();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -7093,7 +7132,7 @@ function swordCoastRunComplete(run) {
 function swordCoastRunOver(run) {
 	const el = dungeonOverlay('3 LOSSES - THE REALMS FALL', `${run.characterId} falls at ${run.wins || 0} wins.`);
 	clearSwordcoast();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -7158,6 +7197,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
@@ -7243,7 +7283,7 @@ function finalFantasyRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - THE VOID IS SEALED!',
 		`${run.characterId} clears Final Fantasy with a ${run.deck.length}-card deck. Gilgamesh is now a playable hero!`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	clearFinalfantasy();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -7251,7 +7291,7 @@ function finalFantasyRunComplete(run) {
 function finalFantasyRunOver(run) {
 	const el = dungeonOverlay('3 LOSSES - GAME OVER', `${run.characterId} falls at ${run.wins || 0} wins.`);
 	clearFinalfantasy();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -7319,6 +7359,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
@@ -7389,7 +7430,7 @@ function multiverseRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - THE MULTIVERSE IS SAVED!',
 		`${run.characterId} clears the Multiverse with a ${run.deck.length}-card deck. Silver Surfer is now a playable hero!`);
 	Col.earnGold(1000);
-	mpRunReward(el, 'win');
+	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	clearMultiverse();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -7397,7 +7438,7 @@ function multiverseRunComplete(run) {
 function multiverseRunOver(run) {
 	const el = dungeonOverlay('3 LOSSES - THE VILLAINS PREVAIL', `${run.characterId} falls at ${run.wins || 0} wins.`);
 	clearMultiverse();
-	mpRunReward(el, 'loss');
+	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
 }
 
@@ -7443,6 +7484,7 @@ function bootArenaEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	applyWeeklyAnomaly();
 	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with your drafted ${run.deck.length}-card deck.`);
 }
