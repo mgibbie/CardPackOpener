@@ -62,8 +62,13 @@ async function waitFor(fn, ms) {
 		const owner = await tokenFor('mgibbie', 'localdev1');
 		const peon = await tokenFor('todopeon', 'localdev1');
 
+		// clean slate across runs — by exact timestamps (there is no clear-everything)
+		const wipe = async () => {
+			const cur = (await api('todo-list', {}, owner)).todos || [];
+			if (cur.length) await api('todo-done', { tsList: cur.map(t => t.ts) }, owner);
+		};
+		await wipe();
 		// seed the inbox with a card-attached note (the wiki box files these)
-		await api('todo-done', { all: true }, owner); // clean slate across runs
 		const added = await api('todo-add', { cardId: 'fireball', cardName: 'Fireball', text: 'make it cost 3 and hit face only' }, owner);
 		A(added.ok === true && added.count === 1, 'todo-add filed the wiki-style note', JSON.stringify(added));
 		A((await api('todo-add', { text: 'nope' }, peon)).error === 'owner only', 'todo API refuses non-owners');
@@ -119,6 +124,20 @@ async function waitFor(fn, ms) {
 			'Done removes a note');
 		A((await api('todo-list', {}, owner)).todos.length === 1, 'the removal reached the server');
 
+		// 3a) THE RACE GUARD: clearing removes only what was on screen — a note
+		// filed after render (e.g. from the phone, mid-batch) must survive.
+		// (This exact race once swallowed live notes; see the todo-done comment.)
+		await api('todo-add', { cardId: 'recruit', cardName: 'Recruit', text: 'filed AFTER the page rendered' }, owner);
+		await page.evaluate(() => { window.confirm = () => true; });
+		await page.click('#clear'); // the page only knows about the 1 rendered note
+		A(await waitFor(() => page.evaluate(() =>
+			document.querySelectorAll('.note').length === 1
+			&& document.querySelector('.note .text')?.textContent.includes('filed AFTER')), 8000),
+			'Clear removes only the rendered notes — the mid-batch note survives');
+		A((await api('todo-list', {}, owner)).todos.length === 1, 'the survivor is still on the server');
+		await page.evaluate(() => document.querySelector('.note .done').click()); // cleanup the survivor
+		await waitFor(() => page.evaluate(() => document.querySelectorAll('.note').length === 0), 8000);
+
 		// 3b) the pending-overrides counter: hidden with none, shown after a live save
 		A(await page.evaluate(() => document.getElementById('pending')?.hidden === true),
 			'pending-overrides banner hidden when the server has none');
@@ -141,7 +160,7 @@ async function waitFor(fn, ms) {
 		A(await anon2.evaluate(() => document.getElementById('tile-todo')?.hidden === true), 'tile stays hidden for visitors');
 		await anonCtx2.close();
 
-		await api('todo-done', { all: true }, owner); // leave the dev inbox clean
+		await wipe(); // leave the dev inbox clean
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
 		console.error(e);

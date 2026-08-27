@@ -768,8 +768,12 @@ export default async function handler(req, env) {
 			return json({ ok: true, count: list.length });
 		}
 		if (action === 'todo-list') return json({ todos: list });
-		// todo-done: {ts} removes one note; {all:true} clears the inbox
-		const next = body.all ? [] : list.filter(e => e.ts !== +body.ts);
+		// todo-done: {ts} removes one note, {tsList:[...]} removes an exact batch.
+		// There is deliberately NO clear-everything: a wipe would swallow notes
+		// filed while a batch was being applied (this raced once, 2026-08-27) —
+		// every removal names the exact timestamps it read.
+		const drop = new Set((Array.isArray(body.tsList) ? body.tsList : [body.ts]).map(Number));
+		const next = list.filter(e => !drop.has(e.ts));
 		await store.setJSON('owner_todo', next.length ? next : null);
 		return json({ ok: true, count: next.length });
 	}
