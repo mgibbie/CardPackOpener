@@ -46,6 +46,7 @@
 		</header>
 		<div class="hint">Design-change notes filed from the wiki's card pages (the "New Version Description" box).
 			Newest first. Tell Claude to "check the internal to do list" to have them applied.</div>
+		<div id="pending" hidden style="background:#241b38;border:1px solid #6b5a3a;border-radius:10px;padding:10px 14px;margin-bottom:14px;color:#ffd25f;font-size:13px;"></div>
 		<div id="list"><div id="empty">Loading…</div></div>
 		<div id="composer">
 			<textarea id="new-note" placeholder="Add a general note (not attached to a card)…"></textarea>
@@ -105,8 +106,26 @@
 		}
 	}
 
+	// live tuner saves (art/sprite) sit as server overrides until a dev session
+	// folds them into the repo — surface how many are waiting
+	async function loadPending() {
+		try {
+			const t = await MP.call('tuning-get');
+			const a = Object.keys(t.art || {}).length, s = Object.keys(t.sprite || {}).length;
+			const el = $('pending');
+			el.hidden = !(a + s);
+			if (a + s) {
+				const parts = [];
+				if (a) parts.push(a + ' art override' + (a === 1 ? '' : 's'));
+				if (s) parts.push(s + ' sprite override' + (s === 1 ? '' : 's'));
+				el.textContent = '🎨 ' + parts.join(' + ') + ' saved live on the server, waiting to be folded into the repo — tell Claude to "fold it into a commit".';
+			}
+		} catch (e) { /* the counter is best-effort */ }
+	}
+
 	async function load() {
 		$('msg').textContent = '';
+		loadPending();
 		try {
 			const r = await MP.call('todo-list');
 			todos = Array.isArray(r.todos) ? r.todos : [];
