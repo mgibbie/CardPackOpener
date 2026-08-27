@@ -408,16 +408,34 @@ function calcStat(base, iv, ev, level, isHP) {
 	return Math.floor((2 * base + iv + Math.floor(ev / 4)) * level / 100) + 5;
 }
 
-export function statsFor(sp, ivs, level) {
+// the 25 natures: +10% / −10% (the five up===dn ones are neutral)
+export const NATURES = {
+	hardy: ['atk', 'atk'], lonely: ['atk', 'def'], brave: ['atk', 'spe'], adamant: ['atk', 'spa'], naughty: ['atk', 'spd'],
+	bold: ['def', 'atk'], docile: ['def', 'def'], relaxed: ['def', 'spe'], impish: ['def', 'spa'], lax: ['def', 'spd'],
+	timid: ['spe', 'atk'], hasty: ['spe', 'def'], serious: ['spe', 'spe'], jolly: ['spe', 'spa'], naive: ['spe', 'spd'],
+	modest: ['spa', 'atk'], mild: ['spa', 'def'], quiet: ['spa', 'spe'], bashful: ['spa', 'spa'], rash: ['spa', 'spd'],
+	calm: ['spd', 'atk'], gentle: ['spd', 'def'], sassy: ['spd', 'spe'], careful: ['spd', 'spa'], quirky: ['spd', 'spd'],
+};
+const NATURE_NAMES = Object.keys(NATURES);
+
+// opts (optional) carries the mon's { nature, evs } — absent keeps the old math
+export function statsFor(sp, ivs, level, opts) {
 	const b = sp.baseStats;
-	return {
-		hp: calcStat(b.hp || 50, ivs.hp, 0, level, true),
-		atk: calcStat(b.atk || 50, ivs.atk, 0, level, false),
-		def: calcStat(b.def || 50, ivs.def, 0, level, false),
-		spa: calcStat(b.spa || 50, ivs.spa, 0, level, false),
-		spd: calcStat(b.spd || 50, ivs.spd, 0, level, false),
-		spe: calcStat(b.spe || 50, ivs.spe, 0, level, false),
+	const evs = opts?.evs || {};
+	const st = {
+		hp: calcStat(b.hp || 50, ivs.hp, evs.hp || 0, level, true),
+		atk: calcStat(b.atk || 50, ivs.atk, evs.atk || 0, level, false),
+		def: calcStat(b.def || 50, ivs.def, evs.def || 0, level, false),
+		spa: calcStat(b.spa || 50, ivs.spa, evs.spa || 0, level, false),
+		spd: calcStat(b.spd || 50, ivs.spd, evs.spd || 0, level, false),
+		spe: calcStat(b.spe || 50, ivs.spe, evs.spe || 0, level, false),
 	};
+	const nat = NATURES[opts?.nature];
+	if (nat && nat[0] !== nat[1]) {
+		st[nat[0]] = Math.floor(st[nat[0]] * 1.1);
+		st[nat[1]] = Math.floor(st[nat[1]] * 0.9);
+	}
+	return st;
 }
 
 export function makeMove(mid, data) {
@@ -430,7 +448,9 @@ export function buildMon(speciesId, level, data) {
 	if (!sp) return null;
 	const iv = () => Math.floor(Math.random() * 32);
 	const ivs = { hp: iv(), atk: iv(), def: iv(), spa: iv(), spd: iv(), spe: iv() };
-	const stats = statsFor(sp, ivs, level);
+	const nature = NATURE_NAMES[Math.floor(Math.random() * NATURE_NAMES.length)];
+	const evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+	const stats = statsFor(sp, ivs, level, { nature, evs });
 	// last 4 level-up moves at this level, deduped (latest first)
 	const learned = sp.learnset.filter(([lv]) => lv <= level);
 	const seen = new Set(), moveIds = [];
@@ -442,6 +462,7 @@ export function buildMon(speciesId, level, data) {
 	const moves = moveIds.map(mid => makeMove(mid, data));
 	return {
 		speciesId, name: sp.name.toUpperCase(), level,
+		nature, evs,
 		gender: Math.random() < 0.5 ? 'M' : 'F',
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
 		friend: 70, // friendship: grows with wins/levels, some species evolve on it
@@ -472,13 +493,14 @@ export class Battle {
 	}
 
 	async init() {
-		const [species, moves, extra, abilities] = await Promise.all([
+		const [species, moves, extra, abilities, tmLearn] = await Promise.all([
 			getJSON('data/species_battle.json'),
 			getJSON('data/moves_battle.json'),
 			getJSON('data/species_extra.json').catch(() => ({})),
 			getJSON('data/species_abilities.json').catch(() => ({})),
+			getJSON('data/tm_learnsets.json').catch(() => ({})), // TM/tutor compat (gen_tm_learnsets.mjs)
 		]);
-		this.data = { species, moves, extra, abilities };
+		this.data = { species, moves, extra, abilities, tmLearn };
 		// the Love2D build's pixel font, so battle text matches the desktop game
 		try {
 			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
@@ -661,6 +683,14 @@ export class Battle {
 	// canonical weight in kg for the weight-based moves; fakemon default mid-tier
 	weightOf(mon) {
 		return this.data.species[mon.speciesId]?.weightkg || 50;
+	}
+	// move-menu effectiveness hint vs the current foe (singles only — doubles
+	// pick their target after the move, so a single hint would mislead)
+	effHint(info) {
+		const a = this.active;
+		if (!a || a.double || !info.type || info.category === 'Status') return '';
+		const e = effectiveness(info.type, a.foe.types);
+		return e === 0 ? ' ×0' : e >= 4 ? ' ×4' : e >= 2 ? ' ×2' : e <= 0.25 ? ' ×¼' : e < 1 ? ' ×½' : '';
 	}
 	// which slot (0 = lead, 1 = ally) a mon occupies — so double-battle animations
 	// only move the mon that's actually acting
@@ -1341,10 +1371,10 @@ export class Battle {
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${target.name}'s Wonder Guard blocks it!`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
-		const nHits = fx.hits ? fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
+		const nHits = fx.hits ? (uAb === 'skilllink' ? fx.hits[1] : fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1))) : 1;
 		// Reflect / Light Screen on the defender's side halves the matching category
 		const defScreens = isFoe ? a.meScreens : a.foeScreens;
-		const screened = defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1;
+		const screened = uAb === 'infiltrator' ? 1 : (defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1);
 		// weather, terrain, and sport effects scale the elements
 		let envMult = 1;
 		const wk = a.weather?.kind;
@@ -1441,7 +1471,7 @@ export class Battle {
 		}
 		// whether this hit lands on a substitute is known now: the sub then soaks
 		// the damage AND shields the mon behind it from secondaries/item theft
-		const hitsSub = target.subHP > 0 && !SOUND_MOVES.has(move.id);
+		const hitsSub = target.subHP > 0 && !SOUND_MOVES.has(move.id) && uAb !== 'infiltrator';
 		total = Math.min(total, hitsSub ? target.subHP : target.curHP);
 		const targetSide = isFoe ? 'me' : 'foe';
 		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3, null, { slot: this.slotOfMon(user) });
@@ -1480,6 +1510,14 @@ export class Battle {
 			// (substitute and disguise hits returned above and don't count)
 			target.lastTaken = { amt: dealt, phys, from: user };
 			if (target.bideDmg != null) target.bideDmg += dealt;
+			// Moxie: a KO with a damaging move fires up the attacker
+			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'moxie') {
+				const ub2 = this.boostsOf(user);
+				if ((ub2.atk || 0) < 6) {
+					ub2.atk = Math.min(6, (ub2.atk || 0) + 1);
+					this.pushMsg(`${user.name}'s Moxie boosted its Attack!`);
+				}
+			}
 			// on-hit reaction abilities (Stamina, Gooey, Justified, ...)
 			const rAb = this.abilityOf(target);
 			const rx = AB_ONHIT[rAb];
@@ -1950,6 +1988,11 @@ export class Battle {
 			const mv = this.data.moves[m.id] || {};
 			const pw = mv.power || AI_EST_POWER[m.id] || 0;
 			if (!pw) continue;
+			// ability-aware: don't walk into full immunities the player can see
+			const defAb = this.abilityOf(a.me);
+			if (defAb === 'levitate' && mv.type === 'Ground') continue;
+			if (AB_ABSORB[defAb]?.t === mv.type) continue;
+			if (defAb === 'flashfire' && mv.type === 'Fire') continue;
 			const score = pw
 				* (a.foe.types.includes(mv.type) ? 1.5 : 1)
 				* effectiveness(mv.type, a.me.types);
@@ -1961,8 +2004,13 @@ export class Battle {
 	resolveTurn(myMove) {
 		const a = this.active;
 		const foeMove = this.chooseFoeMove();
-		const myPrio = this.data.moves[myMove.id]?.priority || 0;
-		const foePrio = this.data.moves[foeMove.id]?.priority || 0;
+		// Prankster: status moves gain +1 priority
+		const prio = (mon, move2) => {
+			const mv2 = this.data.moves[move2.id] || {};
+			return (mv2.priority || 0) + (mv2.category === 'Status' && this.abilityOf(mon) === 'prankster' ? 1 : 0);
+		};
+		const myPrio = prio(a.me, myMove);
+		const foePrio = prio(a.foe, foeMove);
 		let mySpe = this.statOf(a.me, a.meBoosts, 'spe') * (a.meSide?.tailwind > 0 ? 2 : 1);
 		let foeSpe = this.statOf(a.foe, a.foeBoosts, 'spe') * (a.foeSide?.tailwind > 0 ? 2 : 1);
 		if (this.itemFx(a.me)?.choice === 'spe') mySpe *= 1.5;
@@ -2035,7 +2083,7 @@ export class Battle {
 		const winners = a.double
 			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
 			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean);
-		for (const mon of winners) this.awardExp(mon, gain);
+		for (const mon of winners) { this.awardExp(mon, gain); this.awardEvs(mon, fallen || a.foe); }
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
@@ -2061,6 +2109,19 @@ export class Battle {
 		});
 	}
 
+	// EVs: defeating a species pays +2 effort in its HIGHEST base stat (a simple
+	// stand-in for per-species yield tables), capped 252 per stat / 510 total.
+	// Stats fold the effort in silently at the next level-up recalc or vitamin.
+	awardEvs(mon, fallen) {
+		const b = this.data.species[fallen?.speciesId]?.baseStats;
+		if (!b) return;
+		mon.evs = mon.evs || { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+		const total = Object.values(mon.evs).reduce((x, y) => x + y, 0);
+		if (total >= 510) return;
+		const best = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((a2, k) => (b[k] || 0) > (b[a2] || 0) ? k : a2, 'hp');
+		mon.evs[best] = Math.min(252, (mon.evs[best] || 0) + Math.min(2, 510 - total));
+	}
+
 	// give one mon its exp, handle level-ups (stat recalc + move learning)
 	awardExp(mon, gain) {
 		const a = this.active;
@@ -2075,7 +2136,7 @@ export class Battle {
 			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 				const oldMax = mon.maxHP;
-				mon.stats = statsFor(sp, ivs, lvl);
+				mon.stats = statsFor(sp, ivs, lvl, mon);
 				// the level-up recalc is the new canonical statline — don't let a
 				// Transform-snapshot restore roll it back after the battle
 				if (mon._origStats) mon._origStats = { ...mon.stats };
@@ -2807,10 +2868,14 @@ export class Battle {
 				target: mine[Math.floor(Math.random() * mine.length)] || a.me,
 			});
 		}
-		// speed order with priority
+		// speed order with priority (Prankster: +1 on status moves)
+		const actPrio = act => {
+			const mv2 = this.data.moves[act.move.id] || {};
+			return (mv2.priority || 0) + (mv2.category === 'Status' && this.abilityOf(act.user) === 'prankster' ? 1 : 0);
+		};
 		acts.sort((p, q) => {
-			const pp = this.data.moves[p.move.id]?.priority || 0;
-			const qp = this.data.moves[q.move.id]?.priority || 0;
+			const pp = actPrio(p);
+			const qp = actPrio(q);
 			if (pp !== qp) return qp - pp;
 			return this.statOf(q.user, this.boostsOf(q.user), 'spe') - this.statOf(p.user, this.boostsOf(p.user), 'spe');
 		});
@@ -3364,7 +3429,7 @@ export class Battle {
 				btn({
 					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
-					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
+					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
 					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
@@ -3470,7 +3535,7 @@ export class Battle {
 					x: pad + (i % 2) * (bw + gap), y: barY + 12 * u + Math.floor(i / 2) * (bh + gap),
 					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
 					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
-					right: info.power ? `Pwr ${info.power}` : (info.category || ''),
+					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
 					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});

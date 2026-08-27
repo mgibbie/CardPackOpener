@@ -13,6 +13,13 @@ function migrate(mon, data) {
 	}
 	if (mon.exp == null) mon.exp = mon.level ** 3;
 	if (!mon.gender) mon.gender = Math.random() < 0.5 ? 'M' : 'F';
+	if (!mon.nature) { // natures/EVs postdate older saves
+		const n = ['hardy', 'lonely', 'brave', 'adamant', 'naughty', 'bold', 'docile', 'relaxed', 'impish', 'lax',
+			'timid', 'hasty', 'serious', 'jolly', 'naive', 'modest', 'mild', 'quiet', 'bashful', 'rash',
+			'calm', 'gentle', 'sassy', 'careful', 'quirky'];
+		mon.nature = n[Math.floor(Math.random() * n.length)];
+	}
+	if (!mon.evs) mon.evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 	if (!mon.ability) {
 		const opts = data?.abilities?.[mon.speciesId];
 		if (opts?.length) mon.ability = opts[Math.floor(Math.random() * opts.length)];

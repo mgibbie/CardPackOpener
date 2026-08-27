@@ -1370,7 +1370,7 @@ function useRareCandy(mon) {
 	const sp = battle.data.species[mon.speciesId];
 	const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 	const oldMax = mon.maxHP;
-	mon.stats = statsFor(sp, ivs, mon.level);
+	mon.stats = statsFor(sp, ivs, mon.level, mon);
 	mon.maxHP = mon.stats.hp;
 	mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
 	saveParty(party);
@@ -1395,11 +1395,27 @@ function tmMoveId(id) {
 	if (m) return GEN3_HM[+m[1]] || null;
 	m = /^tm([a-z0-9]+)$/.exec(id);
 	if (m && battle.data.moves[m[1]]) return m[1];
+	m = /^tm\d+([a-z][a-z0-9]*)$/.exec(id); // decomp pickups: ITEM_TM24_THUNDERBOLT -> tm24thunderbolt
+	if (m && battle.data.moves[m[1]]) return m[1];
 	return null;
 }
+// species Showdown's dex knows at all — fakemon outside it use a type fallback
+let _tmKnown = null;
+const tmKnown = () => _tmKnown || (_tmKnown = new Set(battle.data.tmLearn?.__species || []));
 function canLearn(mon, mid) {
 	if (battle.data.extra?.[mon.speciesId]?.learn?.includes(mid)) return true;
-	return (battle.data.species[mon.speciesId]?.learnset || []).some(([, id2]) => id2 === mid);
+	if ((battle.data.species[mon.speciesId]?.learnset || []).some(([, id2]) => id2 === mid)) return true;
+	// machine/tutor compatibility (tm_learnsets.json) — the whole point of TMs
+	const learners = battle.data.tmLearn?.[mid];
+	if (Array.isArray(learners)) {
+		if (learners.includes(mon.speciesId)) return true;
+		// fakemon the dex data has never heard of: allow same-type + Normal machines
+		if (!tmKnown().has(mon.speciesId)) {
+			const t = battle.data.moves[mid]?.type;
+			return t === 'Normal' || (battle.data.species[mon.speciesId]?.types || []).includes(t);
+		}
+	}
+	return false;
 }
 
 // fishing: cast a rod from the bag while facing water. Rod tiers read the
@@ -1461,6 +1477,24 @@ function bagKey(k) {
 				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
+				} else if (item?.kind === 'vitamin') {
+					mon.evs = mon.evs || { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+					const total = Object.values(mon.evs).reduce((a, b) => a + b, 0);
+					if (mon.evs[item.stat] >= 252 || total >= 510) {
+						bagMenu.flash = `It won't have any effect on ${mon.name}.`;
+					} else {
+						Bag.consume(id);
+						mon.evs[item.stat] = Math.min(252, mon.evs[item.stat] + Math.min(10, 510 - total));
+						const sp = battle.data.species[mon.speciesId];
+						const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
+						const oldMax = mon.maxHP;
+						mon.stats = statsFor(sp, ivs, mon.level, mon);
+						mon.maxHP = mon.stats.hp;
+						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(0, mon.maxHP - oldMax));
+						saveParty(party);
+						bagMenu.flash = `${mon.name}'s ${item.name} raised its stats!`;
+						bagMenu.picking = false;
+					}
 				} else if (item?.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
 					Bag.consume(id);
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
@@ -1493,12 +1527,12 @@ function bagKey(k) {
 					else if (!canLearn(mon, mid)) bagMenu.flash = `${mon.name} can't learn ${info.name}.`;
 					else if (mon.moves.length < 4) {
 						mon.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
-						if (Bag.ITEMS[id]?.kind !== 'hm') Bag.consume(id); // HMs are reusable
+						if (!['hm', 'tm'].includes(Bag.ITEMS[id]?.kind)) Bag.consume(id); // HMs + mart TMs are reusable
 						saveParty(party);
 						bagMenu.flash = `${mon.name} learned ${info.name}!`;
 						bagMenu.picking = false;
 					} else {
-						bagMenu.forget = { itemId: id, mid, mon, idx: 0, keepItem: Bag.ITEMS[id]?.kind === 'hm' };
+						bagMenu.forget = { itemId: id, mid, mon, idx: 0, keepItem: ['hm', 'tm'].includes(Bag.ITEMS[id]?.kind) };
 					}
 				}
 			}
@@ -1512,7 +1546,7 @@ function bagKey(k) {
 		const [id] = entries[bagMenu.idx];
 		const item = Bag.ITEMS[id];
 		if (item?.kind === 'rod') { castRod(id, item); return; }
-		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone'].includes(item?.kind) || tmMoveId(id)) {
+		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin'].includes(item?.kind) || tmMoveId(id)) {
 			bagMenu.picking = true;
 			bagMenu.pickIdx = 0;
 		}
@@ -3346,7 +3380,7 @@ function drawSummary(W, H, u) {
 	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	sctx.fillText(`ABILITY: ${(m.ability || '—').toUpperCase()}`, 40 * u, 302 * u);
 	sctx.fillText(`ITEM: ${m.heldItem ? (Bag.ITEMS[m.heldItem]?.name || m.heldItem) : '—'}`, 40 * u, 322 * u);
-	sctx.fillText(`FRIEND: ${m.friend ?? 70}`, 40 * u, 342 * u);
+	sctx.fillText(`NATURE: ${(m.nature || '—').toUpperCase()}   FRIEND: ${m.friend ?? 70}`, 40 * u, 342 * u);
 	// stat bars on the right
 	const sx = W * 0.42, sw = W * 0.5;
 	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
@@ -4615,7 +4649,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },

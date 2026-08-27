@@ -64,7 +64,7 @@ export class Evolution {
 		mon.sprite = sp.sprite;
 		mon.num = sp.num;
 		const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
-		mon.stats = statsFor(sp, ivs, mon.level);
+		mon.stats = statsFor(sp, ivs, mon.level, mon);
 		mon.maxHP = mon.stats.hp;
 		mon.curHP = Math.max(1, mon.maxHP - damage);
 	}
