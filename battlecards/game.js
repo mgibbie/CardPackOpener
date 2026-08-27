@@ -5354,6 +5354,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
 	applyRunAnomaly(anomalyId);
+	setRunLife(level);
 	applyTreasures(passives || []);
 	log(`${level ? `Dungeon level ${level}` : 'Dungeon Run'} — ${boss.name} (${bp.life} HP): "${boss.flavor}"`);
 	if (boss.power) log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -5720,6 +5721,16 @@ function pickWeeklyAnomalyOverlay() {
 		el.appendChild(overlayButton('No anomaly — standard run', () => { hideDungeonOverlay(); resolve(null); }));
 	});
 }
+// escalating parity: run fights start small and grow — round 1 is 10 life each,
+// +5 per round for BOTH sides, so every fight stays even. One-off ?boss= fights
+// (no round number) keep the standard 40.
+function setRunLife(round) {
+	if (!round || round < 1) return;
+	const life = 10 + 5 * (round - 1);
+	for (const p of state.players) p.life = life;
+	log(`❤️ Round ${round}: both sides start at ${life} life.`);
+}
+
 function applyRunAnomaly(id) {
 	const a = id && Heist.ANOMALIES[id];
 	if (!a || !Heist.applyAnomaly(state, id)) return;
@@ -5740,7 +5751,7 @@ async function mpRunReward(el, result, score) {
 				el.appendChild(lb);
 			}).catch(() => {});
 	}
-	const data = await MPX.call('run-reward', { result, mode });
+	const data = await MPX.call('run-reward', { result, mode, character: score?.hero ? String(score.hero) : undefined });
 	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
@@ -5997,6 +6008,7 @@ function bootHeistEncounter(cardsById, run) {
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
 	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
 	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly — ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
+	setRunLife(run.level);
 	log(`Heist fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card heist deck.`);
@@ -6294,6 +6306,7 @@ function bootTombsEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife(run.level);
 	for (const id of run.passives) Tombs.applyPassive(state, HUMAN, id);
 	log(`Tombs fight ${run.level}/8 — ${boss.name} (${bp.life} HP).`);
 	log(`Boss power — ${boss.power.name} (${boss.power.cost}): ${boss.power.text}`);
@@ -6576,6 +6589,7 @@ function bootDuelsEncounter(cardsById, run) {
 	for (const id of enemy.passives || []) Duels.applyPassive(state, 1, id);
 	// optional run modifier: a symmetric anomaly warps every game (shared with Heist)
 	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly - ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	log(`Duels - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card deck; ${enemy.name} drafted ${enemy.deck.length}.`);
 	for (const id of run.passives) log(`Your passive - ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);
@@ -6690,10 +6704,22 @@ function resumeLorequestOverlay(run) {
 }
 
 // pick 1 of 3 planeswalker starter decks (shows the deck's signature card)
-function pickLorequestDeckOverlay(cardsById) {
+async function pickLorequestDeckOverlay(cardsById) {
+	// account progression: 3 random UNLOCKED characters per run. Free play (no
+	// account) keeps the whole roster. See Lorequest.STARTERS / BOSS_UNLOCKS.
+	let stats = null;
+	if (MP_ON) {
+		try { stats = (await MPX.freshState())?.stats || null; }
+		catch (e) { stats = MPX.cachedState()?.stats || null; }
+	}
+	const unlocked = Lorequest.unlockedCharacters(stats);
+	const total = Lorequest.PLANESWALKERS.length + Lorequest.BOSSES.length;
 	return new Promise(resolve => {
-		const choices = Lorequest.starterChoices(Math.random, 3);
-		const el = dungeonOverlay('CHOOSE YOUR PLANESWALKER', 'Pick a 30-card starter deck (2 copies of each of its 15 cards).');
+		const choices = Lorequest.offerFrom(unlocked, Math.random, 3);
+		const sub = stats
+			? `Pick a 30-card starter deck. ${unlocked.length}/${total} characters unlocked — each finished run unlocks another; bosses unlock through character feats.`
+			: 'Pick a 30-card starter deck (2 copies of each of its 15 cards).';
+		const el = dungeonOverlay('CHOOSE YOUR CHARACTER', sub);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const ch of choices) {
@@ -6737,6 +6763,7 @@ function bootLorequestEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (Karn -> Wastes only,
 	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
 	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
@@ -6887,6 +6914,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
@@ -7050,6 +7078,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
@@ -7211,6 +7240,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
@@ -7373,6 +7403,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
@@ -7498,6 +7529,7 @@ function bootArenaEncounter(cardsById, run) {
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
+	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with your drafted ${run.deck.length}-card deck.`);
 }

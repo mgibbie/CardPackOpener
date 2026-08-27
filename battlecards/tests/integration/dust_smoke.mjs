@@ -77,6 +77,16 @@ const waitUp = async () => {
 		patchUser('dusty', u => { u.dust = 500; });
 		const c2 = await api('craft', { id: common }, t);
 		A(c2.error === 'you already have a full playset', 'commons cap at the playset');
+
+		// per-character run records (unlock feats): W W L -> best streak 2, current 0
+		await api('run-reward', { result: 'win', mode: 'lorequest', character: 'Chandra' }, t);
+		patchUser('dusty', u => { u.stats.lastReward = 0; }); // skip the payout cooldown
+		await api('run-reward', { result: 'win', mode: 'lorequest', character: 'Chandra' }, t);
+		patchUser('dusty', u => { u.stats.lastReward = 0; });
+		await api('run-reward', { result: 'loss', mode: 'lorequest', character: 'Chandra' }, t);
+		const cs = (await api('state', {}, t)).state.stats.chars['lorequest|Chandra'];
+		A(cs && cs.runs === 3 && cs.wins === 2 && cs.streak === 0 && cs.best === 2,
+			'character streaks: W W L -> runs 3, wins 2, best 2, streak reset', JSON.stringify(cs));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
 		console.error(e);
