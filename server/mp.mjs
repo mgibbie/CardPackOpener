@@ -45,6 +45,7 @@ const RATE_LIMITS = {
 	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
 	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
 	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
+	'run-score': [20, 60_000], 'duel-result': [10, 60_000], // run boards + Elo reports — one per finished run/duel
 	// spectator / duel-guest polls: legit clients poll ~1/s (cardstate) and ~3/s
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
@@ -875,6 +876,70 @@ export default async function handler(req, env) {
 		const board = (await store.get('arena:board')) || [];
 		const rank = board.findIndex(e => e.name === username) + 1;
 		return json({ top: board.slice(0, 50), you: user.arenaBest ? { ...user.arenaBest, rank: rank || null } : null });
+	}
+
+	// ---------- run-mode leaderboards (the Duels-family 12-win climbs) ----------
+	// Same shape as Arena: a player's best run per mode on their record + one
+	// capped global board per mode. A strong Lorequest/Middle-earth/... run was
+	// previously invisible — cleared once and forgotten.
+	if (action === 'run-score' || action === 'run-leaderboard') {
+		const mode = String(body.mode || '');
+		if (!['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) {
+			return json({ error: 'no board for that mode' }, 400);
+		}
+		const key = 'runboard:' + mode;
+		user.runBest = user.runBest || {};
+		if (action === 'run-score') {
+			const wins = Math.max(0, Math.min(12, parseInt(body.wins, 10) || 0));
+			const losses = Math.max(0, Math.min(3, parseInt(body.losses, 10) || 0));
+			const hero = String(body.hero || '').replace(/[\u0000-\u001f]/g, '').slice(0, 32).trim();
+			const run = { wins, losses, hero };
+			const better = arenaBetter(run, user.runBest[mode]);
+			if (better) { user.runBest[mode] = { wins, losses, hero, when: Date.now() }; await store.setJSON(username, user); }
+			const best = user.runBest[mode] || null;
+			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
+			if (best) board.push({ name: username, wins: best.wins, losses: best.losses, hero: best.hero, when: best.when });
+			board.sort((a, b) => b.wins - a.wins || a.losses - b.losses || a.when - b.when);
+			const capped = board.slice(0, 100);
+			if (better) await store.setJSON(key, capped);
+			const rank = capped.findIndex(e => e.name === username) + 1;
+			return json({ ok: true, better, best, rank: rank || null });
+		}
+		const board = (await store.get(key)) || [];
+		const rank = board.findIndex(e => e.name === username) + 1;
+		return json({ top: board.slice(0, 50), you: user.runBest[mode] ? { ...user.runBest[mode], rank: rank || null } : null });
+	}
+
+	// ---------- PvP rating (Elo) ----------
+	// The WINNER of a 1v1 live duel reports the result; both accounts' ratings
+	// adjust (K=32, floor 100) and the top-100 board updates. Client-authoritative
+	// like everything else in the test realm — this is a standing to climb, not
+	// an anti-cheat system.
+	if (action === 'duel-result') {
+		const oppName = String(body.opponent || '').trim().toLowerCase();
+		if (!oppName || oppName === username) return json({ error: 'bad opponent' }, 400);
+		const opp = await store.get(oppName);
+		if (!opp) return json({ error: 'no such opponent' }, 404);
+		const rw = user.pvpRating || 1000, rl = opp.pvpRating || 1000;
+		const expect = 1 / (1 + Math.pow(10, (rl - rw) / 400));
+		const delta = Math.round(32 * (1 - expect));
+		user.pvpRating = rw + delta;
+		opp.pvpRating = Math.max(100, rl - delta);
+		await store.setJSON(username, user);
+		await store.setJSON(oppName, opp);
+		const board = ((await store.get('pvp:board')) || []).filter(e => e.name !== username && e.name !== oppName);
+		const winsOf = u => u.stats?.modes?.pvp?.wins || 0;
+		board.push({ name: username, rating: user.pvpRating, wins: winsOf(user), when: Date.now() });
+		board.push({ name: oppName, rating: opp.pvpRating, wins: winsOf(opp), when: Date.now() });
+		board.sort((a, b) => b.rating - a.rating || a.when - b.when);
+		const capped = board.slice(0, 100);
+		await store.setJSON('pvp:board', capped);
+		return json({ ok: true, rating: user.pvpRating, delta: +delta, rank: (capped.findIndex(e => e.name === username) + 1) || null });
+	}
+	if (action === 'pvp-leaderboard') {
+		const board = (await store.get('pvp:board')) || [];
+		const rank = board.findIndex(e => e.name === username) + 1;
+		return json({ top: board.slice(0, 50), you: user.pvpRating ? { rating: user.pvpRating, rank: rank || null } : null });
 	}
 
 	// upload a packed replay tape → a short id for the shareable ?rshare= link

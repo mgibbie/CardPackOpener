@@ -258,11 +258,32 @@ async function collectFeatured(btn) {
 		toast((r && r.error) || 'Could not collect — try again.');
 	}
 }
+// ---------- what's-new: surface the latest news post to returning players ----------
+const NEWS_SEEN_KEY = 'mp_news_seen_v1';
+function newsUnseen() {
+	const n = state.newsLatest;
+	if (!n || !n.sha) return false;
+	try { return localStorage.getItem(NEWS_SEEN_KEY) !== n.sha; } catch (e) { return false; }
+}
+function markNewsSeen() {
+	if (state.newsLatest?.sha) { try { localStorage.setItem(NEWS_SEEN_KEY, state.newsLatest.sha); } catch (e) {} }
+}
+async function fetchNewsLatest() {
+	if (state.newsLatest !== undefined) return; // once per page life
+	state.newsLatest = null;
+	try {
+		const n = await (await fetch('/magepunknews/news.json')).json();
+		const e = (n.entries || [])[0];
+		if (e?.sha) state.newsLatest = { sha: e.sha, title: e.title || 'New update', date: e.date || '' };
+	} catch (e) {}
+}
+
 function badgeCount() {
-	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0);
+	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0) + (newsUnseen() ? 1 : 0);
 }
 async function poll() {
 	if (!MP.hasToken()) return;
+	fetchNewsLatest().then(() => setBadge(badgeCount())); // once per page life
 	try {
 		const [ch, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
@@ -508,6 +529,17 @@ async function collectPacks() {
 // ----- Alerts (challenges) -----
 function renderAlerts(body) {
 	body.innerHTML = '';
+	if (newsUnseen()) {
+		const n = state.newsLatest;
+		const r = el('div', 'row');
+		r.innerHTML = `<div class="av">📰</div><div class="meta"><div class="name">What's new${n.date ? ` — ${esc(n.date)}` : ''}</div><div class="sub">${esc(n.title)}</div></div><div class="acts"></div>`;
+		const go = el('button', 'mini primary', 'Read');
+		go.addEventListener('click', () => { markNewsSeen(); location.href = '/magepunknews/'; });
+		const dis = el('button', 'mini', 'Dismiss');
+		dis.addEventListener('click', () => { markNewsSeen(); setBadge(badgeCount()); renderAlerts(body); });
+		$('.acts', r).appendChild(go); $('.acts', r).appendChild(dis);
+		body.appendChild(r);
+	}
 	if (state.waitingOn) {
 		const w = el('div', 'row');
 		const kindTxt = state.waitingType === 'pokemon' ? 'Pokémon-battle' : 'card-battle';
