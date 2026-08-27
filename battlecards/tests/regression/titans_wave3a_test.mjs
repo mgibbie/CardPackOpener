@@ -9,7 +9,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', l, x ?? ''); } };
 
 const game = (seed = 7) => {
-	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'priest', name: 'P', power: null }, { id: 'deathknight', name: 'D', power: null }]);
+	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'priest', name: 'P', power: null }, { id: 'death_knight', name: 'D', power: null }]);
 	st.current = 0; st.players[0].hand = []; st.players[1].hand = []; st.players[0].deck = []; st.players[1].deck = [];
 	st.players[0].mana.max = 10; st.players[0].mana.cur = 10; st.players[1].mana.max = 10; st.players[1].mana.cur = 10;
 	return st;
@@ -85,7 +85,7 @@ ok('The Primus is a 7/9 Titan with 3 abilities', cardsById['the_primus'].titan &
 	E.activateAbility(st, 0, pr.uid, 2, null);
 	const spell = E.instantiate({ id: 'sp', name: 'Sp', type: 'sorcery', cost: 5, rarity: 'common', effects: [] }, 0); spell.zone = 'hand'; st.players[0].hand.push(spell);
 	ok('Runes of Frost: next spell costs (3) less (5 -> 2)', E.effectiveCost(st, 0, spell) === 2, E.effectiveCost(st, 0, spell));
-	ok('passive queued a Discover (Death Knight card)', st.pickQueue.length && st.pickQueue[st.pickQueue.length - 1].ids.every(id => (cardsById[id].cardClass || '') === 'deathknight'));
+	ok('passive queued a Discover (Death Knight card)', st.pickQueue.length && st.pickQueue[st.pickQueue.length - 1].ids.every(id => (cardsById[id].cardClass || '') === 'death_knight'));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

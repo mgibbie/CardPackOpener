@@ -13,9 +13,9 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', l, x ?? ''); } };
 
 const game = (seed = 7) => {
-	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'demonhunter', name: 'M', power: null }, { id: 'mage', name: 'N', power: null }]);
+	const st = E.createGame(cardsById, seededRng(seed), null, 2, [{ id: 'demon_hunter', name: 'M', power: null }, { id: 'mage', name: 'N', power: null }]);
 	st.current = 0; for (const p of st.players) { p.hand = []; p.board = []; p.deck = []; }
-	st.players[0].heroClass = 'demonhunter'; st.players[0].mana.max = 10; st.players[0].mana.cur = 10;
+	st.players[0].heroClass = 'demon_hunter'; st.players[0].mana.max = 10; st.players[0].mana.cur = 10;
 	return st;
 };
 const enemy = (st, hp = 9, tribe = null) => { const m = E.instantiate({ id: 'e', name: 'Ox', type: 'creature', cost: 1, attack: 0, health: hp, tribe }, 1); m.zone = 'board'; m.sick = false; st.players[1].board.push(m); return m; };
@@ -73,7 +73,7 @@ for (const id of ['feast_of_souls', 'blade_dance', 'mark_of_scorn', 'throw_glaiv
 	cast(st, 'cosmic_manifestations', { type: 'creature', uid: foe.uid, player: 1 });
 	ok('Cosmic Manifestations dealt 2', foe.damage >= 2, foe.damage);
 	const shuffled = st.players[0].deck.map(id => cardsById[id]).filter(Boolean);
-	ok('shuffled at least one DH spell into the deck', shuffled.length >= 1 && shuffled.every(d => (d.cardClass || 'neutral') === 'demonhunter'), st.players[0].deck);
+	ok('shuffled at least one DH spell into the deck', shuffled.length >= 1 && shuffled.every(d => (d.cardClass || 'neutral') === 'demon_hunter'), st.players[0].deck);
 }
 
 // Field of Strife: your minions +1 Attack; fades after 3 turns

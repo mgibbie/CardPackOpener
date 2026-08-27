@@ -2989,6 +2989,13 @@ function nextEvent() {
 		case 'gameOver': {
 			const won = ev.winner === HUMAN;
 			if (won) questReport({ kind: 'win' }); // advance any "Win N matches" daily quest
+			// a won LIVE duel pays a pack server-side (run modes reward via their
+			// own overlays; the old Col.earnGold below is the offline wallet only)
+			if (won && MP_ON && cardPvpId) {
+				MPX.call('run-reward', { result: 'win', mode: 'pvp' })
+					.then(d => { if (!d.error && d.won) log(`🎁 duel won — +1 pack (${d.state.packs} waiting)`); })
+					.catch(() => {});
+			}
 			const mh = $('mana-hud'); if (mh) mh.style.display = 'none';
 			banner(ev.winner == null ? 'Draw!' : won ? 'VICTORY!' : `DEFEAT — ${nameOf(ev.winner)} wins`, 0);
 			const reward = ev.winner == null ? 50 : won ? 100 : 25;
@@ -5621,7 +5628,7 @@ async function dungeonStarterDeck(clsId) {
 	return Dungeon.STARTER_DECKS[clsId];
 }
 
-// a finished run pays out one pack, win or lose
+// a WON run pays out one pack; losses record stats only
 // which run mode is this? (drives the per-mode achievement counters server-side)
 const runModeName = () => multiverseRunMode ? 'multiverse' : finalfantasyRunMode ? 'finalfantasy' : swordcoastRunMode ? 'swordcoast' : middleearthRunMode ? 'middleearth' : lorequestRunMode ? 'lorequest' : arenaRunMode ? 'arena' : duelsRunMode ? 'duels' : tombsRunMode ? 'tombs'
 	: heistRunMode ? 'heist' : (dungeonRunMode || dungeonBossId) ? 'dungeon' : 'other';
@@ -5631,7 +5638,8 @@ async function mpRunReward(el, result) {
 	const note = document.createElement('div');
 	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
 	note.textContent = data.error ? data.error
-		: `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`;
+		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`
+		: 'Run recorded — win a run to earn a pack.';
 	el.appendChild(note);
 }
 
