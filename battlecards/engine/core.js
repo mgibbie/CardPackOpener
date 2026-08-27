@@ -1318,9 +1318,13 @@ export function colorIdentity(state, pi) {
 
 // a blank slot can only ever become a BASIC — the 5 colored basics plus colorless Wastes
 // (Wastes taps for 1 damage instead of a color boost, so it adds no color identity; a Wastes
-// slot therefore has no color anchor to upgrade into an advanced land)
+// slot therefore has no color anchor to upgrade into an advanced land).
+// A run mode may pin a player to its character's color identity via
+// player.allowedBasics (e.g. Lorequest: Karn makes only Wastes, Chandra only
+// Mountain + Wastes) — set at game boot, survives snapshots with the player.
 export function availableLands(state, pi) {
-	return landPool(state).filter(d => isBasicLand(d.id));
+	const allowed = state.players[pi].allowedBasics;
+	return landPool(state).filter(d => isBasicLand(d.id) && (!allowed || allowed.includes(d.id)));
 }
 
 // advanced lands currently in play, in ANY player's land zone — each is globally
@@ -1385,6 +1389,8 @@ export function buyLand(state, pi, landId) {
 	if (!canBuyLand(state, pi)) return false;
 	const def = state.cardsById[landId];
 	if (!def || def.type !== 'land' || !isBasicLand(landId)) return false;
+	const allowed = state.players[pi].allowedBasics;
+	if (allowed && !allowed.includes(landId)) return false; // color-locked run mode
 	const p = state.players[pi];
 	spendMana(p, LAND_COST);
 	for (const o of opponentsOf(state, pi)) addCoin(state, o);

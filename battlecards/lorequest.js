@@ -28,6 +28,11 @@ export const LOSSES_TO_END = 3;
 export const PW_BATTLES = 8;               // first 8 battles vs planeswalkers, then bosses
 export const TREASURE_WINS = [2, 5, 8, 11]; // wins at which a treasure is granted (and matched by the enemy)
 
+// a character's color identity = the union of its 15 deck cards' colors (Karn's
+// colorless artifacts carry none). In a run, BASICS are restricted to it — you
+// play the character, you build the character's mana (shared impl in duels.js).
+export const allowedBasics = (cardsById, character) => Duels.allowedBasicsFor(cardsById, 'loreDeck', character);
+
 // the 30-card base deck for a character = 2 copies of each of its 15 loreDeck cards
 export function deckOf(cardsById, character) {
 	const ids = Object.values(cardsById).filter(d => d.loreDeck === character && !d.token).map(d => d.id).sort();

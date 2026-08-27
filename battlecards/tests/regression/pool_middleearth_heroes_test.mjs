@@ -25,7 +25,9 @@ const pool = raw.cards.filter(c => c.meDeck && c.meSide === 'hero');
 // ───────────────────────── structure ─────────────────────────
 ok('exactly 110 hero-deck cards tagged meDeck (10 heroes + secret Tom Bombadil)', pool.length === 110, pool.length);
 ok('all 11 heroes present (incl. Tom Bombadil)', HEROES.every(h => pool.some(c => c.meDeck === h)));
-ok('every meDeck card is colorless, non-collectible, paper', pool.every(c => c.collectible === false && (c.colors || []).length === 0 && c.set === 'paper'), pool.find(c => (c.colors||[]).length)?.id);
+// colors were Scryfall-backfilled (2026-08-26) to drive the run's color-locked
+// basics — assert they're VALID rather than absent
+ok('every meDeck card is non-collectible, paper, with valid colors', pool.every(c => c.collectible === false && c.set === 'paper' && (c.colors || []).every(x => 'WUBRG'.includes(x))), pool.find(c => (c.colors || []).some(x => !'WUBRG'.includes(x)))?.id);
 const names = pool.map(c => c.name);
 ok('all 110 names distinct + non-empty', new Set(names).size === 110 && names.every(n => n && n.length > 2), new Set(names).size);
 ok('all ids prefixed me_ and unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 110);
@@ -41,7 +43,7 @@ for (const h of HEROES) {
   const slug = h === 'Éowyn' ? 'eowyn' : h === 'Théoden' ? 'theoden' : h === 'Tom Bombadil' ? 'tom' : h.toLowerCase();
   ok(`${h}: exactly one legendary signature (_sig)`,
     d.filter(c => c.rarity === 'legendary').length === 1 && d.some(c => c.id === `me_${slug}_sig`));
-  ok(`${h}: all cards are class '${CLASS_OF[h]}' and colorless`, d.every(c => c.cardClass === CLASS_OF[h] && (c.colors || []).length === 0), d.find(c => c.cardClass !== CLASS_OF[h])?.id);
+  ok(`${h}: all cards are class '${CLASS_OF[h]}'`, d.every(c => c.cardClass === CLASS_OF[h]), d.find(c => c.cardClass !== CLASS_OF[h])?.id);
 }
 
 // ───────────────────────── breadth ─────────────────────────

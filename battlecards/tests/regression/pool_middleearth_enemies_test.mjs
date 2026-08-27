@@ -36,7 +36,9 @@ const pool = raw.cards.filter(c => c.meDeck && c.meSide === 'enemy');
 ok('exactly 435 enemy-deck cards (meSide enemy)', pool.length === 435, pool.length);
 ok('all 29 enemies present', ENEMIES.every(e => pool.some(c => c.meDeck === e)), ENEMIES.filter(e => !pool.some(c => c.meDeck === e)));
 ok('no stray meDeck values beyond the 29 enemies', pool.every(c => ENEMIES.includes(c.meDeck)), [...new Set(pool.map(c => c.meDeck))].filter(m => !ENEMIES.includes(m)));
-ok('every enemy card is colorless, non-collectible, paper', pool.every(c => c.collectible === false && (c.colors || []).length === 0 && c.set === 'paper'), pool.find(c => (c.colors || []).length)?.id);
+// colors were Scryfall-backfilled (2026-08-26) to drive the run's color-locked
+// basics — assert they're VALID rather than absent
+ok('every enemy card is non-collectible, paper, with valid colors', pool.every(c => c.collectible === false && c.set === 'paper' && (c.colors || []).every(x => 'WUBRG'.includes(x))), pool.find(c => (c.colors || []).some(x => !'WUBRG'.includes(x)))?.id);
 ok('all ids prefixed me_ and globally unique', pool.every(c => c.id.startsWith('me_')) && new Set(pool.map(c => c.id)).size === 435, new Set(pool.map(c => c.id)).size);
 // enemy ids must not collide with the 100 hero ids
 const heroIds = new Set(raw.cards.filter(c => c.meSide === 'hero').map(c => c.id));
@@ -52,8 +54,8 @@ for (const e of ENEMIES) {
     (t.enchantment || 0) === 1 && (t.artifact || 0) === 1, JSON.stringify(t));
   ok(`${e}: exactly one legendary signature (_sig)`,
     d.filter(c => c.rarity === 'legendary').length === 1 && d.some(c => c.id.endsWith('_sig') && c.rarity === 'legendary'));
-  ok(`${e}: all cards are class '${ENEMY_CLASS[e]}' and colorless`,
-    d.every(c => c.cardClass === ENEMY_CLASS[e] && (c.colors || []).length === 0), d.find(c => c.cardClass !== ENEMY_CLASS[e])?.id);
+  ok(`${e}: all cards are class '${ENEMY_CLASS[e]}'`,
+    d.every(c => c.cardClass === ENEMY_CLASS[e]), d.find(c => c.cardClass !== ENEMY_CLASS[e])?.id);
   ok(`${e}: 15 distinct card names within the deck`, new Set(d.map(c => c.name)).size === 15, new Set(d.map(c => c.name)).size);
   ok(`${e}: spans >=6 distinct types`, new Set(d.map(c => c.type)).size >= 6, [...new Set(d.map(c => c.type))]);
 }

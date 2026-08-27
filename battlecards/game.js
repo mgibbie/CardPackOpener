@@ -6620,6 +6620,10 @@ function bootLorequestEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (Karn -> Wastes only,
+	// Chandra -> Mountain + Wastes) — applies to you AND the AI enemy
+	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
+	state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	log(`Lorequest - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${tier}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
@@ -6765,6 +6769,9 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (see PR #85)
+	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
+	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
 	log(`Lorequest: Middle-earth - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Middleearth.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -6924,6 +6931,9 @@ function bootSwordCoastEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (see PR #85)
+	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
+	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
 	log(`Lorequest: Sword Coast - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Swordcoast.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -7081,6 +7091,9 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (see PR #85)
+	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
+	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
 	log(`Lorequest: Final Fantasy - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
@@ -7239,6 +7252,9 @@ function bootMultiverseEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// basics are color-locked to each character's identity (see PR #85)
+	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
+	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
 	log(`Lorequest: Multiverse - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Multiverse.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length} at win-parity.`);
 }
