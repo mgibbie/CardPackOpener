@@ -491,6 +491,13 @@ function rollPack() {
 	return out;
 }
 
+// legacy class-id spellings some imports used — canonicalize before comparing,
+// or cards the builder happily shows get rejected at save (the 278-card
+// demonhunter/deathknight lockout, fixed 2026-08-27; data is normalized too,
+// this guards against future import drift)
+const CLASS_ID_ALIASES = { demonhunter: 'demon_hunter', deathknight: 'death_knight' };
+const canonClassId = c => String(c || '').split('__').map(p => CLASS_ID_ALIASES[p] || p).join('__');
+
 function deckError(classId, deck, collection) {
 	if (!STARTER_DECKS[classId]) return 'unknown class';
 	if (!Array.isArray(deck) || deck.length !== DECK_SIZE) return `deck must be exactly ${DECK_SIZE} cards`;
@@ -498,7 +505,7 @@ function deckError(classId, deck, collection) {
 	for (const id of deck) {
 		const info = POOL[id];
 		if (!info) return `not a collectible card: ${id}`;
-		const [rarity, cardClass] = info;
+		const rarity = info[0], cardClass = canonClassId(info[1]);
 		if (cardClass !== 'neutral' && cardClass !== classId
 			&& !cardClass.split('__').includes(classId)) return `${id} is not a ${classId} card`;
 		counts[id] = (counts[id] || 0) + 1;
@@ -1804,24 +1811,30 @@ export default async function handler(req, env) {
 	}
 
 	if (action === 'run-reward') {
-		// win or lose, a finished run pays one pack (lightly rate-limited)
+		// a WON run (or live duel) pays one pack; a loss/concede records stats but
+		// pays nothing — the old win-or-lose payout made start->concede the best
+		// pack income in the game (~1 pack/minute vs the 12h drip)
 		if (Date.now() - (user.stats.lastReward || 0) < REWARD_COOLDOWN_MS) {
 			return json({ error: 'too soon — the last run just paid out', state: publicState(user, username) }, 429);
 		}
-		user.packs += 1;
-		user.stats.runs += 1;
-		if (body.result === 'win') user.stats.wins += 1;
-		// per-mode counters (for achievements): dungeon/heist/tombs/duels/arena
+		const won = body.result === 'win';
+		if (won) user.packs += 1;
+		// per-mode counters (for achievements); 'pvp' = live duels, which don't
+		// count toward the run totals the profile's run achievements read
 		const mode = String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12);
-		if (['dungeon', 'heist', 'tombs', 'duels', 'arena'].includes(mode)) {
+		if (mode !== 'pvp') {
+			user.stats.runs += 1;
+			if (won) user.stats.wins += 1;
+		}
+		if (['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'pvp'].includes(mode)) {
 			user.stats.modes = user.stats.modes || {};
 			const ms = user.stats.modes[mode] = user.stats.modes[mode] || { runs: 0, wins: 0 };
 			ms.runs += 1;
-			if (body.result === 'win') ms.wins += 1;
+			if (won) ms.wins += 1;
 		}
 		user.stats.lastReward = Date.now();
 		await store.setJSON(username, user);
-		return json({ state: publicState(user, username) });
+		return json({ won, state: publicState(user, username) });
 	}
 
 	if (action === 'save-deck') {

@@ -640,7 +640,7 @@ register('hematurge', ({ state, pi, target, source, enemies, scaled, hm, pickEne
 			if ((p.corpses || 0) >= 1) {
 				spendCorpses(state, pi, 1);
 				emit(state, { type: 'corpses', player: pi, corpses: p.corpses });
-				execEffects(state, pi, [{ type: 'discover', cardClasses: ['deathknight'] }], null, source);
+				execEffects(state, pi, [{ type: 'discover', cardClasses: ['death_knight'] }], null, source);
 			}
 });
 

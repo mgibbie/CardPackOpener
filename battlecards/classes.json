@@ -407,14 +407,27 @@
     {
       "id": "barbarian",
       "name": "Barbarian",
-      "power": null,
-      "note": "Raging Roar needs until-end-of-turn keywords"
+      "power": {
+        "name": "Raging Roar",
+        "cost": 2,
+        "effects": [
+          { "type": "hero-temp-attack", "value": 1 },
+          { "type": "temp-buff", "attack": 1, "target": "friendly-creatures" }
+        ],
+        "text": "Give your hero and creatures +1 Attack until end of turn."
+      }
     },
     {
       "id": "wizard",
       "name": "Wizard",
-      "power": null,
-      "note": "Spellbook Studies needs cost modification"
+      "power": {
+        "name": "Spellbook Studies",
+        "cost": 2,
+        "effects": [
+          { "type": "discover", "cardType": "spell", "costMod": -1 }
+        ],
+        "text": "Discover a spell. It costs (1) less."
+      }
     },
     {
       "id": "centurion",
