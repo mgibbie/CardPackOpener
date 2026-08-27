@@ -153,6 +153,30 @@ async function waitFor(fn, ms) {
 		}), 8000), 'banner counts only overrides that differ from the committed file');
 		await api('tuning-save', { kind: 'art', content: {} }, owner); // clear for the next run
 
+		// 3c) live replacement IMAGES: owner-only save, public fetch, counted by
+		// the banner, and APPLIED by a real cardart.js boot
+		const JPEG_1PX = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AVN//2Q==';
+		A((await api('art-save', { id: 'zzz_live_art', dataUrl: JPEG_1PX }, peon)).error === 'owner only', 'art-save refuses non-owners');
+		A((await api('art-save', { id: 'zzz_live_art', dataUrl: JPEG_1PX }, owner)).ok === true, 'owner saves a live replacement image');
+		A(((await api('tuning-get')).artIds || []).includes('zzz_live_art'), 'tuning-get lists the pending image');
+		A((await api('art-fetch', { id: 'zzz_live_art' })).dataUrl === JPEG_1PX, 'art-fetch serves it publicly');
+		A((await api('art-fetch', { id: 'not_saved' })).error === 'no such override', 'art-fetch refuses unlisted ids');
+		await page.goto(BASE + '/todo/', { waitUntil: 'networkidle2', timeout: 20000 });
+		A(await waitFor(() => page.evaluate(() => {
+			const el = document.getElementById('pending');
+			return el && !el.hidden && /1 replacement image/.test(el.textContent);
+		}), 8000), 'the banner counts the pending replacement image');
+		// a REAL cardart.js boot (importmap + module import on the dev origin) must
+		// pull the override and slot it into the art index
+		await page.setContent(`
+			<script type="importmap">{"imports":{"three":"/battlecards/vendor/three.module.min.js"}}</script>
+			<script type="module">
+				import * as CA from '/battlecards/cardart.js';
+				window.__hasOverride = () => CA.hasArt('zzz_live_art');
+			</script>`);
+		A(await waitFor(() => page.evaluate(() => window.__hasOverride && window.__hasOverride()), 10000),
+			'a client boot applies the live replacement image');
+
 		// 4) homepage tile is owner-only
 		A(await waitFor(async () => {
 			await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 20000 });

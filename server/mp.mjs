@@ -54,6 +54,9 @@ const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
 const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
 const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game boot)
+const AFETCH_LIMIT = [40, 60_000];  // per-IP public override-image fetch (1 per overridden card per boot)
+const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
+const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -709,8 +712,23 @@ export default async function handler(req, env) {
 	// files (tools/pull-live-tuning.mjs) and clears these keys.
 	if (action === 'tuning-get') {
 		if (!(await rateLimit(store, 'tget:' + clientIp(req), TGET_LIMIT[0], TGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
-		const [art, sprite] = await Promise.all([store.get('owner_tuning_art'), store.get('owner_tuning_sprite')]);
-		return json({ art: art || null, sprite: sprite || null });
+		const [art, sprite, artIds] = await Promise.all([
+			store.get('owner_tuning_art'), store.get('owner_tuning_sprite'), store.get('owner_art_ids'),
+		]);
+		return json({ art: art || null, sprite: sprite || null, artIds: artIds || [] });
+	}
+
+	// a live replacement IMAGE (saved from arttune on the live site; ids listed by
+	// tuning-get above). PUBLIC read so every client can render it; only ids in
+	// the owner-maintained list are fetchable, so this can't probe arbitrary keys.
+	if (action === 'art-fetch') {
+		if (!(await rateLimit(store, 'afetch:' + clientIp(req), AFETCH_LIMIT[0], AFETCH_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		const ids = (await store.get('owner_art_ids')) || [];
+		if (!ids.includes(id)) return json({ error: 'no such override' }, 404);
+		const dataUrl = await store.get('owner_art:' + id);
+		if (!dataUrl) return json({ error: 'no such override' }, 404);
+		return json({ dataUrl });
 	}
 
 	// everything below requires a valid token
@@ -749,6 +767,24 @@ export default async function handler(req, env) {
 		if (JSON.stringify(content).length > 400000) return json({ error: 'too large' }, 400);
 		await store.setJSON('owner_tuning_' + kind, Object.keys(content).length ? content : null);
 		return json({ ok: true, count: Object.keys(content).length });
+	}
+
+	// owner save of a live replacement IMAGE (arttune's upload on the live site,
+	// where /dev/save-art doesn't exist). Served publicly via art-fetch above;
+	// a dev session folds these into battlecards/art/ (pull-live-tuning) and
+	// clears the keys. Bounded: a handful of pending images, each one 768px jpeg.
+	if (action === 'art-save') {
+		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		const id = String(body.id || '');
+		if (!/^[a-z0-9_]+$/.test(id)) return json({ error: 'bad card id' }, 400);
+		const dataUrl = String(body.dataUrl || '');
+		if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(dataUrl)) return json({ error: 'expected a base64 jpeg data URL' }, 400);
+		if (dataUrl.length > ART_OVERRIDE_MAX) return json({ error: 'image too large' }, 400);
+		const ids = (await store.get('owner_art_ids')) || [];
+		if (!ids.includes(id) && ids.length >= ART_OVERRIDE_SLOTS) return json({ error: 'too many pending images — fold them into the repo first' }, 400);
+		await store.setJSON('owner_art:' + id, dataUrl);
+		if (!ids.includes(id)) { ids.push(id); await store.setJSON('owner_art_ids', ids); }
+		return json({ ok: true, count: ids.length });
 	}
 
 	if (action === 'todo-add' || action === 'todo-list' || action === 'todo-done') {

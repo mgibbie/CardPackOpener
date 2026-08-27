@@ -120,12 +120,14 @@
 			const fresh = (ov, file) => Object.entries(ov || {})
 				.filter(([id, v]) => JSON.stringify(file[id]) !== JSON.stringify(v)).length;
 			const a = fresh(t.art, artFile), s = fresh(t.sprite, spriteFile);
+			const imgs = (t.artIds || []).length; // live replacement IMAGES (art-save)
 			const el = $('pending');
-			el.hidden = !(a + s);
-			if (a + s) {
+			el.hidden = !(a + s + imgs);
+			if (a + s + imgs) {
 				const parts = [];
 				if (a) parts.push(a + ' art override' + (a === 1 ? '' : 's'));
 				if (s) parts.push(s + ' sprite override' + (s === 1 ? '' : 's'));
+				if (imgs) parts.push(imgs + ' replacement image' + (imgs === 1 ? '' : 's'));
 				el.textContent = '🎨 ' + parts.join(' + ') + ' saved live on the server, waiting to be folded into the repo — tell Claude to "fold it into a commit".';
 			}
 		} catch (e) { /* the counter is best-effort */ }

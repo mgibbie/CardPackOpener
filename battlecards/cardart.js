@@ -220,13 +220,26 @@ const _tuneBase = (() => { try { return new URL('.', import.meta.url).href; } ca
 // committed file first, then the server override on top (per card id) — the
 // override is what the owner saves from the LIVE arttune page, so a phone-side
 // save takes effect for everyone without a deploy
+const _mpCall = body => fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+	.then(r => (r.ok ? r.json() : {}));
 Promise.allSettled([
 	fetch(_tuneBase + 'art_tuning.json').then(r => (r.ok ? r.json() : {})),
-	fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"action":"tuning-get"}' })
-		.then(r => (r.ok ? r.json() : {})).then(d => d.art || {}),
+	_mpCall({ action: 'tuning-get' }),
 ]).then(([f, o]) => {
-	Object.assign(ART_TUNING, f.value || {}, o.value || {});
+	const got = o.value || {};
+	Object.assign(ART_TUNING, f.value || {}, got.art || {});
 	if (Object.keys(ART_TUNING).length) for (const fn of artListeners) fn('*');
+	// live replacement IMAGES (saved from arttune on the live site, pending a
+	// fold into battlecards/art/) — pull each and slot it in as an override
+	for (const id of got.artIds || []) {
+		if (!/^[a-z0-9_]+$/.test(id)) continue;
+		_mpCall({ action: 'art-fetch', id }).then(d => {
+			if (!d.dataUrl) return;
+			const img = new Image();
+			img.onload = () => setArtOverride(id, img);
+			img.src = d.dataUrl;
+		}).catch(() => {});
+	}
 });
 // does this id have real art? (the tuner only lists tunable cards)
 export function hasArt(id) { return !!(artIndex && artIndex.has(id)); }
