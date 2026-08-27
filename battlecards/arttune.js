@@ -238,11 +238,20 @@ function wirePreview(canvas) {
 			if (!r.ok) throw new Error(await r.text());
 			$('msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} cards)` + artMsg;
 		} catch (e) {
-			// live site: save as a server override — takes effect for everyone
-			// immediately (tuning-get merges it over the committed file)
+			// live site: save ONLY what differs from the committed file — after a
+			// fold the override count reads 0 instead of re-uploading the whole
+			// map as byte-identical duplicates
 			try {
-				const r = await MP.call('tuning-save', { kind: 'art', content });
-				$('msg').textContent = `saved LIVE ✓ (${r.count} cards as a server override)` + artMsg;
+				let committed = {};
+				try { committed = await fetch('art_tuning.json', { cache: 'reload' }).then(r => (r.ok ? r.json() : {})); } catch (e3) {}
+				const delta = {};
+				for (const [id, t] of Object.entries(content)) if (JSON.stringify(committed[id]) !== JSON.stringify(t)) delta[id] = t;
+				// a committed entry the user RESET vanishes from cleaned() — send an
+				// explicit default so the live merge neutralizes the file entry
+				// (pull-live-tuning drops default entries when it folds)
+				for (const id of Object.keys(committed)) if (!content[id]) delta[id] = { z: 1, fx: 0.5, fy: 0.5 };
+				const r = await MP.call('tuning-save', { kind: 'art', content: delta });
+				$('msg').textContent = `saved LIVE ✓ (${r.count} change${r.count === 1 ? '' : 's'} as a server override)` + artMsg;
 			} catch (e2) {
 				await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
 				$('msg').textContent = 'save failed (' + String(e2.message || e2).slice(0, 60) + ') — JSON copied to clipboard' + artMsg;

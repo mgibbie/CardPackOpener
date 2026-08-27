@@ -161,10 +161,15 @@ export function mount(ow) {
 			if (!r.ok) throw new Error(await r.text());
 			$('st-msg').textContent = `saved ${TUNING_FILE} (${Object.keys(content).length} species)`;
 		} catch (e) {
-			// live site: save as a server override — live for everyone immediately
+			// live site: save ONLY what differs from the committed file — after a
+			// fold the override count reads 0 instead of re-uploading all species
 			try {
-				const r = await MP.call('tuning-save', { kind: 'sprite', content });
-				$('st-msg').textContent = `saved LIVE ✓ (${r.count} species as a server override)`;
+				let committed = {};
+				try { committed = await fetch('/overworld/sprite_tuning.json', { cache: 'reload' }).then(r => (r.ok ? r.json() : {})); } catch (e3) {}
+				const delta = {};
+				for (const [id, t] of Object.entries(content)) if (JSON.stringify(committed[id]) !== JSON.stringify(t)) delta[id] = t;
+				const r = await MP.call('tuning-save', { kind: 'sprite', content: delta });
+				$('st-msg').textContent = `saved LIVE ✓ (${r.count} change${r.count === 1 ? '' : 's'} as a server override)`;
 			} catch (e2) {
 				await navigator.clipboard.writeText(JSON.stringify(content, null, '\t')).catch(() => {});
 				$('st-msg').textContent = 'save failed (' + String(e2.message || e2).slice(0, 50) + ') — JSON copied to clipboard';
