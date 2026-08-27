@@ -206,19 +206,30 @@ function wirePreview(canvas) {
 		// cache-bust so the CDN can't serve the stale image after a deploy)
 		let artMsg = '';
 		if (pendingArt.size) {
-			let saved = 0;
+			let savedDev = 0, savedLive = 0;
 			for (const [id, dataUrl] of [...pendingArt]) {
 				try {
+					// local dev server: write straight into battlecards/art/
 					const r = await fetch('/dev/save-art', { method: 'POST', body: JSON.stringify({ id, dataUrl }) });
 					if (!r.ok) throw new Error(await r.text());
 					pendingArt.delete(id);
-					saved++;
-				} catch (e) {
-					artMsg = ` · image save FAILED (${id}): ${String(e.message).slice(0, 80)}`;
-					break;
+					savedDev++;
+				} catch (devErr) {
+					// live site: store as a server override — every client picks it
+					// up at boot (tuning-get lists it, art-fetch serves it) until a
+					// dev session folds it into the repo (pull-live-tuning)
+					try {
+						await MP.call('art-save', { id, dataUrl });
+						pendingArt.delete(id);
+						savedLive++;
+					} catch (e) {
+						artMsg = ` · image save FAILED (${id}): ${String(e.message || e).slice(0, 80)}`;
+						break;
+					}
 				}
 			}
-			if (saved) artMsg = ` · ${saved} image${saved > 1 ? 's' : ''} written — deploy art with: npm run deploy-art` + artMsg;
+			if (savedDev) artMsg = ` · ${savedDev} image${savedDev > 1 ? 's' : ''} written — deploy art with: npm run deploy-art` + artMsg;
+			if (savedLive) artMsg = ` · ${savedLive} image${savedLive > 1 ? 's' : ''} saved LIVE ✓ (fold into the repo later)` + artMsg;
 		}
 		const content = cleaned();
 		try {
