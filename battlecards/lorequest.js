@@ -77,12 +77,23 @@ export function unlockedCharacters(stats) {
 	return out;
 }
 
-// N distinct random characters from a pool (the run-start offer)
-export function offerFrom(pool, rng, count = 3) {
-	const bag = [...pool];
+// N distinct random characters from a pool (the run-start offer). `pinned`
+// entries (characters with a live win streak) are always included, ahead of
+// the random fill — a streak must always be continuable.
+export function offerFrom(pool, rng, count = 3, pinned = []) {
 	const out = [];
-	for (let i = 0; i < count && bag.length; i++) out.push(bag.splice(Math.floor(rng() * bag.length), 1)[0]);
+	for (const c of pinned) if (pool.includes(c) && !out.includes(c) && out.length < count) out.push(c);
+	const bag = pool.filter(c => !out.includes(c));
+	while (out.length < count && bag.length) out.push(bag.splice(Math.floor(rng() * bag.length), 1)[0]);
 	return out;
+}
+
+// characters in `pool` with a live win streak in this mode (server resets a
+// character's streak only when THAT character loses a run). Hottest first.
+export function streakPins(pool, stats, modeKey) {
+	const chars = stats?.chars || {};
+	const s = c => chars[modeKey + '|' + c]?.streak || 0;
+	return pool.filter(c => s(c) >= 1).sort((a, b) => s(b) - s(a));
 }
 
 // three distinct planeswalkers to offer as starter decks (free-play path)

@@ -66,5 +66,17 @@ const offer = Lorequest.offerFrom(['a', 'b', 'c', 'd'], () => 0.5, 3);
 ok('offerFrom gives 3 distinct picks', new Set(offer).size === 3);
 ok('offerFrom caps at the pool size', Lorequest.offerFrom(['a'], Math.random, 3).length === 1);
 
+// ---- streak pins: a live win streak is ALWAYS offered next run ----
+const pinOffer = Lorequest.offerFrom(['a', 'b', 'c', 'd'], () => 0, 3, ['d']);
+ok('a pinned character is always in the offer', pinOffer[0] === 'd' && new Set(pinOffer).size === 3);
+ok('pins cap at the offer size, in order',
+	Lorequest.offerFrom(['a', 'b', 'c', 'd'], () => 0, 3, ['d', 'c', 'b', 'a']).join(',') === 'd,c,b');
+ok('a pin outside the pool is ignored', !Lorequest.offerFrom(['a', 'b'], () => 0, 3, ['z']).includes('z'));
+const stStats = { chars: { 'm|a': { streak: 1 }, 'm|b': { streak: 0 }, 'm|c': { streak: 3 }, 'm|x': { streak: 9 } } };
+ok('streakPins finds live in-pool streaks, hottest first',
+	Lorequest.streakPins(['a', 'b', 'c'], stStats, 'm').join(',') === 'c,a');
+ok('streakPins ignores other modes', Lorequest.streakPins(['a', 'c'], stStats, 'other').length === 0);
+ok('streakPins with no stats = no pins', Lorequest.streakPins(['a'], null, 'm').length === 0);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
