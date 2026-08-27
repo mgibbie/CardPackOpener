@@ -9,6 +9,7 @@ import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
 import { toSnapshot, fromSnapshot } from '../../engine/serialize.js';
 import * as Lorequest from '../../lorequest.js';
+import * as Duels from '../../duels.js';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const byId = {}; for (const c of raw.cards) byId[c.id] = c;
@@ -28,6 +29,25 @@ const ids = defs => defs.map(d => d.id).sort().join(',');
 		const b = Lorequest.allowedBasics(byId, ch);
 		return b.includes('wastes') && b.every(id => ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'].includes(id));
 	}));
+}
+
+// --- the sibling modes (colors backfilled from Scryfall color_identity) ---
+{
+	const basics = (tag, ch) => Duels.allowedBasicsFor(byId, tag, ch).sort().join(',');
+	ok('ME: Gimli (mono-R) gets Mountain + Wastes', basics('meDeck', 'Gimli') === 'mountain,wastes');
+	ok('SC: Jaheira (mono-G) gets Forest + Wastes', basics('scDeck', 'Jaheira') === 'forest,wastes');
+	ok('FF: Sephiroth (mono-B) gets Swamp + Wastes', basics('ffDeck', 'Sephiroth, One-Winged Angel') === 'swamp,wastes');
+	ok('MV: Captain America (mono-W) gets Plains + Wastes', basics('mvDeck', 'Captain America') === 'plains,wastes');
+	// every character in every sibling mode has a REAL color identity — no one
+	// collapsed to wastes-only from a failed Scryfall backfill
+	const VALID = ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'];
+	for (const tag of ['meDeck', 'scDeck', 'ffDeck', 'mvDeck']) {
+		const chars = [...new Set(Object.values(byId).filter(d => d[tag]).map(d => d[tag]))];
+		ok(`${tag}: all ${chars.length} characters derive colored, valid identities`, chars.every(ch => {
+			const b = Duels.allowedBasicsFor(byId, tag, ch);
+			return b.length >= 2 && b.includes('wastes') && b.every(id => VALID.includes(id));
+		}));
+	}
 }
 
 // --- engine enforcement ---

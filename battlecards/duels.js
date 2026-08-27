@@ -509,6 +509,22 @@ export const HERO_POWERS = {
 	warlock: ['duelshp_demon_blood'],
 };
 
+// ---------- color-locked basics (the Lorequest-family runs) ----------
+// A run character's color identity = the union of its deck cards' `colors`
+// under the mode's tag (loreDeck / meDeck / scDeck / ffDeck / mvDeck). Runs
+// restrict the land shop to those basics + Wastes (which adds no identity —
+// and is all a colorless character like Karn ever gets). Shared here because
+// every run-mode module already imports Duels.
+const BASIC_OF_COLOR = { W: 'plains', U: 'island', B: 'swamp', R: 'mountain', G: 'forest' };
+export function allowedBasicsFor(cardsById, tagKey, character) {
+	const colors = new Set();
+	for (const d of Object.values(cardsById)) {
+		if (d[tagKey] !== character || d.token) continue;
+		for (const c of d.colors || []) colors.add(c);
+	}
+	return [...colors].map(c => BASIC_OF_COLOR[c]).filter(Boolean).concat('wastes');
+}
+
 // ---------- HS Duels: arena draft, loot buckets, generated enemies ----------
 // Faithful-ish Duels loot: a 10-card arena-style draft (pick 1 of 3, rarity-
 // weighted), tribe/archetype buckets, and dynamically generated opponents kept

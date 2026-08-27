@@ -30,17 +30,8 @@ export const TREASURE_WINS = [2, 5, 8, 11]; // wins at which a treasure is grant
 
 // a character's color identity = the union of its 15 deck cards' colors (Karn's
 // colorless artifacts carry none). In a run, BASICS are restricted to it — you
-// play the character, you build the character's mana. Wastes is always allowed
-// (it adds no color identity), and it's all a colorless character ever gets.
-const BASIC_OF = { W: 'plains', U: 'island', B: 'swamp', R: 'mountain', G: 'forest' };
-export function allowedBasics(cardsById, character) {
-	const colors = new Set();
-	for (const d of Object.values(cardsById)) {
-		if (d.loreDeck !== character || d.token) continue;
-		for (const c of d.colors || []) colors.add(c);
-	}
-	return [...colors].map(c => BASIC_OF[c]).filter(Boolean).concat('wastes');
-}
+// play the character, you build the character's mana (shared impl in duels.js).
+export const allowedBasics = (cardsById, character) => Duels.allowedBasicsFor(cardsById, 'loreDeck', character);
 
 // the 30-card base deck for a character = 2 copies of each of its 15 loreDeck cards
 export function deckOf(cardsById, character) {
