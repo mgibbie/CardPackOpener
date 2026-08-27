@@ -119,6 +119,17 @@ async function waitFor(fn, ms) {
 			'Done removes a note');
 		A((await api('todo-list', {}, owner)).todos.length === 1, 'the removal reached the server');
 
+		// 3b) the pending-overrides counter: hidden with none, shown after a live save
+		A(await page.evaluate(() => document.getElementById('pending')?.hidden === true),
+			'pending-overrides banner hidden when the server has none');
+		await api('tuning-save', { kind: 'art', content: { cardx: { z: 1.5, fx: 0.3, fy: 0.3 }, cardy: { z: 2, fx: 0.5, fy: 0.1 } } }, owner);
+		await page.click('#refresh');
+		A(await waitFor(() => page.evaluate(() => {
+			const el = document.getElementById('pending');
+			return el && !el.hidden && /2 art overrides/.test(el.textContent);
+		}), 8000), 'banner counts the live art overrides after a save');
+		await api('tuning-save', { kind: 'art', content: {} }, owner); // clear for the next run
+
 		// 4) homepage tile is owner-only
 		A(await waitFor(async () => {
 			await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 20000 });
