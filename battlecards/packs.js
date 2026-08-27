@@ -5,6 +5,8 @@ import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, RARITY_COLORS
 import * as Col from './collection.js';
 import * as MPX from './mpmode.js';
 import { keywordsFor, richHtml } from './keywords.js';
+import * as SFX from './sfx.js';
+import { checkToasts as achCheck } from '../site/achievements.js';
 
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
 const MP_ON = MPX.mpMode();
@@ -218,12 +220,14 @@ async function startOpen() {
 		if (data.error) { hud.hint.textContent = data.error; return; }
 		mpPulls = data.cards;
 		mpPacks = data.state.packs;
+		achCheck(data.state); // pack-count / collection achievements toast here
 		preloadArt(mpPulls); // load the art during the tear so the reveal shows it
 	} else if (!Col.spendGold(Col.PACK_PRICE)) { updateHud(); return; }
 	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); }
 	cardMeshes = [];
 	if (!pack) spawnPack();
 	phase = 'tearing';
+	SFX.play('packOpen');
 	tearT = 0;
 	updateHud();
 }
@@ -256,6 +260,7 @@ function flip(i) {
 	c.flipped = true;
 	c.spin = 0; // rotate to face camera
 	const col = RARITY_COLORS[c.def.rarity] || '#9aa0a6';
+	SFX.play(c.def.rarity === 'legendary' || c.def.rarity === 'epic' ? 'rare' : 'cardPlay');
 	burst(c.mesh.position, col, c.def.rarity === 'legendary' ? 60 : c.def.rarity === 'epic' ? 40 : 22);
 	if (c.def.rarity === 'legendary' || c.def.rarity === 'epic') {
 		hud.toast.textContent = `${c.def.rarity.toUpperCase()}! ${c.def.name}`;
