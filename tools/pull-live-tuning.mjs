@@ -60,6 +60,11 @@ for (const row of rows) {
 	let base = {};
 	try { base = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) {}
 	const merged = { ...base, ...override }; // override wins per id
+	// arttune sends {z:1, fx:0.5, fy:0.5} to neutralize a committed entry the
+	// owner reset — folding one means REMOVING the entry, not keeping a default
+	if (file.endsWith('art_tuning.json')) {
+		for (const [id, t] of Object.entries(merged)) if (t && t.z === 1 && t.fx === 0.5 && t.fy === 0.5) delete merged[id];
+	}
 	fs.writeFileSync(file, (file.endsWith('art_tuning.json')
 		? JSON.stringify(merged, null, '\t')
 		: JSON.stringify(merged)) + '\n');
