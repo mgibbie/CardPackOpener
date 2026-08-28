@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20261071a';
-import { keywordsFor, richHtml } from './keywords.js?v=20261071a';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260827a';
+import { keywordsFor, richHtml } from './keywords.js?v=20260827a';
 
 // cache-busting: this module's own ?v=… (from viewer.html) is reused for the
 // cards.json fetch so a version bump refreshes code and data together
@@ -30,6 +30,7 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 let PAGE_SIZE = MOBILE.matches ? 6 : 10;
 MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 6 : 10; page = 0; renderPage(); });
 let cards = [], collection = {}, filtered = [], page = 0;
+let mpFreshOverride = null; // post-craft account state (the localStorage cache lags)
 const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOnly: false, showUncollectible: false };
 
 // cards you can't collect: lands (bought from slots), tokens, hero powers,
@@ -198,6 +199,30 @@ function openZoom(card) {
 		+ `<div class="z-desc">${card.description ? richHtml(card.description) : '<i>No rules text.</i>'}</div>`
 		+ keywordLinesHtml(card)
 		+ `<div class="z-owned">${owned ? `You own x${owned}` : 'Not in your collection yet'}</div>`;
+	// account mode: craft the missing copy right here (mirrors the server's
+	// CRAFT_COST; the server is still the validator)
+	const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+	const st = MP_ON ? (mpFreshOverride || MPX.cachedState()) : null;
+	const cap = card.rarity === 'legendary' ? 1 : 2;
+	if (st && owned < cap && !isUncollectible(card)) {
+		const cost = CRAFT_COST[card.rarity || 'common'];
+		const dust = st.dust || 0;
+		const b = document.createElement('button');
+		b.id = 'zoom-craft';
+		b.textContent = `⚒ Craft — ${cost} dust (you have ${dust})`;
+		b.disabled = dust < cost;
+		b.addEventListener('click', async () => {
+			b.disabled = true;
+			b.textContent = 'Crafting…';
+			const r = await MPX.call('craft', { id: card.id }).catch(e => ({ error: e.message || 'craft failed' }));
+			if (r.error) { b.textContent = r.error; return; }
+			mpFreshOverride = r.state || mpFreshOverride;
+			if (r.state?.collection) collection = r.state.collection;
+			renderPage();
+			openZoom(card); // repaint with the new count + dust balance
+		});
+		$('zoom-info').appendChild(b);
+	}
 	$('zoom').classList.add('open');
 	// once the real art streams in, repaint the big face too
 	setTimeout(() => {
@@ -219,7 +244,17 @@ async function renderPage() {
 	const pageCards = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 	$('prev').disabled = page === 0;
 	$('next').disabled = page >= pages - 1;
-	$('pageinfo').textContent = filtered.length ? `Page ${page + 1} / ${pages}` : 'No cards match those filters.';
+	// the page number is a jump box — 642 pages is a long way by arrow alone
+	const info = $('pageinfo');
+	if (!filtered.length) info.textContent = 'No cards match those filters.';
+	else {
+		info.innerHTML = `Page <input id="page-jump" type="number" min="1" max="${pages}" value="${page + 1}" aria-label="Jump to page"> / ${pages}`;
+		const inp = info.querySelector('#page-jump');
+		const go = () => { page = Math.max(0, Math.min(pages - 1, (parseInt(inp.value, 10) || 1) - 1)); renderPage(); };
+		inp.addEventListener('change', go);
+		// typing in the box must not trigger the global arrow-key page flips
+		inp.addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Enter') go(); });
+	}
 	// load this page's art BEFORE drawing so cards appear complete (no artless
 	// flash); keep the current page on screen until the new art is ready
 	const token = ++renderToken;
@@ -235,6 +270,7 @@ fetch('cards.json' + CB)
 		let mpOwned = null;
 		if (MP_ON) {
 			const s = await MPX.freshState();
+			mpFreshOverride = s || null; // live dust balance for the zoom's craft button
 			mpOwned = s?.collection || {};
 			data.cards = data.cards.filter(d => mpOwned[d.id] > 0);
 		}
