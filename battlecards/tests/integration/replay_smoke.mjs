@@ -80,7 +80,14 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 		A(st0.hasState, 'a frame rendered into a live state (fromSnapshot → renderer)', JSON.stringify(st0));
 		A(st0.bar, 'the replay control bar is present');
 
+		// the bar auto-tucks below the viewport so it never covers the hand —
+		// wait for the opening peek to end, then un-tuck before clicking buttons
+		const tucked = await waitFor(() => page.evaluate(() => document.querySelector('#replay-bar')?.classList.contains('rb-min')), 8000);
+		A(tucked, 'the control bar auto-tucks after its opening peek (hand stays visible)');
+		const rbShow = () => page.evaluate(() => document.querySelector('#replay-bar')?.classList.remove('rb-min'));
+
 		// step forward via the Next button
+		await rbShow();
 		await page.click('#rb-next');
 		await sleep(200);
 		const afterNext = await page.evaluate(() => window.__replay.idx);
@@ -93,6 +100,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 		// flip perspective
 		const viewBefore = await page.evaluate(() => window.__replay.view);
+		await rbShow();
 		await page.click('#rb-flip');
 		await sleep(200);
 		A(await page.evaluate(() => window.__replay.view) !== viewBefore, 'the View button flips which side you watch from');

@@ -7796,7 +7796,10 @@ function injectReplayStyles() {
 	const st = document.createElement('style');
 	st.id = 'replay-style';
 	st.textContent = `
-#replay-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(10,7,20,.92);border-top:1px solid #3a2f56;padding:8px 12px;color:#e8e2f4;backdrop-filter:blur(4px)}
+#replay-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(10,7,20,.92);border-top:1px solid #3a2f56;padding:8px 12px;color:#e8e2f4;backdrop-filter:blur(4px);transition:transform .25s ease}
+#replay-bar.rb-min{transform:translateY(calc(100% - 26px))}
+#replay-bar.rb-min #rb-cap{margin-bottom:0;cursor:pointer}
+#replay-bar.rb-min #rb-cap:after{content:" ▴";color:#8a7db0}
 #rb-cap{font-size:13px;color:#cdbcff;text-align:center;min-height:16px;margin-bottom:6px;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #rb-controls{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
 #rb-controls button{background:#2a2340;color:#cdbcff;border:1px solid #40356a;border-radius:7px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
@@ -7831,6 +7834,21 @@ function buildReplayBar() {
 	$('rb-exit').onclick = () => { location.href = 'replays.html'; };
 	const speeds = [1, 2, 4, 0.5];
 	$('rb-speed').onclick = () => replaySetSpeed(speeds[(speeds.indexOf(replaySpeed) + 1) % speeds.length]);
+	// the bar auto-tucks so it never covers your hand: only the caption strip
+	// stays; hover (or tap) the strip to bring the controls back
+	let rbHideT = null, rbScrubbing = false;
+	const rbTuck = () => { if (!rbScrubbing) bar.classList.add('rb-min'); };
+	const rbShow = () => { clearTimeout(rbHideT); bar.classList.remove('rb-min'); };
+	bar.addEventListener('mouseenter', rbShow);
+	bar.addEventListener('mouseleave', () => { clearTimeout(rbHideT); rbHideT = setTimeout(rbTuck, 500); });
+	bar.addEventListener('pointerdown', () => {
+		rbShow();
+		// no hover (touch): tuck again after a few idle seconds
+		if (matchMedia('(hover: none)').matches) rbHideT = setTimeout(rbTuck, 3500);
+	});
+	$('rb-scrub').addEventListener('pointerdown', () => { rbScrubbing = true; });
+	addEventListener('pointerup', () => { rbScrubbing = false; });
+	rbHideT = setTimeout(rbTuck, 2500); // an opening peek at the controls, then tuck
 	addEventListener('keydown', e => {
 		if (!replayMode) return;
 		if (e.key === 'ArrowRight') { e.preventDefault(); replayStep(1); }
