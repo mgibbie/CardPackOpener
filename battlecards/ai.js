@@ -35,7 +35,43 @@ function weakestHero(state, heroTs) {
 	return [...heroTs].sort((a, b) => state.players[a.player].life - state.players[b.player].life)[0] || null;
 }
 
-function pickTarget(state, pi, card) {
+// Opening-hand mulligan: toss the clunky top of the curve (cost >= 5), and if
+// the hand STILL has no early game (nothing at 2 or less), toss the 4-drops too
+// and dig. The Coin is never tossed (E.mulligan skips it anyway).
+export function mulliganTossUids(hand) {
+	const real = hand.filter(c => c.id !== 'coin');
+	const toss = new Set(real.filter(c => (c.cost || 0) >= 5).map(c => c.uid));
+	const early = real.some(c => (c.cost || 0) <= 2 && !toss.has(c.uid));
+	if (!early) for (const c of real) if ((c.cost || 0) >= 4) toss.add(c.uid);
+	return [...toss];
+}
+
+// Attack order: if any defender is sitting on face-down secrets/traps, send the
+// cheapest body in FIRST so whatever springs eats the probe, not the bomb.
+export function attackProbeOrder(state, pi, attackers) {
+	const trapped = state.players.some((q, qi) => qi !== pi && !q.eliminated
+		&& (((q.secrets || []).length) || ((q.traps || []).length)));
+	return trapped ? [...attackers].sort((a, b) => threatScore(a) - threatScore(b)) : attackers;
+}
+
+// Score a target from an ALREADY-KNOWN legal list (land/artifact taps, whose
+// effect types — boost etc. — aren't in the spell-target table pickTarget
+// leans on): helpful effects at our biggest body, harmful at their biggest.
+export function pickFromLegal(state, pi, effects, legal) {
+	const first = (effects || []).find(e => CHOSEN_TYPES.has(e.type));
+	if (!first) return null;
+	const mine = legal.filter(t => t.type === 'creature' && t.player === pi);
+	const theirs = legal.filter(t => t.type === 'creature' && t.player !== pi);
+	if (FRIENDLY_TYPES.has(first.type)) {
+		return [...mine].sort((a, b) => creatureOf(state, b).attack - creatureOf(state, a).attack)[0] || null;
+	}
+	if (HOSTILE_TYPES.has(first.type)) {
+		return [...theirs].sort((a, b) => threatScore(creatureOf(state, b)) - threatScore(creatureOf(state, a)))[0] || null;
+	}
+	return null;
+}
+
+export function pickTarget(state, pi, card) {
 	const spec = E.targetSpec(state, pi, card);
 	if (!spec) return null;
 	const legal = E.legalTargets(state, pi, spec);
@@ -108,7 +144,7 @@ function pickTarget(state, pi, card) {
 		}
 	}
 }
-const FRIENDLY_TYPES = new Set(['buff', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle', 'attach', 'add-counters']);
+const FRIENDLY_TYPES = new Set(['buff', 'boost', 'grant', 'temp-buff', 'heal-full', 'attack-equals-health', 'double-health', 'double-attack', 'grant-ongoing', 'temp-immune', 'shadowflame', 'grant-deathrattle', 'copy-deathrattle', 'attach', 'add-counters']);
 const HOSTILE_TYPES = new Set(['damage', 'destroy', 'exile', 'set-health', 'set-attack', 'bounce', 'mind-control', 'transform', 'transform-copy', 'damage-then', 'conditional', 'draw-damage', 'swap-stats', 'swipe', 'damage-adjacent', 'betrayal', 'corrupt', 'mind-control-temp', 'attach-curse']);
 const CHOSEN_TYPES = new Set([...FRIENDLY_TYPES, ...HOSTILE_TYPES, 'heal', 'set-hero-health']);
 
@@ -234,7 +270,10 @@ export function step(state, pi = 1) {
 		if (spec && spec.required) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(state.rng() * legal.length)];
+			// score the target like a spell's (helpful → ours, harmful → their biggest)
+			target = pickFromLegal(state, pi, a.tapAbility.effects, legal)
+				|| pickTarget(state, pi, { id: a.id + ':tap', type: 'sorcery', effects: a.tapAbility.effects || [] })
+				|| legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapArtifact(state, pi, a.uid, target)) return true;
 	}
@@ -261,7 +300,9 @@ export function step(state, pi = 1) {
 		if (spec) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(state.rng() * legal.length)];
+			// a boost belongs on OUR biggest body, not a random legal pick
+			target = pickFromLegal(state, pi, taps[idx].effects, legal)
+				|| legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapLand(state, pi, l.uid, idx, target)) return true;
 	}
@@ -276,7 +317,8 @@ export function step(state, pi = 1) {
 		if (spec) {
 			const legal = E.legalTargets(state, pi, spec);
 			if (!legal.length) continue;
-			target = legal[Math.floor(state.rng() * legal.length)];
+			target = pickFromLegal(state, pi, taps[0].effects, legal)
+				|| legal[Math.floor(state.rng() * legal.length)];
 		}
 		if (E.tapLand(state, pi, l.uid, 0, target)) return true;
 	}
@@ -305,10 +347,14 @@ export function step(state, pi = 1) {
 		}
 	}
 
-	// 1. play the most expensive playable card
+	// 1. play the most expensive playable card — but hold combo cards back
+	// until something else has been played this turn (their combo line is the
+	// whole point), as long as there's a non-combo card to lead with
 	const playable = playableCards(state, pi);
 	if (playable.length) {
-		playable.sort((a, b) => b.cost - a.cost);
+		const holdCombo = (p.cardsPlayedThisTurn || 0) === 0 && playable.some(c => !c.combo);
+		const key = c => (c.cost || 0) - (holdCombo && c.combo ? 1000 : 0);
+		playable.sort((a, b) => key(b) - key(a));
 		const card = playable[0];
 		let choice = null, target = null;
 		const magT = magnetizeTarget(state, pi, card);
@@ -398,8 +444,9 @@ export function step(state, pi = 1) {
 		if (E.useWalker(state, pi, pw.uid, idx, target)) return true;
 	}
 
-	// 2. attack with each ready creature
-	const attackers = E.attackersFor(state, pi);
+	// 2. attack with each ready creature (probe-ordered: cheapest first into
+	// face-down secrets/traps so they spring on the small body)
+	const attackers = attackProbeOrder(state, pi, E.attackersFor(state, pi));
 	for (const a of attackers) {
 		const targets = E.attackTargets(state, pi, a);
 		if (!targets.length) continue;
@@ -421,6 +468,15 @@ export function step(state, pi = 1) {
 				const score = threatScore(d);
 				if (score > bestScore) { bestScore = score; best = t; }
 			}
+		}
+		// pop a big threat's Divine Shield with a cheap body so a real attacker
+		// can actually trade into it next
+		if (!best && a.attack <= 2) {
+			const shielded = creatureTs
+				.map(t => ({ t, d: creatureOf(state, t) }))
+				.filter(x => x.d && x.d.shield && threatScore(x.d) >= 8)
+				.sort((x, y) => threatScore(y.d) - threatScore(x.d));
+			if (shielded.length) best = shielded[0].t;
 		}
 		// no hero is reachable (taunts everywhere): trade into the softest creature
 		const mustTrade = !heroTs.length;
@@ -459,7 +515,9 @@ export function step(state, pi = 1) {
 		if (target && E.heroAttack(state, pi, target)) return true;
 	}
 
-	// activate creature abilities with leftover mana (untargeted, non-sacrifice)
+	// activate creature abilities with leftover mana (non-sacrifice). Targeted
+	// ones aim like spells do: helpful at our best body, harmful at theirs —
+	// and stay unused rather than fire at a bad target.
 	for (const c of p.board) {
 		if (!c.activated) continue;
 		for (let i = 0; i < c.activated.length; i++) {
@@ -467,8 +525,12 @@ export function step(state, pi = 1) {
 			if (a.sacrifice) continue; // the AI doesn't eat its own board
 			if (!E.canActivate(state, pi, c, i)) continue;
 			const spec = E.abilitySpec(state, pi, c, i);
-			if (spec) continue; // targeted abilities are the human's toys for now
-			if (E.activateAbility(state, pi, c.uid, i, null)) return true;
+			let target = null;
+			if (spec) {
+				target = pickTarget(state, pi, { id: c.id + ':ability', type: 'sorcery', effects: a.effects || [] });
+				if (!target) continue; // no good use → keep the mana
+			}
+			if (E.activateAbility(state, pi, c.uid, i, target)) return true;
 		}
 	}
 

@@ -2611,11 +2611,10 @@ function doMulligan(uids) {
 	if (isGuest()) return guestApply(() => E.mulligan(state, HUMAN, uids), { k: 'mulligan', uids });
 	E.mulligan(state, HUMAN, uids); pump(); if (duel.on) publishDuel();
 }
-// AI mulligan heuristic: toss the clunky top of the curve (cost >= 5) so the
-// bots keep a playable early hand; the Coin is never tossed (mulligan skips it).
+// AI mulligan: the shared heuristic in ai.js (toss the clunky top of the
+// curve, and dig harder when the hand has no early game at all)
 function aiMulliganUids(pi) {
-	const p = state.players[pi];
-	return p.hand.filter(c => c.id !== 'coin' && (c.cost || 0) >= 5).map(c => c.uid);
+	return AI.mulliganTossUids(state.players[pi].hand);
 }
 
 // optional "you may …" prompt: a centered yes/no using the decision popup
