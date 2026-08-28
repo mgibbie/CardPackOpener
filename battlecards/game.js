@@ -6867,6 +6867,84 @@ function resumeLorequestOverlay(run) {
 	});
 }
 
+// ---------- full character roster & unlock requirements ----------
+// A drawer layered OVER the pick overlay (the pick's promise stays pending
+// underneath, so ✕ simply closes it). Locked characters show exactly what
+// earns them; progress comes from the same server stats the offer uses.
+function showRosterOverlay(cfg) {
+	const { title, modeKey, heroes, order, starters, enemies, unlocks, secrets, secretOn, deckTag, cardsById, stats, unlockedList } = cfg;
+	if (!$('roster-style')) {
+		const st = document.createElement('style');
+		st.id = 'roster-style';
+		st.textContent = `
+#roster-ov{position:fixed;inset:0;z-index:10002;background:rgba(6,4,14,.94);overflow-y:auto;padding:18px 14px 40px;color:#e8e2f4}
+#roster-ov h2{font-size:20px;letter-spacing:2px;color:#e8c37a;text-align:center;margin-top:4px}
+#roster-ov .ro-sub{text-align:center;color:#9d8fd4;font-size:12.5px;margin-bottom:10px}
+#roster-ov .ro-sec{max-width:1080px;margin:0 auto 6px;color:#c9b8ff;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px 6px 6px}
+#roster-ov .ro-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:1080px;margin:0 auto}
+#roster-ov .ro-tile{width:132px;background:#1c1830;border:1px solid #3a3055;border-radius:10px;padding:8px;text-align:center}
+#roster-ov .ro-tile.locked{border-color:#2a2340}
+#roster-ov .ro-tile.locked canvas{filter:grayscale(1) brightness(.55)}
+#roster-ov .ro-name{font-weight:700;font-size:12.5px;margin:5px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#roster-ov .ro-state{font-size:10.5px;line-height:1.35;color:#9fd8b0;min-height:14px}
+#roster-ov .ro-tile.locked .ro-state{color:#b7a8d6}
+#roster-ov .ro-close{position:fixed;top:14px;right:16px;background:#241b38;color:#cdbcff;border:1px solid #4a3f6b;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;z-index:2}
+#roster-ov .ro-close:hover{background:#372c56}`;
+		document.head.appendChild(st);
+	}
+	$('roster-ov')?.remove();
+	const ov = document.createElement('div');
+	ov.id = 'roster-ov';
+	const unlockedSet = new Set(unlockedList);
+	const runs = stats?.modes?.[modeKey]?.runs || 0;
+	const csOf = h => stats?.chars?.[modeKey + '|' + h] || {};
+	const secretUnlocked = secrets?.length && secretOn ? secretOn() : false;
+	const total = heroes.length + enemies.length + (secrets?.length || 0);
+	const owned = heroes.filter(h => unlockedSet.has(h)).length
+		+ enemies.filter(e => unlockedSet.has(e)).length
+		+ (secretUnlocked ? secrets.length : 0);
+	const coresDone = heroes.every(h => unlockedSet.has(h));
+	ov.innerHTML = `<button class="ro-close">✕ Back</button><h2>${title} — ROSTER</h2>
+		<div class="ro-sub">${stats ? `${owned} / ${total} characters unlocked` : 'Free play — every character is unlocked'}</div>`;
+	const section = label => {
+		const d = document.createElement('div'); d.className = 'ro-sec'; d.textContent = label; ov.appendChild(d);
+		const g = document.createElement('div'); g.className = 'ro-grid'; ov.appendChild(g);
+		return g;
+	};
+	const tile = (grid, name, open, hint) => {
+		const t = document.createElement('div');
+		t.className = 'ro-tile' + (open ? '' : ' locked');
+		const sig = Object.values(cardsById).find(d => d[deckTag] === name && d.rarity === 'legendary')
+			|| Object.values(cardsById).find(d => d[deckTag] === name);
+		if (sig) t.appendChild(miniFace(sig, 116));
+		const nm = document.createElement('div'); nm.className = 'ro-name'; nm.textContent = name; nm.title = name; t.appendChild(nm);
+		const stl = document.createElement('div'); stl.className = 'ro-state'; stl.textContent = open ? '✓ Unlocked' : hint; t.appendChild(stl);
+		grid.appendChild(t);
+	};
+	const hg = section(`Heroes (${stats ? heroes.filter(h => unlockedSet.has(h)).length : heroes.length}/${heroes.length})`);
+	for (const h of [...starters, ...order]) {
+		const open = !stats || unlockedSet.has(h);
+		const idx = order.indexOf(h);
+		tile(hg, h, open, starters.includes(h) ? 'Starter'
+			: `Unlocks after ${idx + 1} completed run${idx ? 's' : ''} — you've done ${runs}`);
+	}
+	const eg = section(`Enemy characters (${stats ? enemies.filter(e => unlockedSet.has(e)).length : enemies.length}/${enemies.length})`);
+	for (const en of enemies) {
+		const open = !stats || unlockedSet.has(en);
+		const [hero, need] = unlocks[en] || ['?', 2];
+		const cs = csOf(hero);
+		const prog = ` — best streak ${cs.best || 0}${cs.streak ? `, current ${cs.streak}` : ''}`;
+		tile(eg, en, open, (coresDone ? '' : `Unlock all ${heroes.length} heroes first · then `)
+			+ `win ${need} runs in a row as ${hero}${stats && coresDone ? prog : ''}`);
+	}
+	if (secrets && secrets.length) {
+		const sg = section('Secret');
+		for (const s of secrets) tile(sg, s, !stats || secretUnlocked, 'A secret unlock — keep exploring…');
+	}
+	ov.querySelector('.ro-close').addEventListener('click', () => ov.remove());
+	document.body.appendChild(ov);
+}
+
 // pick 1 of 3 planeswalker starter decks (shows the deck's signature card)
 async function pickLorequestDeckOverlay(cardsById) {
 	// account progression: 3 random UNLOCKED characters per run. Free play (no
@@ -6900,6 +6978,12 @@ async function pickLorequestDeckOverlay(cardsById) {
 			row.appendChild(box);
 		}
 		el.appendChild(row);
+		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
+			title: 'LOREQUEST', modeKey: 'lorequest', cardsById, stats,
+			heroes: Lorequest.PLANESWALKERS, order: Lorequest.CORE_UNLOCK_ORDER, starters: Lorequest.STARTERS,
+			enemies: Lorequest.BOSSES, unlocks: Lorequest.BOSS_UNLOCKS, deckTag: 'loreDeck',
+			unlockedList: unlocked,
+		})));
 	});
 }
 
@@ -7063,6 +7147,13 @@ async function pickMiddleEarthHeroOverlay(cardsById) {
 			row.appendChild(box);
 		}
 		el.appendChild(row);
+		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
+			title: 'MIDDLE-EARTH', modeKey: 'middleearth', cardsById, stats,
+			heroes: Middleearth.HEROES, order: Middleearth.CORE_UNLOCK_ORDER, starters: Middleearth.STARTERS,
+			enemies: Middleearth.ENEMIES, unlocks: Middleearth.ENEMY_UNLOCKS, deckTag: 'meDeck',
+			secrets: Middleearth.SECRET_HEROES, secretOn: () => middleearthTomUnlocked(),
+			unlockedList: pool,
+		})));
 	});
 }
 
@@ -7237,6 +7328,13 @@ async function pickSwordCoastHeroOverlay(cardsById) {
 			row.appendChild(box);
 		}
 		el.appendChild(row);
+		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
+			title: 'SWORD COAST', modeKey: 'swordcoast', cardsById, stats,
+			heroes: Swordcoast.HEROES, order: Swordcoast.CORE_UNLOCK_ORDER, starters: Swordcoast.STARTERS,
+			enemies: Swordcoast.ENEMIES, unlocks: Swordcoast.ENEMY_UNLOCKS, deckTag: 'scDeck',
+			secrets: Swordcoast.SECRET_HEROES, secretOn: () => swordcoastGaleUnlocked(),
+			unlockedList: pool,
+		})));
 	});
 }
 
@@ -7411,6 +7509,13 @@ async function pickFinalFantasyHeroOverlay(cardsById) {
 			row.appendChild(box);
 		}
 		el.appendChild(row);
+		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
+			title: 'FINAL FANTASY', modeKey: 'finalfantasy', cardsById, stats,
+			heroes: Finalfantasy.HEROES, order: Finalfantasy.CORE_UNLOCK_ORDER, starters: Finalfantasy.STARTERS,
+			enemies: Finalfantasy.ENEMIES, unlocks: Finalfantasy.ENEMY_UNLOCKS, deckTag: 'ffDeck',
+			secrets: Finalfantasy.SECRET_HEROES, secretOn: () => finalfantasyGilgameshUnlocked(),
+			unlockedList: pool,
+		})));
 	});
 }
 
@@ -7582,6 +7687,13 @@ async function pickMultiverseHeroOverlay(cardsById) {
 			row.appendChild(box);
 		}
 		el.appendChild(row);
+		el.appendChild(overlayButton('📜 Full roster & unlocks', () => showRosterOverlay({
+			title: 'MULTIVERSE', modeKey: 'multiverse', cardsById, stats,
+			heroes: Multiverse.HEROES, order: Multiverse.CORE_UNLOCK_ORDER, starters: Multiverse.STARTERS,
+			enemies: Multiverse.ENEMIES, unlocks: Multiverse.ENEMY_UNLOCKS, deckTag: 'mvDeck',
+			secrets: Multiverse.SECRET_HEROES, secretOn: () => multiverseSurferUnlocked(),
+			unlockedList: pool,
+		})));
 	});
 }
 

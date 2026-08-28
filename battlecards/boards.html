@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Leaderboards — Battlecards</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8F%86</text></svg>">
+	<meta name="description" content="Magepunk Battlecards leaderboards — the PvP Elo ladder, the Arena board, and every 12-win run mode's top climbs.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/battlecards/boards.html">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Magepunk">
+	<meta property="og:title" content="Battlecards Leaderboards — Magepunk">
+	<meta property="og:description" content="The PvP Elo ladder, the Arena board, and every run mode's top climbs.">
+	<meta property="og:url" content="https://www.michaelgibalerio.com/battlecards/boards.html">
+	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta property="og:image:width" content="1200">
+	<meta property="og:image:height" content="630">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="Battlecards Leaderboards — Magepunk">
+	<meta name="twitter:description" content="The PvP Elo ladder, the Arena board, and every run mode's top climbs.">
+	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<style>
+	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --red:#ff8a8a; --shadow:0 10px 30px rgba(0,0,0,.35); }
+	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --red:#c0392b; --shadow:0 8px 24px rgba(40,50,90,.12); }
+	/* the game keeps its dark identity regardless of OS preference — only the explicit theme toggle switches */
+	* { margin:0; padding:0; box-sizing:border-box; }
+	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
+	a { color:inherit; text-decoration:none; }
+	.wrap { max-width:760px; margin:0 auto; padding:18px 20px 64px; }
+	.back { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; font-size:.92rem; padding:6px 10px; border-radius:8px; }
+	.back:hover { color:var(--text); background:var(--panel); }
+	.hero { text-align:center; padding:24px 12px 6px; }
+	.hero .glyph { font-size:2.6rem; }
+	.hero h1 { font-size:clamp(2rem,6vw,3rem); font-weight:900; letter-spacing:-1px; margin-top:4px; background:linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+	.hero .tag { margin-top:8px; color:var(--muted); }
+	.tabs { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin:16px 0 20px; }
+	.tabs button { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:999px; padding:8px 15px; font:inherit; font-weight:700; font-size:.86rem; cursor:pointer; }
+	.tabs button:hover { border-color:var(--violet); background:var(--panel-2); }
+	.tabs button.on { color:#0c1122; background:linear-gradient(180deg, var(--gold), #d9a94a); border-color:transparent; }
+	:root[data-theme="light"] .tabs button.on { color:#fff; }
+	#board { background:var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
+	.row { display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid var(--border); font-size:.95rem; }
+	.row:last-child { border-bottom:none; }
+	.row.head { background:var(--panel-2); color:var(--muted); font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+	.row.you { background:color-mix(in srgb, var(--gold) 10%, var(--panel)); }
+	.row .rk { width:44px; font-weight:800; color:var(--muted); flex-shrink:0; }
+	.row.top1 .rk { color:var(--gold); }
+	.row.top2 .rk { color:#cfd6e2; }
+	.row.top3 .rk { color:#d0885a; }
+	.row .nm { flex:1; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+	.row .hv { color:var(--muted); font-size:.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:34%; }
+	.row .sc { font-weight:800; color:var(--gold); flex-shrink:0; min-width:66px; text-align:right; }
+	.empty { text-align:center; color:var(--muted); padding:42px 20px; line-height:1.6; }
+	.empty a { color:var(--blue); font-weight:700; }
+	#you-line { text-align:center; color:var(--muted); font-size:.88rem; margin-top:14px; min-height:20px; }
+	#you-line b { color:var(--gold); }
+	footer { margin-top:36px; text-align:center; color:var(--muted); font-size:.84rem; }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<a class="back" href="start.html">← Battlecards</a>
+		<header class="hero">
+			<div class="glyph">🏆</div>
+			<h1>Leaderboards</h1>
+			<p class="tag">The PvP ladder, the Arena board, and every run mode's best climbs.</p>
+		</header>
+		<div class="tabs" id="tabs"></div>
+		<div id="board"><div class="empty">Loading…</div></div>
+		<div id="you-line"></div>
+		<footer>Boards show the top 50. A run counts its best result; PvP is Elo (K=32, everyone starts at 1000).</footer>
+	</div>
+	<script type="module">
+	import * as MP from './mpmode.js';
+	const $ = id => document.getElementById(id);
+	const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+
+	// tab key -> [label, api action, extra payload, row renderer]
+	const runBoard = mode => ['run-leaderboard', { mode }];
+	const TABS = {
+		pvp: ['PvP', () => ['pvp-leaderboard', {}]],
+		arena: ['Arena', () => ['arena-leaderboard', {}]],
+		duels: ['Duels', () => runBoard('duels')],
+		lorequest: ['Lorequest', () => runBoard('lorequest')],
+		middleearth: ['Middle-earth', () => runBoard('middleearth')],
+		swordcoast: ['Sword Coast', () => runBoard('swordcoast')],
+		finalfantasy: ['Final Fantasy', () => runBoard('finalfantasy')],
+		multiverse: ['Multiverse', () => runBoard('multiverse')],
+	};
+	let current = location.hash.slice(1) in TABS ? location.hash.slice(1) : 'pvp';
+
+	const tabsEl = $('tabs');
+	for (const [key, [label]] of Object.entries(TABS)) {
+		const b = document.createElement('button');
+		b.textContent = label;
+		b.dataset.key = key;
+		b.addEventListener('click', () => { current = key; location.hash = key; paint(); load(); });
+		tabsEl.appendChild(b);
+	}
+	function paint() {
+		for (const b of tabsEl.children) b.classList.toggle('on', b.dataset.key === current);
+	}
+
+	const scoreOf = e => current === 'pvp' ? `${e.rating}` : `${e.wins}–${e.losses}`;
+	const heroOf = e => current === 'pvp' ? (e.wins ? `${e.wins} win${e.wins === 1 ? '' : 's'}` : '') : (e.hero || '');
+
+	function render(data) {
+		const board = $('board');
+		const top = (data && data.top) || [];
+		const me = MP.cachedState()?.username || null;
+		if (!top.length) {
+			board.innerHTML = `<div class="empty">No entries yet — be the first!<br>${current === 'pvp'
+				? 'Win a live duel to claim a rating.' : 'Finish a strong run and it lands here.'}</div>`;
+		} else {
+			board.innerHTML = `<div class="row head"><span class="rk">#</span><span class="nm">Player</span><span class="hv">${current === 'pvp' ? 'Record' : 'Hero'}</span><span class="sc">${current === 'pvp' ? 'Rating' : 'Best run'}</span></div>`
+				+ top.map((e, i) => `<div class="row${i < 3 ? ' top' + (i + 1) : ''}${e.name === me ? ' you' : ''}">`
+					+ `<span class="rk">${i + 1}</span><span class="nm">${esc(e.name)}</span>`
+					+ `<span class="hv">${esc(heroOf(e))}</span><span class="sc">${esc(scoreOf(e))}</span></div>`).join('');
+		}
+		const you = data && data.you;
+		$('you-line').innerHTML = you
+			? (current === 'pvp'
+				? `You: <b>${esc(you.rating)}</b> rating${you.rank ? ` — rank <b>#${you.rank}</b>` : ' — outside the top 100'}`
+				: `Your best: <b>${esc(you.wins)}–${esc(you.losses)}</b>${you.hero ? ` as ${esc(you.hero)}` : ''}${you.rank ? ` — rank <b>#${you.rank}</b>` : ' — outside the top 100'}`)
+			: '';
+	}
+
+	async function load() {
+		$('board').innerHTML = '<div class="empty">Loading…</div>';
+		$('you-line').textContent = '';
+		const [action, payload] = TABS[current][1]();
+		try { render(await MP.call(action, payload)); }
+		catch (e) { $('board').innerHTML = `<div class="empty">Couldn't load this board — ${esc(e.message || 'network error')}</div>`; }
+	}
+
+	window.__boards = { render, get current() { return current; } }; // headless smoke hook
+	paint();
+	if (!MP.hasToken()) {
+		$('board').innerHTML = '<div class="empty">Log in to see the boards (and your own rank).<br><a href="/login/?next=%2Fbattlecards%2Fboards.html">Log in →</a></div>';
+	} else load();
+	</script>
+	<script type="module" src="/site/topbar.js"></script>
+</body>
+</html>
