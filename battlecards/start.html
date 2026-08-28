@@ -17,14 +17,8 @@
 		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff; --green: #6bd6a0;
 		--shadow: 0 10px 30px rgba(0,0,0,.35);
 	}
-	@media (prefers-color-scheme: light) {
-		:root {
-			--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
-			--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
-			--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6; --green: #1f9d63;
-			--shadow: 0 8px 24px rgba(40,50,90,.12);
-		}
-	}
+	/* the game keeps its own dark identity regardless of the OS preference —
+	   the explicit ◐ Theme toggle (data-theme) still works */
 	:root[data-theme="dark"] {
 		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
 		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
@@ -97,7 +91,13 @@
 		transition: transform .16s ease, border-color .16s ease, background .16s ease;
 	}
 	.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--violet) 50%, var(--border)); background: var(--panel-2); }
-	.tile .glyph { font-size: 1.8rem; line-height: 1; flex-shrink: 0; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; background: var(--panel-2); border: 1px solid var(--border); }
+	.tile .glyph { font-size: 1.8rem; line-height: 1; flex-shrink: 0; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; background: var(--panel-2); border: 1px solid var(--border); position: relative; overflow: hidden; }
+	/* signature card art fades in over the emoji once it loads */
+	.tile .glyph img, .primary .big img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
+	.tile .glyph img.on, .primary .big img.on { opacity: 1; }
+	.primary .big { position: relative; overflow: hidden; border-radius: 12px; width: 64px; height: 64px; display: grid; place-items: center; flex-shrink: 0; }
+	/* per-mode record chip (bottom-right; Resume owns the top-right corner) */
+	.tile .prog { position: absolute; bottom: 10px; right: 12px; font-size: .64rem; font-weight: 800; letter-spacing: .4px; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border)); border-radius: 999px; padding: 2px 8px; }
 	.tile h3 { font-size: 1.02rem; font-weight: 700; display: flex; align-items: center; gap: 7px; }
 	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
 	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
@@ -177,7 +177,7 @@
 
 		<div class="section-label">Play</div>
 		<a class="primary" href="index.html">
-			<div class="big">⚔️</div>
+			<div class="big" data-art="ragnaros_the_firelord">⚔️</div>
 			<div class="txt">
 				<h2>Quick Match</h2>
 				<p>Jump straight into a game against the AI.</p>
@@ -185,7 +185,7 @@
 			<div class="go">▶</div>
 		</a>
 		<a class="primary" href="#" id="find-match" style="margin-top:14px">
-			<div class="big">🥊</div>
+			<div class="big" data-art="leeroy_jenkins">🥊</div>
 			<div class="txt">
 				<h2>Find Match</h2>
 				<p>Queue against a real player — or a challenger AI if no one's around.</p>
@@ -205,54 +205,54 @@
 
 		<div class="section-label">Run Modes</div>
 		<div class="grid">
-			<a class="tile" href="index.html?dungeon=1" data-run="magepunk_dungeon_v1">
+			<a class="tile" href="index.html?dungeon=1" data-run="magepunk_dungeon_v1" data-mode="dungeon">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">🏰</div>
+				<div class="glyph" data-art="king_togwaggle">🏰</div>
 				<div><h3>Dungeon <span class="arrow">→</span></h3><p>An 8-level gauntlet — draft a bucket and grab treasures between fights.</p></div>
 			</a>
-			<a class="tile" href="index.html?heist=1" data-run="magepunk_heist_v1">
+			<a class="tile" href="index.html?heist=1" data-run="magepunk_heist_v1" data-mode="heist">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">💰</div>
+				<div class="glyph" data-art="swampqueen_hagatha">💰</div>
 				<div><h3>Heist <span class="arrow">→</span></h3><p>A multi-wing run — nine heroes, dozens of bosses, treasures and anomalies.</p></div>
 			</a>
-			<a class="tile" href="index.html?tombs=1" data-run="magepunk_tombs_v1">
+			<a class="tile" href="index.html?tombs=1" data-run="magepunk_tombs_v1" data-mode="tombs">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">⚰️</div>
+				<div class="glyph" data-art="reno_jackson">⚰️</div>
 				<div><h3>Tombs <span class="arrow">→</span></h3><p>Delve with an explorer — collect treasures and passives, then face the bosses.</p></div>
 			</a>
-			<a class="tile" href="index.html?duels=1" data-run="magepunk_duels_v1">
+			<a class="tile" href="index.html?duels=1" data-run="magepunk_duels_v1" data-mode="duels">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">🎲</div>
+				<div class="glyph" data-art="elise_starseeker">🎲</div>
 				<div><h3>Duels <span class="arrow">→</span></h3><p>Bring a starter deck, then upgrade it with treasures as you win.</p></div>
 			</a>
-			<a class="tile" href="index.html?lorequest=1" data-run="magepunk_lorequest_v1">
+			<a class="tile" href="index.html?lorequest=1" data-run="magepunk_lorequest_v1" data-mode="lorequest">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">📖</div>
+				<div class="glyph" data-art="chandra_sig">📖</div>
 				<div><h3>Lorequest <span class="arrow">→</span></h3><p>Pick 1 of 3 planeswalker decks, then climb past planeswalkers to Eldrazi &amp; legendary bosses.</p></div>
 			</a>
-			<a class="tile" href="index.html?middleearth=1" data-run="magepunk_middleearth_v1">
+			<a class="tile" href="index.html?middleearth=1" data-run="magepunk_middleearth_v1" data-mode="middleearth">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">💍</div>
+				<div class="glyph" data-art="me_aragorn_sig">💍</div>
 				<div><h3>Lorequest: Middle-earth <span class="arrow">→</span></h3><p>Pick a hero of the Free Peoples and climb the rungs of Sauron&rsquo;s forces to 12 wins — loot the fallen as you go.</p></div>
 			</a>
-			<a class="tile" href="index.html?swordcoast=1" data-run="magepunk_swordcoast_v1">
+			<a class="tile" href="index.html?swordcoast=1" data-run="magepunk_swordcoast_v1" data-mode="swordcoast">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">🐉</div>
+				<div class="glyph" data-art="sc_drizzt_1">🐉</div>
 				<div><h3>Lorequest: Sword Coast <span class="arrow">→</span></h3><p>Pick a Companion of the Realms and Advance through the Sword Coast&rsquo;s villains to Tiamat — loot the fallen as you go.</p></div>
 			</a>
-			<a class="tile" href="index.html?finalfantasy=1" data-run="magepunk_finalfantasy_v1">
+			<a class="tile" href="index.html?finalfantasy=1" data-run="magepunk_finalfantasy_v1" data-mode="finalfantasy">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">⭐</div>
+				<div class="glyph" data-art="ff_cloud_1">⭐</div>
 				<div><h3>Lorequest: Final Fantasy <span class="arrow">→</span></h3><p>Pick a Final Fantasy hero — Spiritsummon and Limit Break through the villains to Sephiroth &amp; Chaos.</p></div>
 			</a>
-			<a class="tile" href="index.html?multiverse=1" data-run="magepunk_multiverse_v1">
+			<a class="tile" href="index.html?multiverse=1" data-run="magepunk_multiverse_v1" data-mode="multiverse">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">🕸️</div>
+				<div class="glyph" data-art="mv_spiderman_1">🕸️</div>
 				<div><h3>Lorequest: Multiverse <span class="arrow">→</span></h3><p>Pick a Marvel hero — win-parity fights matched to your power, from street-level thugs to Thanos &amp; Galactus.</p></div>
 			</a>
-			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1">
+			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1" data-mode="arena">
 				<span class="resume">▸ Resume</span>
-				<div class="glyph">⚔️</div>
+				<div class="glyph" data-art="zephrys_the_great">⚔️</div>
 				<div><h3>Arena <span class="arrow">→</span></h3><p>Draft a 30-card deck one pick at a time, then run it until 3 losses.</p></div>
 			</a>
 		</div>
@@ -614,6 +614,38 @@
 		overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 		document.getElementById('take-tour').addEventListener('click', e => { e.preventDefault(); open(); });
 		try { if (!localStorage.getItem(KEY)) open(); } catch (e) {}
+	})();
+	</script>
+
+	<!-- signature card art on the mode tiles + per-mode record chips -->
+	<script type="module">
+	import * as MP from './mpmode.js';
+	// art fades in over the emoji; on any error the emoji simply stays
+	for (const el of document.querySelectorAll('[data-art]')) {
+		const img = new Image();
+		img.loading = 'lazy';
+		img.alt = '';
+		img.addEventListener('load', () => img.classList.add('on'));
+		img.addEventListener('error', () => img.remove());
+		img.src = 'https://magepunk-cardart.pages.dev/' + el.dataset.art + '.jpg';
+		el.appendChild(img);
+	}
+	// "3W · 12 runs" chips from the account's per-mode record
+	(async () => {
+		if (!MP.hasToken()) return;
+		const paint = st => {
+			const modes = (st && st.stats && st.stats.modes) || {};
+			for (const el of document.querySelectorAll('.tile[data-mode]')) {
+				const m = modes[el.dataset.mode];
+				if (!m || !m.runs) continue;
+				let chip = el.querySelector('.prog');
+				if (!chip) { chip = document.createElement('span'); chip.className = 'prog'; el.appendChild(chip); }
+				chip.textContent = `${m.wins || 0}W · ${m.runs} run${m.runs === 1 ? '' : 's'}`;
+			}
+		};
+		const c = MP.cachedState();
+		if (c) paint(c);
+		try { paint(await MP.freshState()); } catch (e) {}
 	})();
 	</script>
 </body>
