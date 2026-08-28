@@ -12,6 +12,7 @@ import { checkToasts as achCheck } from '../site/achievements.js';
 const MP_ON = MPX.mpMode();
 let mpPacks = 0;
 let mpPulls = null; // ids the server rolled for the pack being torn open
+let mpState = null; // the post-open account state (collection drives the NEW!/dust badges)
 
 const container = document.getElementById('scene');
 const DPR = Math.min(window.devicePixelRatio || 1, 2); // DPR-3 phones: 2x is visually identical at ~half the fill cost
@@ -54,6 +55,25 @@ function packTexture() {
 	g.addColorStop(1, '#151029');
 	ctx.fillStyle = g;
 	ctx.fillRect(0, 0, 512, 716);
+	// diagonal foil sheen bands + sparkle grain
+	ctx.save();
+	ctx.globalCompositeOperation = 'lighter';
+	for (let i = -3; i < 8; i++) {
+		const sheen = ctx.createLinearGradient(i * 140, 0, i * 140 + 200, 716);
+		sheen.addColorStop(0, 'rgba(143,111,255,0)');
+		sheen.addColorStop(0.5, `rgba(${i % 2 ? '186,150,255' : '110,190,255'},0.07)`);
+		sheen.addColorStop(1, 'rgba(143,111,255,0)');
+		ctx.fillStyle = sheen;
+		ctx.beginPath();
+		ctx.moveTo(i * 140, 0); ctx.lineTo(i * 140 + 90, 0);
+		ctx.lineTo(i * 140 - 110, 716); ctx.lineTo(i * 140 - 200, 716);
+		ctx.closePath(); ctx.fill();
+	}
+	for (let i = 0; i < 130; i++) {
+		ctx.fillStyle = `rgba(220,205,255,${0.05 + Math.random() * 0.1})`;
+		ctx.fillRect(Math.random() * 512, Math.random() * 716, 2, 2);
+	}
+	ctx.restore();
 	// foil crimp top/bottom
 	ctx.fillStyle = '#5a4a8a';
 	ctx.fillRect(0, 0, 512, 42);
@@ -63,10 +83,15 @@ function packTexture() {
 		ctx.fillRect(x, 8, 8, 26);
 		ctx.fillRect(x, 682, 8, 26);
 	}
-	// gear sigil
-	ctx.strokeStyle = '#8f6fff';
-	ctx.lineWidth = 10;
+	// brass gear sigil (matches the battle table's etching)
+	const brass = ctx.createLinearGradient(126, 170, 386, 430);
+	brass.addColorStop(0, '#8a6f3a'); brass.addColorStop(0.5, '#d9b866'); brass.addColorStop(1, '#8a6f3a');
+	ctx.strokeStyle = brass;
+	ctx.lineWidth = 12;
 	ctx.beginPath(); ctx.arc(256, 300, 130, 0, Math.PI * 2); ctx.stroke();
+	ctx.lineWidth = 4;
+	ctx.beginPath(); ctx.arc(256, 300, 108, 0, Math.PI * 2); ctx.stroke();
+	ctx.lineWidth = 12;
 	for (let i = 0; i < 12; i++) {
 		const a = (i / 12) * Math.PI * 2;
 		ctx.beginPath();
@@ -74,15 +99,24 @@ function packTexture() {
 		ctx.lineTo(256 + Math.cos(a) * 162, 300 + Math.sin(a) * 162);
 		ctx.stroke();
 	}
-	ctx.fillStyle = '#f4eede';
-	ctx.font = 'bold 58px Georgia';
+	// embossed title
 	ctx.textAlign = 'center';
+	ctx.font = 'bold 58px Georgia';
+	ctx.fillStyle = 'rgba(0,0,0,0.55)';
+	ctx.fillText('MAGEPUNK', 258, 323);
+	ctx.fillStyle = '#f4eede';
 	ctx.fillText('MAGEPUNK', 256, 320);
 	ctx.font = 'bold 30px Georgia';
 	ctx.fillStyle = '#c9b8ff';
 	ctx.fillText('BOOSTER PACK', 256, 560);
 	ctx.font = '24px Georgia';
 	ctx.fillText(`${Col.PACK_SIZE} CARDS`, 256, 608);
+	// vignette
+	const vg = ctx.createRadialGradient(256, 358, 170, 256, 358, 470);
+	vg.addColorStop(0, 'rgba(0,0,0,0)');
+	vg.addColorStop(1, 'rgba(0,0,0,0.38)');
+	ctx.fillStyle = vg;
+	ctx.fillRect(0, 0, 512, 716);
 	const tex = new THREE.CanvasTexture(c);
 	tex.colorSpace = THREE.SRGBColorSpace;
 	return tex;
@@ -156,6 +190,7 @@ function layoutCards() {
 
 // burst particles
 const bursts = [];
+const tornBits = []; // wrapper pieces mid-tumble after the tear
 function burst(pos, color, n = 26) {
 	const geo = new THREE.BufferGeometry();
 	const arr = new Float32Array(n * 3);
@@ -188,14 +223,14 @@ function updateHud() {
 	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'}` : `${Col.getGold()} gold`;
 	if (phase === 'idle') {
 		hud.hint.textContent = MP_ON
-			? (mpPacks > 0 ? `[Z / click] open a pack — ${mpPacks} waiting`
+			? (mpPacks > 0 ? `Tap the pack to tear it open — ${mpPacks} waiting`
 				: 'No packs — finish a dungeon run (win or lose) to earn one!')
 			: Col.getGold() >= Col.PACK_PRICE
-				? `[Z / click] open a pack — ${Col.PACK_PRICE} gold`
+				? `Tap the pack to tear it open — ${Col.PACK_PRICE} gold`
 				: `Not enough gold — win matches to earn more!`;
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
-		hud.hint.textContent = left ? `Click cards to reveal (${left} left)` : 'Hover a card to see what it does';
+		hud.hint.textContent = left ? `Tap cards to reveal (${left} left)` : 'Hover a card to see what it does';
 	} else if (phase === 'done') {
 		// linger on the pulls — only the button (or Z, or clicking the pack
 		// itself) opens the next one, never a stray click
@@ -220,10 +255,11 @@ async function startOpen() {
 		if (data.error) { hud.hint.textContent = data.error; return; }
 		mpPulls = data.cards;
 		mpPacks = data.state.packs;
+		mpState = data.state;
 		achCheck(data.state); // pack-count / collection achievements toast here
 		preloadArt(mpPulls); // load the art during the tear so the reveal shows it
 	} else if (!Col.spendGold(Col.PACK_PRICE)) { updateHud(); return; }
-	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); }
+	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); c.badge?.material.map?.dispose(); }
 	cardMeshes = [];
 	if (!pack) spawnPack();
 	phase = 'tearing';
@@ -232,9 +268,46 @@ async function startOpen() {
 	updateHud();
 }
 
+// duplicate-above-playset pulls show their dust value; first copies say NEW!
+const DUST_HINT = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 }; // mirrors the server's DUST_VALUE
+function makeBadge(text, fg, bg) {
+	const c = document.createElement('canvas');
+	c.width = 256; c.height = 88;
+	const ctx = c.getContext('2d');
+	ctx.beginPath(); ctx.roundRect(6, 6, 244, 76, 38);
+	ctx.fillStyle = bg; ctx.fill();
+	ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,0.65)'; ctx.stroke();
+	ctx.font = 'bold 46px "Segoe UI", sans-serif';
+	ctx.textAlign = 'center';
+	ctx.fillStyle = fg;
+	ctx.fillText(text, 128, 60);
+	const tex = new THREE.CanvasTexture(c);
+	tex.colorSpace = THREE.SRGBColorSpace;
+	const m = new THREE.Mesh(
+		new THREE.PlaneGeometry(1.1, 0.38),
+		new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false })
+	);
+	m.position.set(0, CARD_H / 2 - 0.02, CARD_D / 2 + 0.03); // riding the card's top edge
+	m.renderOrder = 5;
+	m.visible = false; // shown on flip
+	return m;
+}
+
 function revealCards() {
 	const pulls = MP_ON ? mpPulls.map(id => cardsById[id]).filter(Boolean) : Col.rollPack(cards);
+	// before-counts drive the badges (the MP state arrives with the pulls added)
+	const pulledOf = {};
+	for (const d of pulls) pulledOf[d.id] = (pulledOf[d.id] || 0) + 1;
+	const beforeOf = {};
+	if (MP_ON) {
+		const col = (mpState && mpState.collection) || {};
+		for (const d of pulls) beforeOf[d.id] = Math.max(0, (col[d.id] || 0) - pulledOf[d.id]);
+	} else {
+		const col = Col.getCollection(cards);
+		for (const d of pulls) beforeOf[d.id] = col[d.id] || 0;
+	}
 	if (!MP_ON) Col.addToCollection(pulls.map(d => d.id));
+	const seen = {};
 	pulls.forEach((def, i) => {
 		const face = new THREE.MeshStandardMaterial({ map: makeFaceTexture(def), roughness: 0.35, metalness: 0.15 });
 		const back = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5 });
@@ -242,11 +315,20 @@ function revealCards() {
 		mesh.position.set(0, 0, 0.5);
 		mesh.rotation.y = Math.PI; // face away (back showing)
 		mesh.userData.idx = i;
+		mesh.visible = false; // hidden until its staggered burst beat
 		scene.add(mesh);
+		seen[def.id] = (seen[def.id] || 0) + 1;
+		const copyN = (beforeOf[def.id] || 0) + seen[def.id];
+		const cap = def.rarity === 'legendary' ? 1 : 2;
+		let badge = null;
+		if (copyN > cap) badge = makeBadge(`+${DUST_HINT[def.rarity] || 5} dust`, '#cfd6e2', '#3a4456');
+		else if ((beforeOf[def.id] || 0) === 0 && seen[def.id] === 1) badge = makeBadge('NEW!', '#fff', '#b8952e');
+		if (badge) mesh.add(badge);
 		cardMeshes.push({
-			mesh, def, flipped: false,
+			mesh, def, flipped: false, badge,
 			target: new THREE.Vector3(0, -0.2, REVEAL_Z),
 			spin: Math.PI,
+			delay: 0.1 + i * 0.13, // the staggered burst out of the wrapper
 		});
 	});
 	layoutCards(); // spread them to fit the current screen
@@ -259,6 +341,7 @@ function flip(i) {
 	if (!c || c.flipped) return;
 	c.flipped = true;
 	c.spin = 0; // rotate to face camera
+	if (c.badge) c.badge.visible = true; // NEW! / dust value rides the reveal
 	const col = RARITY_COLORS[c.def.rarity] || '#9aa0a6';
 	SFX.play(c.def.rarity === 'legendary' || c.def.rarity === 'epic' ? 'rare' : 'cardPlay');
 	burst(c.mesh.position, col, c.def.rarity === 'legendary' ? 60 : c.def.rarity === 'epic' ? 40 : 22);
@@ -406,6 +489,10 @@ renderer.domElement.addEventListener('pointermove', e => {
 	const c = hoveredCard(e);
 	if (c && c.flipped) { showTip(c.def, e.clientX, e.clientY); renderer.domElement.style.cursor = 'help'; }
 	else hideTip();
+	// the pack invites the tear: brighten + pointer when hovered
+	const overPack = !c && (phase === 'idle' || phase === 'done') && hitPack(e);
+	packMat.emissive.setHex(overPack ? 0x35245f : 0x000000);
+	if (overPack) renderer.domElement.style.cursor = 'pointer';
 });
 renderer.domElement.addEventListener('pointerleave', hideTip);
 
@@ -422,8 +509,16 @@ function animate() {
 			pack.rotation.z = Math.sin(tearT * 40) * 0.08 * Math.min(1, tearT * 2);
 			pack.scale.setScalar(1 + tearT * 0.25);
 			if (tearT > 0.85) {
-				burst(pack.position, '#c9b8ff', 70);
-				scene.remove(pack);
+				burst(pack.position.clone().add(new THREE.Vector3(0, 1.9, 0)), '#ffd25f', 36);
+				burst(pack.position, '#c9b8ff', 60);
+				// the crimp strip rips off and spins away; the emptied wrapper
+				// tumbles down out of frame
+				const strip = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 0.27), packSideMat);
+				strip.position.copy(pack.position).add(new THREE.Vector3(0, 2.0, 0));
+				strip.rotation.copy(pack.rotation);
+				scene.add(strip);
+				tornBits.push({ mesh: strip, vel: new THREE.Vector3(2.2, 5.5, 0.8), rv: new THREE.Vector3(3, 2, 7), life: 1 });
+				tornBits.push({ mesh: pack, vel: new THREE.Vector3(-0.8, -3.2, 0.5), rv: new THREE.Vector3(-2.5, 1.2, -3), life: 1 });
 				pack = null;
 				revealCards();
 			}
@@ -433,7 +528,22 @@ function animate() {
 		}
 	}
 
+	// torn wrapper pieces: gravity + tumble, gone in a second
+	for (let i = tornBits.length - 1; i >= 0; i--) {
+		const b = tornBits[i];
+		b.life -= dt * 1.1;
+		b.mesh.position.addScaledVector(b.vel, dt);
+		b.vel.y -= dt * 9;
+		b.mesh.rotation.x += b.rv.x * dt;
+		b.mesh.rotation.y += b.rv.y * dt;
+		b.mesh.rotation.z += b.rv.z * dt;
+		if (b.life <= 0) { scene.remove(b.mesh); tornBits.splice(i, 1); }
+	}
+
 	for (const c of cardMeshes) {
+		// staggered burst: each card waits its beat before flying to its seat
+		if (c.delay > 0) { c.delay -= dt; continue; }
+		c.mesh.visible = true;
 		c.mesh.position.lerp(c.target, 1 - Math.pow(0.002, dt));
 		const targetRot = c.spin;
 		c.mesh.rotation.y += (targetRot - c.mesh.rotation.y) * Math.min(1, dt * 7);
