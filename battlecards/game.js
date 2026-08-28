@@ -1257,24 +1257,58 @@ function layoutTargets() {
 }
 
 // ---------- floating combat text ----------
+// damage / healing pop as Hearthstone-style splats (a jagged burst behind the
+// number that slams in oversized, settles, then fades); status glyphs (❄ ⚡ ▲
+// MISS …) stay plain floating text
 const floaters = [];
 function floatText(text, color, worldPos) {
+	const splat = /^[-+]\d/.test(text);
 	const c = document.createElement('canvas');
-	c.width = 256; c.height = 128;
+	c.width = 256; c.height = splat ? 256 : 128;
 	const ctx = c.getContext('2d');
-	ctx.font = 'bold 72px Georgia';
-	ctx.textAlign = 'center';
-	ctx.lineWidth = 10;
-	ctx.strokeStyle = '#000';
-	ctx.strokeText(text, 128, 84);
-	ctx.fillStyle = color;
-	ctx.fillText(text, 128, 84);
+	if (splat) {
+		const heal = text[0] === '+';
+		ctx.save();
+		ctx.translate(128, 128);
+		// a stable per-amount tilt so back-to-back hits don't look copy-pasted
+		ctx.rotate(((parseInt(text.slice(1), 10) || 0) % 7 - 3) * 0.09);
+		ctx.beginPath();
+		const spikes = 12;
+		for (let i = 0; i < spikes * 2; i++) {
+			const a = (i / (spikes * 2)) * TAU;
+			const r = i % 2 ? 76 : 104 + (i % 4) * 8;
+			ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r);
+		}
+		ctx.closePath();
+		ctx.fillStyle = heal ? '#2f8c52' : '#c23b2e';
+		ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+		ctx.lineWidth = 9;
+		ctx.fill();
+		ctx.stroke();
+		ctx.restore();
+		ctx.font = 'bold 96px Georgia';
+		ctx.textAlign = 'center';
+		ctx.lineWidth = 12;
+		ctx.strokeStyle = '#000';
+		ctx.strokeText(text, 128, 162);
+		ctx.fillStyle = '#fff';
+		ctx.fillText(text, 128, 162);
+	} else {
+		ctx.font = 'bold 72px Georgia';
+		ctx.textAlign = 'center';
+		ctx.lineWidth = 10;
+		ctx.strokeStyle = '#000';
+		ctx.strokeText(text, 128, 84);
+		ctx.fillStyle = color;
+		ctx.fillText(text, 128, 84);
+	}
 	const tex = new THREE.CanvasTexture(c);
 	const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-	sp.scale.set(2.4, 1.2, 1);
+	const w = splat ? 2.7 : 2.4, h = splat ? 2.7 : 1.2;
+	sp.scale.set(w, h, 1);
 	sp.position.copy(worldPos).add(new THREE.Vector3(0, 1.2, 0));
 	scene.add(sp);
-	floaters.push({ sp, life: 1 });
+	floaters.push({ sp, life: 1, splat, w, h });
 }
 
 function creaturePos(uid) {
@@ -1496,15 +1530,36 @@ function drawHeroPanel() {
 		ctx.restore();
 		heroOrbUV = { x0: ox / HP_W, x1: (ox + oS) / HP_W, y0: 1 - (oy + oS) / HP_H, y1: 1 - oy / HP_H };
 	}
-	// text column
+	// life gem (armor rides its shoulder as a small steel badge)
+	const lifeG = ctx.createRadialGradient(44, 44, 6, 54, 56, 38);
+	lifeG.addColorStop(0, '#ff8a6a'); lifeG.addColorStop(0.55, '#d64434'); lifeG.addColorStop(1, '#7a1d14');
+	ctx.beginPath(); ctx.arc(54, 56, 36, 0, TAU);
+	ctx.fillStyle = lifeG; ctx.fill();
+	ctx.lineWidth = 4; ctx.strokeStyle = '#3a0f0a'; ctx.stroke();
+	ctx.textAlign = 'center';
+	ctx.font = 'bold 34px system-ui, sans-serif';
+	ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+	ctx.strokeText(String(me.life), 54, 68);
+	ctx.fillStyle = '#fff';
+	ctx.fillText(String(me.life), 54, 68);
+	if (me.armor) {
+		const ag = ctx.createRadialGradient(86, 26, 3, 90, 32, 18);
+		ag.addColorStop(0, '#cfd6e2'); ag.addColorStop(1, '#5a6474');
+		ctx.beginPath(); ctx.arc(90, 32, 17, 0, TAU);
+		ctx.fillStyle = ag; ctx.fill();
+		ctx.lineWidth = 3; ctx.strokeStyle = '#242b36'; ctx.stroke();
+		ctx.font = 'bold 19px system-ui, sans-serif';
+		ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+		ctx.strokeText(String(me.armor), 90, 39);
+		ctx.fillStyle = '#fff';
+		ctx.fillText(String(me.armor), 90, 39);
+	}
+	// text column beside the gem
 	ctx.textAlign = 'left';
-	ctx.fillStyle = '#ff8a7a';
-	ctx.font = 'bold 48px system-ui, sans-serif';
-	ctx.fillText(me.life + (me.armor ? `+${me.armor}` : ''), 22, 62);
 	ctx.fillStyle = '#e8e2f4';
-	ctx.font = '19px system-ui, sans-serif';
+	ctx.font = 'bold 18px system-ui, sans-serif';
 	const myCls = classNameOf(me.heroClass);
-	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 22, 90);
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, 124);
 	ctx.fillStyle = '#cbb8e8';
 	ctx.font = '17px system-ui, sans-serif';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
@@ -1594,6 +1649,16 @@ function updateManaHud(me) {
 	const el = $('mana-hud'); if (!el) return;
 	const cur = E.availableMana(me), max = me.mana.max;
 	$('mana-hud-val').textContent = `${cur}/${max}`;
+	// crystal pips (capped at 12 diamonds — the numeric readout stays exact)
+	const pips = $('mana-pips');
+	if (pips) {
+		const shown = Math.min(Math.max(max, 0), 12);
+		if (pips.childElementCount !== shown) {
+			pips.innerHTML = '';
+			for (let i = 0; i < shown; i++) pips.appendChild(Object.assign(document.createElement('span'), { className: 'pip' }));
+		}
+		[...pips.children].forEach((d, i) => d.classList.toggle('spent', i >= cur));
+	}
 	el.style.display = 'flex';
 	el.classList.toggle('empty', cur === 0);
 	el.classList.toggle('tapped', cur > 0 && cur < max);
@@ -2514,7 +2579,7 @@ function openMulliganModal() {
 	mulliganPicks = new Set();
 	const modal = $('scry-modal');
 	const render = () => {
-		modal.innerHTML = `<div class="wm-title">Mulligan — tap cards to swap, then confirm</div><div class="scry-row mull-row"></div><div class="mull-actions"></div>`;
+		modal.innerHTML = `<div class="wm-title">CHOOSE YOUR OPENING HAND — tap a card to replace it</div><div class="scry-row mull-row"></div><div class="mull-actions"></div>`;
 		const row = modal.querySelector('.scry-row');
 		cards.forEach(c => {
 			const def = state.cardsById[c.id] || c;
@@ -2522,11 +2587,11 @@ function openMulliganModal() {
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell' + (swap ? ' mull-swap' : '');
 			const face = drawCardFace(def);
-			face.style.width = '104px';
+			face.style.width = '122px';
 			cell.appendChild(face);
 			const tag = document.createElement('div');
 			tag.className = 'mull-tag';
-			tag.textContent = swap ? '↺ Swap' : 'Keep';
+			tag.textContent = swap ? 'Replace' : 'Keep';
 			cell.appendChild(tag);
 			cell.addEventListener('pointerdown', e => { e.stopPropagation(); if (swap) mulliganPicks.delete(c.uid); else mulliganPicks.add(c.uid); render(); });
 			row.appendChild(cell);
@@ -4248,8 +4313,16 @@ function animate() {
 	for (let i = floaters.length - 1; i >= 0; i--) {
 		const f = floaters[i];
 		f.life -= dt * 0.9;
-		f.sp.position.y += dt * 1.4;
-		f.sp.material.opacity = Math.max(0, f.life);
+		f.sp.position.y += dt * (f.splat ? 0.7 : 1.4);
+		if (f.splat) {
+			// slam in oversized, settle to rest size, hold, then fade late
+			const t = 1 - f.life;
+			const s = t < 0.16 ? 1.4 - (t / 0.16) * 0.4 : 1;
+			f.sp.scale.set(f.w * s, f.h * s, 1);
+			f.sp.material.opacity = Math.max(0, Math.min(1, f.life * 1.8));
+		} else {
+			f.sp.material.opacity = Math.max(0, f.life);
+		}
 		if (f.life <= 0) { scene.remove(f.sp); f.sp.material.map.dispose(); floaters.splice(i, 1); }
 	}
 	updateRings();

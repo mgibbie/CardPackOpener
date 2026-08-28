@@ -48,7 +48,7 @@
 			left: auto; width: max-content; max-width: min(46vw, 250px); min-width: 118px; padding: 6px 10px;
 			transform: translate(-50%, -100%);
 		}
-		.panel.foe-sm .life { font-size: 21px; }
+		.panel.foe-sm .life { font-size: 16px; min-width: 34px; height: 34px; border-radius: 18px; }
 		.panel.foe-sm .sub { font-size: 11.5px; }
 		.panel.foe-sm .gear { font-size: 11.5px; }
 
@@ -97,7 +97,9 @@
 			position: fixed; display: none; z-index: 11; left: 50%; top: 42%;
 			transform: translate(-50%, -50%); padding: 14px 16px;
 			background: rgba(24,17,40,0.97); border: 1px solid #8f6fff; border-radius: 12px;
-			box-shadow: 0 10px 40px rgba(0,0,0,0.8); color: #e8e2f4;
+			/* the huge-spread shadow dims the whole board — decision points get a spotlight */
+			box-shadow: 0 0 0 100vmax rgba(5,3,10,0.6), 0 10px 40px rgba(0,0,0,0.8);
+			color: #e8e2f4;
 		}
 		#scry-modal .wm-title { color: #c9b8ff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
 		#scry-modal .scry-row { display: flex; gap: 12px; }
@@ -115,9 +117,16 @@
 			margin-top: 12px; width: 100%; padding: 8px; border-radius: 8px; border: none;
 			background: #6b4fd4; color: #fff; font-weight: 700; cursor: pointer;
 		}
-		/* opening-hand mulligan */
-		#scry-modal .mull-row { flex-wrap: wrap; justify-content: center; max-width: min(90vw, 720px); }
-		#scry-modal .scry-cell.mull-swap canvas { outline: 3px solid #e0574f; outline-offset: 1px; opacity: 0.72; }
+		/* opening-hand mulligan: tap a card to mark it with a big ✕ for replacement */
+		#scry-modal .mull-row { flex-wrap: wrap; justify-content: center; max-width: min(90vw, 760px); }
+		#scry-modal .mull-row .scry-cell { position: relative; cursor: pointer; transition: transform 0.12s; }
+		#scry-modal .mull-row .scry-cell:hover { transform: translateY(-4px); }
+		#scry-modal .scry-cell.mull-swap canvas { outline: 3px solid #e0574f; outline-offset: 1px; opacity: 0.45; filter: grayscale(0.5); }
+		#scry-modal .scry-cell.mull-swap::after {
+			content: '✕'; position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+			font-size: 52px; font-weight: 900; color: #ff5f4f;
+			text-shadow: 0 0 14px #000, 0 2px 6px #000; pointer-events: none;
+		}
 		#scry-modal .mull-tag { margin-top: 5px; font-size: 12px; font-weight: 700; color: #9fd8b0; }
 		#scry-modal .scry-cell.mull-swap .mull-tag { color: #e0574f; }
 		#scry-modal .mull-actions { margin-top: 14px; text-align: center; }
@@ -147,7 +156,15 @@
 		}
 		#walker-menu.decision .wm-title { font-size: 15px; text-align: center; margin: 0 0 12px; }
 		#walker-menu.decision button { padding: 12px 14px; font-size: 15px; }
-		.panel .life { font-size: 30px; font-weight: 800; color: #ff8a7a; }
+		/* life as a Hearthstone-style blood gem (stretches to a pill for "40+3" armor) */
+		.panel .life {
+			min-width: 40px; height: 40px; padding: 0 7px; border-radius: 21px;
+			display: inline-flex; align-items: center; justify-content: center;
+			background: radial-gradient(circle at 35% 28%, #ff8a6a, #d64434 55%, #7a1d14);
+			border: 2px solid #3a0f0a; box-shadow: 0 2px 8px rgba(0,0,0,0.55);
+			color: #fff; font-size: 19px; font-weight: 800; text-shadow: 0 1px 3px #000;
+			box-sizing: border-box; margin-bottom: 3px;
+		}
 		.panel .sub { font-size: 12.5px; opacity: 0.85; line-height: 1.5; }
 		/* hangs down from the projected hero point (mirror of the opponents' -100%),
 		   so your land slots stay above it and your hand below */
@@ -192,9 +209,16 @@
 			background: rgba(20,16,34,0.74); border: 1px solid #3a6ea5; border-radius: 11px;
 			text-shadow: 0 2px 6px #000; pointer-events: none; user-select: none;
 		}
-		#mana-hud .mh-icon { font-size: 19px; line-height: 1; filter: drop-shadow(0 0 4px rgba(90,180,255,0.7)); }
 		#mana-hud .mh-label { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; color: #8fb0d4; }
-		#mana-hud .mh-val { font-size: 22px; font-weight: 800; color: #7fd0ff; line-height: 1; }
+		/* crystal pips: one diamond per crystal, dimmed once spent */
+		#mana-pips { display: flex; gap: 4px; align-items: center; }
+		#mana-pips .pip {
+			width: 11px; height: 11px; border-radius: 3px; transform: rotate(45deg);
+			background: linear-gradient(135deg, #b8ecff, #4fa8e8 60%, #2b6fb0);
+			box-shadow: 0 0 6px rgba(90,180,255,0.7);
+		}
+		#mana-pips .pip.spent { background: #283452; box-shadow: none; border: 1px solid #3a4a6a; }
+		#mana-hud .mh-val { font-size: 15px; font-weight: 800; color: #7fd0ff; line-height: 1; margin-left: 2px; }
 		#mana-hud.tapped .mh-val { color: #cbb8e8; }
 		#mana-hud.empty .mh-val { color: #8a7fa8; }
 
@@ -427,7 +451,7 @@
 	<button id="coin-btn" style="display:none">Coin (+1 mana)</button>
 	<button id="planeswalk-btn" style="display:none">Planeswalk</button>
 	<button id="autopass-btn" title="When on, you auto-pass priority. Turn off to get a 4s window to respond at instant speed.">Auto-pass: ON</button>
-	<div id="mana-hud" class="hud"><span class="mh-icon">🔷</span><span class="mh-label">MANA</span><span class="mh-val" id="mana-hud-val">1/1</span><span id="mana-hud-identity" style="display:flex;gap:3px;align-items:center;margin-left:10px;" title="Your color identity"></span></div>
+	<div id="mana-hud" class="hud"><span class="mh-label">MANA</span><span id="mana-pips"></span><span class="mh-val" id="mana-hud-val">1/1</span><span id="mana-hud-identity" style="display:flex;gap:3px;align-items:center;margin-left:10px;" title="Your color identity"></span></div>
 	<div id="dungeon-panel" style="display:none;"><div class="dp-title"></div><div class="dp-card"></div><div class="dp-room"></div></div>
 	<div id="log" class="hud"></div>
 	<button id="log-btn" title="Full game log">📜 Log</button>
