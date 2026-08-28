@@ -214,6 +214,29 @@
 			position: fixed; right: 18px; top: 130px; width: 250px; font-size: 12.5px; color: #b9b0d4;
 			text-shadow: 0 1px 4px #000; pointer-events: none; line-height: 1.55;
 		}
+		/* the inline feed shows only the freshest events; each fades on its own
+		   (the full history lives behind the 📜 Log drawer) */
+		#log div { transition: opacity 0.7s ease; }
+		#log div.fade { opacity: 0; }
+
+		/* during a match the site nav + game-setup dropdowns tuck behind ☰ —
+		   they're pre-game controls and a misclick risk mid-game */
+		#nav-toggle {
+			display: none; pointer-events: auto; background: #241b38; color: #9d8fd4;
+			border: 1px solid #4a3f6b; border-radius: 6px; font-size: 13px;
+			padding: 2px 9px; margin-left: 10px; cursor: pointer; vertical-align: 1px;
+		}
+		#nav-toggle:hover { color: #cfc6e6; border-color: #6a5f8a; }
+		body.in-match #nav-toggle { display: inline-block; }
+		body.in-match #title a:not(.brand), body.in-match #title select { display: none; }
+		body.in-match.nav-open #title a:not(.brand) { display: inline; }
+		body.in-match.nav-open #title select { display: inline-block; }
+		/* narrow screens: the brand text would push ☰ under the topbar's
+		   gear/bell cluster — show just the ☰ */
+		@media (max-width: 640px) {
+			body.in-match #title .brand { display: none; }
+			body.in-match #nav-toggle { margin-left: 0; }
+		}
 		#hint {
 			position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
 			color: #ffd25f; font-size: 14.5px; text-shadow: 0 2px 6px #000; pointer-events: none;
@@ -223,6 +246,31 @@
 			font-size: 54px; font-weight: 900; letter-spacing: 4px; color: #f4eede;
 			text-shadow: 0 0 24px rgba(143,111,255,0.9), 0 4px 12px #000;
 			opacity: 0; transition: opacity 0.35s; pointer-events: none;
+		}
+		/* turn-change ceremony: gold sweep for your turn, violet for theirs */
+		#banner.turn {
+			color: #ffd88a; letter-spacing: 6px;
+			text-shadow: 0 0 34px rgba(255,190,80,0.6), 0 4px 14px #000;
+			animation: turnsweep 0.7s ease;
+		}
+		#banner.turn.foe { color: #b9a8ff; text-shadow: 0 0 34px rgba(143,111,255,0.75), 0 4px 14px #000; }
+		@keyframes turnsweep {
+			from { transform: translate(-50%, -50%) translateX(-7vw); opacity: 0; }
+			35% { opacity: 1; }
+			to { transform: translate(-50%, -50%); }
+		}
+		/* End Turn lights green once nothing is left to play this turn (the
+		   Hearthstone "job's done" cue) */
+		#end-turn.done-glow:not(:disabled) {
+			background: #2f8c52;
+			box-shadow: 0 0 16px rgba(80,220,120,0.55);
+			animation: etpulse 1.6s ease-in-out infinite;
+		}
+		#end-turn.done-glow:not(:disabled):hover { background: #37a662; }
+		@keyframes etpulse { 50% { box-shadow: 0 0 30px rgba(80,220,120,0.9); } }
+		@media (prefers-reduced-motion: reduce) {
+			#banner.turn { animation: none; }
+			#end-turn.done-glow:not(:disabled) { animation: none; }
 		}
 		#restart {
 			position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -355,7 +403,7 @@
 </head>
 <body>
 	<div id="scene"></div>
-	<div id="title" class="hud"><a href="start.html" title="Choose a mode">MAGEPUNK BATTLECARDS</a> <a href="start.html">modes</a> <a href="packs.html">packs</a> <a href="deck.html">deck builder</a> <a href="viewer.html">gallery</a> <a href="../overworld/">play the RPG</a>
+	<div id="title" class="hud"><a class="brand" href="start.html" title="Choose a mode">MAGEPUNK BATTLECARDS</a><button id="nav-toggle" title="Menu">☰</button> <a href="start.html">modes</a> <a href="packs.html">packs</a> <a href="deck.html">deck builder</a> <a href="viewer.html">gallery</a> <a href="../overworld/">play the RPG</a>
 		<select id="class-select" title="your class" style="background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:2px 6px;margin-left:12px;pointer-events:auto"></select>
 		<select id="player-count" title="players">
 			<option value="2">2 players</option>

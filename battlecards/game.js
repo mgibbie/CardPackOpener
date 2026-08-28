@@ -322,23 +322,75 @@ function buildTable() {
 	const tableCanvas = document.createElement('canvas');
 	tableCanvas.width = tableCanvas.height = S;
 	const tc = tableCanvas.getContext('2d');
-	const g = tc.createRadialGradient(S / 2, S / 2, S * 0.1, S / 2, S / 2, S * 0.5);
-	g.addColorStop(0, '#2a2038');
-	g.addColorStop(1, '#171021');
+	// deep purple cloth with a warm center glow
+	const g = tc.createRadialGradient(S / 2, S / 2, S * 0.08, S / 2, S / 2, S * 0.5);
+	g.addColorStop(0, '#342747');
+	g.addColorStop(0.55, '#251c39');
+	g.addColorStop(0.85, '#1a1226');
+	g.addColorStop(1, '#130d1c');
 	tc.fillStyle = g;
 	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 4, 0, TAU); tc.fill();
-	tc.strokeStyle = 'rgba(143,111,255,0.3)';
-	tc.lineWidth = 5;
-	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 10, 0, TAU); tc.stroke();
-	// slice dividers, halfway between adjacent players
-	tc.strokeStyle = 'rgba(143,111,255,0.18)';
-	tc.lineWidth = 4;
+	// cloth speckle
+	tc.save();
+	tc.globalAlpha = 0.05;
+	for (let i = 0; i < 1500; i++) {
+		const a = Math.random() * TAU, d = Math.sqrt(Math.random()) * (S / 2 - 10);
+		tc.fillStyle = Math.random() < 0.5 ? '#000' : '#b9a8ff';
+		tc.fillRect(S / 2 + Math.cos(a) * d, S / 2 + Math.sin(a) * d, 2, 2);
+	}
+	tc.restore();
+	// etched concentric rings
+	tc.strokeStyle = 'rgba(143,111,255,0.07)';
+	tc.lineWidth = 2;
+	for (const cr of [0.18, 0.3, 0.42]) { tc.beginPath(); tc.arc(S / 2, S / 2, S * cr, 0, TAU); tc.stroke(); }
+	// center sigil: the Magepunk gear, barely-there brass etching
+	tc.save();
+	tc.translate(S / 2, S / 2);
+	tc.strokeStyle = 'rgba(200,170,110,0.11)';
+	tc.lineWidth = 6;
+	tc.beginPath(); tc.arc(0, 0, S * 0.105, 0, TAU); tc.stroke();
+	for (let i = 0; i < 12; i++) {
+		const a = i / 12 * TAU;
+		tc.beginPath();
+		tc.moveTo(Math.cos(a) * S * 0.105, Math.sin(a) * S * 0.105);
+		tc.lineTo(Math.cos(a) * S * 0.132, Math.sin(a) * S * 0.132);
+		tc.stroke();
+	}
+	tc.restore();
+	// slice dividers, halfway between adjacent players (brass, fading short of center)
+	tc.strokeStyle = 'rgba(200,170,110,0.14)';
+	tc.lineWidth = 3;
 	for (let i = 0; i < playerCount; i++) {
 		// canvas +y is world +z; player 0 sits at the bottom (world +z)
 		const a = angleOf(i) + TAU / (playerCount * 2) + Math.PI / 2;
 		tc.beginPath();
-		tc.moveTo(S / 2, S / 2);
-		tc.lineTo(S / 2 + Math.cos(a) * (S / 2 - 10), S / 2 + Math.sin(a) * (S / 2 - 10));
+		tc.moveTo(S / 2 + Math.cos(a) * S * 0.15, S / 2 + Math.sin(a) * S * 0.15);
+		tc.lineTo(S / 2 + Math.cos(a) * (S / 2 - 34), S / 2 + Math.sin(a) * (S / 2 - 34));
+		tc.stroke();
+	}
+	// vignette inside the rim
+	const vg = tc.createRadialGradient(S / 2, S / 2, S * 0.34, S / 2, S / 2, S * 0.5);
+	vg.addColorStop(0, 'rgba(0,0,0,0)');
+	vg.addColorStop(1, 'rgba(0,0,0,0.35)');
+	tc.fillStyle = vg;
+	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 4, 0, TAU); tc.fill();
+	// brass rim: two-tone double ring with gear-tooth ticks
+	const rimG = tc.createLinearGradient(0, 0, S, S);
+	rimG.addColorStop(0, '#8a6f3a'); rimG.addColorStop(0.5, '#d9b866'); rimG.addColorStop(1, '#8a6f3a');
+	tc.strokeStyle = rimG;
+	tc.lineWidth = 10;
+	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 12, 0, TAU); tc.stroke();
+	tc.globalAlpha = 0.7;
+	tc.lineWidth = 3;
+	tc.beginPath(); tc.arc(S / 2, S / 2, S / 2 - 27, 0, TAU); tc.stroke();
+	tc.globalAlpha = 1;
+	tc.strokeStyle = 'rgba(217,184,102,0.5)';
+	tc.lineWidth = 5;
+	for (let i = 0; i < 48; i++) {
+		const a = i / 48 * TAU;
+		tc.beginPath();
+		tc.moveTo(S / 2 + Math.cos(a) * (S / 2 - 17), S / 2 + Math.sin(a) * (S / 2 - 17));
+		tc.lineTo(S / 2 + Math.cos(a) * (S / 2 - 27), S / 2 + Math.sin(a) * (S / 2 - 27));
 		tc.stroke();
 	}
 	const tex = new THREE.CanvasTexture(tableCanvas);
@@ -571,18 +623,28 @@ const TRAP_Z = 4.9, TRAP_X = 2.55, TRAP_SPREAD = 1.2; // slice-local trap row
 // per player. Every other zone simply shows nothing until a card is in it.
 let slotMarkers = [];
 const slotTex = (() => {
+	// an inset socket, not a dashed wireframe: soft dark recess, brass-lit
+	// edge, a faint mana-diamond watermark marking it as a land seat
 	const c = document.createElement('canvas');
 	c.width = 128; c.height = 172;
 	const ctx = c.getContext('2d');
-	ctx.strokeStyle = 'rgba(120,180,110,0.5)';
-	ctx.lineWidth = 5;
-	ctx.setLineDash([14, 10]);
-	ctx.strokeRect(8, 8, 112, 156);
+	const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+	rr(6, 6, 116, 160, 14); ctx.fillStyle = 'rgba(10,7,18,0.5)'; ctx.fill();
+	ctx.strokeStyle = 'rgba(200,170,110,0.32)'; ctx.lineWidth = 3;
+	rr(6, 6, 116, 160, 14); ctx.stroke();
+	ctx.strokeStyle = 'rgba(143,111,255,0.2)'; ctx.lineWidth = 2;
+	rr(11, 11, 106, 150, 11); ctx.stroke();
+	ctx.fillStyle = 'rgba(143,111,255,0.14)';
+	ctx.beginPath();
+	ctx.moveTo(64, 60); ctx.lineTo(85, 86); ctx.lineTo(64, 112); ctx.lineTo(43, 86);
+	ctx.closePath(); ctx.fill();
 	const tex = new THREE.CanvasTexture(c);
 	tex.colorSpace = THREE.SRGBColorSpace;
 	return tex;
 })();
 const slotMat = new THREE.MeshBasicMaterial({ map: slotTex, transparent: true, depthWrite: false });
+// opponents' empty seats are context, not controls — keep them quieter
+const slotMatFoe = new THREE.MeshBasicMaterial({ map: slotTex, transparent: true, depthWrite: false, opacity: 0.45 });
 const slotGeo = new THREE.PlaneGeometry(1.12, 1.5);
 
 function buildSlotMarkers() {
@@ -592,7 +654,7 @@ function buildSlotMarkers() {
 	const off = sliceOff();
 	for (let pi = 0; pi < state.players.length; pi++) {
 		for (let i = 0; i < E.MAX_LANDS; i++) {
-			const mesh = new THREE.Mesh(slotGeo, slotMat);
+			const mesh = new THREE.Mesh(slotGeo, pi === HUMAN ? slotMat : slotMatFoe);
 			mesh.userData.landSlotPi = pi;
 			mesh.position.copy(toWorld((i - 2) * LAND_SPREAD, 0.01, off + LAND_Z, pi));
 			mesh.quaternion.copy(sliceQuat(FLAT, pi));
@@ -1236,7 +1298,13 @@ function log(msg) {
 	const div = document.createElement('div');
 	div.textContent = msg;
 	logEl.appendChild(div);
-	while (logEl.children.length > 7) logEl.removeChild(logEl.firstChild);
+	// the inline feed shows only the freshest few events and each fades out on
+	// its own — the full history stays behind the 📜 Log drawer
+	setTimeout(() => {
+		div.classList.add('fade');
+		setTimeout(() => div.remove(), 800);
+	}, 4200);
+	while (logEl.children.length > 3) logEl.removeChild(logEl.firstChild);
 	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg);
 }
 const logFull = $('log-full');
@@ -1262,6 +1330,7 @@ if (logFull) {
 		if (logFull.classList.contains('open')) renderLogFull();
 	});
 	logFull.querySelector('.lf-close').addEventListener('click', () => logFull.classList.remove('open'));
+	$('nav-toggle')?.addEventListener('click', () => document.body.classList.toggle('nav-open'));
 }
 
 // one small projected panel per opponent, rebuilt on new game
@@ -1551,6 +1620,11 @@ function updateDungeonPanel() {
 
 function updateHud() {
 	wake(); // any HUD refresh means on-screen state changed — resume rendering
+	// mid-match the site nav + setup dropdowns tuck behind ☰ (see index.html);
+	// they come back when the game ends
+	const inMatch = !!state && !state.over;
+	document.body.classList.toggle('in-match', inMatch);
+	if (!inMatch) document.body.classList.remove('nav-open');
 	if (!state) return;
 	if (spectateMode || replayMode) { updateHudSpectate(); return; }
 	// the pinned inspect closes itself once its card leaves play entirely
@@ -1608,6 +1682,18 @@ function updateHud() {
 	$('concede').style.display = state && !state.over && !spectateMode ? '' : 'none';
 	const myTurn = state.current === HUMAN && !state.over;
 	$('end-turn').disabled = !myTurn;
+	// the Hearthstone "job's done" cue: End Turn lights green once nothing is
+	// left to play or attack with this turn
+	let allSpent = false;
+	if (myTurn) {
+		try {
+			allSpent = !me.coins
+				&& !me.hand.some(c => E.canPlay(state, HUMAN, c))
+				&& !me.board.some(c => E.canAttackWith(state, HUMAN, c))
+				&& !E.heroAttackTargets(state, HUMAN).length;
+		} catch (e) { allSpent = false; }
+	}
+	$('end-turn').classList.toggle('done-glow', myTurn && allSpent);
 	$('end-turn').textContent = state.over ? 'Game Over'
 		: myTurn ? 'End Turn'
 		: state.current === HUMAN ? 'Your Turn…' : `${nameOf(state.current)}'s Turn…`;
@@ -1661,9 +1747,13 @@ function positionPanels() {
 	for (const m of slotMarkers) m.mesh.visible = !state.players[m.pi].eliminated;
 }
 
-function banner(text, ms = 1400) {
+function banner(text, ms = 1400, cls = '') {
 	const b = $('banner');
 	b.textContent = text;
+	// drop then re-add the class through a reflow so a repeated sweep (turn
+	// after turn) restarts its animation
+	b.className = '';
+	if (cls) { void b.offsetWidth; b.className = cls; }
 	b.style.opacity = 1;
 	clearTimeout(banner._t);
 	if (ms) banner._t = setTimeout(() => { b.style.opacity = 0; }, ms);
@@ -2577,7 +2667,8 @@ function nextEvent() {
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
 			matchStats.turns = Math.max(matchStats.turns, ev.turnNumber || 0);
 			if (ev.player === HUMAN) SFX.play('turn');
-			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`);
+			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`,
+				1400, ev.player === HUMAN ? 'turn' : 'turn foe');
 			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
 			break;

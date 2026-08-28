@@ -192,11 +192,10 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	// click a chat author's name → their profile popup
 	el.addEventListener('click', e => { const w = e.target.closest('.mc-who[data-user]'); if (w && w.dataset.user) openProfile(w.dataset.user); });
 	document.body.appendChild(el);
-	// phones: the expanded emote tray + input covered the hand cards, so start as
-	// just the 💬 pill (it flashes on new messages; one tap expands)
-	try {
-		if (matchMedia('(pointer: coarse)').matches || innerWidth < 760 || innerHeight < 500) setMin(true);
-	} catch (e) {}
+	// start as just the 💬 pill on every screen — the expanded emote tray +
+	// input cluttered the board's bottom-left (it flashes on new messages;
+	// one tap expands)
+	setMin(true);
 	// self-rescheduling instead of setInterval: an async tick on a slow link
 	// otherwise stacks overlapping requests (the interval doesn't wait for the
 	// previous poll to finish)
