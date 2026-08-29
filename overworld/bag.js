@@ -76,6 +76,7 @@ export const ITEMS = {
 	moonstone:   { name: 'MOON STONE',    price: 2100, kind: 'stone' },
 	sunstone:    { name: 'SUN STONE',     price: 2100, kind: 'stone' },
 	shinystone:  { name: 'SHINY STONE',   price: 3000, kind: 'stone' },
+	vsseeker:    { name: 'VS SEEKER',     price: 500,  kind: 'seeker' }, // reusable: re-arms this map's beaten trainers at badge-scaled levels
 	duskstone:   { name: 'DUSK STONE',    price: 3000, kind: 'stone' },
 	dawnstone:   { name: 'DAWN STONE',    price: 3000, kind: 'stone' },
 	icestone:    { name: 'ICE STONE',     price: 3000, kind: 'stone' },
@@ -178,7 +179,7 @@ export function nameOf(id) {
 	return id.toUpperCase();
 }
 export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion',
-	'hyperpotion', 'ether', 'revive', 'oldrod', 'goodrod', 'superrod',
+	'hyperpotion', 'ether', 'revive', 'oldrod', 'goodrod', 'superrod', 'vsseeker',
 	'firestone', 'waterstone', 'thunderstone', 'leafstone', 'moonstone', 'sunstone',
 	'shinystone', 'duskstone', 'dawnstone', 'icestone', 'linkingcord',
 	'oranberry', 'sitrusberry', 'lumberry', 'leftovers',

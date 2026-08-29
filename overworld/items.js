@@ -6,6 +6,7 @@ import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
 
 const COLLECTED_KEY = 'magepunk_collected_v1';
+const BERRY_KEY = 'magepunk_berrytimes_v1'; // tree key -> last-harvest timestamp (24h regrowth)
 const HARVEST_AMOUNT = 2;
 
 // "<Map>_EventScript_ItemRareCandy2" -> ["rarecandy", "Rare Candy"]
@@ -57,6 +58,7 @@ export class Items {
 		this.fruitMap = {};
 		this.ballImg = null;
 		{ const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []); }
+		{ const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {}; }
 	}
 
 	async init() {
@@ -67,6 +69,16 @@ export class Items {
 	markCollected(key) {
 		this.collected.add(key);
 		safeSave(COLLECTED_KEY, [...this.collected]);
+	}
+
+	// a berry tree is bare for 24h after each pick, then bears fruit again
+	berryHarvested(key) {
+		const ts = this.berryTimes[key];
+		return !!ts && Date.now() - ts < 24 * 3600 * 1000;
+	}
+	markHarvested(key) {
+		this.berryTimes[key] = Date.now();
+		safeSave(BERRY_KEY, this.berryTimes);
 	}
 
 	keyFor(prefix, ev) {
@@ -106,7 +118,10 @@ export class Items {
 					: this.fruitMap[o.script || ''];
 				if (!item) continue;
 				const key = this.keyFor('tree_', o);
-				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.collected.has(key) });
+				// berries REGROW: harvested state comes from a 24h timestamp, not
+				// the permanent collected set (legacy entries there are ignored,
+				// so pre-regrowth harvests come back on the next visit)
+				this.trees.push({ tx: +o.x, ty: +o.y, item, name: berryPretty(item), key, harvested: this.berryHarvested(key) });
 			}
 		}
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
@@ -135,9 +150,9 @@ export class Items {
 		}
 		const t = this.trees.find(t => t.tx === tx && t.ty === ty);
 		if (t) {
-			if (t.harvested) return 'The tree is bare.';
+			if (t.harvested) return 'The tree is bare. (Berries regrow in a day.)';
 			t.harvested = true;
-			this.markCollected(t.key);
+			this.markHarvested(t.key);
 			Bag.addItem(t.item, HARVEST_AMOUNT);
 			Bag.registerName(t.item, t.name.toUpperCase());
 			return `Picked ${HARVEST_AMOUNT} ${t.name.toUpperCase()}!`;

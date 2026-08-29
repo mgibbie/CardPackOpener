@@ -101,7 +101,7 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	const pad = 10 * u;
 	ctx.fillStyle = C.text;
 	ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
-	ctx.fillText(mon.name, x + pad, y + pad + 13 * u);
+	ctx.fillText((mon.shiny ? '★' : '') + mon.name, x + pad, y + pad + 13 * u);
 	// gender mark right after the name, GBA-colored
 	if (mon.gender) {
 		const nw = ctx.measureText(mon.name).width;
