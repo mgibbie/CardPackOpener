@@ -99,6 +99,7 @@ const STAT_MOVES = {
 	howl: { stat: 'atk', d: 1 }, sharpen: { stat: 'atk', d: 1 }, meditate: { stat: 'atk', d: 1 },
 	agility: { stat: 'spe', d: 2 }, rockpolish: { stat: 'spe', d: 2 }, autotomize: { stat: 'spe', d: 2 },
 	swordsdance: { stat: 'atk', d: 2 }, irondefense: { stat: 'def', d: 2 },
+	victorydance: { stats: { atk: 1, def: 1, spe: 1 } }, shelter: { stat: 'def', d: 2 },
 	barrier: { stat: 'def', d: 2 }, acidarmor: { stat: 'def', d: 2 },
 	cottonguard: { stat: 'def', d: 3 }, amnesia: { stat: 'spd', d: 2 },
 	tailglow: { stat: 'spa', d: 2 }, nastyplot: { stat: 'spa', d: 2 },
@@ -220,6 +221,11 @@ const MOVE_FX = {
 	aquaring: { regen: true }, ingrain: { regen: true },
 	bellydrum: { bellydrum: true }, painsplit: { painsplit: true },
 	swagger: { confuse: true, foeBoost: { atk: 2 } }, flatter: { confuse: true, foeBoost: { spa: 1 } },
+	// formerly dead status moves (plan batch E)
+	toxicthread: { status: 'psn', foeBoost: { spe: -1 } },
+	corrosivegas: { corrode: true },
+	chillyreception: { weather: 'hail' }, // the self-switch half is not modeled
+	powershift: { ownSwap: ['atk', 'def'] },
 	// weather + terrain + field effects
 	raindance: { weather: 'rain' }, sunnyday: { weather: 'sun' }, sandstorm: { weather: 'sand' },
 	hail: { weather: 'hail' }, snowscape: { weather: 'hail' }, thunderstorm: { weather: 'rain' },
@@ -470,7 +476,9 @@ export function buildMon(speciesId, level, data) {
 	return {
 		speciesId, name: sp.name.toUpperCase(), level,
 		nature, evs,
-		shiny: Math.random() < 1 / 512, // full-odds shiny roll — every mon source runs through here
+		// full-odds shiny roll (every mon source runs through here); the Shiny
+		// Charm — a Pokédex milestone — triples it
+		shiny: Math.random() < (Bag.count('shinycharm') > 0 ? 3 : 1) / 512,
 		gender: rollGender(speciesId, data),
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
 		friend: 70, // friendship: grows with wins/levels, some species evolve on it
@@ -859,6 +867,10 @@ export class Battle {
 			if (ab === 'chlorophyll' && wk === 'sun') v *= 2;
 			if (ab === 'speedboost' && false) v = v; // speed boost is end-of-turn stages
 		}
+		const ifx = this.itemFx(mon);
+		if (key === 'spd' && ifx?.assaultVest) v = Math.floor(v * 1.5);
+		if ((key === 'def' || key === 'spd') && ifx?.eviolite
+			&& this.data.extra?.[mon.speciesId]?.evos?.length) v = Math.floor(v * 1.5);
 		return Math.max(1, v);
 	}
 
@@ -1149,6 +1161,14 @@ export class Battle {
 				if (mv.type && effectiveness(mv.type, target.types) === 0) {
 					this.pushMsg(`It doesn't affect ${target.name}...`);
 					return;
+				}
+				// Toxic Thread-style riders: a stat change alongside the status
+				if (fx.foeBoost) {
+					const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
+					for (const [st, d] of Object.entries(fx.foeBoost)) {
+						targetBoosts[st] = Math.max(-6, Math.min(6, (targetBoosts[st] || 0) + d));
+						this.pushMsg(`${target.name}'s ${words[st] || st} ${d > 0 ? 'rose' : 'fell'}!`);
+					}
 				}
 				this.applyStatus(target, fx.status, fx.bad, user);
 				return;
@@ -1611,6 +1631,14 @@ export class Battle {
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
 		if (eff > 1) this.pushMsg("It's super effective!");
+		// Weakness Policy: eating a super-effective hit sharply boosts both attacks
+		if (eff > 1 && total > 0 && !hitsSub && target.curHP > 0 && this.itemFx(target)?.weakPolicy) {
+			this.pushMsg(`${target.name}'s Weakness Policy sharply raised its stats!`, () => {
+				target.heldItem = null;
+				targetBoosts.atk = Math.min(6, (targetBoosts.atk || 0) + 2);
+				targetBoosts.spa = Math.min(6, (targetBoosts.spa || 0) + 2);
+			});
+		}
 		if (eff < 1) this.pushMsg("It's not very effective...");
 		if (fx.drain) {
 			const healed = Math.max(1, Math.floor(total * fx.drain));
@@ -1976,6 +2004,7 @@ export class Battle {
 	// Disable/Encore/Taunt/Torment restrictions, shared by the menu and the AI
 	moveUsable(mon, m, side) {
 		if (m.pp <= 0) return false;
+		if (this.itemFx(mon)?.assaultVest && this.data.moves[m.id]?.category === 'Status') return false;
 		if (mon.choiceLock && this.itemFx(mon)?.choice && m.id !== mon.choiceLock) return false;
 		if (mon.disabledMove === m.id) return false;
 		if (mon.encoreMove && m.id !== mon.encoreMove) return false;
@@ -2466,6 +2495,16 @@ export class Battle {
 	statusFx(fx, user, userBoosts, target, targetBoosts, move, isFoe) {
 		const a = this.active;
 		const mySide = isFoe ? 'foe' : 'me';
+		// Corrosive Gas: melt the target's held item (no damage)
+		if (fx.corrode) {
+			if (!target.heldItem) { this.pushMsg('But it failed!'); return true; }
+			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${target.name}'s Sticky Hold kept its item!`); return true; }
+			this.pushMsg(`Corrosive gas melted ${target.name}'s ${this.itemName(target)}!`, () => {
+				target.heldItem = null;
+				if (this.abilityOf(target) === 'unburden') target.unburdened = true;
+			});
+			return true;
+		}
 		const sideOf = s => s === 'me' ? a.meSide : a.foeSide;
 		const hazardsOf = s => s === 'me' ? a.meHazards : a.foeHazards;
 		const boostWords = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
@@ -2925,6 +2964,7 @@ export class Battle {
 		const a = this.active;
 		const h = side === 'me' ? a.meHazards : a.foeHazards;
 		if (!h || mon.curHP <= 0) return;
+		if (this.itemFx(mon)?.bootsGuard) return; // Heavy-Duty Boots: entry hazards don't bite
 		const grounded = !mon.types.includes('Flying');
 		if (h.stealthrock) {
 			const eff = effectiveness('Rock', mon.types);
