@@ -18,7 +18,7 @@ Verified starting points:
 
 ---
 
-## Batch A — Battle brains [biggest lever: every battle in the game]
+## Batch A — Battle brains — DONE (PR #123)
 
 1. **Foe switching.** After a KO, send the best matchup (effectiveness of the
    incoming mon's moves vs yours, minus yours vs it) instead of party order.
@@ -35,7 +35,7 @@ Verified starting points:
 4. **Boss potions.** Gym leaders/E4 heal once at low HP (classic), announced
    ("Misty used a HYPER POTION!") so it feels fair.
 
-## Batch B — Breeding & genetics [ties the shiny system into an endgame loop]
+## Batch B — Breeding & genetics — DONE (PR #124)
 
 5. **IV inheritance.** 3 random IVs from the parents (5 with a DESTINY KNOT
    held), rest rolled. EVERSTONE passes the holder's nature. Both items join
@@ -50,7 +50,7 @@ Verified starting points:
    CHARM (awarded at a Pokédex milestone, see batch E) doubles odds everywhere.
    Turns the dex grind + daycare into the shiny endgame.
 
-## Batch C — Storage & trainer QoL
+## Batch C — Storage & trainer QoL — DONE (PR #125; item 10 already existed as the Move Shop)
 
 9. **PC boxes.** 8 boxes × 30 with names, box switching, RELEASE (with
    confirm), and search/sort (dex no., level, type, shiny-first). The single
@@ -64,7 +64,7 @@ Verified starting points:
     stock): swap between a species' listed abilities; overwrite battle nature.
     Both already have engine support (ability field, statsFor nature opt).
 
-## Batch D — Dailies & outbreaks [retention layer; all keyed off clock.js]
+## Batch D — Dailies & outbreaks — SKIPPED (user call, 2026-08-29)
 
 13. **Daily outbreak.** One route per day (seeded by date) swarms with a
     species at high encounter rate — including species otherwise rare or
@@ -76,7 +76,7 @@ Verified starting points:
     legendary encounter machinery.
 16. **Weekly frontier bonus** — one facility pays double BP each week.
 
-## Batch E — Content completion [mechanical debt, mostly data work]
+## Batch E — Content completion — DONE (PR #126; 19 exp curves + 20 cries deferred, need data/asset sourcing)
 
 17. **The 11 no-op status moves** (victorydance, shelter, toxicthread,
     corrosivegas, chillyreception, powershift + the doubles no-ops) get real
@@ -95,7 +95,7 @@ Verified starting points:
     the SHINY CHARM at ~200 caught) — the dex currently records and pays
     nothing.
 
-## Batch F — Multiplayer polish
+## Batch F — Multiplayer polish — 23 & 24 turned out ALREADY FIXED (ghost waypoint queue + ordered PvP event playback); only 25 (async Pokémon) remains
 
 23. **Friend-ghost jitter fix** (from the July test: "clipping all over the
     place, visible only every few frames") — interpolate ghost positions
@@ -107,7 +107,7 @@ Verified starting points:
     infra for play-by-mail Pokémon PvP. Same server keys, a Pokémon snapshot
     instead of a card one.
 
-## Batch G — Story cutscenes [the long-deferred big lift]
+## Batch G — Story cutscenes — OPEN (its own session)
 
 26. The events.js interpreter already runs transpiled decomp scripts and the
     badge/E4/villain spine works without cutscenes. Flesh out region by region
