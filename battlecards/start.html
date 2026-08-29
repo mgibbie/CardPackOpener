@@ -107,6 +107,25 @@
 	.tile[data-inprogress="1"] h3 { padding-right: 78px; }
 	.tile[data-inprogress="1"] h3 .arrow { display: none; }
 
+	/* correspondence (play-by-mail) rows */
+	.corr-badge { background: var(--gold); color: #0c1122; border-radius: 999px; padding: 1px 9px; font-size: .7rem; letter-spacing: 0; }
+	.corr-list { display: flex; flex-direction: column; gap: 9px; }
+	.corr-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow); }
+	.corr-row .cr-main { flex: 1; min-width: 0; }
+	.corr-row .cr-vs { font-weight: 700; }
+	.corr-row .cr-sub { color: var(--muted); font-size: .8rem; margin-top: 2px; }
+	.corr-row.turn { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
+	.corr-row .cr-actions { display: flex; gap: 7px; flex-shrink: 0; }
+	.corr-row .cr-actions button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 13px; font: inherit; font-weight: 700; font-size: .84rem; cursor: pointer; }
+	.corr-row .cr-actions button:hover { border-color: var(--violet); }
+	.corr-row .cr-play { color: #0c1122 !important; background: linear-gradient(180deg, var(--gold), var(--gold-dim)) !important; border-color: transparent !important; }
+	.corr-new { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+	.corr-new select { flex: 0 1 220px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
+	.corr-new button { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+	.corr-new button:hover:not(:disabled) { border-color: var(--violet); background: var(--panel-2); }
+	.corr-new button:disabled { opacity: .5; cursor: default; }
+	.corr-hint { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+
 	/* Live Now watch cards */
 	.live-tile { align-items: center; }
 	.live-tile .live-meta { flex: 1; min-width: 0; }
@@ -192,6 +211,18 @@
 			</div>
 			<div class="go">▶</div>
 		</a>
+
+		<!-- Correspondence: play-by-mail duels — the server holds the match,
+		     each player takes whole turns whenever they like -->
+		<div id="corr" hidden>
+			<div class="section-label">Play-by-mail <span id="corr-badge" class="corr-badge" hidden></span></div>
+			<div id="corr-list" class="corr-list"></div>
+			<div class="corr-new">
+				<select id="corr-friend"></select>
+				<button id="corr-challenge">✉ Challenge to an async duel</button>
+			</div>
+			<p class="corr-hint">No need to be online together — take your turn, they take theirs whenever.</p>
+		</div>
 
 		<!-- Live Now: friends currently in a watchable game (populated when logged in) -->
 		<div id="live-now" hidden>
@@ -411,21 +442,25 @@
 		}
 	})();
 
-	$('find-match').addEventListener('click', async (e) => {
-		e.preventDefault();
+	// shared deck chooser: matchmaking shows the table-size row, async hides it
+	async function openDeckPick(onPick, showSizes) {
 		if (!MP.hasToken()) { location.href = '../login/?next=' + encodeURIComponent('/battlecards/start.html'); return; }
 		let st; try { st = await MP.freshState(); } catch { st = MP.cachedState(); }
 		const decks = (st && st.decks) || [];
 		if (!decks.length) { location.href = 'deck.html'; return; }
+		const sz = document.querySelector('.mm-size-block');
+		if (sz) sz.style.display = showSizes ? '' : 'none';
 		const list = $('mm-decks'); list.innerHTML = '';
 		for (const d of decks) {
 			const b = document.createElement('button'); b.className = 'mm-deck';
 			b.innerHTML = `<span>${esc(d.name || 'Deck')}</span><span class="cls">${esc(d.classId || '')}</span>`;
-			b.addEventListener('click', () => { $('mm-deckpick').hidden = true; beginSearch(d); });
+			b.addEventListener('click', () => { $('mm-deckpick').hidden = true; onPick(d); });
 			list.appendChild(b);
 		}
 		$('mm-deckpick').hidden = false;
-	});
+	}
+	window.__openDeckPick = openDeckPick; // the correspondence panel borrows it
+	$('find-match').addEventListener('click', (e) => { e.preventDefault(); openDeckPick(beginSearch, true); });
 	$('mm-deck-cancel').addEventListener('click', () => { $('mm-deckpick').hidden = true; });
 	$('mm-cancel').addEventListener('click', cancelSearch);
 
@@ -619,6 +654,77 @@
 		document.getElementById('take-tour').addEventListener('click', e => { e.preventDefault(); open(); });
 		try { if (!localStorage.getItem(KEY)) open(); } catch (e) {}
 	})();
+	</script>
+
+	<!-- correspondence (play-by-mail) panel -->
+	<script type="module">
+	import * as MP from './mpmode.js';
+	{
+		const $ = id => document.getElementById(id);
+		const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+		const timeAgo = ts => { const m = Math.floor((Date.now() - (ts || 0)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + 'm ago' : m < 1440 ? Math.floor(m / 60) + 'h ago' : Math.floor(m / 1440) + 'd ago'; };
+		async function refresh() {
+			if (!MP.hasToken() || !$('corr')) return;
+			let matches = [], friends = [];
+			try { matches = (await MP.call('async-list')).matches || []; } catch (e) {}
+			try { friends = (await MP.call('state')).friends || []; } catch (e) {}
+			if (!matches.length && !friends.length) return; // async needs a friend; stay hidden until one exists
+			$('corr').hidden = false;
+			const sel = $('corr-friend');
+			sel.innerHTML = friends.length
+				? friends.map(f => `<option value="${esc(f)}">${esc(f)}</option>`).join('')
+				: '<option value="">add a friend first</option>';
+			$('corr-challenge').disabled = !friends.length;
+			const n = matches.filter(m => m.yourTurn || m.yourInvite).length;
+			$('corr-badge').hidden = !n;
+			$('corr-badge').textContent = n === 1 ? '1 waiting on you' : n + ' waiting on you';
+			const list = $('corr-list'); list.innerHTML = '';
+			const me = MP.cachedState()?.username;
+			for (const m of matches.slice(0, 10)) {
+				const opp = m.players.find(p => p !== me) || '?';
+				const row = document.createElement('div');
+				row.className = 'corr-row' + ((m.yourTurn || m.yourInvite) ? ' turn' : '');
+				const sub = m.status === 'over'
+					? (m.winner == null ? 'Cancelled' : m.winner === me ? '🏆 You won' : `${esc(opp)} won`) + ' · ' + timeAgo(m.updatedAt)
+					: m.yourInvite ? 'They challenged you — pick a deck to accept'
+					: m.status === 'invited' ? 'Waiting for them to accept'
+					: m.yourTurn ? `Your turn — turn ${m.turnNumber}`
+					: `Their turn — turn ${m.turnNumber} · ${timeAgo(m.updatedAt)}`;
+				row.innerHTML = `<div class="cr-main"><div class="cr-vs">vs ${esc(opp)}</div><div class="cr-sub">${sub}</div></div><div class="cr-actions"></div>`;
+				const acts = row.querySelector('.cr-actions');
+				const btn = (label, cls, fn) => {
+					const b = document.createElement('button');
+					if (cls) b.className = cls;
+					b.textContent = label;
+					b.addEventListener('click', fn);
+					acts.appendChild(b);
+				};
+				if (m.yourInvite) {
+					btn('Accept', 'cr-play', () => window.__openDeckPick(d =>
+						{ location.href = `index.html?async=${encodeURIComponent(m.id)}&adeck=${encodeURIComponent(d.id)}`; }, false));
+					btn('Decline', '', async () => { await MP.call('async-resign', { id: m.id }).catch(() => {}); refresh(); });
+				} else if (m.status === 'invited') {
+					btn('Cancel', '', async () => { await MP.call('async-resign', { id: m.id }).catch(() => {}); refresh(); });
+				} else if (m.status === 'active') {
+					btn(m.yourTurn ? '▶ Take your turn' : 'View board', m.yourTurn ? 'cr-play' : '',
+						() => { location.href = 'index.html?async=' + encodeURIComponent(m.id); });
+				} else {
+					btn('View result', '', () => { location.href = 'index.html?async=' + encodeURIComponent(m.id); });
+				}
+				list.appendChild(row);
+			}
+		}
+		$('corr-challenge')?.addEventListener('click', () => {
+			const to = $('corr-friend').value;
+			if (!to) return;
+			window.__openDeckPick(async d => {
+				const party = { deck: d.cards, classId: d.classId, commander: d.commander || null, companion: d.companion || null };
+				const r = await MP.call('async-create', { to, party }).catch(e => ({ error: e.message }));
+				if (r.error) alert(r.error); else refresh();
+			}, false);
+		});
+		refresh();
+	}
 	</script>
 
 	<!-- signature card art on the mode tiles + per-mode record chips -->

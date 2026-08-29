@@ -109,6 +109,15 @@ const replayMode = !!replayId || !!rshareId;
 // runs the real engine as player 0; the guest is player 1, renders the host's
 // published board, and relays action intents the host applies.
 const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : null;
+// ?async=<id>: a correspondence (play-by-mail) duel — whole turns published to
+// the server whenever each player gets around to them. ?adeck=<deckId> rides
+// along when the invitee accepts (their deck pick from the lobby).
+const asyncGame = {
+	on: !!(MP_ON && new URLSearchParams(location.search).get('async')),
+	id: new URLSearchParams(location.search).get('async') || null,
+	deckId: new URLSearchParams(location.search).get('adeck') || null,
+	me: null, opp: null, live: false, myTurnStarted: false, needDeal: false, overSent: false, sending: false,
+};
 const duel = { on: !!cardPvpId, id: cardPvpId, role: null, seat: 0, size: 2, aiSeats: null, soloAi: false, seq: -1, relaySeq: 0, busy: false, config: null, modalSig: null };
 // ?aimatch=<id> — a matchmaking AI game: a normal local game vs the AI, but the
 // AI plays a specific decklist (a starter or a harvested real-player deck)
@@ -251,6 +260,7 @@ try {
 } catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
 
 const nameOf = pi => pi === HUMAN ? 'You'
+	: asyncGame.on ? (asyncGame.opp || 'Opponent')
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
 	: heistBossName && pi === 1 ? heistBossName : `AI ${pi}`);
@@ -1767,6 +1777,7 @@ function updateHud() {
 		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
 			: selectedAttacker ? 'Choose an attack target (right-click to cancel)' : '');
 	if (!spectateMode) drawHeroPanel(); // repaint the in-scene hero panel texture
+	maybePublishAsync(); // correspondence: my turn just ended → hand the match over
 }
 
 // projected screen positions + hero-target highlighting, refreshed per frame
@@ -2556,7 +2567,7 @@ let mulliganModalOpen = false;
 let mulliganPicks = null;
 // mulligan is a Quick Match / AI / duel feature; the PvE run modes keep their
 // tuned openings (boss decks, treasures) untouched.
-const mulliganEnabled = () => !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode && !multiverseRunMode;
+const mulliganEnabled = () => !asyncGame.on && !dungeonRunMode && !heistRunMode && !tombsRunMode && !duelsRunMode && !arenaRunMode && !lorequestRunMode && !middleearthRunMode && !swordcoastRunMode && !finalfantasyRunMode && !multiverseRunMode;
 function maybeOfferMulligan() {
 	if (!state || state.over || spectateMode || !mulliganEnabled()) return;
 	if (duel.on && duel.role === 'guest') return;  // the guest surfaces it via openDuelModals
@@ -3262,6 +3273,9 @@ function isAiSeat(seat) {
 }
 let aiTimer = null;
 function maybeRunAI() {
+	// correspondence: both seats are human — the absent player's TURN is never
+	// AI-played here (pump's resolveAI* still answer their forced decisions)
+	if (asyncGame.on) return;
 	if (!state || state.over || queue.length || queueBusy) return;
 	if (!isAiSeat(state.current)) return; // it's a human's turn (yours or a guest's) — wait
 	// a human with a pending decision (any seat) must resolve it before the AI proceeds
@@ -4122,6 +4136,20 @@ $('restart').addEventListener('click', () => start());
 // conceding forfeits the run outright: no defeat payout, no pack
 $('concede').addEventListener('click', () => {
 	if (!state || state.over) return;
+	// correspondence: resigning ends the match on the server for both sides
+	if (asyncGame.on) {
+		const el = dungeonOverlay('RESIGN?', `Resigning hands the match to ${asyncGame.opp || 'your opponent'}.`);
+		el.appendChild(overlayButton('Resign the match', async () => {
+			try { await MPX.call('async-resign', { id: asyncGame.id }); } catch (e) {}
+			state.over = true;
+			asyncGame.overSent = true;
+			const done = dungeonOverlay('MATCH RESIGNED', `${asyncGame.opp || 'Your opponent'} takes it.`);
+			done.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+			updateHud();
+		}));
+		el.appendChild(overlayButton('Keep playing', () => hideDungeonOverlay()));
+		return;
+	}
 	// run modes keep their own copy (a conceded run clears the save + pays no pack)
 	if (dungeonRunMode || heistRunMode || tombsRunMode || duelsRunMode || arenaRunMode || lorequestRunMode || middleearthRunMode || swordcoastRunMode || finalfantasyRunMode || multiverseRunMode) {
 		const run = multiverseRunMode ? loadMultiverse() : finalfantasyRunMode ? loadFinalfantasy() : swordcoastRunMode ? loadSwordcoast() : middleearthRunMode ? loadMiddleearth() : lorequestRunMode ? loadLorequest() : arenaRunMode ? loadArena() : duelsRunMode ? loadDuels() : tombsRunMode ? loadTombs() : heistRunMode ? loadHeist() : loadRun();
@@ -5251,6 +5279,180 @@ function loadCardsData() {
 	return cardsDataPromise;
 }
 
+// ---------- correspondence (async) duels ----------
+// The server holds the match; each player takes WHOLE turns whenever they
+// like. State of record = the engine snapshot published at the end of every
+// turn. The absent player's forced decisions (discards, scries, priority
+// windows) resolve locally with the same sensible defaults AI seats use —
+// their secrets and traps still fire on their own.
+async function startAsync(cardsById) {
+	let d;
+	try { d = await MPX.call('async-get', { id: asyncGame.id }); } catch (e) { d = { error: e.message }; }
+	if (!d || d.error || !d.match) {
+		const el = dungeonOverlay('MATCH NOT FOUND', d?.error || 'That correspondence match is gone.');
+		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+		return;
+	}
+	let m = d.match;
+	const mySeat = d.you;
+	asyncGame.me = m.players[mySeat];
+	asyncGame.opp = m.players[1 - mySeat];
+	HUMAN = mySeat;
+
+	// the invitee's first visit: accept with the deck they picked in the lobby
+	if (m.status === 'invited' && mySeat === 1 && asyncGame.deckId) {
+		const st = await MPX.freshState().catch(() => MPX.cachedState());
+		const deck = (st?.decks || []).find(x => x.id === asyncGame.deckId);
+		if (!deck) {
+			const el = dungeonOverlay('DECK MISSING', 'That deck no longer exists — pick another from the lobby.');
+			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+			return;
+		}
+		const party = { deck: deck.cards, classId: deck.classId, commander: deck.commander || null, companion: deck.companion || null };
+		const acc = await MPX.call('async-accept', { id: asyncGame.id, party }).catch(e => ({ error: e.message }));
+		if (acc.error) {
+			const el = dungeonOverlay('COULD NOT ACCEPT', acc.error);
+			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+			return;
+		}
+		m = acc.match;
+		asyncGame.needDeal = true;
+	}
+
+	if (m.status === 'invited') {
+		const el = dungeonOverlay('WAITING FOR ' + asyncGame.opp.toUpperCase(),
+			mySeat === 0 ? 'They have not accepted your challenge yet.' : 'Accept this match from the Battlecards lobby.');
+		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+		return;
+	}
+
+	if (m.status === 'over') {
+		asyncReportElo(m);
+		const won = m.winner === asyncGame.me;
+		const el = dungeonOverlay(m.winner == null ? 'MATCH CANCELLED' : won ? 'VICTORY!' : 'DEFEAT',
+			m.winner == null ? 'This match ended without a result.' : won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} took this one.`);
+		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+		return;
+	}
+
+	// active: deal the opening (invitee, first visit) or load the latest snapshot
+	if (asyncGame.needDeal) {
+		const picks = [classPickFor(m.decks?.[0]?.classId), classPickFor(m.decks?.[1]?.classId)];
+		const loadouts = [0, 1].map(s => ({ commander: m.decks?.[s]?.commander || null, companion: m.decks?.[s]?.companion || null }));
+		state = E.createGame(cardsById, E.seededRng(duelSeed(m.id)), m.decks?.[0]?.deck ? [...m.decks[0].deck] : null, 2, picks, loadouts);
+		state.classPicks = picks;
+		if (m.decks?.[1]?.deck?.length) {
+			E.resetDeckAndHand(state, 1, m.decks[1].deck);
+			E.drawCards(state, 1, 4);
+			E.addCoin(state, 1);
+		}
+	} else if (m.snap) {
+		state = E.fromSnapshot(m.snap, cardsById);
+		E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
+	} else {
+		// accepted but the opening deal never arrived (their tab died mid-accept)
+		const el = dungeonOverlay('SETTING UP', `${asyncGame.opp} is dealing the opening — check back shortly.`);
+		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+		return;
+	}
+
+	asyncGame.live = true;
+	asyncGame.myTurnStarted = state.current === HUMAN && !state.over;
+	frameCamera();
+	buildPanels();
+	buildSlotMarkers();
+	pump();
+	updateHud();
+	log(`Correspondence duel: you vs ${asyncGame.opp}.`);
+
+	if (asyncGame.myTurnStarted && Array.isArray(m.lines) && m.lines.length) {
+		// what happened on their turn, before you act on it
+		const el = dungeonOverlay('WHILE YOU WERE AWAY', `${asyncGame.opp}'s turn:`);
+		const list = document.createElement('div');
+		list.style.cssText = 'max-width:520px;margin:0 auto;text-align:left;font-size:13px;line-height:1.55;color:#cbc2e0;max-height:40vh;overflow-y:auto;';
+		for (const ln of m.lines) { const r = document.createElement('div'); r.textContent = ln; list.appendChild(r); }
+		el.appendChild(list);
+		el.appendChild(overlayButton('Take your turn', () => hideDungeonOverlay()));
+	} else if (!asyncGame.myTurnStarted && !state.over) {
+		asyncWaitOverlay();
+	}
+}
+
+function asyncWaitOverlay() {
+	const el = dungeonOverlay('WAITING FOR ' + (asyncGame.opp || '').toUpperCase(),
+		'Your turn is sent. Come back whenever — this page checks once a minute.');
+	el.appendChild(overlayButton('Check now', async () => {
+		const d = await MPX.call('async-get', { id: asyncGame.id }).catch(() => null);
+		if (d?.match && (d.match.turn === asyncGame.me || d.match.status === 'over')) location.reload();
+		else banner('Still waiting…', 1500);
+	}));
+	el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+	clearTimeout(asyncWaitOverlay._t);
+	const poll = async () => {
+		const d = await MPX.call('async-get', { id: asyncGame.id }).catch(() => null);
+		if (d?.match && (d.match.turn === asyncGame.me || d.match.status === 'over')) { location.reload(); return; }
+		asyncWaitOverlay._t = setTimeout(poll, 60_000);
+	};
+	asyncWaitOverlay._t = setTimeout(poll, 60_000);
+}
+
+// the winner's client reports Elo exactly once (per device — good enough here)
+function asyncReportElo(m) {
+	if (m.winner !== asyncGame.me) return;
+	const key = 'magepunk_am_elo_' + m.id;
+	try {
+		if (localStorage.getItem(key)) return;
+		localStorage.setItem(key, '1');
+	} catch (e) {}
+	MPX.call('duel-result', { opponent: asyncGame.opp }).catch(() => {});
+}
+
+// called from updateHud after every settle: my turn just ended (or the game
+// did) → publish the snapshot and hand the match over
+async function maybePublishAsync() {
+	if (!asyncGame.on || !asyncGame.live || !state || asyncGame.sending) return;
+	const over = state.over;
+	const turnEnded = asyncGame.myTurnStarted && state.current !== HUMAN;
+	const openingDeal = asyncGame.needDeal;
+	if (!over && !turnEnded && !openingDeal) return;
+	if (over && asyncGame.overSent) return;
+	// wait for the event queue to drain so the published snapshot is settled
+	if (queue.length || queueBusy) return;
+	asyncGame.sending = true;
+	const winnerSeat = over ? (state.winner ?? null) : null;
+	const payload = {
+		id: asyncGame.id,
+		snap: E.toSnapshot(state),
+		turnTo: state.players[state.current] ? (state.current === HUMAN ? asyncGame.me : asyncGame.opp) : asyncGame.opp,
+		lines: logHistory.slice(-20),
+		over: !!over,
+		winner: winnerSeat == null ? null : (winnerSeat === HUMAN ? asyncGame.me : asyncGame.opp),
+	};
+	try {
+		const r = await MPX.call('async-move', payload);
+		if (r.error) { log('Could not send the turn: ' + r.error); asyncGame.sending = false; return; }
+		asyncGame.needDeal = false;
+		asyncGame.myTurnStarted = false;
+		if (over) {
+			asyncGame.overSent = true;
+			asyncReportElo(r.match || { winner: payload.winner });
+			const won = payload.winner === asyncGame.me;
+			const el = dungeonOverlay(won ? 'VICTORY!' : 'DEFEAT',
+				won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} takes it.`);
+			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+		} else if (!openingDeal || state.current !== HUMAN) {
+			banner('Turn sent ✉', 1800);
+			asyncWaitOverlay();
+		} else {
+			// we dealt the opening AND go first — play on
+			asyncGame.myTurnStarted = true;
+		}
+	} catch (e) {
+		log('Could not send the turn — will retry on your next action.');
+	}
+	asyncGame.sending = false;
+}
+
 async function start() {
 	for (const uid of [...entities.keys()]) removeEntity(uid);
 	queue.length = 0;
@@ -5288,6 +5490,7 @@ async function start() {
 			});
 		} catch (e) { classRegistry = []; }
 	}
+	if (asyncGame.on) { await startAsync(cardsById); return; }
 	if (duel.on) { await startDuel(cardsById); return; }
 	if (aiMatchId) { await startAiMatch(cardsById); return; }
 	// bare visit = the landing menu; any mode param (battle/players/boss/
