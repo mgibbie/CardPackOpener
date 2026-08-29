@@ -51,6 +51,8 @@ const RATE_LIMITS = {
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
+	// async (correspondence) matches: whole turns, not per-action traffic
+	'async-create': [10, 60_000], 'async-move': [30, 60_000],
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
@@ -77,6 +79,8 @@ const GC_TABLE = [
 	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
+	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
+	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 ];
 
@@ -1273,6 +1277,107 @@ export default async function handler(req, env) {
 		const list = (await store.get('chat:' + room)) || [];
 		const since = +body.since || 0;
 		return json({ messages: since ? list.filter(m => m.ts > since) : list.slice(-12), now: Date.now() });
+	}
+
+	// ---------- async (correspondence) card matches ----------
+	// Play-by-mail 1v1: the match lives server-side and each player takes WHOLE
+	// turns whenever they like — no need to be online together. The state of
+	// record is the same deterministic engine snapshot live duels publish;
+	// client-authoritative like the rest of the test realm. Seat 0 = challenger,
+	// seat 1 = accepter (who deals the opening state, having both decks).
+	if (action.startsWith('async-')) {
+		const AM_MAX_BYTES = 700_000, AM_MAX_PER_USER = 20;
+		const amListOf = async name => ((await store.get('amlist:' + name)) || []).filter(x => typeof x === 'string');
+		const amSummary = (m, me) => ({
+			id: m.id, players: m.players, status: m.status, turn: m.turn, turnNumber: m.turnNumber || 0,
+			winner: m.winner ?? null, updatedAt: m.updatedAt, lines: m.lines || [],
+			yourTurn: m.status === 'active' && m.turn === me,
+			yourInvite: m.status === 'invited' && m.players[1] === me,
+		});
+
+		if (action === 'async-create') {
+			const to = String(body.to || '').trim().toLowerCase();
+			if (!user.friends.includes(to)) return json({ error: 'not your friend' }, 403);
+			if (!(await store.get(to))) return json({ error: 'no such player' }, 404);
+			const mine = await amListOf(username);
+			if (mine.length >= AM_MAX_PER_USER) return json({ error: 'too many async matches — finish or resign some first' }, 400);
+			const id = randCode() + randCode();
+			const m = {
+				id, players: [username, to], decks: [body.party || null, null],
+				status: 'invited', snap: null, turn: null, turnNumber: 0, winner: null,
+				lines: [], createdAt: Date.now(), updatedAt: Date.now(),
+			};
+			await store.setJSON('amatch:' + id, m);
+			await store.setJSON('amlist:' + username, [...mine, id]);
+			await store.setJSON('amlist:' + to, [...(await amListOf(to)), id]);
+			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		if (action === 'async-list') {
+			const ids = await amListOf(username);
+			const out = [], live = [];
+			for (const mid of ids.slice(-40)) {
+				const m = await store.get('amatch:' + mid);
+				if (!m) continue;
+				live.push(mid);
+				out.push(amSummary(m, username));
+			}
+			if (live.length !== ids.length) await store.setJSON('amlist:' + username, live);
+			out.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+			return json({ matches: out, yourTurn: out.filter(m => m.yourTurn || m.yourInvite).length });
+		}
+
+		const id = String(body.id || '');
+		const m = await store.get('amatch:' + id);
+		if (!m || !m.players.includes(username)) return json({ error: 'not your match' }, 404);
+
+		if (action === 'async-get') return json({ match: m, you: m.players.indexOf(username) });
+
+		if (action === 'async-accept') {
+			if (m.players[1] !== username) return json({ error: 'not your invite' }, 403);
+			if (m.status !== 'invited') return json({ error: 'already started' }, 400);
+			m.decks[1] = body.party || null;
+			m.status = 'active';
+			m.updatedAt = Date.now();
+			await store.setJSON('amatch:' + id, m);
+			return json({ ok: true, match: m, you: 1 });
+		}
+
+		if (action === 'async-move') {
+			if (m.status !== 'active') return json({ error: 'match is not active' }, 400);
+			// the opening deal (no snap yet) comes from the accepter's build;
+			// after that, only the player to move may publish
+			if (m.snap && m.turn !== username) return json({ error: 'not your turn' }, 403);
+			if (!m.snap && m.players[1] !== username) return json({ error: 'the accepter deals the opening state' }, 403);
+			const snap = body.snap;
+			if (!snap || JSON.stringify(snap).length > AM_MAX_BYTES) return json({ error: 'bad snapshot' }, 400);
+			const turnTo = String(body.turnTo || '');
+			if (!body.over && !m.players.includes(turnTo)) return json({ error: 'bad turnTo' }, 400);
+			m.snap = snap;
+			m.turnNumber = (m.turnNumber || 0) + 1;
+			m.lines = Array.isArray(body.lines) ? body.lines.slice(0, 24).map(l => String(l).slice(0, 220)) : [];
+			m.updatedAt = Date.now();
+			if (body.over) {
+				m.status = 'over';
+				m.turn = null;
+				m.winner = m.players.includes(String(body.winner)) ? String(body.winner) : null;
+			} else m.turn = turnTo;
+			await store.setJSON('amatch:' + id, m);
+			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		if (action === 'async-resign') {
+			if (m.status === 'over') return json({ ok: true, match: amSummary(m, username) });
+			// cancelling an un-accepted invite has no loser; resigning a live match does
+			m.winner = m.status === 'active' ? m.players.find(q => q !== username) : null;
+			m.status = 'over';
+			m.turn = null;
+			m.updatedAt = Date.now();
+			await store.setJSON('amatch:' + id, m);
+			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		return json({ error: 'unknown async action' }, 400);
 	}
 
 	// ---------- live battles (server-authoritative PvP) ----------
