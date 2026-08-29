@@ -15,6 +15,19 @@ const FACE_OF = {
 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const DEFEATED_KEY = 'magepunk_defeated_v1';
+const REMATCH_KEY = 'magepunk_rematch_v1'; // trainer key -> rematch tier (badges when the VS Seeker re-armed them)
+
+// boss-tier trainers fight with real equipment (see buildBattle)
+const BOSS_CLASSES = new Set(['Gym Leader', 'Elite Four', 'Champion', 'Rival',
+	'Aqua Leader', 'Magma Leader', 'Aqua Admin', 'Magma Admin',
+	'TRAINER_CLASS_BOSS', 'TRAINER_CLASS_RIVAL_EARLY', 'TRAINER_CLASS_RIVAL_LATE']);
+const TYPE_ITEM = {
+	Fire: 'charcoal', Water: 'mysticwater', Electric: 'magnet', Grass: 'miracleseed',
+	Ice: 'nevermeltice', Fighting: 'blackbelt', Poison: 'poisonbarb', Ground: 'softsand',
+	Flying: 'sharpbeak', Psychic: 'twistedspoon', Bug: 'silverpowder', Rock: 'hardstone',
+	Ghost: 'spelltag', Dragon: 'dragonfang', Dark: 'blackglasses', Steel: 'metalcoat',
+	Normal: 'silkscarf',
+};
 
 // The Emerald sprite set was never imported into data/people (served read-only from
 // owdata), so Hoenn gym leaders had no sprite and silently failed to spawn — leaving
@@ -85,6 +98,26 @@ export class Trainers {
 		this.onEngage = null;   // set by main.js
 		this.spawnFlagged = null; // set by main.js: predicate to un-hide villain-grunt events during a beat
 		{ const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []); }
+		{ const r = safeLoad(REMATCH_KEY, {}); this.rematch = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}; }
+	}
+
+	// VS Seeker: re-arm this map's defeated trainers for a rematch. The tier
+	// (badge count at re-arm, min 1) sticks to the trainer key and scales
+	// buildBattle's levels, so rematches keep pace with the player.
+	rearmMap(tier) {
+		let n = 0;
+		for (const t of this.list) {
+			const key = this.keyOf(t);
+			if (!this.defeated.has(key)) continue;
+			this.defeated.delete(key);
+			this.rematch[key] = Math.max(this.rematch[key] || 0, Math.max(1, tier || 0));
+			n++;
+		}
+		if (n) {
+			safeSave(DEFEATED_KEY, [...this.defeated]);
+			safeSave(REMATCH_KEY, this.rematch);
+		}
+		return n;
 	}
 
 	async init() {
@@ -210,9 +243,11 @@ export class Trainers {
 	buildBattle(t, data) {
 		const script = t.ev.script && t.ev.script !== '0x0' ? t.ev.script : null;
 		const roster = script ? this.data.rosters[script] : null;
+		// VS Seeker rematches climb: +2 levels per rematch tier (badges at re-arm)
+		const bump = 2 * (this.rematch[this.keyOf(t)] || 0);
 		let party = [];
 		if (roster?.party?.length) {
-			party = roster.party.map(e => buildMon(e.s, e.l, data)).filter(Boolean);
+			party = roster.party.map(e => buildMon(e.s, Math.min(100, e.l + bump), data)).filter(Boolean);
 		}
 		if (!party.length) {
 			const pool = this.data.classPools[t.ev.graphics_id] || this.data.defaultPool;
@@ -220,14 +255,25 @@ export class Trainers {
 			const n = 1 + Math.floor(Math.random() * 2);
 			for (let i = 0; i < n; i++) {
 				const s = pool[Math.floor(Math.random() * pool.length)];
-				const lv = Math.max(5, base + Math.floor(Math.random() * 7) - 3);
+				const lv = Math.max(5, Math.min(100, base + bump + Math.floor(Math.random() * 7) - 3));
 				const mon = buildMon(s, lv, data);
 				if (mon) party.push(mon);
 			}
 		}
+		// bosses (leaders, Elite Four, champions, rivals, villain leadership) fight
+		// with real equipment: their canonical first-listed ability instead of a
+		// random roll, a Sitrus Berry on the ace, a type-boost item on the rest
+		if (roster?.class && BOSS_CLASSES.has(roster.class)) {
+			const ace = party.reduce((a, m) => (m.level > (a?.level ?? -1) ? m : a), null);
+			for (const m of party) {
+				const opts = data.abilities?.[m.speciesId];
+				if (opts?.length) m.ability = opts[0];
+				m.heldItem = m === ace ? 'sitrusberry' : (TYPE_ITEM[m.types[0]] || 'leftovers');
+			}
+		}
 		const className = roster?.class || this.data.classNames[t.ev.graphics_id] || 'Trainer';
 		const name = roster?.name || '';
-		const displayName = name ? `${className} ${name}` : className;
+		const displayName = (name ? `${className} ${name}` : className) + (bump ? ' (rematch)' : '');
 		const high = Math.max(5, ...party.map(m => m.level));
 		return {
 			party,

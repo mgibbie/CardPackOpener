@@ -1546,6 +1546,16 @@ function bagKey(k) {
 		const [id] = entries[bagMenu.idx];
 		const item = Bag.ITEMS[id];
 		if (item?.kind === 'rod') { castRod(id, item); return; }
+		if (item?.kind === 'seeker') {
+			// VS SEEKER: re-arm this map's beaten trainers at badge-scaled levels
+			const region = playerRegion();
+			const tier = Badges.count(region) + (Badges.isChampion?.(region) ? 4 : 0);
+			const armed = trainers.rearmMap(tier);
+			bagMenu.flash = armed
+				? `VS SEEKER: ${armed} trainer${armed === 1 ? '' : 's'} on this map want${armed === 1 ? 's' : ''} a rematch!`
+				: 'No defeated trainers respond around here.';
+			return;
+		}
 		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin'].includes(item?.kind) || tmMoveId(id)) {
 			bagMenu.picking = true;
 			bagMenu.pickIdx = 0;
@@ -3303,6 +3313,11 @@ function monRow(id, x, y, w, h, mon, selected, u, note) {
 	sctx.fillStyle = mon.curHP > 0 ? BUI.C.text : BUI.C.faint;
 	sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 	sctx.fillText(mon.name, x + h + 6 * u, y + 22 * u);
+	if (mon.shiny) { // gold star on the party row
+		sctx.fillStyle = '#e8b84a';
+		sctx.fillText('★', x + h + 8 * u + sctx.measureText(mon.name).width, y + 22 * u);
+		sctx.fillStyle = mon.curHP > 0 ? BUI.C.text : BUI.C.faint;
+	}
 	sctx.fillStyle = BUI.C.dim;
 	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	sctx.fillText(`Lv${mon.level}`, x + h + 6 * u, y + h - 10 * u);

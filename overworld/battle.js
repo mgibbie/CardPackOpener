@@ -463,6 +463,7 @@ export function buildMon(speciesId, level, data) {
 	return {
 		speciesId, name: sp.name.toUpperCase(), level,
 		nature, evs,
+		shiny: Math.random() < 1 / 512, // full-odds shiny roll — every mon source runs through here
 		gender: Math.random() < 0.5 ? 'M' : 'F',
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
 		friend: 70, // friendship: grows with wins/levels, some species evolve on it
@@ -573,11 +574,13 @@ export class Battle {
 		for (const m of party) this.clearVolatiles(m);
 		if (foeAlly) {
 			this.pushMsg(`Wild ${foe.name} and ${foeAlly.name} appeared!`, () => cry(foe.speciesId));
+			if (foe.shiny || foeAlly.shiny) this.pushMsg(`✨ It's SHINY! ✨`);
 			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
 			this.pushMsg(`Go! ${playerMon.name} and ${meAlly.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 		} else {
 			this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
+			if (foe.shiny) this.pushMsg(`✨ It's SHINY! ✨`);
 			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
 			this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
 			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
@@ -3281,6 +3284,7 @@ export class Battle {
 		if (!img || hidden || pose.blink) return;
 		ctx.save();
 		ctx.globalAlpha = pose.alpha;
+		if (mon.shiny) ctx.filter = 'hue-rotate(150deg) saturate(1.3)'; // shiny palette shift
 		ctx.imageSmoothingEnabled = false;
 		// Normalize to the 96px standard canvas. Sprites were exported at wildly varying
 		// native sizes (~12px crops up to 256px Gen-9 art); a fixed scale on raw dims made
@@ -3303,6 +3307,26 @@ export class Battle {
 		const ay = cb ? (cb[1] + cb[3]) * h : h;
 		ctx.drawImage(img, pose.x + pose.dx - ax + (tune?.x || 0) * u, pose.y + pose.dy - ay + (10 + (tune?.y || 0)) * u, w, h);
 		ctx.restore();
+		if (mon.shiny) {
+			// golden twinkles orbit a shiny so it reads at a glance
+			const t = performance.now() / 1000;
+			ctx.save();
+			ctx.fillStyle = 'rgba(255,230,140,0.9)';
+			for (let i = 0; i < 3; i++) {
+				const tw = (Math.sin(t * 2.1 + i * 2.6) + 1) / 2;
+				const ang = t * 0.7 + i * (Math.PI * 2 / 3);
+				const cx2 = pose.x + pose.dx + Math.cos(ang) * 52 * u;
+				const cy2 = pose.y + pose.dy - 46 * u + Math.sin(ang * 1.3) * 26 * u;
+				const r = (1.2 + tw * 2.4) * u;
+				ctx.beginPath();
+				ctx.moveTo(cx2, cy2 - r); ctx.lineTo(cx2 + r * 0.35, cy2 - r * 0.35);
+				ctx.lineTo(cx2 + r, cy2); ctx.lineTo(cx2 + r * 0.35, cy2 + r * 0.35);
+				ctx.lineTo(cx2, cy2 + r); ctx.lineTo(cx2 - r * 0.35, cy2 + r * 0.35);
+				ctx.lineTo(cx2 - r, cy2); ctx.lineTo(cx2 - r * 0.35, cy2 - r * 0.35);
+				ctx.closePath(); ctx.fill();
+			}
+			ctx.restore();
+		}
 	}
 
 	draw(ctx, W, H) {
