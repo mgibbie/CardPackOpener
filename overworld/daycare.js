@@ -102,12 +102,19 @@ export function step(data, onHatch) {
 	for (const mon of state.slots) {
 		if (mon) { mon.exp = (mon.exp ?? mon.level ** 3) + 1; dirty = true; }
 	}
-	// egg production while a compatible pair is in
+	// egg production while a compatible pair is in; the egg snapshots its
+	// inheritance at lay time (a parent may be withdrawn before it hatches)
 	if (!state.egg && compatible(state.slots[0], state.slots[1])) {
 		state.breedSteps++;
 		if (state.breedSteps >= EGG_LAY_STEPS) {
 			const sp = eggSpecies(data);
-			if (sp) { state.egg = { speciesId: sp, hatch: EGG_HATCH_STEPS, ready: false }; state.breedSteps = 0; }
+			if (sp) {
+				state.egg = {
+					speciesId: sp, hatch: EGG_HATCH_STEPS, ready: false,
+					inherit: eggInheritance(state.slots[0], state.slots[1]),
+				};
+				state.breedSteps = 0;
+			}
 		}
 		dirty = true;
 	}
@@ -122,10 +129,58 @@ export function step(data, onHatch) {
 
 export function hasReadyEgg() { return !!(state.egg && state.egg.ready); }
 export function eggPending() { return !!(state.egg && !state.egg.ready); }
-// build the hatched baby (level 5) and clear the egg
-export function collectEgg(data) {
+
+// what the egg carries from its parents: 3 inherited IVs (5 when either holds
+// a DESTINY KNOT), an EVERSTONE holder's nature, the non-mother parent's moves
+// as egg-move candidates, and boosted shiny odds (2x; 4x from a shiny lineage)
+export function eggInheritance(a, b) {
+	if (!a || !b) return null;
+	const knot = [a, b].some(m => m?.heldItem === 'destinyknot');
+	const stone = [a, b].find(m => m?.heldItem === 'everstone');
+	const mother = isDitto(a) ? b : isDitto(b) ? a : (norm(a.gender) === 'F' ? a : b);
+	const father = mother === a ? b : a;
+	const keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+	const picks = [...keys].sort(() => Math.random() - 0.5).slice(0, knot ? 5 : 3);
+	const ivs = {};
+	for (const k of picks) {
+		const src = Math.random() < 0.5 ? a : b;
+		ivs[k] = src?.ivs?.[k] ?? Math.floor(Math.random() * 32);
+	}
+	return {
+		ivs,
+		nature: stone?.nature || null,
+		fatherMoves: (father?.moves || []).map(m => m.id),
+		shinyBoost: [a, b].some(m => m?.shiny) ? 4 : 2,
+	};
+}
+
+// fold the snapshot into the hatchling: IVs/nature, egg moves the species can
+// actually learn (empty slots only), the boosted shiny roll, then recompute
+export function applyInheritance(baby, inh, data, canLearn) {
+	if (!baby || !inh) return;
+	Object.assign(baby.ivs, inh.ivs || {});
+	if (inh.nature) baby.nature = inh.nature;
+	if (canLearn) {
+		for (const mid of inh.fatherMoves || []) {
+			if (baby.moves.length >= 4) break;
+			if (baby.moves.some(m => m.id === mid)) continue;
+			if (!canLearn(baby, mid)) continue;
+			const info = data.moves?.[mid];
+			if (info) baby.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
+		}
+	}
+	if (!baby.shiny && Math.random() < ((inh.shinyBoost || 2) - 1) / 512) baby.shiny = true;
+	const sp = data.species[baby.speciesId];
+	baby.stats = statsFor(sp, baby.ivs, baby.level, baby);
+	baby.maxHP = baby.stats.hp;
+	baby.curHP = baby.stats.hp;
+}
+
+// build the hatched baby (level 5), fold in the inheritance, clear the egg
+export function collectEgg(data, canLearn) {
 	if (!hasReadyEgg()) return null;
 	const baby = buildMon(state.egg.speciesId, 5, data);
+	applyInheritance(baby, state.egg.inherit, data, canLearn);
 	state.egg = null;
 	save(state);
 	if (baby) baby.friend = 120; // hatched mons start friendly

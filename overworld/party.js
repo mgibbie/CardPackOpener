@@ -12,7 +12,7 @@ function migrate(mon, data) {
 		mon.ivs = { hp: iv(), atk: iv(), def: iv(), spa: iv(), spd: iv(), spe: iv() };
 	}
 	if (mon.exp == null) mon.exp = mon.level ** 3;
-	if (!mon.gender) mon.gender = Math.random() < 0.5 ? 'M' : 'F';
+	if (mon.gender === undefined) mon.gender = Math.random() < 0.5 ? 'M' : 'F'; // null = genderless, keep it
 	if (!mon.nature) { // natures/EVs postdate older saves
 		const n = ['hardy', 'lonely', 'brave', 'adamant', 'naughty', 'bold', 'docile', 'relaxed', 'impish', 'lax',
 			'timid', 'hasty', 'serious', 'jolly', 'naive', 'modest', 'mild', 'quiet', 'bashful', 'rash',

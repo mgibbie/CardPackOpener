@@ -844,7 +844,7 @@ function daycareKey(k) {
 			daycareMenu.idx = 0;
 		}
 		if (o.act === 'egg') {
-			const baby = Daycare.collectEgg(battle.data);
+			const baby = Daycare.collectEgg(battle.data, canLearn); // egg moves filter through TM/level-up compat
 			if (baby) {
 				Dex.markCaught(baby.speciesId);
 				const where = addCaught(party, baby);

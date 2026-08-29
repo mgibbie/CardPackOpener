@@ -443,6 +443,13 @@ export function makeMove(mid, data) {
 	return { id: mid, name: mv.name, pp: mv.pp, maxPp: mv.pp };
 }
 
+// real gender ratios (genders.json: male chance, -1 = genderless -> null)
+export function rollGender(speciesId, data) {
+	const g = data?.genders?.[speciesId];
+	if (g === -1) return null;
+	return Math.random() < (g == null ? 0.5 : g) ? 'M' : 'F';
+}
+
 export function buildMon(speciesId, level, data) {
 	const sp = data.species[speciesId];
 	if (!sp) return null;
@@ -464,7 +471,7 @@ export function buildMon(speciesId, level, data) {
 		speciesId, name: sp.name.toUpperCase(), level,
 		nature, evs,
 		shiny: Math.random() < 1 / 512, // full-odds shiny roll — every mon source runs through here
-		gender: Math.random() < 0.5 ? 'M' : 'F',
+		gender: rollGender(speciesId, data),
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
 		friend: 70, // friendship: grows with wins/levels, some species evolve on it
 		types: [...sp.types], ivs, stats, maxHP: stats.hp, curHP: stats.hp,
@@ -494,14 +501,15 @@ export class Battle {
 	}
 
 	async init() {
-		const [species, moves, extra, abilities, tmLearn] = await Promise.all([
+		const [species, moves, extra, abilities, tmLearn, genders] = await Promise.all([
 			getJSON('data/species_battle.json'),
 			getJSON('data/moves_battle.json'),
 			getJSON('data/species_extra.json').catch(() => ({})),
 			getJSON('data/species_abilities.json').catch(() => ({})),
 			getJSON('data/tm_learnsets.json').catch(() => ({})), // TM/tutor compat (gen_tm_learnsets.mjs)
+			getJSON('data/genders.json').catch(() => ({})), // male-chance per species; -1 = genderless (gen_genders.mjs)
 		]);
-		this.data = { species, moves, extra, abilities, tmLearn };
+		this.data = { species, moves, extra, abilities, tmLearn, genders };
 		// the Love2D build's pixel font, so battle text matches the desktop game
 		try {
 			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
