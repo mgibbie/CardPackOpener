@@ -3,7 +3,7 @@ import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
-import { Trainers } from './trainers.js';
+import { Trainers, BOSS_CLASSES } from './trainers.js';
 import { Dialog } from './dialog.js';
 import { Services } from './services.js';
 import { Arcade } from './arcade.js';
@@ -498,7 +498,7 @@ function frontierNext() {
 	const foe = Frontier.genTeam(battle.data, facLevel(cfg) + (tier ? 8 : 0), cfg.size);
 	if (!foe.length) { endFacility(); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
-	const info = { displayName: brain ? brain.name : 'FRONTIER TRAINER', defeatText: '', money: 0 };
+	const info = { displayName: brain ? brain.name : 'FRONTIER TRAINER', defeatText: '', money: 0, boss: !!brain };
 	if (brain) dialog.open(`The ${cfg.name} BRAIN, ${brain.title} ${brain.name}, blocks your path!`, () => runFrontierBattle(foe, info, tier, brain));
 	else runFrontierBattle(foe, info, null, null);
 }
@@ -2536,6 +2536,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	const info = {
 		displayName: roster?.name ? `${className} ${roster.name}` : className,
 		defeatText: '', money: high * 8,
+		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
@@ -2877,7 +2878,7 @@ function startVillainBattle(region, beat) {
 	const foe = beat.team.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
 	if (!foe.length || !party || !leadMon(party)) { completeVillainBeat(region, beat); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
-	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12 };
+	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12, boss: true };
 	battle.startTrainer(party, foe, info, result => {
 		if (result === 'victory') { completeVillainBeat(region, beat); }
 		else { healParty(party); saveParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
@@ -2906,7 +2907,7 @@ function startRivalEncounter(tier) {
 		`${name}: We're both chasing every GYM in all three regions. Let's see who's really ahead — battle me!`,
 	];
 	startCutscene(intro.map(text => ({ op: 'say', text })), () => {
-		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40 };
+		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40, boss: true };
 		battle.startTrainer(party, foe, info, result => {
 			Story.setFlag(rivalFlag(tier)); // one-shot per tier, win or lose
 			saveParty(party);
@@ -3037,7 +3038,7 @@ function startRivalBattle(region, rivalId, rivalName) {
 	const foe = [battleBuildMon(rivalId, 5, battle.data)].filter(Boolean);
 	if (!foe.length || !party || !leadMon(party)) { afterRival(region); return; }
 	Dex.markSeen(rivalId);
-	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40 };
+	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40, boss: true };
 	battle.startTrainer(party, foe, info, result => {
 		if (result !== 'victory') healParty(party);   // the plot continues win or lose
 		saveParty(party);

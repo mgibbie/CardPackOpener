@@ -1978,6 +1978,33 @@ export class Battle {
 
 	// wild mons act at random; trainers prefer the strongest expected hit
 	// (power x STAB x type effectiveness), with a dash of unpredictability
+	// heuristic worth of a status move for the foe right now (0 = don't pick it):
+	// hazards and setup early, status on a healthy target, healing under half,
+	// no re-laying / re-statusing / re-screening
+	statusMoveValue(m) {
+		const a = this.active;
+		const fx = MOVE_FX[m.id] || {};
+		const st = STAT_MOVES[m.id];
+		const early = (a.turnCount || 0) < 2;
+		if (fx.hazard) {
+			const laid = a.meHazards[fx.hazard] || 0;
+			const cap = fx.hazard === 'spikes' ? 3 : fx.hazard === 'toxicspikes' ? 2 : 1;
+			return laid >= cap ? 0 : (early ? 95 : 45);
+		}
+		if (fx.status) return !a.me.status && a.me.curHP > a.me.maxHP * 0.6 ? 85 : 0;
+		if (fx.heal) return a.foe.curHP < a.foe.maxHP * 0.5 ? 90 : 0;
+		if (fx.weather) return a.weather?.kind === fx.weather ? 0 : 55;
+		if (fx.terrain) return a.terrain?.kind === fx.terrain ? 0 : 50;
+		if (fx.screen) return ((fx.screen === 'light' ? a.foeScreens.light : a.foeScreens.reflect) > 0) ? 0 : 60;
+		if (st && !st.foe) {
+			const key = st.stat || Object.keys(st.stats || {})[0];
+			if (!key || (a.foeBoosts[key] || 0) >= 2) return 0; // already set up
+			return a.foe.curHP > a.foe.maxHP * 0.7 ? (early ? 80 : 40) : 0;
+		}
+		if (st && st.foe) return early ? 30 : 15;
+		return fx.protect || fx.selfKO ? 0 : 20;
+	}
+
 	chooseFoeMove() {
 		const a = this.active;
 		if (a.foe.chargeMove) {
@@ -1985,27 +2012,115 @@ export class Battle {
 		}
 		const usable = a.foe.moves.filter(m => this.moveUsable(a.foe, m, 'foe'));
 		if (!usable.length) return STRUGGLE();
-		if (!a.isTrainer || Math.random() < 0.15) return usable[Math.floor(Math.random() * usable.length)];
+		// wild mons are random; route trainers keep a 15% wobble; boss-tier
+		// trainers (info.boss) always play the scored line
+		const boss = a.isTrainer && a.info?.boss;
+		if (!a.isTrainer || (!boss && Math.random() < 0.15)) return usable[Math.floor(Math.random() * usable.length)];
 		let best = null, bestScore = 0;
 		for (const m of usable) {
 			const mv = this.data.moves[m.id] || {};
 			const pw = mv.power || AI_EST_POWER[m.id] || 0;
-			if (!pw) continue;
-			// ability-aware: don't walk into full immunities the player can see
-			const defAb = this.abilityOf(a.me);
-			if (defAb === 'levitate' && mv.type === 'Ground') continue;
-			if (AB_ABSORB[defAb]?.t === mv.type) continue;
-			if (defAb === 'flashfire' && mv.type === 'Fire') continue;
-			const score = pw
-				* (a.foe.types.includes(mv.type) ? 1.5 : 1)
-				* effectiveness(mv.type, a.me.types);
+			let score;
+			if (!pw) {
+				score = this.statusMoveValue(m) * (boss ? 1 : 0.6); // route trainers value tricks less
+				if (score <= 0) continue;
+			} else {
+				// ability-aware: don't walk into full immunities the player can see
+				const defAb = this.abilityOf(a.me);
+				if (defAb === 'levitate' && mv.type === 'Ground') continue;
+				if (AB_ABSORB[defAb]?.t === mv.type) continue;
+				if (defAb === 'flashfire' && mv.type === 'Fire') continue;
+				score = pw
+					* (a.foe.types.includes(mv.type) ? 1.5 : 1)
+					* effectiveness(mv.type, a.me.types);
+			}
 			if (score > bestScore) { bestScore = score; best = m; }
 		}
 		return best || usable[Math.floor(Math.random() * usable.length)];
 	}
 
+	// how well candidate `c` lines up against the player's active mon: its best
+	// STAB/effectiveness hit minus how hard it gets hit back
+	matchupScore(c, target) {
+		let off = 0;
+		for (const m of c.moves) {
+			const mv = this.data.moves[m.id] || {};
+			const pw = mv.power || AI_EST_POWER[m.id] || 0;
+			if (!pw) continue;
+			off = Math.max(off, pw * effectiveness(mv.type, target.types) * (c.types.includes(mv.type) ? 1.5 : 1));
+		}
+		let danger = 0;
+		for (const m of target.moves) {
+			const mv = this.data.moves[m.id] || {};
+			if (!mv.power) continue;
+			danger = Math.max(danger, effectiveness(mv.type, c.types));
+		}
+		return off - 40 * danger;
+	}
+
+	// boss-tier counter-switch: hard-countered (nothing lands >0.5x AND the
+	// player hits us 2x+) and a meaningfully better answer is on the bench.
+	// Cooldown keeps it from ping-ponging. Returns the bench index or -1.
+	shouldFoeSwitch() {
+		const a = this.active;
+		if (!a.isTrainer || !a.info?.boss || a.double) return -1;
+		if ((a.foeSwitchCd || 0) > 0) return -1;
+		let ourBest = 0;
+		for (const m of a.foe.moves) {
+			const mv = this.data.moves[m.id] || {};
+			if (mv.power || AI_EST_POWER[m.id]) ourBest = Math.max(ourBest, effectiveness(mv.type, a.me.types));
+		}
+		let theirBest = 0;
+		for (const m of a.me.moves) {
+			const mv = this.data.moves[m.id] || {};
+			if (mv.power) theirBest = Math.max(theirBest, effectiveness(mv.type, a.foe.types));
+		}
+		if (ourBest > 0.5 || theirBest < 2) return -1;
+		let best = -1, bestScore = this.matchupScore(a.foe, a.me) + 20;
+		for (let i = 0; i < a.foes.length; i++) {
+			const c = a.foes[i];
+			if (c === a.foe || c.curHP <= 0) continue;
+			const s = this.matchupScore(c, a.me);
+			if (s > bestScore) { bestScore = s; best = i; }
+		}
+		return best;
+	}
+
 	resolveTurn(myMove) {
 		const a = this.active;
+		a.turnCount = (a.turnCount || 0) + 1;
+		if (a.foeSwitchCd > 0) a.foeSwitchCd--;
+		// boss counter-switch: replaces the foe's move and resolves first (like
+		// any trainer switch), so your move hits the incoming mon
+		const swIdx = a.foe.chargeMove ? -1 : this.shouldFoeSwitch();
+		if (swIdx >= 0) {
+			const next = a.foes[swIdx];
+			a.foeSwitchCd = 3;
+			this.pushMsg(`${a.info.displayName} withdrew ${a.foe.name}!`, () => this.clearVolatiles(a.foe));
+			this.pushAnim('recall', 'foe', 0.4, () => { a.foeHidden = true; });
+			this.pushMsg(`${a.info.displayName} sent out ${next.name}!`, () => {
+				cry(next.speciesId);
+				a.foe = next;
+				a.foeIdx = swIdx;
+				a.foeImg = a.foeSprites.get(next);
+				a.foeBoosts = freshBoosts();
+				a.foeShownHP = next.curHP;
+				a.foeHidden = false;
+			});
+			this.pushAnim('enter', 'foe', 0.4);
+			this.pushMsg('', () => { this.applyHazards(a.foe, 'foe'); this.switchInAbility(a.foe, 'foe'); });
+			this.pushMsg('', () => { if (a.me.curHP > 0 && a.foe.curHP > 0) this.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false); });
+			this.pushMsg('', () => { if (a.foe.curHP > 0 && a.me.curHP > 0) this.endOfTurn(); });
+			this.pushMsg('', () => this.checkFaints());
+			return;
+		}
+		// boss potion: once per battle at low HP, in place of the foe's move
+		let foePotion = false;
+		if (a.isTrainer && a.info?.boss && !a.foePotionUsed && !a.foe.chargeMove
+			&& a.foe.curHP > 0 && a.foe.curHP <= a.foe.maxHP * 0.25) {
+			a.foePotionUsed = true;
+			foePotion = true;
+		}
 		const foeMove = this.chooseFoeMove();
 		// Prankster: status moves gain +1 priority
 		const prio = (mon, move2) => {
@@ -2029,13 +2144,18 @@ export class Battle {
 			: myQC !== foeQC ? myQC
 			: (mySpe === foeSpe ? Math.random() < 0.5 : mySpe > foeSpe);
 
-		const actions = meFirst
-			? [[a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false], [a.foe, a.foeBoosts, a.me, a.meBoosts, foeMove, true]]
-			: [[a.foe, a.foeBoosts, a.me, a.meBoosts, foeMove, true], [a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false]];
+		const myAct = () => this.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false);
+		const foeAct = foePotion
+			? () => this.pushMsg(`${a.info.displayName} used a HYPER POTION on ${a.foe.name}!`, () => {
+				a.foe.curHP = Math.min(a.foe.maxHP, a.foe.curHP + 120);
+			})
+			: () => this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, foeMove, true);
+		// a trainer's item use preempts moves, like the real games
+		const [first, second] = (meFirst && !foePotion) ? [myAct, foeAct] : [foeAct, myAct];
 
-		this.useMove(...actions[0]);
+		first();
 		this.pushMsg('', () => {
-			if (a.foe.curHP > 0 && a.me.curHP > 0) this.useMove(...actions[1]);
+			if (a.foe.curHP > 0 && a.me.curHP > 0) second();
 		});
 		this.pushMsg('', () => {
 			if (a.foe.curHP > 0 && a.me.curHP > 0) this.endOfTurn();
@@ -2090,9 +2210,30 @@ export class Battle {
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
-			if (a2.isTrainer && a2.foeIdx + 1 < a2.foes.length) {
+			// Doubles keep their original cursor flow untouched (checkFaintsD also
+			// refills slots). Singles pick alive-aware — mid-battle boss switches
+			// break the cursor order — with bosses sending their best matchup and
+			// route trainers keeping party order.
+			const useCursor = a2.isTrainer && a2.double;
+			const alive = a2.isTrainer && !a2.double ? a2.foes.filter(m => m !== a2.foe && m.curHP > 0) : [];
+			if (useCursor && a2.foeIdx + 1 < a2.foes.length) {
 				a2.foeIdx++;
 				const next = a2.foes[a2.foeIdx];
+				this.pushMsg(`${a2.info.displayName} sent out ${next.name}!`, () => {
+					cry(next.speciesId);
+					a2.foe = next;
+					a2.foeImg = a2.foeSprites.get(next);
+					a2.foeBoosts = freshBoosts();
+					a2.foeShownHP = next.curHP;
+					a2.foeHidden = false;
+				});
+				this.pushAnim('enter', 'foe', 0.4);
+				this.pushMsg('', () => { this.applyHazards(a2.foe, 'foe'); this.switchInAbility(a2.foe, 'foe'); });
+			} else if (!useCursor && a2.isTrainer && alive.length) {
+				const next = a2.info?.boss && alive.length > 1
+					? alive.reduce((x, y) => this.matchupScore(y, a2.me) > this.matchupScore(x, a2.me) ? y : x)
+					: alive[0];
+				a2.foeIdx = a2.foes.indexOf(next);
 				this.pushMsg(`${a2.info.displayName} sent out ${next.name}!`, () => {
 					cry(next.speciesId);
 					a2.foe = next;
