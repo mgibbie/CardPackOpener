@@ -17,8 +17,9 @@ const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const DEFEATED_KEY = 'magepunk_defeated_v1';
 const REMATCH_KEY = 'magepunk_rematch_v1'; // trainer key -> rematch tier (badges when the VS Seeker re-armed them)
 
-// boss-tier trainers fight with real equipment (see buildBattle)
-const BOSS_CLASSES = new Set(['Gym Leader', 'Elite Four', 'Champion', 'Rival',
+// boss-tier trainers fight with real equipment + the boss AI (see buildBattle;
+// exported for main.js's script-battle path, which builds its own info)
+export const BOSS_CLASSES = new Set(['Gym Leader', 'Elite Four', 'Champion', 'Rival',
 	'Aqua Leader', 'Magma Leader', 'Aqua Admin', 'Magma Admin',
 	'TRAINER_CLASS_BOSS', 'TRAINER_CLASS_RIVAL_EARLY', 'TRAINER_CLASS_RIVAL_LATE']);
 const TYPE_ITEM = {
@@ -279,6 +280,9 @@ export class Trainers {
 			party,
 			info: {
 				displayName,
+				// boss-tier AI: no random wobble, status logic, counter-switches,
+				// best-matchup replacements, one potion (battle.js reads this)
+				boss: !!(roster?.class && BOSS_CLASSES.has(roster.class)),
 				introQuote: roster?.introQuote || null,
 				defeatText: roster?.defeatText || `${displayName} was defeated!`,
 				money: high * 8,
