@@ -1323,7 +1323,11 @@ function sellList() {
 }
 const sellPrice = id => Math.floor((Bag.ITEMS[id]?.price || 0) / 2);
 const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
-const pcMenu = { open: false, side: 0, idx: 0 }; // side 0 = party (deposit), 1 = box (withdraw)
+// side 0 = party (deposit), 1 = box (withdraw). Storage stays ONE flat array
+// (trade/dex read it whole); the 8 "boxes" are 30-slot pages over it.
+const PC_BOXES = 8, PC_BOX_CAP = 30;
+const PC_SORTS = ['dex', 'level', 'shiny', 'name'];
+const pcMenu = { open: false, side: 0, idx: 0, box: 0, sort: 'dex', confirm: null, releaseMode: false, flash: null };
 
 function getBox() {
 	const b = safeLoad('magepunk_box_v1', []);
@@ -1495,6 +1499,32 @@ function bagKey(k) {
 						bagMenu.flash = `${mon.name}'s ${item.name} raised its stats!`;
 						bagMenu.picking = false;
 					}
+				} else if (item?.kind === 'mint') {
+					// overwrite the battle nature and recompute (the vitamin recipe)
+					if (mon.nature === item.nature) bagMenu.flash = `It won't have any effect on ${mon.name}.`;
+					else {
+						Bag.consume(id);
+						mon.nature = item.nature;
+						const sp = battle.data.species[mon.speciesId];
+						const dmg = mon.maxHP - mon.curHP;
+						mon.stats = statsFor(sp, mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 }, mon.level, mon);
+						mon.maxHP = mon.stats.hp;
+						mon.curHP = Math.max(1, mon.maxHP - dmg);
+						saveParty(party);
+						bagMenu.flash = `${mon.name} became ${item.nature.toUpperCase()} natured!`;
+						bagMenu.picking = false;
+					}
+				} else if (item?.kind === 'capsule') {
+					// cycle to the species' next listed ability
+					const opts = battle.data.abilities?.[mon.speciesId] || [];
+					if (opts.length < 2) bagMenu.flash = `It won't have any effect on ${mon.name}.`;
+					else {
+						Bag.consume(id);
+						mon.ability = opts[(Math.max(0, opts.indexOf(mon.ability)) + 1) % opts.length];
+						saveParty(party);
+						bagMenu.flash = `${mon.name}'s ability became ${String(mon.ability).toUpperCase()}!`;
+						bagMenu.picking = false;
+					}
 				} else if (item?.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
 					Bag.consume(id);
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
@@ -1556,30 +1586,77 @@ function bagKey(k) {
 				: 'No defeated trainers respond around here.';
 			return;
 		}
-		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin'].includes(item?.kind) || tmMoveId(id)) {
+		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin', 'mint', 'capsule'].includes(item?.kind) || tmMoveId(id)) {
 			bagMenu.picking = true;
 			bagMenu.pickIdx = 0;
 		}
 	}
 }
 
+// sort the whole storage (the box pages are windows onto the sorted list)
+function pcSortStorage(mode) {
+	const box = getBox();
+	const dex = (a, b) => Math.abs(a.num || 999) - Math.abs(b.num || 999);
+	const key = {
+		dex,
+		level: (a, b) => b.level - a.level,
+		shiny: (a, b) => (b.shiny ? 1 : 0) - (a.shiny ? 1 : 0) || dex(a, b),
+		name: (a, b) => a.name.localeCompare(b.name),
+	}[mode] || dex;
+	box.sort(key);
+	setBox(box);
+}
+
 function pcKey(k) {
 	const box = getBox();
-	const list = pcMenu.side === 0 ? party : box;
-	if (k === 'ArrowLeft' || k === 'ArrowRight') { pcMenu.side ^= 1; pcMenu.idx = 0; }
+	const pageStart = pcMenu.box * PC_BOX_CAP;
+	const page = box.slice(pageStart, pageStart + PC_BOX_CAP);
+	const list = pcMenu.side === 0 ? party : page;
+	// release confirm: Z lets it go, X keeps it
+	if (pcMenu.confirm != null) {
+		if (k === 'z' || k === 'Enter') {
+			const gone = box[pageStart + pcMenu.confirm];
+			if (gone) {
+				box.splice(pageStart + pcMenu.confirm, 1);
+				setBox(box);
+				pcMenu.flash = `${gone.name} was released. Bye-bye, ${gone.name}!`;
+			}
+			pcMenu.confirm = null;
+			pcMenu.idx = 0;
+		} else if (k === 'x' || k === 'Escape' || k === 'r') pcMenu.confirm = null;
+		return;
+	}
+	if (k === 'Tab') { pcMenu.side ^= 1; pcMenu.idx = 0; return; }
+	if (k === 'ArrowLeft' || k === 'ArrowRight') {
+		if (pcMenu.side === 0) { pcMenu.side = 1; pcMenu.idx = 0; }
+		else { // page through the boxes
+			pcMenu.box = (pcMenu.box + (k === 'ArrowRight' ? 1 : PC_BOXES - 1)) % PC_BOXES;
+			pcMenu.idx = 0;
+		}
+		return;
+	}
 	if (k === 'ArrowUp' && list.length) pcMenu.idx = (pcMenu.idx + list.length - 1) % list.length;
 	if (k === 'ArrowDown' && list.length) pcMenu.idx = (pcMenu.idx + 1) % list.length;
-	if (k === 'x' || k === 'Escape') pcMenu.open = false;
+	if (k === 'x' || k === 'Escape') { pcMenu.open = false; pcMenu.flash = null; pcMenu.releaseMode = false; }
+	if (k === 'r' && pcMenu.side === 1 && page[pcMenu.idx]) { pcMenu.confirm = pcMenu.idx; return; }
+	if (k === 's') {
+		pcMenu.sort = PC_SORTS[(PC_SORTS.indexOf(pcMenu.sort) + 1) % PC_SORTS.length];
+		pcSortStorage(pcMenu.sort);
+		pcMenu.flash = `Sorted storage by ${pcMenu.sort.toUpperCase()}.`;
+		return;
+	}
 	if ((k === 'z' || k === 'Enter') && list.length) {
 		if (pcMenu.side === 0) {
 			if (party.length <= 1) return; // never deposit the last mon
+			if (box.length >= PC_BOXES * PC_BOX_CAP) { pcMenu.flash = 'The storage system is full!'; return; }
 			const [m] = party.splice(pcMenu.idx, 1);
-			box.push(m);
+			// deposit into the viewed box while it has room, else the first free slot
+			box.splice(page.length < PC_BOX_CAP ? pageStart + page.length : box.length, 0, m);
 			setBox(box);
 			saveParty(party);
 		} else {
-			if (party.length >= 6) return;
-			const [m] = box.splice(pcMenu.idx, 1);
+			if (party.length >= 6 || !page[pcMenu.idx]) return;
+			const [m] = box.splice(pageStart + pcMenu.idx, 1);
 			party.push(m);
 			setBox(box);
 			saveParty(party);
@@ -3397,6 +3474,17 @@ function drawSummary(W, H, u) {
 	sctx.fillText(`ABILITY: ${(m.ability || '—').toUpperCase()}`, 40 * u, 302 * u);
 	sctx.fillText(`ITEM: ${m.heldItem ? (Bag.ITEMS[m.heldItem]?.name || m.heldItem) : '—'}`, 40 * u, 322 * u);
 	sctx.fillText(`NATURE: ${(m.nature || '—').toUpperCase()}   FRIEND: ${m.friend ?? 70}`, 40 * u, 342 * u);
+	// the stat judge: IV potential in words (shiny star rides the name line)
+	{
+		const ivs = m.ivs || {};
+		const keys = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+		const tot = keys.reduce((s, k) => s + (ivs[k] || 0), 0);
+		const best = keys.reduce((a, k) => (ivs[k] || 0) > (ivs[a] || 0) ? k : a, 'hp');
+		const overall = tot >= 151 ? 'OUTSTANDING' : tot >= 121 ? 'SUPERIOR' : tot >= 91 ? 'ABOVE AVERAGE' : 'DECENT';
+		const bv = ivs[best] || 0;
+		const bestWord = bv >= 31 ? "CAN'T BE BEAT" : bv >= 26 ? 'FANTASTIC' : bv >= 16 ? 'PRETTY GOOD' : 'SO-SO';
+		sctx.fillText(`JUDGE: ${overall} — best ${STAT_LABEL[best]} (${bestWord})`, 40 * u, 362 * u);
+	}
 	// stat bars on the right
 	const sx = W * 0.42, sw = W * 0.5;
 	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
@@ -3964,18 +4052,38 @@ function drawBagMenu(W, H) {
 function drawPcMenu(W, H) {
 	const u = H / 480;
 	const box = getBox();
-	menuChrome(W, H, u, 'POKEMON STORAGE', 'Tap to move between PARTY and BOX.');
+	const pageStart = pcMenu.box * PC_BOX_CAP;
+	const page = box.slice(pageStart, pageStart + PC_BOX_CAP);
+	menuChrome(W, H, u, 'POKEMON STORAGE',
+		pcMenu.confirm != null ? `Release ${page[pcMenu.confirm]?.name}? Z releases — X keeps it.`
+			: pcMenu.releaseMode ? 'RELEASE MODE: tap a boxed Pokémon to let it go.'
+			: pcMenu.flash || 'Z moves · ←/→ change box · R release · S sort.');
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	sctx.fillStyle = pcMenu.side === 0 ? BUI.C.accent : BUI.C.dim;
 	sctx.fillText('PARTY', 24 * u, 78 * u);
 	sctx.fillStyle = pcMenu.side === 1 ? BUI.C.accent : BUI.C.dim;
-	sctx.fillText(`BOX (${box.length})`, W * 0.52, 78 * u);
+	sctx.fillText(`BOX ${pcMenu.box + 1}/${PC_BOXES} (${page.length}/${PC_BOX_CAP} · ${box.length} total)`, W * 0.52, 78 * u);
+	// tappable controls: box paging + sort + release mode; confirm gets its own pair
+	const navBtns = pcMenu.confirm != null
+		? [['pcnav:yes', 'RELEASE', W * 0.52, 100 * u], ['pcnav:no', 'KEEP', W * 0.52 + 110 * u, 76 * u]]
+		: [
+			['pcnav:prev', '<', W * 0.465, 24 * u],
+			['pcnav:next', '>', W - 40 * u, 24 * u],
+			['pcnav:sort', 'SORT', 24 * u, 60 * u],
+			['pcnav:rel', pcMenu.releaseMode ? 'DONE' : 'RELEASE', 96 * u, 90 * u],
+		];
+	for (const [bid, label, x, w] of navBtns) {
+		const b = { id: bid, x, y: 62 * u, w, h: 22 * u, label, center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid, u);
+	}
+	if (pcMenu.confirm != null) return; // the confirm banner + buttons say it all
 	party.forEach((m, i) => {
 		monRow('pcp:' + i, 24 * u, (88 + i * 54) * u, W * 0.44, 48 * u, m,
 			pcMenu.side === 0 && pcMenu.idx === i, u);
 	});
-	const start = Math.max(0, Math.min((pcMenu.side === 1 ? pcMenu.idx : 0) - 3, box.length - 7));
-	box.slice(start, start + 7).forEach((m, i) => {
+	const start = Math.max(0, Math.min((pcMenu.side === 1 ? pcMenu.idx : 0) - 3, page.length - 7));
+	page.slice(start, start + 7).forEach((m, i) => {
 		const idx = start + i;
 		monRow('pcb:' + idx, W * 0.52, (88 + i * 54) * u, W * 0.44, 48 * u, m,
 			pcMenu.side === 1 && pcMenu.idx === idx, u);
@@ -4089,7 +4197,21 @@ function menuTap(id) {
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'forget') { if (bagMenu.forget) bagMenu.forget.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'pcb') { pcMenu.side = 1; pcMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'pcb') {
+		pcMenu.side = 1;
+		pcMenu.idx = +a;
+		pressKey(pcMenu.releaseMode ? 'r' : 'z'); // release mode arms the confirm instead of withdrawing
+		return;
+	}
+	if (kind === 'pcnav') {
+		if (a === 'yes') { pressKey('z'); return; }
+		if (a === 'no') { pressKey('x'); return; }
+		if (a === 'sort') { pressKey('s'); return; }
+		if (a === 'rel') { pcMenu.releaseMode = !pcMenu.releaseMode; return; }
+		pcMenu.side = 1;
+		pressKey(a === 'prev' ? 'ArrowLeft' : 'ArrowRight');
+		return;
+	}
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'trade') { trade.idx = +a; pressKey('z'); return; }
 	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
@@ -4665,7 +4787,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },

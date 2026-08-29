@@ -27,6 +27,13 @@ export const ITEMS = {
 	leftovers:   { name: 'LEFTOVERS',    price: 3000, kind: 'held', held: { endHealFrac: 1 / 16 } },
 	everstone:   { name: 'EVERSTONE',    price: 200,  kind: 'held', held: {} }, // breeding: the holder's nature passes to the egg
 	destinyknot: { name: 'DESTINY KNOT', price: 3000, kind: 'held', held: {} }, // breeding: 5 IVs inherit instead of 3
+	// nature mints (the five most-wanted) + the ability swapper
+	adamantmint: { name: 'ADAMANT MINT', price: 4000, kind: 'mint', nature: 'adamant' },
+	modestmint:  { name: 'MODEST MINT',  price: 4000, kind: 'mint', nature: 'modest' },
+	jollymint:   { name: 'JOLLY MINT',   price: 4000, kind: 'mint', nature: 'jolly' },
+	timidmint:   { name: 'TIMID MINT',   price: 4000, kind: 'mint', nature: 'timid' },
+	carefulmint: { name: 'CAREFUL MINT', price: 4000, kind: 'mint', nature: 'careful' },
+	abilitycapsule: { name: 'ABILITY CAPSULE', price: 5000, kind: 'capsule' },
 	blacksludge: { name: 'BLACK SLUDGE', price: 1500, kind: 'held', held: { sludge: true } },
 	choiceband:  { name: 'CHOICE BAND',  price: 4800, kind: 'held', held: { choice: 'atk' } },
 	choicespecs: { name: 'CHOICE SPECS', price: 4800, kind: 'held', held: { choice: 'spa' } },
@@ -188,6 +195,7 @@ export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'supe
 	'choiceband', 'choicespecs', 'choicescarf', 'lifeorb', 'focussash', 'quickclaw',
 	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed',
 	'hpup', 'protein', 'iron', 'calcium', 'zinc', 'carbos',
+	'adamantmint', 'modestmint', 'jollymint', 'timidmint', 'carefulmint', 'abilitycapsule',
 	'galaricacuff', 'galaricawreath', 'tartapple', 'sweetapple', 'syrupyapple', 'crackedpot',
 	'chippedpot', 'auspiciousarmor', 'maliciousarmor', 'unremarkableteacup', 'masterpieceteacup', 'metalalloy',
 	// TMs (reusable — buy once, teach the whole party)
