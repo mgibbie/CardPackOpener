@@ -30,6 +30,28 @@ export function markCaught(id) {
 	if (!dex.caught.has(id)) { dex.caught.add(id); changed = true; }
 	if (changed) save(dex);
 }
+// caught-count milestones -> rewards (claimed once each; batch E item 22)
+const CLAIM_KEY = 'magepunk_dexclaims_v1';
+export const MILESTONES = [
+	[25, 'ultraball', 10, '10 ULTRA BALLS'],
+	[75, 'rarecandy', 5, '5 RARE CANDIES'],
+	[150, 'destinyknot', 1, 'a DESTINY KNOT'],
+	[200, 'shinycharm', 1, 'the SHINY CHARM'],
+];
+// newly crossed milestones since the last claim (persisted); caller grants
+export function claimMilestones() {
+	const raw = safeLoad(CLAIM_KEY, []);
+	const claimed = new Set(Array.isArray(raw) ? raw : []);
+	const n = dex.caught.size;
+	const out = [];
+	for (const [t, item, count, label] of MILESTONES) {
+		if (n >= t && !claimed.has(t)) { claimed.add(t); out.push({ t, item, count, label }); }
+	}
+	if (out.length) safeSave(CLAIM_KEY, [...claimed]);
+	return out;
+}
+export function caughtCount() { return dex.caught.size; }
+
 // seed from the current party/box on boot so existing saves aren't blank
 export function seedFrom(mons) {
 	let changed = false;

@@ -846,7 +846,7 @@ function daycareKey(k) {
 		if (o.act === 'egg') {
 			const baby = Daycare.collectEgg(battle.data, canLearn); // egg moves filter through TM/level-up compat
 			if (baby) {
-				Dex.markCaught(baby.speciesId);
+				Dex.markCaught(baby.speciesId); dexMilestoneCheck();
 				const where = addCaught(party, baby);
 				daycareMenu.flash = `The EGG hatched into ${baby.name}! ${where === 'box' ? '(sent to the box)' : ''}`;
 			}
@@ -2474,7 +2474,7 @@ function startLegendaryBattle(e) {
 	dialog.open(e.intro, () => {
 		battle.start(party, e.species, e.level, result => {
 			if (result === 'caught' && battle.lastCaught) {
-				Dex.markCaught(battle.lastCaught.speciesId);
+				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 				const where = addCaught(party, battle.lastCaught);
 				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 				Story.setFlag(e.flag);
@@ -2498,8 +2498,36 @@ function checkLegendaryTrigger() {
 	return false;
 }
 
+// the Ransei rift pool: imported fakemon (dex num <= 0) with usable learnsets
+let riftPool = null;
+function riftSpecies() {
+	if (!riftPool) {
+		riftPool = Object.entries(battle.data.species)
+			.filter(([, s]) => (s.num || 0) <= 0 && s.learnset?.length)
+			.map(([id]) => id);
+	}
+	return riftPool.length ? riftPool[Math.floor(Math.random() * riftPool.length)] : null;
+}
+
+// pokédex milestones: grant newly crossed rewards with a fanfare
+function dexMilestoneCheck() {
+	const won = Dex.claimMilestones();
+	if (!won.length) return;
+	for (const m of won) Bag.addItem(m.item, m.count);
+	dialog.open('POKeDEX MILESTONE!\n\n' + won.map(m => `${m.t} caught — you received ${m.label}!`).join('\n'));
+}
+
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
+	// RANSEI RIFT (post-Champion): a slice of wild encounters tears open into
+	// the imported fakemon — the only place they appear in the wild
+	if (Math.random() < 0.05 && Badges.isChampion?.(playerRegion())) {
+		const rift = riftSpecies();
+		if (rift) {
+			pick = { id: rift, level: pick.level };
+			hud.textContent = 'The air crackles — a rift tears open!';
+		}
+	}
 	Dex.markSeen(pick.id);
 	// a slice of grass encounters are horde-style double battles
 	const second = (forceDouble || Math.random() < 0.1)
@@ -2511,7 +2539,7 @@ function startWildBattle(pick, forceDouble) {
 			healParty(party);
 			hud.textContent = (world.current.map.name || '') + ' — party healed';
 		} else if (result === 'caught' && battle.lastCaught) {
-			Dex.markCaught(battle.lastCaught.speciesId);
+			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 			const where = addCaught(party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 		} else {
@@ -2539,7 +2567,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		takeItem: (id, n) => { Bag.consume(id); },
 		giveMon: (species, level) => {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
-			if (mon) { Dex.markCaught(species); addCaught(party, mon); saveParty(party); }
+			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
 		},
 		healParty: () => healParty(party),
 		warp: (mapId, warpId) => warpTo(mapId, warpId),
@@ -4700,7 +4728,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to
 	// the Factory and provisions a throwaway lead just before starting.
 	factoryStandalone = new URLSearchParams(location.search).has('factory');
-	if (party) Dex.seedFrom([...party, ...getBox()]);
+	if (party) { Dex.seedFrom([...party, ...getBox()]); dexMilestoneCheck(); }
 	if (!party && !factoryStandalone) {
 		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
