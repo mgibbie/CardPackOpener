@@ -136,9 +136,34 @@ which do fire at 0; hence the different treatment). Kanto's beats weren't
   you resume into never fired — in ANY region), and `armStoryScenes` now fills
   in scenes added after a save was created, so existing saves see new beats.
 
+### Johto / Hoenn parity pass (follow-up)
+
+Ran the same audit against the other two regions. Findings:
+
+- **Johto was already at parity by construction** — it ships *zero* dormant
+  `onFrame` scenes; its whole plot is coord_events, which fire at 0 and were
+  selectively enabled in an earlier pass. Asserted in the test so a future
+  re-transpile can't silently regress it.
+- **Hoenn ships 105 dormant onFrame scenes, but ~90% are Battle Frontier
+  machinery** (`VAR_TEMP_*` challenge state machines: enter-room, resume,
+  won/lost). Those must stay inert — this port reimplements the Frontier
+  natively (frontier.js / factoryspec.js), and the decomp versions warp the
+  player and need specials the engine has no path for. They're now blocked as a
+  family by label prefix rather than one at a time.
+- **Three genuine Hoenn beats were dormant and are now armed**: meeting the
+  Devon President (hands over the LETTER), the Lilycove Museum exhibit-hall
+  tour, and Scott's cameo in the S.S. Tidal corridor. All self-advance, none
+  warps or edits tiles.
+- **Left dormant deliberately**: the S.S. Tidal ferry-ride state machine (this
+  port has its own ferry), `VAR_ELITE_4_STATE` (the native E4 flow owns it), and
+  the Sootopolis ice puzzle — gated on the *step count*, so at 0 it drops you
+  through the floor the moment you enter; blocked by label.
+- The other Kanto-pass fixes (item/count swap, `openmart`, the boot `onFrame`
+  gap, `armStoryScenes` back-fill) were **engine-wide from the start**, so all
+  three regions already had them.
+
 Still open if the story is revisited: authoring NEW dialogue for beats the decomp
-gates behind sequences this port skips, and the Johto/Hoenn equivalents of the
-item/count swap audit.
+gates behind sequences this port skips.
 
 26. The events.js interpreter already runs transpiled decomp scripts and the
     badge/E4/villain spine works without cutscenes. Flesh out region by region
