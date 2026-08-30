@@ -148,6 +148,35 @@ async function waitFor(fn, ms) {
 		A(read.blocking, 'reading the sign opens a dialog');
 		A(/AZALEA TOWN/.test(read.text), 'and it shows the authentic sign text', read.text);
 
+		// ---- ported-dialogue rendering (the Elm's-lab report) ----
+		// pokecrystal prints "#" as POKe, so 847 Johto strings carried raw
+		// "#MON"/"#DEX"; and a few lost their leading name placeholder, opening
+		// on bare punctuation ("!\n\nUse these on your #DEX quest!").
+		const dlg = await page.evaluate(async () => {
+			const S = await import('/overworld/events.js');
+			const ctx = { playerName: 'GOLD', rivalName: 'SILVER' };
+			return {
+				balls: S.normalizeText('!\n\nUse these on your\n#DEX quest!', ctx),
+				potion: S.normalizeText(', I want\nyou to have this for your errand.', ctx),
+				explain: S.normalizeText('Throw # BALLS\nat wild #MON to get them.', ctx),
+				plain: S.normalizeText('Nothing to fix here.', ctx),
+				brace: S.normalizeText('Hi {PLAYER}!', ctx),
+			};
+		});
+		A(dlg.balls === 'GOLD!\n\nUse these on your\nPOKeDEX quest!',
+			"the aide's line reads properly (name restored, #DEX expanded)", JSON.stringify(dlg.balls));
+		A(dlg.potion.startsWith('GOLD, I want'), 'the potion line gets its name back too', JSON.stringify(dlg.potion));
+		A(dlg.explain === 'Throw POKe BALLS\nat wild POKeMON to get them.', '"# BALLS" and "#MON" both expand', JSON.stringify(dlg.explain));
+		A(dlg.plain === 'Nothing to fix here.', 'ordinary lines are untouched');
+		A(dlg.brace === 'Hi GOLD!', 'gen-3 {PLAYER} still substitutes');
+		// no string anywhere should still reach the player with a raw '#'
+		const stillRaw = await page.evaluate(async () => {
+			const S = await import('/overworld/events.js');
+			const t = window.__ow.signTexts || {};
+			return Object.values(t).filter(v => typeof v === 'string' && S.normalizeText(v, {}).includes('#')).length;
+		});
+		A(stillRaw === 0, 'no sign text reaches the player with a raw #', String(stillRaw));
+
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
