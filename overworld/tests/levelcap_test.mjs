@@ -98,14 +98,22 @@ async function waitFor(fn, ms) {
 			return {
 				caps: [0, 1, 2, 3, 4, 5, 6, 7, 8].map(t => B.levelCap(t)),
 				floors: B.TIER_LEVEL_FLOOR,
-				headroom: B.LEVEL_CAP_HEADROOM,
+				step: B.LEVEL_CAP_STEP,
 				next0: B.nextLevelCap(0),
 			};
 		});
 		A(table.caps[0] === 20, 'you start capped at Lv20', JSON.stringify(table.caps));
-		A(table.caps[0] === table.floors[0] + table.headroom,
-			'which is the first Gym Leader\'s level plus the headroom', `${table.floors[0]}+${table.headroom}`);
-		A(table.caps.every((c, i) => i === 0 || c >= table.caps[i - 1]), 'the cap never goes backwards', JSON.stringify(table.caps));
+		A(table.step === 10, 'the cap moves in increments of 10');
+		A(JSON.stringify(table.caps) === JSON.stringify([20, 30, 40, 50, 60, 70, 80, 90, 100]),
+			'the full ladder is 20..100 in tens', JSON.stringify(table.caps));
+		A(table.caps.every((c, i) => i === 0 || c - table.caps[i - 1] === table.step),
+			'every step is exactly one increment', JSON.stringify(table.caps));
+		// The cap ladder and the Gym Leader floors are separate tables now, so pin
+		// the one relationship that must hold: you can always out-level the gym
+		// standing in front of you, or that tier would be unwinnable.
+		A(table.floors.every((f, i) => table.caps[i] > f),
+			'the cap always clears the next Gym Leader',
+			table.floors.map((f, i) => `t${i}:${table.caps[i]}v${f}`).join(' '));
 		A(table.caps[8] === 100, 'clearing all 24 gyms removes the cap entirely');
 		A(table.next0 === table.caps[1], 'nextLevelCap previews the following tier');
 
@@ -134,9 +142,9 @@ async function waitFor(fn, ms) {
 		A(gated.start === 20, 'a fresh save is capped at 20');
 		A(gated.afterKanto === 20, 'beating only KANTO gym 1 does NOT raise the cap');
 		A(gated.afterJohto === 20, 'nor does adding JOHTO gym 1');
-		A(gated.afterAllThree === 26, 'the third region is what lifts it — to Lv26', String(gated.afterAllThree));
-		A(gated.engineAfterRefresh === 26, 'and the battle engine is refreshed to match');
-		A(gated.afterSecondKanto === 26, 'racing one region ahead earns nothing further', String(gated.afterSecondKanto));
+		A(gated.afterAllThree === 30, 'the third region is what lifts it — to Lv30', String(gated.afterAllThree));
+		A(gated.engineAfterRefresh === 30, 'and the battle engine is refreshed to match');
+		A(gated.afterSecondKanto === 30, 'racing one region ahead earns nothing further', String(gated.afterSecondKanto));
 		A(/JOHTO|Johto/.test(gated.hintAfterKanto) && /HOENN|Hoenn/.test(gated.hintAfterKanto),
 			'the hint names the regions still owed', gated.hintAfterKanto);
 
@@ -174,7 +182,7 @@ async function waitFor(fn, ms) {
 			out.eLevel = e.level;
 
 			// lift the cap and the held-back mon grows again immediately
-			b.levelCap = 26;
+			b.levelCap = 30;
 			run(a, 1);
 			out.aAfterLift = a.level;
 
