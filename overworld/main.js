@@ -5018,7 +5018,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
-		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; },
+		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
