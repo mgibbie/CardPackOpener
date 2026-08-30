@@ -718,7 +718,7 @@ const startMenu = { open: false, idx: 0 };
 const questMenu = { open: false, idx: 0 }; // the main-quest log (read-only list)
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 const playerMenu = { open: false, idx: 0, target: null };
-const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
+const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
 // deck-selection phase before a card duel: pick which class deck to bring
 const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
 // RuneScape-style two-party trade window
@@ -965,11 +965,15 @@ function dexList() {
 	return dexMenu.list;
 }
 const friendsMenu = { open: false, idx: 0 };
+// MAIL BATTLES: correspondence Pokémon matches (server-authoritative, played a
+// turn at a time whenever each side gets around to it — see async-act in mp.mjs)
+const mailMenu = { open: false, idx: 0, rows: [], loading: false };
+let mailWaiting = 0; // matches waiting on ME, shown as a badge on the START menu
 
 // the FireRed-style START menu (items depend on Test Realm mode)
 function startItems() {
 	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
-	if (MP_ON) items.push('FRIENDS');
+	if (MP_ON) items.push('FRIENDS', mailWaiting > 0 ? `MAIL (${mailWaiting})` : 'MAIL');
 	items.push('BAG', 'TOWN MAP', 'CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
 	return items;
 }
@@ -1000,6 +1004,7 @@ function startKey(k) {
 		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }
+		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
 		else if (it === 'CARD') { trainerCard.open = true; }
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
@@ -1030,6 +1035,7 @@ function playerMenuKey(k) {
 		if (!who) return;
 		const f = friends.find(fr => fr.username === who) || { username: who };
 		if (it === 'POKeMON BATTLE') sendChallenge(f);
+		else if (it === 'MAIL BATTLE') sendMailChallenge(f);
 		else if (it === 'CARD BATTLE') sendCardChallenge(f);
 		else if (it === 'TRADE') startTrade(f);
 		// CANCEL just closes
@@ -1706,6 +1712,7 @@ function pressKey(k) {
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (runMenu.open) { runKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
+	if (mailMenu.open) { mailKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
 	if (portalMenu.open) { portalKey(k); return; }
 	if (bpShopMenu.open) { bpShopKey(k); return; }
@@ -1761,7 +1768,7 @@ function pressKey(k) {
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
-	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
@@ -3353,6 +3360,7 @@ function tick(now) {
 		else if (cardsMenu.open) drawCardsMenu(SW, MH);
 		else if (runMenu.open) drawRunMenu(SW, MH);
 		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
+		else if (mailMenu.open) drawMailMenu(SW, MH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 	// while your run is being spectated, show a live "N watching" badge on top
@@ -4224,6 +4232,7 @@ function menuTap(id) {
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'forget') { if (bagMenu.forget) bagMenu.forget.idx = +a; pressKey('z'); return; }
+	if (kind === 'mail') { mailMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcb') {
 		pcMenu.side = 1;
@@ -4310,6 +4319,91 @@ async function checkRejoin() {
 		if (declined === 'x') { MP.call('leave-match', { id, type }).catch(() => {}); return; }
 		if (type === 'card') goCardDuel(id);
 		else enterMatch(id, false);
+	});
+}
+
+// ---- mail battles (correspondence Pokémon) ----
+async function refreshMail() {
+	if (!MP_ON) return null;
+	try {
+		const d = await MP.call('async-list');
+		const rows = (d.matches || []).filter(m => m.game === 'pokemon');
+		mailWaiting = rows.filter(m => m.yourTurn || m.yourInvite).length;
+		mailMenu.rows = rows;
+		return rows;
+	} catch (e) { return null; }
+}
+async function openMailbox() {
+	mailMenu.open = true; mailMenu.idx = 0; mailMenu.loading = true;
+	await refreshMail();
+	mailMenu.loading = false;
+}
+async function sendMailChallenge(f) {
+	const snap = pvpParty();
+	if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
+	const r = await MP.call('async-create', { to: f.username, game: 'pokemon', party: snap })
+		.catch(e => ({ error: e.message || 'could not send' }));
+	if (r.error) { dialog.open(r.error); return; }
+	await refreshMail();
+	dialog.open(`Mail battle sent to ${f.username}!\n\nThey can answer whenever — check MAIL for their reply.`);
+}
+async function mailAccept(row) {
+	const snap = pvpParty();
+	if (!snap.length) { dialog.open('Your POKeMON need to be healthy to battle!'); return; }
+	const r = await MP.call('async-accept', { id: row.id, party: snap })
+		.catch(e => ({ error: e.message || 'could not accept' }));
+	if (r.error) { dialog.open(r.error); return; }
+	await refreshMail();
+	enterAsyncMatch(row.id);
+}
+// open a correspondence match in the normal PvP view (async mode)
+async function enterAsyncMatch(id) {
+	const d = await MP.call('async-get', { id }).catch(() => null);
+	if (!d || d.error || !d.match?.pk) { dialog.open('That mail battle is not ready yet.'); return; }
+	mailMenu.open = false;
+	await pvp.start(id, d.match.pk, d.you, false, () => { refreshMail(); }, { async: true });
+}
+function mailKey(k) {
+	const rows = mailMenu.rows;
+	const n = rows.length + 1; // + CLOSE
+	if (k === 'ArrowUp') mailMenu.idx = (mailMenu.idx + n - 1) % n;
+	if (k === 'ArrowDown') mailMenu.idx = (mailMenu.idx + 1) % n;
+	if (k === 'x' || k === 'Escape') { mailMenu.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		if (mailMenu.idx >= rows.length) { mailMenu.open = false; return; }
+		const row = rows[mailMenu.idx];
+		if (!row) return;
+		if (row.yourInvite) { mailAccept(row); return; }
+		if (row.status === 'invited') { dialog.open(`Waiting for ${row.players.find(p => p !== mpAccount?.username)} to accept.`); return; }
+		enterAsyncMatch(row.id);
+	}
+}
+function drawMailMenu(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'MAIL BATTLES', mailMenu.loading ? 'Checking the mailbox…'
+		: mailWaiting ? `${mailWaiting} waiting on you.` : 'Battle a turn at a time — no need to both be online.');
+	const me = mpAccount?.username;
+	const rows = mailMenu.rows.map((m, i) => {
+		const opp = m.players.find(p => p !== me) || '?';
+		const sub = m.status === 'over'
+			? (m.winner == null ? 'cancelled' : m.winner === me ? 'you won!' : `${opp} won`)
+			: m.yourInvite ? 'they challenged you — tap to accept'
+			: m.status === 'invited' ? 'waiting for them to accept'
+			: m.yourTurn ? `YOUR MOVE — turn ${m.turnNumber}`
+			: `waiting on ${opp} — turn ${m.turnNumber}`;
+		return { id: 'mail:' + i, label: `vs ${opp}`, sub };
+	});
+	rows.push({ id: 'mail:' + mailMenu.rows.length, label: 'CLOSE', sub: '' });
+	if (!mailMenu.rows.length && !mailMenu.loading) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText('No mail battles — challenge a friend with MAIL BATTLE.', 24 * u, 300 * u);
+	}
+	rows.forEach((r, i) => {
+		const b = { id: r.id, x: 24 * u, y: (78 + i * 52) * u, w: W - 48 * u, h: 46 * u,
+			label: r.label, sub: r.sub, kbSel: mailMenu.idx === i };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === r.id || mailMenu.idx === i, u);
 	});
 }
 
@@ -4798,6 +4892,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beatLoop();
 		presLoop();
 		setInterval(pollChallenges, 2000);
+		refreshMail(); // seed the MAIL badge, then keep it fresh at a gentle cadence
+		setInterval(refreshMail, 45_000);
 		syncOverworldAchievements(); // backfill existing progress into the account for the achievements page
 		// Grand Champion catch-up: a save already 3x champion before this shipped gets the
 		// crown + capstone on load (silent — a cutscene mid-boot would be risky)
@@ -4819,6 +4915,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
+		get mailMenu() { return mailMenu; }, get mailWaiting() { return mailWaiting; }, refreshMail, sendMailChallenge, mailAccept, enterAsyncMatch,
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
 		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },

@@ -666,7 +666,8 @@
 		async function refresh() {
 			if (!MP.hasToken() || !$('corr')) return;
 			let matches = [], friends = [];
-			try { matches = (await MP.call('async-list')).matches || []; } catch (e) {}
+			// card matches only — pokemon mail battles live in the overworld's MAIL menu
+			try { matches = ((await MP.call('async-list')).matches || []).filter(m => (m.game || 'cards') === 'cards'); } catch (e) {}
 			try { friends = (await MP.call('state')).friends || []; } catch (e) {}
 			if (!matches.length && !friends.length) return; // async needs a friend; stay hidden until one exists
 			$('corr').hidden = false;
