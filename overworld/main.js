@@ -1320,7 +1320,7 @@ function maybePortalTutorial(qb) {
 		+ 'GYM badges now come in THIRDS — you must beat this tier’s GYM in ALL THREE regions before the next one opens anywhere.\n\n'
 		+ 'Look for the glowing PORTAL pad beside any GYM town’s POKeMON CENTER. It flies you to the other regions’ same-tier GYM towns. Beat their GYMS, then come back to advance!');
 }
-const shopMenu = { open: false, idx: 0, mode: 'buy' };
+const shopMenu = { open: false, idx: 0, mode: 'buy', fromScript: false };
 // items the mart will buy back (must have a price); sell yields half
 function sellList() {
 	return Object.entries(Bag.getBag())
@@ -1370,7 +1370,11 @@ function shopKey(k) {
 			}
 		}
 	}
-	if (k === 'x' || k === 'Escape') shopMenu.open = false;
+	if (k === 'x' || k === 'Escape') {
+		shopMenu.open = false;
+		// a script-opened mart (clerk `openmart`) resumes its script on close
+		if (shopMenu.fromScript) { shopMenu.fromScript = false; cutscene.resume(); }
+	}
 }
 
 function useRareCandy(mon) {
@@ -1700,6 +1704,10 @@ function starterKey(k) {
 function pressKey(k) {
 	if (starterMenu.open) { starterKey(k); return; }
 	if (dialog.blocking) { dialog.key(k); return; }
+	// a clerk's `openmart` parks its cutscene in a wait WHILE the counter is up,
+	// so the shop must keep taking input — otherwise the player can neither buy
+	// nor close it and the script never resumes
+	if (shopMenu.open && shopMenu.fromScript) { shopKey(k); return; }
 	if (cutscene.blocking) return; // a running cutscene swallows all other input
 	if (evolution.blocking) { evolution.key(k); return; }
 	if (battle.blocking) { battle.key(k); return; }
@@ -2583,6 +2591,13 @@ function cutsceneCtx(talker, scriptLabel) {
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
+		// a clerk's `openmart`: raise the standard shop counter and hold the script
+		// until it closes (shopKey resumes the cutscene on exit)
+		openMart: () => {
+			shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null;
+			shopMenu.fromScript = true;
+			return 'wait';
+		},
 		special: (name, store) => runSpecial(name, store), // handlers write `store`; unknown -> 0
 		hud: msg => { hud.textContent = msg; },
 	};
@@ -2689,6 +2704,7 @@ function checkOnFrame() {
 	if (!meta || !meta.onFrame || cutscene.blocking) return;
 	for (const e of meta.onFrame) {
 		if (e.value === 0 && !Story.hasVar(e.var)) continue;
+		if (PLOT_BLOCKED.has(e.label)) continue; // never runs here (see PLOT_BLOCKED)
 		if (Story.getVar(e.var) === e.value && mapScripts[e.label]) {
 			runScriptLabel(e.label);
 			return;
@@ -2703,6 +2719,15 @@ function checkOnFrame() {
 // key; once fired, the whole group is suppressed. (Scenes that DO self-advance —
 // all the Hoenn set-pieces, and the self-EVENT-guarded Rocket cameras — aren't
 // listed; they one-shot themselves.)
+// Coord scripts that must NEVER run here. Used where the scene gates on a var
+// OTHER regions also read (so seeding it would suppress unrelated content) —
+// suppressing by label keeps the fix surgical.
+const PLOT_BLOCKED = new Set([
+	// e-Reader visiting trainer: warps the player out and needs StartSpecialBattle
+	'SevenIsland_House_Room2_EventScript_BattleVisitingTrainer',
+	// link cable-club exit: no link play in this port, and it never self-advances
+	'CableClub_EventScript_ExitMinigameRoom',
+]);
 const PLOT_ONESHOT = {
 	MeetMomLeftScript: 'jo_mom', MeetMomRightScript: 'jo_mom',
 	FirstStepIntoKantoLeftScene: 'jo_route27', FirstStepIntoKantoRightScene: 'jo_route27',
@@ -2724,6 +2749,7 @@ function checkCoordTrigger() {
 		if (+e.x !== player.tx || +e.y !== player.ty) continue;
 		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
 		if (e.script && mapScripts[e.script]) {
+			if (PLOT_BLOCKED.has(e.script)) continue; // never runs here (see PLOT_BLOCKED)
 			const once = PLOT_ONESHOT[e.script];
 			if (once) {
 				if (loadFiredPlot().has(once)) continue; // this plot beat already played
@@ -2750,6 +2776,31 @@ const STORY_SEED = {
 			// ChooseStarter (1) and NationalDex (7) onFrame scenes, so a
 			// starter-holding region-picker walks into a normal, non-scripted lab.
 			VAR_MAP_SCENE_PALLET_TOWN_OAK: 1,
+			// FireRed drives its plot from NPC scripts + flags, and its set-pieces
+			// are `onFrame` scenes rather than the coord_events Hoenn/Johto use.
+			// checkOnFrame deliberately ignores a value-0 scene until its var has
+			// been SET (so a fresh save isn't ambushed by every scene at once) —
+			// which left Kanto's beats dormant forever. Seeding a var to 0 ARMS
+			// its scene. The safe, self-advancing set-pieces below are now on:
+			//   VIRIDIAN_CITY_MART — Oak's Parcel handed over by the clerk;
+			//   ONE_ISLAND_POKEMON_CENTER — meeting Celio (Tri-Pass + Town Map);
+			//   TWO_ISLAND_JOYFUL_GAME_CORNER — the Lostelle rescue opens;
+			//   FOUR_ISLAND / SIX_ISLAND_POKEMON_CENTER — the rival cameos.
+			// Each is dialogue/choreography that ends by advancing its own var, so
+			// it plays once and never repeats, and none warps or edits tiles.
+			VAR_MAP_SCENE_VIRIDIAN_CITY_MART: 0,
+			VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F: 0,
+			VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER: 0,
+			VAR_MAP_SCENE_FOUR_ISLAND: 0,
+			VAR_MAP_SCENE_SIX_ISLAND_POKEMON_CENTER_1F: 0,
+			// LEFT DORMANT (never armed): LOST_CAVE_ROOM10 fires on entry and WARPS
+			// you out to Resort Gorgeous, so the room could never be explored (the
+			// Selphy rescue still resolves through the Two Island scene above).
+			// SEVEN_ISLAND_HOUSE_ROOM2 (e-Reader trainer: warp + StartSpecialBattle,
+			// which this engine has no path for) and the CABLE_CLUB link-room exit
+			// (no link play, never self-advances) gate on SHARED vars other regions
+			// also read, so they're suppressed by label in PLOT_BLOCKED instead.
+			VAR_MAP_SCENE_FIVE_ISLAND_LOST_CAVE_ROOM10: 1,
 		},
 		flags: [
 			'FLAG_ADVENTURE_STARTED',
@@ -2827,6 +2878,17 @@ const STORY_SEED = {
 		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
 	},
 };
+// Arm any seed var this save has NEVER set. Idempotent and non-destructive: a
+// var the playthrough already touched keeps its value, so this only fills in
+// scenes added to STORY_SEED after the save was created (a fresh game is a
+// no-op — seedStoryState just set them all). Without it, saves made before a
+// scene was armed would never see it, since `story_seeded` is already set.
+function armStoryScenes(region) {
+	const seed = STORY_SEED[region];
+	if (!seed) return;
+	for (const [k, v] of Object.entries(seed.vars || {})) if (!Story.hasVar(k)) Story.setVar(k, v);
+}
+
 function seedStoryState(region) {
 	if (Story.getFlag('story_seeded')) return;
 	const seed = STORY_SEED[region];
@@ -4799,6 +4861,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 // ---------- boot ----------
 (async () => {
 	hud.textContent = 'Loading…';
+	// BEFORE any map loads: a map's onFrame scenes are checked the moment it
+	// finishes loading, so newly-armed scenes must exist by then
+	armStoryScenes(playerRegion());
 	await world.init();
 	await player.init();
 	await npcs.init();
@@ -4861,6 +4926,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 	markFlyPoint(world.current.map.id);
 	loading = false;
 	runMapTransition();
+	// ...and the STARTING map's onFrame pass. moveToMap runs one on every later
+	// entry, but boot loads the first map directly (world.load, not moveToMap),
+	// so a scene waiting on the map you resume into would never fire.
+	try { checkOnFrame(); } catch (e) { console.warn('[plot] boot onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	refreshObjective(); // show the current quest objective on boot
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
