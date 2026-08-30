@@ -267,7 +267,12 @@ function grantTierReward(tier) {
 }
 function showTierRewardDialog(tier) {
 	const lbl = grantTierReward(tier);
-	if (lbl) dialog.open(`TIER ${tier} COMPLETE!\n\nEvery region has cleared its GYM ${tier} — the circuit opens up!\n\nReward: ${lbl}`);
+	// clearing a tier everywhere is exactly what lifts the level cap, so say so
+	// here rather than letting the player discover it mid-battle
+	const cap = refreshLevelCap();
+	const capLine = `\n\nLEVEL CAP raised to Lv${cap}!`;
+	if (lbl) dialog.open(`TIER ${tier} COMPLETE!\n\nEvery region has cleared its GYM ${tier} — the circuit opens up!\n\nReward: ${lbl}${capLine}`);
+	else dialog.open(`TIER ${tier} COMPLETE!\n\nEvery region has cleared its GYM ${tier}.${capLine}`);
 }
 
 // ---------- Grand Champion finale ----------
@@ -302,7 +307,25 @@ function grandChampionFinale(cb) {
 // leader's team to a per-tier FLOOR (shift the whole team up; never lowers) so same-tier
 // gyms are comparable. Applied once to the loaded roster data → every build path sees it.
 // JohKanto (the Gen-2 Kanto dupes) is excluded.
-const TIER_LEVEL_FLOOR = [14, 20, 26, 29, 40, 42, 46, 48]; // index = tier (the (tier+1)th gym)
+// index = tier (the (tier+1)th gym). Lives in badges.js because the level cap is
+// read off the same numbers — see Badges.levelCap.
+const TIER_LEVEL_FLOOR = Badges.TIER_LEVEL_FLOOR;
+
+// ---------- level cap ----------
+// Capped at the tier you have cleared in EVERY region at once, so you cannot
+// out-level the world by racing one region ahead. Recomputed rather than stored:
+// it is a pure function of the badges you hold.
+function levelCapNow() { return Badges.levelCap(Quest.globalTier()); }
+// keep the battle engine's clamp in step with the badges (boot + every badge)
+function refreshLevelCap() { battle.levelCap = levelCapNow(); return battle.levelCap; }
+// which regions are holding the cap down, phrased for a dialog
+function levelCapHint() {
+	const tier = Quest.globalTier();
+	if (tier >= 8) return 'Every gym in all three regions is behind you — the cap is off.';
+	const behind = Quest.laggingRegions().map(r => r[0] + r.slice(1).toLowerCase());
+	const nth = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'][tier];
+	return `Beat the ${nth} gym in ${behind.join(' and ')} to raise it to Lv${Badges.nextLevelCap(tier)}.`;
+}
 function applyGymLevelFloors() {
 	const rosters = trainers.data && trainers.data.rosters;
 	if (!rosters) return;
@@ -344,6 +367,7 @@ function onTrainerDefeated(script, opts) {
 		const earned = Badges.earn(slice, info.id);
 		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
 		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
+		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
 		if (earned && !silent) {
 			const n = Badges.count(slice);
 			dialog.open(slice === 'JOHKANTO'
@@ -799,8 +823,10 @@ function daycareOptions() {
 	const opts = [];
 	st.slots.forEach((m, i) => {
 		if (m) {
-			const info = Daycare.withdrawInfo(i, battle.data);
-			opts.push({ label: `Take back ${m.name} (Lv${info.from}→${info.to}, $${info.cost})`, act: 'withdraw', slot: i });
+			const info = Daycare.withdrawInfo(i, battle.data, levelCapNow());
+			// say when the cap, not the Day Care, is what stopped them growing
+			const capNote = info.capped ? ' — LEVEL CAP' : '';
+			opts.push({ label: `Take back ${m.name} (Lv${info.from}→${info.to}, $${info.cost})${capNote}`, act: 'withdraw', slot: i });
 		}
 	});
 	if (Daycare.hasReadyEgg()) opts.push({ label: 'Collect the EGG!', act: 'egg' });
@@ -836,9 +862,9 @@ function daycareKey(k) {
 		if (o.act === 'leave') { daycareMenu.open = false; return; }
 		if (o.act === 'deposit') { daycareMenu.mode = 'deposit'; daycareMenu.idx = 0; daycareMenu.flash = null; return; }
 		if (o.act === 'withdraw') {
-			const info = Daycare.withdrawInfo(o.slot, battle.data);
+			const info = Daycare.withdrawInfo(o.slot, battle.data, levelCapNow());
 			if (!Bag.spend(info.cost)) { daycareMenu.flash = "You don't have enough money!"; return; }
-			const mon = Daycare.withdraw(o.slot, battle.data);
+			const mon = Daycare.withdraw(o.slot, battle.data, levelCapNow());
 			const where = addCaught(party, mon);
 			daycareMenu.flash = `Got ${mon.name} back! ${where === 'box' ? '(sent to the box)' : ''}`;
 			saveParty(party);
@@ -1379,7 +1405,8 @@ function shopKey(k) {
 }
 
 function useRareCandy(mon) {
-	if (mon.level >= 100 || mon.curHP <= 0) return false;
+	// a RARE CANDY can't buy its way past the cap either
+	if (mon.level >= levelCapNow() || mon.level >= 100 || mon.curHP <= 0) return false;
 	mon.level++;
 	mon.exp = Math.max(mon.exp ?? 0, mon.level ** 3);
 	const sp = battle.data.species[mon.speciesId];
@@ -1506,6 +1533,9 @@ function bagKey(k) {
 				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
+				} else if (item?.kind === 'candy' && mon.level >= levelCapNow() && mon.level < 100) {
+					// say why, instead of the candy silently doing nothing
+					bagMenu.flash = `${mon.name} is at the LEVEL CAP (Lv${levelCapNow()}).`;
 				} else if (item?.kind === 'vitamin') {
 					mon.evs = mon.evs || { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 					const total = Object.values(mon.evs).reduce((a, b) => a + b, 0);
@@ -3870,6 +3900,7 @@ function drawTrainerCard(W, H) {
 		['NAME', name],
 		['REGION', region],
 		['GYM TIER', allChamp ? `${gTier}/8  GRAND CHAMP` : `${gTier}/8`],
+		['LEVEL CAP', gTier >= 8 ? 'NONE' : `Lv${levelCapNow()}`],
 		['OBJECTIVE', Quest.shortObjective(rk)],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
@@ -3884,7 +3915,7 @@ function drawTrainerCard(W, H) {
 		const y = cardY + (34 + i * 28) * u;
 		sctx.fillStyle = BUI.C.dim;
 		sctx.fillText(k, cardX + 28 * u, y);
-		sctx.fillStyle = k === 'GYM TIER' && gTier > 0 ? BUI.C.accent : BUI.C.text;
+		sctx.fillStyle = (k === 'GYM TIER' && gTier > 0) || k === 'LEVEL CAP' ? BUI.C.accent : BUI.C.text;
 		sctx.textAlign = 'right';
 		sctx.fillText(v, midX, y);
 		sctx.textAlign = 'left';
@@ -3898,7 +3929,10 @@ function drawTrainerCard(W, H) {
 	sctx.fillText(`GYM TIER ${gTier}/8`, rX, cardY + 30 * u);
 	sctx.fillStyle = BUI.C.dim;
 	sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-	sctx.fillText('beat each in all 3 regions', rX, cardY + 46 * u);
+	// the tier tracker and the level cap are the same fact seen twice, so spell
+	// out what clearing this row buys you
+	sctx.fillText(gTier >= 8 ? 'all cleared — no level cap' : `beat each in all 3 regions  ->  Lv${Badges.nextLevelCap(gTier)} cap`,
+		rX, cardY + 46 * u);
 	const rowLbl = { KANTO: 'KAN', JOHTO: 'JOH', HOENN: 'HOE' };
 	const pipAreaX = rX + 44 * u, pipAreaW = (cardX + cardW - 24 * u) - pipAreaX, pgap = pipAreaW / 8, pipR = 6 * u;
 	Quest.SHARED.forEach((r, ri) => {
@@ -4919,6 +4953,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	Bag.setMoveNamer(id => { const mid = tmMoveId(id); return mid ? battle.data.moves[mid]?.name : null; });
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
+	refreshLevelCap();     // clamp growth to the tier cleared in EVERY region
 	await services.init();
 	await arcade.init();
 	await blockers.init();
@@ -5041,6 +5076,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
+		levelCapNow, levelCapHint, refreshLevelCap,
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,

@@ -68,21 +68,27 @@ export function deposit(mon) {
 }
 
 // levels a deposited mon has gained since deposit (its exp advanced by steps)
-function levelFor(mon) {
+// The Day Care is a growth path like any other, so it obeys the level cap too —
+// otherwise it would be the one way to train past it. Callers pass the current
+// cap; with none given nothing is clamped.
+function cappedLevel(lvl, cap) { return cap ? Math.min(lvl, Math.max(cap, 1)) : lvl; }
+function levelFor(mon, cap) {
 	let lvl = mon.level;
 	while (lvl < 100 && (mon.exp ?? lvl ** 3) >= (lvl + 1) ** 3) lvl++;
-	return lvl;
+	// never drag a mon DOWN to the cap — only stop it climbing past
+	return Math.max(mon.level, cappedLevel(lvl, cap));
 }
-export function withdrawInfo(slot, data) {
+export function withdrawInfo(slot, data, cap) {
 	const mon = state.slots[slot];
 	if (!mon) return null;
-	return { name: mon.name, from: mon.level, to: levelFor(mon), cost: WITHDRAW_BASE + (levelFor(mon) - mon.level) * 100 };
+	const to = levelFor(mon, cap);
+	return { name: mon.name, from: mon.level, to, cost: WITHDRAW_BASE + (to - mon.level) * 100, capped: to < levelFor(mon) };
 }
 // returns the recomputed mon (level/stats applied) or null; caller pays the fee
-export function withdraw(slot, data) {
+export function withdraw(slot, data, cap) {
 	const mon = state.slots[slot];
 	if (!mon) return null;
-	const newLvl = levelFor(mon);
+	const newLvl = levelFor(mon, cap);
 	if (newLvl !== mon.level) {
 		const sp = data.species[mon.speciesId];
 		const dmg = mon.maxHP - mon.curHP;
