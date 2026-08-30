@@ -34,8 +34,11 @@ const seedMon = {
 const MAPS = path.join(ROOT, 'overworld/data/maps');
 const SIGNS = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/sign_texts.json'), 'utf8'));
 const JOHTO = /^(NewBark|Cherrygrove|Violet|Azalea|Goldenrod|Ecruteak|Olivine|Cianwood|Mahogany|Blackthorn|Route(2[6-9]|3[0-9]|4[0-6])|Union|Ilex|Slowpoke|Ruins|Sprout|Burned|TinTower|Whirl|MountMortar|DarkCave|LakeOfRage|IcePath|Radio)/;
-// interactive furniture, not signposts — these legitimately have no text
-const NOT_A_SIGN = /ElevatorButton|ElevatorScript|MachineScript|Radio$|CardFlip|LuckySlots|Slots/;
+// Interactive furniture rides the same bg_event type as signposts but isn't one
+// and legitimately has no text to read: elevators and their floor pickers, game
+// machines, Silph Co's card-key doors, Battle Frontier record boards, cave
+// puzzle triggers, vending machines, PCs.
+const NOT_A_SIGN = /ElevatorButton|ElevatorScript|Elevator|FloorSelect|MachineScript|Radio$|CardFlip|LuckySlots|Slots|Roulette|_EventScript_Door\d*$|Show\w*Results|Rankings|Record|CaveEntrance|Vending|_PC$|^0x0$|Painting/;
 let total = 0, withText = 0; const missing = [];
 for (const f of fs.readdirSync(MAPS)) {
 	if (!f.endsWith('_map.json') || !JOHTO.test(f)) continue;
@@ -50,6 +53,33 @@ for (const f of fs.readdirSync(MAPS)) {
 A(total > 180, `Johto has a real signpost population (${total})`);
 A(missing.length === 0, 'every Johto signpost has text', missing.slice(0, 5).join(', '));
 A(withText === total, `coverage is complete (${withText}/${total})`);
+
+// ---------- and the same sweep across EVERY region ----------
+// (gen_sign_texts.mjs also reads the FireRed/Emerald .inc dialect, so Kanto,
+// JohKanto and Hoenn signs — bookshelves, plaques, town signs — read too)
+let allSigns = 0, allText = 0; const allMissing = [];
+for (const f of fs.readdirSync(MAPS)) {
+	if (!f.endsWith('_map.json')) continue;
+	const m = JSON.parse(fs.readFileSync(path.join(MAPS, f), 'utf8'));
+	for (const b of (m.bg_events || [])) {
+		if (!/sign/i.test(b.type || '') || !b.script || NOT_A_SIGN.test(b.script)) continue;
+		// Battle Frontier record boards + cave-entrance puzzle triggers are
+		// interactive machinery, not signs, and correctly stay silent
+		if (/^BattleFrontier_|_EventScript_Show\w*Results|CaveEntrance|^0x0$/.test(b.script)) continue;
+		allSigns++;
+		if (SIGNS[b.script]) allText++; else allMissing.push(f.replace('_map.json', '') + ':' + b.script);
+	}
+}
+A(allSigns > 1300, `the whole game has a big signpost population (${allSigns})`);
+// A hard floor rather than a chase to 100%: the long tail is interactive
+// furniture that shares the sign bg_event type (contest-winner portraits, the
+// berry blender, link machines) and has nothing to read. 90% catches the thing
+// that matters — a re-transpile blanking a region's signs again.
+const cov = allText / allSigns;
+A(cov > 0.9, `game-wide sign coverage holds (${allText}/${allSigns} = ${Math.round(cov * 100)}%)`,
+	allMissing.slice(0, 4).join(', '));
+A(/LITTLEROOT TOWN/.test(SIGNS.LittlerootTown_EventScript_TownSign || ''), 'HOENN: Littleroot\'s town sign reads');
+A((SIGNS.AcademyBookshelf || '').length > 5, 'JOHKANTO: a bookshelf reads');
 // the words are the authentic ones, not placeholders
 A(/AZALEA TOWN/.test(SIGNS.AzaleaTownSign || ''), 'Azalea\'s town sign carries its real text');
 A(/BUGSY/.test(SIGNS.AzaleaGymSign || ''), 'the gym sign names its leader');
