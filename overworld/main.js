@@ -2704,7 +2704,7 @@ function checkOnFrame() {
 	if (!meta || !meta.onFrame || cutscene.blocking) return;
 	for (const e of meta.onFrame) {
 		if (e.value === 0 && !Story.hasVar(e.var)) continue;
-		if (PLOT_BLOCKED.has(e.label)) continue; // never runs here (see PLOT_BLOCKED)
+		if (plotBlocked(e.label)) continue; // never runs here (see plotBlocked)
 		if (Story.getVar(e.var) === e.value && mapScripts[e.label]) {
 			runScriptLabel(e.label);
 			return;
@@ -2727,7 +2727,18 @@ const PLOT_BLOCKED = new Set([
 	'SevenIsland_House_Room2_EventScript_BattleVisitingTrainer',
 	// link cable-club exit: no link play in this port, and it never self-advances
 	'CableClub_EventScript_ExitMinigameRoom',
+	// Sootopolis gym's ice puzzle: gated on the STEP COUNT, so at 0 it drops you
+	// through the floor the moment you walk in
+	'SootopolisCity_Gym_1F_EventScript_FallThroughIce',
 ]);
+// The BATTLE FRONTIER / battle tents are reimplemented natively (frontier.js +
+// factoryspec.js), but the decomp ships them as onFrame state machines gated on
+// VAR_TEMP_* — which persist here. Left live, resuming a save inside one of
+// those rooms would fire a challenge-flow script and warp the player. The whole
+// family is inert; the native implementation owns these buildings.
+const plotBlocked = label => typeof label === 'string' && (PLOT_BLOCKED.has(label)
+	|| label.startsWith('BattleFrontier_') || label.startsWith('TrainerHill_')
+	|| /_BattleTent/.test(label));
 const PLOT_ONESHOT = {
 	MeetMomLeftScript: 'jo_mom', MeetMomRightScript: 'jo_mom',
 	FirstStepIntoKantoLeftScene: 'jo_route27', FirstStepIntoKantoRightScene: 'jo_route27',
@@ -2749,7 +2760,7 @@ function checkCoordTrigger() {
 		if (+e.x !== player.tx || +e.y !== player.ty) continue;
 		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
 		if (e.script && mapScripts[e.script]) {
-			if (PLOT_BLOCKED.has(e.script)) continue; // never runs here (see PLOT_BLOCKED)
+			if (plotBlocked(e.script)) continue; // never runs here (see plotBlocked)
 			const once = PLOT_ONESHOT[e.script];
 			if (once) {
 				if (loadFiredPlot().has(once)) continue; // this plot beat already played
@@ -2833,6 +2844,22 @@ const STORY_SEED = {
 			// player came to catch. The legendaries are still catchable via
 			// LEGENDARY_ENCOUNTERS (a real battle on their tile), decoupled from these
 			// awakening scenes.
+			// ARMED (the Kanto pass's discovery applied here): Emerald also ships a
+			// few set-pieces as `onFrame` scenes, which checkOnFrame ignores until
+			// their var is SET — so these sat dormant forever. Seeding to 0 arms
+			// them. All three are dialogue/choreography that self-advance, take no
+			// warp and edit no tiles:
+			//   DEVON_CORP_3F — meeting the Devon President (hands over the LETTER);
+			//   LILYCOVE_MUSEUM_2F — the exhibit-hall tour;
+			//   SS_TIDAL_SCOTT — Scott's cameo in the ferry corridor.
+			// NOT armed: VAR_SS_TIDAL_STATE (the ferry-ride state machine — this
+			// port has its own ferry), VAR_ELITE_4_STATE (shared across the E4
+			// sequence the native flow owns), VAR_ICE_STEP_COUNT (Sootopolis gym —
+			// blocked by label instead, since 0 means "drop through the floor now"),
+			// and the whole Battle Frontier / battle-tent family (see plotBlocked).
+			VAR_DEVON_CORP_3F_STATE: 0,
+			VAR_LILYCOVE_MUSEUM_2F_STATE: 0,
+			VAR_SS_TIDAL_SCOTT_STATE: 0,
 			VAR_OLDALE_TOWN_STATE: 1,
 			VAR_PETALBURG_CITY_STATE: 1,
 			VAR_METEOR_FALLS_STATE: 1,
@@ -5009,7 +5036,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		overworldSummary, syncOverworldAchievements,
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
-		STORY_SEED, PLOT_ONESHOT, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
+		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		refreshFollower, get follower() { return follower; } };
 	requestAnimationFrame(tick);
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
