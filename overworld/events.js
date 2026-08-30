@@ -114,12 +114,19 @@ export class Cutscene {
 				case 'addvar': setVar(op.var, getVar(op.var) + resolveValue(op.value)); break;
 				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
 				case 'setrespawn': break;
-				case 'give': ctx.giveItem?.(itemId(op.item), op.count || 1); break;
-				case 'takeitem': ctx.takeItem?.(itemId(op.item), op.count || 1); break;
+				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); break; }
+				case 'takeitem': { const g = giveArgs(op); if (g.id) ctx.takeItem?.(g.id, g.n); break; }
 				case 'givemon': ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5); break;
 				case 'hideobj': { const a = this._actor(op.who); if (a) a.hidden = true; ctx.hideObj?.(op.who); break; }
 				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; ctx.showObj?.(op.who); break; }
 				case 'setobjxy': ctx.setObjXy?.(op.who, op.x, op.y); break;
+			// script-run marts (department-store floors, the Battle Frontier mart,
+			// most Johto/Kanto clerks): the transpile dropped the decomp's item-list
+			// pointer, so this opens the standard shop. Waits like a message so the
+			// rest of the clerk's script resumes when the counter closes.
+			case 'openmart':
+				if (ctx.openMart?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+				break;
 				case 'setmetatile': ctx.setMetatile?.(op.x, op.y, op.tile, op.impassable); break;
 				case 'special':
 					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
@@ -249,9 +256,32 @@ function resolveText(ctx, ref) {
 	return s.trim() || '...';
 }
 
-// ITEM_POKE_BALL -> pokeball ; SPECIES_BULBASAUR -> bulbasaur
-function itemId(sym) {
+// Resolve a give/takeitem's real (item, count). The transpile SWAPPED the two
+// fields for the "…and here's the message about it" macro — 37 of them (Erika's
+// TM19, Misty's TM03, the Coin Case, the fossils…) carry the message label in
+// `item` and the actual ITEM_ symbol in `count`. Detect that and swap back;
+// otherwise read them straight. A count that isn't a number resolves to 1.
+function giveArgs(op) {
+	const swapped = typeof op.count === 'string' && /^ITEM_/.test(op.count);
+	const id = itemId(swapped ? op.count : op.item);
+	const n = swapped ? 1 : (Number.isFinite(+op.count) && +op.count > 0 ? +op.count : 1);
+	return { id, n };
+}
+
+// ITEM_POKE_BALL -> pokeball ; SPECIES_BULBASAUR -> bulbasaur.
+// Two malformed shapes still reach here:
+//   • a TEXT label where the item belongs and NO usable count (the label spells
+//     the item out, so recover it from "…Received<Thing>From…");
+//   • a VAR_ symbol (a runtime-computed item, 24 of them) — unresolvable
+//     statically, so hand back null and let the caller skip the give entirely.
+export function itemId(sym) {
 	if (typeof sym !== 'string') return sym;
+	if (/^VAR_/.test(sym)) return null;
+	if (/_Text_/.test(sym)) {
+		const m = /(?:Received|Recovered|Obtained|Found)(?:A)?([A-Za-z0-9]+?)(?:From|By|$)/
+			.exec(sym.split('_Text_')[1] || '');
+		return m ? m[1].toLowerCase().replace(/[^a-z0-9]/g, '') : null;
+	}
 	return sym.replace(/^ITEM_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 function speciesId(sym) {

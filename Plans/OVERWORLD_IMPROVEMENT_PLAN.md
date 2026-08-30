@@ -107,7 +107,38 @@ Verified starting points:
     infra for play-by-mail Pokémon PvP. Same server keys, a Pokémon snapshot
     instead of a card one.
 
-## Batch G — Story cutscenes — OPEN (its own session)
+## Batch G — Story cutscenes — DONE (Kanto pass), but NOT as scoped below
+
+The audit found the premise wrong. Kanto's set-pieces are `onFrame` scenes, and
+`checkOnFrame` deliberately ignores a value-0 gate until the var has been SET —
+so seeding a var to **0 is what ARMS a scene** (Hoenn/Johto use coord_events,
+which do fire at 0; hence the different treatment). Kanto's beats weren't
+"unwritten", they were unreachable. What actually shipped:
+
+- **Armed** the safe, self-advancing FireRed set-pieces: Oak's Parcel at the
+  Viridian mart, Celio on One Island (Tri-Pass + Town Map), the Two Island
+  Lostelle rescue, the Four/Six Island rival cameos.
+- **Left dormant** the three that would strand a free-roam save: the Lost Cave
+  entry-warp, the e-Reader trainer (warp + `StartSpecialBattle`), the cable-club
+  exit. The latter two gate on vars other regions read, so they're suppressed by
+  label via a new `PLOT_BLOCKED` set rather than by seeding.
+- **Fixed 37 broken item hand-offs** engine-wide: the transpiler SWAPPED `item`
+  and `count` on the "give + message" macro, so Erika's TM19, Misty's TM03,
+  Blaine's TM38, Koga's TM06, the Coin Case, the fossils, the Tri-Pass and more
+  were dropping a junk item named after a text label. Also `VAR_`-computed items
+  now no-op instead of adding garbage.
+- **Implemented `openmart`** (15 scripts, previously a no-op): script clerks —
+  the whole Celadon Department Store, the Battle Frontier mart — now raise the
+  shop and resume their script on close. Required letting the shop keep input
+  while its cutscene waits, or the counter would have been unusable.
+- **Fixed two engine-wide gaps** found on the way: the STARTING map never got an
+  `onFrame` pass (boot uses `world.load`, not `moveToMap`, so a scene on the map
+  you resume into never fired — in ANY region), and `armStoryScenes` now fills
+  in scenes added after a save was created, so existing saves see new beats.
+
+Still open if the story is revisited: authoring NEW dialogue for beats the decomp
+gates behind sequences this port skips, and the Johto/Hoenn equivalents of the
+item/count swap audit.
 
 26. The events.js interpreter already runs transpiled decomp scripts and the
     badge/E4/villain spine works without cutscenes. Flesh out region by region
