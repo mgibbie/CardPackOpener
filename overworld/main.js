@@ -688,7 +688,8 @@ function interact() {
 	}
 	for (const ev of world.current.map.bg_events || []) {
 		if (+ev.x === fx && +ev.y === fy && signTexts[ev.script]) {
-			dialog.open(signTexts[ev.script]);
+			// same normalizer NPC speech uses, so a sign never shows a raw "#"
+			dialog.open(Story.normalizeText(signTexts[ev.script], cutsceneCtx()));
 			return;
 		}
 	}

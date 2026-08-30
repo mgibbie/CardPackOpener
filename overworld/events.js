@@ -242,18 +242,34 @@ function opposite(dir) { return { up: 'down', down: 'up', left: 'right', right: 
 // resolve a msg's text: the map's own strings first, then the shared common
 // map (cross-map / gText labels), else the literal (hand-authored). Substitute
 // the common {PLAYER}/{RIVAL} tokens.
+// Everything the ported scripts hand to the dialog box goes through here: NPC
+// speech (via resolveText) and signposts alike, so a display quirk is fixed in
+// one place. Exported for the sign path, which looks its text up directly.
+export function normalizeText(s, ctx = {}) {
+	if (typeof s !== 'string') return '...';
+	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
+		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
+		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
+		// pokecrystal's charmap prints "#" as POKé, so the ported Johto strings
+		// are full of "#MON" / "#DEX" / "# BALL". Expand before the é fold below.
+		.replace(/#/g, 'POKé')
+		.replace(/é/g, 'e').replace(/É/g, 'E') // POKéMON -> POKeMON, to match the game's font/convention
+		.replace(/[ \t]+\n/g, '\n')          // trailing spaces left by a stripped inline code
+		.replace(/\n{3,}/g, '\n\n');         // collapse gaps left where a code stood alone on a line
+	s = s.trim();
+	// the transpile dropped a leading name placeholder on a handful of lines,
+	// leaving them opening on punctuation ("!\n\nUse these on your POKeDEX
+	// quest!"). Put the name back rather than show the bare mark.
+	if (/^[!,.?;:]/.test(s)) s = (ctx.playerName || 'PLAYER') + s;
+	return s || '...';
+}
+
 function resolveText(ctx, ref) {
 	let s = ref;
 	if (ctx.strings && ctx.strings[ref] != null) s = ctx.strings[ref];
 	else if (ctx.common && ctx.common[ref] != null) s = ctx.common[ref];
 	if (typeof s !== 'string') return '...';
-	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
-		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
-		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
-		.replace(/é/g, 'e').replace(/É/g, 'E') // POKéMON -> POKeMON, to match the game's font/convention
-		.replace(/[ \t]+\n/g, '\n')          // trailing spaces left by a stripped inline code
-		.replace(/\n{3,}/g, '\n\n');         // collapse gaps left where a code stood alone on a line
-	return s.trim() || '...';
+	return normalizeText(s, ctx);
 }
 
 // Resolve a give/takeitem's real (item, count). The transpile SWAPPED the two
