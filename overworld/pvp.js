@@ -12,9 +12,12 @@ export class Pvp {
 
 	get blocking() { return this.active != null; }
 
-	async start(matchId, match, mySide, spectator, onEnd) {
+	// opts.async: a correspondence match — the same server-authoritative battle,
+	// but each side submits whenever it likes (see async-act in mp.mjs). The
+	// view is identical; only the endpoints and the polling cadence change.
+	async start(matchId, match, mySide, spectator, onEnd, opts = {}) {
 		const a = this.active = {
-			matchId, match, mySide, spectator: !!spectator, onEnd,
+			matchId, match, mySide, spectator: !!spectator, onEnd, async: !!opts.async,
 			phase: spectator ? 'watch' : 'menu',
 			menuIdx: 0, moveIdx: 0, switchIdx: 0,
 			evQueue: [], msg: match.events?.find(e => typeof e === 'string') || 'Battle start!', msgT: 0, msgHold: 1.0,
@@ -67,13 +70,17 @@ export class Pvp {
 			// is busy ANIMATING the last update (nothing actionable can land then)
 			const a = this.active;
 			const fast = a.spectator || a.phase === 'wait';
-			const base = fast ? 400 : a.phase === 'anim' ? 1500 : 1100;
+			// correspondence: the opponent may be hours away — a gentle 20s check
+			const base = a.async ? 20_000 : fast ? 400 : a.phase === 'anim' ? 1500 : 1100;
 			// exponential backoff on errors so a down server isn't hammered at 2.5Hz
-			await new Promise(r => setTimeout(r, Math.min(8000, base * (1 << Math.min(errStreak, 4)))));
+			await new Promise(r => setTimeout(r, Math.min(a.async ? 60_000 : 8000, base * (1 << Math.min(errStreak, 4)))));
 			if (!this.active || !this.active.polling) break;
 			try {
-				const data = await MP.call('match', { id: this.active.matchId });
-				if (data.match) this.ingest(data.match);
+				const data = this.active.async
+					? await MP.call('async-get', { id: this.active.matchId })
+					: await MP.call('match', { id: this.active.matchId });
+				const m = this.active.async ? data.match?.pk : data.match;
+				if (m) this.ingest(m);
 				errStreak = 0;
 			} catch (e) { errStreak++; }
 		}
@@ -116,10 +123,13 @@ export class Pvp {
 		if (!a || a.spectator) return;
 		a.waiting = true;
 		a.phase = 'wait';
-		a.msg = 'Waiting for your opponent…';
+		a.msg = a.async ? 'Move sent ✉ — come back when they answer.' : 'Waiting for your opponent…';
 		try {
-			const data = await MP.call('match-action', { id: a.matchId, act });
-			if (data.match) this.ingest(data.match);
+			const data = a.async
+				? await MP.call('async-act', { id: a.matchId, act })
+				: await MP.call('match-action', { id: a.matchId, act });
+			const m = a.async ? data.match?.pk : data.match;
+			if (m) this.ingest(m);
 		} catch (e) { a.waiting = false; a.phase = 'menu'; }
 	}
 	finish() {
@@ -184,6 +194,9 @@ export class Pvp {
 		if (!a) return;
 		if (a.phase === 'done') { if (k === 'z' || k === 'Enter' || k === 'x') this.quit(); return; }
 		if (a.spectator) { if (k === 'x') this.quit(); return; }
+		// correspondence: X walks away whenever — the match waits on the server,
+		// so leaving is never a forfeit (only the FORFEIT option is)
+		if (a.async && k === 'x' && (a.phase === 'wait' || a.phase === 'menu')) { this.quit(); return; }
 		if (a.phase === 'menu') {
 			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
 			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;

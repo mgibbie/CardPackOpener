@@ -1,6 +1,8 @@
-// async_smoke.mjs — correspondence (play-by-mail) duels, API-level: challenge,
-// accept, opening deal, alternating turns, turn-order enforcement, resign,
-// list shapes. Boots the REAL dev server on a fresh sqlite (dust_smoke pattern).
+// async_smoke.mjs — correspondence (play-by-mail) matches, API-level. CARDS:
+// challenge, accept, opening deal, alternating turns, turn-order enforcement,
+// resign, list shapes. POKEMON: the server hosts the real pvpbattle match —
+// both sides may act whenever and the turn resolves on the second action.
+// Boots the REAL dev server on a fresh sqlite (dust_smoke pattern).
 //   node battlecards/tests/integration/async_smoke.mjs
 import { spawn } from 'child_process';
 import fs from 'fs';
@@ -77,6 +79,47 @@ const waitUp = async () => {
 		const la2 = await api('async-list', {}, ta);
 		A(la2.matches[0].status === 'over' && la2.matches[0].winner === 'penny' && la2.yourTurn === 0, 'finished match reads right in the list');
 		A((await api('async-move', { id, snap: { t: 9 }, turnTo: 'quill' }, ta)).error?.includes('not active'), 'no moves after the end');
+
+		// ---- correspondence POKEMON: the server hosts the real battle ----
+		const mon = (name, hp, power) => ({
+			speciesId: name.toLowerCase(), name, level: 20, types: ['Normal'], sprite: 's1.png', weightkg: 10,
+			stats: { hp, atk: 60, def: 40, spa: 40, spd: 40, spe: 50 }, maxHP: hp, curHP: hp, status: null,
+			moves: [{ id: 'tackle', name: 'Tackle', pp: 30, maxPp: 30, power, type: 'Normal', category: 'Physical', acc: 100 }],
+		});
+		const pkParty = tag => [mon(tag + '1', 60, 40), mon(tag + '2', 60, 40)];
+		A((await api('async-create', { to: 'quill', game: 'pokemon', party: { not: 'an array' } }, ta)).error === 'send a party',
+			'a pokemon challenge must carry a party');
+		const pc = await api('async-create', { to: 'quill', game: 'pokemon', party: pkParty('A') }, ta);
+		A(pc.ok && pc.match.game === 'pokemon' && pc.match.status === 'invited', 'pokemon challenge created', JSON.stringify(pc.match));
+		const pid = pc.match.id;
+		A((await api('async-act', { id: pid, act: { kind: 'move', moveIdx: 0 } }, ta)).error?.includes('not active'),
+			'no moves before the invite is accepted');
+		const pacc = await api('async-accept', { id: pid, party: pkParty('B') }, tb);
+		A(pacc.ok && !!pacc.match.pk && pacc.match.pk.sides.length === 2, 'accepting builds the server-side battle');
+		A(pacc.match.pk.sides[0].name === 'penny' && pacc.match.pk.sides[1].name === 'quill', 'both parties seated correctly');
+
+		// BOTH sides may move whenever; the turn resolves when the second lands
+		const pl1 = await api('async-list', {}, ta);
+		const pm1 = pl1.matches.find(m => m.id === pid);
+		A(pm1.yourTurn === true && pm1.game === 'pokemon', 'a fresh pokemon turn waits on you');
+		const pmv1 = await api('async-act', { id: pid, act: { kind: 'move', moveIdx: 0 } }, ta);
+		A(pmv1.ok && pmv1.match.pk.turn === 1, "one side's move alone does not advance the turn");
+		A((await api('async-act', { id: pid, act: { kind: 'move', moveIdx: 0 } }, ta)).error === 'you already moved this turn',
+			'a side cannot move twice in one turn');
+		const waiting = (await api('async-list', {}, ta)).matches.find(m => m.id === pid);
+		A(waiting.yourTurn === false, 'after moving, the match waits on them');
+		A((await api('async-list', {}, tb)).matches.find(m => m.id === pid).yourTurn === true, '...and flags THEIR turn');
+		const pmv2 = await api('async-act', { id: pid, act: { kind: 'move', moveIdx: 0 } }, tb);
+		A(pmv2.ok && pmv2.match.pk.turn === 2, 'the second action resolves the turn');
+		A(pmv2.match.pk.sides.some(s => s.party[s.active].curHP < 60), 'damage actually happened');
+		A((await api('async-get', { id: pid }, tc)).error === 'not your match', 'a third party still cannot read it');
+		A((await api('async-move', { id: pid, snap: { x: 1 }, turnTo: 'quill' }, ta)).error?.includes('async-act'),
+			'the card move endpoint refuses a pokemon match');
+
+		// resigning ends the hosted battle too
+		const prs = await api('async-resign', { id: pid }, ta);
+		A(prs.ok && prs.match.status === 'over' && prs.match.winner === 'quill', 'resigning a pokemon match hands it over');
+		A((await api('async-get', { id: pid }, tb)).match.pk.over === true, 'the hosted battle is marked over');
 
 		// an over match declared via async-move (game finished on the board)
 		const c2 = await api('async-create', { to: 'quill', party: party('a2') }, ta);

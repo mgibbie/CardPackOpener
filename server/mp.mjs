@@ -52,7 +52,7 @@ const RATE_LIMITS = {
 	// trips a runaway/hammering client (the delta already made each poll cheap).
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
-	'async-create': [10, 60_000], 'async-move': [30, 60_000],
+	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
@@ -1288,10 +1288,21 @@ export default async function handler(req, env) {
 	if (action.startsWith('async-')) {
 		const AM_MAX_BYTES = 700_000, AM_MAX_PER_USER = 20;
 		const amListOf = async name => ((await store.get('amlist:' + name)) || []).filter(x => typeof x === 'string');
+		// Pokémon async matches host a REAL server-resolved battle (pvpbattle.js)
+		// in `m.pk` instead of a client-published card snapshot: both sides may
+		// act at any time and the turn resolves when the second action lands.
+		const amWaitingOn = (m, me) => {
+			if (m.game !== 'pokemon' || !m.pk || m.pk.over) return m.turn === me;
+			const s = m.players.indexOf(me);
+			if (s < 0) return false;
+			return m.pk.needsSwitch?.[s] ? true : !m.pk.actions?.[s];
+		};
 		const amSummary = (m, me) => ({
-			id: m.id, players: m.players, status: m.status, turn: m.turn, turnNumber: m.turnNumber || 0,
-			winner: m.winner ?? null, updatedAt: m.updatedAt, lines: m.lines || [],
-			yourTurn: m.status === 'active' && m.turn === me,
+			id: m.id, players: m.players, game: m.game || 'cards',
+			status: m.status, turn: m.turn, turnNumber: m.game === 'pokemon' ? (m.pk?.turn || 0) : (m.turnNumber || 0),
+			winner: m.winner ?? null, updatedAt: m.updatedAt,
+			lines: m.game === 'pokemon' ? (m.pk?.events || []) : (m.lines || []),
+			yourTurn: m.status === 'active' && amWaitingOn(m, me),
 			yourInvite: m.status === 'invited' && m.players[1] === me,
 		});
 
@@ -1302,11 +1313,15 @@ export default async function handler(req, env) {
 			const mine = await amListOf(username);
 			if (mine.length >= AM_MAX_PER_USER) return json({ error: 'too many async matches — finish or resign some first' }, 400);
 			const id = randCode() + randCode();
+			const game = body.game === 'pokemon' ? 'pokemon' : 'cards';
+			// a pokemon challenge carries the challenger's PARTY (mons), a card
+			// challenge their deck; both ride the same `party` field from the lobby
 			const m = {
-				id, players: [username, to], decks: [body.party || null, null],
-				status: 'invited', snap: null, turn: null, turnNumber: 0, winner: null,
+				id, players: [username, to], game, decks: [body.party || null, null],
+				status: 'invited', snap: null, pk: null, turn: null, turnNumber: 0, winner: null,
 				lines: [], createdAt: Date.now(), updatedAt: Date.now(),
 			};
+			if (game === 'pokemon' && !Array.isArray(body.party)) return json({ error: 'send a party' }, 400);
 			await store.setJSON('amatch:' + id, m);
 			await store.setJSON('amlist:' + username, [...mine, id]);
 			await store.setJSON('amlist:' + to, [...(await amListOf(to)), id]);
@@ -1336,14 +1351,47 @@ export default async function handler(req, env) {
 		if (action === 'async-accept') {
 			if (m.players[1] !== username) return json({ error: 'not your invite' }, 403);
 			if (m.status !== 'invited') return json({ error: 'already started' }, 400);
+			if (m.game === 'pokemon' && !Array.isArray(body.party)) return json({ error: 'send a party' }, 400);
 			m.decks[1] = body.party || null;
 			m.status = 'active';
+			// pokemon: the server builds the authoritative battle right here — no
+			// client ever deals or publishes state for it
+			if (m.game === 'pokemon') m.pk = createMatch(id, m.players[0], m.decks[0] || [], m.players[1], m.decks[1] || []);
 			m.updatedAt = Date.now();
 			await store.setJSON('amatch:' + id, m);
 			return json({ ok: true, match: m, you: 1 });
 		}
 
+		// pokemon: submit this side's action for the current turn. Both players
+		// may act whenever; the turn resolves the moment the second one lands.
+		if (action === 'async-act') {
+			if (m.game !== 'pokemon') return json({ error: 'not a pokemon match' }, 400);
+			if (m.status !== 'active' || !m.pk) return json({ error: 'match is not active' }, 400);
+			const s = m.players.indexOf(username);
+			const act = body.act || {};
+			if (m.pk.over) return json({ ok: true, match: m, you: s });
+			if (act.kind === 'replace') replaceFainted(m.pk, s, +act.partyIdx);
+			else if (act.kind === 'forfeit') {
+				m.pk.over = true; m.pk.winner = 1 - s;
+				m.pk.events = [`${username} forfeited. ${m.players[1 - s]} wins!`];
+				m.pk.seq++;
+			} else {
+				if (m.pk.needsSwitch?.[s]) return json({ error: 'choose a replacement first' }, 400);
+				if (m.pk.actions?.[s]) return json({ error: 'you already moved this turn' }, 400);
+				submitAction(m.pk, s, act);
+			}
+			if (m.pk.over) {
+				m.status = 'over';
+				m.turn = null;
+				m.winner = m.pk.winner == null ? null : m.players[m.pk.winner];
+			}
+			m.updatedAt = Date.now();
+			await store.setJSON('amatch:' + id, m);
+			return json({ ok: true, match: m, you: s });
+		}
+
 		if (action === 'async-move') {
+			if (m.game === 'pokemon') return json({ error: 'pokemon matches use async-act' }, 400);
 			if (m.status !== 'active') return json({ error: 'match is not active' }, 400);
 			// the opening deal (no snap yet) comes from the accepter's build;
 			// after that, only the player to move may publish
@@ -1370,6 +1418,12 @@ export default async function handler(req, env) {
 			if (m.status === 'over') return json({ ok: true, match: amSummary(m, username) });
 			// cancelling an un-accepted invite has no loser; resigning a live match does
 			m.winner = m.status === 'active' ? m.players.find(q => q !== username) : null;
+			if (m.pk && !m.pk.over) {
+				m.pk.over = true;
+				m.pk.winner = 1 - m.players.indexOf(username);
+				m.pk.events = [`${username} forfeited. ${m.winner} wins!`];
+				m.pk.seq++;
+			}
 			m.status = 'over';
 			m.turn = null;
 			m.updatedAt = Date.now();
