@@ -248,7 +248,22 @@ export class Trainers {
 		const bump = 2 * (this.rematch[this.keyOf(t)] || 0);
 		let party = [];
 		if (roster?.party?.length) {
-			party = roster.party.map(e => buildMon(e.s, Math.min(100, e.l + bump), data)).filter(Boolean);
+			party = roster.party.map(e => {
+				const mon = buildMon(e.s, Math.min(100, e.l + bump), data);
+				if (!mon) return null;
+				// authentic movesets / held items when the roster carries them
+				// (gen_trainer_movesets.mjs backfills these from the decomps);
+				// otherwise buildMon's level-up moveset stands in
+				if (e.moves?.length) {
+					const mv = e.moves.map(id => {
+						const info = data.moves[id];
+						return info ? { id, name: info.name, pp: info.pp, maxPp: info.pp } : null;
+					}).filter(Boolean);
+					if (mv.length) mon.moves = mv;
+				}
+				if (e.item) mon.heldItem = e.item;
+				return mon;
+			}).filter(Boolean);
 		}
 		if (!party.length) {
 			const pool = this.data.classPools[t.ev.graphics_id] || this.data.defaultPool;
@@ -269,7 +284,8 @@ export class Trainers {
 			for (const m of party) {
 				const opts = data.abilities?.[m.speciesId];
 				if (opts?.length) m.ability = opts[0];
-				m.heldItem = m === ace ? 'sitrusberry' : (TYPE_ITEM[m.types[0]] || 'leftovers');
+				// a roster-supplied (authentic) item always wins over this fallback
+				if (!m.heldItem) m.heldItem = m === ace ? 'sitrusberry' : (TYPE_ITEM[m.types[0]] || 'leftovers');
 			}
 		}
 		const className = roster?.class || this.data.classNames[t.ev.graphics_id] || 'Trainer';
