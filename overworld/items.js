@@ -94,11 +94,16 @@ export class Items {
 		const map = this.world.current.map;
 		for (const o of map.object_events || []) {
 			const g = String(o.graphics_id || '');
-			if (g.includes('BREAKABLE_ROCK')) {
+			// The three decomps spell these differently and only the pokeemerald
+			// names were matched, so every FireRed/Emerald-styled obstacle was
+			// inert scenery: 97 ROCK_SMASH_ROCKs (all of Cerulean Cave, Mt. Ember)
+			// and 55 CUT_TREEs (Celadon Gym's own puzzle among them) ignored the
+			// HM entirely. Accept either spelling.
+			if (g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH')) {
 				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock' });
 				continue;
 			}
-			if (g.includes('CUTTABLE_TREE')) {
+			if (g.includes('CUTTABLE_TREE') || g.includes('CUT_TREE')) {
 				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'cut' });
 				continue;
 			}

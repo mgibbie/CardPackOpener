@@ -1478,11 +1478,25 @@ function bagKey(k) {
 			const item = Bag.ITEMS[id];
 			const mon = party[bagMenu.pickIdx];
 			if (mon) {
-				if (item && item.kind === 'heal' && mon.curHP > 0 && mon.curHP < mon.maxHP) {
+				if (item && item.kind === 'heal' && mon.curHP > 0 && (mon.curHP < mon.maxHP || (item.cures && mon.status))) {
 					Bag.consume(id);
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + item.amount);
+					if (item.cures) mon.status = null; // FULL RESTORE clears status too
 					saveParty(party);
 					bagMenu.picking = false;
+				} else if (item?.kind === 'cure') {
+					// ANTIDOTE and friends bite only on the status they treat;
+					// FULL HEAL on any of them.
+					const AILMENT = { psn: 'poisoned', par: 'paralyzed', slp: 'asleep', brn: 'burned', frz: 'frozen' };
+					if (!mon.status || mon.curHP <= 0) bagMenu.flash = `It won't have any effect on ${mon.name}.`;
+					else if (item.cures !== 'any' && mon.status !== item.cures) bagMenu.flash = `${mon.name} isn't ${AILMENT[item.cures] || 'affected'}.`;
+					else {
+						Bag.consume(id);
+						mon.status = null;
+						saveParty(party);
+						bagMenu.flash = `${mon.name} was cured!`;
+						bagMenu.picking = false;
+					}
 				} else if (item?.kind === 'revive' && mon.curHP <= 0) {
 					Bag.consume(id);
 					mon.curHP = Math.floor(mon.maxHP / 2);
@@ -4900,6 +4914,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// hand PvP a sprite->battleScale lookup (its mons come over the wire without a species
 	// handle, but they carry the sprite filename, which maps 1:1 to the species)
 	pvp.scaleBySprite = new Map(Object.values(battle.data.species).filter(s => s.sprite).map(s => [s.sprite, s.battleScale || 1]));
+	// TMs the events hand out have no ITEMS entry of their own (tmMoveId resolves
+	// them generically), so let the bag name them from the move they teach
+	Bag.setMoveNamer(id => { const mid = tmMoveId(id); return mid ? battle.data.moves[mid]?.name : null; });
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	await services.init();
