@@ -47,6 +47,44 @@ function cmp(a, op, b) {
 //   strings (label->string), playerName, giveItem, takeItem, giveMon, healParty,
 //   warp(map, warpId), setMetatile, hideObj, showObj, setObjXy, startTrainer,
 //   special(name, store), hud
+// The decomp keeps a library of shared scripts (Common_EventScript_*) that the
+// transpile never emitted, so ~500 jumps across the three regions point at
+// nothing. Dangling jumps are survivable now (see the `goto` case), but the
+// most common ones carry real meaning, so give them a body rather than let the
+// script skip a beat the player should see.
+const COMMON_STUBS = {
+	Common_EventScript_NopReturn: [{ op: 'return' }],
+	EventScript_Return: [{ op: 'return' }],
+	EventScript_ReleaseEnd: [{ op: 'release' }, { op: 'end' }],
+	Common_EventScript_ShowBagIsFull: [{ op: 'msg', text: 'There is no room left in your BAG.' }, { op: 'return' }],
+	Common_EventScript_BagIsFull: [{ op: 'msg', text: 'There is no room left in your BAG.' }, { op: 'return' }],
+	// cosmetic text-window plumbing with nothing to show here
+	EventScript_RestorePrevTextColor: [{ op: 'return' }],
+	Common_EventScript_SaveGame: [{ op: 'return' }],
+	// link-cable rooms: this port has its own multiplayer, so these are inert
+	CableClub_EventScript_TradeCenter: [{ op: 'return' }],
+	CableClub_EventScript_RecordCorner: [{ op: 'return' }],
+	CableClub_EventScript_Colosseum: [{ op: 'return' }],
+	// a static legendary you failed to catch, and the clean-up that removes it
+	// from the map afterwards
+	Common_EventScript_LegendaryFlewAway: [{ op: 'msg', text: 'The POKeMON flew away!' }, { op: 'return' }],
+	Common_EventScript_RemoveStaticPokemon: [{ op: 'return' }],
+	// engine plumbing with no counterpart here: fanfares, the nickname prompt,
+	// rival sprite selection, the trendy-phrase and Briney/weather bookkeeping
+	Common_EventScript_PlayGymBadgeFanfare: [{ op: 'return' }],
+	Common_EventScript_NameReceivedPartyMon: [{ op: 'return' }],
+	Common_EventScript_SetupRivalGfxId: [{ op: 'return' }],
+	Common_EventScript_BufferTrendyPhrase: [{ op: 'return' }],
+	Common_EventScript_UpdateBrineyLocation: [{ op: 'return' }],
+	Common_EventScript_SetAbnormalWeather: [{ op: 'return' }],
+	// a nurse reached through the shared script rather than the port's own
+	// counter NPC still has to actually heal you
+	Common_EventScript_PkmnCenterNurse: [{ op: 'special', name: 'HealPlayerParty' },
+		{ op: 'msg', text: 'We restored your POKeMON to full health.' }, { op: 'return' }],
+	EventScript_PkmnCenterNurse: [{ op: 'special', name: 'HealPlayerParty' },
+		{ op: 'msg', text: 'We restored your POKeMON to full health.' }, { op: 'return' }],
+};
+
 export class Cutscene {
 	constructor() { this.cur = null; }
 	get blocking() { return this.cur != null; }
@@ -79,7 +117,7 @@ export class Cutscene {
 
 	// jump (replace current frame's ops) or call (push a frame) to a label
 	_goto(label, isCall) {
-		const ops = this.cur.program[label];
+		const ops = this.cur.program[label] || COMMON_STUBS[label];
 		if (!ops) return false;
 		if (isCall) this.cur.frames.push({ ops, i: 0 });
 		else { const fr = this._frame(); fr.ops = ops; fr.i = 0; }
@@ -131,7 +169,14 @@ export class Cutscene {
 				case 'special':
 					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
-				case 'goto': this._goto(op.label, false); continue; // no advance
+				// A jump to a label this map doesn't define used to `continue`
+				// without advancing — the same op re-ran until the loop guard
+				// tripped, and the cutscene was left blocking FOREVER (a hard
+				// freeze: input is swallowed while a cutscene runs). The
+				// transpile leaves ~500 of these, mostly shared Common_* labels
+				// that never got emitted. Treat a dangling jump as a no-op and
+				// carry on with the rest of the script.
+				case 'goto': if (!this._goto(op.label, false)) this._advance(); continue;
 				case 'call': this._advance(); this._goto(op.label, true); continue;
 				case 'return': if (c.frames.length) c.frames.pop(); continue;
 				case 'end': return this._finish();
@@ -141,12 +186,25 @@ export class Cutscene {
 					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
 					if (hit) {
 						if (op.kind === 'call') { this._advance(); this._goto(op.label, true); }
-						else this._goto(op.label, false);
+						else if (!this._goto(op.label, false)) this._advance(); // dangling: don't spin
 						continue;
 					}
 					break;
 				}
-				case 'warp': ctx.warp?.(op.map, resolveValue(op.warp) || 0); return this._finish();
+				// The transpile mangles two warp shapes. Some lost the MAP_ prefix
+				// (VERMILION_PORT) — fileFor() tolerates that. Others had their map
+				// and warp-id SWAPPED, leaving a direction constant in `map` and the
+				// real destination in `warp` (`warp UP, HALL_OF_FAME`); that stranded
+				// the Fast Ship gangways, Lance's room and the Bug Contest gates.
+				case 'warp': {
+					let map = op.map, id = resolveValue(op.warp) || 0;
+					if (WARP_NOT_A_MAP.test(String(map))) {
+						if (typeof op.warp !== 'string' || WARP_NOT_A_MAP.test(op.warp)) return this._finish();
+						map = op.warp; id = 0;
+					}
+					ctx.warp?.(map, id);
+					return this._finish();
+				}
 				case 'trainerbattle': {
 					// trainerbattle_single is self-contained: intro text -> battle ->
 					// (on win) defeat text -> optional post-battle script. Expand it
@@ -178,6 +236,13 @@ export class Cutscene {
 				default: break;
 			}
 			this._advance();
+		}
+		// Safety net: if we ever burn the whole budget, END the scene instead of
+		// returning while still holding `blocking` — a stuck cutscene swallows
+		// all input, which strands the player with no way out but a reload.
+		if (this.cur && guard >= 100000) {
+			console.warn('[plot] script exceeded its op budget — releasing the player');
+			this._finish();
 		}
 	}
 
@@ -253,6 +318,11 @@ export function normalizeText(s, ctx = {}) {
 		// pokecrystal's charmap prints "#" as POKé, so the ported Johto strings
 		// are full of "#MON" / "#DEX" / "# BALL". Expand before the é fold below.
 		.replace(/#/g, 'POKé')
+		// pokecrystal splices a runtime buffer in at '@' (the caught POKeMON's
+		// name, a minute count, the day of the week). Nothing fills those here,
+		// so they reached the player as a bare "@" — "Ah, so that is @?". Read
+		// them as an elision rather than a glitch character.
+		.replace(/@+/g, '...')
 		.replace(/é/g, 'e').replace(/É/g, 'E') // POKéMON -> POKeMON, to match the game's font/convention
 		.replace(/[ \t]+\n/g, '\n')          // trailing spaces left by a stripped inline code
 		.replace(/\n{3,}/g, '\n\n');         // collapse gaps left where a code stood alone on a line
@@ -264,10 +334,23 @@ export function normalizeText(s, ctx = {}) {
 	return s || '...';
 }
 
+// Directions and NONE are not destinations; they mark a warp whose fields the
+// transpile shuffled (see the 'warp' case).
+const WARP_NOT_A_MAP = /^(UP|DOWN|LEFT|RIGHT|NONE)$/;
+
+// A `msg` whose label is in neither the map's strings nor _common used to fall
+// through to the label ITSELF, so the NPC stood there and said
+// "RadioTower1FLuckyNumberManDotDotDotText" out loud. Anything that still looks
+// like an identifier — a dangling label, or a runtime buffer like gStringVar4
+// that only the real GBA engine could fill — becomes an ellipsis instead. Most
+// of these are silent-by-design lines anyway (Red's stare, the Dragon Shrine
+// elder, the Lucky Number man's "...").
+const LOOKS_LIKE_A_LABEL = /^[A-Za-z_.][A-Za-z0-9_.]*$/;
 function resolveText(ctx, ref) {
 	let s = ref;
 	if (ctx.strings && ctx.strings[ref] != null) s = ctx.strings[ref];
 	else if (ctx.common && ctx.common[ref] != null) s = ctx.common[ref];
+	else if (typeof ref === 'string' && LOOKS_LIKE_A_LABEL.test(ref)) return '...';
 	if (typeof s !== 'string') return '...';
 	return normalizeText(s, ctx);
 }
@@ -292,7 +375,16 @@ function giveArgs(op) {
 //     statically, so hand back null and let the caller skip the give entirely.
 export function itemId(sym) {
 	if (typeof sym !== 'string') return sym;
-	if (/^VAR_/.test(sym)) return null;
+	// A runtime item. The script sets the var to the real ITEM_ symbol immediately
+	// before handing it over — every Game Corner prize and the Dojo reward work
+	// this way — so read the var back instead of dropping the give on the floor.
+	if (/^VAR_/.test(sym)) {
+		const v = getVar(sym);
+		return (typeof v === 'string' && /^ITEM_/.test(v)) ? itemId(v) : null;
+	}
+	// Placeholders the real engine fills from a table at run time — there is no
+	// item behind the name, so hand back nothing rather than inventing one.
+	if (/^(ITEM_FROM_MEM|REWARD_ITEM)$/.test(sym)) return null;
 	if (/_Text_/.test(sym)) {
 		const m = /(?:Received|Recovered|Obtained|Found)(?:A)?([A-Za-z0-9]+?)(?:From|By|$)/
 			.exec(sym.split('_Text_')[1] || '');
@@ -302,5 +394,12 @@ export function itemId(sym) {
 }
 function speciesId(sym) {
 	if (typeof sym !== 'string') return sym;
+	// Same runtime-symbol trick as items: the Game Corner's Abra/Clefairy/Dratini/
+	// Scyther/Porygon/Pinsir counter and Saffron's Dojo both pick the species into
+	// a var first, so `givemon VAR_TEMP_1` has to read it back or hand over nothing.
+	if (/^VAR_/.test(sym)) {
+		const v = getVar(sym);
+		return (typeof v === 'string' && /^SPECIES_/.test(v)) ? speciesId(v) : null;
+	}
 	return sym.replace(/^SPECIES_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }

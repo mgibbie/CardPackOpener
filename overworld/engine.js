@@ -215,7 +215,14 @@ export class World {
 		this.index = await getJSON(`${DATA}/map_index.json`);
 	}
 
-	fileFor(mapId) { return this.index[mapId] || null; }
+	// Some ported warps name their destination without the MAP_ prefix
+	// (VERMILION_PORT rather than MAP_VERMILION_PORT), which used to read as an
+	// unknown map and silently cancel the warp — that is what stranded the Fast
+	// Ship gangways and Ecruteak's closed-gym bounce. Accept either spelling.
+	fileFor(mapId) {
+		if (typeof mapId !== 'string') return null;
+		return this.index[mapId] || this.index['MAP_' + mapId] || null;
+	}
 
 	async loadBundle(name) {
 		const map = await getJSON(`${DATA}/maps/${name}_map.json`);
