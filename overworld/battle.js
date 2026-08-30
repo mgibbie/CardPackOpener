@@ -506,6 +506,10 @@ export class Battle {
 	constructor() {
 		this.data = null;
 		this.active = null;
+		// Overworld progression clamps this (see Badges.levelCap); every other
+		// caller of this engine — PvP, the run modes, the arcade boxes — leaves it
+		// at 100 and is unaffected.
+		this.levelCap = 100;
 	}
 
 	async init() {
@@ -2310,7 +2314,8 @@ export class Battle {
 		mon.friend = Math.min(255, (mon.friend ?? 70) + 2);
 		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
-		while (mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
+		const cap = Math.max(1, this.levelCap || 100);
+		while (mon.level < Math.min(100, cap) && mon.exp >= (mon.level + 1) ** 3) {
 			mon.level++;
 			mon.friend = Math.min(255, (mon.friend ?? 70) + 1);
 			const lvl = mon.level;
@@ -2340,6 +2345,15 @@ export class Battle {
 					});
 				}
 			}
+		}
+		// Having grown as far as the cap allows, hold EXP one point short of the
+		// next level: nothing is thrown away, nothing banks into a windfall, and
+		// the moment the cap lifts this mon levels on its next battle. Runs AFTER
+		// the loop so a mon that levels INTO the cap is caught too. Mons already
+		// above the cap (gifts, trades) are never de-levelled.
+		if (mon.level >= cap && mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
+			mon.exp = (mon.level + 1) ** 3 - 1;
+			this.pushMsg(`${mon.name} is at the LEVEL CAP!`);
 		}
 	}
 
