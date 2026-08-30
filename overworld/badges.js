@@ -229,20 +229,21 @@ export function badgesUntilLeague(region) { return Math.max(0, 8 - count(region)
 // never drift apart.
 export const TIER_LEVEL_FLOOR = [14, 20, 26, 29, 40, 42, 46, 48];
 
-// Headroom over the next Gym Leader: enough to beat them with a level advantage,
-// not enough to walk through them.
-export const LEVEL_CAP_HEADROOM = 6;
 export const MAX_LEVEL = 100;
+// A flat, readable ladder: start at 20 and add 10 per tier, which lands exactly
+// on 100 once all 24 gyms are behind you.
+export const BASE_LEVEL_CAP = 20;
+export const LEVEL_CAP_STEP = 10;
 
 // The cap is keyed off the tier you have cleared in EVERY region at once
 // (Quest.globalTier() = the minimum badge count across Kanto/Johto/Hoenn), so
-// racing one region ahead earns you nothing until the other two catch up. Tier 0
-// caps at 20 — six over the level-14 first Gym Leaders. Clearing the first gym in
-// all three regions is what lifts it.
+// racing one region ahead earns you nothing until the other two catch up.
+// 20/30/40/50/60/70/80/90/100. It always clears TIER_LEVEL_FLOOR[tier] (the next
+// Gym Leader's level), so no tier can ever be capped into being unwinnable —
+// levelcap_test asserts that against the floors so a retune can't break it.
 export function levelCap(tier) {
 	const t = Math.max(0, Math.min(8, tier | 0));
-	if (t >= TIER_LEVEL_FLOOR.length) return MAX_LEVEL; // all 24 gyms: the League climb is uncapped
-	return TIER_LEVEL_FLOOR[t] + LEVEL_CAP_HEADROOM;
+	return Math.min(MAX_LEVEL, BASE_LEVEL_CAP + t * LEVEL_CAP_STEP);
 }
 
 // what the cap becomes after one more gym everywhere — for "next: Lv26" UI
