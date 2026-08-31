@@ -433,6 +433,114 @@ async function waitFor(fn, ms) {
 		A(trap.suctionCups === null, 'SUCTION CUPS shrugs it off', JSON.stringify(trap));
 		A(trap.ghost === null, 'and a GHOST always walks away', JSON.stringify(trap));
 
+		// ---------- multi-turn and semi-invulnerable moves ----------
+		const lock = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle, out = {};
+			const a = await window.__single();
+			a.foe.curHP = a.foe.maxHP = 999999;
+			const mv = id => ({ id, name: id, pp: 20, maxPp: 20 });
+			// OUTRAGE locks you in, then the rampage costs you
+			a.me.moves = [mv('outrage'), mv('tackle')];
+			b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, mv('outrage'), false);
+			window.__pump(60);
+			out.locked = a.me.lockMove;
+			out.tackleUsable = b.moveUsable(a.me, mv('tackle'), 'me');
+			out.outrageUsable = b.moveUsable(a.me, mv('outrage'), 'me');
+			a.me.lockTurns = 1;                      // run it down
+			b.endOfTurn(); window.__pump(80);
+			out.after = a.me.lockMove;
+			out.confused = (a.me.confuseTurns || 0) > 0;
+			window.__end();
+			return out;
+		});
+		A(lock.locked === 'outrage', 'OUTRAGE locks the user into a rampage', JSON.stringify(lock));
+		A(lock.tackleUsable === false && lock.outrageUsable === true,
+			'and nothing else can be selected while it runs', JSON.stringify(lock));
+		A(lock.after === null && lock.confused,
+			'when it ends the user tires itself out and becomes confused — the drawback that made it a real trade-off',
+			JSON.stringify(lock));
+
+		const ramp = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const a = await window.__single();
+			const mv = id => ({ id, name: id, pp: 20, maxPp: 20 });
+			const p0 = b.powerOf('rollout', a.me, a.foe, a.meBoosts, a.foeBoosts, mv('rollout'));
+			a.me.rampMove = 'rollout'; a.me.rampN = 2;
+			const p2 = b.powerOf('rollout', a.me, a.foe, a.meBoosts, a.foeBoosts, mv('rollout'));
+			a.me.rampMove = 'furycutter'; a.me.rampN = 3;
+			const fc = b.powerOf('furycutter', a.me, a.foe, a.meBoosts, a.foeBoosts, mv('furycutter'));
+			window.__end();
+			return { p0, p2, fc };
+		});
+		A(ramp.p2 === ramp.p0 * 4, 'ROLLOUT doubles each consecutive turn', JSON.stringify(ramp));
+		A(ramp.fc > 40 * 4, 'and FURY CUTTER ramps too — both were permanently weak before', JSON.stringify(ramp));
+
+		// Measured by the engine's own miss MESSAGE, not by a damage delta. Damage
+		// deltas need the HP-bar animation to settle, and when they don't settle
+		// every reading is 0 — which made "the move was blocked" pass for the wrong
+		// reason until a control caught it.
+		const vanish = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle, out = {};
+			const a = await window.__single();
+			window.__pump(200);          // let the intro finish
+			const mv = id => ({ id, name: id, pp: 20, maxPp: 20 });
+			const said = [];
+			const realPush = b.pushMsg.bind(b);
+			b.pushMsg = (text, fn) => { if (text) said.push(text); return realPush(text, fn); };
+			const missedBy = (id) => {
+				said.length = 0;
+				b.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, mv(id), true);
+				return said.some(t => /missed/i.test(t));
+			};
+			out.controlMiss = missedBy('tackle');          // nobody hiding: must NOT miss
+			b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, mv('dig'), false);
+			out.vanished = a.me.vanished;
+			out.tackleMissed = missedBy('tackle');
+			out.quakeMissed = missedBy('earthquake');
+			b.pushMsg = realPush;
+			window.__end();
+			return out;
+		});
+		A(vanish.controlMiss === false, 'control: an ordinary hit connects when nobody is hiding', JSON.stringify(vanish));
+		A(vanish.vanished === 'dig', 'DIG hides the user on its charge turn', JSON.stringify(vanish));
+		A(vanish.tackleMissed === true,
+			'an ordinary move cannot reach it — the charge turn used to be a free hit', JSON.stringify(vanish));
+		A(vanish.quakeMissed === false, 'but EARTHQUAKE still finds it underground', JSON.stringify(vanish));
+
+		const charge = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const a = await window.__single();
+			a.foe.curHP = a.foe.maxHP = 999999;
+			const mv = id => ({ id, name: id, pp: 20, maxPp: 20 });
+			b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, mv('shadowforce'), false);
+			const out = { charging: a.me.chargeMove, vanished: a.me.vanished, dealt: a.foe.maxHP - a.foe.curHP };
+			window.__end();
+			return out;
+		});
+		A(charge.charging === 'shadowforce' && charge.dealt === 0,
+			'SHADOW FORCE now spends a charge turn — it was a one-turn 120-BP move', JSON.stringify(charge));
+		A(charge.vanished === 'shadowforce', 'and vanishes while it charges', JSON.stringify(charge));
+
+		const future = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const a = await window.__single();
+			a.foe.curHP = a.foe.maxHP = 999999;
+			const mv = id => ({ id, name: id, pp: 20, maxPp: 20 });
+			const drain = () => { for (let i = 0; i < 40 && b.active && b.active.queue.length; i++) { b.active.msgT = 99; b.update(0.05); } };
+			b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, mv('futuresight'), false);
+			drain();
+			const immediate = a.foe.maxHP - a.foe.curHP;
+			const pending = !!a.foeFuture;
+			b.endOfTurn(); drain();
+			b.endOfTurn(); drain();
+			const later = a.foe.maxHP - a.foe.curHP;
+            window.__end();
+			return { immediate, later, pending };
+		});
+		A(future.immediate === 0 && future.pending,
+			'FUTURE SIGHT schedules instead of hitting on the turn you use it', JSON.stringify(future));
+		A(future.later > 0, 'it arrives two turns later, as intended', JSON.stringify(future));
+
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
