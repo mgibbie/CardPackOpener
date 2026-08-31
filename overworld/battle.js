@@ -6,6 +6,7 @@ import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
+import { animScale } from './settings.js';
 
 const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
 // move-class lists that abilities key off
@@ -780,7 +781,13 @@ export class Battle {
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
 	// queued sprite animation: the message queue pauses while it plays
-	pushAnim(kind, side, dur, done, extra) { this.active.queue.push({ anim: { kind, side, dur, done, ...extra } }); }
+	// BATTLE ANIM scales every queued animation. Durations were hardcoded
+	// literals, so there was no way to speed up or skip them while grinding.
+	// 'off' still leaves a hair of time so the callback ordering is unchanged.
+	pushAnim(kind, side, dur, done, extra) {
+		const k = animScale();
+		this.active.queue.push({ anim: { kind, side, dur: Math.max(0.01, dur * k), done, ...extra } });
+	}
 
 	// floating combat text over a combatant ("-12", "+8"), positioned at draw time
 	float(side, text, color) {
@@ -3049,6 +3056,14 @@ export class Battle {
 		// advance message
 		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { this.fastForward(); return; }
 		if (a.phase === 'menu') {
+			// R re-throws the ball you last used. A break-free used to send you
+			// back through BAG -> scroll the flat list -> find it -> confirm, on
+			// every single throw of a long capture.
+			if (k === 'r' && !a.isTrainer && a.lastBall && Bag.count(a.lastBall) > 0
+				&& (!a.double || a.actionFor === 0)) {
+				this.useItem(a.lastBall);
+				return;
+			}
 			// 2x2: FIGHT(0) BAG(1) / PKMN(2) RUN(3)
 			if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
 			if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
@@ -3880,10 +3895,15 @@ export class Battle {
 	// usable battle items (balls only in wild battles)
 	bagItems() {
 		const a = this.active;
+		const rank = it => (!a.isTrainer && it.kind === 'ball') ? 0
+			: ['heal', 'revive', 'cure', 'ether'].includes(it.kind) ? 1 : 2;
 		return Object.entries(Bag.getBag())
 			.filter(([id, n]) => n > 0 && Bag.ITEMS[id])
 			.filter(([id]) => !(a.isTrainer && Bag.ITEMS[id].kind === 'ball'))
-			.map(([id, n]) => ({ id, n, ...Bag.ITEMS[id] }));
+			.map(([id, n]) => ({ id, n, ...Bag.ITEMS[id] }))
+			// the battle bag shows 2-3 rows: balls first in a wild fight, then
+			// medicine, then everything else. It used to be raw insertion order.
+			.sort((x, y) => rank(x) - rank(y) || String(x.name).localeCompare(String(y.name)));
 	}
 
 	// the foe gets its move after an item/switch (it costs the turn)
@@ -3905,6 +3925,7 @@ export class Battle {
 		const item = Bag.ITEMS[itemId];
 		if (!item) return;
 		if (item.kind === 'ball') {
+			a.lastBall = itemId;          // R re-throws it; see the battle key handler
 			Bag.consume(itemId);
 			this.startQueue(() => this.throwBall(item.name, item.mult || 1));
 			return;
