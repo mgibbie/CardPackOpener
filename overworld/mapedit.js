@@ -45,6 +45,13 @@ export function mount(ow) {
 		+ 'border-radius:12px;padding:12px;color:#e8e2f4;font:12px "Segoe UI",sans-serif;user-select:none;touch-action:pan-y;';
 	panel.innerHTML = `
 		<div style="font-weight:700;letter-spacing:1px;margin-bottom:6px;">MAP EDITOR</div>
+		<div style="display:flex;gap:4px;margin-bottom:5px;">
+			<select id="me-region" style="flex:1;min-width:0;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px;"></select>
+		</div>
+		<div style="display:flex;gap:4px;margin-bottom:5px;">
+			<select id="me-mapsel" style="flex:1;min-width:0;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px;"></select>
+		</div>
+		<input id="me-filter" placeholder="filter maps…" style="width:100%;box-sizing:border-box;margin-bottom:6px;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px 6px;">
 		<div id="me-map" style="color:#9d92bd;margin-bottom:8px;font-size:11px;">…</div>
 		<div style="display:flex;gap:4px;margin-bottom:8px;">
 			<button class="me-btn me-tool" data-tool="paint">Paint</button>
@@ -66,9 +73,10 @@ export function mount(ow) {
 				<option value="keep">keep</option>
 			</select>
 		</div>
-		<div style="display:flex;gap:10px;margin-bottom:8px;font-size:11px;">
+		<div style="display:flex;gap:10px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;">
 			<label><input type="checkbox" id="me-grid" checked> grid</label>
 			<label><input type="checkbox" id="me-coll"> collision</label>
+			<label><input type="checkbox" id="me-ents" checked> NPCs</label>
 		</div>
 		<div style="color:#9d92bd;margin-bottom:3px;">Metatiles — <span id="me-sel">0</span></div>
 		<div id="me-palwrap" style="max-height:230px;overflow-y:auto;border:1px solid #4a3f6b;border-radius:8px;background:#120d20;">
@@ -104,6 +112,79 @@ export function mount(ow) {
 		o.value = String(e); o.textContent = String(e);
 		elevSel.appendChild(o);
 	}
+
+	// ---------- viewer mode: no player, camera we drive ----------
+	ow.editView.on = true;
+	ow.editView.entities = true;
+	function centreCam() {
+		const lay = world.current?.layout;
+		if (!lay) return;
+		const [vw, vh] = ow.viewSize();
+		ow.editView.cam = [Math.round(lay.width * META / 2 - vw / 2), Math.round(lay.height * META / 2 - vh / 2)];
+	}
+	// keep at least half a screen of the map on screen, so panning can't lose it
+	function clampCam() {
+		const lay = world.current?.layout;
+		if (!lay || !ow.editView.cam) return;
+		const [vw, vh] = ow.viewSize();
+		const c = ow.editView.cam;
+		c[0] = Math.max(-vw / 2, Math.min(lay.width * META - vw / 2, c[0]));
+		c[1] = Math.max(-vh / 2, Math.min(lay.height * META - vh / 2, c[1]));
+	}
+	const panBy = (dx, dy) => { if (ow.editView.cam) { ow.editView.cam[0] += dx; ow.editView.cam[1] += dy; clampCam(); drawOverlay(); } };
+	$('me-ents').addEventListener('change', e => { ow.editView.entities = e.target.checked; });
+
+	// ---------- region / map pickers ----------
+	let regions = {};
+	const regionSel = $('me-region'), mapSel = $('me-mapsel'), filter = $('me-filter');
+	// the four shipped regions first, then any cloned region, then the leftovers
+	const ORDER = ['KANTO', 'JOHTO', 'HOENN', 'JOHKANTO'];
+	const sortRegions = keys => [
+		...ORDER.filter(k => keys.includes(k)),
+		...keys.filter(k => !ORDER.includes(k) && k !== 'OTHER').sort(),
+		...(keys.includes('OTHER') ? ['OTHER'] : []),
+	];
+	function fillMaps() {
+		const list = regions[regionSel.value] || [];
+		const q = filter.value.trim().toLowerCase();
+		const shown = q ? list.filter(m => m.name.toLowerCase().includes(q)) : list;
+		mapSel.innerHTML = '';
+		for (const m of shown.slice(0, 600)) {
+			const o = document.createElement('option');
+			o.value = m.name; o.textContent = m.name;
+			mapSel.appendChild(o);
+		}
+		if (shown.length > 600) {
+			const o = document.createElement('option');
+			o.disabled = true; o.textContent = `…${shown.length - 600} more — type to filter`;
+			mapSel.appendChild(o);
+		}
+		if (world.current && shown.some(m => m.name === world.current.name)) mapSel.value = world.current.name;
+	}
+	fetch('./map_regions.json').then(r => r.json()).then(j => {
+		regions = j;
+		for (const k of sortRegions(Object.keys(j))) {
+			const o = document.createElement('option');
+			o.value = k;
+			o.textContent = `${k} (${j[k].length})`;
+			regionSel.appendChild(o);
+		}
+		// open on whichever region holds the map we booted into
+		const here = world.current?.name;
+		const owner = Object.keys(j).find(k => j[k].some(m => m.name === here));
+		regionSel.value = owner || 'KANTO';
+		fillMaps();
+	}).catch(e => msg('map_regions.json missing — run tools/gen_map_regions.mjs'));
+	regionSel.addEventListener('change', () => { filter.value = ''; fillMaps(); });
+	filter.addEventListener('input', fillMaps);
+	mapSel.addEventListener('change', async () => {
+		const name = mapSel.value;
+		if (!name || name === world.current?.name) return;
+		msg('loading ' + name + '…');
+		await ow.editLoadMap(name);
+		centreCam();
+		msg('editing ' + name);
+	});
 
 	const setActive = (cls, attr, val) => {
 		for (const b of panel.querySelectorAll('.' + cls)) b.classList.toggle('on', b.dataset[attr] === val);
@@ -334,6 +415,32 @@ export function mount(ow) {
 		painting = false;
 		endStroke();
 	};
+	// Pan with the RIGHT or MIDDLE button (left paints), and with the arrow keys —
+	// the player is frozen in edit mode, so those are free.
+	let panning = null;
+	screen.addEventListener('contextmenu', e => e.preventDefault());
+	screen.addEventListener('pointerdown', e => {
+		if (e.button !== 1 && e.button !== 2) return;
+		e.stopPropagation(); e.preventDefault();
+		panning = [e.clientX, e.clientY];
+	}, true);
+	window.addEventListener('pointermove', e => {
+		if (!panning) return;
+		const r = screen.getBoundingClientRect();
+		const scale = r.width / ow.viewSize()[0];
+		panBy(-(e.clientX - panning[0]) / scale, -(e.clientY - panning[1]) / scale);
+		panning = [e.clientX, e.clientY];
+	});
+	window.addEventListener('pointerup', () => { panning = null; });
+	window.addEventListener('keydown', e => {
+		if (document.activeElement && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+		const step = (e.shiftKey ? 4 : 1) * META;
+		const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+		if (!d) return;
+		e.preventDefault();
+		panBy(d[0], d[1]);
+	});
+
 	screen.addEventListener('pointerdown', onDown, true);
 	screen.addEventListener('pointermove', onMove, true);
 	screen.addEventListener('pointerup', onUp, true);
@@ -396,12 +503,16 @@ export function mount(ow) {
 			const lay = world.current.layout;
 			$('me-map').textContent = `${mapName}  ${lay.width}x${lay.height}`;
 			undo = []; redo = [];
+			if (!ow.editView.cam) centreCam();
+			clampCam();
+			if (mapSel.value !== mapName) fillMaps();
 		}
 		drawOverlay();
 	}, 120);
 	window.addEventListener('resize', drawOverlay);
 
-	msg('paint with the mouse; walk to scroll. Ctrl+Z undoes.');
+	centreCam();
+	msg('left-drag paints · right-drag or arrows pan · Ctrl+Z undoes');
 	return {
 		// test surface
 		get sel() { return sel; }, set sel(v) { sel = v; markSel(); },
@@ -416,6 +527,15 @@ export function mount(ow) {
 		layoutFile,
 		paletteSize: () => metatileCount(world.current?.ts),
 		valueFor,
-		destroy() { clearInterval(poll); panel.remove(); overlay.remove(); cursor.remove(); },
+		centreCam, panBy,
+		regionsLoaded: () => Object.keys(regions),
+		mapsShown: () => [...mapSel.options].map(o => o.value).filter(Boolean),
+		selectRegion: r => { regionSel.value = r; fillMaps(); },
+		openMap: async name => { mapSel.value = name; await ow.editLoadMap(name); centreCam(); },
+		destroy() {
+			clearInterval(poll);
+			ow.editView.on = false; ow.editView.cam = null;  // hand the camera back to the player
+			panel.remove(); overlay.remove(); cursor.remove();
+		},
 	};
 }

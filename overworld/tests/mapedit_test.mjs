@@ -181,6 +181,71 @@ async function waitFor(fn, ms) {
 		A(pal.canvas.w > 0 && pal.canvas.h > 0, 'and it rendered to a real canvas', JSON.stringify(pal.canvas));
 		A(pal.map === 'LittlerootTown' && /^LAYOUT_/.test(pal.layout), 'editing the booted map', JSON.stringify(pal));
 
+		// ---- it's a map VIEWER: no player, camera of its own ----
+		const view = await page.evaluate(async () => {
+			const ow = window.__ow, ed = window.__mapedit;
+			const out = { on: ow.editView.on, cam: ow.editView.cam && ow.editView.cam.slice() };
+			// the camera must NOT be the player-following one
+			const px = ow.player.px, py = ow.player.py;
+			const [cx] = ow.cameraPos();
+			out.independent = cx !== Math.round(px + 8 - ow.viewSize()[0] / 2);
+			// panning moves the camera and leaves the player where it is
+			ed.panBy(64, 32);
+			out.panned = ow.cameraPos()[0] !== cx;
+			out.playerStill = ow.player.px === px && ow.player.py === py;
+			// Holding a direction must not walk anywhere. Drive the REAL input path
+			// (a keydown reaching the game's heldKeys, consumed by the frame loop)
+			// — window.__ow.pumpPlayer is a test harness that calls player.update
+			// directly and bypasses the gate, so it would prove nothing here.
+			window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+			await new Promise(r => setTimeout(r, 700));
+			window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown', bubbles: true }));
+			out.frozen = ow.player.px === px && ow.player.py === py;
+			return out;
+		});
+		A(view.on, 'edit mode is on');
+		A(Array.isArray(view.cam), 'the editor has its own camera', JSON.stringify(view.cam));
+		A(view.independent, 'which is not the player-following one');
+		A(view.panned && view.playerStill, 'panning moves the view, not the player');
+		A(view.frozen, 'movement input is frozen so nothing warps under you');
+		A(await page.evaluate(() => window.__ow.editView.entities === true),
+			'NPCs stay visible by default (they are map data), behind a toggle');
+
+		// ---- region / map pickers ----
+		const pick = await page.evaluate(async () => {
+			const ed = window.__mapedit;
+			const out = { regions: ed.regionsLoaded() };
+			ed.selectRegion('JOHTO');
+			out.johto = ed.mapsShown().slice(0, 3);
+			ed.selectRegion('KANTO');
+			out.kanto = ed.mapsShown().slice(0, 3);
+			return out;
+		});
+		A(['KANTO', 'JOHTO', 'HOENN', 'JOHKANTO'].every(r => pick.regions.includes(r)),
+			'the picker offers Kanto, Johto, Hoenn and JohKanto', pick.regions.join(', '));
+		A(pick.johto.length > 0 && pick.kanto.length > 0, 'each region lists its maps');
+		A(!pick.johto.some(n => pick.kanto.includes(n)), 'and the regions do not overlap',
+			JSON.stringify([pick.johto, pick.kanto]));
+
+		// ---- switching map through the picker ----
+		const switched = await page.evaluate(async () => {
+			const ow = window.__ow, ed = window.__mapedit;
+			ed.selectRegion('KANTO');
+			await ed.openMap('PalletTown');
+			await new Promise(r => setTimeout(r, 900));
+			return { name: ow.world.current.name, layout: ow.world.current.layout.id, file: ed.layoutFile() };
+		});
+		A(switched.name === 'PalletTown', 'picking a map loads it', JSON.stringify(switched));
+		A(switched.file === 'overworld/data/layouts/' + switched.layout + '.json',
+			'and Save follows to that map\'s layout file', switched.file);
+		// back to Littleroot for the editing assertions below
+		await page.evaluate(async () => {
+			const ed = window.__mapedit;
+			ed.selectRegion('HOENN');
+			await ed.openMap('LittlerootTown');
+			await new Promise(r => setTimeout(r, 900));
+		});
+
 		// ---- painting writes the real grid cell ----
 		const paint = await page.evaluate(() => {
 			const ed = window.__mapedit, lay = window.__ow.world.current.layout;
