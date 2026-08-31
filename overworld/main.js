@@ -770,11 +770,30 @@ function interact() {
 		return;
 	}
 	for (const ev of world.current.map.bg_events || []) {
-		if (+ev.x === fx && +ev.y === fy && signTexts[ev.script]) {
+		if (+ev.x !== fx || +ev.y !== fy) continue;
+		if (signTexts[ev.script]) {
 			// same normalizer NPC speech uses, so a sign never shows a raw "#"
 			dialog.open(Story.normalizeText(signTexts[ev.script], cutsceneCtx()));
 			return;
 		}
+		// A scripted bg_event with no entry in sign_texts.json used to fall
+		// straight through and say NOTHING — 381 of them across 84 maps, including
+		// every department-store elevator button and every Game Corner machine.
+		// The map's own script usually has the label; run it the same way an NPC's
+		// script runs, and let runScriptLabel's own fallback handle a dead label
+		// (it says "..." rather than freezing).
+		if (ev.script && ev.script !== '0x0' && mapScripts[ev.script]) {
+			runScriptLabel(ev.script);
+			// Some of these are minigame machinery — Game Corner card flip, the
+			// Roulette tables, the Berry Blender — whose opcodes this port has no
+			// implementation for, so the script runs and produces nothing at all.
+			if (!dialog.blocking && !cutscene.blocking) dialog.open('...');
+			return;
+		}
+		// Neither text nor a script label. Say "..." rather than nothing, which is
+		// exactly what an NPC with an unresolvable script already does: pressing A
+		// must always acknowledge that something is there.
+		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
 	}
 	// face-to-face NPC: have them turn toward the player
 	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy);
