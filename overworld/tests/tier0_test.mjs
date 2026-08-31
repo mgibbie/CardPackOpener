@@ -85,6 +85,22 @@ async function waitFor(fn, ms) {
 	const lake = (enc.MAP_LAKE_OF_RAGE?.water?.slots || []).map(s => s.id);
 	A(lake.includes('gyarados'), 'and the tables are the real Gen-2 ones (Lake of Rage has GYARADOS)', lake.join(','));
 
+	// Hoenn's Victory Road and Safari Zone North were serving FireRed's roster,
+	// because BOTH decomps define those map names. Emerald is one game, so it is
+	// authoritative for Hoenn — no version split to adjudicate.
+	const vr = (enc.MAP_VICTORY_ROAD_1F?.land?.slots || []).map(s => s.id);
+	A(vr.includes('lairon') || vr.includes('hariyama'),
+		"Hoenn's Victory Road runs Emerald's roster, not FireRed's", vr.slice(0, 5).join(','));
+	A(!vr.includes('machop') && !vr.includes('onix'),
+		'and no longer has Kanto species in it', vr.slice(0, 5).join(','));
+	const sz = (enc.MAP_SAFARI_ZONE_NORTH?.land?.slots || []).map(s => s.id);
+	A(sz.includes('phanpy') || sz.includes('natu'),
+		'same for Hoenn Safari Zone North', sz.slice(0, 5).join(','));
+	// the Kanto copies keep the FireRed roster, which is correct for those maps
+	const kvr = (enc.MAP_KANTO_VICTORY_ROAD_1F?.land?.slots || []).map(s => s.id);
+	A(kvr.includes('machop') || kvr.includes('onix'),
+		"while KANTO's Victory Road keeps the FireRed roster", kvr.slice(0, 5).join(','));
+
 	const trainers = readData('trainers.json');
 	const pools = Object.values(trainers.classPools || {}).flat();
 	A(!pools.some(id => /-/.test(id)),
@@ -268,6 +284,37 @@ async function waitFor(fn, ms) {
 		});
 		A(tents.every(t => t.lobby && t.facility), 'all three Battle Tent lobbies now start a challenge', JSON.stringify(tents));
 		A(tents.every(t => t.rounds === 3), 'over three rounds, like the real tents', JSON.stringify(tents));
+
+		// ---- 7. Navel Rock is reachable and pays out ----
+		const navel = await page.evaluate(() => {
+			const ow = window.__ow;
+			const ferry = ow.FERRY_DESTS?.find(d => /Navel Rock/.test(d.label));
+			const top = ow.LEGENDARY_ENCOUNTERS?.MAP_NAVEL_ROCK_TOP;
+			const bottom = ow.LEGENDARY_ENCOUNTERS?.MAP_NAVEL_ROCK_BOTTOM;
+			const johtoHooh = ow.LEGENDARY_ENCOUNTERS?.MAP_TIN_TOWER_ROOF;
+			return {
+				ferry: ferry?.file, gated: !!ferry?.requires,
+				top: top?.species, bottom: bottom?.species,
+				sameFlag: top?.flag === johtoHooh?.flag,
+			};
+		});
+		A(navel.ferry === 'NavelRock_Harbor' && navel.gated,
+			'a champion-gated ferry reaches Navel Rock — it had NO inbound edge at all', JSON.stringify(navel));
+		A(navel.top === 'hooh' && navel.bottom === 'lugia',
+			'with HO-OH at the top of the climb and LUGIA at the bottom', JSON.stringify(navel));
+		A(navel.sameFlag === true,
+			'sharing Johto\'s catch flag, so it is a second ROUTE to them, not a second copy',
+			JSON.stringify(navel));
+
+		// and the island is actually walkable from the harbour
+		const walk = await page.evaluate(async () => {
+			const ow = window.__ow;
+			await ow.moveToMap('NavelRock_Harbor');
+			await new Promise(r => setTimeout(r, 700));
+			return { id: ow.world.current.map.id, warps: (ow.world.warps || []).length };
+		});
+		A(walk.id === 'MAP_NAVEL_ROCK_HARBOR' && walk.warps > 0,
+			'the harbour loads and has a way inland', JSON.stringify(walk));
 
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
