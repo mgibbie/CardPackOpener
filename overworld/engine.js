@@ -32,6 +32,13 @@ export const metatileCount = ts =>
 const TILE_INDEX_MASK = 0x3FF, FLIP_X = 0x400, FLIP_Y = 0x800, PAL_MASK = 0xF000;
 const LAYER_COVERED = 1;
 const MB_TALL_GRASS = 0x02;
+// Emerald's MB_LONG_GRASS — the waist-high grass on Routes 119/120. It is an
+// encounter tile there just like MB_TALL_GRASS, but the engine only knew 0x02,
+// so those two maps read as having NO grass at all and fell through to the
+// grassless "cave" rule: encounters on every walkable tile of the route instead
+// of only in the grass.
+const MB_LONG_GRASS = 0x03;
+const isGrassBehavior = b => b === MB_TALL_GRASS || b === MB_LONG_GRASS;
 const MB_CRACKED_FLOOR = 0xD2;
 const MB_JUMP = { right: 0x38, left: 0x39, up: 0x3A, down: 0x3B };
 
@@ -372,7 +379,7 @@ export class World {
 	}
 
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
-	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
+	isTallGrass(tx, ty) { return isGrassBehavior(this.behaviorAt(tx, ty)); }
 	// Does THIS map have any grass to encounter in? Caves and interiors have none
 	// — their land table is meant to fire on the floor itself (gen 3 does the
 	// same). Encounters.roll uses this to decide which rule applies, so it must
@@ -387,7 +394,7 @@ export class World {
 					const v = lay.map[y]?.[x] ?? 0;
 					if (v === 0) continue;
 					const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
-					if ((attr & BEHAVIOR_MASK) === MB_TALL_GRASS) { found = true; break; }
+					if (isGrassBehavior(attr & BEHAVIOR_MASK)) { found = true; break; }
 				}
 			}
 			cur._hasGrass = found;
@@ -501,6 +508,12 @@ export class Player {
 		this.tx = tx; this.ty = ty;
 		this.px = tx * META; this.py = ty * META;
 		this.moving = false; this.jumping = false;
+		// Landing on water means you are surfing, whatever you were doing before.
+		// Johto and JohKanto shipped with no water behaviors at all, so their sea
+		// routes were walkable floor; a save from before that fix can restore onto
+		// open ocean, and without this the player is frozen there — every direction
+		// out is water, and you cannot walk onto water.
+		if (this.world?.isSurfable?.(tx, ty)) this.surfing = true;
 	}
 
 	tryMove(dir) {
@@ -563,6 +576,12 @@ export class Player {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];
 				this.moving = false; this.jumping = false;
 				if (this.surfing && !this.world.isSurfable(this.tx, this.ty)) this.surfing = false;
+				// ...and the inverse, which is a rescue rather than a rule: Johto and
+				// JohKanto shipped with no water behaviors at all, so their sea routes
+				// were walkable floor and a save could be sitting in the middle of one.
+				// Now that those tiles are water, standing on them without surfing is a
+				// position you can never move out of.
+				else if (!this.surfing && this.world.isSurfable(this.tx, this.ty)) this.surfing = true;
 				this.onArrive?.();
 				// keep walking if a key is held
 				if (held) {
