@@ -356,6 +356,83 @@ async function waitFor(fn, ms) {
 		A(abil.defBlocked && abil.atkAllowed, 'BIG PECKS refuses Defense drops and nothing else', JSON.stringify(abil));
 		A(abil.slept <= 2, 'EARLY BIRD burns sleep at double rate', `4 -> ${abil.slept}`);
 
+		// ---------- the ability wave ----------
+		const wave = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const out = {};
+			// SHARPNESS scales slicing moves. A FRESH battle per measurement: reusing
+			// one leaves b.active stale and every later reading silently comes back 0.
+			const dmg = async (ab, id) => {
+				const s = await window.__single();
+				s.me.ability = ab; s.foe.curHP = s.foe.maxHP = 999999;
+				const real = Math.random; Math.random = () => 0.5;
+				try {
+					b.useMove(s.me, s.meBoosts, s.foe, s.foeBoosts, { id, name: id, pp: 99, maxPp: 99 }, false);
+					window.__pump(40);
+				} finally { Math.random = real; }
+				const d = s.foe.maxHP - s.foe.curHP;
+				window.__end();
+				return d;
+			};
+			out.slashPlain = await dmg(null, 'slash');
+			out.slashSharp = await dmg('sharpness', 'slash');
+			// PRIORITY: Gale Wings at full HP
+			const a = await window.__single();
+			a.me.ability = 'galewings'; a.me.curHP = a.me.maxHP;
+			out.galePrio = b.movePriority(a.me, { id: 'wingattack' });
+			a.me.curHP = 1;
+			out.galeHurt = b.movePriority(a.me, { id: 'wingattack' });
+			// SLUSH RUSH
+			a.me.ability = 'slushrush'; a.me.curHP = a.me.maxHP;
+			a.weather = null; const dry = b.speedOf(a.me);
+			a.weather = { kind: 'hail', turns: 5 }; const hail = b.speedOf(a.me);
+			a.weather = null;
+			out.dry = dry; out.hail = hail;
+			// CORROSION poisons a Steel type
+			a.foe.types = ['Steel']; a.foe.status = null;
+			a.me.ability = 'corrosion';
+			b.applyStatus(a.foe, 'psn', false, a.me);
+			out.steelPoisoned = a.foe.status;
+			a.foe.status = null; a.me.ability = null;
+			b.applyStatus(a.foe, 'psn', false, a.me);
+			out.steelSafe = a.foe.status;
+			window.__end();
+			return out;
+		});
+		A(wave.slashSharp > wave.slashPlain, 'SHARPNESS powers up slicing moves', JSON.stringify(wave));
+		A(wave.galePrio === 1 && wave.galeHurt === 0,
+			'GALE WINGS gives Flying moves priority only at full HP', JSON.stringify(wave));
+		A(wave.hail === wave.dry * 2, 'SLUSH RUSH doubles speed in hail', JSON.stringify(wave));
+		A(wave.steelPoisoned === 'psn' && wave.steelSafe === null,
+			'CORROSION poisons a STEEL type — the only ability that beats a type immunity',
+			JSON.stringify(wave));
+
+		// ---------- trapping, and the five moves that announced it and did nothing ----------
+		const trap = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const a = await window.__single();
+			const out = {};
+			out.free = b.trappedBy(a.me);
+			a.me.noSwitch = true;                     // what Mean Look / Block set
+			out.meanLook = b.trappedBy(a.me);
+			a.me.noSwitch = false;
+			a.foe.ability = 'shadowtag'; a.me.types = ['Normal'];
+			out.shadowTag = b.trappedBy(a.me);
+			a.me.ability = 'suctioncups';
+			out.suctionCups = b.trappedBy(a.me);
+			a.me.ability = null; a.me.types = ['Ghost'];
+			out.ghost = b.trappedBy(a.me);
+			window.__end();
+			return out;
+		});
+		A(trap.free === null, 'an unhindered POKeMON is free to leave', JSON.stringify(trap));
+		A(trap.meanLook === 'trapped',
+			'noSwitch now actually traps — MEAN LOOK / BLOCK / SPIDER WEB / OCTOLOCK / FAIRY LOCK all set it and NOTHING read it',
+			JSON.stringify(trap));
+		A(trap.shadowTag === 'SHADOW TAG', 'SHADOW TAG pins the other side', JSON.stringify(trap));
+		A(trap.suctionCups === null, 'SUCTION CUPS shrugs it off', JSON.stringify(trap));
+		A(trap.ghost === null, 'and a GHOST always walks away', JSON.stringify(trap));
+
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
