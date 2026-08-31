@@ -150,6 +150,11 @@ export class Trainers {
 		this.list = [];
 		this.engagement = null;
 		const evs = this.world.current.map.object_events || [];
+		// a few decomp objects ship with script "0x0" and their battle stranded in
+		// an onFrame scene the engine can't arm (see repairScript in main.js).
+		// Rewriting ev.script HERE is deliberate: claims(), keyOf() and buildBattle
+		// all read ev.script, so one mutation keeps every consumer consistent.
+		if (this.repairScript) for (const ev of evs) this.repairScript(ev, this.world.current.map.id);
 		await Promise.all(evs.map(async ev => {
 			if (!this.claims(ev)) return;
 			// hidden story trainers are skipped — EXCEPT villain grunts that the active

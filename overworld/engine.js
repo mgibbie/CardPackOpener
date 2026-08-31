@@ -373,6 +373,27 @@ export class World {
 
 	isLedge(tx, ty, dir) { return this.behaviorAt(tx, ty) === MB_JUMP[dir]; }
 	isTallGrass(tx, ty) { return this.behaviorAt(tx, ty) === MB_TALL_GRASS; }
+	// Does THIS map have any grass to encounter in? Caves and interiors have none
+	// — their land table is meant to fire on the floor itself (gen 3 does the
+	// same). Encounters.roll uses this to decide which rule applies, so it must
+	// describe the current map only: cached per load, never across maps.
+	hasTallGrass() {
+		const cur = this.current;
+		if (cur._hasGrass == null) {
+			const lay = cur.layout;
+			let found = false;
+			for (let y = 0; y < lay.height && !found; y++) {
+				for (let x = 0; x < lay.width; x++) {
+					const v = lay.map[y]?.[x] ?? 0;
+					if (v === 0) continue;
+					const { attr } = metatileOf(cur.ts, v & METATILE_MASK);
+					if ((attr & BEHAVIOR_MASK) === MB_TALL_GRASS) { found = true; break; }
+				}
+			}
+			cur._hasGrass = found;
+		}
+		return cur._hasGrass;
+	}
 	isCrackedFloor(tx, ty) { return this.behaviorAt(tx, ty) === MB_CRACKED_FLOOR; }
 	// a map whose sea can be dived into (offers a 'dive' overlay); its deep water
 	// gets a distinct tint so DIVE spots are readable

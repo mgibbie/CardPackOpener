@@ -204,6 +204,43 @@ trainers.onEngage = t => {
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
 	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
+// ---------- the sealed champions ----------
+// BLUE and WALLACE both ship with `script: "0x0"`, so Trainers.claims() never
+// spawned them. Their battle lived only in an onFrame scene gated on VAR_TEMP_1
+// — and checkOnFrame skips a value-0 entry whose var was never SET, while the
+// only scripts that set VAR_TEMP_1 are the champion's own EnterRoom and the Hall
+// of Fame. Chicken-and-egg: two of three regions could never be completed, which
+// sealed the ENTIRE post-game (Battle Frontier, 9 legendaries, 4 ferry islands,
+// the Grand Champion finale). Johto only worked because Lance's object carries a
+// real script.
+//
+// Seeding VAR_TEMP_1 was the wrong lever: it is a decomp SCRATCH var, and arming
+// it globally would wake unrelated scenes — most of Hoenn's dormant onFrame set
+// is Battle Frontier state machinery that must stay inert. So instead we hand
+// each object the roster script that already exists for it, which routes the
+// fight through the ordinary trainer pipeline exactly like Lance.
+const KANTO_STARTERS = ['bulbasaur', 'charmander', 'squirtle'];
+// Kanto's champion is your rival, and his team is built to counter YOUR starter,
+// so the roster comes in three variants. Saves made before the starter was
+// recorded fall back to whichever Kanto starter the dex says you caught.
+function kantoChampionScript() {
+	const saved = localStorage.getItem('magepunk_starter');
+	const id = KANTO_STARTERS.includes(saved) ? saved
+		: KANTO_STARTERS.find(s => Dex.isCaught(s)) || KANTO_STARTERS[0];
+	return 'PokemonLeague_ChampionsRoom_EventScript_Battle' + id[0].toUpperCase() + id.slice(1);
+}
+const SEALED_TRAINERS = {
+	MAP_POKEMON_LEAGUE_CHAMPIONS_ROOM: { OBJ_EVENT_GFX_BLUE: kantoChampionScript },
+	MAP_EVER_GRANDE_CITY_CHAMPIONS_ROOM: {
+		OBJ_EVENT_GFX_WALLACE: () => 'EverGrandeCity_ChampionsRoom_EventScript_Wallace',
+	},
+};
+trainers.repairScript = (ev, mapId) => {
+	if (!ev || (ev.script && ev.script !== '0x0')) return; // never overwrite a real script
+	const pick = SEALED_TRAINERS[mapId]?.[ev.graphics_id];
+	if (pick) ev.script = pick();
+};
+
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
 	battle.startTrainer(party, foeParty, info, result => {
@@ -433,6 +470,11 @@ const FACILITY_LOBBIES = {
 	MAP_BATTLE_FRONTIER_BATTLE_ARENA_LOBBY:   { facility: 'arena',   tiles: [[7, 7]], bp: [[2, 10]] },
 	MAP_BATTLE_FRONTIER_BATTLE_PIKE_LOBBY:    { facility: 'pike',    tiles: [[5, 5]], bp: [[10, 9]] },
 	MAP_BATTLE_FRONTIER_BATTLE_PYRAMID_LOBBY: { facility: 'pyramid', tiles: [[7, 12]], bp: [[2, 15]] },
+	// the three Battle Tents — each lobby's Attendant stands at (6,5). No `bp`
+	// row: the BP EXCHANGE stays a Frontier facility, the tents only pay it out.
+	MAP_SLATEPORT_CITY_BATTLE_TENT_LOBBY:  { facility: 'slateporttent',  tiles: [[6, 5]] },
+	MAP_VERDANTURF_TOWN_BATTLE_TENT_LOBBY: { facility: 'verdanturftent', tiles: [[6, 5]] },
+	MAP_FALLARBOR_TOWN_BATTLE_TENT_LOBBY:  { facility: 'fallarbortent',  tiles: [[6, 5]] },
 };
 const frontier = { active: false, streak: 0, cfg: null, runParty: null };
 // heal a team IN MEMORY without persisting — used between Frontier bouts so the run
@@ -2107,7 +2149,18 @@ async function moveToMap(file, px, py) {
 
 async function warpTo(mapId, destWarpId) {
 	const file = world.fileFor(mapId);
-	if (!file) { console.warn('unknown warp dest', mapId); return; }
+	// An unresolvable destination used to just warn and return, leaving the player
+	// standing on the warp tile. That is a SOFTLOCK wherever every exit is
+	// unresolvable and there is no connection to walk out through — six elevators
+	// (Silph Co, Rocket Hideout, Trainer Tower, Celadon/Lilycove dept stores,
+	// Marine Cave) trapped you for good, since Fly is blocked indoors and Escape
+	// Rope does nothing. backWarp() puts you back where you came from, and falls
+	// back to the region's start town if even that is unknown.
+	if (!file) {
+		console.warn('unknown warp dest', mapId, '- returning the player instead of stranding them');
+		await backWarp();
+		return;
+	}
 	loading = true;
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
 	try {
@@ -3306,7 +3359,7 @@ function syncOverworldAchievements() {
 // localStorage, so a different device/browser saw stale data. Persist the raw save strings to the
 // server (D1, ow:<user>) so a logged-in player gets the same, current game everywhere. The server is
 // authoritative on boot (hydrateOw overwrites the local cache); a deduped push keeps it current.
-const OW_KEYS = ['magepunk_party_v1', 'magepunk_region', POS_KEY, 'magepunk_box_v1', 'magepunk_rival', 'magepunk_name', 'magepunk_money', 'magepunk_playtime'];
+const OW_KEYS = ['magepunk_party_v1', 'magepunk_region', POS_KEY, 'magepunk_box_v1', 'magepunk_rival', 'magepunk_name', 'magepunk_money', 'magepunk_playtime', 'magepunk_starter'];
 function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
 }
@@ -3377,6 +3430,7 @@ function openStarterPick(region) {
 function finishStarterPick(region, col) {
 	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
 	const id = STARTERS[idx].ids[col];
+	safeSaveStr('magepunk_starter', id); // Kanto's champion roster is chosen by it
 	party = createStarter(id, battle.data);
 	Dex.markCaught(id);
 	Dex.seedFrom(party);

@@ -108,8 +108,14 @@ try {
 	A(shop.refused, 'a purchase with insufficient BP is refused');
 	A(shop.closed, 'the BP EXCHANGE closes on X');
 
-	// all SEVEN facilities are configured
-	A(await page.evaluate(() => Object.keys(window.__ow.Frontier.FACILITIES).length) === 7, 'all seven Battle Frontier facilities are configured');
+	// All SEVEN Frontier facilities are configured. FACILITIES also carries the
+	// three mid-game Battle Tents, so name the seven rather than counting keys —
+	// a bare length check called the tents a regression.
+	const FRONTIER_SEVEN = ['tower', 'dome', 'factory', 'palace', 'arena', 'pike', 'pyramid'];
+	const facs = await page.evaluate(() => Object.keys(window.__ow.Frontier.FACILITIES));
+	A(FRONTIER_SEVEN.every(f => facs.includes(f)), 'all seven Battle Frontier facilities are configured', facs.join(','));
+	A(['slateporttent', 'verdanturftent', 'fallarbortent'].every(f => facs.includes(f)),
+		'and the three Battle Tents sit alongside them', facs.join(','));
 	A(await page.evaluate(() => {
 		const F = window.__ow.Frontier.FACILITIES;
 		return F.factory.rental === true && F.palace.heal === false && F.dome.rounds === 5 && F.arena.rounds === 3 && F.pyramid.bpWin === 2 && F.pike.rooms === true;
