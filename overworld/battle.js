@@ -45,7 +45,28 @@ const AB_ONHIT = {
 const SPREAD_MOVES = new Set(['earthquake', 'rockslide', 'surf', 'blizzard', 'heatwave',
 	'muddywater', 'dazzlinggleam', 'hypervoice', 'boomburst', 'discharge', 'lavaplume',
 	'sludgewave', 'eruption', 'waterspout', 'icywind', 'snarl', 'swift', 'razorleaf',
-	'twister', 'acid', 'bubble', 'powdersnow', 'airslash']);
+	'twister', 'acid', 'bubble', 'powdersnow', 'airslash',
+	// these hit everything too and were missing, so in doubles they struck one target
+	'bulldoze', 'electroweb', 'strugglebug', 'petalblizzard', 'precipiceblades',
+	'originpulse', 'diamondstorm', 'landswrath', 'glaciallance', 'makeitrain', 'parabolicharge']);
+// High crit ratio (1/8) and guaranteed crits. NEITHER existed: critChance was a
+// flat 1/16 for every move in the game, so 532 species learning a high-crit move
+// by level-up got nothing for it.
+const HIGH_CRIT = new Set(['slash', 'razorleaf', 'crabhammer', 'stoneedge', 'nightslash',
+	'crosschop', 'leafblade', 'aircutter', 'psychocut', 'shadowclaw', 'attackorder',
+	'drillrun', 'karatechop', 'aeroblast', 'blazekick', 'poisontail', 'spacialrend',
+	'snipeshot', 'stoneaxe', 'skyattack', 'razorwind', 'crosspoison', 'aquacutter']);
+const ALWAYS_CRIT = new Set(['frostbreath', 'stormthrow', 'wickedblow', 'surgingstrikes', 'flowertrick']);
+// HIDDEN POWER type from IVs (gen 3): the low bit of each IV, in the order
+// hp/atk/def/spe/spa/spd, weighted 1/2/4/8/16/32, scaled across the 16 types.
+const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
+	'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark'];
+function hiddenPowerType(mon) {
+	const iv = mon.ivs || {};
+	const bit = k => (iv[k] ?? 15) & 1;
+	const n = bit('hp') + 2 * bit('atk') + 4 * bit('def') + 8 * bit('spe') + 16 * bit('spa') + 32 * bit('spd');
+	return HP_TYPES[Math.floor(n * 15 / 63)] || 'Dark';
+}
 const SOUND_MOVES = new Set(['growl', 'roar', 'sing', 'supersonic', 'screech', 'snore',
 	'uproar', 'hypervoice', 'grasswhistle', 'metalsound', 'healbell', 'perishsong',
 	'bugbuzz', 'chatter', 'round', 'echoedvoice', 'boomburst', 'disarmingvoice']);
@@ -295,17 +316,26 @@ const MOVE_FX = {
 	trickortreat: { addType: 'Ghost' }, forestscurse: { addType: 'Grass' },
 	stockpile: { stockpile: true }, spitup: { spitUp: true }, swallow: { swallow: true },
 	charge: { chargeUp: true }, splash: { splashMsg: true },
-	// no held items / no allies in this game: these correctly fail
-	afteryou: { noop: true }, allyswitch: { noop: true }, aromaticmist: { noop: true },
-	bestow: { itemGive: true }, embargo: { noop: true }, followme: { noop: true },
-	helpinghand: { noop: true }, instruct: { noop: true }, mefirst: { noop: true },
-	quash: { noop: true }, ragepowder: { noop: true }, recycle: { recycle: true },
-	snatch: { noop: true }, spotlight: { noop: true }, switcheroo: { itemSwap: true },
+	// This block used to be gated on "no held items / no allies in this game" —
+	// BOTH premises are now false: doubles ship and held items ship. The
+	// ally-support family below is implemented; the rest stay no-ops because they
+	// need machinery this engine genuinely lacks (move interception, action
+	// re-ordering mid-turn, item suppression).
+	allyswitch: { allySwitch: true }, aromaticmist: { allyBoost: { spd: 1 } },
+	helpinghand: { helpingHand: true }, followme: { centerTaunt: true },
+	ragepowder: { centerTaunt: true }, spotlight: { centerTaunt: true },
+	decorate: { allyBoost: { atk: 2, spa: 2 } }, gearup: { allyBoost: { atk: 1, spa: 1 } },
+	magneticflux: { allyBoost: { def: 1, spd: 1 } }, flowershield: { allyBoost: { def: 1 } },
+	rototiller: { allyBoost: { atk: 1, spa: 1 } },
+	afteryou: { noop: true }, embargo: { noop: true },
+	bestow: { itemGive: true },
+	instruct: { noop: true }, mefirst: { noop: true },
+	quash: { noop: true }, recycle: { recycle: true },
+	snatch: { noop: true }, switcheroo: { itemSwap: true },
 	magiccoat: { noop: true }, powder: { noop: true },
 	trick: { itemSwap: true }, knockoff: { knockOff: true },
 	thief: { steal: true }, covet: { steal: true },
-	teatime: { noop: true }, rototiller: { noop: true }, flowershield: { noop: true },
-	decorate: { noop: true }, gearup: { noop: true }, magneticflux: { noop: true },
+	teatime: { noop: true },
 	healblock: { noop: true }, imprison: { noop: true }, grudge: { noop: true },
 	electrify: { noop: true }, iondeluge: { noop: true }, magicroom: { noop: true },
 	wonderroom: { noop: true }, doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
@@ -340,6 +370,22 @@ const POWER_FX = {
 	knockoff: (b, u, t) => t.heldItem ? 97 : 65,
 	smellingsalts: (b, u, t) => t.status === 'par' ? 140 : 70,
 	wakeupslap: (b, u, t) => t.status === 'slp' ? 140 : 70,
+	// The same conditional-doubler family as the four above, just never listed —
+	// 321 species learn one of these by level-up and got a flat base power.
+	// (stompingtantrum and retaliate are deliberately NOT here: they need
+	// move-failure and ally-faint bookkeeping this engine doesn't record, and a
+	// half-wired condition that never fires is the exact bug being swept up.)
+	venoshock: (b, u, t) => (t.status === 'psn' || t.status === 'tox') ? 130 : 65,
+	revenge: (b, u, t) => u.lastTaken?.turn === b.active?.turnCount ? 120 : 60,
+	avalanche: (b, u, t) => u.lastTaken?.turn === b.active?.turnCount ? 120 : 60,
+	payback: (b, u, t) => t.movedThisTurn ? 100 : 50,
+	assurance: (b, u, t) => t.tookDamageThisTurn ? 120 : 60,
+	// Last Resort is the reverse problem: it fired at 140 with none of its
+	// "every other move used first" restriction. 0 power => the move fails.
+	lastresort: (b, u, t, ub, tb, mv) => {
+		const others = (u.moves || []).filter(m => m.id !== mv?.id);
+		return others.length && others.every(m => (u.usedMoves || []).includes(m.id)) ? 140 : 0;
+	},
 	return: () => 102, frustration: () => 102,
 	veeveevolley: () => 102, pikapapow: () => 102,
 	// scale with the TARGET's remaining HP (opposite of Flail)
@@ -736,6 +782,20 @@ export class Battle {
 		return Bag.ITEMS[mon.heldItem]?.held || null;
 	}
 	itemName(mon) { return Bag.ITEMS[mon.heldItem]?.name || mon.heldItem; }
+	// Effective speed for turn order: base speed with Tailwind, Choice Scarf,
+	// Unburden and Trick Room applied. Singles has always done all four inline;
+	// the doubles sorter used RAW speed, so a player who set Trick Room in a
+	// double got the OPPOSITE of what the message promised and a 4800-gold
+	// Choice Scarf was dead weight. Shared so they cannot drift apart again.
+	speedOf(mon) {
+		const a = this.active;
+		const side = this.sideOfMon(mon) === 'me' ? a.meSide : a.foeSide;
+		let spe = this.statOf(mon, this.boostsOf(mon), 'spe') * (side?.tailwind > 0 ? 2 : 1);
+		if (this.itemFx(mon)?.choice === 'spe') spe *= 1.5;
+		if (mon.unburdened) spe *= 2;
+		if (mon.status && this.abilityOf(mon) === 'quickfeet') spe *= 1.5;   // was inert: 16 species
+		return a.fieldFx?.trickRoom > 0 ? -spe : spe;
+	}
 	// AMULET COIN doubles a trainer's prize. It MUTATES info.money rather than
 	// just dressing up the message, because the caller (startTrainerBattle in
 	// main.js) credits info.money itself — boosting only the text would announce
@@ -800,12 +860,20 @@ export class Battle {
 		}
 		return a.weather.kind;
 	}
+	// --- narrow accessors so the suites can assert these directly rather than
+	// inferring them from damage rolls (both tables are module-private) ---
+	hiddenPowerTypeOf(mon) { return hiddenPowerType(mon); }
+	powerOf(id, user, target, ub, tb, move) {
+		return POWER_FX[id] ? POWER_FX[id](this, user, target, ub, tb, move) : (this.data.moves[id]?.power || 0);
+	}
 	// Clear Body & friends refuse foe-inflicted stat drops
 	canLowerStat(target, stat) {
 		const ab = this.abilityOf(target);
 		if (ab === 'clearbody' || ab === 'whitesmoke') return false;
 		if (ab === 'keeneye' && stat === 'acc') return false;
 		if (ab === 'hypercutter' && stat === 'atk') return false;
+		if (ab === 'bigpecks' && stat === 'def') return false;       // was inert: 21 species
+		if (ab === 'fullmetalbody' || ab === 'whitesmoke') return false;
 		return true;
 	}
 	// announce + apply an ability's switch-in effect
@@ -838,6 +906,24 @@ export class Battle {
 			this.snapAbility(mon);
 			mon.ability = other.ability;
 			this.pushMsg(`${mon.name} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
+		}
+		// scouting abilities — all three were inert (frisk 33 species, forewarn 8,
+		// anticipation 17). They only ever tell you something, which is exactly
+		// what makes them safe to add and useful to a player reading the log.
+		if (ab === 'frisk' && other.curHP > 0 && other.heldItem) {
+			this.pushMsg(`${mon.name} frisked ${other.name} and found its ${this.itemName(other)}!`);
+		}
+		if (ab === 'forewarn' && other.curHP > 0) {
+			const best = (other.moves || []).reduce((b, m) =>
+				((this.data.moves[m.id]?.power || 0) > (this.data.moves[b?.id]?.power || 0) ? m : b), null);
+			if (best) this.pushMsg(`${mon.name}'s FOREWARN sensed ${other.name}'s ${best.name}!`);
+		}
+		if (ab === 'anticipation' && other.curHP > 0) {
+			const scary = (other.moves || []).some(m => {
+				const mv = this.data.moves[m.id] || {};
+				return mv.power && effectiveness(mv.type, mon.types) > 1;
+			});
+			if (scary) this.pushMsg(`${mon.name} shuddered with ANTICIPATION!`);
 		}
 		if (ab === 'intrepidsword') {
 			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
@@ -881,7 +967,9 @@ export class Battle {
 		const ab = this.abilityOf(mon);
 		if (key === 'atk' && mon.status === 'brn' && ab !== 'guts') v = Math.floor(v / 2);
 		if (key === 'atk' && mon.status && ab === 'guts') v = Math.floor(v * 1.5);
-		if (key === 'spe' && mon.status === 'par') v = Math.floor(v / 4);
+		// QUICK FEET ignores paralysis's own speed cut as well as taking the 1.5x
+		// (see speedOf) — without this the ability was a net LOSS while statused
+		if (key === 'spe' && mon.status === 'par' && ab !== 'quickfeet') v = Math.floor(v / 4);
 		if (key === 'spe') {
 			const wk = this.weatherKind?.();
 			if (ab === 'swiftswim' && wk === 'rain') v *= 2;
@@ -943,6 +1031,9 @@ export class Battle {
 		}
 		delete mon.confuseTurns;
 		delete mon.lastTaken;
+		delete mon.usedMoves;          // Last Resort re-arms on a switch, as it should
+		delete mon.movedThisTurn;
+		delete mon.tookDamageThisTurn;
 		delete mon.bideDmg;
 		delete mon.seeded;
 		delete mon.badPsn;
@@ -1022,6 +1113,8 @@ export class Battle {
 		// sleep and freeze resolve before confusion/attract so a sleeping mon
 		// can't burn confusion turns or hurt itself
 		if (user.status === 'slp') {
+			// EARLY BIRD burns sleep at double rate (was inert: 16 species)
+			if (this.abilityOf(user) === 'earlybird') user.sleepTurns--;
 			if (--user.sleepTurns <= 0) {
 				user.status = null;
 				this.pushMsg(`${user.name} woke up!`);
@@ -1086,6 +1179,8 @@ export class Battle {
 		user.destinyBond = fx.destinyBond ? user.destinyBond : false;
 		const firstAction = !user.acted;
 		user.acted = true;
+		user.movedThisTurn = true;                      // Payback
+		(user.usedMoves ||= []).push(move.id);          // Last Resort
 		if (fx.firstTurn && !firstAction) { this.pushMsg(`${user.name} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
 		move.pp = Math.max(0, move.pp - 1);
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
@@ -1367,6 +1462,10 @@ export class Battle {
 		if (move.id === 'weatherball' && WEATHERBALL_TYPE[this.weatherKind()]) {
 			mv = { ...mv, type: WEATHERBALL_TYPE[this.weatherKind()] };
 		}
+		// HIDDEN POWER's type comes from the user's IVs. Without this it stayed
+		// Normal for all 845 species that can be taught it — never STAB, never
+		// coverage, strictly worse than filler. The gen-3 formula, unchanged.
+		if (move.id === 'hiddenpower') mv = { ...mv, type: hiddenPowerType(user) };
 		// Present: usually a 40/80/120 bomb, sometimes a healing gift
 		if (move.id === 'present') {
 			if (Math.random() < 0.2) {
@@ -1485,10 +1584,28 @@ export class Battle {
 		if (uItem?.lifeOrb) envMult *= 1.3;
 		if (uItem?.expertBelt && eff > 1) envMult *= 1.2;
 		if (uItem?.catBoost === mv.category) envMult *= 1.1;
+		// a spread move hitting more than one target is weaker per target — the
+		// doubles resolver used to call useMove once per victim at FULL power,
+		// so Earthquake hit both foes for 100% each
+		if (opts.spread) envMult *= 0.75;
+		if (user.helpingHand) envMult *= 1.5;   // one-shot, cleared after this move
+		// ANALYTIC rewards moving last (was inert: 18 species)
+		if (uAb === 'analytic' && target.movedThisTurn) envMult *= 1.3;
+		// FRIEND GUARD softens damage from the target's ALLY (doubles; was inert: 11)
+		if (a.double) {
+			const tAlly = target === a.me ? a.meAlly : target === a.meAlly ? a.me
+				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null;
+			if (tAlly && tAlly.curHP > 0 && this.abilityOf(tAlly) === 'friendguard') envMult *= 0.75;
+		}
 		// crit odds: Focus Energy 1/4, Laser Focus certain, Lucky Chant none
 		const critBlocked = (isFoe ? a.meSide : a.foeSide)?.luckychant > 0
 			|| tAb === 'battlearmor' || tAb === 'shellarmor';
 		let critChance = critBlocked ? 0 : user.laserFocus ? 1 : user.focusEnergy ? 0.25 : 1 / 16;
+		// HIGH-CRIT and ALWAYS-CRIT moves existed nowhere in the engine, yet 532
+		// species learn one by level-up. Scope Lens / Super Luck were also weaker
+		// than intended because they only ever raised the base 1/16.
+		if (!critBlocked && ALWAYS_CRIT.has(move.id)) critChance = 1;
+		else if (!critBlocked && HIGH_CRIT.has(move.id)) critChance = Math.max(critChance, 1 / 8);
 		if (!critBlocked && uAb === 'superluck') critChance = Math.max(critChance, 1 / 8);
 		if (!critBlocked && this.itemFx(user)?.critBoost) critChance = Math.max(critChance, 1 / 8);
 		const critMult = uAb === 'sniper' ? 2.5 : 2;
@@ -1563,10 +1680,12 @@ export class Battle {
 				this.pushMsg(`${target.name} hung on using its FOCUS BAND!`);
 			}
 			target.curHP = Math.max(0, target.curHP - dealt);
+			this.lastWasCrit = crits > 0;   // test surface for the crit-tier suite
 			this.float(targetSide, `-${dealt}`, crits ? '#ffd23f' : '#ff7a6b');
 			// damage memory for Counter / Mirror Coat / Metal Burst / Bide
 			// (substitute and disguise hits returned above and don't count)
-			target.lastTaken = { amt: dealt, phys, from: user };
+			target.lastTaken = { amt: dealt, phys, from: user, turn: a.turnCount || 0 };
+			target.tookDamageThisTurn = true;   // Assurance
 			if (target.bideDmg != null) target.bideDmg += dealt;
 			// Moxie: a KO with a damaging move fires up the attacker
 			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'moxie') {
@@ -1574,6 +1693,16 @@ export class Battle {
 				if ((ub2.atk || 0) < 6) {
 					ub2.atk = Math.min(6, (ub2.atk || 0) + 1);
 					this.pushMsg(`${user.name}'s Moxie boosted its Attack!`);
+				}
+			}
+			// BEAST BOOST: same shape as Moxie but on the user's BEST stat (inert: 11)
+			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'beastboost') {
+				const ub3 = this.boostsOf(user);
+				const best = ['atk', 'def', 'spa', 'spd', 'spe']
+					.reduce((b, k) => (user.stats[k] || 0) > (user.stats[b] || 0) ? k : b, 'atk');
+				if ((ub3[best] || 0) < 6) {
+					ub3[best] = Math.min(6, (ub3[best] || 0) + 1);
+					this.pushMsg(`${user.name}'s BEAST BOOST raised its ${best.toUpperCase()}!`);
 				}
 			}
 			// on-hit reaction abilities (Stamina, Gooey, Justified, ...)
@@ -1627,6 +1756,9 @@ export class Battle {
 			if (uHeld?.shellBell && user.curHP > 0 && user.curHP < user.maxHP) {
 				user.curHP = Math.min(user.maxHP, user.curHP + Math.max(1, Math.floor(dealt / 8)));
 			}
+			// STENCH flinches like a KING'S ROCK (was inert: 12 species)
+			if (uAb === 'stench' && target.curHP > 0 && Math.random() < 0.1
+				&& this.abilityOf(target) !== 'innerfocus') target.flinched = true;
 			if (uHeld?.flinch10 && target.curHP > 0 && Math.random() < 0.1
 				&& this.abilityOf(target) !== 'innerfocus') {
 				target.flinched = true;
@@ -1669,10 +1801,35 @@ export class Battle {
 		if (eff < 1) this.pushMsg("It's not very effective...");
 		if (fx.drain) {
 			const healed = Math.max(1, Math.floor(total * fx.drain));
-			this.pushMsg(`${target.name} had its energy drained!`, () => {
-				user.curHP = Math.min(user.maxHP, user.curHP + healed);
-				this.float(isFoe ? 'foe' : 'me', `+${healed}`, '#6be08a');
-			});
+			// LIQUID OOZE turns the drain against the attacker (was inert: 7 species)
+			if (this.abilityOf(target) === 'liquidooze') {
+				this.pushMsg(`${user.name} sucked up the LIQUID OOZE!`, () => {
+					user.curHP = Math.max(0, user.curHP - healed);
+					this.float(isFoe ? 'foe' : 'me', `-${healed}`, '#ff7a6b');
+				});
+			} else {
+				this.pushMsg(`${target.name} had its energy drained!`, () => {
+					user.curHP = Math.min(user.maxHP, user.curHP + healed);
+					this.float(isFoe ? 'foe' : 'me', `+${healed}`, '#6be08a');
+				});
+			}
+		}
+		// RAPID SPIN / MORTAL SPIN: a damaging move that also frees the user. It
+		// appeared NOWHERE in this file, so it landed as a plain 50-BP Normal hit
+		// — while the foe AI rates hazards at 95 on turns 1-2 and lays them
+		// aggressively. Removal was Defog-only, leaving Rock/Ice/Bug/Fire/Flying
+		// teams with no answer at all.
+		if ((move.id === 'rapidspin' || move.id === 'mortalspin') && user.curHP > 0) {
+			const mine = isFoe ? 'foeHazards' : 'meHazards';
+			const hadHazards = Object.values(a[mine] || {}).some(v => v > 0);
+			a[mine] = {};
+			if (user.trapTurns > 0) { user.trapTurns = 0; this.pushMsg(`${user.name} spun free of ${user.trapName}!`); }
+			if (user.seeded) { delete user.seeded; this.pushMsg(`${user.name} shed the LEECH SEED!`); }
+			if (hadHazards) this.pushMsg(`${user.name} blew away the hazards!`);
+			if (move.id === 'rapidspin' && userBoosts) {
+				userBoosts.spe = Math.max(-6, Math.min(6, (userBoosts.spe || 0) + 1));
+				this.pushMsg(`${user.name}'s Speed rose!`);
+			}
 		}
 		if (fx.recoil && uAb !== 'rockhead') {
 			const rec = Math.max(1, Math.floor(total * fx.recoil));
@@ -1686,6 +1843,12 @@ export class Battle {
 				if (target.curHP <= 0 || user.curHP <= 0) return;
 				const dAb = this.abilityOf(target);
 				const roll = Math.random();
+				// POISON TOUCH poisons on the ATTACKER's contact (was inert: 20 species)
+				if (this.abilityOf(user) === 'poisontouch' && Math.random() < 0.3 && !target.status
+					&& target.curHP > 0 && !target.types.some(t => t === 'Poison' || t === 'Steel')) {
+					target.status = 'psn';
+					this.pushMsg(`${target.name} was poisoned by POISON TOUCH!`);
+				}
 				if (dAb === 'static' && roll < 0.3 && !user.status) {
 					user.status = 'par';
 					this.pushMsg(`${user.name} was paralyzed by Static!`);
@@ -1760,7 +1923,16 @@ export class Battle {
 		if (fx.sec && !hitsSub && tAb !== 'shielddust' && uAb !== 'sheerforce' && Math.random() * 100 < secCh) {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0) return;
-				if (fx.sec.flinch) { if (this.abilityOf(target) !== 'innerfocus') target.flinched = true; }
+				if (fx.sec.flinch) {
+					if (this.abilityOf(target) !== 'innerfocus') {
+						target.flinched = true;
+						// STEADFAST turns every flinch into speed (was inert: 15 species)
+						if (this.abilityOf(target) === 'steadfast' && targetBoosts) {
+							targetBoosts.spe = Math.max(-6, Math.min(6, (targetBoosts.spe || 0) + 1));
+							this.pushMsg(`${target.name}'s STEADFAST raised its Speed!`);
+						}
+					}
+				}
 				else if (fx.sec.stat) {
 					if (!this.canLowerStat(target, fx.sec.stat)) return;
 					const before = targetBoosts[fx.sec.stat] ?? 0;
@@ -1856,6 +2028,41 @@ export class Battle {
 				});
 			}
 			mon.protectedTurn = false;
+			// per-turn bookkeeping the conditional-power moves read (Payback,
+			// Assurance). Cleared here so "this turn" means the turn just played.
+			mon.movedThisTurn = false;
+			mon.tookDamageThisTurn = false;
+			mon.helpingHand = false;        // one turn only
+			mon.centerOfAttention = false;  // Follow Me / Rage Powder / Spotlight
+			// WHITE HERB / MENTAL HERB. Both shipped with a payload nothing read.
+			// They resolve HERE rather than at each trigger: stats are lowered from
+			// a dozen places and a check bolted onto some of them is exactly the
+			// half-wired kind of item this sweep exists to remove. End of turn
+			// always fires, at the cost of one turn's delay.
+			const herb = this.itemFx(mon);
+			if (herb?.whiteHerb) {
+				const b = this.boostsOf(mon);
+				const lowered = Object.keys(b).filter(k => b[k] < 0);
+				if (lowered.length) {
+					for (const k of lowered) b[k] = 0;
+					this.pushMsg(`${mon.name}'s WHITE HERB restored its stats!`);
+					this.consumeItem(mon);
+				}
+			}
+			// HEALER: a chance to cure its ally's status each turn (doubles; inert: 11)
+			if (this.abilityOf(mon) === 'healer' && a.double) {
+				const ally = mon === a.me ? a.meAlly : mon === a.meAlly ? a.me
+					: mon === a.foe ? a.foeAlly : mon === a.foeAlly ? a.foe : null;
+				if (ally && ally.curHP > 0 && ally.status && Math.random() < 0.3) {
+					ally.status = null; ally.sleepTurns = 0;
+					this.pushMsg(`${mon.name}'s HEALER cured ${ally.name}!`);
+				}
+			}
+			if (herb?.mentalHerb && (mon.attracted || mon.tauntTurns > 0 || mon.encoreTurns > 0 || mon.tormented)) {
+				mon.attracted = false; mon.tauntTurns = 0; mon.encoreTurns = 0; mon.tormented = false;
+				this.pushMsg(`${mon.name} used its MENTAL HERB to snap out of it!`);
+				this.consumeItem(mon);
+			}
 		}
 		// screens tick down per side
 		for (const [side, screens, who] of [['me', a.meScreens, a.me], ['foe', a.foeScreens, a.foe]]) {
@@ -2074,12 +2281,16 @@ export class Battle {
 		return fx.protect || fx.selfKO ? 0 : 20;
 	}
 
-	chooseFoeMove() {
+	// `user`/`target` default to the singles pair. Doubles used to bypass this
+	// entirely and pick uniformly at random — a gym-tier double trainer would
+	// happily spam Splash — even though the comment above the code claimed "each
+	// foe picks its strongest move". Passing the actor in lets both use it.
+	chooseFoeMove(user = this.active.foe, target = this.active.me) {
 		const a = this.active;
-		if (a.foe.chargeMove) {
-			return a.foe.moves.find(m => m.id === a.foe.chargeMove) || STRUGGLE();
+		if (user.chargeMove) {
+			return user.moves.find(m => m.id === user.chargeMove) || STRUGGLE();
 		}
-		const usable = a.foe.moves.filter(m => this.moveUsable(a.foe, m, 'foe'));
+		const usable = user.moves.filter(m => this.moveUsable(user, m, 'foe'));
 		if (!usable.length) return STRUGGLE();
 		// wild mons are random; route trainers keep a 15% wobble; boss-tier
 		// trainers (info.boss) always play the scored line
@@ -2095,13 +2306,13 @@ export class Battle {
 				if (score <= 0) continue;
 			} else {
 				// ability-aware: don't walk into full immunities the player can see
-				const defAb = this.abilityOf(a.me);
+				const defAb = this.abilityOf(target);
 				if (defAb === 'levitate' && mv.type === 'Ground') continue;
 				if (AB_ABSORB[defAb]?.t === mv.type) continue;
 				if (defAb === 'flashfire' && mv.type === 'Fire') continue;
 				score = pw
-					* (a.foe.types.includes(mv.type) ? 1.5 : 1)
-					* effectiveness(mv.type, a.me.types);
+					* (user.types.includes(mv.type) ? 1.5 : 1)
+					* effectiveness(mv.type, target.types);
 			}
 			if (score > bestScore) { bestScore = score; best = m; }
 		}
@@ -2337,7 +2548,10 @@ export class Battle {
 		const total = Object.values(mon.evs).reduce((x, y) => x + y, 0);
 		if (total >= 510) return;
 		const best = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((a2, k) => (b[k] || 0) > (b[a2] || 0) ? k : a2, 'hp');
-		mon.evs[best] = Math.min(252, (mon.evs[best] || 0) + Math.min(2, 510 - total));
+		// MACHO BRACE doubles the EVs its holder earns. Its payload was empty, so
+		// a 3000-gold item did nothing at all.
+		const gain = 2 * (this.itemFx(mon)?.evBoost || 1);
+		mon.evs[best] = Math.min(252, (mon.evs[best] || 0) + Math.min(gain, 510 - total));
 	}
 
 	// give one mon its exp, handle level-ups (stat recalc + move learning)
@@ -2575,6 +2789,46 @@ export class Battle {
 			}
 		};
 
+		// ---- ally support (doubles) ----
+		// The ally of whoever used the move; null in a single battle, where all of
+		// these correctly fail.
+		const allyOf = (mon) => {
+			if (!a.double) return null;
+			if (mon === a.me) return a.meAlly; if (mon === a.meAlly) return a.me;
+			if (mon === a.foe) return a.foeAlly; if (mon === a.foeAlly) return a.foe;
+			return null;
+		};
+		if (fx.helpingHand) {
+			const ally = allyOf(user);
+			if (!ally || ally.curHP <= 0) { this.pushMsg('But it failed!'); return true; }
+			ally.helpingHand = true;   // consumed by the damage calc this turn
+			this.pushMsg(`${user.name} is ready to help ${ally.name}!`);
+			return true;
+		}
+		if (fx.centerTaunt) {
+			if (!a.double) { this.pushMsg('But it failed!'); return true; }
+			user.centerOfAttention = true;
+			this.pushMsg(`${user.name} became the center of attention!`);
+			return true;
+		}
+		if (fx.allySwitch) {
+			const ally = allyOf(user);
+			if (!ally || ally.curHP <= 0) { this.pushMsg('But it failed!'); return true; }
+			if (user === a.me || user === a.meAlly) [a.me, a.meAlly] = [a.meAlly, a.me];
+			else [a.foe, a.foeAlly] = [a.foeAlly, a.foe];
+			this.pushMsg(`${user.name} and ${ally.name} switched places!`);
+			return true;
+		}
+		if (fx.allyBoost) {
+			const ally = allyOf(user);
+			if (!ally || ally.curHP <= 0) { this.pushMsg('But it failed!'); return true; }
+			const b = this.boostsOf(ally);
+			for (const [st, d] of Object.entries(fx.allyBoost)) {
+				b[st] = Math.max(-6, Math.min(6, (b[st] || 0) + d));
+			}
+			this.pushMsg(`${ally.name}'s stats rose!`);
+			return true;
+		}
 		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
 		if (fx.itemSwap) {
 			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem)) {
@@ -3103,15 +3357,17 @@ export class Battle {
 		const acts = [...a.plans];
 		a.plans = [];
 		a.actionFor = 0;
-		// each foe picks its strongest move at a random player mon
+		a.turnCount = (a.turnCount || 0) + 1;   // doubles never counted turns; Revenge/Avalanche read it
+		// each foe picks its best target, then its best move against that target
 		for (const foeMon of this.livingFoes()) {
-			const saveFoe = a.foe;
-			const usable = foeMon.moves.filter(m => this.moveUsable(foeMon, m, 'foe'));
-			const mv = usable.length ? usable[Math.floor(Math.random() * usable.length)] : STRUGGLE();
 			const mine = this.livingMine();
+			// aim at the target this foe matches up best against, then pick the
+			// move for THAT target (was: uniformly random move at a random target)
+			const target = mine.length
+				? mine.reduce((best, m) => this.matchupScore(foeMon, m) > this.matchupScore(foeMon, best) ? m : best, mine[0])
+				: a.me;
 			acts.push({
-				user: foeMon, boosts: this.boostsOf(foeMon), move: mv,
-				target: mine[Math.floor(Math.random() * mine.length)] || a.me,
+				user: foeMon, boosts: this.boostsOf(foeMon), move: this.chooseFoeMove(foeMon, target), target,
 			});
 		}
 		// speed order with priority (Prankster: +1 on status moves)
@@ -3119,11 +3375,15 @@ export class Battle {
 			const mv2 = this.data.moves[act.move.id] || {};
 			return (mv2.priority || 0) + (mv2.category === 'Status' && this.abilityOf(act.user) === 'prankster' ? 1 : 0);
 		};
+		// Quick Claw jumps the speed bracket but never beats higher priority —
+		// rolled once per actor per turn, as in singles.
+		const qc = new Map(acts.map(x => [x, !!this.itemFx(x.user)?.quickClaw && Math.random() < 0.2]));
 		acts.sort((p, q) => {
 			const pp = actPrio(p);
 			const qp = actPrio(q);
 			if (pp !== qp) return qp - pp;
-			return this.statOf(q.user, this.boostsOf(q.user), 'spe') - this.statOf(p.user, this.boostsOf(p.user), 'spe');
+			if (qc.get(p) !== qc.get(q)) return qc.get(p) ? -1 : 1;
+			return this.speedOf(q.user) - this.speedOf(p.user);
 		});
 		for (const act of acts) {
 			this.pushMsg('', () => {
@@ -3137,9 +3397,21 @@ export class Battle {
 				}
 				if (!tgt) return;
 				const spread = SPREAD_MOVES.has(act.move.id);
+				// Follow Me / Rage Powder / Spotlight pull single-target moves onto
+				// the mon that used them
+				if (!spread) {
+					const pool = isFoe ? this.livingMine() : this.livingFoes();
+					const magnet = pool.find(m => m.centerOfAttention);
+					if (magnet && (this.data.moves[act.move.id]?.category !== 'Status')) tgt = magnet;
+				}
+				// NOTE: spread moves here only ever hit the OPPOSING side, so TELEPATHY
+				// (dodge your ally's blast) has nothing to protect against and stays
+				// inert on purpose — wiring it would mean first making Earthquake hit
+				// your own ally, which is a combat change, not a bug fix.
 				const victims = spread ? (isFoe ? this.livingMine() : this.livingFoes()) : [tgt];
 				for (const v of victims) {
-					this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe);
+					this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe,
+						{ spread: victims.length > 1 });
 				}
 			});
 			this.pushMsg('', () => this.checkFaintsD());
