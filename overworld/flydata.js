@@ -94,13 +94,14 @@ export const POS = {
 	MAP_EVER_GRANDE_CITY: [27, 8],
 };
 
-// region background art (Hoenn has none — it draws as a dot map). Marker
-// pixels sit on the baked city markers in each image.
+// region background art. Marker pixels sit on the baked city markers in each
+// image. Hoenn used to be null — the LARGEST region, with 16 fly destinations,
+// drew as a bare dot grid while the other three got a map (tools/build_hoenn_townmap.py).
 export const IMG = {
 	kanto: { file: 'townmap/kanto.png', w: 240, h: 160 },
 	johkanto: { file: 'townmap/kanto.png', w: 240, h: 160 },
 	johto: { file: 'townmap/johto.png', w: 160, h: 144 },
-	hoenn: null,
+	hoenn: { file: 'townmap/hoenn.png', w: 240, h: 160 },
 };
 // Johto uses authentic landmark pixel coords (pokecrystal); Kanto/JohKanto use
 // the FireRed grid marker formula pixel = (8*col + 36, 8*row + 36).
@@ -110,9 +111,22 @@ const JOHTO_PX = {
 	MAP_OLIVINE_CITY: [36, 60], MAP_CIANWOOD_CITY: [20, 100], MAP_MAHOGANY_TOWN: [108, 44],
 	MAP_BLACKTHORN_CITY: [132, 44],
 };
+// Hoenn: Emerald's own MAPSEC grid, converted with the region map's screen
+// offset — the grid area starts at tile (1,2), so a cell centre is
+// (8x + 12, 8y + 20). Verified by drawing these over the assembled art and
+// checking every one lands on a baked city marker.
+const HOENN_PX = {
+	MAP_LITTLEROOT_TOWN: [44, 108], MAP_OLDALE_TOWN: [44, 92], MAP_PETALBURG_CITY: [20, 92],
+	MAP_RUSTBORO_CITY: [12, 60], MAP_DEWFORD_TOWN: [28, 132], MAP_SLATEPORT_CITY: [76, 100],
+	MAP_MAUVILLE_CITY: [76, 68], MAP_VERDANTURF_TOWN: [44, 68], MAP_FALLARBOR_TOWN: [36, 20],
+	MAP_LAVARIDGE_TOWN: [52, 44], MAP_FORTREE_CITY: [108, 20], MAP_LILYCOVE_CITY: [156, 44],
+	MAP_MOSSDEEP_CITY: [204, 60], MAP_SOOTOPOLIS_CITY: [180, 76], MAP_PACIFIDLOG_TOWN: [148, 100],
+	MAP_EVER_GRANDE_CITY: [228, 84],
+};
 // marker pixel for a town within its region image, or null if the region has no art
 export function markerPx(region, mapId) {
 	if (region === 'johto') return JOHTO_PX[mapId] || null;
+	if (region === 'hoenn') return HOENN_PX[mapId] || null;
 	if (region === 'kanto' || region === 'johkanto') {
 		const g = POS[mapId];
 		return g ? [8 * g[0] + 36, 8 * g[1] + 36] : null;
