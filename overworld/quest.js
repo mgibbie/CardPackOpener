@@ -197,7 +197,18 @@ function gateBeat(region, destMap) {
 	return null;
 }
 
-export function regionKey(r) { return Badges.regionKey(r); }
+// Badges.regionKey ACCEPTS 'JOHKANTO' (and would accept a future HOENN2), but
+// this file's GYMS / VILLAIN_BEATS tables only cover the three spine regions —
+// so objective() and log() would throw on GYMS[rk] for anything else. Nothing
+// sets magepunk_region to JOHKANTO today, which is exactly why this sat here
+// unnoticed: it is a crash waiting for whoever wires that region up. Fall back
+// to KANTO's spine, which is the one JohKanto's gyms mirror.
+export function regionKey(r) {
+	const k = Badges.regionKey(r);
+	return GYMS[k] ? k : 'KANTO';
+}
+// the region as the SPINE knows it, vs the raw region for badge counting
+export function hasSpine(r) { return !!GYMS[Badges.regionKey(r)]; }
 
 // ---------- cross-region badge-thirds ----------
 // The three shared regions advance in lockstep: each gym gives a "third" of that
