@@ -128,6 +128,40 @@ async function waitFor(fn, ms) {
 		A(denied.toldWhy, 'they are told it is an owner tool rather than left guessing');
 		await bad.close();
 
+		// ---- the home page tile sits with the other owner tools ----
+		// This reveal is client-side (cached username) and is only a convenience:
+		// the real gate is the server check above, which is why a spoofed state
+		// still gets no editor. Assert both halves so neither drifts.
+		const tileFor = async (username) => {
+			const ctx = await browser.createBrowserContext();
+			const pg = await ctx.newPage();
+			await pg.evaluateOnNewDocument(u => {
+				localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
+				localStorage.setItem('magepunk_mp_state_v1', JSON.stringify({ username: u, decks: [], collection: {}, stats: {} }));
+			}, username);
+			await pg.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+			await new Promise(r => setTimeout(r, 700));
+			const out = await pg.evaluate(() => {
+				const t = document.getElementById('tile-mapedit');
+				const sib = document.getElementById('tile-spritetune');
+				return {
+					exists: !!t,
+					shown: !!t && !t.hidden,
+					href: t?.getAttribute('href'),
+					nextToTuners: !!(t && sib && sib.parentElement === t.parentElement),
+				};
+			});
+			await pg.close();
+			return out;
+		};
+		const ownerTile = await tileFor('mgibbie');
+		const strangerTile = await tileFor('someone_else');
+		A(ownerTile.exists, 'the home page has a Map Editor tile');
+		A(ownerTile.shown, 'it shows for the owner');
+		A(ownerTile.href === 'overworld/?mapedit=1', 'and points at the editor', ownerTile.href);
+		A(ownerTile.nextToTuners, 'sitting with the other owner tools');
+		A(!strangerTile.shown, 'and stays hidden for everyone else');
+
 		// ---- the gate, as the owner ----
 		SERVER_USERNAME = 'mgibbie';
 		const page = await openPage(true);
