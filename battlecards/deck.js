@@ -29,7 +29,15 @@ let firstClass = '';   // first class alphabetically — the default for a new d
 let deck = [];         // working card ids
 let curCommander = null, curCompanion = null; // optional loadout (own zones, +1 each)
 
-const filters = { tab: 'class', search: '', mana: null, type: '', keyword: '', set: '', sort: 'cost', owned: true };
+// own: 'owned' | 'all' | 'missing' — Hearthstone lets you filter down to what
+// you still need, which is the view you craft from
+const filters = { tab: 'class', search: '', mana: null, type: '', keyword: '', set: '', sort: 'cost', own: 'owned' };
+// mirrors the server's CRAFT_COST (server/mp.mjs); crafting is MP-only because
+// dust lives on the account — the local sandbox has no dust at all
+const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+const craftCostOf = id => CRAFT_COST[cardsById[id]?.rarity];
+const playsetOf = id => limitOf(id);
+const isMissing = id => (collection[id] || 0) < playsetOf(id);
 const RARITY_RANK = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4, basic: 5, special: 6 };
 let filtered = [], page = 0;
 const tileById = new Map(); // id -> { tile, badge, own } for cheap count updates
@@ -89,9 +97,13 @@ function sortCards(arr) {
 	return arr.sort((a, b) => // cost (default)
 		((a.cost ?? 0) - (b.cost ?? 0)) || (RARITY_RANK[a.rarity || 'common'] - RARITY_RANK[b.rarity || 'common']) || byName(a, b));
 }
-function applyFilters() {
+// keepPage: crafting re-filters the pool (the card may leave the Missing view),
+// but yanking you back to page 1 mid-build is a papercut — hold your place.
+function applyFilters(keepPage) {
+	const was = page;
 	filtered = sortCards(baseList().filter(c => {
-		if (filters.owned && !(collection[c.id] > 0)) return false; // "All" shows the whole pool
+		if (filters.own === 'owned' && !(collection[c.id] > 0)) return false;
+		if (filters.own === 'missing' && !isMissing(c.id)) return false; // what you still need
 		if (filters.search && !(`${c.name} ${c.description || ''} ${c.type}`.toLowerCase().includes(filters.search))) return false;
 		if (filters.mana != null) { const cost = c.cost ?? 0; if (filters.mana === 7 ? cost < 7 : cost !== filters.mana) return false; }
 		if (filters.type && c.type !== filters.type) return false;
@@ -99,7 +111,7 @@ function applyFilters() {
 		if (filters.set && c.set !== filters.set) return false;
 		return true;
 	}));
-	page = 0;
+	page = keepPage ? Math.max(0, Math.min(was, Math.ceil(filtered.length / PAGE_SIZE) - 1)) : 0;
 	renderPage();
 }
 // populate the type + keyword + set dropdowns from what the collectible pool
@@ -167,13 +179,115 @@ function renderZoomInfo(card) {
 		+ `<div class="z-desc">${card.description ? richHtml(card.description) : '<i>No rules text.</i>'}</div>`
 		+ keywordsFor(card).map(k => `<div class="z-kw"><b>${k.label}</b> — ${k.text}</div>`).join('')
 		+ `<div class="z-owned">You own ×${have}${used ? ` · ${used} in this deck` : ''}</div>`;
+	refreshCraftBtn();   // openZoom already set zoomCard
 }
+// ---------- crafting ----------
+// The server owns the cost table and the playset cap; this is the button that
+// lets you fill a hole WITHOUT leaving the deck you're building, which is the
+// whole point of crafting in Hearthstone.
+function dustNow() { return MP_ON ? (mpState?.dust || 0) : 0; }
+// what "Dust extras" would pay right now — mirrors the server's table, which
+// still validates. Dust has exactly ONE source (copies past a playset), so a
+// builder that can craft but can't dust would strand you at 0 with no way up.
+const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+function extrasGain() {
+	let gain = 0;
+	for (const [id, n] of Object.entries(collection)) {
+		const v = DUST_VALUE[cardsById[id]?.rarity];
+		const extra = (n || 0) - limitOf(id);
+		if (v && extra > 0) gain += extra * v;
+	}
+	return gain;
+}
+function refreshDust() {
+	const el = $('dust-bal'), btn = $('dust-extras');
+	if (el) {
+		el.hidden = !MP_ON;
+		if (MP_ON) el.textContent = `💎 ${dustNow().toLocaleString()}`;
+	}
+	if (btn) {
+		const gain = MP_ON ? extrasGain() : 0;
+		btn.hidden = gain <= 0;
+		btn.textContent = `♻️ Dust extras +${gain.toLocaleString()}`;
+	}
+}
+async function dustExtras() {
+	const btn = $('dust-extras');
+	btn.disabled = true;
+	try {
+		const r = await MPX.call('dust-extras');
+		if (r.state) { mpState = r.state; collection = mpState.collection || collection; }
+		flash(r.gained ? `Dusted ${r.dusted} extra cop${r.dusted === 1 ? 'y' : 'ies'} for 💎 ${r.gained}.` : 'Nothing to dust.');
+		refreshDust();
+		refreshCraftBtn();
+		applyFilters(true);   // dusted copies drop back to a playset, so tiles change
+	} catch (e) { await resync('Could not reach the server — showing your saved dust.'); }
+	btn.disabled = false;
+}
+// A dropped connection does NOT mean the server dropped the request: MPX.call
+// aborts at 20s, and a craft that timed out client-side has usually already been
+// committed. Guessing "it failed" once left the dust spent and the card missing
+// from the UI — so on any error, re-read the truth instead of assuming.
+async function resync(msg) {
+	try {
+		const s = await MPX.freshState();
+		if (s) { mpState = s; collection = s.collection || collection; }
+	} catch {}
+	refreshDust();
+	if (zoomCard) renderZoomInfo(zoomCard);  // repaints the craft button too
+	applyFilters(true);
+	flash(msg);
+}
+function refreshCraftBtn() {
+	const btn = $('zoom-craft');
+	if (!btn) return;
+	const id = zoomCard?.id;
+	const cost = id && craftCostOf(id);
+	// only where crafting exists, and only for a card you can still add a copy of
+	if (!MP_ON || !id || !cost || !isMissing(id)) { btn.hidden = true; return; }
+	btn.hidden = false;
+	// kept short: three buttons share this row, and "Craft — need 100 dust" wrapped
+	const shortBy = cost - dustNow();
+	btn.disabled = shortBy > 0;
+	btn.textContent = shortBy > 0 ? `⚒ Need 💎${shortBy.toLocaleString()}` : `⚒ Craft 💎${cost}`;
+	btn.title = shortBy > 0
+		? `${zoomCard.name} costs 💎${cost} — you have 💎${dustNow()}. Dust extra copies to make up the difference.`
+		: `Craft ${zoomCard.name} for 💎${cost}`;
+}
+async function craftZoomCard() {
+	const btn = $('zoom-craft');
+	const id = zoomCard?.id;
+	if (!id || btn.disabled) return;
+	btn.disabled = true;
+	const label = btn.textContent;
+	try {
+		const r = await MPX.call('craft', { id });
+		if (r.error) {
+			btn.textContent = r.error.slice(0, 30);
+			setTimeout(() => { btn.textContent = label; refreshCraftBtn(); }, 1800);
+			return;
+		}
+		if (r.state) { mpState = r.state; collection = mpState.collection || collection; }
+		else collection[id] = (collection[id] || 0) + 1;
+		refreshDust();
+		refreshTile(id);
+		renderZoomInfo(zoomCard);  // repaint "You own xN" + the button (not openZoom: that reloads the art)
+		applyFilters(true);      // a crafted card leaves the Missing view — but hold the page
+		flash(`Crafted ${cardsById[id]?.name || id}!`);
+	} catch (e) {
+		btn.textContent = 'Checking…';
+		await resync('Lost the connection — this is what the server has.');
+	}
+}
+
 function refreshTile(id) {
 	const t = tileById.get(id); if (!t) return;
 	const used = inDeck(id), have = collection[id] || 0, cap = Math.min(have, limitOf(id));
 	// unowned cards (only visible in "All" mode) are dimmed + tagged, still non-addable
 	t.tile.classList.toggle('depleted', have === 0 || used >= cap);
-	t.owned.textContent = have === 0 ? 'Not owned' : (used ? `${have - used} left · ×${have}` : `×${have}`);
+	// "left" means addable-to-this-deck, NOT unused copies: owning 7 of a card
+	// still only lets 2 into a deck, so `have - used` would promise 5 more.
+	t.owned.textContent = have === 0 ? 'Not owned' : (used ? `${cap - used} left · ×${have}` : `×${have}`);
 }
 
 let renderToken = 0;
@@ -503,10 +617,13 @@ $('kw-filter').addEventListener('change', ev => { filters.keyword = ev.target.va
 $('set-filter').addEventListener('change', ev => { filters.set = ev.target.value; applyFilters(); });
 $('sort-by').addEventListener('change', ev => { filters.sort = ev.target.value; applyFilters(); });
 $('owned-toggle').addEventListener('click', () => {
-	filters.owned = !filters.owned;
+	// Owned -> All -> Missing -> Owned. "Missing" is only useful where you can
+	// actually craft, so the local sandbox keeps the old two-way toggle.
+	const order = MP_ON ? ['owned', 'all', 'missing'] : ['owned', 'all'];
+	filters.own = order[(order.indexOf(filters.own) + 1) % order.length];
 	const b = $('owned-toggle');
-	b.classList.toggle('on', filters.owned);
-	b.textContent = filters.owned ? 'Owned' : 'All';
+	b.classList.toggle('on', filters.own !== 'all');
+	b.textContent = { owned: 'Owned', all: 'All', missing: 'Missing' }[filters.own];
 	applyFilters();
 });
 $('prev').addEventListener('click', () => flip(-1));
@@ -519,6 +636,8 @@ MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 9 : 15; r
 // ---------- card page (zoom) wiring ----------
 $('zoom-add').addEventListener('click', () => { if (!zoomCard) return; addCard(zoomCard.id); renderZoomInfo(zoomCard); showEdit(); });
 $('zoom-close').addEventListener('click', () => $('zoom').classList.remove('open'));
+$('zoom-craft').addEventListener('click', craftZoomCard);
+$('dust-extras').addEventListener('click', dustExtras);
 $('zoom').addEventListener('click', e => { if (e.target.id === 'zoom') $('zoom').classList.remove('open'); });
 addEventListener('keydown', e => { if (e.key === 'Escape') $('zoom').classList.remove('open'); });
 
@@ -666,6 +785,7 @@ fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let
 	buildFilterOptions(); // type + keyword dropdowns from the loaded pool
 	if (MP_ON) { mpState = await MPX.freshState(); collection = mpState?.collection || {}; }
 	else { collection = Col.getCollection(data.cards); }
+	refreshDust();
 	cardsReady = true;
 	maybeInit();
 });

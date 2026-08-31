@@ -34,6 +34,10 @@
 		#topbar a:hover { text-decoration: underline; }
 		#class-select { background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 6px; padding: 5px 8px; font-size: 14px; }
 		#topbar .spacer { flex: 1; }
+		/* dust lives in the top bar so the cost of a missing card is always in view */
+		#dust-bal { background: #241b38; border: 1px solid #4a3f6b; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; color: #cfe4ff; white-space: nowrap; }
+		#dust-extras { background: #24406b; color: #cfe4ff; border: 1px solid #3f6ba8; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+		#dust-extras:hover { background: #2f5a94; }
 		#toggle-deck { display: none; background: #6b4fd4; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
 
 		#tabs { display: flex; gap: 6px; padding: 8px 14px 0; }
@@ -145,6 +149,9 @@
 		#zoom-actions { display: flex; gap: 10px; margin-top: 18px; }
 		#zoom-add { flex: 1; padding: 12px; font-size: 15px; font-weight: 700; background: #6b4fd4; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
 		#zoom-add:hover { background: #7d63e6; }
+		#zoom-craft { flex: 1; padding: 12px; font-size: 15px; font-weight: 700; background: #2b6cb0; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+		#zoom-craft:hover:not(:disabled) { background: #3a80c9; }
+		#zoom-craft:disabled { background: #2a2145; color: #8a7fb0; cursor: not-allowed; }
 		#zoom-close { padding: 12px 18px; background: #241b38; color: #cdbcff; border: 1px solid #4a3f6b; border-radius: 8px; cursor: pointer; }
 
 		/* ---------- commander / companion loadout ---------- */
@@ -197,6 +204,8 @@
 		<a href="viewer.html">gallery</a>
 		<select id="class-select" title="your class"></select>
 		<span class="spacer"></span>
+		<span id="dust-bal" title="Arcane dust — craft cards you're missing" hidden></span>
+		<button id="dust-extras" title="Extra copies beyond a playset are dead weight — turn them into dust" hidden></button>
 		<button id="toggle-deck">DECK 0/40</button>
 	</div>
 	<div id="tabs">
@@ -210,7 +219,7 @@
 		<select id="kw-filter" class="dd" title="Filter by keyword"><option value="">All keywords</option></select>
 		<select id="set-filter" class="dd" title="Filter by set"><option value="">All sets</option></select>
 		<select id="sort-by" class="dd" title="Sort cards"><option value="cost">Sort: Cost</option><option value="rarity">Sort: Rarity</option><option value="name">Sort: Name</option></select>
-		<button id="owned-toggle" class="ftoggle on" title="Show only cards you own, or the whole pool">Owned</button>
+		<button id="owned-toggle" class="ftoggle on" title="Cycle: cards you own → the whole pool → only what you're missing">Owned</button>
 	</div>
 	<div id="main">
 		<div id="collection">
@@ -280,6 +289,7 @@
 				<div id="zoom-info"></div>
 				<div id="zoom-actions">
 					<button id="zoom-add">＋ Add to Deck</button>
+					<button id="zoom-craft" hidden></button>
 					<button id="zoom-close">Close</button>
 				</div>
 			</div>

@@ -8,8 +8,12 @@ const DECK_KEY = 'magepunk_deck_v1';
 export const PACK_PRICE = 100;
 export const PACK_SIZE = 5;
 export const DECK_SIZE = 40;
-export const MAX_COPIES = 2;
+export const MAX_COPIES = 2;            // DECK limit — how many copies a deck may run
 export const MAX_LEGENDARY_COPIES = 1;
+// OWNERSHIP ceiling, deliberately far above the deck limit: duplicates are kept
+// rather than thrown away. The signed-in game dusts anything past it; the local
+// sandbox has no dust economy, so it simply stops counting.
+export const MAX_OWNED_COPIES = 999;
 const STARTING_GOLD = 300;
 
 export function getGold() {
@@ -54,7 +58,7 @@ export function getCollection(cards) {
 export function addToCollection(ids) {
 	const loaded = safeLoad(COLLECTION_KEY, {}); // was a bare JSON.parse — a corrupt blob threw here
 	const c = (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) ? loaded : {};
-	for (const id of ids) c[id] = (c[id] || 0) + 1;
+	for (const id of ids) c[id] = Math.min(MAX_OWNED_COPIES, (c[id] || 0) + 1);
 	safeSave(COLLECTION_KEY, c);
 	return c;
 }
