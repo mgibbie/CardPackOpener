@@ -288,7 +288,9 @@ function updateHud() {
 				: `Not enough gold — win matches to earn more!`;
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
-		hud.hint.textContent = left ? `Tap cards to reveal (${left} left)` : 'Hover a card to see what it does';
+		hud.hint.textContent = left
+			? `Tap a card or press Space to reveal (${left} left)`
+			: 'Hover a card to see what it does — Space opens another pack';
 	} else if (phase === 'done') {
 		// linger on the pulls — only the button (or Z, or clicking the pack
 		// itself) opens the next one, never a stray click
@@ -383,7 +385,7 @@ function revealCards() {
 		else if ((beforeOf[def.id] || 0) === 0 && seen[def.id] === 1) badge = makeBadge('NEW!', '#fff', '#b8952e');
 		if (badge) mesh.add(badge);
 		cardMeshes.push({
-			mesh, def, flipped: false, badge,
+			mesh, def, flipped: false, badge, backMat: back,
 			target: new THREE.Vector3(0, -0.2, REVEAL_Z),
 			spin: Math.PI,
 			delay: 0.1 + i * 0.13, // the staggered burst out of the wrapper
@@ -392,6 +394,18 @@ function revealCards() {
 	layoutCards(); // spread them to fit the current screen
 	phase = 'revealing';
 	updateHud();
+}
+
+// expanding rings, for the pulls worth looking up from your phone for
+const flashRings = [];
+function shockwave(pos, color) {
+	const m = new THREE.Mesh(
+		new THREE.TorusGeometry(0.45, 0.035, 8, 40),
+		new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }),
+	);
+	m.position.copy(pos);
+	scene.add(m);
+	flashRings.push({ mesh: m, t: 0 });
 }
 
 function flip(i) {
@@ -403,6 +417,8 @@ function flip(i) {
 	const col = RARITY_COLORS[c.def.rarity] || '#9aa0a6';
 	SFX.play(c.def.rarity === 'legendary' || c.def.rarity === 'epic' ? 'rare' : 'cardPlay');
 	burst(c.mesh.position, col, c.def.rarity === 'legendary' ? 60 : c.def.rarity === 'epic' ? 40 : 22);
+	if (c.def.rarity === 'legendary' || c.def.rarity === 'epic') shockwave(c.mesh.position, col);
+	if (c.def.rarity === 'legendary') setTimeout(() => shockwave(c.mesh.position, col), 140);
 	if (c.def.rarity === 'legendary' || c.def.rarity === 'epic') {
 		hud.toast.textContent = `${c.def.rarity.toUpperCase()}! ${c.def.name}`;
 		hud.toast.style.opacity = 1;
@@ -525,14 +541,19 @@ renderer.domElement.addEventListener('pointerup', e => {
 	tapAction(e); // short tap flips / opens
 });
 renderer.domElement.addEventListener('pointercancel', () => { if (drag) { drag = null; springBack = true; } clearTimeout(lpTimer); lpTimer = null; lpFired = false; lpStart = null; hideTip(); });
-addEventListener('keydown', e => {
-	if (e.key === 'z' || e.key === 'Enter') {
-		if (phase === 'idle' || phase === 'done') startOpen();
-		else if (phase === 'revealing') {
-			const next = cardMeshes.findIndex(c => !c.flipped);
-			if (next >= 0) flip(next);
-		}
+// Space is the Hearthstone rhythm: tap to turn the next card, and once the
+// last one is up, tap again to open another pack. preventDefault or the page
+// scrolls under you on every flip.
+function advance() {
+	if (phase === 'revealing') {
+		const next = cardMeshes.findIndex(c => !c.flipped);
+		if (next >= 0) { flip(next); return; }
 	}
+	if (phase === 'idle' || phase === 'done') startOpen();
+}
+addEventListener('keydown', e => {
+	if (e.key === 'z' || e.key === 'Enter') { advance(); return; }
+	if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); advance(); }
 });
 addEventListener('resize', () => {
 	camera.aspect = innerWidth / innerHeight;
@@ -595,6 +616,14 @@ renderer.domElement.addEventListener('pointermove', e => {
 	const c = hoveredCard(e);
 	if (c && c.flipped) { showTip(c.def, e.clientX, e.clientY); renderer.domElement.style.cursor = 'help'; }
 	else hideTip();
+	// Hovering a FACE-DOWN card washes it in its rarity colour, the way
+	// Hearthstone teases a pull before you commit to flipping it.
+	for (const cm of cardMeshes) {
+		if (!cm.backMat) continue;
+		const lit = cm === c && !cm.flipped;
+		cm.backMat.emissive.set(lit ? (RARITY_COLORS[cm.def.rarity] || '#9aa0a6') : 0x000000);
+		cm.backMat.emissiveIntensity = lit ? 0.45 : 0;
+	}
 	// the pack invites the tear: brighten + pointer when hovered
 	const overPack = !c && (phase === 'idle' || phase === 'done') && hitPack(e);
 	// the ACTIVE pack has its own cloned material (heldMat); tint that, or the
@@ -677,6 +706,17 @@ function animate() {
 		}
 	}
 
+	// shockwave rings: swell and fade
+	for (let i = flashRings.length - 1; i >= 0; i--) {
+		const r = flashRings[i];
+		r.t += dt * 2.2;
+		// stays near the card it came from — at 5x the ring filled the screen and
+		// read as background rather than something bursting out of the card
+		r.mesh.scale.setScalar(1 + r.t * 2.6);
+		r.mesh.material.opacity = Math.max(0, 0.9 * (1 - r.t));
+		if (r.t >= 1) { scene.remove(r.mesh); r.mesh.material.dispose(); flashRings.splice(i, 1); }
+	}
+
 	// torn wrapper pieces: gravity + tumble, gone in a second
 	for (let i = tornBits.length - 1; i >= 0; i--) {
 		const b = tornBits[i];
@@ -734,5 +774,6 @@ fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let
 	window.__packs = { startOpen, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col,
 		// drag surface for tests: positions are world-space, project with camera
 		get pack() { return pack; }, get dragging() { return !!drag; }, get slotArmed() { return slotArmed; },
-		get springBack() { return springBack; }, SLOT_POS, PACK_REST, SNAP_R };
+		get springBack() { return springBack; }, SLOT_POS, PACK_REST, SNAP_R,
+		get flashRings() { return flashRings; }, RARITY_COLORS };
 });
