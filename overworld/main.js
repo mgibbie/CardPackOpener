@@ -3317,8 +3317,18 @@ function maybeIntroCutscene() {
 	startIntroNarration(playerRegion());
 }
 
+// ---------- map-editor view ----------
+// ?mapedit=1 turns the game into a plain map viewer: the camera stops following
+// the player, the player and the follower stop drawing, and movement input is
+// frozen so nothing warps or trips an encounter under the editor. Entities stay
+// drawable behind a toggle — they're map data you often want to see while
+// editing. Inert unless the (owner-gated) editor mounts and sets it.
+const editView = { on: false, cam: null, entities: true };
+
 // ---------- camera ----------
 function cameraPos() {
+	// the editor pans its own camera; the map is the subject, not the player
+	if (editView.on && editView.cam) return [Math.round(editView.cam[0]), Math.round(editView.cam[1])];
 	// center on player sprite (feet tile center), GBA-style; no bounds clamp
 	const cx = Math.round(player.px + META / 2 - VIEW_W / 2);
 	const cy = Math.round(player.py + META / 2 - VIEW_H / 2 - 8);
@@ -3415,7 +3425,7 @@ function tick(now) {
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
-		const moveDir = menuBlocking() ? null : (heldKeys[0] || null);
+		const moveDir = (menuBlocking() || editView.on) ? null : (heldKeys[0] || null);
 		if (!trainers.engaging) player.update(dt, moveDir);
 		npcs.update(dt);
 		updateFollower(dt);
@@ -3436,12 +3446,15 @@ function tick(now) {
 		drawAwakening(ctx, camX, camY);
 		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
 		blockers.draw(ctx, camX, camY);
-		// sprites in y order so overlaps stack correctly
-		const sprites = [...npcs.list, ...trainers.list, player];
-		if (follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
+		// sprites in y order so overlaps stack correctly. In the editor the player
+		// and follower are never drawn — you're looking at the map itself.
+		const sprites = editView.on
+			? (editView.entities ? [...npcs.list, ...trainers.list] : [])
+			: [...npcs.list, ...trainers.list, player];
+		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
 		sprites.sort((a, b) => a.py - b.py);
 		for (const s of sprites) s.draw(ctx, camX, camY);
-		drawFriendGhosts(ctx, camX, camY);
+		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
 		drawDayNightTint(ctx);
 		evolution.draw(ctx);
@@ -5079,7 +5092,11 @@ function drawFriendGhosts(ctx, camX, camY) {
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses
-		cameraPos, viewSize: () => [VIEW_W, VIEW_H],
+		cameraPos, viewSize: () => [VIEW_W, VIEW_H], editView,
+		// load a map for editing. Reuses moveToMap (the tested load path, which
+		// also refreshes NPCs/items) — the player it repositions is hidden and
+		// frozen in edit mode, so it's only ever a bookmark.
+		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
