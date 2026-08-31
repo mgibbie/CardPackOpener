@@ -23,6 +23,12 @@ export function drawOwMon(ctx, img, cx, by, camX, camY) {
 	ctx.drawImage(img, Math.round(cx - dw / 2 - camX), Math.round(by - dh - camY), dw, dh);
 }
 const METATILE_MASK = 0x3FF, COLLISION_MASK = 0x0C00, BEHAVIOR_MASK = 0x1FF;
+// A map-grid cell is one u16: metatile id | collision | elevation. The editor
+// needs to take it apart and put it back together, so the layout is public.
+export const GRID = { METATILE: METATILE_MASK, COLLISION: COLLISION_MASK, ELEVATION: 0xF000, ELEVATION_SHIFT: 12 };
+// how many metatiles this tileset pair can address (palette size for the editor)
+export const metatileCount = ts =>
+	(ts?.primaryMetatileCount || 0) + (ts?.secondary?.metatiles?.length || 0);
 const TILE_INDEX_MASK = 0x3FF, FLIP_X = 0x400, FLIP_Y = 0x800, PAL_MASK = 0xF000;
 const LAYER_COVERED = 1;
 const MB_TALL_GRASS = 0x02;
@@ -329,6 +335,28 @@ export class World {
 			cb.clearRect(dx, dy, META, META);
 			ct.clearRect(dx, dy, META, META);
 			drawMetatileTo(cb, ct, cur.ts, v & METATILE_MASK, dx, dy);
+		}
+		return true;
+	}
+
+	// Raw grid write, for the map editor. setMetatile() above masks its argument
+	// down to a metatile id plus a pass/block flag, which silently drops the
+	// elevation nibble — fine for a cutscene opening a door, wrong for an editor
+	// that owns the whole u16 (metatile 0x03FF | collision 0x0C00 | elevation
+	// 0xF000). Repaints the one cell, same as setMetatile.
+	setGridValue(tx, ty, value) {
+		const cur = this.current;
+		const lay = cur?.layout;
+		if (!lay || tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) return false;
+		if (!lay.map[ty]) return false;
+		lay.map[ty][tx] = value & 0xFFFF;
+		const cb = cur.canvases?.bottom?.getContext('2d');
+		const ct = cur.canvases?.top?.getContext('2d');
+		if (cb && ct) {
+			const dx = tx * META, dy = ty * META;
+			cb.clearRect(dx, dy, META, META);
+			ct.clearRect(dx, dy, META, META);
+			drawMetatileTo(cb, ct, cur.ts, value & METATILE_MASK, dx, dy);
 		}
 		return true;
 	}

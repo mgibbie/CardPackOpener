@@ -5077,6 +5077,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
 		levelCapNow, levelCapHint, refreshLevelCap,
+		// the map editor maps screen pixels back to tiles, so it needs the same
+		// camera and logical view size the renderer uses
+		cameraPos, viewSize: () => [VIEW_W, VIEW_H],
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
 		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
@@ -5113,6 +5116,24 @@ function drawFriendGhosts(ctx, camX, camY) {
 			if ((r?.state?.username || '') !== 'mgibbie') { note('The Sprite Tuner is an owner tool.'); return; }
 			return import('./spritetune.js').then(m => m.mount(window.__ow));
 		}).catch(e => { console.warn('spritetune failed', e); note('Sprite Tuner failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
+	}
+	// owner tooling: ?mapedit=1 mounts the tile editor. Same server-verified gate
+	// as the sprite tuner — the module is only fetched once the token's username
+	// checks out, so a spoofed localStorage state gets nothing.
+	if (new URLSearchParams(location.search).has('mapedit')) {
+		const note = t => {
+			const d = document.createElement('div');
+			d.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;max-width:88vw;'
+				+ 'background:rgba(20,15,34,0.95);color:#ffd25f;border:1px solid #6a5f8a;border-radius:10px;'
+				+ 'padding:10px 16px;font:13px "Segoe UI",sans-serif;text-align:center;';
+			d.textContent = t;
+			document.body.appendChild(d);
+			setTimeout(() => d.remove(), 8000);
+		};
+		MP.call('state').then(r => {
+			if ((r?.state?.username || '') !== 'mgibbie') { note('The Map Editor is an owner tool.'); return; }
+			return import('./mapedit.js').then(m => { window.__mapedit = m.mount(window.__ow); });
+		}).catch(e => { console.warn('mapedit failed', e); note('Map Editor failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
