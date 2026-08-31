@@ -107,7 +107,9 @@ export const ITEMS = {
 	masterball:  { name: 'MASTER BALL',  price: 0, kind: 'ball', mult: 255 },
 
 	// held items events hand out
-	expshare:    { name: 'EXP. SHARE',   price: 3000, kind: 'held', held: {} }, // party-wide exp is already the default here
+	// exp is awarded per-ACTIVE mon (grantExp), so a benched holder gets nothing
+	// without this flag; it earns half without reducing the fighter's share
+	expshare:    { name: 'EXP. SHARE',   price: 3000, kind: 'held', held: { expShare: true } },
 	smokeball:   { name: 'SMOKE BALL',   price: 800,  kind: 'held', held: { fleeAlways: true } },
 	luckyegg:    { name: 'LUCKY EGG',    price: 0,    kind: 'held', held: { expBoost: 1.5 } },
 	amuletcoin:  { name: 'AMULET COIN',  price: 0,    kind: 'held', held: { moneyBoost: 2 } },
