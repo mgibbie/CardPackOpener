@@ -53,8 +53,15 @@ export class Encounters {
 
 	// roll for an encounter; returns { id, level } or null
 	roll(mapId, world, tx, ty, surfing) {
+		// Land encounters used to require MB_TALL_GRASS, which no cave tile has —
+		// so 222 maps carried a land table that could never fire (Mt. Moon, Rock
+		// Tunnel, Victory Road, Cerulean Cave...) and 25 species were uncatchable.
+		// On a map with NO grass at all, the floor is the encounter tile, which is
+		// what gen 3 does. Routes keep the grass-only rule, because they have grass.
 		const kind = surfing && world.isSurfable(tx, ty) ? 'water'
-			: world.isTallGrass(tx, ty) ? 'land' : null;
+			: world.isTallGrass(tx, ty) ? 'land'
+			: (!surfing && !world.hasTallGrass()) ? 'land'
+			: null;
 		if (!kind) return null;
 		const grp = this.data[mapId]?.[kind];
 		if (!grp) return null;

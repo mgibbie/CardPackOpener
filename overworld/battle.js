@@ -1824,9 +1824,14 @@ export class Battle {
 				});
 			}
 		}
-		for (const mon of [a.me, a.foe]) {
+		// ALLIES BELONG HERE TOO. This used to iterate [a.me, a.foe], so in a double
+		// battle neither ally ever had protectedTurn cleared — one successful
+		// Protect made that ally permanently untargetable (the check at the top of
+		// useMove), and since you can't flee a trainer battle, the fight was
+		// unwinnable. Allies were also missing Wrap chip, Yawn and Aqua Ring.
+		for (const mon of this.actorMons()) {
 			if (mon.curHP <= 0) continue;
-			const side = mon === a.me ? 'me' : 'foe';
+			const side = this.sideOfMon(mon);
 			if (mon.trapTurns > 0 && this.abilityOf(mon) !== 'magicguard') {
 				const chip = Math.max(1, Math.floor(mon.maxHP / 16));
 				this.pushMsg(`${mon.name} is hurt by ${mon.trapName}!`, () => {

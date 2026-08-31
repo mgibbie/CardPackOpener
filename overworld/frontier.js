@@ -20,6 +20,17 @@ export const FACILITIES = {
 	arena:   { name: 'BATTLE ARENA',   heal: false, rounds: 3,        rental: false, bpWin: 1, bonus: 3, level: 'party', size: 3, unit: 'Round' },
 	pike:    { name: 'BATTLE PIKE',    heal: true,  rounds: Infinity, rental: false, bpWin: 1, level: 'party',   size: 3, rooms: true },
 	pyramid: { name: 'BATTLE PYRAMID', heal: false, rounds: Infinity, rental: false, bpWin: 2, level: 'party+5', size: 3 },
+	// BATTLE TENTS — the three mid-game warm-ups for the Frontier. Their lobbies
+	// were reachable and completely inert: the decomp scripts are hard-blocked
+	// (plotBlocked, main.js) and no FACILITY_LOBBIES row pointed at them, so the
+	// player walked into three buildings in three towns and nothing happened.
+	// Each mirrors the Frontier facility it is a warm-up for, over 3 rounds.
+	// Deliberately NOT champion-gated, unlike everything else here — and with no
+	// BRAINS entry, which is safe because a 3-round run never reaches the streak
+	// where brainTier() returns a tier.
+	slateporttent:  { name: 'SLATEPORT BATTLE TENT',  heal: true,  rounds: 3, rental: false, bpWin: 1, bonus: 3, level: 'party', size: 3, unit: 'Round' },
+	verdanturftent: { name: 'VERDANTURF BATTLE TENT', heal: false, rounds: 3, rental: false, bpWin: 1, bonus: 3, level: 'party', size: 3, unit: 'Round' },
+	fallarbortent:  { name: 'FALLARBOR BATTLE TENT',  heal: true,  rounds: 3, rental: true,  bpWin: 1, bonus: 3, level: 50,      size: 3, unit: 'Round' },
 };
 
 // each facility's FRONTIER BRAIN — the boss who challenges you at streak milestones
