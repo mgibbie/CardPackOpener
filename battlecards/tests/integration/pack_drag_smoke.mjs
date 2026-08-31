@@ -132,6 +132,70 @@ async function waitFor(fn, ms) {
 		A(await page.evaluate(() => typeof window.__packs.startOpen === 'function'),
 			'a non-drag route to open still exists (button / Z key)');
 
+		// ---- rarity glow on a FACE-DOWN card ----
+		const glow = await page.evaluate(async () => {
+			const P = window.__packs, cards = P.cardMeshes;
+			const target = cards[2];
+			const scr = (m) => { const v = m.position.clone(); v.project(P.camera);
+				return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight }; };
+			window.__hoverAt = scr(target.mesh);
+			return { rarity: target.def.rarity, want: P.RARITY_COLORS[target.def.rarity] };
+		});
+		await page.mouse.move(glow.want ? (await page.evaluate(() => window.__hoverAt)).x : 0,
+			(await page.evaluate(() => window.__hoverAt)).y);
+		await new Promise(r => setTimeout(r, 250));
+		const lit = await page.evaluate(() => {
+			const c = window.__packs.cardMeshes;
+			const hovered = c.filter(x => x.backMat.emissiveIntensity > 0);
+			return {
+				count: hovered.length,
+				colour: hovered[0] ? '#' + hovered[0].backMat.emissive.getHexString() : null,
+				rarity: hovered[0] ? hovered[0].def.rarity : null,
+				othersDark: c.filter(x => x !== hovered[0]).every(x => x.backMat.emissiveIntensity === 0),
+			};
+		});
+		A(lit.count === 1, 'hovering a face-down card lights exactly one', JSON.stringify(lit));
+		A(lit.othersDark, 'and leaves the rest dark');
+		A(lit.colour && lit.colour.toLowerCase() === (await page.evaluate(r => window.__packs.RARITY_COLORS[r], lit.rarity)).toLowerCase(),
+			"in that card's rarity colour", `${lit.rarity} -> ${lit.colour}`);
+
+		// ---- SPACE flips one card at a time ----
+		const before = await page.evaluate(() => window.__packs.cardMeshes.filter(c => c.flipped).length);
+		await page.keyboard.press('Space');
+		await new Promise(r => setTimeout(r, 350));
+		const afterOne = await page.evaluate(() => window.__packs.cardMeshes.filter(c => c.flipped).length);
+		A(afterOne === before + 1, 'Space turns over exactly one card', `${before} -> ${afterOne}`);
+
+		for (let i = 0; i < 6; i++) { await page.keyboard.press('Space'); await new Promise(r => setTimeout(r, 300)); }
+		const allUp = await page.evaluate(() => ({
+			flipped: window.__packs.cardMeshes.filter(c => c.flipped).length,
+			phase: window.__packs.phase,
+			gold: window.__packs.Col.getGold(),
+		}));
+		A(allUp.flipped === 5 || allUp.phase === 'tearing' || allUp.phase === 'revealing',
+			'repeated Space walks the whole pack', JSON.stringify(allUp));
+		A(allUp.gold === 300, 'and one more Space after the last card opens the NEXT pack',
+			`gold ${allUp.gold} (400 would mean it never opened)`);
+
+		// ---- a big pull gets a shockwave ----
+		// the Space run above opened a fresh pack; wait for its cards to land, or
+		// this silently skips and proves nothing
+		await waitFor(() => page.evaluate(() =>
+			window.__packs.phase === 'revealing' && window.__packs.cardMeshes.some(c => !c.flipped)), 12000);
+		const wave = await page.evaluate(async () => {
+			const P = window.__packs;
+			const i = P.cardMeshes.findIndex(c => !c.flipped);
+			if (i < 0) return { skip: true };
+			// force the rarity so the test doesn't depend on a lucky roll
+			P.cardMeshes[i].def = { ...P.cardMeshes[i].def, rarity: 'legendary' };
+			const before = P.flashRings.length;
+			P.flip(i);
+            await new Promise(r => setTimeout(r, 60));
+			return { before, after: P.flashRings.length };
+		});
+		A(!wave.skip, 'a face-down card was available for the shockwave check', JSON.stringify(wave));
+		A(wave.after > wave.before, 'a legendary reveal throws a shockwave ring', JSON.stringify(wave));
+
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 
 	} catch (e) {
