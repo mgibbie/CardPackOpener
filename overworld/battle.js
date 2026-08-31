@@ -2247,7 +2247,19 @@ export class Battle {
 		const winners = a.double
 			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
 			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean);
-		for (const mon of winners) { this.awardExp(mon, gain); this.awardEvs(mon, fallen || a.foe); }
+		// LUCKY EGG multiplies its holder's own share (and only its own)
+		const heldOf = m => Bag.ITEMS[m?.heldItem]?.held || null;
+		const share = m => Math.max(1, Math.round(gain * (heldOf(m)?.expBoost || 1)));
+		for (const mon of winners) { this.awardExp(mon, share(mon)); this.awardEvs(mon, fallen || a.foe); }
+		// EXP. SHARE: a benched party member holding one earns HALF, and takes
+		// nothing away from the POKeMON that actually fought. Exp is per-active
+		// here — there is no party-wide default — so without this the item does
+		// nothing at all. The level cap still applies: awardExp clamps.
+		for (const mon of a.party) {
+			if (!mon || mon.curHP <= 0 || winners.includes(mon)) continue;
+			if (!heldOf(mon)?.expShare) continue;
+			this.awardExp(mon, Math.max(1, Math.round(share(mon) / 2)));
+		}
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
