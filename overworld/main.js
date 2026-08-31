@@ -1109,7 +1109,14 @@ let mailWaiting = 0; // matches waiting on ME, shown as a badge on the START men
 function startItems() {
 	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
 	if (MP_ON) items.push('FRIENDS', mailWaiting > 0 ? `MAIL (${mailWaiting})` : 'MAIL');
-	items.push('BAG', 'TOWN MAP', 'CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
+	// BIKE had exactly ONE trigger in the whole game — the `c` key. There is no
+	// touch button for it and bike items are kind:'key', which the bag doesn't
+	// action, so a phone player could never mount up — and cracked floors are
+	// gated on player.biking, which made SKY PILLAR literally impassable on a
+	// phone. Hidden while surfing, where toggleBike refuses anyway.
+	items.push('BAG', 'TOWN MAP');
+	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
+	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
 	return items;
 }
 const cardsItems = () => MP_ON
@@ -1144,6 +1151,7 @@ function startKey(k) {
 		else if (it === 'CARD') { trainerCard.open = true; }
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
+		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
@@ -1411,6 +1419,12 @@ const FERRY_DESTS = [
 	{ label: 'Birth Island', file: 'BirthIsland_Exterior', requires: () => Badges.isChampion('HOENN') },
 	{ label: 'Faraway Island', file: 'FarawayIsland_Entrance', requires: () => Badges.isChampion('HOENN') },
 	{ label: 'Battle Frontier', file: 'BattleFrontier_OutsideWest', requires: () => Badges.isChampion('HOENN') },
+	// NAVEL ROCK — 22 connected maps that had no inbound edge from anywhere, so
+	// the whole island was unreachable. It is Kanto's answer to Hoenn's event
+	// islands: a long climb to HO-OH at the top and a long descent to LUGIA at
+	// the bottom. FRLG gives it no wild encounters either — the emptiness of the
+	// climb is the design, the legendary is the payoff.
+	{ label: 'Navel Rock (Seagallop)', file: 'NavelRock_Harbor', requires: () => Badges.isChampion('KANTO') },
 ];
 function ferryKey(k) {
 	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
@@ -1948,18 +1962,37 @@ addEventListener('keydown', e => {
 if (matchMedia('(pointer: coarse)').matches) { document.body.classList.add('touch'); fitCanvas(); } // re-fit: the touch pad reserves canvas room
 const DPAD = { 't-up': 'up', 't-down': 'down', 't-left': 'left', 't-right': 'right' };
 const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+// The d-pad used to setPointerCapture on the button you pressed, so a thumb
+// sliding from UP onto LEFT kept firing UP — every change of direction needed a
+// lift and a re-press. One tracked pointer plus a hit-test on move lets the
+// thumb slide across the pad the way a real d-pad works.
+let dpadPointer = null, dpadDir = null;
+const dirUnder = (x, y) => DPAD[document.elementFromPoint(x, y)?.id] || null;
+function setDpadDir(dir) {
+	if (dir === dpadDir) return;
+	if (dpadDir) { const i = heldKeys.indexOf(dpadDir); if (i >= 0) heldKeys.splice(i, 1); }
+	dpadDir = dir;
+	if (dir && !heldKeys.includes(dir)) heldKeys.unshift(dir);
+}
 for (const [id, dir] of Object.entries(DPAD)) {
-	const el = document.getElementById(id);
-	el.addEventListener('pointerdown', e => {
+	document.getElementById(id).addEventListener('pointerdown', e => {
 		e.preventDefault();
-		try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ }
-		if (menuBlocking()) { pressKey(ARROW[dir]); return; }
-		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
+		if (menuBlocking()) { pressKey(ARROW[dir]); return; }  // menus want discrete presses
+		dpadPointer = e.pointerId;
+		setDpadDir(dir);
 	});
-	const release = () => { const i = heldKeys.indexOf(dir); if (i >= 0) heldKeys.splice(i, 1); };
-	el.addEventListener('pointerup', release);
-	el.addEventListener('pointercancel', release);
-	el.addEventListener('lostpointercapture', release);
+}
+addEventListener('pointermove', e => {
+	if (dpadPointer === null || e.pointerId !== dpadPointer) return;
+	if (menuBlocking()) { setDpadDir(null); return; }
+	setDpadDir(dirUnder(e.clientX, e.clientY));   // null once the thumb leaves the pad
+});
+for (const ev of ['pointerup', 'pointercancel']) {
+	addEventListener(ev, e => {
+		if (dpadPointer === null || e.pointerId !== dpadPointer) return;
+		setDpadDir(null);
+		dpadPointer = null;
+	});
 }
 for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-start', 'Enter'], ['t-party', 'p'], ['t-bag', 'b']]) {
 	document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); pressKey(key); });
@@ -2482,6 +2515,14 @@ const LEGENDARY_ENCOUNTERS = {
 		requires: () => Bag.count('rainbowwing') > 0, intro: 'Rainbow light spills across the tower — HO-OH answers the RAINBOW WING!' },
 	MAP_WHIRL_ISLAND_LUGIA_CHAMBER: { species: 'lugia', dex: 249, level: 60, x: 9, y: 5, flag: 'legend_caught_lugia',
 		requires: () => Bag.count('silverwing') > 0, intro: 'The sea roars in the depths — LUGIA rises, drawn by the SILVER WING!' },
+	// NAVEL ROCK — the same duo, reached the KANTO way. Deliberately the SAME
+	// flags as the Tin Tower / Whirl Islands entries above, so a save still gets
+	// exactly one HO-OH and one LUGIA: this is a second route to them, not a
+	// second copy. Johto asks for the WINGS, Kanto asks you to be its Champion.
+	MAP_NAVEL_ROCK_TOP: { species: 'hooh', dex: 250, level: 70, x: 12, y: 4, flag: 'legend_caught_hooh',
+		requires: () => Badges.isChampion('KANTO'), intro: 'Light floods the peak — HO-OH descends over NAVEL ROCK!' },
+	MAP_NAVEL_ROCK_BOTTOM: { species: 'lugia', dex: 249, level: 70, x: 11, y: 13, flag: 'legend_caught_lugia',
+		requires: () => Badges.isChampion('KANTO'), intro: 'The cavern floods with sound — LUGIA rises from the deep!' },
 	// The three legendary beasts — once you've woken them at the Burned Tower they can
 	// be confronted at the top of Tin Tower (a map can hold several: an array).
 	MAP_TIN_TOWER_1F: [
@@ -3686,6 +3727,59 @@ function tick(now) {
 	}
 	// while your run is being spectated, show a live "N watching" badge on top
 	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
+	drawTouchHud(SW, SH);
+}
+
+// ---------- the touch HUD ----------
+// `body.touch #bar { display: none }` hides #hud AND #objective, and EVERY thing
+// the overworld tells a roaming player goes through hud.textContent: the map name
+// on arrival, "party healed", "X was sent to the BOX", the egg-ready notice, the
+// rift warning, stuck-load recovery. On a phone all of it was invisible — a
+// caught POKeMON silently vanished into storage. The quest objective was hidden
+// too, so the "where do I go next" system existed and could not be read.
+//
+// Rather than touch the ~15 call sites, a MutationObserver mirrors those two DOM
+// nodes onto the canvas. Anything that writes the bar keeps working unchanged.
+const touchHud = { msg: '', until: 0, objective: '' };
+if (document.body.classList.contains('touch')) {
+	const hudEl = document.getElementById('hud'), objEl = document.getElementById('objective');
+	const obs = new MutationObserver(() => {
+		const t = (hudEl.textContent || '').trim();
+		if (t && t !== touchHud.msg) { touchHud.msg = t; touchHud.until = performance.now() + 4200; }
+		touchHud.objective = (objEl.textContent || '').trim();
+	});
+	for (const el of [hudEl, objEl]) obs.observe(el, { childList: true, characterData: true, subtree: true });
+	touchHud.objective = (objEl.textContent || '').trim();
+}
+function drawTouchHud(SW, SH) {
+	if (!document.body.classList.contains('touch')) return;
+	if (menuBlocking()) return;                       // never over a menu or a battle
+	const now = performance.now();
+	const rows = [];
+	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective]);
+	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg]);
+	if (!rows.length) return;
+	const pad = Math.round(SW * 0.02), fs = Math.max(11, Math.round(SW / 34));
+	sctx.save();
+	sctx.font = `${fs}px system-ui, sans-serif`;
+	sctx.textBaseline = 'top';
+	const w = Math.min(SW - pad * 2, Math.max(...rows.map(r => sctx.measureText(r[1]).width)) + pad * 2);
+	const h = rows.length * (fs + 4) + pad;
+	// Sit UNDER the world frame when the canvas is taller than it (landscape
+	// tablets), where the desktop bar would be. On a portrait phone the frame
+	// fills the canvas, so it overlays the top-left instead — left-anchored and
+	// width-capped so it never reaches the MENU/PARTY/BAG buttons on the right.
+	const below = VIEW_H * SCALE + pad;
+	const y = (below + h + pad <= SH) ? below : pad;
+	sctx.fillStyle = 'rgba(10,8,18,0.78)';
+	sctx.fillRect(pad, y, w, h);
+	sctx.strokeStyle = 'rgba(157,143,212,0.5)';
+	sctx.strokeRect(pad + 0.5, y + 0.5, w, h);
+	rows.forEach((r, i) => {
+		sctx.fillStyle = r[0];
+		sctx.fillText(r[1], pad * 2, y + i * (fs + 4) + 4, w - pad * 2);
+	});
+	sctx.restore();
 }
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------
@@ -5266,6 +5360,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
+		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses
