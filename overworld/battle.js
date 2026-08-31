@@ -65,6 +65,18 @@ const HIGH_CRIT = new Set(['slash', 'razorleaf', 'crabhammer', 'stoneedge', 'nig
 	'drillrun', 'karatechop', 'aeroblast', 'blazekick', 'poisontail', 'spacialrend',
 	'snipeshot', 'stoneaxe', 'skyattack', 'razorwind', 'crosspoison', 'aquacutter']);
 const ALWAYS_CRIT = new Set(['frostbreath', 'stormthrow', 'wickedblow', 'surgingstrikes', 'flowertrick']);
+// two-turn moves whose charge turn hides the user, and the moves that can still
+// reach each hiding place
+const VANISH_MOVES = new Set(['fly', 'bounce', 'dig', 'dive', 'skydrop', 'phantomforce', 'shadowforce']);
+const VANISH_REACH = {
+	fly: ['gust', 'twister', 'thunder', 'hurricane', 'skyuppercut', 'smackdown', 'thousandarrows'],
+	bounce: ['gust', 'twister', 'thunder', 'hurricane', 'skyuppercut', 'smackdown', 'thousandarrows'],
+	skydrop: ['gust', 'twister', 'thunder', 'hurricane', 'skyuppercut', 'smackdown', 'thousandarrows'],
+	dig: ['earthquake', 'magnitude', 'fissure'],
+	dive: ['surf', 'whirlpool'],
+	phantomforce: [],
+	shadowforce: [],
+};
 const SLICING_MOVES = new Set(['aerialace', 'aircutter', 'airslash', 'behemothblade', 'bitterblade',
 	'crosspoison', 'cut', 'furycutter', 'kowtowcleave', 'leafblade', 'nightslash', 'psychocut',
 	'razorleaf', 'razorshell', 'sacredsword', 'secretsword', 'slash', 'solarblade', 'stoneaxe',
@@ -244,6 +256,27 @@ const MOVE_FX = {
 	dive: { chargeText: 'hid underwater!' }, bounce: { chargeText: 'sprang up!' },
 	solarbeam: { chargeText: 'absorbed light!' }, skyattack: { chargeText: 'became cloaked in a harsh light!' },
 	razorwind: { chargeText: 'whipped up a whirlwind!' }, skullbash: { chargeText: 'lowered its head!' },
+	// These SEVEN had power in the table and no entry here, so they resolved in a
+	// single turn at full strength — SHADOW FORCE was a 120-BP one-turn Ghost move.
+	phantomforce: { chargeText: 'vanished instantly!', vanish: true, breaksProtect: true },
+	shadowforce: { chargeText: 'vanished instantly!', vanish: true, breaksProtect: true },
+	skydrop: { chargeText: 'took its target into the sky!', vanish: true },
+	meteorbeam: { chargeText: 'is overflowing with space power!', selfBoost: { spa: 1 } },
+	electroshot: { chargeText: 'absorbed electricity!', selfBoost: { spa: 1 } },
+	freezeshock: { chargeText: 'became cloaked in freezing air!' },
+	iceburn: { chargeText: 'became cloaked in freezing air!' },
+	// nothing in the game broke Protect before this
+	feint: { breaksProtect: true }, hyperspacefury: { breaksProtect: true },
+	hyperspacehole: { breaksProtect: true },
+	// LOCK-IN: rampage for 2-3 turns, then reel from confusion. Without the
+	// drawback these were strictly-better 120-BP moves with no cost at all.
+	thrash: { lockIn: true }, outrage: { lockIn: true }, petaldance: { lockIn: true },
+	ragingfury: { lockIn: true },
+	// UPROAR locks in the same way but keeps everything awake instead
+	uproar: { lockIn: true, noSleep: true },
+	// FUTURE SIGHT / DOOM DESIRE landed instantly for 120/140. They are supposed to
+	// arrive two turns later, which is the entire point of using one.
+	futuresight: { delayed: 2 }, doomdesire: { delayed: 2 },
 	hyperbeam: { recharge: true }, gigaimpact: { recharge: true }, blastburn: { recharge: true },
 	hydrocannon: { recharge: true }, frenzyplant: { recharge: true },
 	selfdestruct: { selfKO: true }, explosion: { selfKO: true },
@@ -398,6 +431,12 @@ const POWER_FX = {
 	assurance: (b, u, t) => t.tookDamageThisTurn ? 120 : 60,
 	// Last Resort is the reverse problem: it fired at 140 with none of its
 	// "every other move used first" restriction. 0 power => the move fails.
+	// RAMPING moves double every consecutive turn they connect. Without the ramp
+	// Rollout and Fury Cutter were permanently 30/40-BP moves that never paid off
+	// — 214 species learn one by level-up.
+	rollout: (b, u) => 30 * Math.pow(2, Math.min(4, u.rampN || 0)) * (u.defenseCurl ? 2 : 1),
+	iceball: (b, u) => 30 * Math.pow(2, Math.min(4, u.rampN || 0)) * (u.defenseCurl ? 2 : 1),
+	furycutter: (b, u) => 40 * Math.pow(2, Math.min(3, u.rampN || 0)),
 	lastresort: (b, u, t, ub, tb, mv) => {
 		const others = (u.moves || []).filter(m => m.id !== mv?.id);
 		return others.length && others.every(m => (u.usedMoves || []).includes(m.id)) ? 140 : 0;
@@ -640,6 +679,7 @@ export class Battle {
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
+			meFuture: null, foeFuture: null,       // a pending FUTURE SIGHT / DOOM DESIRE
 			weather: null, terrain: null,          // {kind, turns}
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
@@ -709,6 +749,7 @@ export class Battle {
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
+			meFuture: null, foeFuture: null,       // a pending FUTURE SIGHT / DOOM DESIRE
 			weather: null, terrain: null,          // {kind, turns}
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
@@ -1124,6 +1165,10 @@ export class Battle {
 			this.pushMsg(`${target.name}'s ${this.abilityName(tAb2)} prevents that!`);
 			return false;
 		}
+		if (st === 'slp' && this.actorMons().some(m => m.lockMove === 'uproar')) {
+			this.pushMsg('But the uproar kept it awake!');
+			return false;
+		}
 		target.status = st;
 		if (st === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 		if (bad) { target.badPsn = true; target.toxicN = 1; }
@@ -1160,6 +1205,7 @@ export class Battle {
 		delete mon.confuseTurns;
 		delete mon.lastTaken;
 		delete mon.usedMoves;          // Last Resort re-arms on a switch, as it should
+		delete mon.lockMove; delete mon.lockTurns; delete mon.rampN; delete mon.rampMove; delete mon.vanished;
 		delete mon.movedThisTurn;
 		delete mon.tookDamageThisTurn;
 		delete mon.bideDmg;
@@ -1314,13 +1360,34 @@ export class Battle {
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
 			user.chargeMove = move.id;
+			// FLY / DIG / DIVE / BOUNCE / PHANTOM FORCE are UNTARGETABLE while charging.
+			// chargeMove was written and read for turn bookkeeping but never consulted
+			// in the targeting path, so a charge turn just handed the foe a free hit.
+			if (VANISH_MOVES.has(move.id) || fx.vanish) user.vanished = move.id;
 			if (move.id === 'bide') user.bideDmg = 0;
 			move.pp = Math.min(move.maxPp, move.pp + 1);
 			this.pushMsg(`${user.name} ${fx.chargeText}`);
 			return;
 		}
-		if (user.chargeMove === move.id) user.chargeMove = null;
-		if (this.itemFx(user)?.choice) user.choiceLock = move.id;
+		if (user.chargeMove === move.id) { user.chargeMove = null; user.vanished = null; }
+		if (fx.delayed) {
+			const sideKey = isFoe ? 'meFuture' : 'foeFuture';   // it lands on the TARGET's side
+			if (a[sideKey]) { this.pushMsg('But it failed!'); return; }
+			a[sideKey] = { move: move.id, name: move.name, turns: fx.delayed, user, level: user.level };
+			this.pushMsg(`${user.name} foresaw an attack!`);
+			return;
+		}
+		// LOCK-IN: begin a 2-3 turn rampage, or count down one already running
+		if (fx.lockIn) {
+			if (!user.lockMove) { user.lockMove = move.id; user.lockTurns = 1 + Math.floor(Math.random() * 2); }
+		}
+		// RAMP: consecutive uses of the same ramping move stack; anything else resets
+		const RAMPING = ['rollout', 'iceball', 'furycutter'];
+		if (RAMPING.includes(move.id)) {
+			user.rampN = user.rampMove === move.id ? (user.rampN || 0) + 1 : 0;
+			user.rampMove = move.id;
+		} else { user.rampN = 0; user.rampMove = null; }
+		if (this.itemFx(user)?.choice || this.abilityOf(user) === 'gorillatactics') user.choiceLock = move.id;
 		// Geomancy charges then boosts (a status move with a charge turn)
 		if (fx.statusCharge) {
 			const boosts = userBoosts;
@@ -1340,7 +1407,7 @@ export class Battle {
 		const aimsAtFoe = mv.category !== 'Status'
 			|| !!(fx.status || fx.confuse || fx.seed || fx.yawn || fx.blow || STAT_MOVES[move.id]?.foe);
 		// UNSEEN FIST punches straight through a Protect on contact
-		if (aimsAtFoe && target.protectedTurn
+		if (aimsAtFoe && target.protectedTurn && !fx.breaksProtect
 			&& !(this.abilityOf(user) === 'unseenfist' && mv.category === 'Physical')) {
 			this.pushMsg(`${target.name} protected itself!`);
 			return;
@@ -1412,7 +1479,17 @@ export class Battle {
 		if (uAbAcc === 'noguard' || tAbAcc === 'noguard') hitChance = 999;
 		const sureHit = user.lockOn || target.telekinesis > 0;
 		if (user.lockOn) user.lockOn = false;
+		// A target mid-charge is out of reach. Each hiding place has its own short
+		// list of moves that can still reach it, which is the whole point of Dig
+		// vs Earthquake. No-Guard and Lock-On still connect.
+		if (aimsAtFoe && target.vanished && !sureHit && uAbAcc !== 'noguard') {
+			if (!(VANISH_REACH[target.vanished] || []).includes(move.id)) {
+				this.pushMsg(`${user.name}'s attack missed ${target.name}!`);
+				return;
+			}
+		}
 		if (!sureHit && (mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
+			user.rampN = 0; user.rampMove = null;   // a miss breaks the Rollout chain
 			this.pushMsg(`${user.name}'s attack missed!`);
 			return;
 		}
@@ -2303,6 +2380,17 @@ export class Battle {
 			mon.tookDamageThisTurn = false;
 			mon.helpingHand = false;        // one turn only
 			mon.justSwitchedIn = false;     // STAKEOUT only gets the turn you arrive
+			// a rampage runs down and then costs you: this drawback is the entire
+			// reason Outrage and Thrash are not just better moves
+			if (mon.lockMove && --mon.lockTurns <= 0) {
+				const wasUproar = mon.lockMove === 'uproar';
+				mon.lockMove = null; mon.lockTurns = 0;
+				if (wasUproar) this.pushMsg(`${mon.name} calmed down.`);
+				else {
+					this.pushMsg(`${mon.name} tired itself out!`);
+					this.applyConfusion(mon);
+				}
+			}
 			mon.centerOfAttention = false;  // Follow Me / Rage Powder / Spotlight
 			// WHITE HERB / MENTAL HERB. Both shipped with a payload nothing read.
 			// They resolve HERE rather than at each trigger: stats are lowered from
@@ -2333,6 +2421,21 @@ export class Battle {
 				this.pushMsg(`${mon.name} used its MENTAL HERB to snap out of it!`);
 				this.consumeItem(mon);
 			}
+		}
+		// a foreseen attack arrives — typeless-ish fixed damage off the caster's
+		// level so it still lands if the caster has since switched or fainted
+		for (const [key, victimOf] of [['meFuture', () => a.me], ['foeFuture', () => a.foe]]) {
+			const f = a[key];
+			if (!f) continue;
+			if (--f.turns > 0) continue;
+			a[key] = null;
+			const victim = victimOf();
+			if (!victim || victim.curHP <= 0) continue;
+			const dmg = Math.max(1, Math.floor(victim.maxHP * 0.35));
+			this.pushMsg(`${victim.name} took the ${f.name} attack!`, () => {
+				victim.curHP = Math.max(0, victim.curHP - dmg);
+				this.float(victim === a.me ? 'me' : 'foe', `-${dmg}`, '#c9a0ff');
+			});
 		}
 		// screens tick down per side
 		for (const [side, screens, who] of [['me', a.meScreens, a.me], ['foe', a.foeScreens, a.foe]]) {
@@ -2517,6 +2620,10 @@ export class Battle {
 		if (mon.choiceLock && this.itemFx(mon)?.choice && m.id !== mon.choiceLock) return false;
 		if (mon.disabledMove === m.id) return false;
 		if (mon.encoreMove && m.id !== mon.encoreMove) return false;
+		// mid-rampage you get no say — same shape as Encore
+		if (mon.lockMove && m.id !== mon.lockMove) return false;
+		// GORILLA TACTICS locks you in like a Choice item, without the item
+		if (mon.choiceLock && this.abilityOf(mon) === 'gorillatactics' && m.id !== mon.choiceLock) return false;
 		if (mon.tauntTurns > 0 && (this.data.moves[m.id]?.category === 'Status')) return false;
 		if (mon.tormented && this.active?.lastMove[side] === m.id) return false;
 		return true;
@@ -2560,6 +2667,8 @@ export class Battle {
 		if (user.chargeMove) {
 			return user.moves.find(m => m.id === user.chargeMove) || STRUGGLE();
 		}
+		// mid-rampage the AI has no choice either
+		if (user.lockMove) return user.moves.find(m => m.id === user.lockMove) || STRUGGLE();
 		const usable = user.moves.filter(m => this.moveUsable(user, m, 'foe'));
 		if (!usable.length) return STRUGGLE();
 		// wild mons are random; route trainers keep a 15% wobble; boss-tier
