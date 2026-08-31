@@ -125,13 +125,71 @@ function packTexture() {
 const packMat = new THREE.MeshStandardMaterial({ map: packTexture(), roughness: 0.4, metalness: 0.35 });
 const packSideMat = new THREE.MeshStandardMaterial({ color: '#241a44', roughness: 0.5 });
 let pack = null;
+// Hearthstone's shape: the sealed pack waits off to one side and you DRAG it
+// into a slot to tear it. The slot sits where the cards will burst from, so the
+// gesture points at the payoff.
+const PACK_REST = new THREE.Vector3(-4.3, -0.3, 0.6);
+const SLOT_POS = new THREE.Vector3(0, 0.1, 0);
+const SNAP_R = 1.9;   // how close the pack must be dropped to count as "in"
+let heldMat = null;   // the active pack's own face material (see armed flare)
 function spawnPack() {
 	if (pack) scene.remove(pack);
+	heldMat = packMat.clone();
 	pack = new THREE.Mesh(
 		new THREE.BoxGeometry(3.1, 4.4, 0.25),
-		[packSideMat, packSideMat, packSideMat, packSideMat, packMat, packMat]
+		[packSideMat, packSideMat, packSideMat, packSideMat, heldMat, heldMat]
 	);
+	pack.position.copy(PACK_REST);
 	scene.add(pack);
+}
+
+// ---------- the slot ----------
+// A ring you drop the pack into. It idles dim and slowly turning; when a
+// dragged pack is close enough to count it flares and spins up, so the player
+// knows the drop will take before they let go.
+const slotRing = new THREE.Mesh(
+	new THREE.TorusGeometry(1.55, 0.075, 12, 64),
+	new THREE.MeshStandardMaterial({ color: '#6a5a9a', emissive: '#4b3f7a', emissiveIntensity: 0.5, roughness: 0.5 }),
+);
+slotRing.position.copy(SLOT_POS);
+scene.add(slotRing);
+const slotGlow = new THREE.Mesh(
+	new THREE.CircleGeometry(1.5, 48),
+	new THREE.MeshBasicMaterial({ color: '#8f6fff', transparent: true, opacity: 0.06 }),
+);
+slotGlow.position.copy(SLOT_POS).setZ(SLOT_POS.z - 0.05);
+scene.add(slotGlow);
+let slotArmed = false;   // a dragged pack is within SNAP_R
+let slotBase = 1;        // layout scale; the armed pulse multiplies this
+function setSlotVisible(v) { slotRing.visible = v; slotGlow.visible = v; }
+
+// Where the pack rests and where the ring sits depends on the shape of the
+// screen. Wide: pack to the LEFT of a centred ring. Narrow (portrait phone):
+// there is no room beside it, so the ring goes up top and the pack sits below
+// it — and the camera pulls back to fit both.
+function layoutScene() {
+	const aspect = innerWidth / innerHeight;
+	const wide = aspect > 1.05;
+	// Portrait has to stack ring-over-pack, which needs ~8 world units of height
+	// (3.1 ring + gap + 4.4 pack); pull the camera back and shrink the ring so
+	// they don't overlap or clip the bottom edge.
+	camera.position.z = wide ? 9.5 : 13;
+	camera.updateProjectionMatrix();
+	// half the visible world height at the play plane, from the camera FOV
+	const halfH = Math.tan((camera.fov * Math.PI / 180) / 2) * (camera.position.z - 0.6);
+	if (wide) {
+		SLOT_POS.set(0, 0.1, 0);
+		// keep the whole 3.1-wide pack inside the frustum, with a margin
+		PACK_REST.set(-Math.min(halfH * aspect - 1.85, 3.6), -0.3, 0.6);
+	} else {
+		SLOT_POS.set(0, halfH * 0.44, 0);
+		PACK_REST.set(0, -halfH * 0.44, 0.6);
+	}
+	slotBase = wide ? 1 : 0.82;
+	slotRing.position.copy(SLOT_POS);
+	slotGlow.position.copy(SLOT_POS).setZ(SLOT_POS.z - 0.05);
+	dragPlane.constant = -PACK_REST.z;
+	if (pack && !drag) pack.position.copy(PACK_REST);
 }
 
 // test-realm inventory: unopened packs pile up beside the opener so a
@@ -147,7 +205,7 @@ function updateStack() {
 			new THREE.BoxGeometry(3.1, 4.4, 0.25),
 			[packSideMat, packSideMat, packSideMat, packSideMat, packMat, packMat]
 		);
-		m.position.set(-5.4 - i * 0.22, -0.5 + i * 0.02, -1.2 - i * 0.3);
+		m.position.set(PACK_REST.x - 0.28 - i * 0.2, PACK_REST.y - 0.18 + i * 0.02, PACK_REST.z - 0.5 - i * 0.28);
 		m.rotation.set(0, 0.4, (i % 2 ? 1 : -1) * 0.05);
 		scene.add(m);
 		stackMeshes.push(m);
@@ -223,10 +281,10 @@ function updateHud() {
 	hud.gold.textContent = MP_ON ? `${mpPacks} pack${mpPacks === 1 ? '' : 's'}` : `${Col.getGold()} gold`;
 	if (phase === 'idle') {
 		hud.hint.textContent = MP_ON
-			? (mpPacks > 0 ? `Tap the pack to tear it open — ${mpPacks} waiting`
+			? (mpPacks > 0 ? (drag ? 'Drop it in the ring' : `Drag a pack into the ring — ${mpPacks} waiting`)
 				: 'No packs — finish a dungeon run (win or lose) to earn one!')
 			: Col.getGold() >= Col.PACK_PRICE
-				? `Tap the pack to tear it open — ${Col.PACK_PRICE} gold`
+				? (drag ? 'Drop it in the ring' : `Drag the pack into the ring — ${Col.PACK_PRICE} gold`)
 				: `Not enough gold — win matches to earn more!`;
 	} else if (phase === 'revealing') {
 		const left = cardMeshes.filter(c => !c.flipped).length;
@@ -236,7 +294,7 @@ function updateHud() {
 		// itself) opens the next one, never a stray click
 		const canOpen = MP_ON ? mpPacks > 0 : Col.getGold() >= Col.PACK_PRICE;
 		hud.hint.textContent = canOpen
-			? 'Take your time — hover a card for details'
+			? 'Take your time — hover a card, or drag the next pack in'
 			: MP_ON ? 'That was your last pack — finish a dungeon run (win or lose) to earn more!'
 				: 'Out of gold — win matches to earn more!';
 		hud.nextBtn.hidden = !canOpen;
@@ -385,8 +443,52 @@ function hitPack(e) {
 	return raycaster.intersectObjects(targets).length > 0;
 }
 
+// ---------- drag the pack into the slot ----------
+// The DROP is what opens a pack, not the press. A drag that never reaches the
+// slot springs back and spends nothing, so a stray tap can't burn a pack.
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -PACK_REST.z);
+const dragPt = new THREE.Vector3();
+let drag = null;
+let springBack = false;
+
+const canDrag = () => (phase === 'idle' || phase === 'done')
+	&& pack && pack.visible && (MP_ON ? mpPacks > 0 : Col.getGold() >= Col.PACK_PRICE);
+
+function pointerWorld(e) {
+	pointer.x = (e.clientX / innerWidth) * 2 - 1;
+	pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+	raycaster.setFromCamera(pointer, camera);
+	raycaster.ray.intersectPlane(dragPlane, dragPt);
+	return dragPt;
+}
+function beginDrag(e) {
+	if (!canDrag() || !hitPack(e)) return false;
+	drag = { grab: pack.position.clone().sub(pointerWorld(e)) };
+	springBack = false;
+	updateHud();
+	return true;
+}
+function moveDrag(e) {
+	if (!drag || !pack) return;
+	pack.position.copy(pointerWorld(e)).add(drag.grab);
+	slotArmed = pack.position.distanceTo(SLOT_POS) < SNAP_R;
+}
+function endDrag() {
+	if (!drag || !pack) { drag = null; return false; }
+	drag = null;
+	if (slotArmed) {
+		slotArmed = false;
+		pack.position.copy(SLOT_POS);
+		startOpen();
+		return true;
+	}
+	springBack = true;
+	updateHud();
+	return false;
+}
+
 function tapAction(e) {
-	if (phase === 'idle') { startOpen(); return; }
+	if (phase === 'idle') return;   // idle opens by DRAGGING into the slot
 	if (phase === 'done') {
 		// no involuntary next pack: only a deliberate click on the pack (or the
 		// button / Z key) tears the next one — clicking a card inspects it
@@ -404,6 +506,7 @@ function tapAction(e) {
 // touch has no hover, so press-and-hold a revealed card to inspect it
 let lpTimer = null, lpFired = false, lpStart = null;
 renderer.domElement.addEventListener('pointerdown', e => {
+	if (beginDrag(e)) { renderer.domElement.setPointerCapture?.(e.pointerId); return; }
 	if (e.pointerType !== 'touch') { tapAction(e); return; } // mouse acts on press
 	lpFired = false;
 	lpStart = { x: e.clientX, y: e.clientY };
@@ -414,13 +517,14 @@ renderer.domElement.addEventListener('pointerdown', e => {
 	}, 420);
 });
 renderer.domElement.addEventListener('pointerup', e => {
+	if (drag) { endDrag(); return; }
 	if (e.pointerType !== 'touch') return;
 	clearTimeout(lpTimer); lpTimer = null;
 	if (lpFired) { hideTip(); lpStart = null; return; } // an inspect, not a tap
 	lpStart = null;
 	tapAction(e); // short tap flips / opens
 });
-renderer.domElement.addEventListener('pointercancel', () => { clearTimeout(lpTimer); lpTimer = null; lpFired = false; lpStart = null; hideTip(); });
+renderer.domElement.addEventListener('pointercancel', () => { if (drag) { drag = null; springBack = true; } clearTimeout(lpTimer); lpTimer = null; lpFired = false; lpStart = null; hideTip(); });
 addEventListener('keydown', e => {
 	if (e.key === 'z' || e.key === 'Enter') {
 		if (phase === 'idle' || phase === 'done') startOpen();
@@ -434,7 +538,8 @@ addEventListener('resize', () => {
 	camera.aspect = innerWidth / innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(innerWidth, innerHeight);
-	layoutCards(); // keep the cards on-screen after a resize / rotate
+	layoutScene();  // pack/ring swap between side-by-side and stacked
+	layoutCards();  // keep the cards on-screen after a resize / rotate
 });
 
 // ---------- hover tooltip: what does this card do? ----------
@@ -480,6 +585,7 @@ function showTip(def, cx, cy) {
 function hideTip() { tip.style.display = 'none'; renderer.domElement.style.cursor = ''; }
 // mouse hover → tooltip; a touch drag just cancels a pending long-press
 renderer.domElement.addEventListener('pointermove', e => {
+	if (drag) { moveDrag(e); return; }   // a pack in hand owns the pointer
 	if (e.pointerType === 'touch') {
 		if (lpTimer && lpStart && Math.hypot(e.clientX - lpStart.x, e.clientY - lpStart.y) > 14) {
 			clearTimeout(lpTimer); lpTimer = null;
@@ -491,7 +597,12 @@ renderer.domElement.addEventListener('pointermove', e => {
 	else hideTip();
 	// the pack invites the tear: brighten + pointer when hovered
 	const overPack = !c && (phase === 'idle' || phase === 'done') && hitPack(e);
-	packMat.emissive.setHex(overPack ? 0x35245f : 0x000000);
+	// the ACTIVE pack has its own cloned material (heldMat); tint that, or the
+	// hover highlight silently stops working while the shared one lights the stack
+	const hoverMat = heldMat || packMat;
+	hoverMat.emissive.setHex(overPack ? 0x35245f : 0x000000);
+	if (overPack) hoverMat.emissiveIntensity = 1;
+	if (overPack && canDrag()) renderer.domElement.style.cursor = 'grab';
 	if (overPack) renderer.domElement.style.cursor = 'pointer';
 });
 renderer.domElement.addEventListener('pointerleave', hideTip);
@@ -522,9 +633,47 @@ function animate() {
 				pack = null;
 				revealCards();
 			}
+		} else if (drag) {
+			// in hand: tilt with the motion, and flare gold once the drop would
+			// take. The flare is on the PACK because the pack hides the ring.
+			pack.rotation.y += (0.25 - pack.rotation.y) * Math.min(1, dt * 8);
+			pack.rotation.z += ((slotArmed ? 0 : -0.12) - pack.rotation.z) * Math.min(1, dt * 8);
+			pack.scale.setScalar(1 + (slotArmed ? 0.12 : 0.06));
+			if (heldMat) {
+				// gentle: enough to read as charged, not enough to wash the art out
+				const want = slotArmed ? 0.11 + Math.sin(t * 8) * 0.03 : 0;
+				heldMat.emissiveIntensity += (want - heldMat.emissiveIntensity) * Math.min(1, dt * 12);
+				heldMat.emissive.setHex(0xffd25f);
+			}
+		} else if (springBack) {
+			// missed the slot — float home; nothing was spent
+			pack.position.lerp(PACK_REST, 1 - Math.pow(0.001, dt));
+			pack.rotation.z += (0 - pack.rotation.z) * Math.min(1, dt * 8);
+			pack.scale.setScalar(1);
+			if (heldMat) heldMat.emissiveIntensity = Math.max(0, heldMat.emissiveIntensity - dt * 4);
+			if (pack.position.distanceTo(PACK_REST) < 0.04) { pack.position.copy(PACK_REST); springBack = false; }
 		} else {
-			pack.position.y = Math.sin(t * 1.3) * 0.15;
+			pack.position.x += (PACK_REST.x - pack.position.x) * Math.min(1, dt * 6);
+			pack.position.z += (PACK_REST.z - pack.position.z) * Math.min(1, dt * 6);
+			pack.position.y = PACK_REST.y + Math.sin(t * 1.3) * 0.15;
 			pack.rotation.y = Math.sin(t * 0.7) * 0.18;
+			pack.scale.setScalar(1);
+		}
+	}
+
+	// the slot: dim and slowly turning, flaring when a drop would take
+	{
+		const show = (phase === 'idle' || phase === 'done') && !!pack && pack.visible;
+		setSlotVisible(show);
+		if (show) {
+			slotRing.rotation.z += dt * (slotArmed ? 1.6 : 0.35);
+			const want = slotArmed ? 1.25 : 0.5 + Math.sin(t * 2) * 0.12;
+			const m = slotRing.material;
+			m.emissiveIntensity += (want - m.emissiveIntensity) * Math.min(1, dt * 9);
+			m.emissive.setHex(slotArmed ? 0xffd25f : 0x4b3f7a);
+			const s2 = slotBase * (slotArmed ? 1.7 : 1);
+			slotRing.scale.setScalar(slotRing.scale.x + (s2 - slotRing.scale.x) * Math.min(1, dt * 9));
+			slotGlow.material.opacity += ((slotArmed ? 0.16 : 0.06) - slotGlow.material.opacity) * Math.min(1, dt * 9);
 		}
 	}
 
@@ -580,6 +729,10 @@ fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let
 		Col.getCollection(cards); // seed starter collection on first visit
 	}
 	spawnPack();
+	layoutScene();
 	updateHud();
-	window.__packs = { startOpen, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col };
+	window.__packs = { startOpen, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col,
+		// drag surface for tests: positions are world-space, project with camera
+		get pack() { return pack; }, get dragging() { return !!drag; }, get slotArmed() { return slotArmed; },
+		get springBack() { return springBack; }, SLOT_POS, PACK_REST, SNAP_R };
 });
