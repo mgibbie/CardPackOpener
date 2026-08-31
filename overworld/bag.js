@@ -414,6 +414,9 @@ export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'supe
 	'oranberry', 'sitrusberry', 'lumberry', 'leftovers', 'everstone', 'destinyknot',
 	'choiceband', 'choicespecs', 'choicescarf', 'lifeorb', 'focussash', 'quickclaw',
 	'kingsrock', 'rockyhelmet', 'shellbell', 'scopelens', 'charcoal', 'mysticwater', 'magnet', 'miracleseed',
+	// these three had working prices but were stocked nowhere, so the only one a
+	// player could ever hold was the SMOKE BALL on a traded DODRIO
+	'focusband', 'soothebell', 'smokeball',
 	'assaultvest', 'eviolite', 'heavydutyboots', 'weaknesspolicy',
 	'hpup', 'protein', 'iron', 'calcium', 'zinc', 'carbos',
 	'adamantmint', 'modestmint', 'jollymint', 'timidmint', 'carefulmint', 'abilitycapsule',
