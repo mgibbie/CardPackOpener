@@ -21,6 +21,7 @@ import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as Settings from './settings.js';
 import * as Badges from './badges.js';
+import * as Trades from './trades.js';
 import * as Quest from './quest.js';
 import { EXTRA_DIVE } from './divelinks.js';
 import * as Story from './events.js';
@@ -784,6 +785,8 @@ function optionsKey(k) {
 	if (k === 'x' || k === 'Escape') optionsMenu.open = false;
 }
 const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
+// in-game NPC trade: the offer, then a party picker (see trades.js)
+const tradeMenu = { open: false, trade: null, idx: 0, flash: null, talker: null };
 const nameRater = { open: false, idx: 0 };
 const moveShop = { open: false, mode: 'main', idx: 0, mon: null, list: null, flash: null };
 
@@ -842,6 +845,58 @@ function daycareOptions() {
 	opts.push({ label: 'See you later', act: 'leave' });
 	return opts;
 }
+// ---------- in-game NPC trades ----------
+// One flow for both dialects (see trades.js for why they broke differently).
+// Offer -> pick a party POKeMON -> it must be the species they asked for -> swap.
+const monName = id => (battle.data?.species?.[id]?.name || id || '').toUpperCase();
+function startNpcTrade(trade, talker) {
+	if (!party || !party.length) return;
+	if (Story.getFlag(Trades.flagFor(trade.key))) {
+		dialog.open(`How's ${trade.nickname || monName(trade.give)} doing?\n\nI'm glad we traded.`);
+		return;
+	}
+	dialog.open(`I have a ${monName(trade.give)}.\n\nWould you trade me your ${monName(trade.want)} for it?`, () => {
+		tradeMenu.open = true; tradeMenu.trade = trade; tradeMenu.idx = 0;
+		tradeMenu.flash = null; tradeMenu.talker = talker || null;
+	});
+}
+function npcTradeKey(k) {
+	const t = tradeMenu.trade;
+	if (k === 'ArrowUp') tradeMenu.idx = (tradeMenu.idx + party.length - 1) % party.length;
+	if (k === 'ArrowDown') tradeMenu.idx = (tradeMenu.idx + 1) % party.length;
+	if (k === 'x' || k === 'Escape') { tradeMenu.open = false; dialog.open('Oh… well, maybe another time.'); return; }
+	if (k !== 'z' && k !== 'Enter') return;
+	const given = party[tradeMenu.idx];
+	if (!given || !t) return;
+	if (given.speciesId !== t.want) {
+		tradeMenu.flash = `That's not a ${monName(t.want)}!`;
+		return;
+	}
+	// your last POKeMON would leave you with an empty party mid-overworld
+	if (party.length <= 1) { tradeMenu.flash = "That's your only POKeMON!"; return; }
+	const got = Trades.buildTraded(t, given, battle.data, battleBuildMon);
+	if (!got) { tradeMenu.flash = 'Something went wrong…'; return; }
+	party.splice(tradeMenu.idx, 1);
+	party.push(got);
+	saveParty(party);
+	Dex.markSeen(got.speciesId); Dex.markCaught(got.speciesId); dexMilestoneCheck();
+	Story.setFlag(Trades.flagFor(t.key));
+	tradeMenu.open = false;
+	dialog.open(`You traded your ${monName(t.want)} for ${got.name}!\n\nThanks — take good care of it!`);
+	hud.textContent = `Traded ${monName(t.want)} for ${got.name} (Lv${got.level}).`;
+}
+function drawNpcTrade(W, H) {
+	const u = H / 480;
+	const t = tradeMenu.trade;
+	menuChrome(W, H, u, 'TRADE', t ? `Which POKeMON will you give for ${monName(t.give)}?` : '');
+	party.forEach((m, i) => monRow('trade:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, tradeMenu.idx === i, u));
+	if (tradeMenu.flash) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(tradeMenu.flash, 24 * u, H - 18 * u);
+	}
+}
+
 function daycareKey(k) {
 	if (daycareMenu.mode === 'deposit') {
 		const cands = party.filter((m, i) => i > 0 || party.length > 1); // keep at least one
@@ -1782,6 +1837,7 @@ function pressKey(k) {
 	if (pcMenu.open) { pcKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
 	if (townMap.open) { townKey(k); return; }
+	if (tradeMenu.open) { npcTradeKey(k); return; }
 	if (daycareMenu.open) { daycareKey(k); return; }
 	if (nameRater.open) { nameRaterKey(k); return; }
 	if (moveShop.open) { moveShopKey(k); return; }
@@ -1829,7 +1885,8 @@ function pressKey(k) {
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
-	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open;
+	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
+	|| tradeMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
@@ -2683,7 +2740,15 @@ function startCutscene(steps, onDone) {
 // resolve a script label (an NPC's `script`, a coord_event, a map trigger) and
 // run it through the interpreter with the current map's strings
 function runScriptLabel(label, talker) {
-	if (cutscene.blocking || !label || !mapScripts[label]) return false;
+	if (cutscene.blocking || !label) return false;
+	// In-game trades are intercepted here, before the script runs. The Kanto and
+	// Hoenn scripts exist but drive the trade through four `special` ops this
+	// port never implemented; the Johto ones were dropped entirely at transpile
+	// (Kyle is [faceplayer, end]), so there is no script to run at all. One flow
+	// serves both -- see trades.js.
+	const tr = Trades.forScript(world.current.name, label);
+	if (tr) { startNpcTrade(tr, talker); return true; }
+	if (!mapScripts[label]) return false;
 	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); });
 	return true;
 }
@@ -3541,6 +3606,7 @@ function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, MH);
 		else if (dexMenu.open) drawDexMenu(SW, MH);
 		else if (townMap.open) drawTownMap(SW, MH);
+		else if (tradeMenu.open) drawNpcTrade(SW, MH);
 		else if (daycareMenu.open) drawDaycare(SW, MH);
 		else if (nameRater.open) drawNameRater(SW, MH);
 		else if (moveShop.open) drawMoveShop(SW, MH);
@@ -4475,7 +4541,7 @@ function menuTap(id) {
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -5015,6 +5081,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// TMs the events hand out have no ITEMS entry of their own (tmMoveId resolves
 	// them generically), so let the bag name them from the move they teach
 	Bag.setMoveNamer(id => { const mid = tmMoveId(id); return mid ? battle.data.moves[mid]?.name : null; });
+	await Trades.init();  // in-game NPC trade table (tools/gen_trades.mjs)
 	await trainers.init();
 	applyGymLevelFloors(); // even out same-tier gym difficulty across regions (interleave)
 	refreshLevelCap();     // clamp growth to the tier cleared in EVERY region
@@ -5132,6 +5199,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get mailMenu() { return mailMenu; }, get mailWaiting() { return mailWaiting; }, refreshMail, sendMailChallenge, mailAccept, enterAsyncMatch,
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
 		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
+		Trades, get tradeMenu() { return tradeMenu; }, startNpcTrade,
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },

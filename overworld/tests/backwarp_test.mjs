@@ -126,16 +126,30 @@ async function waitFor(fn, ms) {
 		await p1.close();
 
 		// ---- THE REPORTED BUG: reload while upstairs, then try to leave ----
-		const p2 = await boot('Pokecenter2F');
+		// Its own context: sibling pages SHARE localStorage, so scenario 1's
+		// persisted `back` would leak in and this would never test the fallback.
+		const ctx2 = await browser.createBrowserContext();
+		const p2 = await ctx2.newPage();
+		await p2.evaluateOnNewDocument((st, m) => {
+			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
+			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
+			localStorage.setItem('magepunk_party_v1', JSON.stringify([m]));
+			localStorage.setItem('magepunk_region', 'JOHTO');
+			localStorage.removeItem('magepunk_pos_v1');   // no remembered way back
+		}, STATE, MON);
+		await p2.goto(`http://localhost:${PORT}/overworld/index.html?map=Pokecenter2F`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => p2.evaluate(() => !!window.__ow?.world?.current), 30000);
+		await new Promise(r => setTimeout(r, 1000));
 		const fresh = await p2.evaluate(() => window.__ow.world.lastWarpSource);
 		A(fresh === null, 'a cold boot on the 2F has no in-memory source (the trap)');
 		const out = await takeExit(p2);
 		A(out !== 'Pokecenter2F', 'the exit still gets you OUT after a reload', `still on ${out}`);
 		A(out === 'NewBarkTown', 'falling back to the region start town rather than sealing you in', out);
-		await p2.close();
+		await p2.close(); await ctx2.close();
 
 		// ---- and with a persisted source, the reload returns you properly ----
-		const p3 = await browser.newPage();
+		const ctx3 = await browser.createBrowserContext();
+		const p3 = await ctx3.newPage();
 		await p3.evaluateOnNewDocument((st, m) => {
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
@@ -151,7 +165,7 @@ async function waitFor(fn, ms) {
 		await new Promise(r => setTimeout(r, 1000));
 		A(await takeExit(p3) === 'JohKantoFuchsiaPokecenter1F',
 			'a reload that kept the saved source returns you to the right CENTER');
-		await p3.close();
+		await p3.close(); await ctx3.close();
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
 	} finally {
