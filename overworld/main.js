@@ -625,7 +625,15 @@ const POS_KEY = 'magepunk_pos_v1';
 let factoryStandalone = false;
 function savePos() {
 	if (factoryStandalone) return; // the mini-game never persists position
-	safeSave(POS_KEY, { map: world.current.name, x: player.tx, y: player.ty });
+	// `back` rides along because a few Crystal maps leave by a -1 "return to
+	// where you came from" warp (Pokecenter2F, the dept-store elevators, the Fast
+	// Ship). That source lived only in memory, so reloading inside one of them
+	// left backWarp() with nothing to go back TO and the exit silently did
+	// nothing — you were sealed in. See backWarp's fallback for the second net.
+	safeSave(POS_KEY, {
+		map: world.current.name, x: player.tx, y: player.ty,
+		back: world.lastWarpSource || null,
+	});
 }
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 function interact() {
@@ -2070,15 +2078,31 @@ async function flyTo(mapId, tx, ty) {
 	} catch (e) { afterLoadError('flyTo ' + mapId, e); }
 }
 
+// A Crystal -1 warp means "put me back where I came from". The source is
+// remembered in memory and now also persisted with the save position — but this
+// must NEVER be able to do nothing, because the maps that use it (Pokecenter2F,
+// the dept-store elevators, the Fast Ship) have no other way out. If the source
+// is somehow missing, fall back to the region's start town: a big hop, but the
+// alternative is being sealed in a room forever.
 async function backWarp() {
-	const src = world.lastWarpSource;
-	if (!src) return;
-	loading = true;
-	try {
-		await world.load(src.name);
-		player.setTile(src.tx, src.ty);
-		await refreshMapContent(src.name);
-	} catch (e) { afterLoadError('backWarp ' + src.name, e); }
+	// in-memory source first, then the one saved alongside the position (this is
+	// what survives a reload)
+	const src = world.lastWarpSource || safeLoad(POS_KEY, null)?.back || null;
+	// src.name is a map FILE stem (what world.load takes) — not a MAP_ id, so it
+	// must not be validated through fileFor(), which maps ids TO stems.
+	if (src?.name) {
+		loading = true;
+		try {
+			await world.load(src.name);
+			player.setTile(src.tx, src.ty);
+			await refreshMapContent(src.name);
+			world.lastWarpSource = null; // spent
+			return;
+		} catch (e) { console.warn('backWarp ' + src.name + ' failed, using the fallback', e); }
+	}
+	// last resort — a failed or missing source must never leave the player sealed in
+	hud.textContent = 'You found your own way out.';
+	await moveToMap(Quest.START[playerRegion()] || 'PalletTown');
 }
 
 // ---------- Mach Bike ----------
