@@ -94,6 +94,33 @@ export const ITEMS = {
 	elixer:      { name: 'ELIXIR',       price: 3000, kind: 'ether', amount: 10 },
 	maxelixer:   { name: 'MAX ELIXIR',   price: 4500, kind: 'ether', amount: 999 },
 
+	// ITEMS THE GROUND HANDS OUT THAT THE BAG DID NOT KNOW. 57 pickups across the
+	// three regions named an id with no ITEMS entry, so they landed in the bag
+	// with a name and no `kind` — unusable, unsellable, dead weight you had to
+	// walk past a real item to collect. Two of them are pure spelling drift
+	// between the decomp pickup and this table.
+	maxelixir:   { name: 'MAX ELIXIR',   price: 4500, kind: 'ether', amount: 999 },   // pickups spell it -ir
+	paralyzeheal: { name: 'PARLYZ HEAL', price: 200,  kind: 'cure', cures: 'par' },   // ...and -yze
+	diveball:    { name: 'DIVE BALL',    price: 1000, kind: 'ball', mult: 1.5 },
+	luxuryball:  { name: 'LUXURY BALL',  price: 1000, kind: 'ball', mult: 1 },
+	// the two Hoenn incenses are held type boosters in everything but name
+	laxincense:  { name: 'LAX INCENSE',  price: 2500, kind: 'held', held: { evade: 0.95 } },
+	seaincense:  { name: 'SEA INCENSE',  price: 2000, kind: 'held', held: { typeBoost: 'Water' } },
+	luckypunch:  { name: 'LUCKY PUNCH',  price: 1000, kind: 'held', held: { critBoost: true } },
+	// shards and mail are sell/keepsake items in the source games too
+	redshard:    { name: 'RED SHARD',    price: 1000, kind: 'sell' },
+	blueshard:   { name: 'BLUE SHARD',   price: 1000, kind: 'sell' },
+	yellowshard: { name: 'YELLOW SHARD', price: 1000, kind: 'sell' },
+	greenshard:  { name: 'GREEN SHARD',  price: 1000, kind: 'sell' },
+	orangemail:  { name: 'ORANGE MAIL',  price: 50, kind: 'misc' },
+	wavemail:    { name: 'WAVE MAIL',    price: 50, kind: 'misc' },
+	woodmail:    { name: 'WOOD MAIL',    price: 50, kind: 'misc' },
+	shadowmail:  { name: 'SHADOW MAIL',  price: 50, kind: 'misc' },
+	mechmail:    { name: 'MECH MAIL',    price: 50, kind: 'misc' },
+	glittermail: { name: 'GLITTER MAIL', price: 50, kind: 'misc' },
+	tropicmail:  { name: 'TROPIC MAIL',  price: 50, kind: 'misc' },
+	beadmail:    { name: 'BEAD MAIL',    price: 50, kind: 'misc' },
+
 	// vending-machine drinks and the herbal remedies, all plain heals
 	freshwater:  { name: 'FRESH WATER',  price: 200, kind: 'heal', amount: 50 },
 	sodapop:     { name: 'SODA POP',     price: 300, kind: 'heal', amount: 60 },

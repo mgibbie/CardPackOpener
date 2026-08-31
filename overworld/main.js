@@ -816,7 +816,7 @@ const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVEND
 	'MAP_SLATEPORT_CITY_NAME_RATERS_HOUSE']);
 const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
 
-const partyMenu = { open: false, idx: 0, summary: false, action: null };
+const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null };
 const startMenu = { open: false, idx: 0 };
 const questMenu = { open: false, idx: 0 }; // the main-quest log (read-only list)
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
@@ -1024,6 +1024,15 @@ function nameRaterKey(k) {
 		if (mon) promptRename(mon);
 	}
 }
+// A caught POKeMON could only ever be named by walking to the NAME RATER —
+// setNickname existed and nothing but that NPC ever called it. Ask at the moment
+// of capture, which is when you actually care and when the games ask.
+function offerNickname(mon) {
+	if (!mon) return;
+	dialog.open(`Give a nickname to ${mon.name}?\n\nZ = Yes   X = No`, declined => {
+		if (declined !== 'x') promptRename(mon);
+	});
+}
 // rename via the browser prompt (headless-safe: no prompt -> unchanged)
 function promptRename(mon) {
 	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
@@ -1138,7 +1147,7 @@ function startItems() {
 	// action, so a phone player could never mount up — and cracked floors are
 	// gated on player.biking, which made SKY PILLAR literally impassable on a
 	// phone. Hidden while surfing, where toggleBike refuses anyway.
-	items.push('BAG', 'TOWN MAP');
+	items.push('BAG', 'TOWN MAP', 'PC');
 	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
 	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
 	return items;
@@ -1176,6 +1185,9 @@ function startKey(k) {
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
+		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full
+		// party silently goes to a box you then could not open
+		else if (it === 'PC') { pcMenu.open = true; }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
@@ -1501,7 +1513,29 @@ function sellList() {
 		.map(([id, n]) => ({ id, n }));
 }
 const sellPrice = id => Math.floor((Bag.ITEMS[id]?.price || 0) / 2);
-const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0 };
+const bagMenu = { open: false, idx: 0, picking: false, pickIdx: 0, pocket: 0 };
+// POCKETS. The bag was one flat list of up to 305 items in raw insertion order,
+// seven rows at a time — balls, potions, TMs, berries, mints, vitamins and key
+// items in a single undifferentiated column, and only TWO rows in a portrait
+// battle. Every item already carries a `kind`, so the tabs cost nothing to key
+// off; the ordering within a pocket is alphabetical rather than "whatever you
+// picked up first".
+const BAG_POCKETS = [
+	{ id: 'all', label: 'ALL', test: () => true },
+	{ id: 'ball', label: 'BALLS', test: it => it?.kind === 'ball' },
+	{ id: 'heal', label: 'MEDICINE', test: it => ['heal', 'revive', 'cure', 'ether'].includes(it?.kind) },
+	{ id: 'berry', label: 'BERRIES', test: (it, id) => /berry$/.test(id) },
+	{ id: 'held', label: 'HELD', test: (it, id) => it?.kind === 'held' && !/berry$/.test(id) },
+	{ id: 'tm', label: 'TMs', test: (it, id) => it?.kind === 'tm' || !!tmMoveId(id) },
+	{ id: 'key', label: 'KEY', test: it => ['key', 'charm', 'seeker', 'rod'].includes(it?.kind) },
+	{ id: 'misc', label: 'OTHER', test: it => !it || ['misc', 'sell', 'candy', 'vitamin', 'mint', 'capsule', 'stone'].includes(it.kind) },
+];
+function bagEntries() {
+	const p = BAG_POCKETS[bagMenu.pocket] || BAG_POCKETS[0];
+	return Object.entries(Bag.getBag())
+		.filter(([id, n]) => n > 0 && p.test(Bag.ITEMS[id], id))
+		.sort((a, b) => Bag.nameOf(a[0]).localeCompare(Bag.nameOf(b[0])));
+}
 // side 0 = party (deposit), 1 = box (withdraw). Storage stays ONE flat array
 // (trade/dex read it whole); the 8 "boxes" are 30-slot pages over it.
 const PC_BOXES = 8, PC_BOX_CAP = 30;
@@ -1623,7 +1657,7 @@ function castRod(id, item) {
 }
 
 function bagKey(k) {
-	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
+	const entries = bagEntries();
 	// forgetting a move to make room for a TM
 	if (bagMenu.forget) {
 		const f = bagMenu.forget;
@@ -1772,6 +1806,12 @@ function bagKey(k) {
 	}
 	if (k === 'ArrowUp' && entries.length) bagMenu.idx = (bagMenu.idx + entries.length - 1) % entries.length;
 	if (k === 'ArrowDown' && entries.length) bagMenu.idx = (bagMenu.idx + 1) % entries.length;
+	// left/right change pocket (they did nothing here before)
+	if (k === 'ArrowLeft' || k === 'ArrowRight') {
+		const d = k === 'ArrowLeft' ? BAG_POCKETS.length - 1 : 1;
+		bagMenu.pocket = (bagMenu.pocket + d) % BAG_POCKETS.length;
+		bagMenu.idx = 0;
+	}
 	if (k === 'x' || k === 'Escape' || k === 'b') bagMenu.open = false;
 	if ((k === 'z' || k === 'Enter') && entries.length) {
 		const [id] = entries[bagMenu.idx];
@@ -1946,8 +1986,11 @@ function pressKey(k) {
 				if (opt.kind === 'field') useFieldMove(opt.hm, a.mon);
 				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; }
 				else if (opt.kind === 'switch') {
-					const [m] = party.splice(a.monIdx, 1);
-					party.unshift(m); partyMenu.idx = 0; saveParty(party); partyMenu.action = null;
+					// SWITCH used to only ever promote to lead — there was no way to move
+					// slot 5 to slot 3, or to demote the lead. Now it arms a swap and the
+					// SECOND pick completes it.
+					partyMenu.swapFrom = a.monIdx;
+					partyMenu.action = null;
 				} else partyMenu.action = null; // cancel
 			}
 			return;
@@ -1961,8 +2004,17 @@ function pressKey(k) {
 		}
 		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
 		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-		if (k === 'z' || k === 'Enter') openPartyAction(partyMenu.idx); // choose an action for this mon
-		if (k === 'x' || k === 'p' || k === 'Escape') partyMenu.open = false;
+		if (k === 'z' || k === 'Enter') {
+			if (partyMenu.swapFrom != null && partyMenu.swapFrom !== partyMenu.idx) {
+				const i = partyMenu.swapFrom, j = partyMenu.idx;
+				[party[i], party[j]] = [party[j], party[i]];
+				saveParty(party); refreshFollower();
+				partyMenu.swapFrom = null;
+			} else if (partyMenu.swapFrom === partyMenu.idx) {
+				partyMenu.swapFrom = null;                 // tapping the same slot cancels
+			} else openPartyAction(partyMenu.idx);        // choose an action for this mon
+		}
+		if (k === 'x' || k === 'p' || k === 'Escape') { if (partyMenu.swapFrom != null) partyMenu.swapFrom = null; else partyMenu.open = false; }
 		return;
 	}
 	if ((k === 'Enter' || k === 'm') && !loading) { startMenu.open = true; startMenu.idx = 0; return; }
@@ -2424,7 +2476,7 @@ function openPartyAction(idx) {
 	if (!mon) return;
 	const opts = fieldMovesOf(mon).map(mv => ({ label: HM_FIELD[mv.id].name, kind: 'field', hm: mv.id }));
 	opts.push({ label: 'SUMMARY', kind: 'summary' });
-	if (idx > 0) opts.push({ label: 'SWITCH', kind: 'switch' });
+	if (party.length > 1) opts.push({ label: 'SWITCH', kind: 'switch' });
 	opts.push({ label: 'CANCEL', kind: 'cancel' });
 	partyMenu.action = { mon, monIdx: idx, options: opts, idx: 0 };
 }
@@ -2757,6 +2809,7 @@ function startLegendaryBattle(e) {
 				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 				const where = addCaught(party, battle.lastCaught);
 				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+				offerNickname(battle.lastCaught);
 				Story.setFlag(e.flag);
 				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
@@ -2822,6 +2875,7 @@ function startWildBattle(pick, forceDouble) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 			const where = addCaught(party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+			offerNickname(battle.lastCaught);
 		} else {
 			saveParty(party);
 		}
@@ -3917,7 +3971,9 @@ function drawPartyMenu(W, H) {
 	const u = H / 480;
 	if (partyMenu.summary) { drawSummary(W, H, u); return; }
 	const act = partyMenu.action;
-	menuChrome(W, H, u, 'PARTY', act ? `Choose an action for ${act.mon.name}.` : 'Choose a POKEMON, then an action (field moves it knows, SUMMARY, SWITCH).');
+	menuChrome(W, H, u, 'PARTY', partyMenu.swapFrom != null
+		? `Swapping ${party[partyMenu.swapFrom]?.name || ''} — pick the slot to swap it with (X cancels).`
+		: act ? `Choose an action for ${act.mon.name}.` : 'Choose a POKEMON, then an action (field moves it knows, SUMMARY, SWITCH).');
 	party.forEach((m, i) => {
 		const note = (i === 0 ? 'LEAD ' : '') + (m.heldItem ? Bag.ITEMS[m.heldItem]?.name || m.heldItem : '');
 		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem && !act ? 74 * u : 0), 56 * u, m,
@@ -3990,6 +4046,12 @@ function drawSummary(W, H, u) {
 		sctx.textAlign = 'right';
 		sctx.fillText(String(v), sx + 96 * u, y);
 		sctx.textAlign = 'left';
+		// raw IV / EV. The screen showed a verbal "judge" and nothing else, and EVs
+		// — which the game does award — appeared literally nowhere.
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`IV ${m.ivs?.[st] ?? '?'}  EV ${m.evs?.[st] ?? 0}`, sx + 104 * u, y - 12 * u);
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 		const frac = Math.max(0.05, Math.min(1, v / 200));
 		BUI.bar(sctx, sx + 108 * u, y - 11 * u, sw - 108 * u, 12 * u, frac, BUI.C.accent, 4 * u);
 	});
@@ -4014,7 +4076,9 @@ function drawSummary(W, H, u) {
 		sctx.fillText(mv.name, bx + 12 * u, yy + 13 * u);
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		sctx.fillText(`${(info.type || '').toUpperCase()}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
+		const pw = info.power ? `${info.power}` : '—';
+		const ac = (info.acc == null || info.acc === true) ? '—' : `${info.acc}`;
+		sctx.fillText(`${(info.type || '').toUpperCase()}  PW ${pw}  AC ${ac}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
 	});
 	// nav hint / lead button
 	const lead = { id: 'summary-lead', x: 40 * u, y: H - 52 * u, w: 200 * u, h: 40 * u,
@@ -4502,8 +4566,10 @@ function drawShopMenu(W, H) {
 
 function drawBagMenu(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'BAG', `Money: $${Bag.getMoney()} — tap an item, then who to use it on`);
-	const entries = Object.entries(Bag.getBag()).filter(([, n]) => n > 0);
+	const pocket = BAG_POCKETS[bagMenu.pocket] || BAG_POCKETS[0];
+	menuChrome(W, H, u, `BAG — ${pocket.label}`,
+		`Money: $${Bag.getMoney()} — ←/→ pocket · tap an item, then who to use it on`);
+	const entries = bagEntries();
 	if (!entries.length) {
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
@@ -5403,6 +5469,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
+		BAG_POCKETS, bagEntries, offerNickname, Settings,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses

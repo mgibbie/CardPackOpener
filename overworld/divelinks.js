@@ -15,4 +15,10 @@
 export const EXTRA_DIVE = {
 	Underwater_SootopolisCity: { emerge: { map: 'MAP_SOOTOPOLIS_CITY', x: 30, y: 40 } },
 	SootopolisCity: { dive: { map: 'MAP_UNDERWATER_SOOTOPOLIS_CITY', x: 10, y: 5 } },
+	// HOENN2 had the underwater room but no city: SOOTOPOLIS was the one gym town
+	// the region clone missed, because clone_region walks the map graph and
+	// Sootopolis has no connections and no inbound warps — you arrive by DIVE.
+	// Without it Badges.count('HOENN2') could never reach 8.
+	Hoenn2_Underwater_SootopolisCity: { emerge: { map: 'MAP_HOENN2_SOOTOPOLIS_CITY', x: 30, y: 40 } },
+	Hoenn2_SootopolisCity: { dive: { map: 'MAP_HOENN2_UNDERWATER_SOOTOPOLIS_CITY', x: 10, y: 5 } },
 };

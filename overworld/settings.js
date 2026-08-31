@@ -10,8 +10,11 @@ export const OPTIONS = {
 	autoRun: { label: 'AUTO-RUN', values: [false, true], show: v => (v ? 'ON' : 'OFF') },
 	dayNight: { label: 'DAY & NIGHT', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
 	followers: { label: 'FOLLOWERS', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
+	// every modern game ships this; grinding here meant eating full ball-shake and
+	// attack sequences forever, with only a per-message tap to skip
+	battleAnim: { label: 'BATTLE ANIM', values: ['full', 'fast', 'off'], show: v => v.toUpperCase() },
 };
-const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true, followers: true };
+const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true, followers: true, battleAnim: 'full' };
 
 function load() {
 	const d = safeLoad(KEY, null);
@@ -39,3 +42,6 @@ const VOL = { off: 0, low: 0.35, mid: 0.65, full: 1 };
 export function volumeMult() { return VOL[cfg.sound] ?? 1; }
 const CPS = { slow: 18, mid: 42, fast: 90, instant: Infinity };
 export function charsPerSec() { return CPS[cfg.textSpeed] ?? 42; }
+// multiplier the battle applies to every queued animation duration
+const ANIM = { full: 1, fast: 0.4, off: 0 };
+export function animScale() { return ANIM[cfg.battleAnim] ?? 1; }
