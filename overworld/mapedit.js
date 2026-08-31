@@ -59,6 +59,10 @@ export function mount(ow) {
 			<button class="me-btn me-tool" data-tool="rect">Rect</button>
 			<button class="me-btn me-tool" data-tool="pick">Pick</button>
 		</div>
+		<div style="display:flex;gap:4px;margin-bottom:8px;">
+			<button class="me-btn me-tool" data-tool="warp">Warp</button>
+			<button class="me-btn me-tool" data-tool="obj">Object</button>
+		</div>
 		<div style="margin-bottom:6px;">
 			<div style="color:#9d92bd;margin-bottom:3px;">Collision</div>
 			<div style="display:flex;gap:4px;">
@@ -86,8 +90,30 @@ export function mount(ow) {
 			<button class="me-btn" id="me-undo">Undo</button>
 			<button class="me-btn" id="me-redo">Redo</button>
 		</div>
+		<details id="me-places" style="margin-bottom:8px;">
+			<summary style="cursor:pointer;color:#9d92bd;">Warps, links &amp; objects</summary>
+			<div style="margin-top:6px;">
+				<div style="color:#9d92bd;font-size:11px;">Warp target (used by the Warp tool)</div>
+				<input id="me-warpdest" list="me-maplist" placeholder="MAP_..." style="width:100%;box-sizing:border-box;margin:2px 0;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px 6px;">
+				<input id="me-warpid" placeholder="dest warp id (0, or -1 = back)" style="width:100%;box-sizing:border-box;margin-bottom:6px;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px 6px;">
+				<datalist id="me-maplist"></datalist>
+				<div style="color:#9d92bd;font-size:11px;">Object (used by the Object tool)</div>
+				<input id="me-objgfx" placeholder="OBJ_EVENT_GFX_YOUNGSTER" style="width:100%;box-sizing:border-box;margin:2px 0;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px 6px;">
+				<input id="me-objscript" placeholder="script label (optional)" style="width:100%;box-sizing:border-box;margin-bottom:6px;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px 6px;">
+				<div style="color:#9d92bd;font-size:11px;">Edge link</div>
+				<div style="display:flex;gap:4px;margin:2px 0 6px;">
+					<select id="me-condir" style="background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px;">
+						<option>up</option><option>down</option><option>left</option><option>right</option><option>dive</option><option>emerge</option>
+					</select>
+					<input id="me-conoff" placeholder="offset" style="width:56px;background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:3px;">
+					<button class="me-btn" id="me-conadd" style="flex:0 0 auto;">+ link</button>
+				</div>
+				<div id="me-list" style="font-size:11px;color:#cfc6e6;max-height:150px;overflow-y:auto;"></div>
+			</div>
+		</details>
 		<div style="display:flex;gap:4px;">
-			<button class="me-btn" id="me-save" style="flex:1;">Save</button>
+			<button class="me-btn" id="me-save" style="flex:1;">Save tiles</button>
+			<button class="me-btn" id="me-savemap" style="flex:1;">Save map</button>
 			<button class="me-btn" id="me-export">Export</button>
 		</div>
 		<div id="me-msg" style="margin-top:8px;color:#ffd25f;min-height:30px;font-size:11px;"></div>
@@ -163,6 +189,17 @@ export function mount(ow) {
 	}
 	fetch('./map_regions.json').then(r => r.json()).then(j => {
 		regions = j;
+		// every map id in the game, so the warp/link target box autocompletes and
+		// you cannot fat-finger a destination that does not exist
+		const dl = $('me-maplist');
+		for (const list of Object.values(j)) {
+			for (const m of list) {
+				const o = document.createElement('option');
+				o.value = m.id;
+				o.textContent = m.name;
+				dl.appendChild(o);
+			}
+		}
 		for (const k of sortRegions(Object.keys(j))) {
 			const o = document.createElement('option');
 			o.value = k;
@@ -259,7 +296,9 @@ export function mount(ow) {
 		const ctx = overlay.getContext('2d');
 		ctx.clearRect(0, 0, overlay.width, overlay.height);
 		const lay = world.current?.layout;
-		if (!lay || (!showGrid && !showCollision)) return;
+		// NOTE: no early-out on the grid/collision toggles any more — warps and
+		// objects draw regardless, or turning the grid off would hide them.
+		if (!lay) return;
 		const [camX, camY] = ow.cameraPos();
 		const r = screen.getBoundingClientRect();
 		const scale = r.width / ow.viewSize()[0];
@@ -276,6 +315,34 @@ export function mount(ow) {
 				ctx.fillStyle = 'rgba(255,60,60,0.32)';
 				ctx.fillRect(sx, sy, step, step);
 			}
+		}
+		// warps and objects are otherwise INVISIBLE state — you would be editing a
+		// list you cannot see, against a map you can.
+		const m = world.current?.map;
+		if (m) {
+			ctx.font = `${Math.max(8, Math.round(step * 0.4))}px "Segoe UI", sans-serif`;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			for (const w of (m.warp_events || [])) {
+				const [sx, sy] = t2s(+w.x, +w.y);
+				if (sx < -step || sy < -step || sx > overlay.width || sy > overlay.height) continue;
+				ctx.fillStyle = 'rgba(90,190,255,0.35)';
+				ctx.fillRect(sx, sy, step, step);
+				ctx.strokeStyle = '#5abeff';
+				ctx.strokeRect(sx + 0.5, sy + 0.5, step - 1, step - 1);
+				ctx.fillStyle = '#eaf6ff';
+				ctx.fillText('W', sx + step / 2, sy + step / 2);
+			}
+			for (const o of (m.object_events || [])) {
+				const [sx, sy] = t2s(+o.x, +o.y);
+				if (sx < -step || sy < -step || sx > overlay.width || sy > overlay.height) continue;
+				ctx.strokeStyle = '#ffd25f';
+				ctx.strokeRect(sx + 1.5, sy + 1.5, step - 3, step - 3);
+				ctx.fillStyle = '#ffd25f';
+				ctx.fillText('O', sx + step / 2, sy + step / 2);
+			}
+			ctx.textAlign = 'start';
+			ctx.textBaseline = 'alphabetic';
 		}
 		if (showGrid) {
 			ctx.strokeStyle = 'rgba(255,255,255,0.18)';
@@ -373,6 +440,11 @@ export function mount(ow) {
 		const [tx, ty] = tileAt(e);
 		if (!inBounds(tx, ty)) return;
 		if (tool === 'pick') { sel = (world.current.layout.map[ty][tx] ?? 0) & GRID.METATILE; markSel(); return; }
+		// A painted region with no doors is scenery. These two tools edit the MAP
+		// json (warps / objects) rather than the LAYOUT grid, which is why they
+		// save through a different endpoint.
+		if (tool === 'warp') { toggleWarp(tx, ty); return; }
+		if (tool === 'obj') { toggleObject(tx, ty); return; }
 		if (tool === 'rect') { rectAnchor = [tx, ty]; msg(`rect from ${tx},${ty}…`); return; }
 		painting = true;
 		beginStroke();
@@ -462,6 +534,90 @@ export function mount(ow) {
 		if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); $('me-redo').click(); }
 	});
 
+	// ---------- warps, edge links and objects ----------
+	// These live in the MAP json, not the layout, and the editor could not touch
+	// them at all: you could paint a town and never give it a door, a route and
+	// never join it to the next one, a house and never put anyone in it.
+	//
+	// Everything here edits world.current.map IN PLACE. That object is what the
+	// running game reads, so a warp you drop is walkable immediately — same
+	// principle as painting straight into the live layout.
+	const curMap = () => world.current?.map || null;
+	const mapStem = () => world.current?.name || null;
+	const warpsOf = m => (m.warp_events ||= []);
+	const objsOf = m => (m.object_events ||= []);
+	const consOf = m => (m.connections ||= []);
+	const at = (list, tx, ty) => list.findIndex(w => +w.x === tx && +w.y === ty);
+
+	function toggleWarp(tx, ty) {
+		const m = curMap(); if (!m) return;
+		const list = warpsOf(m);
+		const i = at(list, tx, ty);
+		if (i >= 0) { const w = list.splice(i, 1)[0]; refreshPlaces(); return msg(`removed warp -> ${w.dest_map}`); }
+		const dest = $('me-warpdest').value.trim();
+		if (!dest) return msg('set a warp target first (Warps, links & objects)');
+		const elev = (world.current.layout.map[ty][tx] >> GRID.ELEVATION_SHIFT) & 0xF;
+		list.push({ x: tx, y: ty, elevation: elev, dest_map: dest, dest_warp_id: ($('me-warpid').value.trim() || '0') });
+		refreshPlaces();
+		msg(`warp @${tx},${ty} -> ${dest}`);
+	}
+	function toggleObject(tx, ty) {
+		const m = curMap(); if (!m) return;
+		const list = objsOf(m);
+		const i = at(list, tx, ty);
+		if (i >= 0) { const o = list.splice(i, 1)[0]; refreshPlaces(); return msg(`removed ${o.graphics_id}`); }
+		const gfx = $('me-objgfx').value.trim();
+		if (!gfx) return msg('set an object sprite first (OBJ_EVENT_GFX_...)');
+		list.push({
+			type: 'object', graphics_id: gfx, x: tx, y: ty,
+			elevation: (world.current.layout.map[ty][tx] >> GRID.ELEVATION_SHIFT) & 0xF,
+			movement_type: 'MOVEMENT_TYPE_FACE_DOWN', movement_range_x: 0, movement_range_y: 0,
+			trainer_type: 'TRAINER_TYPE_NONE', trainer_sight_or_berry_tree_id: '0',
+			script: $('me-objscript').value.trim() || '0x0', flag: '0',
+		});
+		refreshPlaces();
+		msg(`${gfx} @${tx},${ty}`);
+	}
+
+	function refreshPlaces() {
+		const m = curMap();
+		const box = $('me-list');
+		if (!m) { box.textContent = ''; return; }
+		const row = (label, onDel) => {
+			const d = document.createElement('div');
+			d.style.cssText = 'display:flex;gap:4px;align-items:center;margin:1px 0;';
+			const t = document.createElement('span'); t.style.flex = '1'; t.textContent = label;
+			const b = document.createElement('button'); b.className = 'me-btn'; b.textContent = '×';
+			b.style.cssText = 'flex:0 0 20px;padding:0;';
+			b.addEventListener('click', () => { onDel(); refreshPlaces(); });
+			d.append(t, b);
+			return d;
+		};
+		box.textContent = '';
+		for (const [i, w] of warpsOf(m).entries()) {
+			box.appendChild(row(`warp ${w.x},${w.y} -> ${String(w.dest_map).replace('MAP_', '')}:${w.dest_warp_id}`,
+				() => warpsOf(m).splice(i, 1)));
+		}
+		for (const [i, c] of consOf(m).entries()) {
+			box.appendChild(row(`${c.direction} +${c.offset} -> ${String(c.map).replace('MAP_', '')}`,
+				() => consOf(m).splice(i, 1)));
+		}
+		for (const [i, o] of objsOf(m).entries()) {
+			box.appendChild(row(`${String(o.graphics_id).replace('OBJ_EVENT_GFX_', '')} ${o.x},${o.y}`,
+				() => objsOf(m).splice(i, 1)));
+		}
+		if (!box.childNodes.length) box.textContent = 'no warps, links or objects on this map';
+	}
+
+	$('me-conadd').addEventListener('click', () => {
+		const m = curMap(); if (!m) return msg('no map loaded');
+		const dest = $('me-warpdest').value.trim();
+		if (!dest) return msg('put the target map in the warp-target box first');
+		consOf(m).push({ map: dest, offset: +($('me-conoff').value || 0), direction: $('me-condir').value });
+		refreshPlaces();
+		msg(`${$('me-condir').value} link -> ${dest}`);
+	});
+
 	// ---------- save / export ----------
 	// The layout file is exactly what the loader reads back, so write the whole
 	// object rather than a patch — no merge step to get wrong later.
@@ -478,6 +634,24 @@ export function mount(ow) {
 			msg(`saved ${lay.id}.json — deploy overworld/data to owdata to publish`);
 		} catch (e) {
 			msg('no dev server (' + String(e.message || e).slice(0, 40) + ') — use Export');
+		}
+	});
+	$('me-savemap').addEventListener('click', async () => {
+		const m = curMap(), stem = mapStem();
+		if (!m || !stem) return msg('no map loaded');
+		try {
+			const r = await fetch('/dev/save-map', { method: 'POST', body: JSON.stringify({ stem, content: m }) });
+			if (!r.ok) throw new Error(await r.text());
+			msg(`saved ${stem}_map.json — deploy overworld/data to owdata to publish`);
+		} catch (e) {
+			// no dev server: hand the file over instead, same as Export does
+			const blob = new Blob([JSON.stringify(m)], { type: 'application/json' });
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = stem + '_map.json';
+			a.click();
+			setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+			msg(`no dev server — downloaded ${stem}_map.json, drop it in overworld/data/maps/`);
 		}
 	});
 	$('me-export').addEventListener('click', () => {
