@@ -815,7 +815,14 @@ export class Battle {
 	}
 	// canonical weight in kg for the weight-based moves; fakemon default mid-tier
 	weightOf(mon) {
-		return this.data.species[mon.speciesId]?.weightkg || 50;
+		let w = this.data.species[mon.speciesId]?.weightkg || 50;
+		// HEAVY METAL / LIGHT METAL were inert for want of this one line. They also
+		// swing Heavy Slam, Heat Crash, Low Kick and Grass Knot, which all read
+		// weightOf — four moves and two abilities on the same hook.
+		const ab = this.abilityOf(mon);
+		if (ab === 'heavymetal') w *= 2;
+		else if (ab === 'lightmetal') w /= 2;
+		return w;
 	}
 	// move-menu effectiveness hint vs the current foe (singles only — doubles
 	// pick their target after the move, so a single hint would mislead)

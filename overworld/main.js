@@ -1461,6 +1461,11 @@ const FERRY_DESTS = [
 	// the bottom. FRLG gives it no wild encounters either — the emptiness of the
 	// climb is the design, the legendary is the payoff.
 	{ label: 'Navel Rock (Seagallop)', file: 'NavelRock_Harbor', requires: () => Badges.isChampion('KANTO') },
+	// S.S. TIDAL — three maps wired to each other and to nothing else. This port
+	// has its own ferry, so the decomp's boarding state machine stays blocked and
+	// you simply walk aboard. regionparity_test asserts Scott's cameo is armed in
+	// the corridor; until now that was a map nobody could stand on.
+	{ label: 'S.S. Tidal (Hoenn liner)', file: 'SSTidalCorridor' },
 ];
 function ferryKey(k) {
 	const dests = FERRY_DESTS.filter(d => d.file !== world.current.name && (!d.requires || d.requires()));
@@ -2617,6 +2622,20 @@ const LEGENDARY_ENCOUNTERS = {
 		requires: () => Badges.isChampion('KANTO'), intro: 'Light floods the peak — HO-OH descends over NAVEL ROCK!' },
 	MAP_NAVEL_ROCK_BOTTOM: { species: 'lugia', dex: 249, level: 70, x: 11, y: 13, flag: 'legend_caught_lugia',
 		requires: () => Badges.isChampion('KANTO'), intro: 'The cavern floods with sound — LUGIA rises from the deep!' },
+	// CELEBI. Johto's signature mascot did not exist ANYWHERE in this codebase —
+	// zero hits, despite shipping in the species table with a sprite. Crystal
+	// gates it behind the GS Ball, an item this port has no equivalent for, so it
+	// waits at the Ilex Forest shrine for the region's CHAMPION instead. That also
+	// gives Johto a second post-game beat; it previously had only Mt Silver.
+	MAP_ILEX_FOREST: { species: 'celebi', dex: 251, level: 60, x: 4, y: 19, flag: 'legend_caught_celebi',
+		requires: () => Badges.isChampion('JOHTO'),
+		intro: 'The shrine hums, and the forest folds around a small green shape — CELEBI!' },
+	// JOHKANTO had NO legendaries at all, while Hoenn has 9, Johto 5 and Kanto 4.
+	// Its Power Plant is the one bird lair the region actually owns (Seafoam and
+	// Cerulean Cave are unprefixed border maps). Same flag as Kanto's ZAPDOS, so
+	// this is a second route to the bird rather than a second bird.
+	MAP_JOHKANTO_POWER_PLANT: { species: 'zapdos', dex: 145, level: 50, x: 16, y: 4, flag: 'legend_caught_zapdos',
+		intro: 'The generators scream — ZAPDOS bursts from the machinery!' },
 	// The three legendary beasts — once you've woken them at the Burned Tower they can
 	// be confronted at the top of Tin Tower (a map can hold several: an array).
 	MAP_TIN_TOWER_1F: [

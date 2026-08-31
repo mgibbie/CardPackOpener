@@ -21,4 +21,19 @@ export const EXTRA_DIVE = {
 	// Without it Badges.count('HOENN2') could never reach 8.
 	Hoenn2_Underwater_SootopolisCity: { emerge: { map: 'MAP_HOENN2_SOOTOPOLIS_CITY', x: 30, y: 40 } },
 	Hoenn2_SootopolisCity: { dive: { map: 'MAP_HOENN2_UNDERWATER_SOOTOPOLIS_CITY', x: 10, y: 5 } },
+
+	// SEALED CHAMBER — the Braille chain that unseals the REGI trio. Every room
+	// exists and they link to each other, but the chain had no way in: Route 134
+	// was the one sea route with no dive connection, and nothing surfaced from
+	// Underwater_SealedChamber into the chamber itself.
+	Route134: { dive: { map: 'MAP_UNDERWATER_ROUTE134', x: 9, y: 5 } },
+	Underwater_Route134: { emerge: { map: 'MAP_ROUTE134', x: 40, y: 20 } },
+	Underwater_SealedChamber: { emerge: { map: 'MAP_SEALED_CHAMBER_OUTER_ROOM', x: 10, y: 20 } },
+
+	// ABANDONED SHIP hidden floor — the Deep Sea Tooth / Deep Sea Scale rooms.
+	// Both underwater maps and both hidden-floor maps shipped, wired to each
+	// other and to nothing else, so the entire wing was sealed.
+	AbandonedShip_Rooms_B1F: { dive: { map: 'MAP_ABANDONED_SHIP_UNDERWATER1', x: 4, y: 4 } },
+	AbandonedShip_Underwater1: { emerge: { map: 'MAP_ABANDONED_SHIP_ROOMS_B1F', x: 13, y: 4 } },
+	AbandonedShip_Underwater2: { emerge: { map: 'MAP_ABANDONED_SHIP_HIDDEN_FLOOR_CORRIDORS', x: 6, y: 9 } },
 };
