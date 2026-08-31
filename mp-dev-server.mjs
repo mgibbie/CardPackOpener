@@ -67,6 +67,32 @@ createServer(async (req, res) => {
 		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
 		return;
 	}
+	// ?mapedit=1 Save: writes one map layout back into overworld/data/layouts/.
+	// That tree is gitignored and deploys to magepunk-owdata separately, so this
+	// only lands locally — publish with:
+	//   npx wrangler pages deploy overworld/data --project-name=magepunk-owdata --branch=main --commit-dirty=true
+	// Path is rebuilt from the layout id rather than trusted from the client, so
+	// nothing can be written outside the layouts directory.
+	if (url.pathname === '/dev/save-layout' && req.method === 'POST') {
+		const chunks = [];
+		for await (const c of req) chunks.push(c);
+		try {
+			const { content } = JSON.parse(Buffer.concat(chunks));
+			const id = content?.id;
+			if (!/^LAYOUT_[A-Z0-9_]+$/.test(id || '')) throw new Error('bad layout id');
+			if (!Array.isArray(content.map) || !content.map.length) throw new Error('layout has no map grid');
+			if (content.map.length !== content.height) throw new Error('map rows != height');
+			for (const row of content.map) {
+				if (!Array.isArray(row) || row.length !== content.width) throw new Error('a map row != width');
+				for (const v of row) if (!Number.isInteger(v) || v < 0 || v > 0xFFFF) throw new Error('grid cell out of u16 range');
+			}
+			writeFileSync(join('overworld/data/layouts', id + '.json'), JSON.stringify(content));
+			console.log('saved layout', id, `(${content.width}x${content.height})`);
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end('{"ok":true}');
+		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
+		return;
+	}
 	// arttune.html "replace image": writes battlecards/art/<id>.jpg, adds the id
 	// to art/index.json, and bumps the id's ART_REVS cache-bust in cardart.js so
 	// the 7-day CDN cache can't serve the stale image after the next art deploy.
