@@ -736,6 +736,23 @@ export class Battle {
 		return Bag.ITEMS[mon.heldItem]?.held || null;
 	}
 	itemName(mon) { return Bag.ITEMS[mon.heldItem]?.name || mon.heldItem; }
+	// AMULET COIN doubles a trainer's prize. It MUTATES info.money rather than
+	// just dressing up the message, because the caller (startTrainerBattle in
+	// main.js) credits info.money itself — boosting only the text would announce
+	// money the player never receives. Idempotent: both the singles and doubles
+	// victory paths call this, and a battle must not pay double twice.
+	// The real games require the holder to have fought; there is no participation
+	// tracking here, so anyone in the party counts.
+	prizeMoney() {
+		const a = this.active;
+		if (!a?.info) return 0;
+		if (!a.info._coinApplied) {
+			a.info._coinApplied = true;
+			const mult = Math.max(1, ...(a.party || []).map(m => (m && this.itemFx(m)?.moneyBoost) || 1));
+			if (mult > 1) a.info.money = Math.round((a.info.money || 0) * mult);
+		}
+		return a.info.money || 0;
+	}
 	consumeItem(mon) {
 		mon.consumedItem = mon.heldItem;
 		mon.heldItem = null;
@@ -1539,6 +1556,12 @@ export class Battle {
 				this.consumeItem(target);
 				this.pushMsg(`${target.name} hung on with its Focus Sash!`);
 			}
+			// FOCUS BAND: unlike the Sash it is not consumed and does not need full
+			// HP — it is a 1-in-10 reprieve from any lethal hit.
+			else if (this.itemFx(target)?.focusBand && dealt >= target.curHP && Math.random() < 0.1) {
+				dealt = target.curHP - 1;
+				this.pushMsg(`${target.name} hung on using its FOCUS BAND!`);
+			}
 			target.curHP = Math.max(0, target.curHP - dealt);
 			this.float(targetSide, `-${dealt}`, crits ? '#ffd23f' : '#ff7a6b');
 			// damage memory for Counter / Mirror Coat / Metal Burst / Bide
@@ -2292,7 +2315,7 @@ export class Battle {
 				this.pushMsg('', () => { this.applyHazards(a2.foe, 'foe'); this.switchInAbility(a2.foe, 'foe'); });
 			} else if (a2.isTrainer) {
 				this.pushMsg(a2.info.defeatText);
-				this.pushMsg(`You got $${a2.info.money} for winning!`, () => this.finish('victory'));
+				this.pushMsg(`You got $${this.prizeMoney()} for winning!`, () => this.finish('victory'));
 			} else {
 				this.finish('victory');
 			}
@@ -2316,13 +2339,17 @@ export class Battle {
 	awardExp(mon, gain) {
 		const a = this.active;
 		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
-		mon.friend = Math.min(255, (mon.friend ?? 70) + 2);
+		// SOOTHE BELL multiplies every friendship gain its holder earns. Friendship
+		// drives the friendship evolutions in evolution.js, so this is the item's
+		// whole point — without it the bell did nothing at all.
+		const bell = this.itemFx(mon)?.friendBoost || 1;
+		mon.friend = Math.min(255, (mon.friend ?? 70) + 2 * bell);
 		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
 		const cap = Math.max(1, this.levelCap || 100);
 		while (mon.level < Math.min(100, cap) && mon.exp >= (mon.level + 1) ** 3) {
 			mon.level++;
-			mon.friend = Math.min(255, (mon.friend ?? 70) + 1);
+			mon.friend = Math.min(255, (mon.friend ?? 70) + 1 * bell);
 			const lvl = mon.level;
 			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
@@ -2395,7 +2422,10 @@ export class Battle {
 		const a = this.active;
 		a.runAttempts++;
 		const mySpe = a.me.stats.spe, foeSpe = a.foe.stats.spe;
-		let ok = mySpe >= foeSpe || this.abilityOf(a.me) === 'runaway';
+		// SMOKE BALL is a guaranteed escape from a wild battle, like Run Away —
+		// tryRun is only reachable from wild encounters, so it cannot skip trainers.
+		let ok = mySpe >= foeSpe || this.abilityOf(a.me) === 'runaway'
+			|| !!this.itemFx(a.me)?.fleeAlways;
 		if (!ok) {
 			const f = (Math.floor(mySpe * 128 / foeSpe) + 30 * a.runAttempts) % 256;
 			ok = Math.floor(Math.random() * 256) < f;
@@ -3163,7 +3193,7 @@ export class Battle {
 				if (!more) {
 					if (a.isTrainer) {
 						this.pushMsg(a.info.defeatText);
-						this.pushMsg(`You got $${a.info.money} for winning!`, () => this.finish('victory'));
+						this.pushMsg(`You got $${this.prizeMoney()} for winning!`, () => this.finish('victory'));
 					} else this.finish('victory');
 				}
 			} else if (!this.livingMine().length) {

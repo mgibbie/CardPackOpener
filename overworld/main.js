@@ -246,7 +246,10 @@ function leagueGateMessage(script) {
 // Clearing gym N in the LAST of the three regions advances the shared tier (globalTier);
 // that milestone grants a scaling reward, once per tier. Items are all real bag.js ids.
 const TIER_REWARDS = {
-	1: { money: 1500, items: [['greatball', 5]], label: '$1500 + 5 GREAT BALLS' },
+	// the AMULET COIN lands at tier 1 on purpose: it doubles prize money, so it
+	// has to arrive early to be worth anything. price: 0 means "not for sale"
+	// here (same as the Master Ball and Lucky Egg), so a reward is its only route.
+	1: { money: 1500, items: [['greatball', 5], ['amuletcoin', 1]], label: '$1500 + 5 GREAT BALLS + an AMULET COIN' },
 	2: { money: 2000, items: [['hyperpotion', 5]], label: '$2000 + 5 HYPER POTIONS' },
 	3: { money: 2500, items: [['rarecandy', 1]], label: '$2500 + a RARE CANDY' },
 	4: { money: 3000, items: [['ultraball', 5]], label: '$3000 + 5 ULTRA BALLS' },
@@ -5208,7 +5211,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
-		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard,
+		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses
