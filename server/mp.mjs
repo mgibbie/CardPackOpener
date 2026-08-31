@@ -22,8 +22,35 @@ const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
 const PACK_SIZE = 5;
 const DECK_SIZE = 40;               // PvP constructed decks are 40 cards (dungeon decks are separate)
-const MAX_COPIES = 2;
+const MAX_COPIES = 2;               // DECK limit: how many copies may go in a deck
 const MAX_LEGENDARY_COPIES = 1;
+// OWNERSHIP limit — deliberately different from the deck limit. Extra copies
+// used to pile up untouched, so a pack full of dupes felt like nothing happened;
+// they now sit in the collection until you choose to dust them down to a playset.
+// The 999 ceiling only exists so one id can't grow without bound: copies past it
+// are dusted on the spot rather than dropped, so a pack is never wasted.
+const MAX_OWNED_COPIES = 999;
+const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+const playsetCap = rarity => (rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES);
+// The one place NEW copies enter a collection (packs, weekly card). Distinct
+// from grantCards() below, which only tops a collection up to a starter deck's
+// requirement. Returns dust auto-refunded for anything over the ownership
+// ceiling (0 in practice — 999 of one card is a lot).
+function addCopies(user, ids) {
+	const col = user.collection || (user.collection = {});
+	let refunded = 0;
+	for (const id of ids) {
+		const have = col[id] || 0;
+		if (have >= MAX_OWNED_COPIES) {
+			refunded += DUST_VALUE[POOL[id]?.[0]] || 0;   // at the ceiling: pay out instead of dropping it
+			continue;
+		}
+		col[id] = have + 1;
+	}
+	if (refunded) user.dust = (user.dust || 0) + refunded;
+	return refunded;
+}
 const MAX_DECK_SLOTS = 40;          // each player can save up to 40 PvP decks
 const REWARD_COOLDOWN_MS = 60_000;  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
@@ -945,8 +972,6 @@ export default async function handler(req, env) {
 	// Disenchanting extras pays dust; crafting spends it on the exact card.
 	if (action === 'dust-extras' || action === 'craft') {
 		if (TEST_PHASE) return json({ error: 'crafting is disabled during the test phase' }, 400);
-		const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
-		const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
 		user.dust = user.dust || 0;
 		if (action === 'dust-extras') {
 			let gained = 0, dusted = 0;
@@ -1581,7 +1606,7 @@ export default async function handler(req, env) {
 		for (const [id, n] of Object.entries(cards || {})) {
 			fromU.collection[id] = Math.max(0, (fromU.collection[id] || 0) - (n | 0));
 			if (!fromU.collection[id]) delete fromU.collection[id];
-			toU.collection[id] = (toU.collection[id] || 0) + (n | 0);
+			toU.collection[id] = Math.min(MAX_OWNED_COPIES, (toU.collection[id] || 0) + (n | 0));
 		}
 	};
 
@@ -2102,9 +2127,9 @@ export default async function handler(req, env) {
 		user.packs -= 1;
 		user.stats.packsOpened += 1;
 		const cards = rollPack();
-		for (const id of cards) user.collection[id] = (user.collection[id] || 0) + 1;
+		const refunded = addCopies(user, cards);   // duplicates are KEPT, not discarded
 		await store.setJSON(username, user);
-		return json({ cards, state: publicState(user, username) });
+		return json({ cards, refunded, state: publicState(user, username) });
 	}
 
 	// Card of the Week: one free copy per UTC-week. The card is derived SERVER-side
@@ -2124,7 +2149,7 @@ export default async function handler(req, env) {
 		if (!Array.isArray(pool) || !pool.length) return json({ error: "couldn't load this week's card — try again shortly" }, 503);
 		const card = pool[week % pool.length];
 		if (!card || !card.id) return json({ error: 'no featured card available' }, 503);
-		user.collection[card.id] = (user.collection[card.id] || 0) + 1;
+		addCopies(user, [card.id]);
 		claims[week] = card.id;
 		for (const k of Object.keys(claims)) if (+k < week - 26) delete claims[k]; // prune old weeks
 		user.featuredClaims = claims;
