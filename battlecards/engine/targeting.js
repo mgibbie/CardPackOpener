@@ -87,6 +87,11 @@ const CHOSEN = {
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
 	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	// Naturalize and friends: a CHOSEN artifact/enchantment. Rides the existing
+	// 'permanent' target kind (legalTargets already enumerates artifacts,
+	// enchantments and walkers, and the board UI already lights permanents up
+	// for a pending spell); the filter below narrows it to the two zones.
+	'destroy-permanent': { 'artifact-or-enchantment': 'permanent', artifact: 'permanent', enchantment: 'permanent', permanent: 'permanent' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	frostburn: { creature: 'creature' },
 	'deck-minions-become-copies': { 'friendly-creature': 'friendly-creature' },
@@ -182,6 +187,11 @@ export function targetSpec(state, pi, card, choice) {
 			'enemy-any': 'an enemy', 'any-hero': 'a hero', permanent: 'any permanent',
 		}[kind];
 		if (e.target === 'undamaged-creature') { filter = c => c.damage === 0; why = 'an undamaged creature'; }
+		// the 'permanent' kind offers creatures too — narrow it to the zones these
+		// effects can actually act on, so a creature is never a legal Naturalize target
+		if (e.target === 'artifact-or-enchantment') { filter = c => c.type === 'artifact' || c.type === 'enchantment'; why = 'an artifact or enchantment'; }
+		if (e.target === 'artifact') { filter = c => c.type === 'artifact'; why = 'an artifact'; }
+		if (e.target === 'enchantment') { filter = c => c.type === 'enchantment'; why = 'an enchantment'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
 		if (e.maxCost != null) { filter = c => (c.cost || 0) <= e.maxCost; why = `a creature that costs ${e.maxCost} or less`; }
 		if (e.minAttack != null) { filter = c => c.attack >= e.minAttack; why = `a creature with ${e.minAttack} or more Attack`; }

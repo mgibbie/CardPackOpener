@@ -141,6 +141,25 @@ register('destroy-walker', ({ state, pi, enemies }, e) => {
 			}
 });
 register('destroy-permanent', ({ state, pi, target, source, enemies, scaled }, e) => {
+			// TARGETED mode (Naturalize, Nature's Claim): e.target names a target
+			// kind, so the player — or the AI, via legalTargets — has already
+			// chosen. Honour that instead of rolling. The random branch below is
+			// the older shape and is left exactly as it was for the 11 cards on it.
+			if (e.target) {
+				if (!target || target.uid == null) return;
+				const c = findPermanent(state, target.uid);
+				if (!c) return;
+				// only artifacts and enchantments live in zones destroyPermanent knows;
+				// anything else that reached here simply isn't a legal victim
+				const own = state.players.findIndex(p => p.artifacts.includes(c) || p.enchantments.includes(c));
+				if (own < 0) return;
+				if (e.only && c.type !== e.only) return;
+				destroyPermanent(state, own, c, !!e.exile); // runs the permanent's own deathrattle
+				// "its controller gains N Life" — whoever owned it, not every enemy
+				if (e.healOwner) healHero(state, own, e.healOwner);
+				recomputeAuras(state);
+				return;
+			}
 			const which = e.which || 'both'; // 'artifact' | 'enchantment' | 'location' | 'both' | 'any'
 			const owners = e.mine ? [pi] : opponentsOf(state, pi);
 			const cands = [];
