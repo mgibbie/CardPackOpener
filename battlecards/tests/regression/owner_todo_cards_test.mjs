@@ -36,7 +36,9 @@ const game = (seed = 7) => {
 	ok('Forest Bear has Taunt', (c.keywords || []).includes('taunt'), JSON.stringify(c.keywords));
 	// Swift == first_strike in this game's vocabulary
 	ok('Forest Bear has Swift (first_strike)', (c.keywords || []).includes('first_strike'), JSON.stringify(c.keywords));
-	ok('Forest Bear reads "Taunt. Swift."', c.description === 'Taunt. Swift.', c.description);
+	// keyword-only text was later normalised to the ampersand house form
+	// (tools/normalize_keyword_text.mjs) — the keywords themselves are unchanged
+	ok('Forest Bear reads "Taunt & Swift."', c.description === 'Taunt & Swift.', c.description);
 	ok('no bogus "swift" keyword crept in', !(c.keywords || []).includes('swift'));
 }
 
