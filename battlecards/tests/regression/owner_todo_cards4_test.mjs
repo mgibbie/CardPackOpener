@@ -26,7 +26,9 @@ const game = (seed = 2) => {
 	const c = cardsById.ambush_viper;
 	ok('Ambush Viper has Deathtouch and Rush',
 		(c.keywords || []).includes('deathtouch') && (c.keywords || []).includes('rush'), JSON.stringify(c.keywords));
-	ok('reads "Deathtouch. Rush."', c.description === 'Deathtouch. Rush.', c.description);
+	// the ampersand form: a minority house style (11 keyword-only cards use it,
+	// e.g. 'Taunt & Divine Shield.') that the owner picked for this card
+	ok('reads "Deathtouch & Rush."', c.description === 'Deathtouch & Rush.', c.description);
 	ok('keyword order mirrors the text (house form)',
 		JSON.stringify(c.keywords) === JSON.stringify(['deathtouch', 'rush']), JSON.stringify(c.keywords));
 	ok('the rest of the card is unchanged',
