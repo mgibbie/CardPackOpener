@@ -1746,6 +1746,10 @@ register('destroy-art-ench', ({ state, pi, target, source, enemies, scaled, hm, 
 				const j = Math.floor(state.rng() * pool.length);
 				const [own, c] = pool.splice(j, 1)[0];
 				destroyPermanent(state, own, c, !!e.exile);
+				// healOwner: "its controller gains N Life" (Nature's Claim). Heals the
+				// player who actually owned the destroyed permanent — a blanket
+				// 'enemy-heroes' heal would pay EVERY opponent in a free-for-all.
+				if (e.healOwner) healHero(state, own, e.healOwner);
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 });
