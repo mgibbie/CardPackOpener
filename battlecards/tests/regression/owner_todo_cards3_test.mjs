@@ -52,7 +52,10 @@ const cast = (st, id, target) => {
 {
 	const c = cardsById.natures_claim;
 	const fx = (c.effects || [])[0];
-	ok('Nature\'s Claim heals via healOwner', fx?.type === 'destroy-art-ench' && fx.healOwner === 4, JSON.stringify(c.effects));
+	// SUPERSEDED: this shipped as random destroy-art-ench + healOwner. Targeted
+	// permanent destruction landed right after (destroy_permanent_test.mjs), so
+	// the card now picks its victim — healOwner rode along unchanged.
+	ok('Nature\'s Claim heals via healOwner', fx?.type === 'destroy-permanent' && fx.healOwner === 4, JSON.stringify(c.effects));
 	ok('it no longer blanket-heals every opponent',
 		!(c.effects || []).some(e => e.type === 'heal' && e.target === 'enemy-heroes'), JSON.stringify(c.effects));
 	ok('text says "gains 4 Life"', /Its controller gains 4 Life\./.test(c.description), c.description);
@@ -63,7 +66,7 @@ const cast = (st, id, target) => {
 	const art = E.instantiate({ id: 't_art', name: 'Art', type: 'artifact', cost: 1 }, 1);
 	st.players[1].artifacts.push(art);
 	const life = st.players.map(p => p.life);
-	cast(st, 'natures_claim');
+	cast(st, 'natures_claim', { type: 'artifact', uid: art.uid, player: 1 });
 	ok('the artifact was destroyed', st.players[1].artifacts.length === 0, String(st.players[1].artifacts.length));
 	ok('its controller gained 4 Life', st.players[1].life === life[1] + 4, `${life[1]} -> ${st.players[1].life}`);
 	ok('the OTHER opponent gained nothing', st.players[2].life === life[2], `${life[2]} -> ${st.players[2].life}`);
@@ -100,18 +103,18 @@ const cast = (st, id, target) => {
 		JSON.stringify([c.cost, c.attack, c.health, c.keywords]));
 }
 
-// ---------- Naturalize (deliberately unchanged) ----------
-// The note asked for "Destroy TARGET artifact or enchantment". The engine has no
-// board-permanent targeting UI, so destroy-art-ench picks at random from a scope,
-// and all 14 cards that use it are enemy-scoped with the same house wording.
-// Widening just this one to scope:'all' would make a removal spell able to blow
-// up your own permanents at random — strictly worse. Pinned so the convention is
-// a decision on the record rather than an oversight.
+// ---------- Naturalize (SUPERSEDED) ----------
+// This batch left Naturalize alone: the note asked for "Destroy TARGET artifact
+// or enchantment" and there appeared to be no way to target a board permanent.
+// That was wrong — the targeting service already had a 'permanent' kind (built
+// for bounce), so the follow-up wired a targeted destroy onto it. Naturalize
+// now genuinely targets; destroy_permanent_test.mjs owns that behaviour.
+// Kept here as a pointer so the reversal is legible rather than a silent flip.
 {
 	const c = cardsById.naturalize;
-	ok('Naturalize is still enemy-scoped', (c.effects || [])[0]?.scope === undefined, JSON.stringify(c.effects));
-	ok('and keeps the house wording shared by its 13 siblings',
-		c.description === 'Destroy an enemy artifact or enchantment.', c.description);
+	ok('Naturalize now targets (see destroy_permanent_test.mjs)',
+		(c.effects || [])[0]?.type === 'destroy-permanent', JSON.stringify(c.effects));
+	ok('and says so', c.description === 'Destroy target artifact or enchantment.', c.description);
 }
 
 console.log(`${pass} passed, ${fail} failed`);
