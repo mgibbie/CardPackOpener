@@ -666,6 +666,11 @@ addEventListener('keyup', e => {
 
 // where you are, so a return visit resumes there (URL params still win)
 const POS_KEY = 'magepunk_pos_v1';
+// REPEL steps remaining. Persisted so it survives a reload mid-cave, and read by
+// the step handler + encounters.roll. Nothing read the repel items before this.
+const REPEL_KEY = 'magepunk_repel_v1';
+let repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
+function setRepel(n) { repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(repelSteps)); }
 // standalone Battle Factory mini-game (?factory=1 from the home page): rentals only,
 // no save/party needed — and it must never write over a real overworld save
 let factoryStandalone = false;
@@ -1753,6 +1758,13 @@ function bagKey(k) {
 		const [id] = entries[bagMenu.idx];
 		const item = Bag.ITEMS[id];
 		if (item?.kind === 'rod') { castRod(id, item); return; }
+		if (item?.kind === 'repel') {
+			if (repelSteps > 0) { bagMenu.flash = 'A REPEL is already working.'; return; }
+			Bag.consume(id);
+			setRepel(item.steps || 100);
+			bagMenu.flash = `${item.name} will keep weak POKeMON away for ${item.steps} steps.`;
+			return;
+		}
 		if (item?.kind === 'seeker') {
 			// VS SEEKER: re-arm this map's beaten trainers at badge-scaled levels
 			const region = playerRegion();
@@ -2468,9 +2480,20 @@ player.onArrive = () => {
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
 	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
+	// REPEL burns a step, and announces the moment it runs out (that message is
+	// the whole reason the item feels responsive)
+	if (repelSteps > 0) {
+		repelSteps--;
+		safeSaveStr(REPEL_KEY, String(repelSteps));
+		if (repelSteps === 0) hud.textContent = 'REPEL\'s effect wore off...';
+	}
 	// wild encounter?
 	if (!battle.blocking) {
-		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing);
+		// guard: this runs inside the rAF step loop, where a throw is silent and
+		// kills movement outright — `party` is not guaranteed to be populated yet
+		const lead = Array.isArray(party) ? party.find(m => m && m.curHP > 0) : null;
+		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing,
+			repelSteps > 0 ? (lead?.level || 0) : 0);
 		if (pick) startWildBattle(pick);
 	}
 };

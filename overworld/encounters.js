@@ -52,7 +52,9 @@ export class Encounters {
 	}
 
 	// roll for an encounter; returns { id, level } or null
-	roll(mapId, world, tx, ty, surfing) {
+	// repelLevel: while a REPEL is burning, anything weaker than your lead keeps
+	// away (the gen-3 rule). 0 disables the check.
+	roll(mapId, world, tx, ty, surfing, repelLevel = 0) {
 		// Land encounters used to require MB_TALL_GRASS, which no cave tile has —
 		// so 222 maps carried a land table that could never fire (Mt. Moon, Rock
 		// Tunnel, Victory Road, Cerulean Cave...) and 25 species were uncatchable.
@@ -66,7 +68,12 @@ export class Encounters {
 		const grp = this.data[mapId]?.[kind];
 		if (!grp) return null;
 		if (Math.random() * 100 > grp.rate) return null;
-		return this.pick(mapId, kind);
+		const pick = this.pick(mapId, kind);
+		// REPEL turns away anything weaker than your lead. Rolling first and then
+		// discarding is deliberate: it keeps the encounter RATE honest, so a repel
+		// thins out the low-level noise rather than making a route feel empty.
+		if (pick && repelLevel > 0 && pick.level < repelLevel) return null;
+		return pick;
 	}
 
 	// a table pick, time-of-day aware. `phase` defaults to the live Clock phase; pass it

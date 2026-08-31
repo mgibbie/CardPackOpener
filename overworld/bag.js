@@ -222,7 +222,7 @@ export const ITEMS = {
 	whiteherb:   { name: 'WHITE HERB',   price: 1000, kind: 'held', held: { whiteHerb: true } },
 	mentalherb:  { name: 'MENTAL HERB',  price: 1000, kind: 'held', held: { mentalHerb: true } },
 	cleansetag:  { name: 'CLEANSE TAG',  price: 1000, kind: 'held', held: {} },
-	machobrace:  { name: 'MACHO BRACE',  price: 3000, kind: 'held', held: {} },
+	machobrace:  { name: 'MACHO BRACE',  price: 3000, kind: 'held', held: { evBoost: 2 } },
 	soothebell:  { name: 'SOOTHE BELL',  price: 1000, kind: 'held', held: { friendBoost: 2 } },
 	blackbelti:  { name: 'BLACK BELT',   price: 1000, kind: 'held', held: { typeBoost: 'Fighting' } },
 
@@ -235,9 +235,11 @@ export const ITEMS = {
 	xaccuracy:   { name: 'X ACCURACY', price: 950,  kind: 'misc' },
 	direhit:     { name: 'DIRE HIT',   price: 650,  kind: 'misc' },
 	guardspec:   { name: 'GUARD SPEC.', price: 700, kind: 'misc' },
-	repel:       { name: 'REPEL',      price: 350,  kind: 'misc' },
-	superrepel:  { name: 'SUPER REPEL', price: 500, kind: 'misc' },
-	maxrepel:    { name: 'MAX REPEL',  price: 700,  kind: 'misc' },
+	// repel steps — nothing read these until now, so all three were dead weight
+	// you could buy. `kind: 'repel'` so the bag actually actions them.
+	repel:       { name: 'REPEL',      price: 350,  kind: 'repel', steps: 100 },
+	superrepel:  { name: 'SUPER REPEL', price: 500, kind: 'repel', steps: 200 },
+	maxrepel:    { name: 'MAX REPEL',  price: 700,  kind: 'repel', steps: 250 },
 	ppup:        { name: 'PP UP',      price: 0,    kind: 'misc' },
 	ppmax:       { name: 'PP MAX',     price: 0,    kind: 'misc' },
 	// contest scarves and mail: cosmetic in the source games too
