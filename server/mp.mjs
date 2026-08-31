@@ -828,6 +828,61 @@ export default async function handler(req, env) {
 		return json({ ok: true, count: next.length });
 	}
 
+	// ---------- gifts ----------
+	// A player's bag lives in THEIR localStorage (magepunk_bag_v1) and is not in
+	// OW_KEYS, so nothing here can write items into an account directly. A gift
+	// is therefore a message the recipient's own client claims and applies: the
+	// server only ever holds the promise of the items, never the inventory.
+	// Owner-only to send; anyone may list/claim their own.
+	if (action === 'gift-send') {
+		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		const to = String(body.to || '').trim().toLowerCase();
+		if (!to) return json({ error: 'no recipient' }, 400);
+		if (!(await store.get(to))) return json({ error: 'no player with that username' }, 404);
+		const items = body.items;
+		if (!items || typeof items !== 'object' || Array.isArray(items)) return json({ error: 'bad items' }, 400);
+		const entries = Object.entries(items);
+		if (!entries.length || entries.length > 20) return json({ error: 'send between 1 and 20 item kinds' }, 400);
+		const clean = {};
+		for (const [id, n] of entries) {
+			// the server has no item table; validate the SHAPE and let the
+			// recipient's client ignore any id its bag doesn't know
+			if (!/^[a-z0-9_]{2,40}$/.test(id)) return json({ error: 'bad item id: ' + id }, 400);
+			const c = Number(n);
+			if (!Number.isInteger(c) || c < 1 || c > 999) return json({ error: 'item counts are 1-999' }, 400);
+			clean[id] = c;
+		}
+		const list = (await store.get('gifts:' + to)) || [];
+		if (list.filter(g => !g.claimed).length >= 20) return json({ error: 'that player has too many unclaimed gifts' }, 400);
+		const gift = {
+			id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+			ts: Date.now(), from: username,
+			title: String(body.title || 'A gift!').slice(0, 80),
+			body: String(body.body || '').slice(0, 400),
+			items: clean, claimed: false,
+		};
+		list.push(gift);
+		await store.setJSON('gifts:' + to, list);
+		return json({ ok: true, gift, pending: list.filter(g => !g.claimed).length });
+	}
+	if (action === 'gift-list') {
+		const list = (await store.get('gifts:' + username)) || [];
+		return json({ gifts: list.filter(g => !g.claimed) });
+	}
+	if (action === 'gift-claim') {
+		// Claim marks it spent and hands the items back in ONE step, so a repeated
+		// call can never pay out twice — the client applies what this returns.
+		const id = String(body.id || '');
+		const list = (await store.get('gifts:' + username)) || [];
+		const g = list.find(x => x.id === id);
+		if (!g) return json({ error: 'no such gift' }, 404);
+		if (g.claimed) return json({ error: 'already claimed' }, 409);
+		g.claimed = true;
+		g.claimedAt = Date.now();
+		await store.setJSON('gifts:' + username, list);
+		return json({ ok: true, gift: { id: g.id, title: g.title, body: g.body, items: g.items, from: g.from } });
+	}
+
 	// a SAFE public profile of ANY player (clicked from the watcher list / chat).
 	// Public-safe subset only — never the collection contents, decks, packs, or
 	// friends list (those stay in the owner's publicState).

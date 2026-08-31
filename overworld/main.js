@@ -3226,6 +3226,33 @@ function pushOw() {
 	_lastOwJson = json;
 	try { MP.call('ow-save', { ow }).catch(() => {}); } catch (e) {}
 }
+// ---------- gifts ----------
+// The bag is device-local (magepunk_bag_v1 is not in OW_KEYS), so the server
+// can only hold the PROMISE of items — this is the client half that turns a
+// claimed gift into real inventory. gift-claim marks it spent and returns the
+// payload in one step, so a retry can never pay out twice; the bag write
+// happens immediately after, with no await in between.
+async function claimGifts() {
+	if (!MP_ON) return;
+	let gifts = [];
+	try { gifts = (await MP.call('gift-list'))?.gifts || []; } catch (e) { return; }
+	for (const g of gifts) {
+		let payload = null;
+		try { payload = (await MP.call('gift-claim', { id: g.id }))?.gift; } catch (e) { continue; }
+		if (!payload) continue;
+		const got = [];
+		for (const [id, n] of Object.entries(payload.items || {})) {
+			if (!Bag.ITEMS[id] && !/^(tm|hm)/.test(id)) continue; // an id this build doesn't know
+			Bag.addItem(id, n);
+			got.push(`${Bag.nameOf(id)} x${n}`);
+		}
+		const lines = [payload.title, payload.body, got.length ? '\nYou received:\n' + got.join('\n') : '']
+			.filter(Boolean).join('\n');
+		dialog.open(lines);
+		hud.textContent = payload.title;
+	}
+}
+
 async function hydrateOw() {
 	if (!MP_ON) return;
 	try {
@@ -5063,6 +5090,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 			grantGrandChampionReward();
 			hud.textContent = 'GRAND CHAMPION of all three regions! A GOLD TROPHY awaits in your BAG.';
 		}
+		claimGifts(); // anything the owner sent this account, applied on arrival
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)
