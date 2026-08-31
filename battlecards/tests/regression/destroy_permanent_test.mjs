@@ -115,12 +115,82 @@ ok("Nature's Claim still heals the controller", cardsById.natures_claim.effects[
 	ok('the AI has a legal target to choose from (no special-casing needed)', legal.length === 1, String(legal.length));
 }
 
-// ---------- the 12 random-scope siblings are untouched ----------
+// ---------- the sweep: the rest of the artifact removal ----------
+// Nine more cards carried the house workaround wording ("an ENEMY artifact or
+// enchantment") only because targeting was impossible. Three did not, and stay
+// random: Abzan Advantage says "random" in its own text, Return to Dust hits
+// up to TWO (the engine targets one), and Pulverize hits ALL artifacts.
 {
-	const others = raw.cards.filter(c => JSON.stringify(c.effects || []).includes('destroy-art-ench'));
-	ok('the other artifact-removal cards still use the random scope', others.length === 12, String(others.length));
-	ok('and none of them regressed to a targeted shape',
-		others.every(c => !JSON.stringify(c.effects).includes('destroy-permanent')));
+	const SWEPT = ['disenchant', 'kor_sanctifiers', 'fragmentize', 'smash_to_smithereens',
+		'shatter', 'smelt', 'reclamation_sage', 'slice_in_twain', 'revoke_existence'];
+	for (const id of SWEPT) {
+		const c = cardsById[id];
+		const fx = (c.effects || []).find(e => e.type === 'destroy-permanent');
+		ok(`${id} targets`, !!fx, JSON.stringify(c.effects));
+		ok(`${id} says "target"`, /\btarget\b/.test(c.description), c.description);
+		ok(`${id} no longer says "enemy"`, !/an enemy artifact|an enemy enchantment/.test(c.description), c.description);
+	}
+	const stillRandom = raw.cards.filter(c => JSON.stringify(c.effects || []).includes('destroy-art-ench'));
+	ok('exactly three stay random by design', stillRandom.length === 3, stillRandom.map(c => c.id).join(','));
+	ok('and they are the right three',
+		['abzan_advantage', 'pulverize', 'return_to_dust'].every(id => stillRandom.some(c => c.id === id)),
+		stillRandom.map(c => c.id).join(','));
+}
+
+// Shatter is artifact-only: an enchantment must not be offered
+{
+	const st = game();
+	const art = put(st, 1, ART, 'artifacts');
+	put(st, 1, ENCH, 'enchantments');
+	const sh = inHand(st, 'shatter');
+	const spec = E.targetSpec(st, 0, sh);
+	ok('Shatter asks for an artifact', spec.why === 'an artifact', spec.why);
+	const legal = E.legalTargets(st, 0, spec);
+	ok('and only the artifact is legal', legal.length === 1 && legal[0].uid === art.uid,
+		legal.map(t => t.type).join(','));
+}
+
+// Revoke Existence exiles rather than destroys
+{
+	const st = game();
+	const art = put(st, 1, ART, 'artifacts');
+	const re = inHand(st, 'revoke_existence');
+	st.players[0].mana.cur = 10;
+	E.playCard(st, 0, re.uid, { type: 'artifact', uid: art.uid, player: 1 }, null, 0);
+	ok('the artifact left play', st.players[1].artifacts.length === 0);
+	ok('it went to exile, not the graveyard',
+		st.players[1].exile.some(c => c.uid === art.uid) && !st.players[1].graveyard.some(c => c.uid === art.uid),
+		`exile ${st.players[1].exile.length} / grave ${st.players[1].graveyard.length}`);
+}
+
+// riders still fire alongside the targeted destroy
+{
+	const st = game();
+	const art = put(st, 1, ART, 'artifacts');
+	st.players[0].deck = ['naturalize', 'naturalize'];
+	const sl = inHand(st, 'slice_in_twain');
+	const handBefore = st.players[0].hand.length;   // counted WITH the spell still in hand
+	st.players[0].mana.cur = 10;
+	E.playCard(st, 0, sl.uid, { type: 'artifact', uid: art.uid, player: 1 }, null, 0);
+	ok('Slice in Twain destroyed the artifact', st.players[1].artifacts.length === 0);
+	// the spell leaves hand and the draw replaces it, so the count holds steady
+	ok('and still drew a card', st.players[0].hand.length === handBefore,
+		`${handBefore} -> ${st.players[0].hand.length}`);
+	ok('the drawn card is the one from the deck', st.players[0].hand.some(c => c.id === 'naturalize'),
+		st.players[0].hand.map(c => c.id).join(','));
+}
+
+// a Battlecry creature may be played with nothing to destroy (it just fizzles)
+{
+	const st = game();
+	const sage = inHand(st, 'reclamation_sage');
+	st.players[0].mana.cur = 10;
+	const spec = E.targetSpec(st, 0, sage);
+	ok('Reclamation Sage\'s target is optional', spec && spec.required === false, JSON.stringify(spec && spec.required));
+	ok('so it is playable with no artifact in play', E.canPlay(st, 0, sage) === true);
+	E.playCard(st, 0, sage.uid, null, null, 0);
+	ok('and it resolves onto the board', st.players[0].board.some(c => c.id === 'reclamation_sage'),
+		st.players[0].board.map(c => c.id).join(','));
 }
 
 console.log(`${pass} passed, ${fail} failed`);
