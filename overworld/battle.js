@@ -40,6 +40,14 @@ const AB_ONHIT = {
 	sandspit: { weather: 'sand', anyHit: true },
 	cursedbody: { disable: true, anyHit: true, ch: 0.3 },
 	ironbarbs: { chip: 8 }, roughskin: { chip: 8 },
+	// all of these were inert — the table already had the shape they needed
+	steamengine: { selfMulti: { spe: 6 }, types: ['Fire', 'Water'], anyHit: true },
+	watercompaction: { selfMulti: { def: 2 }, type: 'Water', anyHit: true },
+	electromorphosis: { charge: true, anyHit: true },
+	windpower: { charge: true, anyHit: true, wind: true },
+	seedsower: { terrain: 'grassy', anyHit: true },
+	angershell: { selfMulti: { atk: 1, spa: 1, spe: 1, def: -1, spd: -1 }, anyHit: true, halfHp: true },
+	grasspelt: {}, // no on-hit component; its Defense boost lives in statOf
 };
 // moves that strike every opposing mon in a double battle
 const SPREAD_MOVES = new Set(['earthquake', 'rockslide', 'surf', 'blizzard', 'heatwave',
@@ -57,6 +65,14 @@ const HIGH_CRIT = new Set(['slash', 'razorleaf', 'crabhammer', 'stoneedge', 'nig
 	'drillrun', 'karatechop', 'aeroblast', 'blazekick', 'poisontail', 'spacialrend',
 	'snipeshot', 'stoneaxe', 'skyattack', 'razorwind', 'crosspoison', 'aquacutter']);
 const ALWAYS_CRIT = new Set(['frostbreath', 'stormthrow', 'wickedblow', 'surgingstrikes', 'flowertrick']);
+const SLICING_MOVES = new Set(['aerialace', 'aircutter', 'airslash', 'behemothblade', 'bitterblade',
+	'crosspoison', 'cut', 'furycutter', 'kowtowcleave', 'leafblade', 'nightslash', 'psychocut',
+	'razorleaf', 'razorshell', 'sacredsword', 'secretsword', 'slash', 'solarblade', 'stoneaxe',
+	'xscissor', 'ceaselessedge', 'populationbomb', 'aquacutter', 'psyblade']);
+// wind moves — WIND RIDER is immune to them, WIND POWER charges off them
+const WIND_MOVES = new Set(['gust', 'hurricane', 'twister', 'tailwind', 'whirlwind', 'aircutter',
+	'bleakwindstorm', 'wildboltstorm', 'sandsearstorm', 'springtidestorm', 'icywind', 'petalblizzard',
+	'blizzard', 'fairywind', 'heatwave']);
 // HIDDEN POWER type from IVs (gen 3): the low bit of each IV, in the order
 // hp/atk/def/spe/spa/spd, weighted 1/2/4/8/16/32, scaled across the 16 types.
 const HP_TYPES = ['Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
@@ -794,6 +810,8 @@ export class Battle {
 		if (this.itemFx(mon)?.choice === 'spe') spe *= 1.5;
 		if (mon.unburdened) spe *= 2;
 		if (mon.status && this.abilityOf(mon) === 'quickfeet') spe *= 1.5;   // was inert: 16 species
+		if (this.abilityOf(mon) === 'slushrush' && this.weatherKind() === 'hail') spe *= 2;
+		if (this.abilityOf(mon) === 'surgesurfer' && a.terrain?.kind === 'electric') spe *= 2;
 		return a.fieldFx?.trickRoom > 0 ? -spe : spe;
 	}
 	// AMULET COIN doubles a trainer's prize. It MUTATES info.money rather than
@@ -823,7 +841,8 @@ export class Battle {
 		const fx = this.itemFx(mon);
 		if (!fx || mon.curHP <= 0) return;
 		if ((fx.berryHeal || fx.berryHealFrac) && mon.curHP <= mon.maxHP / 2) {
-			const amt = fx.berryHeal || Math.floor(mon.maxHP * fx.berryHealFrac);
+			const ripe = this.abilityOf(mon) === 'ripen' ? 2 : 1;   // was inert: 3 species
+			const amt = (fx.berryHeal || Math.floor(mon.maxHP * fx.berryHealFrac)) * ripe;
 			this.pushMsg(`${mon.name} ate its ${this.itemName(mon)}!`, () => {
 				mon.curHP = Math.min(mon.maxHP, mon.curHP + amt);
 				this.float(side, `+${amt}`, '#6be08a');
@@ -860,6 +879,43 @@ export class Battle {
 		}
 		return a.weather.kind;
 	}
+	// Why `mon` cannot leave the field, or null. This did not exist: `noSwitch`
+	// was SET by Mean Look / Block / Spider Web / Octolock / Fairy Lock and read
+	// by nothing, so all five announced "can no longer escape!" and then let you
+	// walk away — and SHADOW TAG / ARENA TRAP / MAGNET PULL were inert for the
+	// same reason. Ghosts, SUCTION CUPS, GUARD DOG, Run Away and a SHED SHELL are
+	// the canonical outs.
+	trappedBy(mon) {
+		const a = this.active;
+		if (!a || mon.curHP <= 0) return null;
+		const ab = this.abilityOf(mon);
+		if (mon.types.includes('Ghost') || ab === 'runaway' || ab === 'suctioncups' || ab === 'guarddog') return null;
+		if (mon.heldItem === 'shedshell') return null;
+		if (mon.noSwitch) return 'trapped';
+		if (mon.trapTurns > 0) return mon.trapName || 'trapped';
+		// an opposing ability can pin it
+		const foes = this.sideOfMon(mon) === 'me' ? this.livingFoes() : this.livingMine();
+		for (const f of foes) {
+			const fa = this.abilityOf(f);
+			if (fa === 'shadowtag' && ab !== 'shadowtag') return 'SHADOW TAG';
+			if (fa === 'arenatrap' && !mon.types.includes('Flying') && ab !== 'levitate') return 'ARENA TRAP';
+			if (fa === 'magnetpull' && mon.types.includes('Steel')) return 'MAGNET PULL';
+		}
+		return null;
+	}
+	// Move priority, shared by the singles and doubles resolvers (they each had
+	// their own copy, which is how the doubles sorter drifted). Gale Wings,
+	// Triage and Quick Draw were all inert because neither copy knew them.
+	movePriority(mon, move) {
+		const mv = this.data.moves[move.id] || {};
+		const ab = this.abilityOf(mon);
+		let p = mv.priority || 0;
+		if (mv.category === 'Status' && ab === 'prankster') p += 1;
+		if (ab === 'galewings' && mv.type === 'Flying' && mon.curHP === mon.maxHP) p += 1;
+		if (ab === 'triage' && (MOVE_FX[move.id]?.heal || MOVE_FX[move.id]?.drain)) p += 3;
+		if (ab === 'quickdraw' && mv.category !== 'Status' && Math.random() < 0.3) p += 1;
+		return p;
+	}
 	// --- narrow accessors so the suites can assert these directly rather than
 	// inferring them from damage rolls (both tables are module-private) ---
 	hiddenPowerTypeOf(mon) { return hiddenPowerType(mon); }
@@ -873,12 +929,16 @@ export class Battle {
 		if (ab === 'keeneye' && stat === 'acc') return false;
 		if (ab === 'hypercutter' && stat === 'atk') return false;
 		if (ab === 'bigpecks' && stat === 'def') return false;       // was inert: 21 species
+		if (ab === 'illuminate' && stat === 'acc') return false;     // gen-9 role; was inert: 10
+		if (ab === 'mirrorarmor') return false;                      // bounced instead (see below)
+		if (ab === 'guarddog' && stat === 'atk') return false;       // shrugs off Intimidate
 		if (ab === 'fullmetalbody' || ab === 'whitesmoke') return false;
 		return true;
 	}
 	// announce + apply an ability's switch-in effect
 	switchInAbility(mon, side) {
 		const a = this.active;
+		mon.justSwitchedIn = true;   // STAKEOUT reads this; cleared at end of turn
 		const ab = this.abilityOf(mon);
 		if (!ab || mon.curHP <= 0) return;
 		const other = side === 'me' ? a.foe : a.me;
@@ -906,6 +966,62 @@ export class Battle {
 			this.snapAbility(mon);
 			mon.ability = other.ability;
 			this.pushMsg(`${mon.name} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
+		}
+		// PROTOSYNTHESIS / QUARK DRIVE: the paradox pair. Each boosts its own best
+		// stat while its field condition holds.
+		const para = { protosynthesis: () => this.weatherKind() === 'sun', quarkdrive: () => a.terrain?.kind === 'electric' };
+		if (para[ab]?.()) {
+			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
+			const best = ['atk', 'def', 'spa', 'spd', 'spe']
+				.reduce((b, k) => (mon.stats[k] || 0) > (mon.stats[b] || 0) ? k : b, 'atk');
+			boosts[best] = Math.min(6, (boosts[best] || 0) + 1);
+			this.pushMsg(`${mon.name}'s ${this.abilityName(ab)} boosted its ${best.toUpperCase()}!`);
+		}
+		// NEUTRALIZING GAS switches every OTHER ability off while it is on the field
+		if (ab === 'neutralizinggas') {
+			this.pushMsg(`${mon.name} released NEUTRALIZING GAS — abilities were suppressed!`);
+			for (const m of this.actorMons()) if (m !== mon) m.abilitySuppressed = true;
+		}
+		// POWER OF ALCHEMY / RECEIVER inherit a fallen ally's ability
+		if ((ab === 'powerofalchemy' || ab === 'receiver') && a.double) {
+			const ally = side === 'me' ? a.meAlly : a.foeAlly;
+			if (ally && ally.curHP <= 0 && ally.ability) {
+				this.snapAbility(mon);
+				mon.ability = ally.ability;
+				this.pushMsg(`${mon.name} inherited ${this.abilityName(ally.ability)}!`);
+			}
+		}
+		// doubles pick-me-ups that only ever help the partner
+		if (a.double) {
+			const ally = side === 'me' ? a.meAlly : a.foeAlly;
+			if (ally && ally.curHP > 0) {
+				if (ab === 'hospitality') {
+					const heal = Math.max(1, Math.floor(ally.maxHP / 4));
+					ally.curHP = Math.min(ally.maxHP, ally.curHP + heal);
+					this.pushMsg(`${mon.name} showered ${ally.name} with HOSPITALITY!`);
+				}
+				if (ab === 'curiousmedicine') {
+					const ab2 = this.boostsOf(ally);
+					for (const k of Object.keys(ab2)) ab2[k] = 0;
+					this.pushMsg(`${mon.name}'s CURIOUS MEDICINE reset ${ally.name}'s stats!`);
+				}
+				if (ab === 'costar') {
+					const mine = this.boostsOf(mon), theirs = this.boostsOf(ally);
+					for (const k of Object.keys(theirs)) mine[k] = theirs[k];
+					this.pushMsg(`${mon.name} copied ${ally.name}'s stat changes!`);
+				}
+			}
+		}
+		// SUPERSWEET SYRUP / INTIMIDATE's cousin: a one-time evasion drop on entry
+		if (ab === 'supersweetsyrup' && other.curHP > 0 && !mon._syrupUsed) {
+			mon._syrupUsed = true;
+			otherBoosts.eva = Math.max(-6, (otherBoosts.eva || 0) - 1);
+			this.pushMsg(`${mon.name} coated the field in SUPERSWEET SYRUP!`);
+		}
+		// MIMICRY takes the terrain's type
+		if (ab === 'mimicry' && a.terrain?.kind) {
+			const T = { electric: 'Electric', grassy: 'Grass', misty: 'Fairy', psychic: 'Psychic' }[a.terrain.kind];
+			if (T) { this.snapTypes(mon); mon.types = [T]; this.pushMsg(`${mon.name}'s MIMICRY made it ${T}-type!`); }
 		}
 		// scouting abilities — all three were inert (frisk 33 species, forewarn 8,
 		// anticipation 17). They only ever tell you something, which is exactly
@@ -985,11 +1101,23 @@ export class Battle {
 
 	applyStatus(target, st, bad, source) {
 		if (target.status) { this.pushMsg('But it failed!'); return false; }
-		if ((STATUS_IMMUNE[st] || []).some(t => target.types.includes(t))) {
+		// CORROSION poisons even Steel and Poison types — the one ability that
+		// overrides a type immunity, so it has to be checked before the type list
+		const corroding = source && this.abilityOf(source) === 'corrosion' && (st === 'psn');
+		if (!corroding && (STATUS_IMMUNE[st] || []).some(t => target.types.includes(t))) {
 			this.pushMsg(`It doesn't affect ${target.name}...`);
 			return false;
 		}
 		const tAb2 = this.abilityOf(target);
+		// AROMA VEIL / FLOWER VEIL also cover the ally in a double battle
+		const a2 = this.active;
+		const guard = [target, a2?.double ? (target === a2.me ? a2.meAlly : target === a2.meAlly ? a2.me
+			: target === a2.foe ? a2.foeAlly : target === a2.foeAlly ? a2.foe : null) : null]
+			.filter(m => m && m.curHP > 0).map(m => this.abilityOf(m));
+		if (guard.includes('flowerveil') && target.types.includes('Grass')) {
+			this.pushMsg(`${target.name} is protected by FLOWER VEIL!`);
+			return false;
+		}
 		if ((STATUS_IMMUNE_AB[st] || []).includes(tAb2)
 			|| (tAb2 === 'leafguard' && this.weatherKind() === 'sun')
 			|| (tAb2 === 'comatose')) {
@@ -1211,8 +1339,39 @@ export class Battle {
 		// Protect/Detect blocks anything aimed at the protected side
 		const aimsAtFoe = mv.category !== 'Status'
 			|| !!(fx.status || fx.confuse || fx.seed || fx.yawn || fx.blow || STAT_MOVES[move.id]?.foe);
-		if (aimsAtFoe && target.protectedTurn) {
+		// UNSEEN FIST punches straight through a Protect on contact
+		if (aimsAtFoe && target.protectedTurn
+			&& !(this.abilityOf(user) === 'unseenfist' && mv.category === 'Physical')) {
 			this.pushMsg(`${target.name} protected itself!`);
+			return;
+		}
+		// --- ability gates that stop a move landing at all (all were inert) ---
+		const defAb = this.abilityOf(target);
+		// DAZZLING / QUEENLY MAJESTY / ARMOR TAIL refuse priority moves
+		if (aimsAtFoe && (mv.priority || 0) > 0
+			&& ['dazzling', 'queenlymajesty', 'armortail'].includes(defAb)) {
+			this.pushMsg(`${target.name}'s ${this.abilityName(defAb)} blocked the move!`);
+			return;
+		}
+		// WIND RIDER rides the gust instead of taking it
+		if (aimsAtFoe && defAb === 'windrider' && WIND_MOVES.has(move.id)) {
+			const wb = isFoe ? a.meBoosts : a.foeBoosts;
+			wb.atk = Math.min(6, (wb.atk || 0) + 1);
+			this.pushMsg(`${target.name} rode the wind — its Attack rose!`);
+			return;
+		}
+		// GOOD AS GOLD shrugs off status moves entirely
+		if (aimsAtFoe && mv.category === 'Status' && defAb === 'goodasgold') {
+			this.pushMsg(`${target.name}'s GOOD AS GOLD blocked it!`);
+			return;
+		}
+		// MAGIC BOUNCE / REBOUND send a status move straight back. MYCELIUM MIGHT
+		// is the counter to that whole family, so it is checked first.
+		if (aimsAtFoe && mv.category === 'Status' && this.abilityOf(user) !== 'myceliummight'
+			&& (defAb === 'magicbounce' || defAb === 'rebound') && !opts.bounced) {
+			this.pushMsg(`${target.name} bounced the move back!`, () => {
+				this.useMove(target, targetBoosts, user, userBoosts, move, !isFoe, { bounced: true });
+			});
 			return;
 		}
 		// a substitute soaks status tricks aimed through it (sound bypasses)
@@ -1446,6 +1605,12 @@ export class Battle {
 		const tAb = ['moldbreaker', 'teravolt', 'turboblaze'].includes(uAb) ? null : this.abilityOf(target);
 		// -ate abilities turn Normal moves into their element
 		if (AB_ATE[uAb] && mv.type === 'Normal') mv = { ...mv, type: AB_ATE[uAb], atePower: true };
+		// PROTEAN / LIBERO retype the user to whatever it is about to throw
+		if ((uAb === 'protean' || uAb === 'libero') && mv.type && !user.types.includes(mv.type)) {
+			this.snapTypes(user);
+			user.types = [mv.type];
+			this.pushMsg(`${user.name} became ${mv.type}-type!`);
+		}
 		const phys = mv.category === 'Physical';
 		// Unaware ignores the other side's stat stages
 		const aBoosts = tAb === 'unaware' ? freshBoosts() : userBoosts;
@@ -1466,6 +1631,10 @@ export class Battle {
 		// Normal for all 845 species that can be taught it — never STAB, never
 		// coverage, strictly worse than filler. The gen-3 formula, unchanged.
 		if (move.id === 'hiddenpower') mv = { ...mv, type: hiddenPowerType(user) };
+		// move-retyping abilities (all inert): LIQUID VOICE makes sound moves Water,
+		// ENERGIZATE turns Normal moves Electric and powers them up slightly
+		if (uAb === 'liquidvoice' && SOUND_MOVES.has(move.id)) mv = { ...mv, type: 'Water' };
+		if (uAb === 'energizate' && mv.type === 'Normal') mv = { ...mv, type: 'Electric' };
 		// Present: usually a 40/80/120 bomb, sometimes a healing gift
 		if (move.id === 'present') {
 			if (Math.random() < 0.2) {
@@ -1591,6 +1760,37 @@ export class Battle {
 		if (user.helpingHand) envMult *= 1.5;   // one-shot, cleared after this move
 		// ANALYTIC rewards moving last (was inert: 18 species)
 		if (uAb === 'analytic' && target.movedThisTurn) envMult *= 1.3;
+		if (uAb === 'sharpness' && SLICING_MOVES.has(move.id)) envMult *= 1.5;
+		if (uAb === 'stakeout' && target.justSwitchedIn) envMult *= 2;
+		if (uAb === 'neuroforce' && eff > 1) envMult *= 1.25;
+		if (uAb === 'steelyspirit' && mv.type === 'Steel') envMult *= 1.5;
+		// SUPREME OVERLORD grows with the graveyard behind you
+		if (uAb === 'supremeoverlord') {
+			const fallen = (this.sideOfMon(user) === 'me' ? a.party : (a.foes || [])).filter(m => m && m.curHP <= 0).length;
+			envMult *= 1 + 0.1 * Math.min(5, fallen);
+		}
+		// AURAS are field-wide: any mon on either side projects them, and AURA
+		// BREAK inverts whatever is running
+		const auras = this.actorMons().map(m => this.abilityOf(m));
+		if ((mv.type === 'Fairy' && auras.includes('fairyaura')) || (mv.type === 'Dark' && auras.includes('darkaura'))) {
+			envMult *= auras.includes('aurabreak') ? 0.75 : 4 / 3;
+		}
+		// the RUIN quartet each weaken one stat for everyone else on the field
+		const ruin = this.actorMons().filter(m => m !== user).map(m => this.abilityOf(m));
+		if (phys && ruin.includes('tabletsofruin')) envMult *= 0.75;      // everyone's Attack
+		if (!phys && ruin.includes('vesselofruin')) envMult *= 0.75;      // everyone's Sp. Atk
+		if (phys && this.abilityOf(user) !== 'swordofruin' && this.actorMons().some(m => this.abilityOf(m) === 'swordofruin')) envMult *= 1.25;
+		if (!phys && this.abilityOf(user) !== 'beadsofruin' && this.actorMons().some(m => this.abilityOf(m) === 'beadsofruin')) envMult *= 1.25;
+		// GORILLA TACTICS: Choice Band's power without the item (it locks below)
+		if (uAb === 'gorillatactics' && phys) envMult *= 1.5;
+		// doubles support: an ally's BATTERY / POWER SPOT amplifies you
+		if (a.double) {
+			const uAlly = user === a.me ? a.meAlly : user === a.meAlly ? a.me
+				: user === a.foe ? a.foeAlly : user === a.foeAlly ? a.foe : null;
+			const aAb = uAlly && uAlly.curHP > 0 ? this.abilityOf(uAlly) : null;
+			if (aAb === 'battery' && !phys) envMult *= 1.3;
+			if (aAb === 'powerspot') envMult *= 1.3;
+		}
 		// FRIEND GUARD softens damage from the target's ALLY (doubles; was inert: 11)
 		if (a.double) {
 			const tAlly = target === a.me ? a.meAlly : target === a.meAlly ? a.me
@@ -1604,7 +1804,8 @@ export class Battle {
 		// HIGH-CRIT and ALWAYS-CRIT moves existed nowhere in the engine, yet 532
 		// species learn one by level-up. Scope Lens / Super Luck were also weaker
 		// than intended because they only ever raised the base 1/16.
-		if (!critBlocked && ALWAYS_CRIT.has(move.id)) critChance = 1;
+		if (!critBlocked && uAb === 'merciless' && (target.status === 'psn' || target.status === 'tox')) critChance = 1;
+		else if (!critBlocked && ALWAYS_CRIT.has(move.id)) critChance = 1;
 		else if (!critBlocked && HIGH_CRIT.has(move.id)) critChance = Math.max(critChance, 1 / 8);
 		if (!critBlocked && uAb === 'superluck') critChance = Math.max(critChance, 1 / 8);
 		if (!critBlocked && this.itemFx(user)?.critBoost) critChance = Math.max(critChance, 1 / 8);
@@ -1695,6 +1896,22 @@ export class Battle {
 					this.pushMsg(`${user.name}'s Moxie boosted its Attack!`);
 				}
 			}
+			// CHILLING NEIGH / GRIM NEIGH / SOUL HEART: Moxie's shape on other stats
+			const NEIGH = { chillingneigh: 'atk', grimneigh: 'spa', soulheart: 'spa' };
+			const neighStat = NEIGH[this.abilityOf(user)];
+			if (target.curHP <= 0 && user.curHP > 0 && neighStat) {
+				const ubn = this.boostsOf(user);
+				if ((ubn[neighStat] || 0) < 6) {
+					ubn[neighStat] = Math.min(6, (ubn[neighStat] || 0) + 1);
+					this.pushMsg(`${user.name}'s ${this.abilityName(this.abilityOf(user))} rose its power!`);
+				}
+			}
+			// INNARDS OUT pays the attacker back for the KO
+			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(target) === 'innardsout') {
+				const back = Math.max(1, dealt);
+				user.curHP = Math.max(0, user.curHP - back);
+				this.pushMsg(`${user.name} was hit by ${target.name}'s INNARDS OUT!`);
+			}
 			// BEAST BOOST: same shape as Moxie but on the user's BEST stat (inert: 11)
 			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'beastboost') {
 				const ub3 = this.boostsOf(user);
@@ -1710,6 +1927,8 @@ export class Battle {
 			const rx = AB_ONHIT[rAb];
 			if (rx && target.curHP > 0 && (rx.anyHit || phys)
 				&& (!rx.type || mv.type === rx.type) && (!rx.types || rx.types.includes(mv.type))
+				&& (!rx.wind || WIND_MOVES.has(move.id))
+				&& (!rx.halfHp || target.curHP <= target.maxHP / 2)
 				&& (rx.ch == null || Math.random() < rx.ch)) {
 				const tb = isFoe ? a.meBoosts : a.foeBoosts;
 				const ub = isFoe ? a.foeBoosts : a.meBoosts;
@@ -1733,6 +1952,15 @@ export class Battle {
 				if (rx.weather && a.weather?.kind !== rx.weather) {
 					a.weather = { kind: rx.weather, turns: 5 };
 					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} whipped up a storm!`);
+				}
+				if (rx.terrain && a.terrain?.kind !== rx.terrain) {
+					a.terrain = { kind: rx.terrain, turns: 5 };
+					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} changed the field!`);
+				}
+				// ELECTROMORPHOSIS / WIND POWER bank a charged Electric hit
+				if (rx.charge && !target.chargedUp) {
+					target.chargedUp = true;   // the same flag Charge sets; doubles Electric
+					this.pushMsg(`${target.name} became charged!`);
 				}
 				if (rx.disable && !user.disabledMove) {
 					user.disabledMove = move.id;
@@ -1838,7 +2066,8 @@ export class Battle {
 				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
 			});
 		}
-		if (phys && !hitsSub) {
+		// LONG REACH keeps its user out of contact range entirely (was inert: 4)
+		if (phys && !hitsSub && uAb !== 'longreach') {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0 || user.curHP <= 0) return;
 				const dAb = this.abilityOf(target);
@@ -1848,6 +2077,46 @@ export class Battle {
 					&& target.curHP > 0 && !target.types.some(t => t === 'Poison' || t === 'Steel')) {
 					target.status = 'psn';
 					this.pushMsg(`${target.name} was poisoned by POISON TOUCH!`);
+				}
+				// MAGICIAN lifts the TARGET's item when it lands a hit (inert: 7)
+				if (this.abilityOf(user) === 'magician' && target.heldItem && !user.heldItem
+					&& this.abilityOf(target) !== 'stickyhold') {
+					user.heldItem = target.heldItem; target.heldItem = null;
+					this.pushMsg(`${user.name} magicked away the ${this.itemName(user)}!`);
+				}
+				// TOXIC CHAIN has a chance to badly poison on any hit (inert: 3)
+				if (this.abilityOf(user) === 'toxicchain' && target.curHP > 0 && !target.status
+					&& Math.random() < 0.3) {
+					this.applyStatus(target, 'psn', true, user);
+				}
+				// PICKPOCKET lifts the attacker's item on contact (was inert: 16)
+				if (dAb === 'pickpocket' && user.heldItem && !target.heldItem
+					&& this.abilityOf(user) !== 'stickyhold') {
+					target.heldItem = user.heldItem; user.heldItem = null;
+					this.pushMsg(`${target.name} pickpocketed the ${this.itemName(target)}!`);
+				}
+				// MUMMY / LINGERING AROMA / WANDERING SPIRIT rewrite the attacker
+				if ((dAb === 'mummy' || dAb === 'lingeringaroma') && this.abilityOf(user) !== dAb) {
+					this.snapAbility(user);
+					user.ability = dAb;
+					this.pushMsg(`${user.name} was infected by ${this.abilityName(dAb)}!`);
+				} else if (dAb === 'wanderingspirit' && this.abilityOf(user)) {
+					const swap = this.abilityOf(user);
+					this.snapAbility(user); this.snapAbility(target);
+					user.ability = dAb; target.ability = swap;
+					this.pushMsg(`${target.name} and ${user.name} swapped abilities!`);
+				}
+				if (dAb === 'colorchange' && target.curHP > 0 && mv.type && !target.types.includes(mv.type)) {
+					this.snapTypes(target);
+					target.types = [mv.type];
+					this.pushMsg(`${target.name}'s COLOR CHANGE made it ${mv.type}-type!`);
+				}
+				if (dAb === 'toxicdebris' && target.curHP > 0) {
+					const h = isFoe ? a.foeHazards : a.meHazards;
+					if ((h.toxicspikes || 0) < 2) {
+						h.toxicspikes = (h.toxicspikes || 0) + 1;
+						this.pushMsg(`${target.name} scattered TOXIC DEBRIS!`);
+					}
 				}
 				if (dAb === 'static' && roll < 0.3 && !user.status) {
 					user.status = 'par';
@@ -2033,6 +2302,7 @@ export class Battle {
 			mon.movedThisTurn = false;
 			mon.tookDamageThisTurn = false;
 			mon.helpingHand = false;        // one turn only
+			mon.justSwitchedIn = false;     // STAKEOUT only gets the turn you arrive
 			mon.centerOfAttention = false;  // Follow Me / Rage Powder / Spotlight
 			// WHITE HERB / MENTAL HERB. Both shipped with a payload nothing read.
 			// They resolve HERE rather than at each trigger: stats are lowered from
@@ -2403,12 +2673,8 @@ export class Battle {
 		}
 		const foeMove = this.chooseFoeMove();
 		// Prankster: status moves gain +1 priority
-		const prio = (mon, move2) => {
-			const mv2 = this.data.moves[move2.id] || {};
-			return (mv2.priority || 0) + (mv2.category === 'Status' && this.abilityOf(mon) === 'prankster' ? 1 : 0);
-		};
-		const myPrio = prio(a.me, myMove);
-		const foePrio = prio(a.foe, foeMove);
+		const myPrio = this.movePriority(a.me, myMove);
+		const foePrio = this.movePriority(a.foe, foeMove);
 		let mySpe = this.statOf(a.me, a.meBoosts, 'spe') * (a.meSide?.tailwind > 0 ? 2 : 1);
 		let foeSpe = this.statOf(a.foe, a.foeBoosts, 'spe') * (a.foeSide?.tailwind > 0 ? 2 : 1);
 		if (this.itemFx(a.me)?.choice === 'spe') mySpe *= 1.5;
@@ -2643,8 +2909,9 @@ export class Battle {
 		const mySpe = a.me.stats.spe, foeSpe = a.foe.stats.spe;
 		// SMOKE BALL is a guaranteed escape from a wild battle, like Run Away —
 		// tryRun is only reachable from wild encounters, so it cannot skip trainers.
-		let ok = mySpe >= foeSpe || this.abilityOf(a.me) === 'runaway'
-			|| !!this.itemFx(a.me)?.fleeAlways;
+		const pinned = this.trappedBy(a.me);
+		let ok = !pinned && (mySpe >= foeSpe || this.abilityOf(a.me) === 'runaway'
+			|| !!this.itemFx(a.me)?.fleeAlways);
 		if (!ok) {
 			const f = (Math.floor(mySpe * 128 / foeSpe) + 30 * a.runAttempts) % 256;
 			ok = Math.floor(Math.random() * 256) < f;
@@ -2694,7 +2961,9 @@ export class Battle {
 				else if (a.menuIdx === 2) {
 					// switchTo only swaps the lead slot, so like bag it is the lead's action
 					const options = a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
-					if (options.length && (!a.double || a.actionFor === 0)) { a.phase = 'switch'; a.switchIdx = 0; }
+					const pinned = this.trappedBy(a.actionFor === 1 && a.meAlly ? a.meAlly : a.me);
+					if (pinned) this.startQueue(() => this.pushMsg(`Can't switch — held by ${pinned}!`));
+					else if (options.length && (!a.double || a.actionFor === 0)) { a.phase = 'switch'; a.switchIdx = 0; }
 				} else {
 					if (a.isTrainer) this.startQueue(() => this.pushMsg("There's no running from a trainer battle!"));
 					else this.startQueue(() => this.tryRun());
@@ -2979,6 +3248,11 @@ export class Battle {
 			return true;
 		}
 		if (fx.restrict) {
+			// AROMA VEIL covers the holder AND its partner (was inert: 10 species)
+			const veil = [target, a.double ? (target === a.me ? a.meAlly : target === a.meAlly ? a.me
+				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null) : null]
+				.filter(m => m && m.curHP > 0).some(m => this.abilityOf(m) === 'aromaveil');
+			if (veil) { this.pushMsg(`${target.name} is protected by AROMA VEIL!`); return true; }
 			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
 			if (fx.restrict === 'disable') {
 				if (!lastId || target.disabledMove) { this.pushMsg('But it failed!'); return true; }
@@ -3371,10 +3645,7 @@ export class Battle {
 			});
 		}
 		// speed order with priority (Prankster: +1 on status moves)
-		const actPrio = act => {
-			const mv2 = this.data.moves[act.move.id] || {};
-			return (mv2.priority || 0) + (mv2.category === 'Status' && this.abilityOf(act.user) === 'prankster' ? 1 : 0);
-		};
+		const actPrio = act => this.movePriority(act.user, act.move);
 		// Quick Claw jumps the speed bracket but never beats higher priority —
 		// rolled once per actor per turn, as in singles.
 		const qc = new Map(acts.map(x => [x, !!this.itemFx(x.user)?.quickClaw && Math.random() < 0.2]));
@@ -3399,7 +3670,9 @@ export class Battle {
 				const spread = SPREAD_MOVES.has(act.move.id);
 				// Follow Me / Rage Powder / Spotlight pull single-target moves onto
 				// the mon that used them
-				if (!spread) {
+				// STALWART / PROPELLER TAIL ignore redirection and hit what they aimed at
+				const ignoresPull = ['stalwart', 'propellertail'].includes(this.abilityOf(act.user));
+				if (!spread && !ignoresPull) {
 					const pool = isFoe ? this.livingMine() : this.livingFoes();
 					const magnet = pool.find(m => m.centerOfAttention);
 					if (magnet && (this.data.moves[act.move.id]?.category !== 'Status')) tgt = magnet;
