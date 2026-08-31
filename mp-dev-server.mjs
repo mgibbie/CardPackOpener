@@ -93,6 +93,50 @@ createServer(async (req, res) => {
 		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
 		return;
 	}
+	// mapedit "save map": writes overworld/data/maps/<stem>_map.json. The LAYOUT
+	// is the painted grid; the MAP is everything that makes a painted grid a
+	// place — warps, connections, object events. The editor could only ever write
+	// layouts, so a region built with it had no doors and nobody in it.
+	//
+	// Validated hard because a malformed map JSON is a boot failure, not a
+	// cosmetic bug: the fields are checked by shape and every dest_map / connection
+	// target must exist in map_index.json, so a typo cannot strand the player.
+	if (url.pathname === '/dev/save-map' && req.method === 'POST') {
+		const chunks = [];
+		for await (const c of req) chunks.push(c);
+		try {
+			const { stem, content } = JSON.parse(Buffer.concat(chunks));
+			if (!/^[A-Za-z0-9_]+$/.test(stem || '')) throw new Error('bad map stem');
+			if (!content || typeof content !== 'object') throw new Error('no map content');
+			if (!/^MAP_[A-Z0-9_]+$/.test(content.id || '')) throw new Error('bad map id');
+			if (!/^LAYOUT_[A-Z0-9_]+$/.test(content.layout || '')) throw new Error('bad layout id');
+
+			const index = JSON.parse(readFileSync('overworld/data/map_index.json', 'utf8'));
+			const known = id => typeof id === 'string' && (index[id] || /^MAP_(DYNAMIC|NONE)$/.test(id));
+			const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+
+			for (const w of (content.warp_events || [])) {
+				if (!int(+w.x, 0, 2000) || !int(+w.y, 0, 2000)) throw new Error('warp out of range');
+				if (!known(w.dest_map)) throw new Error('warp points at an unknown map: ' + w.dest_map);
+			}
+			for (const c2 of (content.connections || [])) {
+				if (!['up', 'down', 'left', 'right', 'dive', 'emerge'].includes(c2.direction)) {
+					throw new Error('bad connection direction: ' + c2.direction);
+				}
+				if (!known(c2.map)) throw new Error('connection points at an unknown map: ' + c2.map);
+			}
+			for (const o of (content.object_events || [])) {
+				if (!int(+o.x, 0, 2000) || !int(+o.y, 0, 2000)) throw new Error('object out of range');
+				if (!/^[A-Za-z0-9_]*$/.test(String(o.graphics_id ?? ''))) throw new Error('bad graphics_id');
+			}
+			writeFileSync(join('overworld/data/maps', stem + '_map.json'), JSON.stringify(content));
+			console.log('saved map', stem,
+				`(${(content.warp_events || []).length} warps, ${(content.connections || []).length} connections, ${(content.object_events || []).length} objects)`);
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end('{"ok":true}');
+		} catch (e) { res.writeHead(400); res.end(String(e.message || e)); }
+		return;
+	}
 	// arttune.html "replace image": writes battlecards/art/<id>.jpg, adds the id
 	// to art/index.json, and bumps the id's ART_REVS cache-bust in cardart.js so
 	// the 7-day CDN cache can't serve the stale image after the next art deploy.
