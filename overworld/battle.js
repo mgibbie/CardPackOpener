@@ -2251,26 +2251,19 @@ export class Battle {
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
-			// Doubles keep their original cursor flow untouched (checkFaintsD also
-			// refills slots). Singles pick alive-aware — mid-battle boss switches
-			// break the cursor order — with bosses sending their best matchup and
-			// route trainers keeping party order.
-			const useCursor = a2.isTrainer && a2.double;
-			const alive = a2.isTrainer && !a2.double ? a2.foes.filter(m => m !== a2.foe && m.curHP > 0) : [];
-			if (useCursor && a2.foeIdx + 1 < a2.foes.length) {
-				a2.foeIdx++;
-				const next = a2.foes[a2.foeIdx];
-				this.pushMsg(`${a2.info.displayName} sent out ${next.name}!`, () => {
-					cry(next.speciesId);
-					a2.foe = next;
-					a2.foeImg = a2.foeSprites.get(next);
-					a2.foeBoosts = freshBoosts();
-					a2.foeShownHP = next.curHP;
-					a2.foeHidden = false;
-				});
-				this.pushAnim('enter', 'foe', 0.4);
-				this.pushMsg('', () => { this.applyHazards(a2.foe, 'foe'); this.switchInAbility(a2.foe, 'foe'); });
-			} else if (!useCursor && a2.isTrainer && alive.length) {
+			// DOUBLES STOP HERE. checkFaintsD owns both halves of this decision:
+			// it refills the emptied slot from the bench and, only once
+			// livingFoes()/livingMine() is empty, ends the battle. Running this
+			// singles-shaped tail as well ended a WILD double the instant one of
+			// the two wild POKeMON fainted — reported by a tester, reproduced in
+			// doubles_test before the fix. (Trainer doubles were unaffected: they
+			// went down the cursor branch, which refilled rather than finishing.)
+			if (a2.double) return;
+			// Singles pick alive-aware — mid-battle boss switches break the party
+			// order — with bosses sending their best matchup and route trainers
+			// keeping party order.
+			const alive = a2.isTrainer ? a2.foes.filter(m => m !== a2.foe && m.curHP > 0) : [];
+			if (a2.isTrainer && alive.length) {
 				const next = a2.info?.boss && alive.length > 1
 					? alive.reduce((x, y) => this.matchupScore(y, a2.me) > this.matchupScore(x, a2.me) ? y : x)
 					: alive[0];
