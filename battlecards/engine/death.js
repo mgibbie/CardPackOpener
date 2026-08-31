@@ -162,16 +162,43 @@ export function sweepDeaths(state) {
 	checkGameOver(state);
 }
 
+// A Deathrattle can't ask anyone to pick a target — the creature is already
+// leaving the board — so a TARGETED deathrattle effect used to run with
+// target=null and silently do nothing. Nine cards shipped that way (Zealous
+// Initiate, Fiery Bat, Huge Toad, Thassarian…): their text promised an effect
+// that never happened. Resolve a RANDOM legal target instead, which is the
+// standard reading ("Deathrattle: deal 1 damage to a random enemy") and mirrors
+// the untargeted fallback execEffects already uses for enemyHero().
+// The dying card is never its own target.
+const TARGETED = new Set(['creature', 'friendly-creature', 'enemy-creature', 'any', 'enemy-any']);
+function deathrattleTarget(state, pi, effects, source) {
+	const spec = (effects || []).find(e => TARGETED.has(e.target))?.target;
+	if (!spec) return null;
+	const enemies = opponentsOf(state, pi);
+	const live = p => state.players[p].board.filter(c => !isDead(c) && c.uid !== source?.uid);
+	const pool = [];
+	if (spec === 'friendly-creature') pool.push(...live(pi).map(c => ({ type: 'creature', uid: c.uid })));
+	else if (spec === 'enemy-creature') for (const e of enemies) pool.push(...live(e).map(c => ({ type: 'creature', uid: c.uid })));
+	else if (spec === 'enemy-any') {
+		for (const e of enemies) pool.push(...live(e).map(c => ({ type: 'creature', uid: c.uid })), { type: 'hero', player: e });
+	} else { // 'creature' | 'any' — every board, plus heroes for 'any'
+		for (let p = 0; p < state.players.length; p++) pool.push(...live(p).map(c => ({ type: 'creature', uid: c.uid })));
+		if (spec === 'any') for (let p = 0; p < state.players.length; p++) pool.push({ type: 'hero', player: p });
+	}
+	return pool.length ? pool[Math.floor(state.rng() * pool.length)] : null;
+}
+
 export function runDeathrattle(state, pi, card) {
 	if (card.deathrattle) {
-		execEffects(state, pi, card.deathrattle, null, card);
+		const drTarget = deathrattleTarget(state, pi, card.deathrattle, card);
+		execEffects(state, pi, card.deathrattle, drTarget, card);
 		// Totem of the Dead (dungeon treasure / Azun passive) or a live Rivendare
 		if (state.players[pi].deathrattlesTwice
 			|| state.players[pi].board.some(c => c.rattleDouble && !isDead(c))
 			|| state.players[pi].enchantments.some(en => en.rattleDouble)) { // Snowfall Graveyard (timed)
-			execEffects(state, pi, card.deathrattle, null, card);
+			execEffects(state, pi, card.deathrattle, deathrattleTarget(state, pi, card.deathrattle, card), card);
 		}
-		{ const _dv = staticValue(state.players[pi], 'death-doubler'); for (let _k = 1; _k < 2 ** _dv; _k++) execEffects(state, pi, card.deathrattle, null, card); } // Drivnod: Deathrattles fire an extra time (stacks)
+		{ const _dv = staticValue(state.players[pi], 'death-doubler'); for (let _k = 1; _k < 2 ** _dv; _k++) execEffects(state, pi, card.deathrattle, deathrattleTarget(state, pi, card.deathrattle, card), card); } // Drivnod: Deathrattles fire an extra time (stacks)
 	}
 	switch (card.id) {
 		case 'forest_sprite': summon(state, pi, TOKENS.seedling); break;
