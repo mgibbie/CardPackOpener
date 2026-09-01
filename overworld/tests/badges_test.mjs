@@ -62,7 +62,10 @@ A(B.scriptInfo('LancesRoomLanceScript')?.kind === 'champion', 'Lance = champion 
 A(B.scriptInfo('KarenScript_Battle')?.kind === 'elite', 'Karen = elite (Johto)');
 // every league script points at a real region
 for (const [script, [region, role]] of Object.entries(B.LEAGUE_SCRIPT)) {
-	A(['KANTO', 'JOHTO', 'HOENN'].includes(region) && ['elite', 'champion'].includes(role),
+	// regions come from BADGES rather than a literal triple — JOHKANTO is a real
+	// fourth region with its own league (Mt Silver), and hardcoding three here
+	// failed the moment it got one
+	A(Object.keys(B.BADGES).includes(region) && ['elite', 'champion'].includes(role),
 		`LEAGUE_SCRIPT ${script} well-formed`, `${region}/${role}`);
 }
 

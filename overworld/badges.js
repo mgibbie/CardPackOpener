@@ -128,6 +128,19 @@ export const LEAGUE_SCRIPT = {
 	'EverGrandeCity_GlaciasRoom_EventScript_Glacia': ['HOENN', 'elite'],
 	'EverGrandeCity_DrakesRoom_EventScript_Drake': ['HOENN', 'elite'],
 	'EverGrandeCity_ChampionsRoom_EventScript_Wallace': ['HOENN', 'champion'],
+	// --- JohKanto (MT SILVER) ---
+	// Crystal gates the mountain on all sixteen badges, so it already IS this
+	// region's capstone — Red is spawn-gated on `count('JOHKANTO') >= 8`. Its four
+	// elites are the canonical members JohKanto's gyms did not take (Janine
+	// replaced Koga, Blue replaced Giovanni), and RED is the Champion he has always
+	// been. NEW script ids on purpose: reusing WillScript_Battle and friends maps
+	// straight back to JOHTO, which is the collision that made the gyms award
+	// Kanto badges.
+	'SilverCaveEliteLorelei': ['JOHKANTO', 'elite'],
+	'SilverCaveEliteAgatha': ['JOHKANTO', 'elite'],
+	'SilverCaveEliteBruno': ['JOHKANTO', 'elite'],
+	'SilverCaveEliteKaren': ['JOHKANTO', 'elite'],
+	'Red': ['JOHKANTO', 'champion'],
 };
 
 // HM field-move -> number of that region's badges required to use it out of

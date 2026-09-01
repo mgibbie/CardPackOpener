@@ -265,7 +265,7 @@ export class Trainers {
 		let party = [];
 		if (roster?.party?.length) {
 			party = roster.party.map(e => {
-				const mon = buildMon(e.s, scale(e.l + bump, { boss, ace: (e.l || 0) >= aceLevel, bump }), data);
+				const mon = buildMon(e.s, scale(e.l + bump, { boss, ace: (e.l || 0) >= aceLevel, bump, script }), data);
 				if (!mon) return null;
 				// authentic movesets / held items when the roster carries them
 				// (gen_trainer_movesets.mjs backfills these from the decomps);
@@ -287,7 +287,7 @@ export class Trainers {
 			const n = 1 + Math.floor(Math.random() * 2);
 			for (let i = 0; i < n; i++) {
 				const s = pool[Math.floor(Math.random() * pool.length)];
-				const lv = Math.max(5, scale(base + bump + Math.floor(Math.random() * 7) - 3, { boss: false }));
+				const lv = Math.max(5, scale(base + bump + Math.floor(Math.random() * 7) - 3, { boss: false, script }));
 				const mon = buildMon(s, lv, data);
 				if (mon) party.push(mon);
 			}
