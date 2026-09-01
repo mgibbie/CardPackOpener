@@ -79,6 +79,21 @@ for (const [mapId, t] of Object.entries(enc)) {
 	}
 }
 
+// JohKanto's postgame roster (encounters_postgame.js) — the designed table that
+// wins over both DAYNIGHT and the base data, and the whole point of which is to
+// hold everything the rest of the game leaves uncatchable.
+//
+// `--ignore-postgame` exists to break a circle: gen_postgame_encounters.mjs asks
+// THIS tool what is still missing, so counting its own previous output would make
+// a re-run see everything as covered and emit an empty roster.
+if (!process.argv.includes('--ignore-postgame')) {
+	const src = fs.readFileSync('overworld/encounters_postgame.js', 'utf8');
+	for (const m of src.matchAll(/'(MAP_[A-Z0-9_]+)': \{([\s\S]*?)\n\t\},/g)) {
+		const r = regionOf[m[1]] || 'OTHER';
+		for (const q of m[2].matchAll(/id:'([a-z0-9_]+)'/g)) noteWild(q[1], r);
+	}
+}
+
 // starters — the 3x3 region picker
 {
 	const at = main.indexOf('const STARTERS');
