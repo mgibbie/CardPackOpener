@@ -18,7 +18,19 @@ export const EXTRA_DIVE = {
 	// HOENN2 had the underwater room but no city: SOOTOPOLIS was the one gym town
 	// the region clone missed, because clone_region walks the map graph and
 	// Sootopolis has no connections and no inbound warps — you arrive by DIVE.
-	// Without it Badges.count('HOENN2') could never reach 8.
+	// These two entries close that hole so the clone matches Hoenn structurally.
+	//
+	// They are INERT today, and deliberately so: HOENN2 is the map editor's sandbox
+	// (?mapedit=1) and is unreachable on purpose — no region-picker entry, nothing in
+	// badges.js, and no Hoenn2 map in data/map_index.json, so the engine cannot even
+	// resolve a MAP_HOENN2_* id. Nothing outside Hoenn2 warps or connects into it
+	// (0 of the 1,170 edges that point at it come from elsewhere).
+	//
+	// An earlier version of this comment justified the entries with "without it
+	// Badges.count('HOENN2') could never reach 8". That was never true — HOENN2 has
+	// no badge set, so that count is structurally 0 — and it read as though the
+	// region were live. The entries are here for when the editor opens it up, not
+	// because anything counts badges there now.
 	Hoenn2_Underwater_SootopolisCity: { emerge: { map: 'MAP_HOENN2_SOOTOPOLIS_CITY', x: 30, y: 40 } },
 	Hoenn2_SootopolisCity: { dive: { map: 'MAP_HOENN2_UNDERWATER_SOOTOPOLIS_CITY', x: 10, y: 5 } },
 
