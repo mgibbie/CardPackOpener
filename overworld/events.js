@@ -68,6 +68,12 @@ function resolveValue(v) {
 	if (typeof v === 'number') return v;
 	if (v === 'TRUE') return 1;
 	if (v === 'FALSE') return 0;
+	// FireRed/Emerald compare VAR_RESULT against YES/NO after a MSGBOX_YESNO
+	// question (NO = 0, YES = 1 in both decomps). Without these the restored
+	// prompts would all be inert: `1 === 'YES'` is false, so every branch would
+	// take the wrong path — a dead payload wearing the shape of a fix.
+	if (v === 'YES') return 1;
+	if (v === 'NO') return 0;
 	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
 	const n = Number(v);
@@ -288,6 +294,11 @@ export class Cutscene {
 					setVar('VAR_RESULT', 1);
 					if (ctx.prompt?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
+				// FireRed/Emerald's `checkitem`, which answers into VAR_RESULT for the
+				// `compare VAR_RESULT` that follows. It was unhandled entirely, so that
+				// comparison read whatever the last script had left in the var — an item
+				// gate could pass with an empty bag, or refuse with a full one.
+				case 'hasitem': setVar(op.store || 'VAR_RESULT', ctx.hasItem?.(itemId(op.item)) ? 1 : 0); break;
 				case 'special':
 					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
