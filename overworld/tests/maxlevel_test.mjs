@@ -155,11 +155,11 @@ A(under.length === 0, 'no tier is capped below the leader it has to beat', JSON.
 			const out = {};
 			fake('MAP_JOHKANTO_ROUTE_2');
 			out.inJK = ow.inJohKanto();
-			out.jkLow = ow.scalePostgameLevel(50);     // authored Brock-territory level
-			out.jkHigh = ow.scalePostgameLevel(77);    // authored Blue-territory level
+			out.jkLow = ow.wildEncounterLevel(50);     // authored Brock-territory level
+			out.jkHigh = ow.wildEncounterLevel(77);    // authored Blue-territory level
 			fake('MAP_ROUTE1');
 			out.inKanto = ow.inJohKanto();
-			out.kanto = ow.scalePostgameLevel(50);
+			out.kanto = ow.wildEncounterLevel(50);
 			out.legendLow = ow.scaleLegendaryLevel(50);
 			out.legendHigh = ow.scaleLegendaryLevel(250);
 			return out;

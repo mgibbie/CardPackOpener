@@ -203,7 +203,7 @@ trainers.onEngage = t => {
 // un-hide villain grunts during their beat, AND spawn RED atop MT SILVER once you hold
 // all 16 badges (JOHTO Champion + the 8 JohKanto gyms) — the post-game crown
 // JohKanto's trainers scale with its wilds — same rule, same reason (see
-// scalePostgameLevel). Outside JohKanto this is the identity.
+// routeTrainerLevel). Outside JohKanto this is the identity.
 //
 // GYM LEADERS are the exception: they are levelled off YOU, not off the roster,
 // so whenever you walk into a JohKanto gym its leader is one level above your
@@ -2947,6 +2947,9 @@ function startWildBattle(pick, forceDouble) {
 			hud.textContent = 'The air crackles — a rift tears open!';
 		}
 	}
+	// JohKanto scales its wilds to the party (wildEncounterLevel). The scaler is
+	// region-guarded itself, so this is a no-op everywhere else.
+	pick = { ...pick, level: wildEncounterLevel(pick.level) };
 	Dex.markSeen(pick.id);
 	// a slice of grass encounters are horde-style double battles
 	const second = (forceDouble || Math.random() < 0.1)
@@ -3044,15 +3047,40 @@ const JOHKANTO_DESIGN_LEVEL = 60;   // the middle of the authored 50-77 band
 // deliberately left alone.
 function inJohKanto() { return /^MAP_JOHKANTO_/.test(world.current?.map?.id || ''); }
 function partyLead() { return Math.max(1, ...((party || []).filter(Boolean).map(m => m.level || 1)), 1); }
-// Clamped by YOUR LEAD, deliberately not by the level cap. The cap is keyed on
+// WILD ENCOUNTERS: a band below the route trainers.
+//
+// The old relative multiply had two faults. It CLAMPED AT YOUR LEAD, so once you
+// were strong every territory from Erika's up pinned flat to the same number and
+// the eight-territory ramp — the thing the whole postgame roster is organised
+// around — disappeared exactly when the region was supposed to be at its
+// hardest. And a wild mon at precisely your lead, on every step through the
+// grass, is relentless in a way a route trainer every few screens is not.
+//
+// So the authored band maps onto a band under your lead, the same way the route
+// trainers' does, just lower. That keeps Brock's routes easier than Blue's at
+// every player level, and stacks the region into a readable ladder:
+//
+//   wild  lead-20..-5   ·   route trainer  lead-12..-2
+//   gym   lead+1/+2     ·   elite  +2/+3   ·   champion  +3/+5
+//
+// 50 and 78 are the measured span of encounters_postgame.js, not a guess. The
+// three JohKanto maps with no postgame roster (Celadon, Pallet, Route 12) hold
+// authentic Crystal water tables down at Lv2 — those clamp to the bottom of the
+// band, which is right: nothing in the endgame region should be a Lv2 Goldeen.
+//
+// Never DOWN, and deliberately not clamped by the level cap. The cap is keyed on
 // badges in the three shared regions and says what you *should* be; your lead
 // says what you *are*. Clamping to the cap made a Lv150 party fight Lv20 foes
 // whenever the cap had not caught up, which is the opposite of the point.
-function scalePostgameLevel(level) {
+const WILD_BAND = { lo: 50, hi: 78 };
+const WILD_UNDER_LEAD = { weakest: 20, strongest: 5 };
+function wildEncounterLevel(level) {
+	if (!inJohKanto()) return level;   // guarded HERE, not at the call site
 	const lead = partyLead();
 	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
-	const scaled = Math.round(level * (lead / JOHKANTO_DESIGN_LEVEL));
-	return Math.max(level, Math.min(lead, scaled));
+	const t = Math.max(0, Math.min(1, (level - WILD_BAND.lo) / (WILD_BAND.hi - WILD_BAND.lo)));
+	const under = WILD_UNDER_LEAD.weakest + t * (WILD_UNDER_LEAD.strongest - WILD_UNDER_LEAD.weakest);
+	return Math.max(level, Math.min(lead, Math.round(lead - under)));
 }
 // A legendary should never be a pushover, wherever it is: lift it toward your
 // lead if you have outgrown it, but never past your lead and never DOWN, so
@@ -3079,6 +3107,7 @@ function scaleLegendaryLevel(level) {
 const ROUTE_BAND = { lo: 23, hi: 38 };
 const ROUTE_UNDER_LEAD = { weakest: 12, strongest: 2 };
 function routeTrainerLevel(level) {
+	if (!inJohKanto()) return level;   // guarded HERE, not at the call site
 	const lead = partyLead();
 	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
 	const t = Math.max(0, Math.min(1, (level - ROUTE_BAND.lo) / (ROUTE_BAND.hi - ROUTE_BAND.lo)));
@@ -5770,7 +5799,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
-		inJohKanto, scalePostgameLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor,
+		inJohKanto, wildEncounterLevel, routeTrainerLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses
