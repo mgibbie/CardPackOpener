@@ -30,7 +30,12 @@ export const ITEMS = {
 	cheriberry:  { name: 'CHERI BERRY',  price: 150,  kind: 'held', held: { cure: 'par' } },
 	rawstberry:  { name: 'RAWST BERRY',  price: 150,  kind: 'held', held: { cure: 'brn' } },
 	aspearberry: { name: 'ASPEAR BERRY', price: 150,  kind: 'held', held: { cure: 'frz' } },
-	persimberry: { name: 'PERSIM BERRY', price: 150,  kind: 'held', held: { cure: 'confusion' } },
+	persimberry: { name: 'PERSIM BERRY', price: 150,  kind: 'held', held: { cure: 'confusion' } },
+	// Two Johto fruit trees (Route 35, Route 45) bear LEPPA BERRIES and there was no
+	// entry for them, so harvesting one put a nameless, priceless, effectless id in
+	// the bag. `ppRestore` is read by battle.js checkBerry — an entry with a payload
+	// nothing reads is the same bug wearing a different hat.
+	leppaberry:  { name: 'LEPPA BERRY',  price: 200,  kind: 'held', held: { ppRestore: 10 } },
 	leftovers:   { name: 'LEFTOVERS',    price: 3000, kind: 'held', held: { endHealFrac: 1 / 16 } },
 	everstone:   { name: 'EVERSTONE',    price: 200,  kind: 'held', held: {} }, // breeding: the holder's nature passes to the egg
 	destinyknot: { name: 'DESTINY KNOT', price: 3000, kind: 'held', held: {} }, // breeding: 5 IVs inherit instead of 3
@@ -465,7 +470,7 @@ export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'supe
 	'tmwillowisp', 'tmtoxic', 'tmprotect', 'tmsubstitute', 'tmswordsdance', 'tmcalmmind',
 	'tmnastyplot', 'tmbulkup', 'tmroost', 'tmstealthrock'];
 // held items a wild mon might be carrying (15% roll)
-export const WILD_HELD = ['oranberry', 'sitrusberry', 'lumberry', 'chestoberry', 'pechaberry',
+export const WILD_HELD = ['oranberry', 'sitrusberry', 'lumberry', 'chestoberry', 'pechaberry', 'leppaberry',
 	'cheriberry', 'persimberry', 'leftovers', 'quickclaw', 'kingsrock'];
 
 export function getMoney() {

@@ -912,6 +912,18 @@ export class Battle {
 			});
 			this.consumeItem(mon);
 		}
+		// LEPPA BERRY: restores PP to a move that has run dry. Held-item berries fire
+		// on their own threshold, and "a move is empty" is this one's.
+		if (fx.ppRestore) {
+			const dry = (mon.moves || []).find(mv => mv.pp <= 0);
+			if (dry) {
+				const ripe = this.abilityOf(mon) === 'ripen' ? 2 : 1;
+				this.pushMsg(`${mon.name}'s ${this.itemName(mon)} restored ${dry.name}'s PP!`, () => {
+					dry.pp = Math.min(dry.maxPp, dry.pp + fx.ppRestore * ripe);
+				});
+				this.consumeItem(mon);
+			}
+		}
 		if (fx.cure && (mon.status || mon.confuseTurns > 0)) {
 			const cures = fx.cure === 'any'
 				|| (fx.cure === 'confusion' && mon.confuseTurns > 0)
