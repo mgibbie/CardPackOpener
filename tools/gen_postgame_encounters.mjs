@@ -70,6 +70,22 @@ const roots = [...missing].filter(id => !preEvo.has(id) || !missing.has(preEvo.g
 const isLegendary = id => bst(id) >= 570 && !preEvo.has(id) && !(ext[id]?.evos || []).length;
 const ordinary = roots.filter(id => !isLegendary(id));
 
+// REGIONAL VARIANTS are wild POKeMON in the games they come from, so they get
+// route slots like anything else rather than existing only at the end of a RIFT
+// PRISM. They are not "roots" — they share their base's dex number, so the
+// coverage report files them under forms and the root walk above never sees them.
+const REGIONAL = /_(alola|galar|hisui|paldea)/;
+const placedAlready = new Set();
+for (const t of Object.values(enc)) for (const k of ['land', 'water', 'fishing', 'rock_smash'])
+	for (const sl of (t[k]?.slots || [])) placedAlready.add(sl.id);
+// ...except the ones that are ALSO a battle transformation. Galarian Darmanitan
+// is a wild POKeMON; Galarian Darmanitan-Zen is what it turns into at low HP, and
+// putting that in a grass table would be as wrong as a wild Aegislash-Blade.
+const BATTLE_FORM = /_(zen|blade|school|core|noice|hangry|hero|complete|origin|therian|ultra|dawn_wings|dusk_mane)$/;
+const regionals = Object.keys(bat).filter(id =>
+	REGIONAL.test(id) && !BATTLE_FORM.test(id) && !placedAlready.has(id) && bat[id].num > 0);
+ordinary.push(...regionals);
+
 // ---------- territories ----------
 const TERRITORIES = [
 	{ gym: 'Brock', types: ['Rock', 'Ground', 'Steel'], lvl: 50,
@@ -285,8 +301,8 @@ for (const [mapId, node] of Object.entries(POSTGAME)) {
 }
 
 // ---------- report ----------
-console.log(`ordinary roots needing a home: ${ordinary.length}`);
-console.log(`legendaries/mythicals (task #84, not placed here): ${roots.length - ordinary.length}`);
+console.log(`ordinary roots needing a home: ${ordinary.length}  (incl. ${regionals.length} regional variants)`);
+console.log(`legendaries/mythicals (placed separately by gen_legendary_placements.mjs): ${roots.filter(isLegendary).length}`);
 console.log('');
 for (const line of report) console.log(line);
 console.log('');

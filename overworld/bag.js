@@ -14,6 +14,13 @@ export const ITEMS = {
 	ether:       { name: 'ETHER',        price: 1200, kind: 'ether', amount: 10 },
 	revive:      { name: 'REVIVE',       price: 1500, kind: 'revive' },
 	rarecandy:   { name: 'RARE CANDY',   price: 0,    kind: 'candy' },
+	// Postgame dex tool. Alternate forms are not separate catchable POKeMON —
+	// they are what a species BECOMES under weather, an item, an ability or a
+	// fusion, and porting fifteen different trigger mechanisms (Gracidea, DNA
+	// Splicers, Reveal Glass, Zen Mode, Schooling, Reins of Unity...) is a far
+	// bigger job than making the dex completable. The PRISM is honest about being
+	// the shortcut: it cycles a POKeMON through the forms it has.
+	riftprism:   { name: 'RIFT PRISM',   price: 0,    kind: 'form' },
 	// held items: give one to a party member from the bag
 	oranberry:   { name: 'ORAN BERRY',   price: 100,  kind: 'held', held: { berryHeal: 10 } },
 	sitrusberry: { name: 'SITRUS BERRY', price: 400,  kind: 'held', held: { berryHealFrac: 0.25 } },

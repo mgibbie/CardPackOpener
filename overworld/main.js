@@ -1533,7 +1533,7 @@ const BAG_POCKETS = [
 	{ id: 'berry', label: 'BERRIES', test: (it, id) => /berry$/.test(id) },
 	{ id: 'held', label: 'HELD', test: (it, id) => it?.kind === 'held' && !/berry$/.test(id) },
 	{ id: 'tm', label: 'TMs', test: (it, id) => it?.kind === 'tm' || !!tmMoveId(id) },
-	{ id: 'key', label: 'KEY', test: it => ['key', 'charm', 'seeker', 'rod'].includes(it?.kind) },
+	{ id: 'key', label: 'KEY', test: it => ['key', 'charm', 'seeker', 'rod', 'form'].includes(it?.kind) },
 	{ id: 'misc', label: 'OTHER', test: it => !it || ['misc', 'sell', 'candy', 'vitamin', 'mint', 'capsule', 'stone'].includes(it.kind) },
 ];
 function bagEntries() {
@@ -1716,6 +1716,18 @@ function bagKey(k) {
 					mon.status = null;
 					saveParty(party);
 					bagMenu.picking = false;
+				} else if (item?.kind === 'form') {
+					// cycles rather than opening a submenu: keep using it and you walk
+					// the whole family and come back to the base, which is also how you
+					// undo it. The PRISM is never consumed — it is a dex tool.
+					const family = formsOf(mon.speciesId);
+					if (!family || family.length < 2) {
+						bagMenu.flash = `${mon.name} has no other form.`;
+					} else {
+						const became = cycleForm(mon);
+						saveParty(party);
+						bagMenu.flash = became ? `${mon.name} shifted into ${became.toUpperCase()}!` : `Nothing happened.`;
+					}
 				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
@@ -2983,6 +2995,55 @@ function cutsceneCtx(talker, scriptLabel) {
 }
 function buildMonForGift(species, level) {
 	return battleBuildMon(species, level, battle.data);
+}
+
+// ---------- alternate forms ----------
+// A form shares its base species' DEX NUMBER — that is the only link the data
+// has, since species_battle.json carries no baseSpecies/forme fields. Base first
+// (the id without an underscore), then the forms in id order, so cycling is
+// stable and always returns you to where you started.
+let formIndex = null;
+function formsOf(speciesId) {
+	if (!formIndex) {
+		formIndex = new Map();
+		const byNum = new Map();
+		for (const [id, sp] of Object.entries(battle.data.species || {})) {
+			if (id.startsWith('_') || !(sp?.num > 0)) continue;
+			(byNum.get(sp.num) || byNum.set(sp.num, []).get(sp.num)).push(id);
+		}
+		for (const ids of byNum.values()) {
+			if (ids.length < 2) continue;
+			const base = ids.filter(i => !i.includes('_')).sort()[0];
+			if (!base) continue;                                   // no plain base: not a form family
+			const family = [base, ...ids.filter(i => i !== base).sort()];
+			for (const id of family) formIndex.set(id, family);
+		}
+	}
+	return formIndex.get(speciesId) || null;
+}
+// Turn a caught POKeMON into the next form its species has. Everything the mon
+// earned — level, IVs, EVs, nature, friendship, nickname, moves — is ITS OWN and
+// survives; only what the SPECIES decides is rebuilt.
+function cycleForm(mon) {
+	const family = formsOf(mon.speciesId);
+	if (!family || family.length < 2) return null;
+	const next = family[(family.indexOf(mon.speciesId) + 1) % family.length];
+	const sp = battle.data.species[next];
+	if (!sp) return null;
+	// a nickname is the player's, a species name is not — only replace the latter
+	const oldName = (battle.data.species[mon.speciesId]?.name || '').toUpperCase();
+	if (!mon.name || mon.name === oldName) mon.name = (sp.name || next).toUpperCase();
+	mon.speciesId = next;
+	mon.types = [...(sp.types || [])];
+	mon.sprite = sp.sprite;
+	mon.num = sp.num;
+	const dmg = mon.maxHP - mon.curHP;
+	mon.stats = statsFor(sp, mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 }, mon.level, mon);
+	mon.maxHP = mon.stats.hp;
+	mon.curHP = Math.max(1, mon.maxHP - dmg);   // keep the wound, not the number
+	Dex.markSeen(next); Dex.markCaught(next);
+	dexMilestoneCheck();
+	return sp.name || next;
 }
 // A STATIC wild battle started BY A SCRIPT: the Snorlax asleep in the road, the
 // Sudowoodo posing as a tree, the Voltorb disguised as a Rocket-base switch.
@@ -5589,7 +5650,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
-		BAG_POCKETS, bagEntries, offerNickname, Settings,
+		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses

@@ -83,3 +83,28 @@ fs.writeFileSync(path.join(WIKI, 'moves.json'), JSON.stringify(moves));
 fs.writeFileSync(path.join(WIKI, 'abilities.json'), JSON.stringify(abilities));
 fs.writeFileSync(path.join(WIKI, 'regions.json'), JSON.stringify(regions, null, 1));
 console.log(`Wrote designwiki/data: ${speciesIds.length} pokemon, ${Object.keys(moves).length} moves, ${Object.keys(abilities).length} abilities, ${Object.keys(regions).length} regions.`);
+
+// ---------- sprites ----------
+// The wiki serves its own copy of the sprite files (it is deployed as a static
+// site, and overworld/data is a separate Pages project). Nothing kept the two in
+// step, so every sprite added since the folder was first populated 404s and the
+// wiki's onerror handler quietly removes the image — which is how 101 alternate
+// forms ended up showing their BASE species' art: pokemon.json pointed at the
+// base sprite, and the form sprite was not there to point at anyway.
+// Copy anything referenced but missing, so the folder can never drift again.
+{
+	const SPR_SRC = path.join(DATA, 'pokemon');
+	const SPR_DST = path.resolve('designwiki/sprites');
+	fs.mkdirSync(SPR_DST, { recursive: true });
+	const want = new Set(Object.values(pokemon).map(p => p.sprite).filter(Boolean));
+	let copied = 0, absent = 0;
+	for (const f of want) {
+		const dst = path.join(SPR_DST, f);
+		if (fs.existsSync(dst)) continue;
+		const src = path.join(SPR_SRC, f);
+		if (!fs.existsSync(src)) { absent++; continue; }
+		fs.copyFileSync(src, dst);
+		copied++;
+	}
+	console.log(`Sprites: ${want.size} referenced, ${copied} copied in, ${absent} with no source art.`);
+}
