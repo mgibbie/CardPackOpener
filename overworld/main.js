@@ -215,7 +215,7 @@ trainers.levelScale = (l, o) => {
 	if (league) return bossLevelFor(league, !!o.ace) + (o.bump || 0);
 	if (!inJohKanto()) return l;
 	if (o?.boss) return bossLevelFor('gym', !!o.ace) + (o.bump || 0);
-	return scalePostgameLevel(l);
+	return routeTrainerLevel(l) + (o?.bump || 0);
 };
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
 	// RED and the four elites below him appear together, once JohKanto's eight
@@ -3065,6 +3065,27 @@ function scaleLegendaryLevel(level) {
 // level above it and the ace two. Walk in under-levelled and it is a close fight;
 // come back at Lv200 and it is still a close fight. Clamped to MAX_LEVEL so the
 // last gyms cannot ask for a level that cannot exist.
+// ROUTE TRAINERS sit in a band just under your lead.
+//
+// The relative scale alone PRESERVES WEAKNESS. JohKanto's 94 route trainers are
+// Crystal-era rosters authored Lv23-38, so multiplying by lead/60 puts them at
+// Lv58-95 against a Lv150 party — half your level, which is not a fight, and the
+// region is meant to be the hardest in the game.
+//
+// Their ORDERING is worth keeping (a Youngster should still be easier than an Ace
+// Trainer), so the authored band is mapped onto a band under your lead rather than
+// flattened to a single number. Measured, not guessed: 23 and 38 are the real min
+// and max ace levels across those 94.
+const ROUTE_BAND = { lo: 23, hi: 38 };
+const ROUTE_UNDER_LEAD = { weakest: 12, strongest: 2 };
+function routeTrainerLevel(level) {
+	const lead = partyLead();
+	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
+	const t = Math.max(0, Math.min(1, (level - ROUTE_BAND.lo) / (ROUTE_BAND.hi - ROUTE_BAND.lo)));
+	const under = ROUTE_UNDER_LEAD.weakest + t * (ROUTE_UNDER_LEAD.strongest - ROUTE_UNDER_LEAD.weakest);
+	return Math.max(level, Math.min(lead, Math.round(lead - under)));
+}
+
 // gym team / ace, then the league above it. The four elites and the Champion are
 // a step up from a gym rather than the same fight again — that is the whole
 // shape of a league — but they are the same rule, just further ahead.
@@ -3229,7 +3250,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		const lk = johkantoLeagueKind(scriptLabel) || johkantoLeagueKind(trainerId);
 		if (lk) return bossLevelFor(lk, (e.l || 0) >= aceLv);
 		if (BOSS_CLASSES.has(className)) return bossLevelFor('gym', (e.l || 0) >= aceLv);
-		return scalePostgameLevel(e.l);
+		return routeTrainerLevel(e.l);
 	};
 	if (team?.party?.length) {
 		foeParty = team.party.map(e => {
