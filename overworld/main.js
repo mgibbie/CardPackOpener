@@ -142,6 +142,7 @@ const cutscene = new Story.Cutscene();
 let signTexts = {};
 let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
 let commonStrings = {}; // cross-map / shared text labels (fallback for msg ops)
+let sharedScripts = {}; // bodies the decomps keep outside the map files (see loadMapScripts)
 let party = null;
 
 // starter picker (fresh saves): 3 regions x 3 starters
@@ -2193,7 +2194,19 @@ async function loadMapScripts(stem) {
 		scriptCache.set(stem, { scr, str });
 	}
 	const c = scriptCache.get(stem);
-	mapScripts = c.scr || {}; mapStrings = c.str || {};
+	// Both decomps keep script bodies OUTSIDE the map file — in data/scripts/*.inc,
+	// in event_scripts.s, and in another map's file when several maps share one
+	// (every Silph Co floor points at one door script; the Dotted Hole's basements
+	// at 1F's). The engine loads exactly ONE map's file, so all of that resolved to
+	// nothing and the object was mute. sharedScripts is the recovered table — the
+	// FireRed/Emerald counterpart of crystal_stds.js.
+	//
+	// Merged UNDER the map's own labels, so a map that defines a label keeps its
+	// own version; the shared copy is only ever a fallback. Merging here rather
+	// than at each call site means runScriptLabel, `goto` and `call` all resolve
+	// through it without knowing it exists.
+	mapScripts = { ...sharedScripts, ...(c.scr || {}) };
+	mapStrings = c.str || {};
 }
 
 // fire-and-forget: warm the sprites a battle on THIS map would need (party
@@ -5780,6 +5793,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
+	// the shared bodies, and the text they speak — an unstringed msg falls through
+	// to printing its own label, so the two have to arrive together
+	{
+		const sh = await getJSON('data/shared_scripts.json').catch(() => null);
+		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
+	}
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
 	party = loadParty(battle.data);
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
