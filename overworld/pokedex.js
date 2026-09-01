@@ -37,6 +37,12 @@ export const MILESTONES = [
 	[75, 'rarecandy', 5, '5 RARE CANDIES'],
 	[150, 'destinyknot', 1, 'a DESTINY KNOT'],
 	[200, 'shinycharm', 1, 'the SHINY CHARM'],
+	// The RIFT PRISM cycles a POKeMON through its alternate forms. It is the only
+	// way to register the 41 forms that are transformations rather than catches
+	// (weather, held items, abilities, fusions), so it has to be reliably
+	// obtainable — a dex reward for dex completion, rather than something hidden
+	// at the end of a region only some saves finish.
+	[300, 'riftprism', 1, 'the RIFT PRISM'],
 ];
 // newly crossed milestones since the last claim (persisted); caller grants
 export function claimMilestones() {

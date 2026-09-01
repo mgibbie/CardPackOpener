@@ -176,6 +176,29 @@ for (let pass = 0; pass < 8; pass++) {
 	if (!grew) break;
 }
 
+// The PRISM runs AFTER the closure on purpose: it needs the BASE species to be
+// obtainable, and most bases arrive by evolution. Running it first left
+// Darmanitan-Zen, Aegislash-Blade, Lycanroc-Dusk and Palafin-Hero unreachable
+// because Darmanitan, Aegislash, Lycanroc and Palafin were not in the set yet.
+// the RIFT PRISM (a dex milestone at 300 caught) cycles a POKeMON through the
+// alternate forms its species has. Alternate forms are transformations, not
+// catches — weather, held items, abilities, fusions — so this is how they are
+// registered. A form counts only when its BASE is obtainable, since you have to
+// own the POKeMON before you can shift it.
+{
+	const main = fs.readFileSync('overworld/main.js', 'utf8');
+	const wired = /kind === 'form'/.test(main) && /riftprism/.test(fs.readFileSync('overworld/bag.js', 'utf8'));
+	if (wired) {
+		const byNum = new Map();
+		for (const id of ALL) { const n = bat[id].num; if (n > 0) (byNum.get(n) || byNum.set(n, []).get(n)).push(id); }
+		for (let pass = 0; pass < 3; pass++) for (const ids of byNum.values()) {
+			const base = ids.filter(i => !i.includes('_')).sort()[0];
+			if (!base || !via.has(base)) continue;
+			for (const id of ids) if (id !== base) add(id, 'prism');
+		}
+	}
+}
+
 // ---------- report ----------
 const missing = ALL.filter(id => !via.has(id));
 const realMissing = missing.filter(id => !isFake(id));
