@@ -204,7 +204,17 @@ trainers.onEngage = t => {
 // all 16 badges (JOHTO Champion + the 8 JohKanto gyms) — the post-game crown
 // JohKanto's trainers scale with its wilds — same rule, same reason (see
 // scalePostgameLevel). Outside JohKanto this is the identity.
-trainers.levelScale = (l) => (inJohKanto() ? scalePostgameLevel(l) : l);
+//
+// GYM LEADERS are the exception: they are levelled off YOU, not off the roster,
+// so whenever you walk into a JohKanto gym its leader is one level above your
+// strongest and its ace is two. A relative scale cannot do that — the eight gyms
+// would either bunch up under your lead or ramp past it depending on when you
+// arrived, and the point of a postgame gym is that it is always just ahead.
+trainers.levelScale = (l, o) => {
+	if (!inJohKanto()) return l;
+	if (o?.boss) return gymLevelFor(!!o.ace) + (o.bump || 0);
+	return scalePostgameLevel(l);
+};
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
 	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
@@ -268,8 +278,17 @@ function playerRegion() { return Badges.regionKey(localStorage.getItem('magepunk
 
 // a JOHTO save beating a crystal-Kanto (JohKanto) gym fills the post-game JOHKANTO
 // badge slice (toward a 16-badge total + RED), NOT the standalone-Kanto game's badges
+// JohKanto's gyms ARE Crystal's Kanto gyms, so their scripts map to KANTO badges
+// in GYM_SCRIPT. Which slice a win actually counts for is decided by the MAP.
+//
+// This used to also require `playerRegion() === 'JOHTO'` — which records where you
+// STARTED, not where you are. A Kanto or Hoenn starter who walked into JohKanto
+// re-earned Kanto badges they already had, and `count('JOHKANTO')` stayed 0
+// forever. That is not cosmetic: the postgame level cap above 100 is keyed on
+// JohKanto's badge count, so for two starters in three the ladder to 255 could
+// never begin. The map id is unambiguous on its own.
 function badgeSliceFor(region) {
-	if (region === 'KANTO' && playerRegion() === 'JOHTO' && /^MAP_JOHKANTO/.test(world.current.map.id || '')) return 'JOHKANTO';
+	if (region === 'KANTO' && /^MAP_JOHKANTO/.test(world.current?.map?.id || '')) return 'JOHKANTO';
 	return region;
 }
 
@@ -3034,6 +3053,14 @@ function scaleLegendaryLevel(level) {
 	const lead = partyLead();
 	return Math.max(level, lead);
 }
+// A JOHKANTO gym leader is levelled off your strongest POKeMON: the team sits one
+// level above it and the ace two. Walk in under-levelled and it is a close fight;
+// come back at Lv200 and it is still a close fight. Clamped to MAX_LEVEL so the
+// last gyms cannot ask for a level that cannot exist.
+const GYM_OVER_LEAD = 1, GYM_ACE_OVER_LEAD = 2;
+function gymLevelFor(isAce) {
+	return Math.min(Badges.MAX_LEVEL, partyLead() + (isAce ? GYM_ACE_OVER_LEAD : GYM_OVER_LEAD));
+}
 
 // ---------- alternate forms ----------
 // A form shares its base species' DEX NUMBER — that is the only link the data
@@ -3171,9 +3198,18 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
 	let foeParty = [];
 	let className = team?.class || roster?.class || 'Trainer';
+	// Same rule as trainers.levelScale: in JohKanto a BOSS is levelled off you (ace
+	// two above your strongest, the rest one), everything else scales relatively.
+	const srcParty = team?.party?.length ? team.party : (roster?.party || []);
+	const aceLv = Math.max(0, ...srcParty.map(e => e.l || 0));
+	const foeLevel = (e) => {
+		if (!inJohKanto()) return e.l;
+		if (BOSS_CLASSES.has(className)) return gymLevelFor((e.l || 0) >= aceLv);
+		return scalePostgameLevel(e.l);
+	};
 	if (team?.party?.length) {
 		foeParty = team.party.map(e => {
-			const mon = battleBuildMon(e.s, inJohKanto() ? scalePostgameLevel(e.l) : e.l, battle.data);
+			const mon = battleBuildMon(e.s, foeLevel(e), battle.data);
 			if (mon && e.moves?.length) {
 				mon.moves = e.moves.map(id => {
 					const mv = battle.data.moves[id];
@@ -3185,7 +3221,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		}).filter(Boolean);
 	}
 	if (!foeParty.length && roster?.party?.length) {
-		foeParty = roster.party.map(e => battleBuildMon(e.s, inJohKanto() ? scalePostgameLevel(e.l) : e.l, battle.data)).filter(Boolean);
+		foeParty = roster.party.map(e => battleBuildMon(e.s, foeLevel(e), battle.data)).filter(Boolean);
 	}
 	if (!foeParty.length) {
 		const pool = trainers.data?.defaultPool || ['rattata', 'pidgey'];
@@ -5689,7 +5725,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
-		inJohKanto, scalePostgameLevel, scaleLegendaryLevel, levelCapNow,
+		inJohKanto, scalePostgameLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses

@@ -252,15 +252,20 @@ export class Trainers {
 	// are authored for a team fresh off a League, and the cap now runs to 255. This
 	// module has no business knowing about regions or badges, so it just asks.
 	buildBattle(t, data) {
-		const scale = l => Math.max(1, Math.min(MAX_LEVEL, this.levelScale ? this.levelScale(l) : l));
 		const script = t.ev.script && t.ev.script !== '0x0' ? t.ev.script : null;
 		const roster = script ? this.data.rosters[script] : null;
+		// `levelScale` is set by main.js and is how JOHKANTO stays a fight. It is told
+		// whether this is a BOSS and whether this mon is the ACE, because a gym leader
+		// there is levelled off the player rather than off the roster.
+		const boss = !!(roster?.class && BOSS_CLASSES.has(roster.class));
+		const aceLevel = Math.max(0, ...((roster?.party || []).map(e => e.l || 0)));
+		const scale = (l, opts) => Math.max(1, Math.min(MAX_LEVEL, this.levelScale ? this.levelScale(l, opts) : l));
 		// VS Seeker rematches climb: +2 levels per rematch tier (badges at re-arm)
 		const bump = 2 * (this.rematch[this.keyOf(t)] || 0);
 		let party = [];
 		if (roster?.party?.length) {
 			party = roster.party.map(e => {
-				const mon = buildMon(e.s, scale(e.l + bump), data);
+				const mon = buildMon(e.s, scale(e.l + bump, { boss, ace: (e.l || 0) >= aceLevel, bump }), data);
 				if (!mon) return null;
 				// authentic movesets / held items when the roster carries them
 				// (gen_trainer_movesets.mjs backfills these from the decomps);
@@ -282,7 +287,7 @@ export class Trainers {
 			const n = 1 + Math.floor(Math.random() * 2);
 			for (let i = 0; i < n; i++) {
 				const s = pool[Math.floor(Math.random() * pool.length)];
-				const lv = Math.max(5, scale(base + bump + Math.floor(Math.random() * 7) - 3));
+				const lv = Math.max(5, scale(base + bump + Math.floor(Math.random() * 7) - 3, { boss: false }));
 				const mon = buildMon(s, lv, data);
 				if (mon) party.push(mon);
 			}
