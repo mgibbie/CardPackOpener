@@ -2514,7 +2514,9 @@ function useFieldMove(hmId, mon) {
 	partyMenu.open = false; partyMenu.action = null; partyMenu.summary = false;
 	// badge gate: an HM can't be used outside battle until you've earned enough of
 	// your region's badges (canonical order). The move is still usable in battle.
-	const region = playerRegion();
+	// the region you are STANDING in, not the one you started in — see
+	// Badges.regionOfMap. HM_GATE.JOHKANTO was unreachable before this.
+	const region = Badges.regionOfMap(world.current?.map?.id, playerRegion());
 	const req = Badges.hmReq(region, hmId);
 	if (req > Badges.count(region)) {
 		const gb = Badges.list(region)[req - 1];
@@ -3989,6 +3991,42 @@ function cameraPos() {
 
 // day/night colour wash over the world (not menus/HUD). Keyed to the in-game
 // hour with smooth dawn/dusk ramps; indoor maps stay untinted.
+// ---------- unlit caves ----------
+// FLASH had nothing to do. `HM_FIELD.flash` checked `map.requires_flash`, set a
+// `flash_<map>` story flag — and NOTHING ANYWHERE read that flag, so even on the
+// two Kanto maps that carried the field the cave was never dark. Crystal's
+// thirteen PALETTE_DARK maps (Rock Tunnel among them, which is why Gen-2 Kanto
+// hands you the HM at all) had no field at all.
+//
+// A dark map draws black except a small window around the player, until FLASH is
+// used there. Generous enough to walk by, tight enough that you want the HM.
+const DARK_RADIUS = 44, DARK_FADE = 26;
+function mapIsUnlit() {
+	const m = world.current?.map;
+	return !!(m?.requires_flash && !Story.getFlag('flash_' + m.id));
+}
+function drawCaveDark(ctx, camX, camY) {
+	if (editView.on || !mapIsUnlit()) return;
+	const cx = Math.round(player.px + META / 2 - camX);
+	const cy = Math.round(player.py + META / 2 - camY);
+	ctx.save();
+	// everything outside the sight radius is solid dark...
+	ctx.fillStyle = 'rgba(0,0,0,0.94)';
+	ctx.beginPath();
+	ctx.rect(0, 0, VIEW_W, VIEW_H);
+	ctx.arc(cx, cy, DARK_RADIUS, 0, Math.PI * 2);
+	ctx.fill('evenodd');
+	// ...and the rim fades in, so the edge of sight is soft rather than a cut circle
+	const g = ctx.createRadialGradient(cx, cy, Math.max(0, DARK_RADIUS - DARK_FADE), cx, cy, DARK_RADIUS);
+	g.addColorStop(0, 'rgba(0,0,0,0)');
+	g.addColorStop(1, 'rgba(0,0,0,0.94)');
+	ctx.fillStyle = g;
+	ctx.beginPath();
+	ctx.arc(cx, cy, DARK_RADIUS, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.restore();
+}
+
 function drawDayNightTint(context) {
 	if (!Settings.get('dayNight')) return;
 	if (world.current?.map?.map_type === 'MAP_TYPE_INDOOR' || world.current?.map?.indoor) return;
@@ -4108,6 +4146,7 @@ function tick(now) {
 		for (const s of sprites) s.draw(ctx, camX, camY);
 		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
+		drawCaveDark(ctx, camX, camY);
 		drawDayNightTint(ctx);
 		evolution.draw(ctx);
 
@@ -5812,7 +5851,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
-		inJohKanto, wildEncounterLevel, routeTrainerLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor,
+		inJohKanto, wildEncounterLevel, routeTrainerLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor, mapIsUnlit, useFieldMove,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses
