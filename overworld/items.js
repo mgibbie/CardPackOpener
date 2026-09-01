@@ -24,6 +24,28 @@ function parseBallScript(script) {
 	return [id, pretty];
 }
 
+// Crystal writes an item ball's script as <Map><Item> — "RockTunnel1FElixer",
+// "Route12Nugget" — with no _EventScript_Item marker for parseBallScript to find.
+// The map stem is the only thing that says where the map name ends, so it is
+// passed in; a JohKanto map carries Crystal's own (unprefixed) name in the script,
+// so both spellings are tried.
+//
+// The three starter balls in Elm's lab are POKE_BALLs too and must NOT become
+// items: picking up a "Cyndaquil" would put a junk id in the bag.
+const STARTER_BALLS = /^(Cyndaquil|Totodile|Chikorita)PokeBallScript$/;
+function parseCrystalBall(script, stem) {
+	if (!script || STARTER_BALLS.test(script)) return null;
+	let tail = script;
+	for (const pre of [stem, String(stem).replace(/^JohKanto/, '')]) {
+		if (pre && tail.startsWith(pre)) { tail = tail.slice(pre.length); break; }
+	}
+	tail = tail.replace(/Script$/, '');
+	if (!tail || tail === script) return null;       // nothing stripped: not this form
+	const id = tail.toLowerCase().replace(/[^a-z0-9]/g, '');
+	if (!id) return null;
+	return [id, tail.replace(/([a-z])([A-Z])/g, '$1 $2')];
+}
+
 // "ITEM_RARE_CANDY" -> ["rarecandy", "Rare Candy"]
 function parseItemConst(c) {
 	if (!c || c === 'ITEM_NONE') return null;
@@ -115,8 +137,11 @@ export class Items {
 				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'boulder' });
 				continue;
 			}
-			if (g.includes('ITEM_BALL')) {
-				const parsed = parseBallScript(o.script);
+			// POKE_BALL is Crystal's spelling. items.js only ever matched ITEM_BALL, so
+			// all 180 of JohKanto's and Johto's item balls were walked straight past —
+			// two whole regions with no overworld items at all.
+			if (g.includes('ITEM_BALL') || g.includes('POKE_BALL')) {
+				const parsed = parseBallScript(o.script) || parseCrystalBall(o.script, this.world.current.name);
 				if (!parsed) continue;
 				const key = this.keyFor('', o);
 				if (this.collected.has(key)) continue;

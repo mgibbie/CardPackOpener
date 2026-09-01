@@ -1653,6 +1653,11 @@ function tmMoveId(id) {
 	if (m) return GEN3_HM[+m[1]] || null;
 	m = /^tm([a-z0-9]+)$/.exec(id);
 	if (m && battle.data.moves[m[1]]) return m[1];
+	// ...and the same for a NAMED HM. Crystal's item balls hold `hmwaterfall`,
+	// which only had the numbered `hm(\d+)` branch to fall through and so taught
+	// nothing.
+	m = /^hm([a-z]+)$/.exec(id);
+	if (m && battle.data.moves[m[1]]) return m[1];
 	m = /^tm\d+([a-z][a-z0-9]*)$/.exec(id); // decomp pickups: ITEM_TM24_THUNDERBOLT -> tm24thunderbolt
 	if (m && battle.data.moves[m[1]]) return m[1];
 	return null;
