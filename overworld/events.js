@@ -6,6 +6,7 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
 import { SCENE_SET } from './crystal_scenes.js';
+import { SCRIPT_CONSTANTS } from './script_constants.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -74,6 +75,12 @@ function resolveValue(v) {
 	// take the wrong path — a dead payload wearing the shape of a fix.
 	if (v === 'YES') return 1;
 	if (v === 'NO') return 0;
+	// Every other named constant the decomps compare against — DIR_EAST, SATURDAY,
+	// PARTY_SIZE, MON_GIVEN_TO_PARTY and 196 more. Without these the value stayed a
+	// STRING, so `cmp(2, 'eq', 'DIR_EAST')` compared a number to text and was false
+	// forever: 1,464 comparisons that could never be true, every one of those
+	// branches taking the same path whatever the game state.
+	if (typeof v === 'string' && SCRIPT_CONSTANTS[v] !== undefined) return SCRIPT_CONSTANTS[v];
 	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
 	const n = Number(v);
@@ -257,7 +264,15 @@ export class Cutscene {
 				case 'setrespawn': break;
 				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); break; }
 				case 'takeitem': { const g = giveArgs(op); if (g.id) ctx.takeItem?.(g.id, g.n); break; }
-				case 'givemon': ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5); break;
+				// `givemon` answers into VAR_RESULT — the script after it says something
+				// different when the mon went to a BOX because your party was full, and
+				// 28 branches read that. Nothing wrote it, so they all took the party arm.
+				case 'givemon': {
+					const full = (ctx.partyCount?.() ?? 0) >= 6;
+					ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5);
+					setVar('VAR_RESULT', full ? 1 : 0);   // MON_GIVEN_TO_PC : MON_GIVEN_TO_PARTY
+					break;
+				}
 				// an EGG gift (Crystal's `giveegg`) — the mon arrives unhatched, so it
 				// goes to the party/box as an egg with a step counter, not as a Pokémon
 				case 'giveegg': ctx.giveEgg?.(speciesId(op.species), resolveValue(op.level) || 5); break;
@@ -299,6 +314,14 @@ export class Cutscene {
 				// comparison read whatever the last script had left in the var — an item
 				// gate could pass with an empty bag, or refuse with a full one.
 				case 'hasitem': setVar(op.store || 'VAR_RESULT', ctx.hasItem?.(itemId(op.item)) ? 1 : 0); break;
+				// `random N` picks 0..N-1 into VAR_RESULT — the Game Corner's chatter,
+				// the Trick House prizes. Dropped before, so the branch after it read a
+				// stale var and always took one arm.
+				case 'random': {
+					const n = resolveValue(op.max);
+					setVar('VAR_RESULT', Number.isFinite(n) && n > 0 ? Math.floor(Math.random() * n) : 0);
+					break;
+				}
 				case 'special':
 					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
