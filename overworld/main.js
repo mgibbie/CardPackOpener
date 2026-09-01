@@ -4198,6 +4198,14 @@ function tick(now) {
 	if (wasInBattle && !inBattleNow) heldKeys.length = 0;
 	wasInBattle = inBattleNow;
 	if (!battle.blocking && !pvp.blocking && !factorySpec.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
+		// The starter hand-over is the one trigger that MUST NOT be missed — without
+		// it you have no POKeMON and no way to get one. Every other trigger fires on
+		// map entry only, which is fine for them, but it means walking into the lab
+		// while ANY cutscene is still playing skipped this one for good: the guard
+		// returned early and nothing ever re-asked. Retry it here instead. It is
+		// four boolean checks and becomes a permanent no-op the moment you have a
+		// party, so it costs nothing for the rest of the game.
+		if (!party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
@@ -5833,7 +5841,21 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// the Factory and provisions a throwaway lead just before starting.
 	factoryStandalone = new URLSearchParams(location.search).has('factory');
 	if (party) { Dex.seedFrom([...party, ...getBox()]); dexMilestoneCheck(); }
-	if (!party && !factoryStandalone) {
+	// "No party" is NOT the same as "new game". Fork B hands over no POKeMON until
+	// you reach the professor's lab, so the whole stretch between choosing a region
+	// and picking a starter is partyless — and keying the region picker on `!party`
+	// alone re-asked the question on EVERY load in that window. Answering it a
+	// second time rewrote `magepunk_region` and warped the player to a different
+	// region's home town while the first region's story seed stayed put, so the lab
+	// then offered that other region's starters. That is the "starters offered
+	// multiple times" report.
+	//
+	// The real question is whether the game has BEGUN: beginNewGame writes the
+	// region and seeds the story together, so requiring both is exact. A save with
+	// a region but no seed (anything predating Fork B) still gets the picker, which
+	// is the safe direction — it can always start, never gets stuck.
+	const alreadyBegun = !!localStorage.getItem('magepunk_region') && Story.getFlag('story_seeded');
+	if (!party && !factoryStandalone && !alreadyBegun) {
 		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
 		starterMenu.phase = 'region';
@@ -5879,6 +5901,14 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// so a scene waiting on the map you resume into would never fire.
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] boot onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	refreshObjective(); // show the current quest objective on boot
+	// Resuming mid-intro — region chosen, starter not yet collected. The lab
+	// trigger (checkIntroTrigger) still fires when they walk in, so the only gap is
+	// a player who reloaded before hearing where to go. Replay the professor's
+	// welcome for them; it self-terminates by setting `intro_started`, so anyone
+	// who already heard it is left alone.
+	if (!party && !factoryStandalone && alreadyBegun && !Story.getFlag('intro_started') && !cutscene.blocking) {
+		startIntroNarration(playerRegion());
+	}
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
 	function freezeLoop(on) { loading = !!on; }
