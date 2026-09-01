@@ -50,26 +50,25 @@ const parse = stem => {
 	return { scenes, evs };
 };
 
-// DELIBERATELY NOT RESTORED — fail open.
-//
-// Both gates are the CYCLING ROAD bicycle check, and the BICYCLE cannot be
-// obtained in the Crystal regions: GoldenrodBikeShopClerkScript's `yesorno` was
+// The two CYCLING ROAD gates were held back on the first pass, because the
+// BICYCLE could not be obtained: GoldenrodBikeShopClerkScript's `yesorno` was
 // mistranspiled into a duplicate branch on the surrounding flag
 //   op1  branch(EVENT_GOT_BICYCLE, true)  -> .GotBicycle
 //   op3  branch(EVENT_GOT_BICYCLE, false) -> .Refused
-// and after op1 the flag is necessarily false, so op3 always refuses and the
-// `give BICYCLE` on op5 is dead code.
+// so after op1 the flag was necessarily false, op3 always refused, and the
+// `give BICYCLE` was dead code. Restoring the gates then would have SEALED
+// CYCLING ROAD — the same trap the Victory Road badge check would have been
+// without a live VAR_BADGES.
 //
-// Restoring these triggers would therefore SEAL CYCLING ROAD the moment anyone
-// fixes that transpile bug — the same trap the Victory Road badge gate would
-// have been without a live VAR_BADGES. A walkable Cycling Road is a far smaller
-// loss than an unreachable one, so these stay out until the bike is obtainable.
-const SKIP = new Set(['Route16Gate', 'Route17Route18Gate']);
+// That is fixed (gen_crystal_branch_fix.mjs: the clerk now asks, and hands the
+// bike over on yes), so the gates come back. They are a soft block anyway —
+// a line of text and a step back, not a locked door.
+const SKIP = new Set();
 
 const stems = fs.readdirSync(CRY).filter(f => f.endsWith('.asm')).map(f => f.replace(/\.asm$/, ''));
 const src = new Map();
 for (const s of stems) { const p = parse(s); if (p && !SKIP.has(s)) src.set(s, p); }
-console.log('skipped (fail open, see SKIP): ' + [...SKIP].join(', '));
+if (SKIP.size) console.log('skipped (fail open, see SKIP): ' + [...SKIP].join(', '));
 
 // ---------- which of our files is which ----------
 const regionOf = {};

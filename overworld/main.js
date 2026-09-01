@@ -2997,6 +2997,18 @@ function cutsceneCtx(talker, scriptLabel) {
 		rivalName: (localStorage.getItem('magepunk_rival') || 'GARY'),
 		giveItem: (id, n) => { Bag.addItem(id, n); Bag.registerName(id, (id || '').toUpperCase()); },
 		takeItem: (id, n) => { Bag.consume(id); },
+		// `checkitem` — the condition behind every item turn-in in the Crystal
+		// scripts (the MACHINE PART, the LOST ITEM, the PASS, the BICYCLE check).
+		hasItem: (id) => !!id && Bag.count(id) > 0,
+		// Crystal's yes/no box, answered with the closing key the way every other
+		// prompt in this port is (Z = yes, X = no), stored where the branch reads it.
+		prompt: () => {
+			dialog.open('Z = Yes    X = No', k => {
+				Story.setVar('VAR_RESULT', k === 'x' ? 0 : 1);
+				cutscene.resume();
+			});
+			return 'wait';
+		},
 		giveMon: (species, level) => {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
 			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
