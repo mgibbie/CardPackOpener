@@ -125,7 +125,10 @@ export class Items {
 			// inert scenery: 97 ROCK_SMASH_ROCKs (all of Cerulean Cave, Mt. Ember)
 			// and 55 CUT_TREEs (Celadon Gym's own puzzle among them) ignored the
 			// HM entirely. Accept either spelling.
-			if (g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH')) {
+			// ...and Crystal's spelling is a plain `OBJ_EVENT_GFX_ROCK`, which matched
+			// neither, so 15 smashable rocks across Gen-2 Kanto and Johto were inert
+			// scenery. Anchored so it cannot catch OBJ_EVENT_GFX_ROCKET.
+			if (g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH') || /_ROCK$/.test(g)) {
 				this.fieldObjs.push({ tx: +o.x, ty: +o.y, kind: 'rock' });
 				continue;
 			}
