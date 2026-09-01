@@ -2235,6 +2235,9 @@ async function refreshMapContent(label) {
 	blockers.loadForMap();
 	portals.loadForMap();
 	items.loadForMap();
+	// the real games wipe the TEMP flag range on every map transition
+	// (ClearTempFieldEventData); ours persists it, so do it here
+	Story.clearTempFlags();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
 	// arriving on a Fly-destination map registers it so you can fly back later
@@ -5863,6 +5866,9 @@ function drawFriendGhosts(ctx, camX, camY) {
 	blockers.loadForMap();
 	portals.loadForMap();
 	items.loadForMap();
+	// the real games wipe the TEMP flag range on every map transition
+	// (ClearTempFieldEventData); ours persists it, so do it here
+	Story.clearTempFlags();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);

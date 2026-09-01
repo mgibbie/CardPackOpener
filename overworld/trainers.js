@@ -166,8 +166,17 @@ export class Trainers {
 			// present: MISTY and her three gym swimmers, BLUE, and the Route 24 Rocket
 			// are all flagged trainers, and treating any flag as permanent removal is
 			// what made the Cascade and Earth badges unobtainable.
-			const flagged = objectHiddenByFlag(ev, crystal);
-			if (flagged && !(this.spawnFlagged && this.spawnFlagged(ev))) return;
+			const hidden = objectHiddenByFlag(ev, crystal);
+			if (hidden && !(this.spawnFlagged && this.spawnFlagged(ev))) return;
+			// "villain" means a story-flagged trainer the ACTIVE quest beat is
+			// populating — a Rocket on a hideout floor, not just any flagged NPC. It
+			// used to be inferred from `hidden`, which worked only while "hidden" meant
+			// "carries a flag at all". Now that a flag is read for its actual state,
+			// that inference collapsed: the grunts still spawned (their flags are
+			// clear) but stopped being MARKED, so the quest's own crawl looked empty.
+			// Say what it means instead of deriving it from a coincidence.
+			const storyFlagged = !!(ev.flag && ev.flag !== '0');
+			const claimedByBeat = storyFlagged && !!(this.spawnFlagged && this.spawnFlagged(ev));
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
@@ -175,7 +184,7 @@ export class Trainers {
 			// missing sprite (e.g. Hoenn leaders) must NOT hide a battleable trainer —
 			// use their real people_extra art, else a generic
 			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
-			if (img) { const t = new Trainer(ev, img); if (flagged) t.villain = true; this.list.push(t); }
+			if (img) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
 		}));
 	}
 
