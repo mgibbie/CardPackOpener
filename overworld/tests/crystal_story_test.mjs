@@ -53,9 +53,11 @@ const readScript = f => JSON.parse(fs.readFileSync(path.join(D, 'scripts', f + '
 	// reproduces all 36 of Johto's existing tables exactly.
 	const nb = readMap('NewBarkTown').coord_events;
 	A(nb.length === 2 && nb[0].var === 'VAR_SCENE_NewBarkTown', "and Johto's own tables are unchanged", JSON.stringify(nb.length));
-	// the bicycle gates are deliberately NOT restored — see SKIP in the generator
-	A((readMap('JohKantoRoute16Gate').coord_events || []).length === 0,
-		'the Cycling Road bicycle gate stays out, because the BICYCLE cannot be obtained');
+	// The Cycling Road gates were held back until the BICYCLE was obtainable — its
+	// giver had the mistranspiled-yesorno bug, so restoring them would have sealed
+	// the road. That is fixed, so they are back.
+	A((readMap('JohKantoRoute16Gate').coord_events || []).length === 2,
+		'the Cycling Road gate is back, now that the BICYCLE can actually be got');
 }
 
 // ---------- 3. the scene table ----------

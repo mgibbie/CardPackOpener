@@ -278,6 +278,16 @@ export class Cutscene {
 				if (ctx.openMart?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 				break;
 				case 'setmetatile': ctx.setMetatile?.(op.x, op.y, op.tile, op.impassable); break;
+				// Crystal's yes/no box. It writes its answer where the following
+				// iftrue/iffalse reads it, so it lowers onto VAR_RESULT and the ordinary
+				// var branch. Default YES before asking, so a context with no prompt
+				// (a headless harness) takes the agreed path deterministically rather
+				// than silently refusing — refusing is what the old mistranspile did,
+				// and it is why the BICYCLE and the SUPER ROD could never be obtained.
+				case 'prompt':
+					setVar('VAR_RESULT', 1);
+					if (ctx.prompt?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					break;
 				case 'special':
 					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
@@ -294,7 +304,12 @@ export class Cutscene {
 				case 'end': return this._finish();
 				case 'branch': {
 					let hit;
-					if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
+					// `checkitem X` -> an ITEM condition. It used to transpile to a
+					// byte-identical copy of the preceding `checkevent`, which the first
+					// branch had already consumed, so the test was provably unreachable
+					// and every "do you have item X" gate in the game was dead.
+					if (op.cond.item != null) hit = !!ctx.hasItem?.(itemId(op.cond.item)) === !!op.cond.state;
+					else if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
 					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
 					if (hit) {
 						if (op.kind === 'call') { this._advance(); this._goto(op.label, true); }
