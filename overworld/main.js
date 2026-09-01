@@ -3013,6 +3013,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		// `checkitem` — the condition behind every item turn-in in the Crystal
 		// scripts (the MACHINE PART, the LOST ITEM, the PASS, the BICYCLE check).
 		hasItem: (id) => !!id && Bag.count(id) > 0,
+		partyCount: () => (party || []).length,   // givemon reports party-vs-box into VAR_RESULT
 		// Crystal's yes/no box, answered with the closing key the way every other
 		// prompt in this port is (Z = yes, X = no), stored where the branch reads it.
 		prompt: () => {
@@ -3279,6 +3280,7 @@ function startCutscene(steps, onDone) {
 // run it through the interpreter with the current map's strings
 function runScriptLabel(label, talker) {
 	if (cutscene.blocking || !label) return false;
+	syncScriptVars();   // VAR_FACING/VAR_WEEKDAY/VAR_PARTYCOUNT, fresh for this run
 	// In-game trades are intercepted here, before the script runs. The Kanto and
 	// Hoenn scripts exist but drive the trade through four `special` ops this
 	// port never implemented; the Johto ones were dropped entirely at transpile
@@ -3620,6 +3622,28 @@ function armStoryScenes(region) {
 // badges for Johto's gyms whichever region you started in.
 function syncStoryVars() {
 	Story.setVar('VAR_BADGES', Badges.count('JOHTO'));
+}
+
+// Vars the scripts READ but nothing here ever WROTE, so every branch on them
+// compared against 0 and took the same arm forever. Refreshed immediately before
+// a script runs, because two of the three change as you walk around.
+//
+// VAR_FACING gates the choreography in 122 scripts — which way an NPC should walk
+// to reach you, which side Eusine steps to. The encoding matches
+// script_constants.js and is OURS: the decomps disagree (Crystal's UP is 1,
+// Emerald's DIR_SOUTH is also 1), and since those symbols are only ever compared
+// against this var, it only has to agree with itself.
+//
+// VAR_WEEKDAY drives 83 branches, all Crystal: the Day-of-Week siblings who each
+// appear on their own day, the Goldenrod move tutor (Wednesday and Saturday), the
+// Dragon's Den rival (Tuesday and Thursday), the Sunday-only dept store floor.
+// GSC read the cartridge's real-time clock for this, so the real date is the
+// faithful source — "come back on Saturday" means what it says.
+const FACING_VALUE = { down: 1, up: 2, left: 3, right: 4 };
+function syncScriptVars() {
+	Story.setVar('VAR_FACING', FACING_VALUE[player?.facing] || 1);
+	Story.setVar('VAR_WEEKDAY', new Date().getDay());          // SUNDAY = 0 .. SATURDAY = 6
+	Story.setVar('VAR_PARTYCOUNT', (party || []).length);
 }
 
 // pokecrystal runs InitializeEventsScript before a new save's first step, and now
