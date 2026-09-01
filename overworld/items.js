@@ -5,6 +5,25 @@ import { getJSON, getImage, META } from './engine.js';
 import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
 
+// Does items.js own this object outright, by its graphics id? Item balls, berry
+// and fruit trees, and the three HM obstacles — it draws and drives them, so
+// nobody else should.
+//
+// EXPORTED because npcs.js has to ask the SAME question, and for a long time it
+// asked a slightly different one: its own list matched CUTTABLE_TREE and
+// BREAKABLE_ROCK but not the CUT_TREE / ROCK_SMASH_ROCK spellings, and not
+// Crystal's plain _ROCK. That drift is what made the two files disagree about
+// who owns 400-odd objects — harmless only while a blanket flag rule happened to
+// hide them all. One predicate, one answer.
+export function itemsOwns(graphicsId) {
+	const g = String(graphicsId || '');
+	return g.includes('BREAKABLE_ROCK') || g.includes('ROCK_SMASH') || /_ROCK$/.test(g)
+		|| g.includes('CUTTABLE_TREE') || g.includes('CUT_TREE')
+		|| g.includes('BOULDER')
+		|| g.includes('ITEM_BALL') || g.includes('POKE_BALL')
+		|| g.includes('BERRY_TREE') || g.includes('FRUIT_TREE');
+}
+
 const COLLECTED_KEY = 'magepunk_collected_v1';
 const BERRY_KEY = 'magepunk_berrytimes_v1'; // tree key -> last-harvest timestamp (24h regrowth)
 const HARVEST_AMOUNT = 2;
@@ -118,6 +137,7 @@ export class Items {
 		this.trees = [];
 		this.fieldObjs = []; // smashable rocks / cuttable trees (respawn per visit)
 		const map = this.world.current.map;
+		// (see itemsOwns below — npcs.js asks the same question through it)
 		for (const o of map.object_events || []) {
 			const g = String(o.graphics_id || '');
 			// The three decomps spell these differently and only the pokeemerald

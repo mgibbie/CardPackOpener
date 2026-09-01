@@ -4,6 +4,7 @@
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META } from './engine.js';
 import { isTrainerEvent, spritePath } from './trainers.js';
+import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
@@ -129,11 +130,13 @@ export class NPCs {
 			// keeps the old blanket rule. See objectHiddenByFlag.
 			if (objectHiddenByFlag(ev, crystal)) return;
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
-			// POKE_BALL is CRYSTAL's spelling of an item ball and items.js owns it.
-			// It used to be caught by the blanket flag rule by accident — every one of
-			// them carries an EVENT_ flag — so with that rule relaxed, leaving it out
-			// here would draw 13 Gen-2 Kanto item balls TWICE, once as a fake NPC.
-			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|POKE_BALL|BERRY_TREE|FRUIT_TREE|BOULDER/.test(ev.graphics_id || '')) return; // items.js owns these
+			// Asked through items.js's OWN predicate rather than a copy of its list.
+			// The copy had drifted: it matched CUTTABLE_TREE and BREAKABLE_ROCK but not
+			// the CUT_TREE / ROCK_SMASH_ROCK spellings nor Crystal's plain _ROCK, so
+			// ~400 obstacles were owned by items.js and unclaimed here. That only stayed
+			// invisible while the blanket flag rule hid them anyway; the moment flags
+			// are read honestly they would each be drawn TWICE, once as a fake NPC.
+			if (itemsOwns(ev.graphics_id)) return;          // items.js draws and drives these
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			let img = await getImage(`data/people/${file}`).catch(() => null);

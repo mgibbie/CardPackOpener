@@ -39,18 +39,45 @@ export function resetStory() { store = { flags: {}, vars: {} }; save(); }
 // were among them, which made two Gen-2 Kanto badges UNOBTAINABLE and left RED
 // sealed behind a gate wanting eight badges that could only ever reach six.
 //
-// Crystal only, deliberately. Reading the flag honestly needs the right STARTING
-// state, and Crystal has one seeded from its own InitializeEventsScript
-// (crystal_init_events.js) — which is what keeps Misty at the Cerulean Cape
-// rather than in her gym on day one. FireRed and Emerald keep the blanket rule
-// until their own initial-flag state is ported: their FLAG_HIDE_*,
-// FLAG_DECORATION_* and FLAG_TEMP_* families gate ~2,400 objects that would
-// otherwise all appear at once.
-export function objectHiddenByFlag(ev, crystal) {
+// FireRed and Emerald work the same way, and their starting state is simpler than
+// Crystal's: `InitEventData` memsets every flag to zero, so a fresh save has them
+// all CLEAR and every object visible. There is no init list to port — the villain
+// grunts at Mt Chimney, the Rockets in Silph Co and the Magma hideout really are
+// present when you first walk in, and hiding them was this port's invention.
+// (Crystal is the odd one out: its InitializeEventsScript explicitly SETS ~124
+// events, which is why that one needed crystal_init_events.js.)
+//
+// TWO FAMILIES STAY HIDDEN, because the systems that would place them do not
+// exist here. Their flags being clear does not mean "show it" — it means "the
+// player owns none of these yet", and the real game fills the object in from a
+// var at runtime:
+//   FLAG_DECORATION_*        384 objects, the furniture in your bedroom and in
+//                            secret bases. Their graphics is OBJ_EVENT_GFX_VAR_0..F
+//                            — a placeholder resolved from a var by the decoration
+//                            system. Revealed, they would be a room full of
+//                            furniture nobody owns, drawn from an unresolved sprite.
+//   FLAG_HIDE_SECRET_BASE_*  the secret-base trainer, same placeholder graphics.
+// Same call crystal_stds.js made about Strength boulders: do not hand an object to
+// a system that is not there to receive it.
+const UNMODELLED_SYSTEM = /^FLAG_DECORATION_|^FLAG_HIDE_SECRET_BASE/;
+
+export function objectHiddenByFlag(ev, _crystal) {
 	const f = ev && ev.flag;
-	if (!f || f === '0') return false;   // no flag: always visible
-	if (!crystal) return true;           // FireRed / Emerald: unchanged for now
-	return getFlag(f);                   // Crystal: hidden only while the flag is SET
+	if (!f || f === '0') return false;        // no flag: always visible
+	if (UNMODELLED_SYSTEM.test(f)) return true;
+	return getFlag(f);                        // hidden only while the flag is SET
+}
+
+// The real games wipe the TEMP flag range on every map transition
+// (ClearTempFieldEventData, called from overworld.c). Ours persists everything to
+// localStorage, so a FLAG_TEMP_* a cutscene set to hide someone mid-scene would
+// keep them hidden for the rest of the save. 409 objects ride on that range —
+// mostly HM obstacles, which items.js owns, but the scripts branch on them too.
+export function clearTempFlags() {
+	let n = 0;
+	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k)) { delete store.flags[k]; n++; }
+	if (n) save();
+	return n;
 }
 
 // resolve a symbolic value (a var name, TRUE/FALSE, or a literal number)
