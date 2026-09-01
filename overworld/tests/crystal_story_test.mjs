@@ -74,11 +74,21 @@ const readScript = f => JSON.parse(fs.readFileSync(path.join(D, 'scripts', f + '
 		'the date self-advances its own scene, so it plays once without a one-shot list');
 	A((SCENE_SET['_VictoryRoadGateBadgeCheckScript.AllEightBadges'] || []).some(([v, n]) => v === 'VAR_SCENE_VictoryRoadGate' && n === 1),
 		'and passing the badge check disarms the Victory Road gate, so it stops re-nagging');
-	// every label in the table must exist in some transpiled script
+	// Every label in the table must exist in some transpiled script — EXCEPT the
+	// handful belonging to maps this port has no copy of at all: Crystal's cable-club
+	// rooms (Colosseum, TimeCapsule, MobileTradeRoom, MobileBattleRoom — there is no
+	// link play here) and the Battle Tower (reimplemented natively in frontier.js).
+	// Those entries were always unreachable; they only became VISIBLE when the
+	// orphaned script files were pruned, because the dead copies used to satisfy the
+	// lookup while never being loadable.
+	const NO_MAP_HERE = /^(Colosseum|TimeCapsule|MobileTradeRoom|MobileBattleRoom|BattleTower)/;
 	const known = new Set();
 	for (const f of fs.readdirSync(path.join(D, 'scripts'))) for (const k of Object.keys(readScript(f.replace('.json', '')))) known.add(k);
 	const miss = Object.keys(SCENE_SET).filter(k => !known.has(k));
-	A(miss.length <= 3, `${Object.keys(SCENE_SET).length - miss.length} of them name a real script label`, miss.join(','));
+	const unexpected = miss.filter(k => !NO_MAP_HERE.test(k));
+	A(unexpected.length === 0,
+		`${Object.keys(SCENE_SET).length - miss.length} name a real script label; the ${miss.length} that do not are all maps this port has no copy of`,
+		unexpected.join(','));
 }
 
 // ---------- 1. the init state ----------
