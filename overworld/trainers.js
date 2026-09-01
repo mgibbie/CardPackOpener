@@ -5,6 +5,7 @@ import { getJSON, getImage, META } from './engine.js';
 import { MAX_LEVEL } from './badges.js';
 import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { objectHiddenByFlag } from './events.js';
 
 const FACE_OF = {
 	MOVEMENT_TYPE_FACE_DOWN: 'down', MOVEMENT_TYPE_FACE_UP: 'up',
@@ -151,6 +152,7 @@ export class Trainers {
 		this.list = [];
 		this.engagement = null;
 		const evs = this.world.current.map.object_events || [];
+		const crystal = !!this.world.current.map._crystal_tileset;
 		// a few decomp objects ship with script "0x0" and their battle stranded in
 		// an onFrame scene the engine can't arm (see repairScript in main.js).
 		// Rewriting ev.script HERE is deliberate: claims(), keyOf() and buildBattle
@@ -159,8 +161,12 @@ export class Trainers {
 		await Promise.all(evs.map(async ev => {
 			if (!this.claims(ev)) return;
 			// hidden story trainers are skipped — EXCEPT villain grunts that the active
-			// quest beat wants populating the dungeon (main.js sets spawnFlagged)
-			const flagged = ev.flag && ev.flag !== '0';
+			// quest beat wants populating the dungeon (main.js sets spawnFlagged).
+			// On CRYSTAL maps "hidden" means the flag is actually SET, not merely
+			// present: MISTY and her three gym swimmers, BLUE, and the Route 24 Rocket
+			// are all flagged trainers, and treating any flag as permanent removal is
+			// what made the Cascade and Earth badges unobtainable.
+			const flagged = objectHiddenByFlag(ev, crystal);
 			if (flagged && !(this.spawnFlagged && this.spawnFlagged(ev))) return;
 			// gfx map first, then guess from the id (OBJ_EVENT_GFX_BROCK -> brock.png)
 			const file = this.gfx[ev.graphics_id]

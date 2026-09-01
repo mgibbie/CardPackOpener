@@ -4,6 +4,7 @@
 // Sight-range trainers are excluded here — trainers.js owns them.
 import { getJSON, getImage, META } from './engine.js';
 import { isTrainerEvent, spritePath } from './trainers.js';
+import { objectHiddenByFlag } from './events.js';
 
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const NPC_SPEED = 60; // px/s — NPCs stroll
@@ -121,11 +122,18 @@ export class NPCs {
 	async loadForMap() {
 		this.list = [];
 		const evs = this.world.current.map.object_events || [];
+		const crystal = !!this.world.current.map._crystal_tileset;
 		await Promise.all(evs.map(async ev => {
 			if (ev.type != null && ev.type !== 'object') return; // Emerald maps omit `type` — treat missing as object (else no Hoenn NPCs)
-			if (ev.flag && ev.flag !== '0') return;        // hidden-by-flag (story NPCs)
+			// Crystal hides a story NPC only while its flag is SET; everything else
+			// keeps the old blanket rule. See objectHiddenByFlag.
+			if (objectHiddenByFlag(ev, crystal)) return;
 			if (isTrainerEvent(ev)) return;                // trainers.js renders these
-			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|BERRY_TREE|FRUIT_TREE|BOULDER/.test(ev.graphics_id || '')) return; // items.js owns these
+			// POKE_BALL is CRYSTAL's spelling of an item ball and items.js owns it.
+			// It used to be caught by the blanket flag rule by accident — every one of
+			// them carries an EVENT_ flag — so with that rule relaxed, leaving it out
+			// here would draw 13 Gen-2 Kanto item balls TWICE, once as a fake NPC.
+			if (/BREAKABLE_ROCK|CUTTABLE_TREE|ITEM_BALL|POKE_BALL|BERRY_TREE|FRUIT_TREE|BOULDER/.test(ev.graphics_id || '')) return; // items.js owns these
 			const file = this.gfx[ev.graphics_id]
 				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
 			let img = await getImage(`data/people/${file}`).catch(() => null);

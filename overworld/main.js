@@ -20,6 +20,7 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
+import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Settings from './settings.js';
 import * as Badges from './badges.js';
 import * as Trades from './trades.js';
@@ -440,6 +441,7 @@ function onTrainerDefeated(script, opts) {
 		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
 		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
 		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
+		syncStoryVars();   // ...and so is VAR_BADGES, which the Victory Road gate reads
 		if (earned && !silent) {
 			const n = Badges.count(slice);
 			dialog.open(slice === 'JOHKANTO'
@@ -3582,6 +3584,38 @@ function armStoryScenes(region) {
 	for (const [k, v] of Object.entries(seed.vars || {})) if (!Story.hasVar(k)) Story.setVar(k, v);
 }
 
+// Crystal's scripts read VAR_BADGES straight out of the save — the Victory Road
+// gate officer turns you back below eight, and several NPCs change their line on
+// it. NOTHING in this port ever wrote that var, so it read 0 forever. Restoring
+// the gate's trigger without this would have SEALED VICTORY ROAD: the only road
+// to the Johto League, and half the Johto<->Gen-2-Kanto link.
+//
+// Johto's eight, deliberately: the gate is the Johto League's front door and the
+// decomp compares against NUM_JOHTO_BADGES. `badgeSliceFor` already awards JOHTO
+// badges for Johto's gyms whichever region you started in.
+function syncStoryVars() {
+	Story.setVar('VAR_BADGES', Badges.count('JOHTO'));
+}
+
+// pokecrystal runs InitializeEventsScript before a new save's first step, and now
+// that object visibility reads the event flag for real (objectHiddenByFlag), this
+// is what stops the entire Crystal cast walking on at once: it keeps MISTY at the
+// Cerulean Cape instead of standing in her gym on day one, BLUE off the Viridian
+// Gym floor until you meet him at Cinnabar, and HO-OH off the Tin Tower roof.
+//
+// Applied to every save whatever region it started in — the past timeline is
+// reachable from anywhere, so a Kanto starter walking into Johto needs the same
+// starting state. Guarded so it runs exactly once.
+//
+// Safe for saves made before this shipped: the events it re-sets all gate objects
+// that were UNCONDITIONALLY invisible until now, so no playthrough can have made
+// meaningful progress against them.
+function seedCrystalEvents() {
+	if (Story.getFlag('crystal_events_seeded')) return;
+	for (const e of INIT_EVENTS) Story.setFlag(e);
+	Story.setFlag('crystal_events_seeded');
+}
+
 function seedStoryState(region) {
 	if (Story.getFlag('story_seeded')) return;
 	const seed = STORY_SEED[region];
@@ -5710,6 +5744,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// BEFORE any map loads: a map's onFrame scenes are checked the moment it
 	// finishes loading, so newly-armed scenes must exist by then
 	armStoryScenes(playerRegion());
+	seedCrystalEvents();      // Crystal's own new-game event state (Misty is out, Blue is at Cinnabar)
+	syncStoryVars();          // VAR_BADGES, for the Crystal scripts that read it
 	await world.init();
 	await player.init();
 	await npcs.init();
@@ -5844,7 +5880,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
-		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
