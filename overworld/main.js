@@ -211,12 +211,17 @@ trainers.onEngage = t => {
 // would either bunch up under your lead or ramp past it depending on when you
 // arrived, and the point of a postgame gym is that it is always just ahead.
 trainers.levelScale = (l, o) => {
+	const league = johkantoLeagueKind(o?.script);
+	if (league) return bossLevelFor(league, !!o.ace) + (o.bump || 0);
 	if (!inJohKanto()) return l;
-	if (o?.boss) return gymLevelFor(!!o.ace) + (o.bump || 0);
+	if (o?.boss) return bossLevelFor('gym', !!o.ace) + (o.bump || 0);
 	return scalePostgameLevel(l);
 };
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
-	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
+	// RED and the four elites below him appear together, once JohKanto's eight
+	// badges are in — the mountain is the region's league, so it opens as one.
+	|| (ev && /^(Red|SilverCaveElite)/.test(ev.script || '')
+		&& Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
 // ---------- the sealed champions ----------
 // BLUE and WALLACE both ship with `script: "0x0"`, so Trainers.claims() never
@@ -412,13 +417,16 @@ function applyGymLevelFloors() {
 // Called on any trainer victory. Gym Leaders award their badge; the Champion
 // crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
 function onTrainerDefeated(script, opts) {
-	// RED at Mt Silver — the ultimate battle; not a gym/league, so handle it here
+	// RED at Mt Silver. He keeps his own silence rather than a synthetic toast, but
+	// he is JOHKANTO's CHAMPION and no longer returns early — the league path below
+	// is what calls Badges.crown(), and the level cap's last step to 255 is gated on
+	// exactly that crown. Returning here left the ladder stuck at 240 forever.
 	if (script === 'Red') {
 		const fresh = !Story.getFlag('beat_red');
 		Story.setFlag('beat_red');
 		if (fresh) syncOverworldAchievements();
 		if (fresh && !(opts && opts.silent)) dialog.open('. . . . . . . . .\n\nRED says nothing, and turns back to the mountain.\n\nYou have bested the strongest trainer of all.');
-		return;
+		opts = { ...(opts || {}), silent: true };   // his silence IS the speech
 	}
 	const info = Badges.scriptInfo(script);
 	if (!info) return;
@@ -3057,9 +3065,23 @@ function scaleLegendaryLevel(level) {
 // level above it and the ace two. Walk in under-levelled and it is a close fight;
 // come back at Lv200 and it is still a close fight. Clamped to MAX_LEVEL so the
 // last gyms cannot ask for a level that cannot exist.
-const GYM_OVER_LEAD = 1, GYM_ACE_OVER_LEAD = 2;
-function gymLevelFor(isAce) {
-	return Math.min(Badges.MAX_LEVEL, partyLead() + (isAce ? GYM_ACE_OVER_LEAD : GYM_OVER_LEAD));
+// gym team / ace, then the league above it. The four elites and the Champion are
+// a step up from a gym rather than the same fight again — that is the whole
+// shape of a league — but they are the same rule, just further ahead.
+const BOSS_OVER_LEAD = { gym: [1, 2], elite: [2, 3], champion: [3, 5] };
+function bossLevelFor(kind, isAce) {
+	const [team, ace] = BOSS_OVER_LEAD[kind] || BOSS_OVER_LEAD.gym;
+	return Math.min(Badges.MAX_LEVEL, partyLead() + (isAce ? ace : team));
+}
+// kept as the name the gym work used; a JohKanto gym is the `gym` row above
+function gymLevelFor(isAce) { return bossLevelFor('gym', isAce); }
+// Mt Silver is a JOHTO map, so inJohKanto() is false there — the league is
+// recognised by its SCRIPT instead, which is also the only thing that can tell
+// an elite from a champion.
+function johkantoLeagueKind(script) {
+	const info = Badges.scriptInfo(script);
+	return (info && info.region === 'JOHKANTO' && (info.kind === 'elite' || info.kind === 'champion'))
+		? info.kind : null;
 }
 
 // ---------- alternate forms ----------
@@ -3203,8 +3225,10 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	const srcParty = team?.party?.length ? team.party : (roster?.party || []);
 	const aceLv = Math.max(0, ...srcParty.map(e => e.l || 0));
 	const foeLevel = (e) => {
-		if (!inJohKanto()) return e.l;
-		if (BOSS_CLASSES.has(className)) return gymLevelFor((e.l || 0) >= aceLv);
+		if (!inJohKanto() && !johkantoLeagueKind(scriptLabel) && !johkantoLeagueKind(trainerId)) return e.l;
+		const lk = johkantoLeagueKind(scriptLabel) || johkantoLeagueKind(trainerId);
+		if (lk) return bossLevelFor(lk, (e.l || 0) >= aceLv);
+		if (BOSS_CLASSES.has(className)) return bossLevelFor('gym', (e.l || 0) >= aceLv);
 		return scalePostgameLevel(e.l);
 	};
 	if (team?.party?.length) {
