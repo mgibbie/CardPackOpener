@@ -19,6 +19,7 @@ import * as Dex from './pokedex.js';
 import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
+import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
 import * as Settings from './settings.js';
 import * as Badges from './badges.js';
 import * as Trades from './trades.js';
@@ -2583,7 +2584,7 @@ player.onArrive = () => {
 // it. A caught/defeated flag stops it re-triggering. The plot awakening scenes
 // stay seeded off (they assume story state and lead to no catch); this is the
 // catch itself, decoupled from them.
-const LEGENDARY_ENCOUNTERS = {
+const HAND_PLACED_LEGENDS = {
 	// Hoenn weather trio (decoupled from the awakening plot)
 	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
 	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
@@ -2656,13 +2657,28 @@ const LEGENDARY_ENCOUNTERS = {
 			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'A volcanic roar — ENTEI blocks your path!' },
 	],
 };
+// ...plus the 87 that had no home anywhere, one at the bottom of each of 87
+// dungeons (legendaries_postgame.js, generated). The hand-placed table wins on a
+// collision, but the generator skips any map named above so there are none.
+const LEGENDARY_ENCOUNTERS = { ...POSTGAME_LEGENDS, ...HAND_PLACED_LEGENDS };
 // a Pokemon's overworld sprite, loaded on demand from data/pokemon_ow/<id>.png
 const owMonCache = new Map();
 function owMonSprite(id) {
 	if (!id) return null;
 	if (!owMonCache.has(id)) {
 		owMonCache.set(id, null);
-		getImage(`data/pokemon_ow/${id}.png`).then(img => owMonCache.set(id, img)).catch(() => {});
+		// Fall back to the BATTLE sprite when there is no overworld one. 28 of the
+		// placed legendaries are gen-9 Paradox/Ruin species with no pokemon_ow art,
+		// and drawLegendary simply skipped them — leaving an invisible tile that
+		// starts a legendary battle when you walk onto it, which reads as a bug
+		// rather than as a secret.
+		getImage(`data/pokemon_ow/${id}.png`)
+			.catch(() => {
+				const sp = battle.data?.species?.[id]?.sprite;
+				return sp ? getImage(`data/pokemon/${sp}`) : Promise.reject(new Error('no sprite'));
+			})
+			.then(img => owMonCache.set(id, img))
+			.catch(() => {});
 	}
 	return owMonCache.get(id);
 }
