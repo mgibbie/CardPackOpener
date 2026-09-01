@@ -100,9 +100,16 @@ if (!process.argv.includes('--ignore-postgame')) {
 	const body = main.slice(at, main.indexOf('\n];', at));
 	for (const m of body.matchAll(/'([a-z0-9_]+)'/g)) add(m[1], 'starter');
 }
-// legendaries
+// legendaries — the 87 generated placements, one at the bottom of each dungeon
 {
-	const at = main.indexOf('const LEGENDARY_ENCOUNTERS');
+	const pg = fs.readFileSync('overworld/legendaries_postgame.js', 'utf8');
+	for (const m of pg.matchAll(/species:\s*'([a-z0-9_]+)'/g)) add(m[1], 'legendary');
+}
+// ...and the hand-placed table in main.js. Note the name: LEGENDARY_ENCOUNTERS is
+// now the MERGE of the two, so reading from it here would find a spread
+// expression and no species at all.
+{
+	const at = main.indexOf('const HAND_PLACED_LEGENDS');
 	const body = main.slice(at, main.indexOf('\n};', at));
 	for (const m of body.matchAll(/species:\s*'([a-z0-9_]+)'/g)) add(m[1], 'legendary');
 }
