@@ -11,6 +11,15 @@ import { getJSON } from './engine.js';
 import * as Clock from './clock.js';
 import { DAYNIGHT } from './encounters_daynight.js';
 import { FREM_NIGHT } from './encounters_frem_night.js';
+import { POSTGAME } from './encounters_postgame.js';
+
+// JohKanto is the postgame region, and its roster is where every species the
+// rest of the game leaves uncatchable lives (tools/gen_postgame_encounters.mjs).
+// It wins over DAYNIGHT and the base table: all 23 JohKanto maps with a land
+// table are in DAYNIGHT, which would otherwise swallow these whole.
+// A few of its maps had no table at all before, so they have no `rate` in the
+// base data either — 25% is the gen-2 grass default.
+const POSTGAME_RATE = 25;
 
 // species that skew NOCTURNAL (more common at night) — mostly cave/grass night dwellers
 const NOCTURNAL = new Set([
@@ -66,8 +75,9 @@ export class Encounters {
 			: null;
 		if (!kind) return null;
 		const grp = this.data[mapId]?.[kind];
-		if (!grp) return null;
-		if (Math.random() * 100 > grp.rate) return null;
+		const pg = POSTGAME[mapId]?.[kind];
+		if (!grp && !pg) return null;
+		if (Math.random() * 100 > (grp?.rate ?? POSTGAME_RATE)) return null;
 		const pick = this.pick(mapId, kind);
 		// REPEL turns away anything weaker than your lead. Rolling first and then
 		// discarding is deliberate: it keeps the encounter RATE honest, so a repel
@@ -80,6 +90,10 @@ export class Encounters {
 	// explicitly (e.g. for tests) to force a time of day. Used for wild rolls AND the
 	// double-battle partner pick.
 	pick(mapId, kind = 'land', phase = Clock.phase()) {
+		// JohKanto's postgame roster first — it is authored per phase, so raw weights.
+		const pg = POSTGAME[mapId]?.[kind];
+		const pgSlots = kind === 'land' ? pg?.[phase] : pg;
+		if (pgSlots?.length) return this.weightedPick(pgSlots, phase, true);
 		// AUTHENTIC per-map day/night table (Johto grass, from pokecrystal) takes precedence —
 		// it's already time-specific, so pick from it raw (no reweighting, no overlay).
 		const dn = DAYNIGHT[mapId]?.[kind]?.[phase];
@@ -108,10 +122,14 @@ export class Encounters {
 	// Old rod slots [0,1], Good [2,4], Super [5,9]). Returns { id, level } or null when the
 	// map has no fishing table. The bite chance itself is handled by the caller (castRod).
 	fish(mapId, tier) {
+		// the postgame roster keeps each fishing table a full 10 slots precisely so
+		// these rod bands still mean what they say
+		const pg = POSTGAME[mapId]?.fishing;
 		const grp = this.data[mapId]?.fishing;
-		if (!grp || !grp.slots?.length) return null;
+		const all = pg?.length ? pg : grp?.slots;
+		if (!all?.length) return null;
 		const [lo, hi] = ({ 1: [0, 1], 2: [2, 4], 3: [5, 9] })[tier] || [0, 1];
-		const slots = grp.slots.slice(lo, hi + 1);
+		const slots = all.slice(lo, hi + 1);
 		if (!slots.length) return null;
 		const total = slots.reduce((s, x) => s + x.w, 0);
 		let r = Math.random() * total, slot = slots[0];
