@@ -7,6 +7,7 @@ import * as Bag from './bag.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 import { animScale } from './settings.js';
+import { expForLevel, levelForExp, MAX_LEVEL, CLASSIC_MAX_LEVEL } from './badges.js';
 
 const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
 // move-class lists that abilities key off
@@ -585,7 +586,7 @@ export function buildMon(speciesId, level, data) {
 		ability: (() => { const opts = data.abilities?.[speciesId]; return opts?.length ? opts[Math.floor(Math.random() * opts.length)] : null; })(),
 		friend: 70, // friendship: grows with wins/levels, some species evolve on it
 		types: [...sp.types], ivs, stats, maxHP: stats.hp, curHP: stats.hp,
-		exp: level ** 3, // medium-fast growth curve
+		exp: expForLevel(level), // medium-fast to 100, flat above (badges.js)
 		moves, sprite: sp.sprite, num: sp.num,
 	};
 }
@@ -611,7 +612,11 @@ export class Battle {
 		// Overworld progression clamps this (see Badges.levelCap); every other
 		// caller of this engine — PvP, the run modes, the arcade boxes — leaves it
 		// at 100 and is unaffected.
-		this.levelCap = 100;
+		// No cap by default: the overworld sets its own via refreshLevelCap(), and
+		// every other caller (PvP, the run modes, the Frontier) is uncapped. This has
+		// to be MAX_LEVEL rather than 100 now that mons can exceed 100 — a Lv150 mon
+		// in a PvP battle would otherwise sit permanently at the cap and never level.
+		this.levelCap = MAX_LEVEL;
 	}
 
 	async init() {
@@ -669,14 +674,14 @@ export class Battle {
 			meAlly, foeAlly, meAllyImg, foeAllyImg,
 			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
 			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
-			meAllyShownExp: meAlly ? (meAlly.exp ?? meAlly.level ** 3) : 0,
+			meAllyShownExp: meAlly ? (meAlly.exp ?? expForLevel(meAlly.level)) : 0,
 			plans: [], actionFor: 0,
 			party, me: playerMon, foe, foeImg, backSprites,
 			meImg: backSprites.get(playerMon),
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
-			meShownExp: playerMon.exp ?? playerMon.level ** 3,
+			meShownExp: playerMon.exp ?? expForLevel(playerMon.level),
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
@@ -737,7 +742,7 @@ export class Battle {
 			meAllyImg: null, foeAllyImg: null,
 			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
 			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
-			meAllyShownExp: meAlly ? (meAlly.exp ?? meAlly.level ** 3) : 0,
+			meAllyShownExp: meAlly ? (meAlly.exp ?? expForLevel(meAlly.level)) : 0,
 			plans: [], actionFor: 0,
 			party, me: playerMon, foe, backSprites, foeSprites,
 			foes: foeParty, foeIdx: 0, isTrainer: true, info,
@@ -746,7 +751,7 @@ export class Battle {
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
 			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
-			meShownExp: playerMon.exp ?? playerMon.level ** 3,
+			meShownExp: playerMon.exp ?? expForLevel(playerMon.level),
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
@@ -2946,7 +2951,7 @@ export class Battle {
 	// give one mon its exp, handle level-ups (stat recalc + move learning)
 	awardExp(mon, gain) {
 		const a = this.active;
-		mon.exp = (mon.exp ?? mon.level ** 3) + gain;
+		mon.exp = (mon.exp ?? expForLevel(mon.level)) + gain;
 		// SOOTHE BELL multiplies every friendship gain its holder earns. Friendship
 		// drives the friendship evolutions in evolution.js, so this is the item's
 		// whole point — without it the bell did nothing at all.
@@ -2954,8 +2959,8 @@ export class Battle {
 		mon.friend = Math.min(255, (mon.friend ?? 70) + 2 * bell);
 		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
-		const cap = Math.max(1, this.levelCap || 100);
-		while (mon.level < Math.min(100, cap) && mon.exp >= (mon.level + 1) ** 3) {
+		const cap = Math.max(1, this.levelCap || CLASSIC_MAX_LEVEL);
+		while (mon.level < Math.min(MAX_LEVEL, cap) && mon.exp >= expForLevel(mon.level + 1)) {
 			mon.level++;
 			mon.friend = Math.min(255, (mon.friend ?? 70) + 1 * bell);
 			const lvl = mon.level;
@@ -2991,8 +2996,8 @@ export class Battle {
 		// the moment the cap lifts this mon levels on its next battle. Runs AFTER
 		// the loop so a mon that levels INTO the cap is caught too. Mons already
 		// above the cap (gifts, trades) are never de-levelled.
-		if (mon.level >= cap && mon.level < 100 && mon.exp >= (mon.level + 1) ** 3) {
-			mon.exp = (mon.level + 1) ** 3 - 1;
+		if (mon.level >= cap && mon.level < MAX_LEVEL && mon.exp >= expForLevel(mon.level + 1)) {
+			mon.exp = expForLevel(mon.level + 1) - 1;
 			this.pushMsg(`${mon.name} is at the LEVEL CAP!`);
 		}
 	}
@@ -4020,7 +4025,7 @@ export class Battle {
 		// fill (and wrap across level-ups) instead of jumping; snaps on a mon swap
 		const easeExp = (mon, key, tag) => {
 			if (!mon) return;
-			const real = mon.exp ?? mon.level ** 3;
+			const real = mon.exp ?? expForLevel(mon.level);
 			if (a[tag] !== mon) { a[tag] = mon; a[key] = real; }
 			else if (a[key] == null || a[key] > real) a[key] = real;
 			else if (a[key] < real) a[key] = Math.min(real, a[key] + (real - a[key]) * Math.min(1, dt * 2.2) + 4 * dt);
@@ -4110,16 +4115,15 @@ export class Battle {
 
 	// medium-fast exp progress within the current level
 	expFrac(mon) {
-		const cur = mon.level ** 3, next = (mon.level + 1) ** 3;
+		const cur = expForLevel(mon.level), next = expForLevel(mon.level + 1);
 		return Math.max(0, Math.min(1, ((mon.exp ?? cur) - cur) / (next - cur)));
 	}
 	// progress for an animated exp value: derive the level it belongs to so the
 	// bar fills to full, then wraps to empty and keeps going across level-ups
 	expFracFor(mon, exp) {
 		let lvl = mon.level;
-		while (lvl > 1 && exp < lvl ** 3) lvl--;
-		while (lvl < 100 && exp >= (lvl + 1) ** 3) lvl++;
-		const cur = lvl ** 3, next = (lvl + 1) ** 3;
+		lvl = levelForExp(exp);
+		const cur = expForLevel(lvl), next = expForLevel(lvl + 1);
 		return Math.max(0, Math.min(1, (exp - cur) / (next - cur)));
 	}
 
@@ -4334,7 +4338,7 @@ export class Battle {
 			// portrait has no width for two side-by-side panels — the ally goes left
 			UI.monPanel(ctx, a.meAlly, portrait ? 14 * u : W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
 				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true,
-					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? a.meAlly.level ** 3)) });
+					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? expForLevel(a.meAlly.level))) });
 		}
 		UI.monPanel(ctx, a.foe, 14 * u, 14 * u, 272 * u, u,
 			{ shownHP: a.foeShownHP, boosts: a.foeBoosts, abilityName: this.abilityName(a.foe.ability),
@@ -4343,7 +4347,7 @@ export class Battle {
 		const meY = barY - 118 * u;
 		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
 			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true,
-				expFrac: this.expFracFor(a.me, a.meShownExp ?? (a.me.exp ?? a.me.level ** 3)), abilityName: this.abilityName(a.me.ability),
+				expFrac: this.expFracFor(a.me, a.meShownExp ?? (a.me.exp ?? expForLevel(a.me.level))), abilityName: this.abilityName(a.me.ability),
 				itemName: a.me.heldItem ? this.itemName(a.me) : null });
 		// party dots sit in a row just above the panel's right edge
 		UI.teamDots(ctx, a.party, a.me,

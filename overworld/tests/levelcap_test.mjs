@@ -43,7 +43,7 @@ A(/export const TIER_LEVEL_FLOOR/.test(badgesSrc), 'the gym level floors live in
 A(!/^const TIER_LEVEL_FLOOR = \[/m.test(fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8')),
 	'main.js no longer keeps its own copy of the floors');
 // the engine default must stay uncapped so PvP and the run modes are untouched
-A(/this\.levelCap = 100/.test(fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8')),
+A(/this\.levelCap = MAX_LEVEL/.test(fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8')),
 	'the battle engine defaults to no cap for every non-overworld caller');
 
 async function waitFor(fn, ms) {

@@ -229,11 +229,45 @@ export function badgesUntilLeague(region) { return Math.max(0, 8 - count(region)
 // never drift apart.
 export const TIER_LEVEL_FLOOR = [14, 20, 26, 29, 40, 42, 46, 48];
 
-export const MAX_LEVEL = 100;
+export const MAX_LEVEL = 255;
+// Where the main game ends. Levels 1-100 are the three shared regions; 101-255
+// are JOHKANTO's, earned one gym at a time.
+export const CLASSIC_MAX_LEVEL = 100;
 // A flat, readable ladder: start at 20 and add 10 per tier, which lands exactly
 // on 100 once all 24 gyms are behind you.
 export const BASE_LEVEL_CAP = 20;
 export const LEVEL_CAP_STEP = 10;
+// ...then JohKanto's eight gyms carry it the rest of the way: 120/140/.../240,
+// and its Champion opens the last stretch to 255.
+export const POST_CAP_STEP = 20;
+
+// ---------- growth curve ----------
+// Cubic (medium-fast) to 100, then FLAT per level above it.
+//
+// Extending `level ** 3` to 255 would cost 15.6 MILLION exp for the climb —
+// fifteen times the entire main game, or about 14,000 battles at postgame yields.
+// That is not a grind, it is a wall. Levels past 100 are a different thing from
+// levels below it: not a species growing into itself, but a postgame ladder. So
+// they are priced as one.
+//
+// POST_CAP_STEP_EXP is chosen so the whole 100 -> 255 climb costs 930,000 — a
+// second main game, near enough, rather than fifteen of them. The curve BELOW 100
+// is untouched, so every existing save keeps the exact level it had.
+export const POST_CAP_STEP_EXP = 6000;
+const CLASSIC_MAX_EXP = CLASSIC_MAX_LEVEL ** 3;
+export function expForLevel(level) {
+	const lv = Math.max(1, Math.min(MAX_LEVEL, Math.floor(level) || 1));
+	return lv <= CLASSIC_MAX_LEVEL ? lv ** 3 : CLASSIC_MAX_EXP + (lv - CLASSIC_MAX_LEVEL) * POST_CAP_STEP_EXP;
+}
+export function levelForExp(exp) {
+	const e = Math.max(0, exp || 0);
+	if (e < CLASSIC_MAX_EXP) {
+		let lv = 1;
+		while (lv < CLASSIC_MAX_LEVEL && e >= (lv + 1) ** 3) lv++;
+		return lv;
+	}
+	return Math.min(MAX_LEVEL, CLASSIC_MAX_LEVEL + Math.floor((e - CLASSIC_MAX_EXP) / POST_CAP_STEP_EXP));
+}
 
 // The cap is keyed off the tier you have cleared in EVERY region at once
 // (Quest.globalTier() = the minimum badge count across Kanto/Johto/Hoenn), so
@@ -243,7 +277,15 @@ export const LEVEL_CAP_STEP = 10;
 // levelcap_test asserts that against the floors so a retune can't break it.
 export function levelCap(tier) {
 	const t = Math.max(0, Math.min(8, tier | 0));
-	return Math.min(MAX_LEVEL, BASE_LEVEL_CAP + t * LEVEL_CAP_STEP);
+	const main = BASE_LEVEL_CAP + t * LEVEL_CAP_STEP;
+	if (main < CLASSIC_MAX_LEVEL) return main;
+	// The main game is done. JOHKANTO's own eight badges carry the cap the rest of
+	// the way — 120/140/160/180/200/220/240, and beating its Champion lifts the
+	// last stop to 255. Keyed on JohKanto alone (not globalTier) because the three
+	// shared regions have no more gyms to give.
+	const jk = Math.max(0, Math.min(8, count('JOHKANTO')));
+	if (jk >= 8) return isChampion('JOHKANTO') ? MAX_LEVEL : CLASSIC_MAX_LEVEL + 7 * POST_CAP_STEP;
+	return Math.min(MAX_LEVEL, CLASSIC_MAX_LEVEL + jk * POST_CAP_STEP);
 }
 
 // what the cap becomes after one more gym everywhere — for "next: Lv26" UI

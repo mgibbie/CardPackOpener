@@ -202,6 +202,9 @@ trainers.onEngage = t => {
 // beat's dungeon floors (they then route through the normal sight/battle pipeline)
 // un-hide villain grunts during their beat, AND spawn RED atop MT SILVER once you hold
 // all 16 badges (JOHTO Champion + the 8 JohKanto gyms) — the post-game crown
+// JohKanto's trainers scale with its wilds — same rule, same reason (see
+// scalePostgameLevel). Outside JohKanto this is the identity.
+trainers.levelScale = (l) => (inJohKanto() ? scalePostgameLevel(l) : l);
 trainers.spawnFlagged = (ev) => Quest.isDungeonFloor(playerRegion(), world.current.name)
 	|| (ev && ev.script === 'Red' && Badges.isChampion('JOHTO') && Badges.count('JOHKANTO') >= 8);
 
@@ -484,9 +487,9 @@ function healTeam(team) {
 	for (const m of (team || [])) { if (!m) continue; m.curHP = m.maxHP; m.status = null; for (const mv of m.moves || []) mv.pp = mv.maxPp; }
 }
 function facLevel(cfg) {
-	const base = Math.min(100, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50))));
+	const base = Math.min(Badges.MAX_LEVEL, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50))));
 	if (cfg.level === 50) return 50;
-	if (cfg.level === 'party+5') return Math.min(100, base + 5);
+	if (cfg.level === 'party+5') return Math.min(Badges.MAX_LEVEL, base + 5);
 	return base;
 }
 // ---- spectate broadcast: publish a board snapshot of the run so friends can watch ----
@@ -1592,9 +1595,9 @@ function shopKey(k) {
 
 function useRareCandy(mon) {
 	// a RARE CANDY can't buy its way past the cap either
-	if (mon.level >= levelCapNow() || mon.level >= 100 || mon.curHP <= 0) return false;
+	if (mon.level >= levelCapNow() || mon.level >= Badges.MAX_LEVEL || mon.curHP <= 0) return false;
 	mon.level++;
-	mon.exp = Math.max(mon.exp ?? 0, mon.level ** 3);
+	mon.exp = Math.max(mon.exp ?? 0, Badges.expForLevel(mon.level));
 	const sp = battle.data.species[mon.speciesId];
 	const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 	const oldMax = mon.maxHP;
@@ -1731,7 +1734,7 @@ function bagKey(k) {
 				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
 					Bag.consume(id);
 					bagMenu.picking = false;
-				} else if (item?.kind === 'candy' && mon.level >= levelCapNow() && mon.level < 100) {
+				} else if (item?.kind === 'candy' && mon.level >= levelCapNow() && mon.level < Badges.MAX_LEVEL) {
 					// say why, instead of the candy silently doing nothing
 					bagMenu.flash = `${mon.name} is at the LEVEL CAP (Lv${levelCapNow()}).`;
 				} else if (item?.kind === 'vitamin') {
@@ -2860,7 +2863,7 @@ function startLegendaryBattle(e) {
 	if (!party || !leadMon(party) || battle.blocking) return;
 	Dex.markSeen(e.species);
 	dialog.open(e.intro, () => {
-		battle.start(party, e.species, e.level, result => {
+		battle.start(party, e.species, scaleLegendaryLevel(e.level), result => {
 			if (result === 'caught' && battle.lastCaught) {
 				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
 				const where = addCaught(party, battle.lastCaught);
@@ -2995,6 +2998,41 @@ function cutsceneCtx(talker, scriptLabel) {
 }
 function buildMonForGift(species, level) {
 	return battleBuildMon(species, level, battle.data);
+}
+
+// ---------- postgame level scaling ----------
+// JOHKANTO is the postgame region. Its roster is authored for a team that has
+// just won a League — Lv50-77 across the eight gym territories — but the cap now
+// runs to 255, so without this the whole region turns into a formality the moment
+// you out-level it, which is exactly the content the coverage work just filled.
+//
+// The scale is RELATIVE, not a flat "match the player": multiplying keeps the
+// gym-order ramp intact, so Brock's territory stays easier than Blue's at every
+// player level. And it only ever scales UP, capped by the level cap and by your
+// own lead — the region can meet you, never outrun you.
+const JOHKANTO_DESIGN_LEVEL = 60;   // the middle of the authored 50-77 band
+// Read from the MAP, not the player's saved region: `magepunk_region` is which
+// region you started in, and you can walk into JohKanto from either side.
+// Unprefixed border maps (Seafoam, Cerulean Cave) are shared with Kanto and are
+// deliberately left alone.
+function inJohKanto() { return /^MAP_JOHKANTO_/.test(world.current?.map?.id || ''); }
+function partyLead() { return Math.max(1, ...((party || []).filter(Boolean).map(m => m.level || 1)), 1); }
+// Clamped by YOUR LEAD, deliberately not by the level cap. The cap is keyed on
+// badges in the three shared regions and says what you *should* be; your lead
+// says what you *are*. Clamping to the cap made a Lv150 party fight Lv20 foes
+// whenever the cap had not caught up, which is the opposite of the point.
+function scalePostgameLevel(level) {
+	const lead = partyLead();
+	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
+	const scaled = Math.round(level * (lead / JOHKANTO_DESIGN_LEVEL));
+	return Math.max(level, Math.min(lead, scaled));
+}
+// A legendary should never be a pushover, wherever it is: lift it toward your
+// lead if you have outgrown it, but never past your lead and never DOWN, so
+// Articuno at Lv50 is still a wall for a mid-game Kanto team.
+function scaleLegendaryLevel(level) {
+	const lead = partyLead();
+	return Math.max(level, lead);
 }
 
 // ---------- alternate forms ----------
@@ -3135,7 +3173,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	let className = team?.class || roster?.class || 'Trainer';
 	if (team?.party?.length) {
 		foeParty = team.party.map(e => {
-			const mon = battleBuildMon(e.s, e.l, battle.data);
+			const mon = battleBuildMon(e.s, inJohKanto() ? scalePostgameLevel(e.l) : e.l, battle.data);
 			if (mon && e.moves?.length) {
 				mon.moves = e.moves.map(id => {
 					const mv = battle.data.moves[id];
@@ -3147,7 +3185,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		}).filter(Boolean);
 	}
 	if (!foeParty.length && roster?.party?.length) {
-		foeParty = roster.party.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+		foeParty = roster.party.map(e => battleBuildMon(e.s, inJohKanto() ? scalePostgameLevel(e.l) : e.l, battle.data)).filter(Boolean);
 	}
 	if (!foeParty.length) {
 		const pool = trainers.data?.defaultPool || ['rattata', 'pidgey'];
@@ -5651,6 +5689,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
+		inJohKanto, scalePostgameLevel, scaleLegendaryLevel, levelCapNow,
 		levelCapNow, levelCapHint, refreshLevelCap,
 		// the map editor maps screen pixels back to tiles, so it needs the same
 		// camera and logical view size the renderer uses

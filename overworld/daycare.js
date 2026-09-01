@@ -3,6 +3,7 @@
 // the mother's base-form baby after more steps. State persists in localStorage.
 import { buildMon, statsFor } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { expForLevel, levelForExp } from './badges.js';
 
 const KEY = 'magepunk_daycare';
 const EGG_LAY_STEPS = 128;   // both slots filled -> egg appears
@@ -74,7 +75,7 @@ export function deposit(mon) {
 function cappedLevel(lvl, cap) { return cap ? Math.min(lvl, Math.max(cap, 1)) : lvl; }
 function levelFor(mon, cap) {
 	let lvl = mon.level;
-	while (lvl < 100 && (mon.exp ?? lvl ** 3) >= (lvl + 1) ** 3) lvl++;
+	lvl = levelForExp(mon.exp ?? expForLevel(lvl));
 	// never drag a mon DOWN to the cap — only stop it climbing past
 	return Math.max(mon.level, cappedLevel(lvl, cap));
 }
@@ -106,7 +107,7 @@ export function withdraw(slot, data, cap) {
 export function step(data, onHatch) {
 	let dirty = false;
 	for (const mon of state.slots) {
-		if (mon) { mon.exp = (mon.exp ?? mon.level ** 3) + 1; dirty = true; }
+		if (mon) { mon.exp = (mon.exp ?? expForLevel(mon.level)) + 1; dirty = true; }
 	}
 	// egg production while a compatible pair is in; the egg snapshots its
 	// inheritance at lay time (a parent may be withdrawn before it hatches)

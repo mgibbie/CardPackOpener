@@ -2,6 +2,7 @@
 // engagement. Rosters come from trainers.json (FireRed decomp + Johto
 // pokecrystal + hand-crafted gym leaders); fallback teams from class pools.
 import { getJSON, getImage, META } from './engine.js';
+import { MAX_LEVEL } from './badges.js';
 import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
 
@@ -246,7 +247,12 @@ export class Trainers {
 	}
 
 	// team + display info for a trainer (buildParty/buildInfo port)
+	//
+	// `levelScale` is set by main.js and is how JOHKANTO stays a fight: its rosters
+	// are authored for a team fresh off a League, and the cap now runs to 255. This
+	// module has no business knowing about regions or badges, so it just asks.
 	buildBattle(t, data) {
+		const scale = l => Math.max(1, Math.min(MAX_LEVEL, this.levelScale ? this.levelScale(l) : l));
 		const script = t.ev.script && t.ev.script !== '0x0' ? t.ev.script : null;
 		const roster = script ? this.data.rosters[script] : null;
 		// VS Seeker rematches climb: +2 levels per rematch tier (badges at re-arm)
@@ -254,7 +260,7 @@ export class Trainers {
 		let party = [];
 		if (roster?.party?.length) {
 			party = roster.party.map(e => {
-				const mon = buildMon(e.s, Math.min(100, e.l + bump), data);
+				const mon = buildMon(e.s, scale(e.l + bump), data);
 				if (!mon) return null;
 				// authentic movesets / held items when the roster carries them
 				// (gen_trainer_movesets.mjs backfills these from the decomps);
@@ -276,7 +282,7 @@ export class Trainers {
 			const n = 1 + Math.floor(Math.random() * 2);
 			for (let i = 0; i < n; i++) {
 				const s = pool[Math.floor(Math.random() * pool.length)];
-				const lv = Math.max(5, Math.min(100, base + bump + Math.floor(Math.random() * 7) - 3));
+				const lv = Math.max(5, scale(base + bump + Math.floor(Math.random() * 7) - 3));
 				const mon = buildMon(s, lv, data);
 				if (mon) party.push(mon);
 			}
