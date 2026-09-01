@@ -3257,7 +3257,15 @@ function runScriptLabel(label, talker) {
 	// serves both -- see trades.js.
 	const tr = Trades.forScript(world.current.name, label);
 	if (tr) { startNpcTrade(tr, talker); return true; }
-	if (!mapScripts[label]) return false;
+	if (!mapScripts[label]) {
+		// Crystal factors its common NPCs through `jumpstd`, which the transpiler
+		// drops — so 237 bookshelves, signs and trash cans have no label at all.
+		// Run the shared body instead of falling through to silence.
+		const std = Story.crystalStd(label);
+		if (!std) return false;
+		cutscene.run({ [label]: std }, label, cutsceneCtx(talker, label), () => { saveParty(party); });
+		return true;
+	}
 	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); });
 	return true;
 }

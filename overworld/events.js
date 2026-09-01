@@ -4,6 +4,7 @@
 // stack, so ported scripts' goto/call/return control flow works. While a
 // cutscene runs it freezes player input and drives NPC/player movement + text.
 import { safeLoad, safeSave } from './safestore.js';
+import { STD_OF, STD_TEXT } from './crystal_stds.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -96,6 +97,42 @@ const COMMON_STUBS = {
 	EventScript_PkmnCenterNurse: [{ op: 'special', name: 'HealPlayerParty' },
 		{ op: 'msg', text: 'We restored your POKeMON to full health.' }, { op: 'return' }],
 };
+
+// ---------- Crystal's shared scripts ----------
+// Crystal factors its common NPCs through `jumpstd <StdScript>`, and the
+// transpiler emits nothing for that op — so a label whose whole body is one
+// jumpstd vanished from the script file and 237 objects and signs across Gen-2
+// Kanto and Johto did nothing at all when talked to. Every bookshelf, every
+// POKeMON CENTER and MART sign, every trash can, the Game Corner coin vendor.
+//
+// This is the same idea as COMMON_STUBS above, for the other decomp. The text
+// ones come straight from pokecrystal's std_text.asm (crystal_stds.js); the rest
+// are behavioural and get a body here.
+const STD_BODY = {
+	// the healing itself is a service tile (services.js), so talking to the nurse
+	// from anywhere else just gets her line
+	PokecenterNurseScript: [{ op: 'special', name: 'HealPlayerParty' },
+		{ op: 'msg', text: 'We hope to see you again!' }, { op: 'end' }],
+	// Crystal's button is a sound and nothing else; say something rather than
+	// leave a dead tile
+	ElevatorButtonScript: [{ op: 'msg', text: 'The ELEVATOR button is lit.' }, { op: 'end' }],
+	HappinessCheckScript: [{ op: 'special', name: 'GetLeadMonFriendshipScore', store: 'VAR_RESULT' },
+		{ op: 'msg', text: 'Your POKeMON looks happy to be with you!' }, { op: 'end' }],
+	GameCornerCoinVendorScript: [{ op: 'msg', text: 'Care to buy some COINS for the GAME CORNER?' }, { op: 'end' }],
+	Radio2Script: [{ op: 'msg', text: 'The RADIO is playing a cheerful POKeMON march.' }, { op: 'end' }],
+	// StrengthBoulderScript / SmashRockScript are deliberately absent: those
+	// objects are handled as HM field obstacles by items.js off their graphics_id,
+	// which is the mechanism that actually moves and breaks them. Giving them a
+	// talk script here would put a message in front of the HM prompt.
+};
+// the ops for a label the map script does not have, or null
+export function crystalStd(label) {
+	const std = STD_OF[label];
+	if (!std) return null;
+	if (STD_BODY[std]) return STD_BODY[std];
+	const text = STD_TEXT[std];
+	return text ? [{ op: 'msg', text }, { op: 'end' }] : null;
+}
 
 export class Cutscene {
 	constructor() { this.cur = null; }
