@@ -218,6 +218,20 @@ export function badgeName(region, id) {
 	return (BADGES[regionKey(region)].find(b => b.id === id) || {}).name || 'Badge';
 }
 
+// Which region's rules apply where you are STANDING.
+//
+// `magepunk_region` records the region you STARTED in and is only ever KANTO,
+// JOHTO or HOENN — so playerRegion() can never return JOHKANTO, and the
+// HM_GATE.JOHKANTO row below was dead config that nothing could reach. Gen-2
+// Kanto used whichever region you happened to start in, which also meant a Johto
+// starter needed 8 badges for WATERFALL there and a Kanto starter needed none.
+//
+// The map id is the only honest source. Unprefixed border maps (Silver Cave,
+// Indigo Plateau) belong to Johto and keep the fallback.
+export function regionOfMap(mapId, fallback) {
+	return /^MAP_JOHKANTO_/.test(String(mapId || '')) ? 'JOHKANTO' : regionKey(fallback);
+}
+
 // badges required to use an HM field move in this region (0 = always allowed)
 export function hmReq(region, hmId) {
 	return HM_GATE[regionKey(region)]?.[hmId] || 0;

@@ -15,7 +15,12 @@ import * as Bag from './bag.js';
 import * as Story from './events.js';
 import { globalTier } from './quest.js';
 
-function region() { return Badges.regionKey(localStorage.getItem('magepunk_region')); }
+// The region you are STANDING in. `magepunk_region` is only ever KANTO/JOHTO/
+// HOENN, so an HM-gated blocker in Gen-2 Kanto was reading another region's
+// badge count and HM table. Set by the Blockers instance on every map load.
+let curMapId = null;
+export function setBlockerMap(mapId) { curMapId = mapId; }
+function region() { return Badges.regionOfMap(curMapId, localStorage.getItem('magepunk_region')); }
 
 // does a condition currently HOLD — i.e. should the obstacle be GONE?
 function condMet(cond) {
@@ -211,6 +216,7 @@ export class Blockers {
 
 	loadForMap() {
 		const id = this.world.current.map.id;
+		setBlockerMap(id);   // HM gates read the region of the map you are on
 		this.list = (BLOCKERS[id] || []).filter(b => !condMet(b.cond)); // present only while unmet
 		this.givers = (GIVERS[id] || []).slice();
 	}
