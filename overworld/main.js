@@ -2596,8 +2596,17 @@ const LEGENDARY_ENCOUNTERS = {
 	MAP_ANCIENT_TOMB: { species: 'registeel', dex: 379, level: 40, x: 8, y: 7, flag: 'legend_caught_registeel',
 		requires: () => Badges.isChampion('HOENN'), intro: 'A body of tempered steel unseals itself — REGISTEEL awakens.' },
 	// event-island legendaries (reached by the post-game EON/SEAGALLOP ferry, champion-gated)
-	MAP_SOUTHERN_ISLAND_INTERIOR: { species: 'latios', dex: 381, level: 50, x: 13, y: 12, flag: 'legend_caught_latios',
-		requires: () => Badges.isChampion('HOENN'), intro: 'A blue eon POKeMON drifts amid the leaves — LATIOS regards you keenly.' },
+	// The EON DUO, both on their island. Emerald gives you one and roams the other,
+	// and we have no roamer — so LATIAS was reachable nowhere at all (the script
+	// route is `BattleSetup_StartLatiBattle`, one of the 427 specials with no
+	// handler). Two eon dragons on one island is the liberty that makes the pair
+	// completable; they take separate flags, so it is still one of each.
+	MAP_SOUTHERN_ISLAND_INTERIOR: [
+		{ species: 'latios', dex: 381, level: 50, x: 13, y: 12, flag: 'legend_caught_latios',
+			requires: () => Badges.isChampion('HOENN'), intro: 'A blue eon POKeMON drifts amid the leaves — LATIOS regards you keenly.' },
+		{ species: 'latias', dex: 380, level: 50, x: 11, y: 12, flag: 'legend_caught_latias',
+			requires: () => Badges.isChampion('HOENN'), intro: 'A red eon POKeMON watches from the branches — LATIAS reveals herself.' },
+	],
 	MAP_BIRTH_ISLAND_EXTERIOR: { species: 'deoxys', dex: 386, level: 60, x: 15, y: 3, flag: 'legend_caught_deoxys',
 		requires: () => Badges.isChampion('HOENN'), intro: 'The strange triangle pulses — DEOXYS materializes from deep space.' },
 	MAP_FARAWAY_ISLAND_INTERIOR: { species: 'mew', dex: 151, level: 30, x: 13, y: 17, flag: 'legend_caught_mew',
@@ -2922,6 +2931,21 @@ function cutsceneCtx(talker, scriptLabel) {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
 			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
 		},
+		// Crystal's `giveegg`. Elm's aide hands over the TOGEPI EGG in the Violet
+		// POKeMON CENTER; the op was dropped in transpile (along with the `scall`
+		// body that announced it), so the aide's whole scene played and nothing
+		// changed hands — TOGEPI and TOGETIC were obtainable nowhere.
+		giveEgg: (species, level) => {
+			if (!battle.data.species[species]) return;
+			if (Daycare.giftEgg(species)) {
+				hud.textContent = 'You received an EGG! It is at the DAY CARE — walk to hatch it.';
+				return;
+			}
+			// the Day Care egg slot is busy with a bred egg; hand over the POKeMON
+			// itself rather than dropping the gift on the floor
+			const mon = buildMonForGift(species, level);
+			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
+		},
 		healParty: () => healParty(party),
 		warp: (mapId, warpId) => warpTo(mapId, warpId),
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
@@ -2929,6 +2953,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
+		wildBattle: (species, level) => startScriptedWildBattle(species, level),
 		// a clerk's `openmart`: raise the standard shop counter and hold the script
 		// until it closes (shopKey resumes the cutscene on exit)
 		openMart: () => {
@@ -2942,6 +2967,59 @@ function cutsceneCtx(talker, scriptLabel) {
 }
 function buildMonForGift(species, level) {
 	return battleBuildMon(species, level, battle.data);
+}
+// A STATIC wild battle started BY A SCRIPT: the Snorlax asleep in the road, the
+// Sudowoodo posing as a tree, the Voltorb disguised as a Rocket-base switch.
+//
+// Both transpilers dropped the battle itself and kept everything around it, so
+// these scripts played out in full and never fought: FireRed's `setwildbattle` +
+// `dowildbattle` vanished, and Crystal's `loadwildmon` + `startbattle` came
+// through as a `trainerbattle` with an empty trainer id. On Route 12 that meant
+// using the POKe FLUTE woke the Snorlax, hid it, and moved on — the species was
+// catchable nowhere in the game as a result.
+//
+// Blocks the script like a trainer battle does, and records the real outcome so
+// the script's own `GetBattleOutcome` branch works instead of always reading WON.
+function startScriptedWildBattle(species, level) {
+	if (!species || !battle.data?.species?.[species]) return 'skip';
+	if (!party || !leadMon(party) || battle.blocking) return 'skip';
+	Dex.markSeen(species);
+	battle.start(party, species, level, result => {
+		if (result === 'caught' && battle.lastCaught) {
+			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
+			const where = addCaught(party, battle.lastCaught);
+			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+			offerNickname(battle.lastCaught);
+			lastBattleOutcome = B_OUTCOME_CAUGHT;
+			Story.setVar('VAR_RESULT', B_OUTCOME_CAUGHT);
+			cutscene.resume();
+		} else if (result === 'victory') {
+			lastBattleOutcome = B_OUTCOME_WON;
+			Story.setVar('VAR_RESULT', B_OUTCOME_WON);
+			evolution.check(party, battle.data);
+			saveParty(party);
+			cutscene.resume();
+		} else if (result === 'defeat') {
+			// blacked out: heal and abandon the rest of the script, as trainer
+			// battles do. Note the static is GONE either way — the decomp scripts
+			// set the object's hide flag before the battle, not after, so losing to
+			// the Route 12 Snorlax costs you that Snorlax. That is what the original
+			// does, and the second one on Route 16 is the game's own second chance.
+			lastBattleOutcome = B_OUTCOME_LOST;
+			Story.setVar('VAR_RESULT', B_OUTCOME_LOST);
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			cutscene.stop();
+		} else {
+			// ran / it fled — the decomp scripts treat RAN the same as WON (the
+			// encounter is over and the object goes away), so let the script run on
+			lastBattleOutcome = B_OUTCOME_RAN;
+			Story.setVar('VAR_RESULT', B_OUTCOME_RAN);
+			saveParty(party);
+			cutscene.resume();
+		}
+	});
+	return 'wait';
 }
 function startCutscene(steps, onDone) {
 	if (cutscene.blocking) return;
@@ -3014,6 +3092,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
+			lastBattleOutcome = B_OUTCOME_WON;
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
 			saveParty(party);
 			onTrainerDefeated(talker?.ev?.script, { silent: true }); // badge/crown; the script's own speech announces it
@@ -3021,6 +3100,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		} else {
 			// blacked out / fled: heal and abandon the rest of the script
 			Story.setVar('VAR_RESULT', 0);
+			lastBattleOutcome = B_OUTCOME_LOST;
 			if (result === 'defeat') { healParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
 			cutscene.stop();
 		}
@@ -3279,7 +3359,12 @@ function seedStoryState(region) {
 // computed value the following branch reads; action specials just do the thing.
 // Unknown store-specials default to 0 so branches take the "nothing happened"
 // path deterministically rather than reading a stale var.
-const B_OUTCOME_WON = 1;
+const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME_CAUGHT = 7;
+// What the last script-driven battle actually did. `GetBattleOutcome` used to
+// answer WON unconditionally, on the assumption that scripted battles were
+// skipped entirely; now that static wild battles really run, the scripts that
+// branch on the outcome deserve the truth.
+let lastBattleOutcome = B_OUTCOME_WON;
 function runSpecial(name, store) {
 	// query specials write their result to the given store var, or VAR_RESULT by
 	// the decomp convention when a plain `special` (no store) is used
@@ -3301,7 +3386,7 @@ function runSpecial(name, store) {
 		case 'QuestLog_CutRecording': return; // cosmetic / system
 
 		// --- store-writing queries (a following branch reads `store`) ---
-		case 'GetBattleOutcome': return set(B_OUTCOME_WON); // scripted battles skipped -> treat as won
+		case 'GetBattleOutcome': return set(lastBattleOutcome); // a real static battle records its own; otherwise WON
 		case 'CalculatePlayerPartyCount': return set((party || []).length);
 		case 'GetPlayerPartyCountForOverworld': return set((party || []).length);
 		case 'IsNationalPokedexEnabled': return set(1);

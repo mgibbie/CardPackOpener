@@ -114,6 +114,13 @@ const scriptGifts = new Map();               // species -> the script file that 
 	for (const f of fs.readdirSync(dir)) {
 		if (!f.endsWith('.json')) continue;
 		const raw = fs.readFileSync(path.join(dir, f), 'utf8');
+		// `wildbattle` is a STATIC encounter the script starts (Snorlax in the road,
+		// the Sudowoodo posing as a tree) — a real acquisition route, not a gift,
+		// but reachable all the same.
+		for (const m of raw.matchAll(/"op":"wildbattle","species":"([a-z0-9_]+)"/g)) {
+			const hit = speciesKey(m[1]);
+			if (hit) { add(hit, 'static'); }
+		}
 		if (!/"(givemon|giveegg)"/.test(raw)) continue;
 		// every species this file ever puts in a var — the indirect candidates
 		const viaVar = [...raw.matchAll(/"value":\s*"(SPECIES_[A-Z0-9_]+)"/g)].map(m => m[1]);

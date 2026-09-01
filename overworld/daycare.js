@@ -133,6 +133,20 @@ export function step(data, onHatch) {
 	if (dirty) save(state);
 }
 
+// An EGG handed over by a script rather than bred — Elm's aide in the Violet
+// POKeMON CENTER gives the TOGEPI EGG this way. Eggs in this port live in the
+// Day Care slot and hatch as you walk (they never sit in the party), so a gift
+// egg goes there too and still has to be walked out and collected. `inherit` is
+// null because there are no parents to inherit from, which applyInheritance
+// already treats as "nothing to fold in".
+// Returns false when a bred egg is already occupying the slot, so the caller can
+// fall back to handing over the POKeMON itself rather than silently eating it.
+export function giftEgg(speciesId) {
+	if (!speciesId || state.egg) return false;
+	state.egg = { speciesId, hatch: EGG_HATCH_STEPS, ready: false, inherit: null, gift: true };
+	save(state);
+	return true;
+}
 export function hasReadyEgg() { return !!(state.egg && state.egg.ready); }
 export function eggPending() { return !!(state.egg && !state.egg.ready); }
 
