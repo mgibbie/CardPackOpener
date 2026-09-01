@@ -25,10 +25,22 @@ export function setVar(v, val) { store.vars[v] = val; save(); }
 export function resetStory() { store = { flags: {}, vars: {} }; save(); }
 
 // resolve a symbolic value (a var name, TRUE/FALSE, or a literal number)
+// How a battle ended, as the decomp scripts name it (include/constants/battle.h).
+// 188 branches across the ported scripts compare VAR_RESULT against these, and
+// every one of them was dead: the symbol fell through to `Number(v)` -> NaN ->
+// the raw string, so a numeric VAR_RESULT could never equal it. That was
+// invisible while no scripted battle recorded an outcome; now that static wild
+// battles run for real, the post-battle branches need to resolve.
+const B_OUTCOME = {
+	B_OUTCOME_WON: 1, B_OUTCOME_LOST: 2, B_OUTCOME_DREW: 3, B_OUTCOME_RAN: 4,
+	B_OUTCOME_PLAYER_TELEPORTED: 5, B_OUTCOME_MON_FLED: 6, B_OUTCOME_CAUGHT: 7,
+	B_OUTCOME_NO_SAFARI_BALLS: 8, B_OUTCOME_FORFEITED: 9, B_OUTCOME_MON_TELEPORTED: 10,
+};
 function resolveValue(v) {
 	if (typeof v === 'number') return v;
 	if (v === 'TRUE') return 1;
 	if (v === 'FALSE') return 0;
+	if (typeof v === 'string' && B_OUTCOME[v] !== undefined) return B_OUTCOME[v];
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
 	const n = Number(v);
 	return isNaN(n) ? v : n;
@@ -155,6 +167,21 @@ export class Cutscene {
 				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); break; }
 				case 'takeitem': { const g = giveArgs(op); if (g.id) ctx.takeItem?.(g.id, g.n); break; }
 				case 'givemon': ctx.giveMon?.(speciesId(op.species), resolveValue(op.level) || 5); break;
+				// an EGG gift (Crystal's `giveegg`) — the mon arrives unhatched, so it
+				// goes to the party/box as an egg with a step counter, not as a Pokémon
+				case 'giveegg': ctx.giveEgg?.(speciesId(op.species), resolveValue(op.level) || 5); break;
+				// a STATIC wild battle: Snorlax in the road, the Sudowoodo posing as a
+				// tree, the Rocket-base Voltorb. Both transpilers lost these — FireRed's
+				// `setwildbattle`/`dowildbattle` vanished outright and Crystal's
+				// `loadwildmon`/`startbattle` became a `trainerbattle` with no trainer —
+				// so the scripts ran the whole encounter and simply never fought. It
+				// blocks like a trainer battle, because the script reads the outcome
+				// afterwards and branches on it.
+				case 'wildbattle':
+					if (ctx.wildBattle?.(speciesId(op.species), resolveValue(op.level) || 5) === 'wait') {
+						this._advance(); c.sub = { kind: 'battle' }; return;
+					}
+					break;
 				case 'hideobj': { const a = this._actor(op.who); if (a) a.hidden = true; ctx.hideObj?.(op.who); break; }
 				case 'showobj': { const a = this._actor(op.who); if (a) a.hidden = false; ctx.showObj?.(op.who); break; }
 				case 'setobjxy': ctx.setObjXy?.(op.who, op.x, op.y); break;
