@@ -5,6 +5,7 @@
 // cutscene runs it freezes player input and drives NPC/player movement + text.
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
+import { SCENE_SET } from './crystal_scenes.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -24,6 +25,32 @@ export function getVar(v) { return store.vars[v] || 0; }
 export function hasVar(v) { return Object.prototype.hasOwnProperty.call(store.vars, v); }
 export function setVar(v, val) { store.vars[v] = val; save(); }
 export function resetStory() { store = { flags: {}, vars: {} }; save(); }
+
+// ---------- object visibility ----------
+// Crystal hides an object_event while its event flag is SET, and shows it while
+// clear (engine/overworld/map_objects_2.asm, CheckObjectFlag: CHECK_FLAG, then
+// `jr nz, .masked`; a flag of -1 means "always appear"). `clearevent` is how a
+// set-piece delivers its cast.
+//
+// This port hid an object that had a flag AT ALL, whichever way the flag pointed
+// — so every story NPC in the Crystal regions was deleted from the game for
+// good. MISTY and the whole Cerulean Gym, and BLUE and his Viridian Gym guide,
+// were among them, which made two Gen-2 Kanto badges UNOBTAINABLE and left RED
+// sealed behind a gate wanting eight badges that could only ever reach six.
+//
+// Crystal only, deliberately. Reading the flag honestly needs the right STARTING
+// state, and Crystal has one seeded from its own InitializeEventsScript
+// (crystal_init_events.js) — which is what keeps Misty at the Cerulean Cape
+// rather than in her gym on day one. FireRed and Emerald keep the blanket rule
+// until their own initial-flag state is ported: their FLAG_HIDE_*,
+// FLAG_DECORATION_* and FLAG_TEMP_* families gate ~2,400 objects that would
+// otherwise all appear at once.
+export function objectHiddenByFlag(ev, crystal) {
+	const f = ev && ev.flag;
+	if (!f || f === '0') return false;   // no flag: always visible
+	if (!crystal) return true;           // FireRed / Emerald: unchanged for now
+	return getFlag(f);                   // Crystal: hidden only while the flag is SET
+}
 
 // resolve a symbolic value (a var name, TRUE/FALSE, or a literal number)
 // How a battle ended, as the decomp scripts name it (include/constants/battle.h).
@@ -134,6 +161,25 @@ export function crystalStd(label) {
 	return text ? [{ op: 'msg', text }, { op: 'end' }] : null;
 }
 
+// ---------- Crystal scenes ----------
+// A "scene" is Crystal's per-map story state, and its coord_events gate on it.
+// Scripts move it with `setscene` / `setmapscene`, and THE TRANSPILER EMITS
+// NEITHER — 163 scene ops across 85 maps, all dropped, so no scene in the game
+// could ever arm or advance. Misty's date and the Power Plant guard's phone call
+// both sit at scene 1 and were unreachable; Johto's scene-0 beats could never
+// switch themselves off, which is what PLOT_ONESHOT was working around.
+//
+// crystal_scenes.js is the recovered table, keyed by the label the op sat in and
+// lowered to the VAR_SCENE_<Map> vars coord_events already read. Applied on entry
+// to a label — precise rather than approximate, because the transpiler keeps the
+// decomp's sub-labels, so a setscene inside a conditional is keyed to its own
+// `.Branch` and only fires when that branch is actually taken.
+function applyScenes(label) {
+	const sets = SCENE_SET[label];
+	if (!sets) return;
+	for (const [v, n] of sets) setVar(v, n);
+}
+
 export class Cutscene {
 	constructor() { this.cur = null; }
 	get blocking() { return this.cur != null; }
@@ -147,6 +193,7 @@ export class Cutscene {
 	run(program, entryLabel, ctx, onDone) {
 		const ops = program[entryLabel];
 		if (!ops) { onDone?.(); return; }
+		applyScenes(entryLabel);
 		this.cur = { program, ctx, onDone, frames: [{ ops, i: 0 }], sub: null };
 		this._enter();
 	}
@@ -168,6 +215,7 @@ export class Cutscene {
 	_goto(label, isCall) {
 		const ops = this.cur.program[label] || COMMON_STUBS[label];
 		if (!ops) return false;
+		applyScenes(label);
 		if (isCall) this.cur.frames.push({ ops, i: 0 });
 		else { const fr = this._frame(); fr.ops = ops; fr.i = 0; }
 		return true;
