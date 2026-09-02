@@ -81,9 +81,22 @@ try {
 	await page.evaluate(async () => { await window.__ow.moveToMap('ViridianCity'); });
 	await waitFor(() => page.evaluate(() => /ViridianCity/.test(window.__ow.world.current?.name || '')), 8000);
 	await page.evaluate(async () => {
+		// Earlier sections leave dialog chains and cutscenes behind, and this
+		// section's fixed press budget was being spent clearing THEIR pages —
+		// the champion chain then stalled un-pressed and the test read "stranded"
+		// when the engine flow is fine (verified in an isolated repro, both with
+		// and without the grand-champion flag). Start clean, and press until the
+		// warp lands rather than a fixed 30 times.
+		window.__ow.cutscene.stop();
+		window.__ow.dialog.pages = null;
 		window.__ow.onTrainerDefeated('PokemonLeague_ChampionsRoom_EventScript_BattleSquirtle'); // KANTO champion
 		const d = window.__ow.dialog;
-		for (let i = 0; i < 30; i++) { if (d.blocking) d.key('x'); await new Promise(r => setTimeout(r, 60)); }
+		for (let i = 0; i < 150; i++) {
+			if (d.blocking) { d.revealed = 1e9; d.key('x'); }
+			if (window.__ow.cutscene.blocking) window.__ow.cutscene.update(1 / 60);
+			await new Promise(r => setTimeout(r, 60));
+			if (/PalletTown/.test(window.__ow.world.current?.name || '')) break;
+		}
 	});
 	await waitFor(() => page.evaluate(() => /PalletTown/.test(window.__ow.world.current?.name || '')), 8000);
 	A(await page.evaluate(() => window.__ow.Badges.isChampion('KANTO')), 'defeating the CHAMPION crowns you');

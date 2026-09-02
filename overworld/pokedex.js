@@ -43,6 +43,13 @@ export const MILESTONES = [
 	// obtainable — a dex reward for dex completion, rather than something hidden
 	// at the end of a region only some saves finish.
 	[300, 'riftprism', 1, 'the RIFT PRISM'],
+	// The ladder used to STOP here — 300 of 1,751 catchable, ~17%, with nothing
+	// for the long back half of the dex. These carry it to completion.
+	[500, 'masterball', 1, 'a MASTER BALL'],
+	[750, 'rarecandy', 20, '20 RARE CANDIES'],
+	[1000, 'masterball', 3, '3 MASTER BALLS'],
+	[1400, 'rarecandy', 50, '50 RARE CANDIES'],
+	[1751, 'dexcrown', 1, 'the DEX CROWN — every POKeMON in the world, caught'],
 ];
 // newly crossed milestones since the last claim (persisted); caller grants
 export function claimMilestones() {

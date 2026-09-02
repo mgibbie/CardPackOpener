@@ -67,7 +67,9 @@ A(ELITES.every(([k]) => !/Script_Battle$/.test(k)), 'the new ids do not reuse an
 
 // ---------- Red no longer returns before the crown ----------
 const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
-const redBlock = mainSrc.slice(mainSrc.indexOf("if (script === 'Red')"), mainSrc.indexOf("if (script === 'Red')") + 700);
+// (window widened when RED gained his capstone reward block — the silence flag
+// moved further from the branch head, but the assertions' intent is unchanged)
+const redBlock = mainSrc.slice(mainSrc.indexOf("if (script === 'Red')"), mainSrc.indexOf("if (script === 'Red')") + 1600);
 A(!/^\s*return;/m.test(redBlock.split('}')[0] + '}'), 'the Red handler no longer returns before the league path crowns the region');
 A(/opts = \{ \.\.\.\(opts \|\| \{\}\), silent: true \}/.test(redBlock), '...and keeps his silence instead of a synthetic toast');
 
