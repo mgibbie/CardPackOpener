@@ -125,6 +125,18 @@ const REGIONS = {
 				out.labProf = lab.filter(g => g === cfg.prof).length;
 				out.labProps = lab.filter(g => /POKEDEX|TRUCK|^VAR_0$/.test(g)).length;
 				out.labBallsOnFloor = ow.items.balls ? ow.items.balls.length : 0;
+				// ABNORMAL CLOSE + WALK OUT: nothing lab-flavored may follow into
+				// the town (the greeting used to re-fire and its lines trailed the
+				// player out the door), and returning must reopen the pick with NO
+				// second speech (the professor talks once)
+				ow.starterMenu.open = false;
+				await ow.moveToMap(cfg.home);
+				await wait(700);
+				out.townClean = !ow.starterMenu.open && !ow.cutscene.blocking && !ow.dialog.blocking;
+				await ow.moveToMap(cfg.lab);
+				let silent = true;
+				for (let i = 0; i < 40 && !ow.starterMenu.open; i++) { if (ow.cutscene.blocking) silent = false; await wait(100); }
+				out.reopenSilent = ow.starterMenu.open && silent;
 				// take the first starter; ride the rival flow to the end
 				key('z');
 				for (let i = 0; i < 200; i++) {
@@ -151,6 +163,8 @@ const REGIONS = {
 			A(run.labProf === 1 && run.labProps === 0,
 				`${region}: exactly one professor in the lab, no prop-people`, JSON.stringify({ prof: run.labProf, props: run.labProps }));
 			A(run.labBallsOnFloor === 0, `${region}: no scene item-balls on the lab floor`, String(run.labBallsOnFloor));
+			A(run.townClean, `${region}: an abandoned pick never follows the player into the town`);
+			A(run.reopenSilent, `${region}: back in the lab, the pick reopens with no second speech`);
 			A(run.party.length === 1 && run.party[0] === cfg.trio[0],
 				`${region}: the flow ends with the chosen starter in hand`, JSON.stringify(run.party));
 			A(!run.reoffer, `${region}: re-entering the lab never re-offers a starter`);
