@@ -51,8 +51,24 @@ const HOENN_MARTS = [
 	'MAP_SOOTOPOLIS_CITY_MART', 'MAP_PETALBURG_CITY_MART', 'MAP_BATTLE_FRONTIER_MART',
 ];
 
+// GAME CORNERS: the counter clerks (existing decomp NPCs — no new sprites)
+// become one 'gamecorner' service each. The zone shadows the NPC's mute
+// script and opens the Game Corner hub (Voltorb Flip / coins / prizes).
+// Tiles cover the clerk and the tile the player faces them from.
+const GAME_CORNERS = {
+	MAP_CELADON_CITY_GAME_CORNER: [[4, 2], [4, 3], [6, 2], [6, 3]],
+	MAP_CELADON_CITY_GAME_CORNER_PRIZE_ROOM: [[4, 2], [4, 3], [6, 2], [6, 3]],
+	MAP_GOLDENROD_GAME_CORNER: [[3, 2], [3, 3], [16, 2], [16, 3], [18, 2], [18, 3]],
+	MAP_MAUVILLE_CITY_GAME_CORNER: [[11, 2], [11, 3], [13, 2], [13, 3], [14, 2], [14, 3]],
+	MAP_JOHKANTO_CELADON_GAME_CORNER: [[3, 2], [3, 3], [5, 2], [5, 3]],
+	MAP_JOHKANTO_CELADON_GAME_CORNER_PRIZE_ROOM: [[0, 2], [0, 3], [4, 4], [4, 5]],
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (GAME_CORNERS[mapId]) {
+		return { sprites: [], zones: [{ kind: 'gamecorner', tiles: GAME_CORNERS[mapId] }], solid: [] };
+	}
 	if (FR_CENTERS.includes(mapId)) {
 		return {
 			sprites: [{ img: 'nurse', tx: 7, ty: 2 }],
