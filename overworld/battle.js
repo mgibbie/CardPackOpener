@@ -376,16 +376,19 @@ const MOVE_FX = {
 	charge: { chargeUp: true }, splash: { splashMsg: true },
 	// This block used to be gated on "no held items / no allies in this game" —
 	// BOTH premises are now false: doubles ship and held items ship. The
-	// ally-support family below is implemented; the rest stay no-ops because they
-	// need machinery this engine genuinely lacks (move interception, action
-	// re-ordering mid-turn, item suppression).
+	// ally-support family below is implemented, EMBARGO and MAGIC ROOM ride the
+	// central itemFx gate, WONDER ROOM rides the damage formula's defense pick.
+	// What still says noop needs machinery this engine genuinely lacks: move
+	// interception (snatch/magiccoat/powder), action re-ordering mid-turn
+	// (afteryou/quash/instruct/mefirst), per-move type rewrites timed against
+	// the opponent's pick (electrify/iondeluge), or berry-forcing (teatime).
 	allyswitch: { allySwitch: true }, aromaticmist: { allyBoost: { spd: 1 } },
 	helpinghand: { helpingHand: true }, followme: { centerTaunt: true },
 	ragepowder: { centerTaunt: true }, spotlight: { centerTaunt: true },
 	decorate: { allyBoost: { atk: 2, spa: 2 } }, gearup: { allyBoost: { atk: 1, spa: 1 } },
 	magneticflux: { allyBoost: { def: 1, spd: 1 } }, flowershield: { allyBoost: { def: 1 } },
 	rototiller: { allyBoost: { atk: 1, spa: 1 } },
-	afteryou: { noop: true }, embargo: { noop: true },
+	afteryou: { noop: true }, embargo: { embargo: true },
 	bestow: { itemGive: true },
 	instruct: { noop: true }, mefirst: { noop: true },
 	quash: { noop: true }, recycle: { recycle: true },
@@ -394,9 +397,16 @@ const MOVE_FX = {
 	trick: { itemSwap: true }, knockoff: { knockOff: true },
 	thief: { steal: true }, covet: { steal: true },
 	teatime: { noop: true },
+	// the party tricks are canon-cosmetic, so a festive line IS the faithful
+	// model — except HAPPY HOUR, whose payout doubling is real (prizeMoney)
+	celebrate: { festMsg: 'Congratulations!' }, holdhands: { festMsg: 'They held hands. How heartwarming!' },
+	happyhour: { happyHour: true },
+	// doubles support, unlocked by the side-mechanics work
+	coaching: { allyBoost: { atk: 1, def: 1 } }, dragoncheer: { allyCrit: true },
 	healblock: { noop: true }, imprison: { noop: true }, grudge: { noop: true },
-	electrify: { noop: true }, iondeluge: { noop: true }, magicroom: { noop: true },
-	wonderroom: { noop: true }, doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
+	electrify: { noop: true }, iondeluge: { noop: true },
+	magicroom: { field: 'magicRoom' }, wonderroom: { field: 'wonderRoom' },
+	doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
 	skillswap: { abilitySwap: true }, entrainment: { abilityGive: true },
 	gastroacid: { abilitySuppress: true }, worryseed: { abilitySet: 'insomnia' },
 	simplebeam: { abilitySet: 'simple' },
@@ -892,6 +902,9 @@ export class Battle {
 	// a mon's live held-item effects (null under Klutz or when empty-handed)
 	itemFx(mon) {
 		if (!mon.heldItem || this.abilityOf(mon) === 'klutz') return null;
+		// EMBARGO on the mon, or MAGIC ROOM over the field, silences the item —
+		// one check covers every effect because every read comes through here
+		if (mon.embargoTurns > 0 || (this.active?.fieldFx?.magicRoom || 0) > 0) return null;
 		return Bag.ITEMS[mon.heldItem]?.held || null;
 	}
 	itemName(mon) { return Bag.ITEMS[mon.heldItem]?.name || mon.heldItem; }
@@ -925,6 +938,7 @@ export class Battle {
 			a.info._coinApplied = true;
 			const mult = Math.max(1, ...(a.party || []).map(m => (m && this.itemFx(m)?.moneyBoost) || 1));
 			if (mult > 1) a.info.money = Math.round((a.info.money || 0) * mult);
+			if (a.happyHour) a.info.money = (a.info.money || 0) * 2;   // HAPPY HOUR
 		}
 		return a.info.money || 0;
 	}
@@ -1306,6 +1320,7 @@ export class Battle {
 		delete mon.subHP;
 		delete mon.attracted;
 		delete mon.focusEnergy;
+		delete mon.embargoTurns;
 		delete mon.laserFocus;
 		delete mon.lockOn;
 		delete mon.foresight;
@@ -1798,7 +1813,10 @@ export class Battle {
 		const aBoosts = tAb === 'unaware' ? freshBoosts() : userBoosts;
 		const dBoosts = uAb === 'unaware' ? freshBoosts() : targetBoosts;
 		let A = this.statOf(user, aBoosts, phys ? 'atk' : 'spa');
-		let D = this.statOf(target, dBoosts, phys ? 'def' : 'spd');
+		// WONDER ROOM: while it holds, every hit is measured against the OTHER
+		// defense (physical vs Sp. Def, special vs Defense)
+		const wonderRoom = (a.fieldFx?.wonderRoom || 0) > 0;
+		let D = this.statOf(target, dBoosts, phys === !wonderRoom ? 'def' : 'spd');
 		if (phys && (uAb === 'hugepower' || uAb === 'purepower')) A *= 2;
 		if (phys && uAb === 'hustle') A = Math.floor(A * 1.5);
 		if (phys && tAb === 'marvelscale' && target.status) D = Math.floor(D * 1.5);
@@ -2526,6 +2544,9 @@ export class Battle {
 				this.pushMsg(`${mon.name} used its MENTAL HERB to snap out of it!`);
 				this.consumeItem(mon);
 			}
+			if (mon.embargoTurns > 0 && --mon.embargoTurns === 0) {
+				this.pushMsg(`${mon.name} can use items again!`);
+			}
 		}
 		// a foreseen attack arrives. It used to be a flat 35% of the victim's max
 		// HP — typeless, statless, un-dodgeable by a Dark type. It is a REAL typed
@@ -2779,7 +2800,7 @@ export class Battle {
 		// default of 20 meant "an unknown trick is probably worth something" —
 		// tolerable while damage scores were raw-power-sized, but on the percent
 		// scale it let SPLASH outbid an honest chip hit from a weak attacker.
-		if (fx.noop || fx.splashMsg || (!Object.keys(fx).length && !st)) return 0;
+		if (fx.noop || fx.splashMsg || fx.festMsg || fx.happyHour || (!Object.keys(fx).length && !st)) return 0;
 		return fx.protect || fx.selfKO ? 0 : 20;
 	}
 
@@ -3491,6 +3512,25 @@ export class Battle {
 			this.pushMsg(`${ally.name}'s stats rose!`);
 			return true;
 		}
+		if (fx.allyCrit) {
+			// DRAGON CHEER: the partner rides the Focus Energy machinery
+			const ally = allyOf(user);
+			if (!ally || ally.curHP <= 0 || ally.focusEnergy) { this.pushMsg('But it failed!'); return true; }
+			ally.focusEnergy = true;
+			this.pushMsg(`${user.name}'s cheer fired ${ally.name} up!`);
+			return true;
+		}
+		if (fx.festMsg) { this.pushMsg(fx.festMsg); return true; }
+		if (fx.happyHour) {
+			this.pushMsg('Everyone is caught up in the happy atmosphere!', () => { a.happyHour = true; });
+			return true;
+		}
+		if (fx.embargo) {
+			if (target.embargoTurns > 0) { this.pushMsg('But it failed!'); return true; }
+			target.embargoTurns = 5;
+			this.pushMsg(`${target.name} can't use items anymore!`);
+			return true;
+		}
 		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
 		if (fx.itemSwap) {
 			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem)) {
@@ -3536,7 +3576,8 @@ export class Battle {
 			if (a.fieldFx[fx.field] > 0) { a.fieldFx[fx.field] = 0; this.pushMsg('The effect wore off!'); return true; }
 			a.fieldFx[fx.field] = 5;
 			this.pushMsg({ trickRoom: `${user.name} twisted the dimensions!`, gravity: 'Gravity intensified!',
-				mudSport: 'Electric moves were weakened!', waterSport: 'Fire moves were weakened!' }[fx.field]);
+				mudSport: 'Electric moves were weakened!', waterSport: 'Fire moves were weakened!',
+				magicRoom: 'Items lost their power!', wonderRoom: 'Defense and Sp. Def swapped for everyone!' }[fx.field]);
 			return true;
 		}
 		if (fx.side) {
