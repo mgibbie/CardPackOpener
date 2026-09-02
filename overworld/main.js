@@ -319,6 +319,7 @@ trainers.repairScript = (ev, mapId) => {
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
 	if (!info.weather) info.weather = mapWeatherNow();   // the route's own sky
+	battle.endSpec = { kind: 'trainer', script: t?.ev?.script || null, money: info.money || 0 };
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
@@ -671,6 +672,7 @@ function frontierNext() {
 }
 function runFrontierBattle(foe, info, tier, brain) {
 	const cfg = frontier.cfg;
+	battle.endSpec = null;   // frontier runs have their own state machine — never snapshot these
 	battle.startTrainer(frontier.runParty, foe, info, result => {
 		if (result !== 'victory') { endFacility(); return; }
 		frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
@@ -951,6 +953,114 @@ const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
 const optionsMenu = { open: false, idx: 0 };
 const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'followers'];
+// ---------- leave-and-resume for battles ----------
+// Hitting the gear (or closing the tab) mid-battle used to vaporize the fight
+// AND its ending — a rival or gym win that never landed its flags broke
+// progression for good. The battle now persists like a dungeon run: a
+// serializable snapshot (battle.snapshot) plus an endSpec tag naming which
+// ending to rebuild, written every ~1.5s while a resumable battle runs and on
+// pagehide, consumed at boot.
+const BATTLE_SAVE_KEY = 'magepunk_battle_v1';
+let battleSaveAt = 0, battleSaveDirty = false;
+function persistBattle() {
+	const resumable = battle.blocking && battle.active && battle.endSpec && !pvp.blocking && !frontier.active;
+	if (resumable) {
+		const now = performance.now();
+		if (now - battleSaveAt < 1500) return;
+		const snap = battle.snapshot();
+		if (!snap) return;
+		battleSaveAt = now;
+		safeSave(BATTLE_SAVE_KEY, { v: 1, snap, end: battle.endSpec, map: world.current.name });
+		saveParty(party);   // the party's mid-battle HP/PP must match the snapshot
+		battleSaveDirty = true;
+	} else if (battleSaveDirty && !battle.blocking) {
+		battleSaveDirty = false;
+		try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) { /* storage gone */ }
+	}
+}
+addEventListener('pagehide', () => { battleSaveAt = 0; persistBattle(); });
+addEventListener('beforeunload', () => { battleSaveAt = 0; persistBattle(); });
+
+// rebuild the right battle-ending from its serialized tag. Everything here
+// mirrors a live call site; anything unreconstructable degrades safely.
+function resumeEndHandler(end, savedMap) {
+	const kind = end?.kind || 'wild';
+	if (kind === 'legendary') return result => {
+		if (result === 'caught' && battle.lastCaught) {
+			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
+			const where = addCaught(party, battle.lastCaught);
+			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+			offerNickname(battle.lastCaught);
+			Story.setFlag(end.flag);
+			syncOverworldAchievements();
+		} else if (result === 'victory') {
+			Story.setFlag(end.flag);
+			evolution.check(party, battle.data);
+		} else if (result === 'defeat') {
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		} else saveParty(party);
+	};
+	if (kind === 'trainer') return result => {
+		if (result === 'victory') {
+			const t = trainers.list.find(x => x.ev?.script === end.script);
+			if (t) trainers.markDefeated(t);
+			Bag.earn(end.money || 0);
+			saveParty(party);
+			if (end.script) onTrainerDefeated(end.script);
+			evolution.check(party, battle.data);
+		} else if (result === 'defeat') {
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		}
+	};
+	if (kind === 'strainer') return result => {
+		// the blocking cutscene is gone after a reload; land the flags, skip the speech
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			const t = trainers.list.find(x => x.ev?.script === end.script);
+			if (t) trainers.markDefeated(t);
+			saveParty(party);
+			if (end.script) onTrainerDefeated(end.script, { silent: true });
+		} else {
+			Story.setVar('VAR_RESULT', 0);
+			if (result === 'defeat') healParty(party);
+		}
+	};
+	if (kind === 'villain') return result => {
+		if (result === 'victory') {
+			const beat = Quest.beatAt(end.region, savedMap);
+			if (beat) completeVillainBeat(end.region, beat);
+		} else { healParty(party); saveParty(party); }
+	};
+	if (kind === 'rivaltier') return result => {
+		Story.setFlag(rivalFlag(end.tier));
+		if (result !== 'victory') healParty(party);
+		saveParty(party);
+	};
+	if (kind === 'rivalintro') return result => {
+		if (result !== 'victory') healParty(party);
+		saveParty(party);
+		afterRival(end.region);
+	};
+	return result => wildBattleEnd(result, !!(safari.on && safariZoneOf(world.current?.map?.id)));
+}
+
+function resumeSavedBattle() {
+	const saved = safeLoad(BATTLE_SAVE_KEY, null);
+	if (!saved || !saved.snap || !party) return false;
+	try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) {}   // consume: a crash must not loop
+	const snap = saved.snap;
+	const onEnd = resumeEndHandler(saved.end, saved.map);
+	battle.endSpec = saved.end || { kind: 'wild' };
+	battleSaveDirty = true;   // re-arms the tick, which re-saves while it runs
+	if (snap.isTrainer) battle.startTrainer(party, snap.foes, snap.info, onEnd, { restore: snap });
+	else battle.start(party, snap.foe.speciesId, snap.foe.level, onEnd, null,
+		{ restore: snap, safari: snap.safari && safari.on ? safari : null });
+	hud.textContent = 'Resuming the battle...';
+	return true;
+}
+
 // ---------- background music ----------
 // music_map.json: mapId -> bgm file key (tools/gen_bgm.mjs — the accurate
 // per-map songs from Crystal/FireRed/Emerald). Loaded lazily; until it lands
@@ -3188,6 +3298,7 @@ function startLegendaryBattle(e) {
 	Dex.markSeen(e.species);
 	dialog.open(e.intro, () => {
 		battle.themeHint = /^regi(rock|ce|steel)/.test(e.species) ? 'regi' : 'legendary';
+		battle.endSpec = { kind: 'legendary', species: e.species, flag: e.flag };
 		battle.start(party, e.species, scaleLegendaryLevel(e.level), result => {
 			if (result === 'caught' && battle.lastCaught) {
 				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
@@ -3359,24 +3470,30 @@ function startWildBattle(pick, forceDouble) {
 		&& party.filter(m => m.curHP > 0).length >= 2
 		? encounters.pick(world.current.map.id) : null;
 	if (second) Dex.markSeen(second.id);
-	battle.start(party, pick.id, pick.level, result => {
-		if (result === 'defeat') {
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
-		} else if (result === 'caught' && battle.lastCaught) {
-			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(party, battle.lastCaught);
-			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
-			offerNickname(battle.lastCaught);
-		} else {
-			saveParty(party);
-		}
-		if (result === 'victory') { evolution.check(party, battle.data); pickupCheck(); }
-		if (inSafari) {
-			saveSafari();   // the battle burned balls on the shared session
-			if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
-		}
-	}, second, { weather: mapWeatherNow(), safari: inSafari ? safari : null });
+	battle.endSpec = { kind: 'wild' };
+	battle.start(party, pick.id, pick.level, result => wildBattleEnd(result, inSafari),
+		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null });
+}
+
+// the standard wild-battle ending — shared by live battles and RESUMED ones
+// (a battle abandoned by leaving the page reconstructs this from its endSpec)
+function wildBattleEnd(result, inSafari) {
+	if (result === 'defeat') {
+		healParty(party);
+		hud.textContent = (world.current.map.name || '') + ' — party healed';
+	} else if (result === 'caught' && battle.lastCaught) {
+		Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
+		const where = addCaught(party, battle.lastCaught);
+		hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+		offerNickname(battle.lastCaught);
+	} else {
+		saveParty(party);
+	}
+	if (result === 'victory') { evolution.check(party, battle.data); pickupCheck(); }
+	if (inSafari) {
+		saveSafari();   // the battle burned balls on the shared session
+		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
+	}
 }
 
 // ---------- cutscenes ----------
@@ -3745,6 +3862,7 @@ function startScriptedWildBattle(species, level) {
 	if (!species || !battle.data?.species?.[species]) return 'skip';
 	if (!party || !leadMon(party) || battle.blocking) return 'skip';
 	Dex.markSeen(species);
+	battle.endSpec = { kind: 'wild' };   // the blocking script is gone after a reload; a plain wild ending is safe
 	battle.start(party, species, level, result => {
 		if (result === 'caught' && battle.lastCaught) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
@@ -3870,6 +3988,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		defeatText: '', money: high * 8,
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
+	battle.endSpec = { kind: 'strainer', script: talker?.ev?.script || null };
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
@@ -4389,6 +4508,7 @@ function startVillainBattle(region, beat) {
 	if (!foe.length || !party || !leadMon(party)) { completeVillainBeat(region, beat); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
 	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12, boss: true };
+	battle.endSpec = { kind: 'villain', region };
 	battle.startTrainer(party, foe, info, result => {
 		if (result === 'victory') { completeVillainBeat(region, beat); }
 		else { healParty(party); saveParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
@@ -4418,6 +4538,7 @@ function startRivalEncounter(tier) {
 	];
 	startCutscene(intro.map(text => ({ op: 'say', text })), () => {
 		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40, boss: true };
+		battle.endSpec = { kind: 'rivaltier', tier };
 		battle.startTrainer(party, foe, info, result => {
 			Story.setFlag(rivalFlag(tier)); // one-shot per tier, win or lose
 			saveParty(party);
@@ -4577,6 +4698,7 @@ function startRivalBattle(region, rivalId, rivalName) {
 	if (!foe.length || !party || !leadMon(party)) { afterRival(region); return; }
 	Dex.markSeen(rivalId);
 	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40, boss: true };
+	battle.endSpec = { kind: 'rivalintro', region };
 	battle.startTrainer(party, foe, info, result => {
 		if (result !== 'victory') healParty(party);   // the plot continues win or lose
 		saveParty(party);
@@ -4740,6 +4862,7 @@ function tick(now) {
 
 	battle.update(dt);
 	bgmTick();
+	persistBattle();
 	pvp.update(dt);
 	factorySpec.update(dt);
 	evolution.update(dt);
@@ -6513,6 +6636,16 @@ function drawFriendGhosts(ctx, camX, camY) {
 	try { checkSafariGate(); } catch (e) { console.warn('[safari] boot gate check failed', e); }
 	syncMapBgm();
 	refreshObjective(); // show the current quest objective on boot
+	// a battle abandoned by leaving the page resumes exactly where it stood —
+	// same foe, same HP, same field (like resuming a dungeon run)
+	let battleResumed = false;
+	try { battleResumed = resumeSavedBattle(); } catch (e) { console.warn('[battle-resume] failed', e); }
+	// heal saves stranded before resume existed: a starter in hand but the
+	// intro flags never landed (left mid-rival-battle), gating all progression
+	if (!battleResumed && party && !Story.getFlag('intro_done')) {
+		console.warn('[intro-heal] party without intro_done — completing the intro');
+		afterRival(playerRegion());
+	}
 	// Resuming mid-intro — region chosen, starter not yet collected. The lab
 	// trigger (checkIntroTrigger) still fires when they walk in, so the only gap is
 	// a player who reloaded before hearing where to go. Replay the professor's
@@ -6587,7 +6720,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
 	get safariState() { return safari; }, checkSafariGate, endSafari,
 	gcMenu, vfMenu, VFlip, gcKey, vfKey,
-	bgmNow, syncMapBgm, battleThemeKey, bgmGame, get musicMap() { return musicMap; }, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+	bgmNow, syncMapBgm, battleThemeKey, bgmGame, get musicMap() { return musicMap; },
+	persistBattle, resumeSavedBattle, wildBattleEnd, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,

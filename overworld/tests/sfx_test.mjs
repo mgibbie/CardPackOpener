@@ -99,7 +99,7 @@ const ALL = ['ui_move', 'ui_select', 'ui_cancel', 'ui_denied', 'ui_open', 'text_
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'JOHTO');
 			localStorage.setItem('magepunk_money', '1500');
-			localStorage.removeItem('magepunk_story');
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, story_seeded: true, intro_started: true, intro_greeted: true }, vars: {} }));
 			// spy on the Audio constructor: play() builds one base element per URL
 			window.__sfxLog = [];
 			const RealAudio = window.Audio;

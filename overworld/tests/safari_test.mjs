@@ -79,7 +79,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'KANTO');
 			localStorage.setItem('magepunk_money', '20000');
-			localStorage.removeItem('magepunk_story');
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, story_seeded: true, intro_started: true, intro_greeted: true }, vars: {} }));
 			localStorage.removeItem('magepunk_safari_v1');
 		}, STATE, PARTY);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=SafariZone_Center`, { waitUntil: 'domcontentloaded' });
