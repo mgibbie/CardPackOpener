@@ -501,6 +501,27 @@ export function spend(amount) {
 	return true;
 }
 
+// ---------- COINS (the Game Corner currency, kept in the COIN CASE) ----------
+// A separate bank from money on purpose: coins are won at Voltorb Flip or
+// bought at the counter, and only the prize corner takes them.
+const COIN_KEY = 'magepunk_coins_v1';
+export const COIN_CAP = 9999;   // the gen-3 COIN CASE limit
+export function getCoins() {
+	const v = parseInt(localStorage.getItem(COIN_KEY), 10);
+	return isNaN(v) ? 0 : v;
+}
+export function addCoins(amount) {
+	const c = Math.min(COIN_CAP, getCoins() + Math.max(0, amount | 0));
+	safeSaveStr(COIN_KEY, c);
+	return c;
+}
+export function spendCoins(amount) {
+	const c = getCoins();
+	if (c < amount) return false;
+	safeSaveStr(COIN_KEY, c - amount);
+	return true;
+}
+
 export function getBag() {
 	const b = safeLoad(BAG_KEY, null);
 	if (b && typeof b === 'object' && !Array.isArray(b)) return b;
