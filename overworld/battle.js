@@ -689,16 +689,20 @@ export class Battle {
 	// a wild DOUBLE battle when the party has two healthy mons
 	async start(party, wildId, wildLevel, onEnd, second, opts) {
 		this._starting = true; // block overworld movement immediately (before sprites load)
-		const foe = buildMon(wildId, wildLevel, this.data);
-		if (foe && Math.random() < 0.15) {
+		// leave-and-resume: a restore snapshot supplies the mid-battle foe and
+		// skips every fresh-encounter roll (held item, Synchronize, intro)
+		const restore = opts?.restore || null;
+		const foe = restore ? restore.foe : buildMon(wildId, wildLevel, this.data);
+		if (foe && !restore && Math.random() < 0.15) {
 			foe.heldItem = Bag.WILD_HELD[Math.floor(Math.random() * Bag.WILD_HELD.length)];
 		}
-		const playerMon = party.find(m => m.curHP > 0);
+		const playerMon = (restore && party[restore.meIdx]?.curHP > 0)
+			? party[restore.meIdx] : party.find(m => m.curHP > 0);
 		if (!foe || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }
 		// SYNCHRONIZE afield: with a Synchronize lead, half of wild encounters
 		// share its nature — the classic nature-hunting tool, previously
 		// battle-only. Stats are recomputed since the nature was already baked in.
-		if (playerMon.ability === 'synchronize' && Math.random() < 0.5 && playerMon.nature) {
+		if (!restore && playerMon.ability === 'synchronize' && Math.random() < 0.5 && playerMon.nature) {
 			foe.nature = playerMon.nature;
 			foe.stats = statsFor(this.data.species[wildId], foe.ivs, foe.level, foe);
 			foe.maxHP = foe.stats.hp; foe.curHP = foe.stats.hp;
@@ -713,7 +717,11 @@ export class Battle {
 		// loads in ONE parallel round (two serialized rounds doubled the frozen
 		// pre-battle wait on cold caches)
 		let foeAlly = null, meAlly = null;
-		if (second && party.filter(m => m.curHP > 0).length >= 2) {
+		if (restore) {
+			foeAlly = restore.foeAlly || null;
+			meAlly = restore.meAllyIdx >= 0 && party[restore.meAllyIdx]?.curHP > 0 ? party[restore.meAllyIdx] : null;
+			if (!foeAlly || !meAlly) { foeAlly = null; meAlly = null; }   // a half-pair can't resume as doubles
+		} else if (second && party.filter(m => m.curHP > 0).length >= 2) {
 			foeAlly = buildMon(second.id, second.level, this.data);
 			meAlly = party.filter(m => m.curHP > 0)[1];
 		}
@@ -759,6 +767,7 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
+		if (restore) { this.applyRestore(restore); return; }
 		for (const m of party) this.clearVolatiles(m);
 		// the map's weather is worth a line — it changes the fight
 		if (this.active.weather?.kind) {
@@ -782,9 +791,11 @@ export class Battle {
 	}
 
 	// trainer battle: foeParty of mons, no running, no catching
-	async startTrainer(party, foeParty, info, onEnd) {
+	async startTrainer(party, foeParty, info, onEnd, opts) {
+		const restore = opts?.restore || null;
 		this._starting = true; // block overworld movement immediately (before sprites load)
-		const playerMon = party.find(m => m.curHP > 0);
+		const playerMon = (restore && party[restore.meIdx]?.curHP > 0)
+			? party[restore.meIdx] : party.find(m => m.curHP > 0);
 		if (!foeParty.length || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }
 		const loadSprite = async (file, back) => {
 			if (!file) return null;
@@ -797,7 +808,7 @@ export class Battle {
 			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
 			...foeParty.map(async m => foeSprites.set(m, await loadSprite(m.sprite, false))),
 		]);
-		const foe = foeParty[0];
+		const foe = foeParty[(restore?.foeIdx) || 0] || foeParty[0];
 		const isDouble = foeParty.length >= 2 && /TWINS|COUPLE| & |SR\. AND JR/i.test(info.displayName || '');
 		const meAlly = isDouble ? party.filter(m => m.curHP > 0)[1] || null : null;
 		const foeAlly = isDouble ? foeParty[1] : null;
@@ -811,7 +822,7 @@ export class Battle {
 			meAllyShownExp: meAlly ? (meAlly.exp ?? expForLevel(meAlly.level)) : 0,
 			plans: [], actionFor: 0,
 			party, me: playerMon, foe, backSprites, foeSprites,
-			foes: foeParty, foeIdx: 0, isTrainer: true, info,
+			foes: foeParty, foeIdx: (restore?.foeIdx) || 0, isTrainer: true, info,
 			foeImg: foeSprites.get(foe),
 			meImg: backSprites.get(playerMon),
 			meBoosts: freshBoosts(),
@@ -835,12 +846,13 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
-		for (const m of party) this.clearVolatiles(m);
+		if (!restore) for (const m of party) this.clearVolatiles(m);
 		if (this.active.double) {
 			this.active.meAllyImg = backSprites.get(this.active.meAlly);
 			this.active.foeAllyImg = foeSprites.get(this.active.foeAlly);
 			this.active.foeIdx = 1; // both lead foes are out
 		}
+		if (restore) { this.applyRestore(restore); return; }
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
 		this.pushMsg(`${info.displayName} sent out ${foe.name}${this.active.double ? ' and ' + this.active.foeAlly.name : ''}!`, () => cry(foe.speciesId));
 		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
@@ -858,6 +870,58 @@ export class Battle {
 	pushAnim(kind, side, dur, done, extra) {
 		const k = animScale();
 		this.active.queue.push({ anim: { kind, side, dur: Math.max(0.01, dur * k), done, ...extra } });
+	}
+
+	// ---------- leave-and-resume ----------
+	// A serializable picture of the fight, taken between actions (never the
+	// message queue — callbacks can't survive a reload). main.js persists it
+	// and rebuilds the battle through the normal start paths with
+	// opts.restore, so sprites and images load the usual way and only STATE
+	// is reapplied. Infinity survives as 'inf' (JSON drops it otherwise).
+	snapshot() {
+		const a = this.active;
+		if (!a || a.phase === 'done' || !a.me || !a.foe || a.foe.curHP <= 0 || a.me.curHP <= 0) return null;
+		const strip = m => JSON.parse(JSON.stringify(m, (k, v) => (typeof v === 'function' ? undefined : v)));
+		return {
+			v: 1, isTrainer: !!a.isTrainer, double: !!a.double,
+			info: a.isTrainer ? strip(a.info) : null,
+			foes: a.isTrainer ? a.foes.map(strip) : null,
+			foeIdx: a.foeIdx || 0,
+			foe: strip(a.foe), foeAlly: a.foeAlly ? strip(a.foeAlly) : null,
+			meIdx: Math.max(0, a.party.indexOf(a.me)),
+			meAllyIdx: a.meAlly ? a.party.indexOf(a.meAlly) : -1,
+			boosts: { me: a.meBoosts, foe: a.foeBoosts, meAlly: a.meAllyBoosts, foeAlly: a.foeAllyBoosts },
+			meScreens: a.meScreens, foeScreens: a.foeScreens,
+			meSide: a.meSide, foeSide: a.foeSide,
+			meHazards: a.meHazards, foeHazards: a.foeHazards,
+			meFuture: a.meFuture, foeFuture: a.foeFuture,
+			weather: a.weather ? { kind: a.weather.kind, turns: a.weather.turns === Infinity ? 'inf' : a.weather.turns } : null,
+			terrain: a.terrain, fieldFx: a.fieldFx,
+			turnCount: a.turnCount || 0, lastMove: a.lastMove, runAttempts: a.runAttempts || 0,
+			safari: !!a.safari,
+		};
+	}
+	// reapply the snapshot onto a freshly-built active. Switch-in abilities
+	// deliberately do NOT re-fire (Intimidate already spoke last time).
+	applyRestore(snap) {
+		const a = this.active;
+		const put = (dst, src) => { if (dst && src) Object.assign(dst, src); };
+		put(a.meBoosts, snap.boosts?.me); put(a.foeBoosts, snap.boosts?.foe);
+		put(a.meAllyBoosts, snap.boosts?.meAlly); put(a.foeAllyBoosts, snap.boosts?.foeAlly);
+		put(a.meScreens, snap.meScreens); put(a.foeScreens, snap.foeScreens);
+		put(a.meSide, snap.meSide); put(a.foeSide, snap.foeSide);
+		put(a.meHazards, snap.meHazards); put(a.foeHazards, snap.foeHazards);
+		put(a.fieldFx, snap.fieldFx);
+		a.terrain = snap.terrain || null;
+		a.weather = snap.weather ? { kind: snap.weather.kind, turns: snap.weather.turns === 'inf' ? Infinity : snap.weather.turns } : null;
+		a.meFuture = snap.meFuture || null;
+		a.foeFuture = snap.foeFuture || null;
+		a.turnCount = snap.turnCount || 0;
+		a.lastMove = snap.lastMove || {};
+		a.runAttempts = snap.runAttempts || 0;
+		a.meShownHP = a.me.curHP; a.foeShownHP = a.foe.curHP;
+		a.meAllyShownHP = a.meAlly?.curHP ?? 0; a.foeAllyShownHP = a.foeAlly?.curHP ?? 0;
+		this.pushMsg('The battle picks up right where it left off!');
 	}
 
 	// floating combat text over a combatant ("-12", "+8"), positioned at draw time
@@ -4542,6 +4606,7 @@ export class Battle {
 				const cb = a.onEnd, res = a.result;
 				this.lastCaught = a.caughtMon;
 				this.active = null;
+				this.endSpec = null;   // main.js: nothing left to resume
 				cb?.(res);
 			}
 		}
