@@ -137,8 +137,15 @@ export class NPCs {
 			// invisible while the blanket flag rule hid them anyway; the moment flags
 			// are read honestly they would each be drawn TWICE, once as a fake NPC.
 			if (itemsOwns(ev.graphics_id)) return;          // items.js draws and drives these
+			// prop objects (cutscene furniture): drawing them with a person-sprite
+			// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
+			// would park villagers where Littleroot's moving TRUCKs sit
+			if (/POKEDEX|TRUCK/.test(ev.graphics_id || '')) return;
+			// Crystal names its graphics SPRITE_X — the fallback only stripped the
+			// GBA prefix, so sprite files like fisher.png were probed as
+			// sprite_fisher.png, silently emptying whole Johto towns
 			const file = this.gfx[ev.graphics_id]
-				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').toLowerCase() + '.png';
+				|| (ev.graphics_id || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase() + '.png';
 			let img = await getImage(`data/people/${file}`).catch(() => null);
 			if (!img) img = await getImage(spritePath(ev.graphics_id, false)).catch(() => null);
 			if (img) this.list.push(new NPC(ev, img));
