@@ -715,6 +715,9 @@ export class Battle {
 			// environmental weather arrives from the MAP (endless); moves/abilities
 			// overwrite it with their own timed spells as usual
 			weather: opts?.weather ? { kind: opts.weather, turns: Infinity } : null, terrain: null,
+			// the LIVE safari session object from main (balls decrement in place);
+			// null everywhere but a Safari Zone encounter
+			safari: opts?.safari || null,
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
@@ -3194,6 +3197,78 @@ export class Battle {
 		}
 	}
 
+	// ---------- SAFARI GAME ----------
+	// No fighting in the Safari Zone: you throw BALLS, BAIT and ROCKS while the
+	// wild mon decides each turn whether to bolt. Bait halves the catch odds but
+	// also halves the flee odds; a rock doubles both — the classic tension. The
+	// foe never attacks, and its HP stays full, which is exactly why safari
+	// catches feel like gambling.
+	safariBall() {
+		const a = this.active, sess = a.safari;
+		if (sess.balls <= 0) { this.pushMsg('No SAFARI BALLS left!'); return; }
+		sess.balls--;
+		this.pushMsg(`You threw a SAFARI BALL! (${sess.balls} left)`);
+		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a.foeHidden = true; a.ballShown = true; });
+		const mood = a.safariMood?.kind;
+		// Safari Ball = 1.5x, bait/rock swing the factor the way gen 3 swings it
+		const rate = (this.data.extra?.[a.foe.speciesId]?.catch ?? 45) * 1.5
+			* (mood === 'angry' ? 2 : mood === 'eating' ? 0.5 : 1);
+		const f = Math.max(1, Math.floor((3 * a.foe.maxHP - 2 * a.foe.curHP) * rate / (3 * a.foe.maxHP)));
+		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
+		let shakes = 0;
+		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
+		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
+		if (shakes >= 4) {
+			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { a.caughtMon = a.foe; });
+			this.awardBattleExp();
+			this.pushMsg('', () => this.finish('caught'));
+		} else {
+			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a.foeHidden = false; a.ballShown = false; });
+			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
+			this.safariFoeTurn();
+		}
+	}
+	safariBait() {
+		const a = this.active;
+		a.safariMood = { kind: 'eating', turns: 2 + Math.floor(Math.random() * 5) };
+		this.pushMsg('You tossed some bait.');
+		this.pushMsg(`The wild ${a.foe.name} is eating!`);
+		this.safariFoeTurn();
+	}
+	safariRock() {
+		const a = this.active;
+		a.safariMood = { kind: 'angry', turns: 2 + Math.floor(Math.random() * 5) };
+		this.pushMsg('You threw a rock.');
+		this.pushMsg(`The wild ${a.foe.name} is angry!`);
+		this.safariFoeTurn();
+	}
+	// the wild mon's whole turn: tick the mood, then roll to bolt. Rare species
+	// (low catch rate) bolt sooner — Chansey energy; commons hang around.
+	safariFoeTurn() {
+		const a = this.active;
+		this.pushMsg('', () => {
+			const catchRate = this.data.extra?.[a.foe.speciesId]?.catch ?? 45;
+			let flee = catchRate <= 30 ? 0.4 : catchRate <= 75 ? 0.25 : 0.12;
+			const mood = a.safariMood;
+			if (mood?.kind === 'eating') flee *= 0.5;
+			if (mood?.kind === 'angry') flee *= 2;
+			if (mood && --mood.turns <= 0) {
+				a.safariMood = null;
+				this.pushMsg(mood.kind === 'eating'
+					? `The wild ${a.foe.name} finished eating.`
+					: `The wild ${a.foe.name} calmed down.`);
+			}
+			if (Math.random() < flee) {
+				this.pushMsg(`The wild ${a.foe.name} fled!`, () => this.finish('escaped'));
+			} else if (a.safari.balls <= 0) {
+				this.pushMsg('PA: You are out of SAFARI BALLS!', () => this.finish('escaped'));
+			} else {
+				this.pushMsg(`The wild ${a.foe.name} is watching carefully...`);
+			}
+		});
+	}
+
 	tryRun() {
 		const a = this.active;
 		a.runAttempts++;
@@ -3231,6 +3306,20 @@ export class Battle {
 		// advance message
 		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { this.fastForward(); return; }
 		if (a.phase === 'menu') {
+			// SAFARI GAME: the whole menu is BALL/BAIT/ROCK/RUN — no fighting, no
+			// bag, no switching. R throws a ball, same shortcut as a normal capture.
+			if (a.safari) {
+				if (k === 'r') { this.startQueue(() => this.safariBall()); return; }
+				if (k === 'ArrowLeft' || k === 'ArrowRight') a.menuIdx ^= 1;
+				if (k === 'ArrowUp' || k === 'ArrowDown') a.menuIdx ^= 2;
+				if (k === 'z' || k === 'Enter') {
+					if (a.menuIdx === 0) this.startQueue(() => this.safariBall());
+					else if (a.menuIdx === 1) this.startQueue(() => this.safariBait());
+					else if (a.menuIdx === 2) this.startQueue(() => this.safariRock());
+					else this.startQueue(() => this.pushMsg('Got away safely!', () => this.finish('escaped')));
+				}
+				return;
+			}
 			// R re-throws the ball you last used. A break-free used to send you
 			// back through BAG -> scroll the flat list -> find it -> confirm, on
 			// every single throw of a long capture.
@@ -4331,7 +4420,8 @@ export class Battle {
 						this.startQueue(() => this.resolveTurn(mv));
 					} else {
 						a.phase = 'menu';
-						a.msg = `What will ${a.me.name} do?`;
+						a.msg = a.safari ? `SAFARI BALLS: ${a.safari.balls} — what will you do?`
+							: `What will ${a.me.name} do?`;
 					}
 				}
 			}
@@ -4600,7 +4690,7 @@ export class Battle {
 			ctx.font = `${Math.round(17 * ub)}px m6x11plus, monospace`;
 			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) =>
 				ctx.fillText(l, 24 * ub, barY + 32 * ub + i * 22 * ub));
-			const labels = ['FIGHT', 'BAG', 'PKMN', 'RUN'];
+			const labels = a.safari ? ['BALL', 'BAIT', 'ROCK', 'RUN'] : ['FIGHT', 'BAG', 'PKMN', 'RUN'];
 			labels.forEach((lab, i) => {
 				const bw = 120 * ub, bh = 44 * ub;
 				const x = W - 24 * ub - (2 - i % 2) * (bw + 8 * ub) + 8 * ub;
@@ -4711,7 +4801,7 @@ export class Battle {
 			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 2).forEach((l, i) =>
 				ctx.fillText(l, 24 * u, barY + 30 * u + i * 24 * u));
 			const bw = (fullW - 10 * u) / 2, bh = 82 * u;
-			['FIGHT', 'BAG', 'PKMN', 'RUN'].forEach((lab, i) => {
+			(a.safari ? ['BALL', 'BAIT', 'ROCK', 'RUN'] : ['FIGHT', 'BAG', 'PKMN', 'RUN']).forEach((lab, i) => {
 				btn({ x: pad + (i % 2) * (bw + 10 * u), y: barY + 74 * u + Math.floor(i / 2) * (bh + 10 * u),
 					w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
 			});

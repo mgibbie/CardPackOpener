@@ -2356,6 +2356,8 @@ async function refreshMapContent(label) {
 	try { checkRivalTrigger(); } catch (e) { console.warn('[rival] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// Hoenn legendary-awakening beats (post-climax): KYOGRE/GROUDON clash -> RAYQUAZA
 	try { checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// the safari PA speaks the moment you cross into (or out of) the zone
+	try { checkSafariGate(); } catch (e) { console.warn('[safari] gate check failed', e); }
 	refreshObjective();
 }
 
@@ -2762,6 +2764,14 @@ player.onArrive = () => {
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
 	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
+	// SAFARI GAME: every step in the zone burns the meter, and the step that
+	// empties it ends the game on the spot (no encounter on the way out)
+	if (safari.on && safariZoneOf(world.current.map.id)) {
+		safari.steps--;
+		saveSafari();
+		if (safari.steps <= 0) { endSafari('PA: Ding-dong! Your SAFARI GAME is over!'); return; }
+		if (safari.steps === 50) hud.textContent = 'PA: Only 50 steps left in your SAFARI GAME!';
+	}
 	// REPEL burns a step, and announces the moment it runs out (that message is
 	// the whole reason the item feels responsive)
 	if (repelSteps > 0) {
@@ -3155,6 +3165,55 @@ function pickupCheck() {
 	}
 }
 
+// ---------- SAFARI GAME ----------
+// The Safari Zones shipped as plain routes: normal battles, no fee, no balls,
+// no step meter. Real safari rules now — pay at the door, 30 SAFARI BALLS,
+// 600 steps, catch-only battles (battle.js safariBall/Bait/Rock). The session
+// persists so a reload mid-game resumes it.
+const SAFARI_ZONES = {
+	// FireRed's four areas (NORTH was de-dup-renamed KANTO_) enter via Fuchsia
+	MAP_SAFARI_ZONE_CENTER: 'fr', MAP_SAFARI_ZONE_EAST: 'fr',
+	MAP_SAFARI_ZONE_WEST: 'fr', MAP_KANTO_SAFARI_ZONE_NORTH: 'fr',
+	// Emerald's six areas enter via Route 121
+	MAP_SAFARI_ZONE_NORTH: 'hoenn', MAP_SAFARI_ZONE_SOUTH: 'hoenn',
+	MAP_SAFARI_ZONE_SOUTHWEST: 'hoenn', MAP_SAFARI_ZONE_SOUTHEAST: 'hoenn',
+	MAP_SAFARI_ZONE_NORTHWEST: 'hoenn', MAP_SAFARI_ZONE_NORTHEAST: 'hoenn',
+};
+const SAFARI_GATES = { fr: 'MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE', hoenn: 'MAP_ROUTE121_SAFARI_ZONE_ENTRANCE' };
+const SAFARI_FEE = 500, SAFARI_BALLS = 30, SAFARI_STEPS = 600;
+let safari = safeLoad('magepunk_safari_v1', null) || { on: false, zone: null, balls: 0, steps: 0 };
+function safariZoneOf(mapId) { return SAFARI_ZONES[mapId] || null; }
+function saveSafari() { safeSave('magepunk_safari_v1', safari); }
+function endSafari(reason) {
+	const zone = safari.zone;
+	safari = { on: false, zone: null, balls: 0, steps: 0 };
+	saveSafari();
+	if (reason) dialog.open(reason, () => { if (zone) warpTo(SAFARI_GATES[zone], 0); });
+}
+// on every map entry: offer the game at the zone's doorstep, or end a running
+// game the moment the player is neither in a play area nor a zone rest house
+function checkSafariGate() {
+	const id = world.current?.map?.id || '';
+	const zone = safariZoneOf(id);
+	if (zone && !safari.on) {
+		if (cutscene.blocking || dialog.blocking) return;
+		dialog.open(`PA: Welcome to the SAFARI GAME!\n$${SAFARI_FEE} buys ${SAFARI_BALLS} SAFARI BALLS and ${SAFARI_STEPS} steps.\n\nZ = Play    X = Walk back out`, key => {
+			if (key === 'x') { warpTo(SAFARI_GATES[zone], 0); return; }
+			if (!Bag.spend(SAFARI_FEE)) {
+				dialog.open("PA: You can't afford the entry fee...", () => warpTo(SAFARI_GATES[zone], 0));
+				return;
+			}
+			safari = { on: true, zone, balls: SAFARI_BALLS, steps: SAFARI_STEPS };
+			saveSafari();
+			hud.textContent = `SAFARI GAME start! ${SAFARI_BALLS} balls, ${SAFARI_STEPS} steps.`;
+		});
+	} else if (safari.on && !zone && !/REST_HOUSE|SECRET_HOUSE/.test(id)) {
+		// walked out through a gate (or flew away): the game ends quietly
+		endSafari(null);
+		hud.textContent = 'PA: Thanks for playing the SAFARI GAME!';
+	}
+}
+
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
 	// RANSEI RIFT (post-Champion): a slice of wild encounters tears open into
@@ -3170,8 +3229,11 @@ function startWildBattle(pick, forceDouble) {
 	// region-guarded itself, so this is a no-op everywhere else.
 	pick = { ...pick, level: wildEncounterLevel(pick.level) };
 	Dex.markSeen(pick.id);
+	// SAFARI GAME encounters run catch-only against the LIVE session object
+	// (battle.js burns its balls in place); hordes never spawn there
+	const inSafari = !!(safari.on && safariZoneOf(world.current.map.id));
 	// a slice of grass encounters are horde-style double battles
-	const second = (forceDouble || Math.random() < 0.1)
+	const second = !inSafari && (forceDouble || Math.random() < 0.1)
 		&& party.filter(m => m.curHP > 0).length >= 2
 		? encounters.pick(world.current.map.id) : null;
 	if (second) Dex.markSeen(second.id);
@@ -3188,7 +3250,11 @@ function startWildBattle(pick, forceDouble) {
 			saveParty(party);
 		}
 		if (result === 'victory') { evolution.check(party, battle.data); pickupCheck(); }
-	}, second, { weather: mapWeatherNow() });
+		if (inSafari) {
+			saveSafari();   // the battle burned balls on the shared session
+			if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
+		}
+	}, second, { weather: mapWeatherNow(), safari: inSafari ? safari : null });
 }
 
 // ---------- cutscenes ----------
@@ -6144,6 +6210,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// entry, but boot loads the first map directly (world.load, not moveToMap),
 	// so a scene waiting on the map you resume into would never fire.
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] boot onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// booting straight into a Safari Zone (reload mid-game, or a save standing
+	// inside with no session) must speak the PA line too — boot bypasses
+	// refreshMapContent, where the gate check normally lives
+	try { checkSafariGate(); } catch (e) { console.warn('[safari] boot gate check failed', e); }
 	refreshObjective(); // show the current quest objective on boot
 	// Resuming mid-intro — region chosen, starter not yet collected. The lab
 	// trigger (checkIntroTrigger) still fires when they walk in, so the only gap is
@@ -6216,7 +6286,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
-		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
+	get safariState() { return safari; }, checkSafariGate, endSafari, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
