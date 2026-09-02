@@ -1700,7 +1700,7 @@ export class Battle {
 			}
 			if (fx.blow) {
 				if (a.isTrainer) { this.pushMsg('But it failed!'); return; }
-				this.pushMsg(`${isFoe ? a.me.name : a.foe.name} was blown away!`, () => this.finish('escaped'));
+				this.pushMsg(`${isFoe ? a.me.name : a.foe.name} was blown away!`, () => { sfx('flee'); this.finish('escaped'); });
 				return;
 			}
 			if (fx.cureParty) {
@@ -1802,6 +1802,7 @@ export class Battle {
 					// visible punch, same rule as the doubles/self path: the arrow pops
 					// on the sprite so a buff/debuff turn doesn't read as nothing
 					const arrows = { atk: 'ATK', def: 'DEF', spa: 'SP.A', spd: 'SP.D', spe: 'SPE', acc: 'ACC', eva: 'EVA' };
+					sfx(d > 0 ? 'stat_up' : 'stat_dn');
 					this.float(this.sideOfMon(who), `${arrows[st] || st}${d > 0 ? '↑' : '↓'}${Math.abs(d) > 1 ? Math.abs(d) : ''}`,
 						d > 0 ? '#6be08a' : '#e0736b');
 				}
@@ -3177,6 +3178,7 @@ export class Battle {
 			mon.friend = Math.min(255, (mon.friend ?? 70) + 1 * bell);
 			const lvl = mon.level;
 			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
+				sfx('levelup');
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 				const oldMax = mon.maxHP;
 				const before = { ...mon.stats };
@@ -3315,9 +3317,9 @@ export class Battle {
 					: `The wild ${a.foe.name} calmed down.`);
 			}
 			if (Math.random() < flee) {
-				this.pushMsg(`The wild ${a.foe.name} fled!`, () => this.finish('escaped'));
+				this.pushMsg(`The wild ${a.foe.name} fled!`, () => { sfx('flee'); this.finish('escaped'); });
 			} else if (a.safari.balls <= 0) {
-				this.pushMsg('PA: You are out of SAFARI BALLS!', () => this.finish('escaped'));
+				this.pushMsg('PA: You are out of SAFARI BALLS!', () => { sfx('flee'); this.finish('escaped'); });
 			} else {
 				this.pushMsg(`The wild ${a.foe.name} is watching carefully...`);
 			}
@@ -3337,7 +3339,7 @@ export class Battle {
 			const f = (Math.floor(mySpe * 128 / foeSpe) + 30 * a.runAttempts) % 256;
 			ok = Math.floor(Math.random() * 256) < f;
 		}
-		if (ok) this.pushMsg('Got away safely!', () => this.finish('escaped'));
+		if (ok) this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); });
 		else {
 			this.pushMsg("Can't escape!");
 			this.pushMsg('', () => {
@@ -3358,8 +3360,14 @@ export class Battle {
 	key(k) {
 		const a = this.active;
 		if (!a) return;
+		// the little sounds: menus tick, confirm and cancel; text advances blip
+		if (['menu', 'moves', 'bag', 'switch', 'target', 'learn'].includes(a.phase)) {
+			if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) sfx('ui_move');
+			else if (k === 'z' || k === 'Enter') sfx('ui_select');
+			else if (k === 'x') sfx('ui_cancel');
+		}
 		// advance message
-		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { this.fastForward(); return; }
+		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { sfx('text_tick'); this.fastForward(); return; }
 		if (a.phase === 'menu') {
 			// SAFARI GAME: the whole menu is BALL/BAIT/ROCK/RUN — no fighting, no
 			// bag, no switching. R throws a ball, same shortcut as a normal capture.
@@ -3371,7 +3379,7 @@ export class Battle {
 					if (a.menuIdx === 0) this.startQueue(() => this.safariBall());
 					else if (a.menuIdx === 1) this.startQueue(() => this.safariBait());
 					else if (a.menuIdx === 2) this.startQueue(() => this.safariRock());
-					else this.startQueue(() => this.pushMsg('Got away safely!', () => this.finish('escaped')));
+					else this.startQueue(() => this.pushMsg('Got away safely!', () => { sfx('flee'); this.finish('escaped'); }));
 				}
 				return;
 			}
@@ -3500,6 +3508,7 @@ export class Battle {
 					this.pushMsg(`${who.name}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
 					// visible punch: the text line alone made buff turns read as
 					// nothing happening — float the arrow on the sprite too
+					sfx(d > 0 ? 'stat_up' : 'stat_dn');
 					this.float(this.sideOfMon(who), `${arrows[st] || st}${d > 0 ? '↑' : '↓'}${Math.abs(d) > 1 ? Math.abs(d) : ''}`,
 						d > 0 ? '#6be08a' : '#e0736b');
 				}
@@ -3691,7 +3700,7 @@ export class Battle {
 		}
 		if (fx.fleeSelf) {
 			if (a.isTrainer) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} fled the battle!`, () => this.finish('escaped'));
+			this.pushMsg(`${user.name} fled the battle!`, () => { sfx('flee'); this.finish('escaped'); });
 			return true;
 		}
 		if (fx.memento) {
@@ -4478,7 +4487,8 @@ export class Battle {
 								});
 							}
 						}
-						// status archetypes ride the same particle system: BOOST/HEAL
+						if (a.fx.kind === 'faint') sfx('faint');
+					// status archetypes ride the same particle system: BOOST/HEAL
 						// sparkles rise off the caster, DEBUFF motes sink onto the victim
 						if (a.fx.kind === 'boost' || a.fx.kind === 'heal') {
 							a.particles ||= [];
