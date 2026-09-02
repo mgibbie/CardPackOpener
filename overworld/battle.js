@@ -6,7 +6,7 @@ import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
-import { animScale } from './settings.js';
+import { animScale, charsPerSec } from './settings.js';
 import { expForLevel, levelForExp, MAX_LEVEL, CLASSIC_MAX_LEVEL } from './badges.js';
 
 const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
@@ -1221,6 +1221,8 @@ export class Battle {
 		if (st === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 		if (bad) { target.badPsn = true; target.toxicN = 1; }
 		this.pushMsg(`${target.name} ${bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[st]}`);
+		// same visible-punch rule as stat stages: the ailment tag pops on the sprite
+		this.float(this.sideOfMon(target), st.toUpperCase(), '#e0b36b');
 		this.pushMsg('', () => this.checkBerry(target, target === this.active?.me ? 'me' : 'foe'));
 		if (source && this.abilityOf(target) === 'synchronize' && ['brn', 'psn', 'par'].includes(st)) {
 			this.pushMsg(`${target.name}'s Synchronize passed it back!`, () => {});
@@ -1708,6 +1710,11 @@ export class Battle {
 					any = true;
 					const dirWord = d > 0 ? (d > 1 ? 'rose sharply' : 'rose') : (d < -1 ? 'fell harshly' : 'fell');
 					this.pushMsg(`${who.name}'s ${words[st]} ${dirWord}!`);
+					// visible punch, same rule as the doubles/self path: the arrow pops
+					// on the sprite so a buff/debuff turn doesn't read as nothing
+					const arrows = { atk: 'ATK', def: 'DEF', spa: 'SP.A', spd: 'SP.D', spe: 'SPE', acc: 'ACC', eva: 'EVA' };
+					this.float(this.sideOfMon(who), `${arrows[st] || st}${d > 0 ? '↑' : '↓'}${Math.abs(d) > 1 ? Math.abs(d) : ''}`,
+						d > 0 ? '#6be08a' : '#e0736b');
 				}
 				if (!any) this.pushMsg('But it failed!');
 				// Defiant / Competitive punish foe-inflicted drops
@@ -2703,6 +2710,11 @@ export class Battle {
 			return a.foe.curHP > a.foe.maxHP * 0.7 ? (early ? 80 : 40) : 0;
 		}
 		if (st && st.foe) return early ? 30 : 15;
+		// A status move the engine has NO model for scores nothing. The old
+		// default of 20 meant "an unknown trick is probably worth something" —
+		// tolerable while damage scores were raw-power-sized, but on the percent
+		// scale it let SPLASH outbid an honest chip hit from a weak attacker.
+		if (fx.noop || fx.splashMsg || (!Object.keys(fx).length && !st)) return 0;
 		return fx.protect || fx.selfKO ? 0 : 20;
 	}
 
@@ -2737,32 +2749,58 @@ export class Battle {
 				if (defAb === 'levitate' && mv.type === 'Ground') continue;
 				if (AB_ABSORB[defAb]?.t === mv.type) continue;
 				if (defAb === 'flashfire' && mv.type === 'Fire') continue;
-				score = pw
-					* (user.types.includes(mv.type) ? 1.5 : 1)
-					* effectiveness(mv.type, target.types);
+				// Score by the SHARE of the target this would remove — computed
+				// damage, so stages and stat spreads finally matter — and treat a
+				// guaranteed finish as beyond price: nothing else compares, and
+				// among lethal moves the one that strikes first (priority) wins.
+				// The ×1.5 keeps damage comparable to the statusMoveValue scale
+				// (tuned against the old raw-power scores): a boss still opens with
+				// its 85-point status unless it can remove ~57%+, a route trainer's
+				// 0.6× status discount still loses to a solid neutral hit.
+				const est = this.estimateDamage(user, target, m);
+				score = Math.min(150, 100 * est / Math.max(1, target.maxHP)) * 1.5;
+				if (est >= target.curHP) score = 1000 + (mv.priority || 0) * 10 + score / 10;
 			}
 			if (score > bestScore) { bestScore = score; best = m; }
 		}
 		return best || usable[Math.floor(Math.random() * usable.length)];
 	}
 
-	// how well candidate `c` lines up against the player's active mon: its best
-	// STAB/effectiveness hit minus how hard it gets hit back
+	// What a move would actually DO: the real damage core — level, the right
+	// attack against the right defense, stat stages, STAB, effectiveness — minus
+	// only the random roll. The AI used to rank on RAW BASE POWER, which ignores
+	// every stat in the game: a boss would pick its resisted 120-power STAB over
+	// the neutral coverage move that wins, and never recognised a finishable
+	// target. Optional boost args let matchupScore rate a BENCHED candidate
+	// (boostsOf falls through to the active foe's stages, which a bench mon
+	// doesn't have).
+	estimateDamage(user, target, m, ub, tb) {
+		const mv = this.data.moves[m.id] || {};
+		const pw = mv.power || AI_EST_POWER[m.id] || 0;
+		if (!pw) return 0;
+		const phys = (mv.category || 'Physical') === 'Physical';
+		const A = this.statOf(user, ub || this.boostsOf(user), phys ? 'atk' : 'spa');
+		const D = Math.max(1, this.statOf(target, tb || this.boostsOf(target), phys ? 'def' : 'spd'));
+		const stabEff = (user.types.includes(mv.type) ? 1.5 : 1) * effectiveness(mv.type, target.types);
+		const base = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * pw * A / D) / 50) + 2;
+		// a mon with no usable stat line (imported data can be sparse) falls back
+		// to raw power as the damage stand-in rather than poisoning every
+		// comparison with NaN — NaN never wins a `>`, so the AI would go random
+		return Number.isFinite(base) ? Math.floor(base * stabEff) : Math.floor(pw * stabEff);
+	}
+
+	// how well candidate `c` lines up against the player's active mon: the share
+	// of the target its best hit removes, minus how hard it gets hit back. Both
+	// sides are ESTIMATED damage now (see estimateDamage) — the old version
+	// compared base powers, so a bench mon with a huge move and no Attack stat
+	// looked like a wall answer.
 	matchupScore(c, target) {
+		const fresh = freshBoosts();
 		let off = 0;
-		for (const m of c.moves) {
-			const mv = this.data.moves[m.id] || {};
-			const pw = mv.power || AI_EST_POWER[m.id] || 0;
-			if (!pw) continue;
-			off = Math.max(off, pw * effectiveness(mv.type, target.types) * (c.types.includes(mv.type) ? 1.5 : 1));
-		}
+		for (const m of c.moves) off = Math.max(off, this.estimateDamage(c, target, m, fresh, this.boostsOf(target)));
 		let danger = 0;
-		for (const m of target.moves) {
-			const mv = this.data.moves[m.id] || {};
-			if (!mv.power) continue;
-			danger = Math.max(danger, effectiveness(mv.type, c.types));
-		}
-		return off - 40 * danger;
+		for (const m of target.moves) danger = Math.max(danger, this.estimateDamage(target, c, m, this.boostsOf(target), fresh));
+		return 100 * off / Math.max(1, target.maxHP) - 40 * danger / Math.max(1, c.maxHP);
 	}
 
 	// boss-tier counter-switch: hard-countered (nothing lands >0.5x AND the
@@ -2850,7 +2888,10 @@ export class Battle {
 		const myAct = () => this.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, myMove, false);
 		const foeAct = foePotion
 			? () => this.pushMsg(`${a.info.displayName} used a HYPER POTION on ${a.foe.name}!`, () => {
-				a.foe.curHP = Math.min(a.foe.maxHP, a.foe.curHP + 120);
+				// half the mon's own health, floored at the old flat 120 — a flat
+				// number meant a Lv255 ace "healed" a sliver and the whole beat
+				// read as broken, while its Sitrus Berry out-healed the trainer
+				a.foe.curHP = Math.min(a.foe.maxHP, a.foe.curHP + Math.max(120, Math.floor(a.foe.maxHP / 2)));
 			})
 			: () => this.useMove(a.foe, a.foeBoosts, a.me, a.meBoosts, foeMove, true);
 		// a trainer's item use preempts moves, like the real games
@@ -3006,6 +3047,7 @@ export class Battle {
 			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 				const oldMax = mon.maxHP;
+				const before = { ...mon.stats };
 				mon.stats = statsFor(sp, ivs, lvl, mon);
 				// the level-up recalc is the new canonical statline — don't let a
 				// Transform-snapshot restore roll it back after the battle
@@ -3014,6 +3056,11 @@ export class Battle {
 				mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
 				if (mon === a.me) a.meShownHP = mon.curHP;
 				else if (mon === a.meAlly) a.meAllyShownHP = mon.curHP;
+				// the stat-gain window, GBA style — leveling used to recalc silently,
+				// which made growth weightless. Queued from inside the callback so it
+				// reads the freshly computed statline.
+				const gain = k => (mon.stats[k] || 0) - (before[k] || 0);
+				this.pushMsg(`HP +${gain('hp')}  ATK +${gain('atk')}  DEF +${gain('def')}\nSP.A +${gain('spa')}  SP.D +${gain('spd')}  SPE +${gain('spe')}`);
 			});
 			for (const [lv, mid] of sp.learnset) {
 				if (lv !== lvl || mon.moves.some(m => m.id === mid)) continue;
@@ -3225,6 +3272,7 @@ export class Battle {
 		const boostWords = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
 		const applyBoosts = (boosts, who, stats) => {
 			const ab4 = this.abilityOf(who);
+			const arrows = { atk: 'ATK', def: 'DEF', spa: 'SP.A', spd: 'SP.D', spe: 'SPE', acc: 'ACC', eva: 'EVA' };
 			for (let [st, d] of Object.entries(stats)) {
 				if (ab4 === 'contrary') d = -d;
 				if (ab4 === 'simple') d *= 2;
@@ -3232,6 +3280,10 @@ export class Battle {
 				boosts[st] = Math.max(-6, Math.min(6, before + d));
 				if (boosts[st] !== before) {
 					this.pushMsg(`${who.name}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
+					// visible punch: the text line alone made buff turns read as
+					// nothing happening — float the arrow on the sprite too
+					this.float(this.sideOfMon(who), `${arrows[st] || st}${d > 0 ? '↑' : '↓'}${Math.abs(d) > 1 ? Math.abs(d) : ''}`,
+						d > 0 ? '#6be08a' : '#e0736b');
 				}
 			}
 		};
@@ -4158,7 +4210,14 @@ export class Battle {
 			// waiting for HP bars before advancing
 			const settled = a.foeShownHP === a.foe.curHP && a.meShownHP === a.me.curHP;
 			a.msgT += dt;
-			if ((a.msgT > 1.1 || a.msgT >= 99) && settled) {
+			// The auto-advance dwell follows the player's TEXT SPEED. It was a hard
+			// 1.1 s per line whatever the setting — the one knob that exists to kill
+			// the grind tax, and battle never read it. `instant` all but removes the
+			// wait (a beat remains so a line can't vanish before the eye lands on
+			// it); slow readers get a little longer than the old default.
+			const cps = charsPerSec();
+			const dwell = cps === Infinity ? 0.2 : Math.min(1.6, Math.max(0.45, 48 / cps));
+			if ((a.msgT > dwell || a.msgT >= 99) && settled) {
 				const next = a.queue.shift();
 				if (next) {
 					if (next.anim) {
