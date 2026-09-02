@@ -104,7 +104,7 @@ export function withdraw(slot, data, cap) {
 }
 
 // called once per walked step: accrue EXP to deposits, advance breeding/hatching
-export function step(data, onHatch) {
+export function step(data, onHatch, hatchBoost = 1) {
 	let dirty = false;
 	for (const mon of state.slots) {
 		if (mon) { mon.exp = (mon.exp ?? expForLevel(mon.level)) + 1; dirty = true; }
@@ -127,7 +127,8 @@ export function step(data, onHatch) {
 	}
 	// incubate a laid egg
 	if (state.egg && !state.egg.ready) {
-		state.egg.hatch--;
+		// FLAME BODY / MAGMA ARMOR in the party warm the egg along at double pace
+		state.egg.hatch -= hatchBoost;
 		if (state.egg.hatch <= 0) { state.egg.ready = true; onHatch?.(); }
 		dirty = true;
 	}

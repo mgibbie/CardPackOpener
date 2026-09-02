@@ -316,6 +316,7 @@ trainers.repairScript = (ev, mapId) => {
 
 function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
+	if (!info.weather) info.weather = mapWeatherNow();   // the route's own sky
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
@@ -2298,6 +2299,7 @@ async function refreshMapContent(label) {
 	// the real games wipe the TEMP flag range on every map transition
 	// (ClearTempFieldEventData); ours persists it, so do it here
 	Story.clearTempFlags();
+	noteOutdoor();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
 	// arriving on a Fly-destination map registers it so you can fly back later
@@ -2522,7 +2524,47 @@ function facingTile() {
 	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
 	return [player.tx + dx, player.ty + dy, dx, dy];
 }
+// SOFTBOILED / MILK DRINK afield: the user gives a fifth of its health to the
+// most-injured OTHER party member. (The cartridge lets you pick the target; with
+// no picker in the field-move flow, "whoever needs it most" is the honest cut.)
+function fieldHealTransfer(user, label) {
+	const cost = Math.floor(user.maxHP / 5);
+	if (user.curHP <= cost) { dialog.open(`${user.name} is too weak to share its health!`); return; }
+	const target = (party || []).filter(m => m && m !== user && m.curHP > 0 && m.curHP < m.maxHP)
+		.sort((a, b) => (a.curHP / a.maxHP) - (b.curHP / b.maxHP))[0];
+	if (!target) { dialog.open('No one needs it right now.'); return; }
+	user.curHP -= cost;
+	target.curHP = Math.min(target.maxHP, target.curHP + cost);
+	saveParty(party);
+	dialog.open(`${user.name} used ${label}!\n\n${target.name} recovered ${cost} HP.`);
+}
+
 const HM_FIELD = {
+	// ---- field-utility moves (not HMs — no badge gate; hmReq returns 0) ----
+	sweetscent: { name: 'SWEET SCENT', use() {
+		const pick = encounters.pick(world.current.map.id, player.surfing ? 'water' : 'land');
+		if (!pick) { dialog.open('The sweet scent drifted away...\n\nNothing came.'); return; }
+		dialog.open('A sweet scent fills the air!', () => startWildBattle(pick));
+	} },
+	teleport: { name: 'TELEPORT', use() {
+		// the classic warp-out. This port has no "last Pokemon Center" record, so
+		// it goes to the region's home town — stated plainly rather than pretended.
+		const home = Quest.START[playerRegion()];
+		if (!home || world.current.name === home) { dialog.open("It won't work here."); return; }
+		dialog.open('You were whisked away home!', () => moveToMap(home));
+	} },
+	dig: { name: 'DIG', use() {
+		const t = world.current?.map?.map_type || '';
+		if (t !== 'MAP_TYPE_UNDERGROUND') { dialog.open('DIG can only tunnel out of caves.'); return; }
+		if (!lastOutdoor) { dialog.open("It won't work here."); return; }
+		dialog.open('You tunneled back to the surface!', () => moveToMap(lastOutdoor.map, lastOutdoor.x, lastOutdoor.y));
+	} },
+	softboiled: { name: 'SOFTBOILED', use(mon) {
+		fieldHealTransfer(mon, 'SOFTBOILED');
+	} },
+	milkdrink: { name: 'MILK DRINK', use(mon) {
+		fieldHealTransfer(mon, 'MILK DRINK');
+	} },
 	cut: { name: 'CUT', use() {
 		const [fx, fy] = facingTile();
 		const o = items.fieldObjAt(fx, fy);
@@ -2632,7 +2674,10 @@ player.onBump = (tx, ty) => { if (dialog.blocking || !party) return; const m = b
 
 player.onArrive = () => {
 	// each completed step accrues Day Care EXP and incubates any egg
-	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; });
+	// FLAME BODY / MAGMA ARMOR halve the steps an egg needs — previously
+	// battle-only text on 20-odd species
+	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; },
+		(party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
 	// warp tile?
 	const w = world.warpAt(player.tx, player.ty);
 	if (!w) savePos();
@@ -3037,6 +3082,46 @@ function dexMilestoneCheck() {
 	}
 }
 
+// ---------- ambient weather ----------
+// The in-battle weather engine has been complete for ages; nothing ever handed
+// it an ENVIRONMENTAL value, so Hoenn's desert and rainforest routes began every
+// fight in clear skies. Endless (Infinity turns) — moves and abilities overwrite
+// it with their own timed spells as usual. Emerald's canonical weather routes,
+// plus hail on the Mt Silver climb (its Gen-4 identity).
+const MAP_WEATHER = {
+	MAP_ROUTE111: 'sandstorm',
+	MAP_ROUTE119: 'rain',
+	MAP_ROUTE120: 'rain',
+	MAP_SILVER_CAVE_OUTSIDE: 'hail',
+};
+function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
+
+// last position on an outdoor map — DIG's exit point. Updated on every map
+// entry (refreshMapContent), so stepping into a cave remembers the doorstep.
+let lastOutdoor = null;
+function noteOutdoor() {
+	const t = world.current?.map?.map_type || '';
+	if (t !== 'MAP_TYPE_INDOOR' && t !== 'MAP_TYPE_UNDERGROUND' && !world.current?.map?.indoor) {
+		lastOutdoor = { map: world.current.name, x: player.tx, y: player.ty };
+	}
+}
+
+// PICKUP afield: after a wild win, an idle-handed Pickup mon may scoop something
+// up — the classic free-items loop, previously battle-only ability text.
+const PICKUP_TABLE = ['potion', 'superpotion', 'pokeball', 'greatball', 'ultraball',
+	'oranberry', 'sitrusberry', 'revive', 'fullheal', 'rarecandy'];
+function pickupCheck() {
+	for (const mon of party || []) {
+		if (!mon || mon.curHP <= 0 || mon.ability !== 'pickup' || mon.heldItem) continue;
+		if (Math.random() >= 0.1) continue;
+		const id = PICKUP_TABLE[Math.floor(Math.random() * PICKUP_TABLE.length)];
+		mon.heldItem = id;
+		hud.textContent = `${mon.name} picked up a ${Bag.ITEMS[id].name}!`;
+		saveParty(party);
+		break;    // one find per battle, like the cartridge
+	}
+}
+
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
 	// RANSEI RIFT (post-Champion): a slice of wild encounters tears open into
@@ -3069,8 +3154,8 @@ function startWildBattle(pick, forceDouble) {
 		} else {
 			saveParty(party);
 		}
-		if (result === 'victory') evolution.check(party, battle.data);
-	}, second);
+		if (result === 'victory') { evolution.check(party, battle.data); pickupCheck(); }
+	}, second, { weather: mapWeatherNow() });
 }
 
 // ---------- cutscenes ----------
@@ -6006,6 +6091,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// the real games wipe the TEMP flag range on every map transition
 	// (ClearTempFieldEventData); ours persists it, so do it here
 	Story.clearTempFlags();
+	noteOutdoor();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
@@ -6087,7 +6173,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
-		postgameObjective, postgameLog, legendStats, shopStockNow, services, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
