@@ -3482,7 +3482,7 @@ export class Battle {
 								this.resolveTurn(STRUGGLE());
 							});
 						}
-					} else { a.phase = 'moves'; a.moveIdx = 0; }
+					} else { a.phase = 'moves'; a.moveIdx = 0; a.swapFrom = null; }
 				}
 				else if (a.menuIdx === 1) { if (!a.double || a.actionFor === 0) { a.phase = 'bag'; a.bagIdx = 0; } }
 				else if (a.menuIdx === 2) {
@@ -3517,8 +3517,24 @@ export class Battle {
 			if (k === 'ArrowDown' && a.moveIdx + 2 < n) a.moveIdx += 2;
 			if (k === 'ArrowLeft' && a.moveIdx % 2 === 1) a.moveIdx--;
 			if (k === 'ArrowRight' && a.moveIdx % 2 === 0 && a.moveIdx + 1 < n) a.moveIdx++;
-			if (k === 'x') a.phase = 'menu';
+			// S arms slot-swapping on the highlighted move; choosing another slot
+			// swaps them (same slot or X cancels). The order lives on the mon, so
+			// it carries out of battle and into every later fight.
+			if (k === 's') { a.swapFrom = a.swapFrom == null ? a.moveIdx : null; sfx('ui_select'); return; }
+			if (k === 'x') {
+				if (a.swapFrom != null) { a.swapFrom = null; sfx('ui_cancel'); return; }
+				a.phase = 'menu';
+			}
 			if (k === 'z' || k === 'Enter') {
+				if (a.swapFrom != null) {
+					const from = a.swapFrom;
+					a.swapFrom = null;
+					if (from !== a.moveIdx && who.moves[from] && who.moves[a.moveIdx]) {
+						[who.moves[from], who.moves[a.moveIdx]] = [who.moves[a.moveIdx], who.moves[from]];
+						sfx('ui_select');
+					}
+					return;
+				}
 				const mv = who.moves[a.moveIdx];
 				if (this.moveUsable(who, mv, 'me')) {
 					if (a.double) this.planMove(mv);
@@ -4957,13 +4973,19 @@ export class Battle {
 				const x = 20 * ub + (i % 2) * (bw + 8 * ub);
 				const y = barY + 9 * ub + Math.floor(i / 2) * (bh + 8 * ub);
 				btn({
-					x, y, w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
-					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
+					x, y, w: bw, h: bh,
+					label: (a.swapFrom === i ? '⇄ ' : '') + mv.name.toUpperCase().slice(0, 16),
+					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}`,
+					subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
-					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
+					// while a swap is armed every slot is a valid target — no gray-out
+					type: info.type, disabled: a.swapFrom == null && !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'),
+					kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
-			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 44 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 61 * ub, w: backW, h: 44 * ub,
+				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
 			ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
@@ -5063,13 +5085,18 @@ export class Battle {
 				const info = this.data.moves[mv.id] || {};
 				btn({
 					x: pad + (i % 2) * (bw + gap), y: barY + 12 * u + Math.floor(i / 2) * (bh + gap),
-					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16),
-					sub: `PP ${mv.pp}/${mv.maxPp}`, subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
+					w: bw, h: bh,
+					label: (a.swapFrom === i ? '⇄ ' : '') + mv.name.toUpperCase().slice(0, 16),
+					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}`,
+					subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
-					type: info.type, disabled: !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'), kbSel: a.moveIdx === i,
+					type: info.type, disabled: a.swapFrom == null && !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'),
+					kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
-			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: (fullW - gap) / 2, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad + (fullW + gap) / 2, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: (fullW - gap) / 2, h: 60 * u,
+				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
 			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
@@ -5174,6 +5201,7 @@ export class Battle {
 		if (kind === 'back') { this.key('x'); return; }
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }
+		if (kind === 'swapbtn') { this.key('s'); return; }
 		if (kind === 'target') { a.targetIdx = +arg; this.key('z'); return; }
 		if (kind === 'bag') { a.bagIdx = +arg; this.key('z'); return; }
 		if (kind === 'switch') { a.switchIdx = +arg; this.key('z'); return; }
