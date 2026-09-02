@@ -955,11 +955,90 @@ const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'fo
 // music_map.json: mapId -> bgm file key (tools/gen_bgm.mjs — the accurate
 // per-map songs from Crystal/FireRed/Emerald). Loaded lazily; until it lands
 // the world is simply quiet, exactly as it was before music existed.
+//
+// On top of the map track sit the OVERRIDES, watched every frame by bgmTick:
+// battles pick the source game's battle theme (wild/trainer/gym/evil/rival/
+// champion/legendary — Crystal even keeps its separate KANTO set for JohKanto
+// and its night-wild variant), and surfing/biking play the field themes.
+// When an override ends, the map track restarts from the top — exactly what
+// the cartridges do.
 let musicMap = null;
-function syncMapBgm() {
-	if (!musicMap) return;
-	bgm(musicMap[world.current?.map?.id] || null);
+const BATTLE_THEMES = {
+	crystal: {
+		wild: 'crystal_MUSIC_JOHTO_WILD_BATTLE', wildNight: 'crystal_MUSIC_JOHTO_WILD_BATTLE_NIGHT',
+		trainer: 'crystal_MUSIC_JOHTO_TRAINER_BATTLE', gym: 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',
+		kantoWild: 'crystal_MUSIC_KANTO_WILD_BATTLE', kantoTrainer: 'crystal_MUSIC_KANTO_TRAINER_BATTLE',
+		kantoGym: 'crystal_MUSIC_KANTO_GYM_LEADER_BATTLE',
+		// GSC's Elite Four ride the gym-leader theme; only the Champion differs
+		elite: 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',
+		champion: 'crystal_MUSIC_CHAMPION_BATTLE', rival: 'crystal_MUSIC_RIVAL_BATTLE',
+		evil: 'crystal_MUSIC_ROCKET_BATTLE', evilboss: 'crystal_MUSIC_ROCKET_BATTLE',
+		legendary: 'crystal_MUSIC_SUICUNE_BATTLE', regi: 'crystal_MUSIC_SUICUNE_BATTLE',
+		surf: 'crystal_MUSIC_SURF', bike: 'crystal_MUSIC_BICYCLE',
+	},
+	firered: {
+		wild: 'firered_MUS_VS_WILD', trainer: 'firered_MUS_VS_TRAINER',
+		gym: 'firered_MUS_VS_GYM_LEADER', elite: 'firered_MUS_VS_GYM_LEADER',
+		champion: 'firered_MUS_VS_CHAMPION',
+		// FR gives rockets and the mid-game rival plain trainer music — authentic
+		rival: 'firered_MUS_VS_TRAINER', evil: 'firered_MUS_VS_TRAINER', evilboss: 'firered_MUS_VS_TRAINER',
+		legendary: 'firered_MUS_VS_LEGEND', regi: 'firered_MUS_VS_LEGEND',
+		surf: 'firered_MUS_SURF', bike: 'firered_MUS_CYCLING',
+	},
+	emerald: {
+		wild: 'emerald_MUS_VS_WILD', trainer: 'emerald_MUS_VS_TRAINER',
+		gym: 'emerald_MUS_VS_GYM_LEADER', elite: 'emerald_MUS_VS_ELITE_FOUR',
+		champion: 'emerald_MUS_VS_CHAMPION', rival: 'emerald_MUS_VS_RIVAL',
+		evil: 'emerald_MUS_VS_AQUA_MAGMA', evilboss: 'emerald_MUS_VS_AQUA_MAGMA_LEADER',
+		legendary: 'emerald_MUS_VS_KYOGRE_GROUDON', regi: 'emerald_MUS_VS_REGI',
+		surf: 'emerald_MUS_SURF', bike: 'emerald_MUS_CYCLING',
+	},
+};
+// which game's soundtrack governs here: the map's own track says; a map with
+// no music falls back to the region
+function bgmGame() {
+	const k = musicMap?.[world.current?.map?.id];
+	if (k) return k.split('_')[0];
+	const r = playerRegion();
+	return r === 'KANTO' ? 'firered' : r === 'HOENN' ? 'emerald' : 'crystal';
 }
+function battleThemeKey(a) {
+	const T = BATTLE_THEMES[bgmGame()] || BATTLE_THEMES.crystal;
+	const jk = bgmGame() === 'crystal' && (world.current?.map?.id || '').startsWith('MAP_JOHKANTO');
+	if (!a.isTrainer) {
+		if (battle.themeHint === 'regi') return T.regi;
+		if (battle.themeHint === 'legendary') return T.legendary;
+		if (jk) return T.kantoWild;
+		if (T.wildNight && Clock.phase() === 'night') return T.wildNight;
+		return T.wild;
+	}
+	const n = a.info?.displayName || '';
+	if (/Champion/i.test(n)) return T.champion;
+	if (/Elite Four/i.test(n)) return T.elite;
+	if (/Aqua Leader|Magma Leader|Giovanni/i.test(n)) return T.evilboss;
+	if (/Rocket|Team Aqua|Team Magma|Aqua |Magma |Grunt/i.test(n)) return T.evil;
+	if (/Rival/i.test(n)) return T.rival;
+	if (/^(Gym )?Leader\b/i.test(n)) return jk ? T.kantoGym : T.gym;
+	return jk ? T.kantoTrainer : T.trainer;
+}
+let bgmWant = null;
+function bgmTick() {
+	if (!musicMap) return;
+	let want;
+	if (battle.blocking) {
+		const a = battle.active;
+		if (!a) return;                        // sprites still loading — hold the current track
+		want = battleThemeKey(a);
+	} else {
+		battle.themeHint = null;               // any finished battle clears its hint
+		const T = BATTLE_THEMES[bgmGame()];
+		want = player.surfing ? T?.surf
+			: player.biking ? T?.bike
+			: (musicMap[world.current?.map?.id] || null);
+	}
+	if (want !== bgmWant) { bgmWant = want; bgm(want); }
+}
+function syncMapBgm() { bgmTick(); }
 getJSON('data/music_map.json').then(m => { musicMap = m || {}; syncMapBgm(); }).catch(() => { musicMap = {}; });
 
 function optionsKey(k) {
@@ -3090,6 +3169,7 @@ function startLegendaryBattle(e) {
 	if (!party || !leadMon(party) || battle.blocking) return;
 	Dex.markSeen(e.species);
 	dialog.open(e.intro, () => {
+		battle.themeHint = /^regi(rock|ce|steel)/.test(e.species) ? 'regi' : 'legendary';
 		battle.start(party, e.species, scaleLegendaryLevel(e.level), result => {
 			if (result === 'caught' && battle.lastCaught) {
 				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
@@ -4597,6 +4677,7 @@ function tick(now) {
 	}
 
 	battle.update(dt);
+	bgmTick();
 	pvp.update(dt);
 	factorySpec.update(dt);
 	evolution.update(dt);
@@ -6444,7 +6525,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
 	get safariState() { return safari; }, checkSafariGate, endSafari,
 	gcMenu, vfMenu, VFlip, gcKey, vfKey,
-	bgmNow, syncMapBgm, get musicMap() { return musicMap; }, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+	bgmNow, syncMapBgm, battleThemeKey, bgmGame, get musicMap() { return musicMap; }, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,

@@ -57,6 +57,10 @@ const FR = {
 	MUS_SILPH: '47', MUS_SLOW_PALLET: '05', MUS_SS_ANNE: '36',
 	MUS_TRAINER_TOWER: '26', MUS_VERMILLION: '35', MUS_VICTORY_ROAD: '69',
 	MUS_VIRIDIAN_FOREST: '17',
+	// battle + field overrides (not map music; keyed the same way)
+	MUS_VS_WILD: '18', MUS_VS_TRAINER: '11', MUS_VS_GYM_LEADER: '27',
+	MUS_VS_CHAMPION: '70', MUS_VS_LEGEND: '53',
+	MUS_SURF: '52', MUS_CYCLING: '37',
 };
 // constants whose song is another constant's file (no separate download)
 const FR_ALIAS = {
@@ -86,6 +90,12 @@ const EM = {
 	MUS_SCHOOL: 'S128', MUS_SEALED_CHAMBER: 'S237', MUS_SLATEPORT: 'S132',
 	MUS_SOOTOPOLIS: 'S227', MUS_TRICK_HOUSE: 'S239', MUS_UNDERWATER: 'S226',
 	MUS_VERDANTURF: 'S141', MUS_VICTORY_ROAD: 'S242',
+	// battle + field overrides
+	MUS_VS_WILD: 'S109', MUS_VS_TRAINER: 'S117', MUS_VS_GYM_LEADER: 'S150',
+	MUS_VS_ELITE_FOUR: 'S245', MUS_VS_CHAMPION: 'S247', MUS_VS_RIVAL: 'S211',
+	MUS_VS_AQUA_MAGMA: 'S125', MUS_VS_AQUA_MAGMA_LEADER: 'S222',
+	MUS_VS_KYOGRE_GROUDON: 'S229', MUS_VS_REGI: 'S238',
+	MUS_SURF: 'S154', MUS_CYCLING: 'S135',
 };
 const EM_ALIAS = {
 	MUS_RG_SEVII_CAVE: 'firered_MUS_MT_MOON',
@@ -149,8 +159,33 @@ async function pageLinks(url) {
 }
 
 // ---------- main ----------
+// tracks with no map of their own: battle themes and the surf/bike overrides.
+// Crystal keys resolve through the same ID table as everything MUSIC_-named;
+// FR/Emerald keys resolve through the FR/EM tables above.
+const EXTRA = [
+	// Crystal — Johto set, the separate KANTO set JohKanto uses, night wilds
+	'crystal_MUSIC_JOHTO_WILD_BATTLE', 'crystal_MUSIC_JOHTO_WILD_BATTLE_NIGHT',
+	'crystal_MUSIC_JOHTO_TRAINER_BATTLE', 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',
+	'crystal_MUSIC_KANTO_WILD_BATTLE', 'crystal_MUSIC_KANTO_TRAINER_BATTLE',
+	'crystal_MUSIC_KANTO_GYM_LEADER_BATTLE',
+	'crystal_MUSIC_CHAMPION_BATTLE', 'crystal_MUSIC_RIVAL_BATTLE',
+	'crystal_MUSIC_ROCKET_BATTLE', 'crystal_MUSIC_SUICUNE_BATTLE',
+	'crystal_MUSIC_SURF', 'crystal_MUSIC_BICYCLE',
+	// FireRed
+	'firered_MUS_VS_WILD', 'firered_MUS_VS_TRAINER', 'firered_MUS_VS_GYM_LEADER',
+	'firered_MUS_VS_CHAMPION', 'firered_MUS_VS_LEGEND',
+	'firered_MUS_SURF', 'firered_MUS_CYCLING',
+	// Emerald
+	'emerald_MUS_VS_WILD', 'emerald_MUS_VS_TRAINER', 'emerald_MUS_VS_GYM_LEADER',
+	'emerald_MUS_VS_ELITE_FOUR', 'emerald_MUS_VS_CHAMPION', 'emerald_MUS_VS_RIVAL',
+	'emerald_MUS_VS_AQUA_MAGMA', 'emerald_MUS_VS_AQUA_MAGMA_LEADER',
+	'emerald_MUS_VS_KYOGRE_GROUDON', 'emerald_MUS_VS_REGI',
+	'emerald_MUS_SURF', 'emerald_MUS_CYCLING',
+];
+
 const ids = crystalIds();
 const { map, needed } = buildMap();
+for (const k of EXTRA) needed.add(k);
 const files = [...needed].sort();
 console.log(`maps mapped: ${Object.keys(map).length}   unique files: ${files.length}`);
 

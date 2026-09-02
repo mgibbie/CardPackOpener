@@ -84,7 +84,14 @@ GBS rip, FR/Emerald by internal-sequence-name-pinned titles from the GSF rips;
 132 unique tracks, ~210MB ogg on owdata; music_map.json is the mapId->track
 table). Same-song map crossings never restart the track; Settings gained
 separate MUSIC (BGM) and SOUND FX sliders with legacy-'sound' migration.
-Not covered (future): battle themes, surf/bike overrides, move animations.
+Battle themes + surf/bike overrides followed in PR #206 (user-ordered):
+wild/trainer/gym/Elite-Four/champion/rival/evil-team/legendary themes per
+source game — Crystal keeps its separate KANTO battle set for JohKanto, its
+night-wild variant, and the Suicune theme for legendaries; Emerald
+distinguishes grunts from their leaders and the Regi trio; FR authentically
+gives rockets plain trainer music. Surf and bike (C key) override the map
+track; every override ends by restarting the map song, as the cartridges do.
+Not covered (future): move animations (the batch's remaining half).
 
 12. **Music.** There is none — no overworld themes, no battle theme, no
     victory fanfare; sound.js is cries+sfx only. The single largest "feels
