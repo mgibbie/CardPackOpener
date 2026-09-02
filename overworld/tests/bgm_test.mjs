@@ -163,6 +163,71 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		});
 		A(audio.ok && audio.bytes > 100000, 'the New Bark track serves as real audio', JSON.stringify(audio));
 
+		// ---------- battle themes + surf/bike overrides ----------
+		const themes = await page.evaluate(async () => {
+			const ow = window.__ow; const b = ow.battle;
+			const out = {};
+			// currently standing in Littleroot (emerald): classification is pure
+			out.game = ow.bgmGame();
+			out.champion = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Champion Steven' } });
+			out.elite = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Elite Four Phoebe' } });
+			out.grunt = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Team Aqua Grunt' } });
+			out.evilboss = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Aqua Leader Archie' } });
+			out.gym = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Leader Roxanne' } });
+			out.plain = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Youngster Timmy' } });
+			b.themeHint = 'regi';
+			out.regi = ow.battleThemeKey({ isTrainer: false });
+			b.themeHint = null;
+			// a REAL wild battle flips the live track, and its end restores the map's
+			const done = new Promise(res => b.start(ow.party, 'zigzagoon', 5, r => res(r)));
+			for (let i = 0; i < 300; i++) { const a = b.active; if (a && (a.phase === 'choose' || a.phase === 'menu')) break; await new Promise(r => setTimeout(r, 60)); }
+			await window.__until(() => /VS_WILD/.test(ow.bgmNow() || ''));
+			out.duringBattle = ow.bgmNow();
+			b.finish('ran'); await done;
+			await window.__until(() => ow.bgmNow() === 'emerald_MUS_LITTLEROOT');
+			out.afterBattle = ow.bgmNow();
+			// surf + bike overrides, and the dismount restore
+			ow.player.surfing = true;
+			await window.__until(() => /SURF/.test(ow.bgmNow() || ''));
+			out.surf = ow.bgmNow();
+			ow.player.surfing = false; ow.player.biking = true;
+			await window.__until(() => /CYCLING/.test(ow.bgmNow() || ''));
+			out.bike = ow.bgmNow();
+			ow.player.biking = false;
+			await window.__until(() => ow.bgmNow() === 'emerald_MUS_LITTLEROOT');
+			out.dismount = ow.bgmNow();
+			// JohKanto gets Crystal's separate KANTO battle set
+			const jkId = Object.keys(ow.musicMap).find(k => k.startsWith('MAP_JOHKANTO'));
+			await ow.moveToMap(ow.world.fileFor(jkId));
+			out.jkWild = ow.battleThemeKey({ isTrainer: false });
+			out.jkTrainer = ow.battleThemeKey({ isTrainer: true, info: { displayName: 'Youngster Joey' } });
+			return out;
+		});
+		A(themes.game === 'emerald' && themes.champion === 'emerald_MUS_VS_CHAMPION'
+			&& themes.elite === 'emerald_MUS_VS_ELITE_FOUR' && themes.gym === 'emerald_MUS_VS_GYM_LEADER',
+			'bosses get their boss themes',
+			JSON.stringify({ game: themes.game, champion: themes.champion, elite: themes.elite, gym: themes.gym }));
+		A(themes.grunt === 'emerald_MUS_VS_AQUA_MAGMA' && themes.evilboss === 'emerald_MUS_VS_AQUA_MAGMA_LEADER'
+			&& themes.plain === 'emerald_MUS_VS_TRAINER',
+			'evil teams, their leaders, and plain trainers all differ', JSON.stringify([themes.grunt, themes.evilboss]));
+		A(themes.regi === 'emerald_MUS_VS_REGI', 'the Regi trio get their own battle theme', themes.regi);
+		A(themes.duringBattle === 'emerald_MUS_VS_WILD' && themes.afterBattle === 'emerald_MUS_LITTLEROOT',
+			'a live wild battle swaps the track in and the map music returns after', JSON.stringify([themes.duringBattle, themes.afterBattle]));
+		A(themes.surf === 'emerald_MUS_SURF' && themes.bike === 'emerald_MUS_CYCLING' && themes.dismount === 'emerald_MUS_LITTLEROOT',
+			'surf and bike override the map, dismount restores it', JSON.stringify([themes.surf, themes.bike]));
+		A(themes.jkWild === 'crystal_MUSIC_KANTO_WILD_BATTLE' && themes.jkTrainer === 'crystal_MUSIC_KANTO_TRAINER_BATTLE',
+			"JohKanto uses Crystal's separate KANTO battle set", JSON.stringify([themes.jkWild, themes.jkTrainer]));
+
+		// every theme key BATTLE_THEMES references exists as a real file
+		{
+			const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+			const bgmDir = path.join(ROOT, 'overworld/data/sounds/bgm');
+			const refs = [...new Set([...main.matchAll(/'((?:crystal|firered|emerald)_MUS\w+)'/g)].map(m => m[1]))];
+			const gone = refs.filter(k => !fs.existsSync(path.join(bgmDir, k + '.ogg')));
+			A(refs.length > 30 && gone.length === 0,
+				`all ${refs.length} theme keys in BATTLE_THEMES have real files`, gone.slice(0, 4).join(', '));
+		}
+
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
 		A(false, 'harness crashed: ' + e.message);
