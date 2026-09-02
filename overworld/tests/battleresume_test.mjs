@@ -119,6 +119,28 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		});
 		A(resumed && resumed.species === 'sentret' && resumed.hp === 313 && resumed.max === 400 && resumed.atk === 2,
 			'after the reload the SAME battle resumes — foe, HP and boosts intact', JSON.stringify(resumed));
+
+		// TWO moves must land after a resume. The first shipped version stored a
+		// live mon ref (lastTaken.from) — the snapshot tick then threw on the
+		// circular mon graph every frame and the battle locked after one move.
+		const twoMoves = await page.evaluate(async () => {
+			const ow = window.__ow; const b = ow.battle; const a = b.active;
+			a.foe.maxHP = 4000; a.foe.curHP = 4000; a.foeShownHP = 4000;   // outlive both moves
+			const key = k => dispatchEvent(new KeyboardEvent('keydown', { key: k }));
+			const wait = ms => new Promise(r => setTimeout(r, ms));
+			const move = async () => {
+				const hp0 = a.foe.curHP;
+				key('z'); await wait(200); key('z');
+				for (let i = 0; i < 80; i++) { if (a.phase === 'menu' && a.queue.length === 0 && a.foe.curHP < hp0) break; await wait(200); }
+				return hp0 - a.foe.curHP;
+			};
+			const d1 = await move();
+			await wait(1800);          // let the snapshot tick run between moves
+			const d2 = await move();
+			return { d1, d2, phase: a.phase };
+		});
+		A(twoMoves.d1 > 0 && twoMoves.d2 > 0 && twoMoves.phase === 'menu',
+			'a resumed battle takes move after move (the one-move lock is dead)', JSON.stringify(twoMoves));
 		const cleaned = await page.evaluate(async () => {
 			const ow = window.__ow; const b = ow.battle;
 			b.startQueue(() => b.tryRun());

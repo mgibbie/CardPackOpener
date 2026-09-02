@@ -967,12 +967,14 @@ function persistBattle() {
 	if (resumable) {
 		const now = performance.now();
 		if (now - battleSaveAt < 1500) return;
-		const snap = battle.snapshot();
-		if (!snap) return;
-		battleSaveAt = now;
-		safeSave(BATTLE_SAVE_KEY, { v: 1, snap, end: battle.endSpec, map: world.current.name });
-		saveParty(party);   // the party's mid-battle HP/PP must match the snapshot
-		battleSaveDirty = true;
+		battleSaveAt = now;   // even a failed attempt waits — a throwing snapshot must not spin every frame
+		try {
+			const snap = battle.snapshot();
+			if (!snap) return;
+			safeSave(BATTLE_SAVE_KEY, { v: 1, snap, end: battle.endSpec, map: world.current.name });
+			saveParty(party);   // the party's mid-battle HP/PP must match the snapshot
+			battleSaveDirty = true;
+		} catch (e) { console.warn('[battle-save] snapshot failed', e); }
 	} else if (battleSaveDirty && !battle.blocking) {
 		battleSaveDirty = false;
 		try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) { /* storage gone */ }
