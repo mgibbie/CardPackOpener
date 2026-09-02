@@ -4,9 +4,16 @@ import { safeLoad, safeSave } from './safestore.js';
 const KEY = 'magepunk_settings';
 
 // each option: ordered value list; the stored value is one of these
+// volume sliders run 0..100 in tens; ◄► steps them like every other option
+const PCTS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+// plain '=' bars: the m6x11plus pixel font has no block-glyph coverage
+const pctBar = v => (v === 0 ? 'OFF' : '='.repeat(Math.round(v / 10)) + ' ' + v + '%');
 export const OPTIONS = {
 	textSpeed: { label: 'TEXT SPEED', values: ['slow', 'mid', 'fast', 'instant'], show: v => v.toUpperCase() },
-	sound: { label: 'SOUND', values: ['off', 'low', 'mid', 'full'], show: v => v.toUpperCase() },
+	// music and effects get SEPARATE sliders — the old single 'sound' option is
+	// migrated in load() so nobody's saved preference is lost
+	bgmVol: { label: 'MUSIC (BGM)', values: PCTS, show: pctBar },
+	sfxVol: { label: 'SOUND FX', values: PCTS, show: pctBar },
 	autoRun: { label: 'AUTO-RUN', values: [false, true], show: v => (v ? 'ON' : 'OFF') },
 	dayNight: { label: 'DAY & NIGHT', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
 	followers: { label: 'FOLLOWERS', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
@@ -14,11 +21,18 @@ export const OPTIONS = {
 	// attack sequences forever, with only a per-message tap to skip
 	battleAnim: { label: 'BATTLE ANIM', values: ['full', 'fast', 'off'], show: v => v.toUpperCase() },
 };
-const DEFAULTS = { textSpeed: 'mid', sound: 'full', autoRun: false, dayNight: true, followers: true, battleAnim: 'full' };
+const DEFAULTS = { textSpeed: 'mid', bgmVol: 70, sfxVol: 100, autoRun: false, dayNight: true, followers: true, battleAnim: 'full' };
 
 function load() {
 	const d = safeLoad(KEY, null);
-	if (d && typeof d === 'object') return { ...DEFAULTS, ...d };
+	if (d && typeof d === 'object') {
+		// legacy single 'sound' knob -> both sliders (music a notch under sfx)
+		if (d.sound != null && d.sfxVol == null) {
+			d.sfxVol = { off: 0, low: 40, mid: 70, full: 100 }[d.sound] ?? 100;
+			d.bgmVol = Math.min(d.sfxVol, 70);
+		}
+		return { ...DEFAULTS, ...d };
+	}
 	return { ...DEFAULTS };
 }
 let cfg = load();
@@ -38,8 +52,8 @@ export function cycle(k, dir = 1) {
 export function displayValue(k) { return OPTIONS[k].show(cfg[k]); }
 
 // derived helpers other modules consume
-const VOL = { off: 0, low: 0.35, mid: 0.65, full: 1 };
-export function volumeMult() { return VOL[cfg.sound] ?? 1; }
+export function volumeMult() { return Math.max(0, Math.min(1, (cfg.sfxVol ?? 100) / 100)); }
+export function bgmMult() { return Math.max(0, Math.min(1, (cfg.bgmVol ?? 70) / 100)); }
 const CPS = { slow: 18, mid: 42, fast: 90, instant: Infinity };
 export function charsPerSec() { return CPS[cfg.textSpeed] ?? 42; }
 // multiplier the battle applies to every queued animation duration
