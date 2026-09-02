@@ -75,7 +75,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     and make the AI potion a % heal instead of flat 120. battle.js:2756, 2836.
     **[2/5 · S]**
 
-## Batch 3 — Sound & spectacle — music HALF-DONE (PR #205, user-ordered); animations still skipped
+## Batch 3 — Sound & spectacle — COMPLETE (PRs #205-#207, all user-ordered)
 
 The music item shipped 2026-09-02 on user order ("accurate music for each
 map"): every map plays its decomp-accurate track from Crystal/FireRed/Emerald
@@ -91,7 +91,11 @@ night-wild variant, and the Suicune theme for legendaries; Emerald
 distinguishes grunts from their leaders and the Regi trio; FR authentically
 gives rockets plain trainer music. Surf and bike (C key) override the map
 track; every override ends by restarting the map song, as the cartridges do.
-Not covered (future): move animations (the batch's remaining half).
+Move animations closed the batch in PR #207: every attack classified into
+archetypes (BEAM pours, SHOT lobs, SLASH rakes with the contact lunge, other
+specials BURST, plain contact keeps the classic STRIKE lunge), status moves
+animate for the first time (BOOST/HEAL sparkles rise off the caster, DEBUFF
+motes sink onto the victim), all riding the BATTLE ANIM speed setting.
 
 12. **Music.** There is none — no overworld themes, no battle theme, no
     victory fanfare; sound.js is cries+sfx only. The single largest "feels
