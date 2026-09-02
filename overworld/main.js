@@ -121,7 +121,59 @@ const objectiveEl = document.getElementById('objective');
 // keep the persistent on-screen objective in sync with the quest stage
 function refreshObjective() {
 	if (!objectiveEl) return;
-	objectiveEl.textContent = party ? ('NEXT: ' + Quest.objective(playerRegion())) : '';
+	// Once the HOME region is done, the POSTGAME arc takes the line. Every
+	// objective surface used to key off the starting region forever, so the
+	// entire postgame was silent: standing on Mt Silver, a Kanto starter read
+	// "MEWTWO stirs in CERULEAN CAVE" and the 16-badge climb, RED and the
+	// legendary hunt got no guidance at all.
+	const pg = Quest.stage(playerRegion()) === Quest.DONE ? postgameObjective() : null;
+	objectiveEl.textContent = party ? ('NEXT: ' + (pg || Quest.objective(playerRegion()))) : '';
+}
+
+// ---------- the postgame arc, as guidance ----------
+// The content exists (JohKanto's 8 gyms, the Mt Silver league, 87+ placed
+// legendaries); this is the layer that TELLS the player so. Lives here rather
+// than quest.js because it reads the legendary registry, which is main's.
+const JOHKANTO_GYMS = [
+	['BROCK', 'PEWTER CITY'], ['MISTY', 'CERULEAN CITY'], ['LT. SURGE', 'VERMILION CITY'],
+	['ERIKA', 'CELADON CITY'], ['JANINE', 'FUCHSIA CITY'], ['SABRINA', 'SAFFRON CITY'],
+	['BLAINE', 'CINNABAR ISLAND'], ['BLUE', 'VIRIDIAN CITY'],
+];
+function legendStats() {
+	const species = [...new Set(Object.values(LEGENDARY_ENCOUNTERS).map(e => e.species))];
+	return { caught: species.filter(s => Dex.isCaught(s)).length, total: species.length };
+}
+// one uncaught legend's lair, as a rumor — the hunt had NO structure: no
+// counter, no hints, just blind flood-crawling three regions' dungeons
+function legendRumor() {
+	const entry = Object.entries(LEGENDARY_ENCOUNTERS).find(([, e]) => !Dex.isCaught(e.species));
+	if (!entry) return null;
+	const pretty = entry[0].replace(/^MAP_(JOHKANTO_)?/, '').replace(/_/g, ' ');
+	return `Rumor places ${(battle.data?.species?.[entry[1].species]?.name || entry[1].species).toUpperCase()} in ${pretty}.`;
+}
+function postgameObjective() {
+	if (!Badges.isChampion('JOHTO')) return null;   // the postgame opens on the JOHTO crown
+	const jk = Badges.count('JOHKANTO');
+	if (!Story.getFlag('beat_red')) {
+		if (jk >= 8) return 'All 16 badges! The silent trainer RED waits at the summit of MT SILVER.';
+		return `The MAGNET TRAIN runs again — the KANTO of old awaits. ${8 - jk} of its GYMS remain. (Board at GOLDENROD.)`;
+	}
+	const { caught, total } = legendStats();
+	if (caught >= total) return 'RED has fallen and every legend is caught. The world is yours to wander.';
+	return `RED has fallen. ${total - caught} legendary POKeMON still hide in the deep places (${caught}/${total}). ${legendRumor() || ''}`;
+}
+// quest-log rows for the same arc (appended to the region log by drawQuest)
+function postgameLog() {
+	if (!Badges.isChampion('JOHTO')) return [];
+	const jk = Badges.count('JOHKANTO');
+	const rows = JOHKANTO_GYMS.map(([leader, town], i) => ({
+		label: `${leader} — ${town}`,
+		state: i < jk ? 'done' : (i === jk ? 'current' : 'locked'),
+	}));
+	rows.push({ label: 'RED — MT SILVER', state: Story.getFlag('beat_red') ? 'done' : (jk >= 8 ? 'current' : 'locked') });
+	const { caught, total } = legendStats();
+	rows.push({ label: `LEGENDS — ${caught}/${total}`, state: caught >= total ? 'done' : (Story.getFlag('beat_red') ? 'current' : 'locked') });
+	return rows;
 }
 const world = new World();
 const player = new Player(world);
@@ -426,8 +478,16 @@ function onTrainerDefeated(script, opts) {
 	if (script === 'Red') {
 		const fresh = !Story.getFlag('beat_red');
 		Story.setFlag('beat_red');
-		if (fresh) syncOverworldAchievements();
-		if (fresh && !(opts && opts.silent)) dialog.open('. . . . . . . . .\n\nRED says nothing, and turns back to the mountain.\n\nYou have bested the strongest trainer of all.');
+		if (fresh) {
+			syncOverworldAchievements();
+			// the CAPSTONE. The hardest fight in the game (lead+3/+5, up to Lv255)
+			// used to pay a flag and silence, while the Grand Champion got $50k and
+			// a trophy — the reward ladder ended before the summit it pointed at.
+			Bag.earn(100000);
+			Bag.addItem('rarecandy', 10);
+			Bag.addItem('redscap', 1); Bag.registerName('redscap', "RED'S CAP");
+		}
+		if (fresh && !(opts && opts.silent)) dialog.open('. . . . . . . . .\n\nRED says nothing, and turns back to the mountain.\n\nHe leaves his CAP at your feet.\nYou have bested the strongest trainer of all.\n\n(Received $100000, 10 RARE CANDIES, and RED\'S CAP!)');
 		opts = { ...(opts || {}), silent: true };   // his silence IS the speech
 	}
 	const info = Badges.scriptInfo(script);
@@ -1596,13 +1656,13 @@ function shopKey(k) {
 		shopMenu.idx = 0;
 		return;
 	}
-	const list = shopMenu.mode === 'buy' ? Bag.SHOP_STOCK : sellList();
+	const list = shopMenu.mode === 'buy' ? shopStockNow() : sellList();
 	const n = Math.max(1, list.length);
 	if (k === 'ArrowUp') shopMenu.idx = (shopMenu.idx + n - 1) % n;
 	if (k === 'ArrowDown') shopMenu.idx = (shopMenu.idx + 1) % n;
 	if (k === 'z' || k === 'Enter') {
 		if (shopMenu.mode === 'buy') {
-			const id = Bag.SHOP_STOCK[shopMenu.idx];
+			const id = shopStockNow()[shopMenu.idx];
 			shopMenu.flash = Bag.buy(id) ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
 		} else {
 			const entry = sellList()[shopMenu.idx];
@@ -2959,9 +3019,22 @@ function riftSpecies() {
 // pokédex milestones: grant newly crossed rewards with a fanfare
 function dexMilestoneCheck() {
 	const won = Dex.claimMilestones();
-	if (!won.length) return;
-	for (const m of won) Bag.addItem(m.item, m.count);
-	dialog.open('POKeDEX MILESTONE!\n\n' + won.map(m => `${m.t} caught — you received ${m.label}!`).join('\n'));
+	if (won.length) {
+		for (const m of won) Bag.addItem(m.item, m.count);
+		dialog.open('POKeDEX MILESTONE!\n\n' + won.map(m => `${m.t} caught — you received ${m.label}!`).join('\n'));
+	}
+	// catching ALL the placed legendaries is its own summit — checked here
+	// because every catch path already funnels through this function
+	if (!Story.getFlag('all_legends_caught')) {
+		const { caught, total } = legendStats();
+		if (total > 0 && caught >= total) {
+			Story.setFlag('all_legends_caught');
+			Bag.addItem('legendcharm', 1); Bag.registerName('legendcharm', 'LEGEND CHARM');
+			Bag.addItem('masterball', 3);
+			if (!dialog.blocking) dialog.open(`Every legendary POKeMON — all ${total} — is yours.\n\nYou received the LEGEND CHARM and 3 MASTER BALLS!`);
+			syncOverworldAchievements();
+		}
+	}
 }
 
 function startWildBattle(pick, forceDouble) {
@@ -4816,6 +4889,28 @@ function drawTrainerCard(W, H) {
 			else if (list[i].earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1; sctx.stroke(); }
 		}
 	});
+	// THE POSTGAME ROW — JohKanto's own eight, plus RED and the legend count.
+	// The card tracked the three shared regions and stopped; the sixteen-badge
+	// climb and the hunt had no progress surface at all.
+	if (Badges.isChampion('JOHTO')) {
+		const ry = cardY + (72 + 3 * 26) * u;
+		const jkList = Badges.list('JOHKANTO');
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+		sctx.fillText('OLD' + (Story.getFlag('beat_red') ? '*' : ''), rX, ry + 4 * u);
+		for (let i = 0; i < 8; i++) {
+			const px = pipAreaX + pgap * i + pgap / 2;
+			sctx.beginPath();
+			sctx.arc(px, ry, pipR, 0, Math.PI * 2);
+			sctx.fillStyle = jkList[i].earned ? '#c9a24a' : 'rgba(255,255,255,0.12)';
+			sctx.fill();
+			if (jkList[i].earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1; sctx.stroke(); }
+		}
+		const { caught, total } = legendStats();
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`LEGENDS ${caught}/${total}`, rX, ry + 20 * u);
+	}
 	// FRONTIER SYMBOLS — a compact row of diamonds (gold/silver) under the tier tracker
 	const symbols = Frontier.getSymbols();
 	const facOrder = [['tower', 'TO'], ['dome', 'DO'], ['factory', 'FA'], ['palace', 'PA'], ['arena', 'AR'], ['pike', 'PI'], ['pyramid', 'PY']];
@@ -5012,7 +5107,7 @@ function drawShopMenu(W, H) {
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === bid || shopMenu.mode === m, u);
 	});
-	const rows = selling ? sellList() : Bag.SHOP_STOCK.map(id => ({ id }));
+	const rows = selling ? sellList() : shopStockNow().map(id => ({ id }));
 	if (!rows.length) {
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
@@ -5174,10 +5269,15 @@ function drawStartMenu(W, H) {
 }
 function drawQuest(W, H) {
 	const rk = playerRegion();
-	const rows = Quest.log(rk).map(r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label);
+	const mark = r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label;
+	// the postgame arc appends below the region log — the log used to end at the
+	// League row while sixteen more badges, RED and the legendary hunt existed
+	const pg = postgameLog();
+	const rows = Quest.log(rk).map(mark).concat(pg.length ? ['— THE OLD KANTO —', ...pg.map(mark)] : []);
+	const next = (Quest.stage(rk) === Quest.DONE && postgameObjective()) || Quest.objective(rk);
 	// the title carries the SHARED gym tier (all three regions must clear each tier); the
 	// subtitle's objective already spells out the cross-region "who's behind" when relevant
-	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + Quest.objective(rk), rows, questMenu.idx, 'quest:', null);
+	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + next, rows, questMenu.idx, 'quest:', null);
 }
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
@@ -5325,6 +5425,18 @@ async function checkRejoin() {
 		if (type === 'card') goCardDuel(id);
 		else enterMatch(id, false);
 	});
+}
+
+// THE PREMIUM COUNTER: the league Centers' clerk sells the high-end goods once
+// the JOHTO crown opens the postgame — the money sink JohKanto's outsized
+// payouts never had. STATIC stock by design: the dailies system was
+// deliberately skipped (standing user call), so no restock timers here.
+const PREMIUM_STOCK = ['rarecandy', 'maxpotion', 'maxrevive', 'abilitycapsule',
+	'adamantmint', 'modestmint', 'jollymint', 'timidmint', 'carefulmint'];
+const PREMIUM_MAPS = new Set(['MAP_INDIGO_PLATEAU_POKECENTER_1F', 'MAP_SILVER_CAVE_POKECENTER_1F']);
+function shopStockNow() {
+	return PREMIUM_MAPS.has(world.current?.map?.id) && Badges.isChampion('JOHTO')
+		? [...Bag.SHOP_STOCK, ...PREMIUM_STOCK] : Bag.SHOP_STOCK;
 }
 
 // ---- mail battles (correspondence Pokémon) ----
@@ -5974,7 +6086,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
-		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
+		postgameObjective, postgameLog, legendStats, shopStockNow, services, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
@@ -6045,6 +6158,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 			return import('./mapedit.js').then(m => { window.__mapedit = m.mount(window.__ow); });
 		}).catch(e => { console.warn('mapedit failed', e); note('Map Editor failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
+	// The MAIL badge ("MAIL (2)") only counted after you opened the mailbox — the
+	// one thing a your-move indicator must not require. Populate it at boot and
+	// keep it fresh; play-by-mail is fully built and was just invisible.
+	try { refreshMail(); setInterval(refreshMail, 120000); } catch (e) { /* logged out */ }
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
 		setInterval(pushOw, 10000);

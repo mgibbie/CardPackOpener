@@ -64,7 +64,7 @@ function specFor(mapId) {
 		};
 	}
 	if (CR_CENTERS.includes(mapId)) {
-		return {
+		const spec = {
 			sprites: [{ img: 'nurse', tx: 3, ty: 1 }],
 			zones: [
 				{ kind: 'nurse', tiles: [[3, 1], [3, 2]] },
@@ -72,6 +72,17 @@ function specFor(mapId) {
 			],
 			solid: [[3, 1], [3, 2]],
 		};
+		// THE POSTGAME PREMIUM VENDOR. The two league Centers get a clerk — the
+		// counter where JohKanto's outsized payouts finally have something to
+		// buy. main.js's shopStockNow() appends the premium stock only on these
+		// maps and only once the JOHTO crown opens the postgame; before that he
+		// sells the ordinary catalogue, which is harmless.
+		if (mapId === 'MAP_INDIGO_PLATEAU_POKECENTER_1F' || mapId === 'MAP_SILVER_CAVE_POKECENTER_1F') {
+			spec.sprites.push({ img: 'clerk', tx: 6, ty: 1 });
+			spec.zones.push({ kind: 'shop', tiles: [[6, 1], [6, 2]] });
+			spec.solid.push([6, 1]);
+		}
+		return spec;
 	}
 	if (KANTO_MARTS.includes(mapId)) {
 		return {

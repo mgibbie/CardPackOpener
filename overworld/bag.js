@@ -13,7 +13,9 @@ export const ITEMS = {
 	hyperpotion: { name: 'HYPER POTION', price: 1200, kind: 'heal', amount: 200 },
 	ether:       { name: 'ETHER',        price: 1200, kind: 'ether', amount: 10 },
 	revive:      { name: 'REVIVE',       price: 1500, kind: 'revive' },
-	rarecandy:   { name: 'RARE CANDY',   price: 0,    kind: 'candy' },
+	// priced for the POSTGAME PREMIUM VENDOR (the league Centers) — nothing else
+	// stocks it, so the price only bites there
+	rarecandy:   { name: 'RARE CANDY',   price: 8000, kind: 'candy' },
 	// Postgame dex tool. Alternate forms are not separate catchable POKeMON —
 	// they are what a species BECOMES under weather, an item, an ability or a
 	// fusion, and porting fifteen different trigger mechanisms (Gracidea, DNA
@@ -87,8 +89,8 @@ export const ITEMS = {
 	silkscarf:   { name: 'SILK SCARF',   price: 1000, kind: 'held', held: { typeBoost: 'Normal' } },
 	// common overworld pickups that map onto shop items
 	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999, cures: 'any' },
-	maxpotion:   { name: 'MAX POTION',   price: 0, kind: 'heal', amount: 999 },
-	maxrevive:   { name: 'MAX REVIVE',   price: 0, kind: 'revive' },
+	maxpotion:   { name: 'MAX POTION',   price: 2500, kind: 'heal', amount: 999 },
+	maxrevive:   { name: 'MAX REVIVE',   price: 4000, kind: 'revive' },
 
 	// STATUS CURES. The port had none: a burn or a paralysis could only be slept
 	// off at a POKeMON CENTER, and the Full Heals and Antidotes that events hand
@@ -257,6 +259,10 @@ export const ITEMS = {
 	spelonberry: { name: 'SPELON BERRY', price: 20, kind: 'sell' },
 	watmelberry: { name: 'WATMEL BERRY', price: 20, kind: 'sell' },
 	goldteeth:   { name: 'GOLD TEETH',   price: 0,  kind: 'key' },
+	// completion capstones — granted, never sold
+	dexcrown:    { name: 'DEX CROWN',    price: 0,  kind: 'key' },
+	legendcharm: { name: 'LEGEND CHARM', price: 0,  kind: 'key' },
+	redscap:     { name: "RED'S CAP",    price: 0,  kind: 'key' },
 
 	// held items
 	whiteherb:   { name: 'WHITE HERB',   price: 1000, kind: 'held', held: { whiteHerb: true } },
