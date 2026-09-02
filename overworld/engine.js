@@ -527,6 +527,7 @@ export class Player {
 			const lx = this.tx + dx * 2, ly = this.ty + dy * 2;
 			if (this.world.isPassable(lx, ly) && !(this.blocked && this.blocked(lx, ly))) {
 				this.beginMove(lx, ly, META * 2, true);
+				this.onHop?.();
 				return;
 			}
 		}
@@ -534,7 +535,7 @@ export class Player {
 		const open = this.surfing
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
-		if (!open) return;
+		if (!open) { this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
 		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
 		// across (they read as normal floor otherwise, so gate them explicitly)
 		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.onBlockedCracked?.(); return; }

@@ -20,7 +20,7 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as VFlip from './voltorbflip.js';
-import { bgm, bgmNow, syncBgmVolume } from './sound.js';
+import { bgm, bgmNow, syncBgmVolume, sfx } from './sound.js';
 import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Settings from './settings.js';
@@ -792,7 +792,7 @@ function interact() {
 	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
 	// item balls / berry trees / hidden items (facing tile, then standing tile)
 	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
-	if (found) { dialog.open(found); return; }
+	if (found) { sfx('item_get'); dialog.open(found); return; }
 	// field obstacles: point the player at the right HM (used from the party menu)
 	const fo = items.fieldObjAt(fx, fy);
 	if (fo) {
@@ -806,10 +806,10 @@ function interact() {
 	if (leg && fx === leg.x && fy === leg.y) { startLegendaryBattle(leg); return; }
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
-		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => healParty(party));
+		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(party); });
 		return;
 	}
-	if (svc === 'pc') { pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
+	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'gamecorner') {
@@ -1788,13 +1788,16 @@ function shopKey(k) {
 	if (k === 'z' || k === 'Enter') {
 		if (shopMenu.mode === 'buy') {
 			const id = shopStockNow()[shopMenu.idx];
-			shopMenu.flash = Bag.buy(id) ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
+			const bought = Bag.buy(id);
+			sfx(bought ? 'money' : 'ui_denied');
+			shopMenu.flash = bought ? `Bought ${Bag.ITEMS[id].name}!` : 'Not enough money!';
 		} else {
 			const entry = sellList()[shopMenu.idx];
 			if (entry) {
 				const gain = sellPrice(entry.id);
 				Bag.consume(entry.id);
 				Bag.earn(gain);
+				sfx('money');
 				shopMenu.flash = `Sold ${Bag.ITEMS[entry.id].name} for $${gain}.`;
 				const after = sellList();
 				if (shopMenu.idx >= after.length) shopMenu.idx = Math.max(0, after.length - 1);
@@ -2190,8 +2193,15 @@ function starterKey(k) {
 
 // one entry point for keyboard AND the virtual touch buttons
 function pressKey(k) {
+	// the little sounds: every open menu ticks, confirms and cancels audibly —
+	// one hook covers all of them; battle and dialog beep from their own paths
+	if (!dialog.blocking && !battle.blocking && !cutscene.blocking && canvasMenuOpen()) {
+		if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) sfx('ui_move');
+		else if (k === 'z' || k === 'Enter') sfx('ui_select');
+		else if (k === 'x' || k === 'Escape') sfx('ui_cancel');
+	}
 	if (starterMenu.open) { starterKey(k); return; }
-	if (dialog.blocking) { dialog.key(k); return; }
+	if (dialog.blocking) { if (k === 'z' || k === 'Enter' || k === 'x') sfx('text_tick'); dialog.key(k); return; }
 	// a clerk's `openmart` parks its cutscene in a wait WHILE the counter is up,
 	// so the shop must keep taking input — otherwise the player can neither buy
 	// nor close it and the script never resumes
@@ -2269,7 +2279,7 @@ function pressKey(k) {
 		if (k === 'x' || k === 'p' || k === 'Escape') { if (partyMenu.swapFrom != null) partyMenu.swapFrom = null; else partyMenu.open = false; }
 		return;
 	}
-	if ((k === 'Enter' || k === 'm') && !loading) { startMenu.open = true; startMenu.idx = 0; return; }
+	if ((k === 'Enter' || k === 'm') && !loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
 	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; return; }
 	if (k === 'c' && !loading) { toggleBike(); return; }
@@ -2549,6 +2559,7 @@ async function warpTo(mapId, destWarpId) {
 		return;
 	}
 	loading = true;
+	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
 	try {
 		await world.load(file);
@@ -2807,8 +2818,17 @@ async function crossConnection(hit) {
 
 // nudge the player toward the bike when a cracked floor stops them
 player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
-// walking into an authentic blocker (guard / SNORLAX / grunt) shows its themed line
-player.onBump = (tx, ty) => { if (dialog.blocking || !party) return; const m = blockers.messageAt(tx, ty); if (m) dialog.open(m); };
+player.onHop = () => sfx('ledge');
+// ONE bump handler: the wall thud (throttled — tryMove fires every held frame)
+// plus the authentic blocker line (guard / SNORLAX / grunt) when one is there
+let bumpCooldown = 0;
+player.onBump = (tx, ty) => {
+	const now = performance.now();
+	if (now > bumpCooldown) { bumpCooldown = now + 350; sfx('bump'); }
+	if (dialog.blocking || !party) return;
+	const m = blockers.messageAt(tx, ty);
+	if (m) dialog.open(m);
+};
 
 player.onArrive = () => {
 	// each completed step accrues Day Care EXP and incubates any egg
@@ -2866,7 +2886,7 @@ player.onArrive = () => {
 	// a static legendary sitting on this tile
 	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
 	// trainer sight lines take priority over grass
-	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) return;
+	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) { sfx('notice'); return; }
 	// SAFARI GAME: every step in the zone burns the meter, and the step that
 	// empties it ends the game on the spot (no encounter on the way out)
 	if (safari.on && safariZoneOf(world.current.map.id)) {
@@ -3467,13 +3487,14 @@ function gcKey(k) {
 	} else if (gcMenu.mode === 'coins') {
 		const deal = [[50, 1000], [500, 10000]][gcMenu.idx];
 		if (!deal) { gcMenu.mode = 'hub'; gcMenu.idx = 0; return; }
-		if (Bag.getCoins() >= Bag.COIN_CAP) gcMenu.flash = 'Your COIN CASE is full!';
-		else if (!Bag.spend(deal[1])) gcMenu.flash = 'Not enough money!';
-		else { Bag.addCoins(deal[0]); gcMenu.flash = `Bought ${deal[0]} coins!`; }
+		if (Bag.getCoins() >= Bag.COIN_CAP) { sfx('ui_denied'); gcMenu.flash = 'Your COIN CASE is full!'; }
+		else if (!Bag.spend(deal[1])) { sfx('ui_denied'); gcMenu.flash = 'Not enough money!'; }
+		else { Bag.addCoins(deal[0]); sfx('money'); gcMenu.flash = `Bought ${deal[0]} coins!`; }
 	} else {
 		const pz = GC_PRIZES[gcMenu.idx];
 		if (!pz) { gcMenu.mode = 'hub'; gcMenu.idx = 0; return; }
-		if (!Bag.spendCoins(pz.cost)) { gcMenu.flash = 'Not enough coins!'; return; }
+		if (!Bag.spendCoins(pz.cost)) { sfx('ui_denied'); gcMenu.flash = 'Not enough coins!'; return; }
+		sfx('item_get');
 		if (pz.item) { Bag.addItem(pz.item); gcMenu.flash = `${Bag.ITEMS[pz.item].name} is yours!`; }
 		else {
 			const mon = buildMonForGift(pz.mon, 25);
