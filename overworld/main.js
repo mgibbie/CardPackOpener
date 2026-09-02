@@ -2636,6 +2636,9 @@ player.onArrive = () => {
 		// guard: this runs inside the rAF step loop, where a throw is silent and
 		// kills movement outright — `party` is not guaranteed to be populated yet
 		const lead = Array.isArray(party) ? party.find(m => m && m.curHP > 0) : null;
+		// CLEANSE TAG: held by the LEAD, it wards off a third of would-be
+		// encounters. A ¥1000 buyable whose payload nothing read until now.
+		if (Bag.ITEMS[lead?.heldItem]?.held?.cleanseTag && Math.random() < 1 / 3) return;
 		const pick = encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing,
 			repelSteps > 0 ? (lead?.level || 0) : 0);
 		if (pick) startWildBattle(pick);

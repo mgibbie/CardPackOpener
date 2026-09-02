@@ -30,7 +30,7 @@ export const ITEMS = {
 	cheriberry:  { name: 'CHERI BERRY',  price: 150,  kind: 'held', held: { cure: 'par' } },
 	rawstberry:  { name: 'RAWST BERRY',  price: 150,  kind: 'held', held: { cure: 'brn' } },
 	aspearberry: { name: 'ASPEAR BERRY', price: 150,  kind: 'held', held: { cure: 'frz' } },
-	persimberry: { name: 'PERSIM BERRY', price: 150,  kind: 'held', held: { cure: 'confusion' } },
+	persimberry: { name: 'PERSIM BERRY', price: 150,  kind: 'held', held: { cure: 'confusion' } },
 	// Two Johto fruit trees (Route 35, Route 45) bear LEPPA BERRIES and there was no
 	// entry for them, so harvesting one put a nameless, priceless, effectless id in
 	// the bag. `ppRestore` is read by battle.js checkBerry — an entry with a payload
@@ -247,7 +247,8 @@ export const ITEMS = {
 	iapapaberry: { name: 'IAPAPA BERRY', price: 100, kind: 'held', held: { berryHealFrac: 0.125 } },
 	enigmaberry: { name: 'ENIGMA BERRY', price: 100, kind: 'held', held: { berryHealFrac: 0.25 } },
 	lansatberry: { name: 'LANSAT BERRY', price: 200, kind: 'held', held: { critBoost: true } },
-	starfberry:  { name: 'STARF BERRY',  price: 200, kind: 'held', held: {} },
+	// at ≤¼ HP it sharply raises a random stat — read by checkBerry
+	starfberry:  { name: 'STARF BERRY',  price: 200, kind: 'held', held: { starfBoost: 2 } },
 	// berry-blender stock: nothing to do here but be sellable
 	belueberry:  { name: 'BELUE BERRY',  price: 20, kind: 'sell' },
 	durinberry:  { name: 'DURIN BERRY',  price: 20, kind: 'sell' },
@@ -260,20 +261,23 @@ export const ITEMS = {
 	// held items
 	whiteherb:   { name: 'WHITE HERB',   price: 1000, kind: 'held', held: { whiteHerb: true } },
 	mentalherb:  { name: 'MENTAL HERB',  price: 1000, kind: 'held', held: { mentalHerb: true } },
-	cleansetag:  { name: 'CLEANSE TAG',  price: 1000, kind: 'held', held: {} },
+	// held by your LEAD, it wards off a third of would-be wild encounters —
+	// read by the step handler in main.js
+	cleansetag:  { name: 'CLEANSE TAG',  price: 1000, kind: 'held', held: { cleanseTag: true } },
 	machobrace:  { name: 'MACHO BRACE',  price: 3000, kind: 'held', held: { evBoost: 2 } },
 	soothebell:  { name: 'SOOTHE BELL',  price: 1000, kind: 'held', held: { friendBoost: 2 } },
 	blackbelti:  { name: 'BLACK BELT',   price: 1000, kind: 'held', held: { typeBoost: 'Fighting' } },
 
-	// battle-only boosters and field consumables the port has no mechanic for.
-	// Real items with real names, inert until there is something to hook them to.
-	xattack:     { name: 'X ATTACK',   price: 500,  kind: 'misc' },
-	xdefend:     { name: 'X DEFEND',   price: 550,  kind: 'misc' },
-	xspeed:      { name: 'X SPEED',    price: 350,  kind: 'misc' },
-	xspecial:    { name: 'X SPECIAL',  price: 350,  kind: 'misc' },
-	xaccuracy:   { name: 'X ACCURACY', price: 950,  kind: 'misc' },
-	direhit:     { name: 'DIRE HIT',   price: 650,  kind: 'misc' },
-	guardspec:   { name: 'GUARD SPEC.', price: 700, kind: 'misc' },
+	// X ITEMS — in-battle stat boosters, GBA rules (+1 stage). battle.js's
+	// useItem has the `xitem` branch; DIRE HIT is bottled Focus Energy and
+	// GUARD SPEC. lays Mist on your side.
+	xattack:     { name: 'X ATTACK',   price: 500,  kind: 'xitem', boost: { atk: 1 } },
+	xdefend:     { name: 'X DEFEND',   price: 550,  kind: 'xitem', boost: { def: 1 } },
+	xspeed:      { name: 'X SPEED',    price: 350,  kind: 'xitem', boost: { spe: 1 } },
+	xspecial:    { name: 'X SPECIAL',  price: 350,  kind: 'xitem', boost: { spa: 1 } },
+	xaccuracy:   { name: 'X ACCURACY', price: 950,  kind: 'xitem', boost: { acc: 1 } },
+	direhit:     { name: 'DIRE HIT',   price: 650,  kind: 'xitem', crit: true },
+	guardspec:   { name: 'GUARD SPEC.', price: 700, kind: 'xitem', guard: true },
 	// repel steps — nothing read these until now, so all three were dead weight
 	// you could buy. `kind: 'repel'` so the bag actually actions them.
 	repel:       { name: 'REPEL',      price: 350,  kind: 'repel', steps: 100 },
