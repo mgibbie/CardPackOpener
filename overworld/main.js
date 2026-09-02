@@ -4349,11 +4349,25 @@ function startIntroNarration(region) {
 // fired from refreshMapContent after every map load: a partyless player who has
 // walked into the region's lab gets the professor greeting + the starter picker.
 function checkIntroTrigger() {
-	if (party || Story.getFlag('intro_done') || cutscene.blocking || starterMenu.open) return;
-	const cfg = NEW_GAME_INTRO[playerRegion()];
-	if (cfg && world.current.name === cfg.lab) {
-		startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
+	// a starter pick left open across a map change (anything that moves the
+	// player while it's up) must not float over the town — close it; it will
+	// reopen the moment they're back in the lab
+	if (starterMenu.open && starterMenu.phase === 'pick') {
+		const cfg0 = NEW_GAME_INTRO[playerRegion()];
+		if (cfg0 && world.current.name !== cfg0.lab) starterMenu.open = false;
 	}
+	if (party || Story.getFlag('intro_done') || cutscene.blocking || dialog.blocking || starterMenu.open) return;
+	const cfg = NEW_GAME_INTRO[playerRegion()];
+	if (!cfg || world.current.name !== cfg.lab) return;
+	// The professor speaks ONCE. This runs from the frame loop (so a reload
+	// mid-intro can't strand a partyless player), which means any abnormal
+	// close of the picker used to re-fire the whole greeting — and a greeting
+	// cutscene's remaining lines would trail the player out the door and play
+	// over the town. With the flag, a replay just (re)opens the picker, and
+	// only ever here in the lab.
+	if (Story.getFlag('intro_greeted')) { openStarterPick(playerRegion()); return; }
+	Story.setFlag('intro_greeted');
+	startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
 }
 
 // ---------- villain arcs ----------
