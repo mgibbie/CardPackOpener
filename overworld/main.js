@@ -20,6 +20,7 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as VFlip from './voltorbflip.js';
+import { bgm, bgmNow, syncBgmVolume } from './sound.js';
 import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Settings from './settings.js';
@@ -949,12 +950,23 @@ const dexMenu = { open: false, idx: 0, detail: false, list: null };
 const trainerCard = { open: false };
 const townMap = { open: false, region: 0, idx: 0 };
 const optionsMenu = { open: false, idx: 0 };
-const OPTION_KEYS = ['textSpeed', 'sound', 'autoRun', 'dayNight', 'followers'];
+const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'followers'];
+// ---------- background music ----------
+// music_map.json: mapId -> bgm file key (tools/gen_bgm.mjs — the accurate
+// per-map songs from Crystal/FireRed/Emerald). Loaded lazily; until it lands
+// the world is simply quiet, exactly as it was before music existed.
+let musicMap = null;
+function syncMapBgm() {
+	if (!musicMap) return;
+	bgm(musicMap[world.current?.map?.id] || null);
+}
+getJSON('data/music_map.json').then(m => { musicMap = m || {}; syncMapBgm(); }).catch(() => { musicMap = {}; });
+
 function optionsKey(k) {
 	if (k === 'ArrowUp') optionsMenu.idx = (optionsMenu.idx + OPTION_KEYS.length - 1) % OPTION_KEYS.length;
 	if (k === 'ArrowDown') optionsMenu.idx = (optionsMenu.idx + 1) % OPTION_KEYS.length;
-	if (k === 'ArrowLeft') Settings.cycle(OPTION_KEYS[optionsMenu.idx], -1);
-	if (k === 'ArrowRight' || k === 'z' || k === 'Enter') Settings.cycle(OPTION_KEYS[optionsMenu.idx], 1);
+	if (k === 'ArrowLeft') { Settings.cycle(OPTION_KEYS[optionsMenu.idx], -1); syncBgmVolume(); }
+	if (k === 'ArrowRight' || k === 'z' || k === 'Enter') { Settings.cycle(OPTION_KEYS[optionsMenu.idx], 1); syncBgmVolume(); }
 	if (k === 'x' || k === 'Escape') optionsMenu.open = false;
 }
 const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
@@ -2369,6 +2381,7 @@ async function refreshMapContent(label) {
 	try { checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// the safari PA speaks the moment you cross into (or out of) the zone
 	try { checkSafariGate(); } catch (e) { console.warn('[safari] gate check failed', e); }
+	syncMapBgm();
 	refreshObjective();
 }
 
@@ -6355,6 +6368,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// inside with no session) must speak the PA line too — boot bypasses
 	// refreshMapContent, where the gate check normally lives
 	try { checkSafariGate(); } catch (e) { console.warn('[safari] boot gate check failed', e); }
+	syncMapBgm();
 	refreshObjective(); // show the current quest objective on boot
 	// Resuming mid-intro — region chosen, starter not yet collected. The lab
 	// trigger (checkIntroTrigger) still fires when they walk in, so the only gap is
@@ -6429,7 +6443,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
 	get safariState() { return safari; }, checkSafariGate, endSafari,
-	gcMenu, vfMenu, VFlip, gcKey, vfKey, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+	gcMenu, vfMenu, VFlip, gcKey, vfKey,
+	bgmNow, syncMapBgm, get musicMap() { return musicMap; }, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
 		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,

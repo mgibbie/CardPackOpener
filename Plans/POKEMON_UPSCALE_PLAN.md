@@ -75,7 +75,16 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     and make the AI potion a % heal instead of flat 120. battle.js:2756, 2836.
     **[2/5 · S]**
 
-## Batch 3 — Sound & spectacle — SKIPPED (user call, 2026-09-02: "do the suggested order but skip 3")
+## Batch 3 — Sound & spectacle — music HALF-DONE (PR #205, user-ordered); animations still skipped
+
+The music item shipped 2026-09-02 on user order ("accurate music for each
+map"): every map plays its decomp-accurate track from Crystal/FireRed/Emerald
+(tools/gen_bgm.mjs — Crystal resolved by music-ID alignment with the numbered
+GBS rip, FR/Emerald by internal-sequence-name-pinned titles from the GSF rips;
+132 unique tracks, ~210MB ogg on owdata; music_map.json is the mapId->track
+table). Same-song map crossings never restart the track; Settings gained
+separate MUSIC (BGM) and SOUND FX sliders with legacy-'sound' migration.
+Not covered (future): battle themes, surf/bike overrides, move animations.
 
 12. **Music.** There is none — no overworld themes, no battle theme, no
     victory fanfare; sound.js is cries+sfx only. The single largest "feels
