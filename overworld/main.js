@@ -2182,8 +2182,6 @@ function starterKey(k) {
 	// pick that on-screen once the intro walks you into the professor's lab)
 	if (k === 'ArrowUp') starterMenu.row = (starterMenu.row + 2) % 3;
 	if (k === 'ArrowDown') starterMenu.row = (starterMenu.row + 1) % 3;
-	if (k === 'ArrowLeft') starterMenu.col = (starterMenu.col + 2) % 3;
-	if (k === 'ArrowRight') starterMenu.col = (starterMenu.col + 1) % 3;
 	if (k === 'z' || k === 'Enter') {
 		const region = STARTERS[starterMenu.row].region;
 		starterMenu.open = false;
@@ -4025,7 +4023,17 @@ const STORY_SEED = {
 		flags: [
 			'FLAG_ADVENTURE_STARTED',
 			'FLAG_GOT_FIRST_POKEMON',
-			'FLAG_HIDE_PALLET_TOWN_OAK', // Oak is in his lab, not blocking the road
+			// the intro-scene Oak on the Pallet path (script 0x0 — he only exists
+			// for FR's escort cutscene). The old entry had the flag's words in the
+			// wrong order, so he stood there mute forever.
+			'FLAG_HIDE_OAK_IN_PALLET_TOWN',
+			// FR's table starter balls parse as GRABBABLE item balls (their
+			// scripts resolve through parseBallScript) — the pick is menu-based
+			// here, so the physical balls must go
+			'FLAG_HIDE_BULBASAUR_BALL', 'FLAG_HIDE_SQUIRTLE_BALL', 'FLAG_HIDE_CHARMANDER_BALL',
+			// the two Pokedex props on the lab counter (our intro hands the dex
+			// over without physical props; unhidden they rendered as people)
+			'FLAG_HIDE_POKEDEX',
 		],
 	},
 	HOENN: {
@@ -4076,7 +4084,23 @@ const STORY_SEED = {
 			VAR_SEAFLOOR_CAVERN_STATE: 1,
 			VAR_SKY_PILLAR_RAYQUAZA_CRY_DONE: 1,
 		},
-		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
+		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON',
+			// Emerald's opening-scene actors and props (managed by cutscenes this
+			// port replaces with its own intro): the lab's scene-rival (drawn as
+			// Birch's identical twin), the bag-scene starter balls (three stacked
+			// on one tile), the moving trucks, and the outdoor scene copies of
+			// Mom / Birch / the rival / the mover
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_RIVAL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_CYNDAQUIL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_TOTODILE',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCHS_LAB_POKEBALL_CHIKORITA',
+			'FLAG_HIDE_LITTLEROOT_TOWN_RIVAL',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BIRCH',
+			'FLAG_HIDE_LITTLEROOT_TOWN_BRENDANS_HOUSE_TRUCK',
+			'FLAG_HIDE_LITTLEROOT_TOWN_MAYS_HOUSE_TRUCK',
+			'FLAG_HIDE_LITTLEROOT_TOWN_MOM_OUTSIDE',
+			'FLAG_HIDE_LITTLEROOT_TOWN_FAT_MAN',
+		],
 	},
 	JOHTO: {
 		// Crystal gates its story coord_events on a per-map scene var VAR_SCENE_<Map>
@@ -4123,6 +4147,9 @@ function armStoryScenes(region) {
 	const seed = STORY_SEED[region];
 	if (!seed) return;
 	for (const [k, v] of Object.entries(seed.vars || {})) if (!Story.hasVar(k)) Story.setVar(k, v);
+	// flags too (idempotent): saves made before a hide-flag joined the seed
+	// keep their mute scene-actors otherwise (the Pallet-path Oak, for one)
+	for (const f of seed.flags || []) Story.setFlag(f);
 }
 
 // Crystal's scripts read VAR_BADGES straight out of the save — the Victory Road
@@ -5509,28 +5536,28 @@ function drawStarterMenu(W, H) {
 		});
 		return;
 	}
-	// phase 'region': choose where the journey begins — each card previews the trio
-	menuChrome(W, H, u, 'CHOOSE YOUR REGION', 'Pick where your journey begins. You will choose a starter in the lab.', false);
-	const cw = 150 * u, ch = 118 * u;
+	// phase 'region': REGION cards only. The old screen was a 3x3 grid of the
+	// nine starters, which read as "pick your starter" — but the starter is
+	// chosen later, on-screen in the professor's lab, so showing them here
+	// promised a choice this screen doesn't make.
+	menuChrome(W, H, u, 'CHOOSE YOUR REGION', 'Pick where your journey begins. Your first POKeMON waits in the lab.', false);
 	STARTERS.forEach((row, r) => {
-		const y = (78 + r * 130) * u;
+		const y = (84 + r * 128) * u, ch = 112 * u;
 		const rowSel = starterMenu.row === r;
 		const bid = `region:${r}`;
-		// a full-row hit target so a tap anywhere on the card selects that region
-		menuUi.push({ id: bid, x: 30 * u, y, w: W - 60 * u, h: ch });
+		const b = { id: bid, x: 30 * u, y, w: W - 60 * u, h: ch };
+		menuUi.push(b);
+		sctx.fillStyle = rowSel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.fill();
+		if (rowSel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2.5 * u; BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.stroke(); }
+		const cfg = NEW_GAME_INTRO[row.region] || {};
+		sctx.fillStyle = rowSel ? BUI.C.accent : BUI.C.text;
+		sctx.font = `${Math.round(30 * u)}px m6x11plus, monospace`;
+		sctx.fillText(row.region, b.x + 26 * u, y + 46 * u);
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
-		sctx.save();
-		sctx.translate(38 * u, y + ch / 2);
-		sctx.rotate(-Math.PI / 2);
-		sctx.textAlign = 'center';
-		sctx.fillStyle = rowSel ? BUI.C.accent : BUI.C.dim;
-		sctx.fillText(row.region, 0, 0);
-		sctx.restore();
-		row.ids.forEach((id, c) => {
-			const x = (70 + c * 165) * u;
-			drawStarterCell(id, x, y, cw, ch, rowSel, bid, u);
-		});
+		sctx.fillText(`${cfg.prof || ''} awaits in ${(cfg.home || '').replace(/([a-z])([A-Z])/g, '$1 $2').toUpperCase()}`, b.x + 26 * u, y + 74 * u);
+		sctx.fillText({ KANTO: 'The classic journey — FireRed', JOHTO: 'The golden road — Crystal', HOENN: 'Land and sea — Emerald' }[row.region] || '', b.x + 26 * u, y + 96 * u);
 	});
 }
 
@@ -6541,7 +6568,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
-		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene,
+		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
 	get safariState() { return safari; }, checkSafariGate, endSafari,

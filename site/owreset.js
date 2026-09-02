@@ -36,6 +36,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_flypoints', 'magepunk_playtime',
 	// pockets
 	'magepunk_bag_v1', 'magepunk_money', 'magepunk_itemnames_v1', 'magepunk_repel_v1',
+	// the Game Corner's COIN CASE and a live Safari Game
+	'magepunk_coins_v1', 'magepunk_safari_v1',
 	// what you have picked up off the ground, and what has regrown
 	'magepunk_collected_v1', 'magepunk_berrytimes_v1',
 	// the dex

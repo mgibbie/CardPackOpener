@@ -2,6 +2,7 @@
 // (bg_events), Emerald berry trees, and Crystal fruit trees. Port of
 // MapItems.lua + MapTrees.lua; collected state persists in localStorage.
 import { getJSON, getImage, META } from './engine.js';
+import { objectHiddenByFlag } from './events.js';
 import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
 
@@ -164,6 +165,10 @@ export class Items {
 			// all 180 of JohKanto's and Johto's item balls were walked straight past —
 			// two whole regions with no overworld items at all.
 			if (g.includes('ITEM_BALL') || g.includes('POKE_BALL')) {
+				// balls carry hide-flags too (scene props, story rewards): a flagged
+				// ball must not sit there grabbable — Birch's bag-scene starter
+				// balls were stacked three-deep on the lab floor
+				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
 				const parsed = parseBallScript(o.script) || parseCrystalBall(o.script, this.world.current.name);
 				if (!parsed) continue;
 				const key = this.keyFor('', o);
