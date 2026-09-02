@@ -412,6 +412,25 @@ const MOVE_FX = {
 	simplebeam: { abilitySet: 'simple' },
 };
 
+// ---------- move-animation archetypes ----------
+// Every attack used to play the same lunge-plus-sparks. Moves now classify
+// into archetypes: a BEAM pours across the field, a SHOT lobs and bursts, a
+// SLASH rakes the target, other specials flash a BURST, and physical contact
+// keeps the classic lunge (STRIKE). Status moves glow on the caster (BOOST /
+// HEAL) or wash over the victim (DEBUFF). Classification is by id heuristic
+// on purpose: ~900 moves, eight buckets, no hand table to rot.
+const ANIM_BEAM = /beam|cannon|pulse|laser|flamethrower|hydropump|dragonbreath|thunderbolt|discharge|overheat|ray$/;
+const ANIM_SLASH = /slash|razor|claw|blade|edge|scissor|scratch|fang|bite|crunch|chop|cut$|horn/;
+const ANIM_SHOT = /ball$|bomb|sphere|shot$|seed|egg|missile|shuriken|dart|barrage|sludge|gunk|spit|web|blast|rockthrow|rockslide|mudslap/;
+const targetSideOf = isFoe => (isFoe ? 'me' : 'foe');
+function animArchFor(move, mv) {
+	const id = move.id || '';
+	if (ANIM_BEAM.test(id)) return 'beam';
+	if (ANIM_SLASH.test(id)) return 'slash';
+	if (ANIM_SHOT.test(id)) return 'shot';
+	return mv.category === 'Special' ? 'burst' : 'strike';
+}
+
 // moves whose power is computed from battle state; (battle, user, target,
 // userBoosts, targetBoosts) => power. Falls back to data power when absent.
 const hpScale = (u) => Math.max(1, Math.floor(150 * u.curHP / u.maxHP));
@@ -1602,6 +1621,11 @@ export class Battle {
 			return;
 		}
 		if (mv.category === 'Status') {
+			// status archetype: HEAL and self-BOOST glow on the caster, a move
+			// aimed at the foe washes over them as a DEBUFF
+			const sArch = fx.heal ? 'heal' : aimsAtFoe ? 'debuff' : 'boost';
+			this.pushAnim(sArch, sArch === 'debuff' ? targetSideOf(isFoe) : (isFoe ? 'foe' : 'me'), 0.45, null,
+				{ color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(sArch === 'debuff' ? target : user) });
 			if (fx.heal) {
 				if (user.curHP >= user.maxHP) { this.pushMsg('But it failed!'); return; }
 				const amt = Math.floor(user.maxHP * fx.heal);
@@ -2044,8 +2068,18 @@ export class Battle {
 		const hitsSub = target.subHP > 0 && !SOUND_MOVES.has(move.id) && uAb !== 'infiltrator';
 		total = Math.min(total, hitsSub ? target.subHP : target.curHP);
 		const targetSide = isFoe ? 'me' : 'foe';
-		this.pushAnim('lunge', isFoe ? 'foe' : 'me', 0.3, null, { slot: this.slotOfMon(user) });
-		this.pushAnim('hit', targetSide, 0.4, null, { color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(target) });
+		const atkSide = isFoe ? 'foe' : 'me';
+		const arch = animArchFor(move, mv);
+		const acolor = UI.TYPE_COLORS[mv.type] || '#e8e8e8';
+		// contact archetypes keep the classic lunge; ranged ones stay planted
+		if (arch === 'strike' || arch === 'slash') {
+			this.pushAnim('lunge', atkSide, 0.3, null, { slot: this.slotOfMon(user) });
+		}
+		if (arch !== 'strike') {
+			this.pushAnim(arch, targetSide, arch === 'slash' ? 0.35 : 0.4, null,
+				{ color: acolor, slot: this.slotOfMon(target), fromSide: atkSide, fromSlot: this.slotOfMon(user) });
+		}
+		this.pushAnim('hit', targetSide, 0.4, null, { color: acolor, slot: this.slotOfMon(target) });
 		this.pushMsg('', () => {
 			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
 			if (this.abilityOf(target) === 'disguise' && !target.disguiseBroken) {
@@ -4444,6 +4478,30 @@ export class Battle {
 								});
 							}
 						}
+						// status archetypes ride the same particle system: BOOST/HEAL
+						// sparkles rise off the caster, DEBUFF motes sink onto the victim
+						if (a.fx.kind === 'boost' || a.fx.kind === 'heal') {
+							a.particles ||= [];
+							for (let i = 0; i < 14; i++) {
+								a.particles.push({
+									side: a.fx.side, color: a.fx.kind === 'heal' ? '#7ce8a0' : a.fx.color, t: 0,
+									dx: -40 + Math.random() * 80, dy: -10 - Math.random() * 50,
+									vx: (Math.random() - 0.5) * 30, vy: -420 - Math.random() * 120,
+									r: 2 + Math.random() * 2.5,
+								});
+							}
+						}
+						if (a.fx.kind === 'debuff') {
+							a.particles ||= [];
+							for (let i = 0; i < 14; i++) {
+								a.particles.push({
+									side: a.fx.side, color: a.fx.color, t: 0,
+									dx: -50 + Math.random() * 100, dy: -150 - Math.random() * 40,
+									vx: 0, vy: 60 + Math.random() * 80,
+									r: 2 + Math.random() * 2.5,
+								});
+							}
+						}
 						a.msgT = 1.2;
 						return;
 					}
@@ -4529,6 +4587,71 @@ export class Battle {
 			if (fx.kind === 'ballshake') wob = Math.sin(fx.t * Math.PI * 4) * 0.35;
 		}
 		return { ...base, dx, dy, alpha, blink, wob };
+	}
+
+	// ---------- move-animation overlays ----------
+	// The travel-and-impact halves of the damage archetypes, drawn OVER the
+	// sprites. BOOST/HEAL/DEBUFF ride the particle system instead, and STRIKE
+	// is the classic lunge + hit, so only four kinds render here.
+	drawMoveFx(ctx, a, W, H, u) {
+		const fx = a.fx;
+		if (!fx || !['beam', 'shot', 'slash', 'burst'].includes(fx.kind)) return;
+		const p = Math.min(1, fx.t / fx.dur);
+		const to = this.spritePose(a, fx.side, W, H, u, fx.slot || 0);
+		const tx = to.x, ty = to.y - 46 * u;
+		ctx.save();
+		if (fx.kind === 'beam' || fx.kind === 'shot') {
+			const from = this.spritePose(a, fx.fromSide || (fx.side === 'me' ? 'foe' : 'me'), W, H, u, fx.fromSlot || 0);
+			const sx = from.x, sy = from.y - 46 * u;
+			if (fx.kind === 'beam') {
+				// a wide glow and a hot white core, pulsing while it pours
+				const wPulse = (1 + 0.35 * Math.sin(fx.t * 40)) * Math.sin(Math.PI * Math.min(1, p * 1.15));
+				ctx.lineCap = 'round';
+				ctx.globalAlpha = 0.45 * Math.max(0, wPulse);
+				ctx.strokeStyle = fx.color; ctx.lineWidth = Math.max(0.1, 16 * u * wPulse);
+				ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke();
+				ctx.globalAlpha = 0.9 * Math.max(0, wPulse);
+				ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(0.1, 5 * u * wPulse);
+				ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke();
+			} else {
+				// a lobbed projectile with a short fading tail
+				for (let i = 3; i >= 0; i--) {
+					const q = Math.max(0, p - i * 0.05);
+					const bx = sx + (tx - sx) * q, by = sy + (ty - sy) * q - Math.sin(Math.PI * q) * 90 * u;
+					ctx.globalAlpha = i ? 0.16 * (4 - i) : 0.95;
+					ctx.fillStyle = i ? fx.color : '#ffffff';
+					ctx.beginPath(); ctx.arc(bx, by, (i ? 7 : 9) * u, 0, Math.PI * 2); ctx.fill();
+					if (!i) { ctx.globalAlpha = 0.6; ctx.strokeStyle = fx.color; ctx.lineWidth = 3 * u; ctx.stroke(); }
+				}
+			}
+		} else if (fx.kind === 'slash') {
+			// three rake-marks appear one after another across the target
+			ctx.lineCap = 'round';
+			for (let i = 0; i < 3; i++) {
+				const start = i * 0.22, seg = Math.max(0, Math.min(1, (p - start) / 0.3));
+				if (seg <= 0) continue;
+				const ox = (i - 1) * 26 * u;
+				const fade = 0.9 * (1 - Math.max(0, p - 0.7) / 0.3);
+				ctx.globalAlpha = Math.max(0, fade);
+				ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5 * u;
+				ctx.beginPath();
+				ctx.moveTo(tx + ox - 30 * u, ty - 44 * u);
+				ctx.lineTo(tx + ox - 30 * u + 60 * u * seg, ty - 44 * u + 88 * u * seg);
+				ctx.stroke();
+				ctx.globalAlpha = Math.max(0, fade * 0.55);
+				ctx.strokeStyle = fx.color; ctx.lineWidth = 9 * u; ctx.stroke();
+			}
+		} else {   // burst: a flash and an expanding ring on the target
+			const r = (14 + p * 80) * u;
+			ctx.globalAlpha = 0.55 * (1 - p);
+			ctx.fillStyle = fx.color;
+			ctx.beginPath(); ctx.arc(tx, ty, r * 0.55, 0, Math.PI * 2); ctx.fill();
+			ctx.globalAlpha = 0.85 * (1 - p);
+			ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4 * u;
+			ctx.beginPath(); ctx.arc(tx, ty, r, 0, Math.PI * 2); ctx.stroke();
+		}
+		ctx.restore();
+		ctx.globalAlpha = 1;
 	}
 
 	drawSide(ctx, a, side, W, H, u, slot = 0) {
@@ -4667,6 +4790,7 @@ export class Battle {
 			this.drawSide(ctx, a, 'foe', W, H, u, 1);
 			this.drawSide(ctx, a, 'me', W, H, u, 1);
 		}
+		this.drawMoveFx(ctx, a, W, H, u);
 
 		// hit sparks + floating combat text ride each combatant's pose
 		for (const p of a.particles || []) {
