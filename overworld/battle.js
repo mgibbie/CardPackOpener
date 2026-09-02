@@ -443,8 +443,12 @@ const POWER_FX = {
 		const others = (u.moves || []).filter(m => m.id !== mv?.id);
 		return others.length && others.every(m => (u.usedMoves || []).includes(m.id)) ? 140 : 0;
 	},
-	return: () => 102, frustration: () => 102,
-	veeveevolley: () => 102, pikapapow: () => 102,
+	// friendship-scaled, not flat: max 102 at 255 friendship (foes sit at the
+	// wild-caught default of 70, i.e. 28 power — exactly as on cartridge)
+	return: (b, u) => Math.max(1, Math.floor(((u.friend ?? 70) * 10) / 25)),
+	frustration: (b, u) => Math.max(1, Math.floor(((255 - (u.friend ?? 70)) * 10) / 25)),
+	veeveevolley: (b, u) => Math.max(1, Math.floor(((u.friend ?? 70) * 10) / 25)),
+	pikapapow: (b, u) => Math.max(1, Math.floor(((u.friend ?? 70) * 10) / 25)),
 	// scale with the TARGET's remaining HP (opposite of Flail)
 	wringout: (b, u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
 	crushgrip: (b, u, t) => Math.max(1, Math.floor(120 * t.curHP / t.maxHP)),
@@ -910,6 +914,19 @@ export class Battle {
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.floor(mon.maxHP / 3));
 				}
 			});
+			this.consumeItem(mon);
+		}
+		// STARF BERRY: at a quarter HP it sharply raises one random stat. Its
+		// payload was `held: {}` — a berry you could buy that did nothing.
+		if (fx.starfBoost && mon.curHP <= mon.maxHP / 4) {
+			const stats = ['atk', 'def', 'spa', 'spd', 'spe'];
+			const stat = stats[Math.floor(Math.random() * stats.length)];
+			const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
+			const boosts = this.boostsOf(mon);
+			this.pushMsg(`${mon.name} ate its ${this.itemName(mon)}!`, () => {
+				boosts[stat] = Math.min(6, (boosts[stat] || 0) + fx.starfBoost);
+			});
+			this.pushMsg(`${mon.name}'s ${words[stat]} rose sharply!`);
 			this.consumeItem(mon);
 		}
 		// LEPPA BERRY: restores PP to a move that has run dry. Held-item berries fire
@@ -2886,7 +2903,12 @@ export class Battle {
 
 	// exp -> level ups -> stat recalc -> move learning (medium-fast curve).
 	// In a double battle every active mon on your side shares the yield.
-	grantExp(fallen) {
+	// The AWARD half of grantExp, tail-free: who earns what from this foe.
+	// Split out so CATCHING can pay experience too — grantExp's tail assumes a KO
+	// and decides whether the battle is over (finish / send the next trainer mon),
+	// which is exactly wrong after a successful ball. Reusing the whole function
+	// there turned every catch into a phantom 'victory'.
+	awardBattleExp(fallen) {
 		const a = this.active;
 		const gain = expGain(fallen || a.foe, this.data);
 		const winners = a.double
@@ -2905,6 +2927,11 @@ export class Battle {
 			if (!heldOf(mon)?.expShare) continue;
 			this.awardExp(mon, Math.max(1, Math.round(share(mon) / 2)));
 		}
+	}
+
+	grantExp(fallen) {
+		this.awardBattleExp(fallen);
+		const a = this.active;
 		// trainer battles continue to the next foe mon; wild battles are over
 		this.pushMsg('', () => {
 			const a2 = this.active;
@@ -3029,10 +3056,13 @@ export class Battle {
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
-				a.caughtMon = a.foe;
-				this.finish('caught');
-			});
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { a.caughtMon = a.foe; });
+			// Catching pays experience like a KO (the Gen-6 rule). It used to pay
+			// nothing, which quietly taught players that catching is bad for training.
+			// The AWARD half only — grantExp's tail decides "is the battle over" on
+			// KO logic and would report this catch as a victory.
+			this.awardBattleExp();
+			this.pushMsg('', () => this.finish('caught'));
 		} else {
 			this.pushAnim('ballbreak', 'foe', 0.35, () => { sfx('ball_open'); a.foeHidden = false; a.ballShown = false; });
 			this.pushMsg(`Oh no! The ${a.foe.name} broke free!`);
@@ -3990,6 +4020,61 @@ export class Battle {
 				this.pushMsg(`${fainted.name} came back to its senses!`);
 				this.foeFreeMove();
 			});
+			return;
+		}
+		// STATUS CURES. The battle bag has always LISTED these as rank-1 medicine,
+		// and selecting one silently did nothing — there was simply no branch for
+		// the kind. ANTIDOTE and friends bite only on their own ailment; FULL HEAL
+		// (cures 'any') also lifts confusion, as it does in the real games.
+		if (item.kind === 'cure') {
+			const cures = a.me.status && (item.cures === 'any' || a.me.status === item.cures);
+			const uncon = item.cures === 'any' && a.me.confuseTurns > 0;
+			if (!cures && !uncon) return;           // wrong medicine: stay in the bag
+			Bag.consume(itemId);
+			this.startQueue(() => {
+				this.pushMsg(`You used a ${item.name}!`, () => {
+					if (cures) a.me.status = null;
+					if (uncon) a.me.confuseTurns = 0;
+				});
+				this.pushMsg(`${a.me.name} was cured!`);
+				this.foeFreeMove();
+			});
+			return;
+		}
+		// X ITEMS — the Gen-3 in-battle boosters, previously `kind:'misc'` with no
+		// mechanic. A stat one raises its stage (+1, GBA rules); DIRE HIT is Focus
+		// Energy in a bottle; GUARD SPEC. lays your side's Mist. All spend the turn.
+		if (item.kind === 'xitem') {
+			const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy' };
+			if (item.boost) {
+				const [stat, d] = Object.entries(item.boost)[0];
+				if ((a.meBoosts[stat] || 0) >= 6) return;   // won't go any higher
+				Bag.consume(itemId);
+				this.startQueue(() => {
+					this.pushMsg(`You used the ${item.name}!`, () => {
+						a.meBoosts[stat] = Math.min(6, (a.meBoosts[stat] || 0) + d);
+					});
+					this.pushMsg(`${a.me.name}'s ${words[stat]} rose!`);
+					this.foeFreeMove();
+				});
+			} else if (item.crit) {
+				if (a.me.focusEnergy) return;
+				Bag.consume(itemId);
+				this.startQueue(() => {
+					this.pushMsg(`You used the ${item.name}!`, () => { a.me.focusEnergy = true; });
+					this.pushMsg(`${a.me.name} is getting pumped!`);
+					this.foeFreeMove();
+				});
+			} else if (item.guard) {
+				if ((a.meSide.mist || 0) > 0) return;
+				Bag.consume(itemId);
+				this.startQueue(() => {
+					this.pushMsg(`You used the ${item.name}!`, () => { a.meSide.mist = 5; });
+					this.pushMsg(`Your team became shrouded in mist!`);
+					this.foeFreeMove();
+				});
+			}
+			return;
 		}
 	}
 

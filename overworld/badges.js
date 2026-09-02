@@ -305,14 +305,25 @@ export function levelForExp(exp) {
 export function levelCap(tier) {
 	const t = Math.max(0, Math.min(8, tier | 0));
 	const main = BASE_LEVEL_CAP + t * LEVEL_CAP_STEP;
-	if (main < CLASSIC_MAX_LEVEL) return main;
-	// The main game is done. JOHKANTO's own eight badges carry the cap the rest of
-	// the way — 120/140/160/180/200/220/240, and beating its Champion lifts the
-	// last stop to 255. Keyed on JohKanto alone (not globalTier) because the three
-	// shared regions have no more gyms to give.
+	// JOHKANTO's own eight badges carry the cap past the main game —
+	// 120/140/160/180/200/220/240, and beating its Champion lifts the last stop
+	// to 255. Keyed on JohKanto alone (not globalTier) because the three shared
+	// regions have no more gyms to give.
+	//
+	// THE TWO LADDERS RACE; TAKE THE MAX. This used to early-return `main`
+	// whenever it was under 100, which made the whole JohKanto branch dead code
+	// until globalTier hit 8 — but the Magnet Train opens on the JOHTO crown
+	// alone, which a player can earn with Kanto and Hoenn still on seven badges.
+	// They could clear all eight JohKanto gyms and beat RED capped at Lv90 the
+	// entire time, with the quest text actively sending them there. A JohKanto
+	// badge is earned against a gym levelled off your own lead, so it has every
+	// right to lift the cap regardless of where the shared tier sits.
 	const jk = Math.max(0, Math.min(8, count('JOHKANTO')));
-	if (jk >= 8) return isChampion('JOHKANTO') ? MAX_LEVEL : CLASSIC_MAX_LEVEL + 7 * POST_CAP_STEP;
-	return Math.min(MAX_LEVEL, CLASSIC_MAX_LEVEL + jk * POST_CAP_STEP);
+	if (jk === 0) return main;
+	const jkCap = jk >= 8
+		? (isChampion('JOHKANTO') ? MAX_LEVEL : CLASSIC_MAX_LEVEL + 7 * POST_CAP_STEP)
+		: CLASSIC_MAX_LEVEL + jk * POST_CAP_STEP;
+	return Math.max(main, jkCap);
 }
 
 // what the cap becomes after one more gym everywhere — for "next: Lv26" UI
