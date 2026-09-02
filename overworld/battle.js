@@ -632,7 +632,10 @@ export class Battle {
 			getJSON('data/tm_learnsets.json').catch(() => ({})), // TM/tutor compat (gen_tm_learnsets.mjs)
 			getJSON('data/genders.json').catch(() => ({})), // male-chance per species; -1 = genderless (gen_genders.mjs)
 		]);
-		this.data = { species, moves, extra, abilities, tmLearn, genders };
+		// real per-species EV yields (gen_ev_yields.mjs, from pokeemerald); species
+		// absent from it (fakemon, later gens) keep the highest-base-stat heuristic
+		const evYields = await getJSON('data/ev_yields.json').catch(() => ({}));
+		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields };
 		// the Love2D build's pixel font, so battle text matches the desktop game
 		try {
 			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
@@ -644,7 +647,7 @@ export class Battle {
 	// start a wild battle vs the party; onEnd(result) with
 	// 'victory'|'defeat'|'escaped'|'caught'; second = {id, level} makes it
 	// a wild DOUBLE battle when the party has two healthy mons
-	async start(party, wildId, wildLevel, onEnd, second) {
+	async start(party, wildId, wildLevel, onEnd, second, opts) {
 		this._starting = true; // block overworld movement immediately (before sprites load)
 		const foe = buildMon(wildId, wildLevel, this.data);
 		if (foe && Math.random() < 0.15) {
@@ -652,6 +655,14 @@ export class Battle {
 		}
 		const playerMon = party.find(m => m.curHP > 0);
 		if (!foe || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }
+		// SYNCHRONIZE afield: with a Synchronize lead, half of wild encounters
+		// share its nature — the classic nature-hunting tool, previously
+		// battle-only. Stats are recomputed since the nature was already baked in.
+		if (playerMon.ability === 'synchronize' && Math.random() < 0.5 && playerMon.nature) {
+			foe.nature = playerMon.nature;
+			foe.stats = statsFor(this.data.species[wildId], foe.ivs, foe.level, foe);
+			foe.maxHP = foe.stats.hp; foe.curHP = foe.stats.hp;
+		}
 		const loadSprite = async (file, back) => {
 			if (!file) return null;
 			const name = back ? file.replace(/\.(png|gif)$/, '-b.$1') : file;
@@ -690,7 +701,9 @@ export class Battle {
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
 			meFuture: null, foeFuture: null,       // a pending FUTURE SIGHT / DOOM DESIRE
-			weather: null, terrain: null,          // {kind, turns}
+			// environmental weather arrives from the MAP (endless); moves/abilities
+			// overwrite it with their own timed spells as usual
+			weather: opts?.weather ? { kind: opts.weather, turns: Infinity } : null, terrain: null,
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
@@ -704,6 +717,12 @@ export class Battle {
 		};
 		this._starting = false; // active now drives `blocking`
 		for (const m of party) this.clearVolatiles(m);
+		// the map's weather is worth a line — it changes the fight
+		if (this.active.weather?.kind) {
+			const wmsg = { rain: 'Rain pours down.', sandstorm: 'A sandstorm rages.', hail: 'Hail pelts down.', sun: 'The sunlight is harsh.' };
+			this.pushMsg(wmsg[this.active.weather.kind] || '');
+		}
+
 		if (foeAlly) {
 			this.pushMsg(`Wild ${foe.name} and ${foeAlly.name} appeared!`, () => cry(foe.speciesId));
 			if (foe.shiny || foeAlly.shiny) this.pushMsg(`✨ It's SHINY! ✨`);
@@ -760,7 +779,7 @@ export class Battle {
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
 			meFuture: null, foeFuture: null,       // a pending FUTURE SIGHT / DOOM DESIRE
-			weather: null, terrain: null,          // {kind, turns}
+			weather: info?.weather ? { kind: info.weather, turns: Infinity } : null, terrain: null,
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
@@ -3019,13 +3038,24 @@ export class Battle {
 		const b = this.data.species[fallen?.speciesId]?.baseStats;
 		if (!b) return;
 		mon.evs = mon.evs || { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
-		const total = Object.values(mon.evs).reduce((x, y) => x + y, 0);
+		let total = Object.values(mon.evs).reduce((x, y) => x + y, 0);
 		if (total >= 510) return;
-		const best = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((a2, k) => (b[k] || 0) > (b[a2] || 0) ? k : a2, 'hp');
-		// MACHO BRACE doubles the EVs its holder earns. Its payload was empty, so
-		// a 3000-gold item did nothing at all.
-		const gain = 2 * (this.itemFx(mon)?.evBoost || 1);
-		mon.evs[best] = Math.min(252, (mon.evs[best] || 0) + Math.min(gain, 510 - total));
+		const brace = this.itemFx(mon)?.evBoost || 1;   // MACHO BRACE doubles earned EVs
+		// The REAL per-species yield when the table knows the species — so a Zubat
+		// trains Speed and a Shuckle trains defenses, and targeted EV training by
+		// picking opponents finally works. The old rule (+2 to the fallen mon's
+		// highest base stat) stays as the fallback for species outside the table.
+		const yields = this.data.evYields?.[fallen?.speciesId];
+		const entries = yields
+			? Object.entries(yields).filter(([, n]) => n > 0)
+			: [[['hp', 'atk', 'def', 'spa', 'spd', 'spe'].reduce((a2, k) => (b[k] || 0) > (b[a2] || 0) ? k : a2, 'hp'), 2]];
+		for (const [stat, n] of entries) {
+			if (total >= 510) break;
+			const gain = Math.min(n * brace, 510 - total, 252 - (mon.evs[stat] || 0));
+			if (gain <= 0) continue;
+			mon.evs[stat] = (mon.evs[stat] || 0) + gain;
+			total += gain;
+		}
 	}
 
 	// give one mon its exp, handle level-ups (stat recalc + move learning)
