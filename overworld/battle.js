@@ -881,7 +881,17 @@ export class Battle {
 	snapshot() {
 		const a = this.active;
 		if (!a || a.phase === 'done' || !a.me || !a.foe || a.foe.curHP <= 0 || a.me.curHP <= 0) return null;
-		const strip = m => JSON.parse(JSON.stringify(m, (k, v) => (typeof v === 'function' ? undefined : v)));
+		const strip = m => {
+			const seen = new WeakSet();   // per CALL — foes[i] and foe are the same object across calls
+			return JSON.parse(JSON.stringify(m, (k, v) => {
+				if (typeof v === 'function') return undefined;
+				if (v && typeof v === 'object') {
+					if (seen.has(v)) return undefined;   // any future live-ref cycle degrades, never throws
+					seen.add(v);
+				}
+				return v;
+			}));
+		};
 		return {
 			v: 1, isTrainer: !!a.isTrainer, double: !!a.double,
 			info: a.isTrainer ? strip(a.info) : null,
@@ -2184,7 +2194,9 @@ export class Battle {
 			this.float(targetSide, `-${dealt}`, crits ? '#ffd23f' : '#ff7a6b');
 			// damage memory for Counter / Mirror Coat / Metal Burst / Bide
 			// (substitute and disguise hits returned above and don't count)
-			target.lastTaken = { amt: dealt, phys, from: user, turn: a.turnCount || 0 };
+			// no `from` ref: nothing reads it, and a live mon reference makes the
+			// mon graph CIRCULAR — snapshot() and saveParty would throw on it
+			target.lastTaken = { amt: dealt, phys, turn: a.turnCount || 0 };
 			target.tookDamageThisTurn = true;   // Assurance
 			if (target.bideDmg != null) target.bideDmg += dealt;
 			// Moxie: a KO with a damaging move fires up the attacker
