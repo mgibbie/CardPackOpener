@@ -23,7 +23,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
 
 ---
 
-## Batch 1 — Correctness quickies (all S; do first)
+## Batch 1 — Correctness quickies (all S; do first) — DONE (PR #196)
 
 1. **Fix the postgame cap-trap.** `levelCap()` returns early when
    `main < 100`, so the whole JohKanto ladder (120→255) is unreachable until
@@ -52,7 +52,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
 6. **Return/Frustration scale with friendship** instead of flat 102.
    battle.js:446. **[1/5 · S]**
 
-## Batch 2 — Boss brains & battle pace (the "fights feel smart" batch)
+## Batch 2 — Boss brains & battle pace (the "fights feel smart" batch) — DONE (PR #197)
 
 7. **Damage-based AI with KO awareness.** The AI ranks moves by
    `basePower × STAB × effectiveness` — ignores Atk/SpA vs Def/SpD, stat
@@ -75,7 +75,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     and make the AI potion a % heal instead of flat 120. battle.js:2756, 2836.
     **[2/5 · S]**
 
-## Batch 3 — Sound & spectacle
+## Batch 3 — Sound & spectacle — SKIPPED (user call, 2026-09-02: "do the suggested order but skip 3")
 
 12. **Music.** There is none — no overworld themes, no battle theme, no
     victory fanfare; sound.js is cries+sfx only. The single largest "feels
@@ -89,7 +89,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     projectile arc, self-buff glow, spread wave) break the monotony for a
     fraction of per-move work. battle.js:1955-1956, 4170-4176. **[4/5 · M]**
 
-## Batch 4 — World depth (weather, abilities afield, utility moves)
+## Batch 4 — World depth (weather, abilities afield, utility moves) — DONE (PR #199)
 
 14. **Map weather enters battle.** The in-battle weather engine is complete
     but `start()` takes no environmental value — Hoenn's sandstorm routes and
@@ -105,7 +105,7 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
 17. **Per-species EV yields** (real yield table instead of +2-to-highest-stat)
     — makes targeted EV training possible. battle.js:2950-2961. **[2/5 · M]**
 
-## Batch 5 — The postgame deserves players (guidance, rewards, legends)
+## Batch 5 — The postgame deserves players (guidance, rewards, legends) — DONE (PR #198)
 
 18. **Region-aware objectives + a JOHKANTO quest arc.** Every objective
     surface keys off *starting* region, so the whole postgame is silent: on Mt
@@ -136,7 +136,14 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     It's just buried under FRIENDS→MAIL with no your-turn signal. Surface an
     indicator; nothing else. main.js:5343-5366. **[2/5 · XS]**
 
-## Batch 6 — Deep cuts (each optional, order freely)
+## Batch 6 — Deep cuts (each optional, order freely) — tractable subset DONE (PR #200)
+
+Shipped: 23 (true egg moves via gen_egg_moves.mjs + egg_moves.json), 24 (side
+Wide/Quick Guard, typed Future Sight/Doom Desire, ALL_ADJACENT spread hits the
+ally with Telepathy exempting — Gale Wings turned out ALREADY implemented; the
+audit claim was stale), 27 (PC box search, F key + FIND button).
+Consciously skipped: 25 (Safari mechanic — current normal-battle behaviour
+stands), 26 (Game Corner), 28 (asset-debt cluster).
 
 23. **True egg moves** — inheritance currently can't grant anything the baby
     couldn't already learn; needs a per-species egg-move table from the

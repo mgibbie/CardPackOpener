@@ -52,6 +52,11 @@ const AB_ONHIT = {
 	grasspelt: {}, // no on-hit component; its Defense boost lives in statOf
 };
 // moves that strike every opposing mon in a double battle
+// the subset of spread moves that hit EVERYTHING adjacent — including the
+// user's own partner. This is what finally gives TELEPATHY (dodge your ally's
+// blast) something to protect against.
+const ALL_ADJACENT = new Set(['earthquake', 'magnitude', 'bulldoze', 'surf', 'discharge',
+	'lavaplume', 'sludgewave', 'boomburst', 'petalblizzard']);
 const SPREAD_MOVES = new Set(['earthquake', 'rockslide', 'surf', 'blizzard', 'heatwave',
 	'muddywater', 'dazzlinggleam', 'hypervoice', 'boomburst', 'discharge', 'lavaplume',
 	'sludgewave', 'eruption', 'waterspout', 'icywind', 'snarl', 'swift', 'razorleaf',
@@ -310,8 +315,10 @@ const MOVE_FX = {
 	// protect variants + endure
 	kingsshield: { protect: true }, obstruct: { protect: true }, silktrap: { protect: true },
 	spikyshield: { protect: true }, banefulbunker: { protect: true }, burningbulwark: { protect: true },
-	matblock: { protect: true }, craftyshield: { protect: true }, quickguard: { protect: true },
-	wideguard: { protect: true }, endure: { endure: true },
+	matblock: { protect: true }, craftyshield: { protect: true },
+	// REAL side guards now, not personal-Protect aliases: QUICK GUARD walls the
+	// whole side against priority moves, WIDE GUARD against spread moves
+	quickguard: { sideGuard: 'quick' }, wideguard: { sideGuard: 'wide' }, endure: { endure: true },
 	// entry hazards
 	spikes: { hazard: 'spikes' }, toxicspikes: { hazard: 'toxicspikes' },
 	stealthrock: { hazard: 'stealthrock' }, stickyweb: { hazard: 'stickyweb' },
@@ -634,8 +641,12 @@ export class Battle {
 		]);
 		// real per-species EV yields (gen_ev_yields.mjs, from pokeemerald); species
 		// absent from it (fakemon, later gens) keep the highest-base-stat heuristic
-		const evYields = await getJSON('data/ev_yields.json').catch(() => ({}));
-		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields };
+		const [evYields, eggMoves] = await Promise.all([
+			getJSON('data/ev_yields.json').catch(() => ({})),
+			// true egg-move lists (gen_egg_moves.mjs) — read by daycare inheritance
+			getJSON('data/egg_moves.json').catch(() => ({})),
+		]);
+		this.data = { species, moves, extra, abilities, tmLearn, genders, evYields, eggMoves };
 		// the Love2D build's pixel font, so battle text matches the desktop game
 		try {
 			const f = new FontFace('m6x11plus', 'url(data/fonts/m6x11plus.ttf)');
@@ -1481,6 +1492,16 @@ export class Battle {
 			this.pushMsg(`${target.name} protected itself!`);
 			return;
 		}
+		// the SIDE guards: QUICK GUARD walls priority, WIDE GUARD walls spread —
+		// per side and per turn, which personal Protect never modelled
+		if (aimsAtFoe && user !== target) {
+			const tSide = this.sideOfMon(target) === 'me' ? a.meSide : a.foeSide;
+			if ((tSide.quickGuard && this.movePriority(user, move) > 0)
+				|| (tSide.wideGuard && opts?.spread)) {
+				this.pushMsg(`${target.name} was protected by the guard!`);
+				return;
+			}
+		}
 		// --- ability gates that stop a move landing at all (all were inert) ---
 		const defAb = this.abilityOf(target);
 		// DAZZLING / QUEENLY MAJESTY / ARMOR TAIL refuse priority moves
@@ -1603,6 +1624,13 @@ export class Battle {
 					this.pushMsg(`${target.name}'s ${Object.keys(fx.foeBoost)[0] === 'atk' ? 'Attack' : 'Sp. Atk'} rose sharply!`);
 				}
 				this.applyConfusion(target);
+				return;
+			}
+			if (fx.sideGuard) {
+				const side = this.sideOfMon(user) === 'me' ? a.meSide : a.foeSide;
+				if (side[fx.sideGuard + 'Guard']) { this.pushMsg('But it failed!'); return; }
+				side[fx.sideGuard + 'Guard'] = true;   // cleared at the top of every turn
+				this.pushMsg(`${move.name} shielded ${user.name}'s side of the field!`);
 				return;
 			}
 			if (fx.protect) {
@@ -2496,8 +2524,12 @@ export class Battle {
 				this.consumeItem(mon);
 			}
 		}
-		// a foreseen attack arrives — typeless-ish fixed damage off the caster's
-		// level so it still lands if the caster has since switched or fainted
+		// a foreseen attack arrives. It used to be a flat 35% of the victim's max
+		// HP — typeless, statless, un-dodgeable by a Dark type. It is a REAL typed
+		// special hit now (Psychic; DOOM DESIRE is Steel), computed from the stats
+		// the caster had when it foresaw — so it still lands right if the caster
+		// has since switched or fainted. Falls back to the flat cut only for a
+		// snapshot from before this change.
 		for (const [key, victimOf] of [['meFuture', () => a.me], ['foeFuture', () => a.foe]]) {
 			const f = a[key];
 			if (!f) continue;
@@ -2505,7 +2537,18 @@ export class Battle {
 			a[key] = null;
 			const victim = victimOf();
 			if (!victim || victim.curHP <= 0) continue;
-			const dmg = Math.max(1, Math.floor(victim.maxHP * 0.35));
+			let dmg;
+			if (f.user?.stats?.spa) {
+				const type = f.move === 'doomdesire' ? 'Steel' : 'Psychic';
+				const pw = f.move === 'doomdesire' ? 140 : 120;
+				const D = Math.max(1, victim.stats?.spd || 1);
+				const base = Math.floor(Math.floor(Math.floor(2 * (f.level || 50) / 5 + 2) * pw * f.user.stats.spa / D) / 50) + 2;
+				const eff = effectiveness(type, victim.types);
+				if (eff === 0) { this.pushMsg(`${f.name} failed to affect ${victim.name}!`); continue; }
+				dmg = Math.max(1, Math.floor(base * (f.user.types?.includes(type) ? 1.5 : 1) * eff));
+			} else {
+				dmg = Math.max(1, Math.floor(victim.maxHP * 0.35));
+			}
 			this.pushMsg(`${victim.name} took the ${f.name} attack!`, () => {
 				victim.curHP = Math.max(0, victim.curHP - dmg);
 				this.float(victim === a.me ? 'me' : 'foe', `-${dmg}`, '#c9a0ff');
@@ -2853,6 +2896,7 @@ export class Battle {
 	resolveTurn(myMove) {
 		const a = this.active;
 		a.turnCount = (a.turnCount || 0) + 1;
+		a.meSide.quickGuard = a.meSide.wideGuard = a.foeSide.quickGuard = a.foeSide.wideGuard = false;
 		if (a.foeSwitchCd > 0) a.foeSwitchCd--;
 		// boss counter-switch: replaces the foe's move and resolves first (like
 		// any trainer switch), so your move hits the incoming mon
@@ -3888,6 +3932,7 @@ export class Battle {
 	}
 	resolveDoubleTurn() {
 		const a = this.active;
+		a.meSide.quickGuard = a.meSide.wideGuard = a.foeSide.quickGuard = a.foeSide.wideGuard = false;
 		const acts = [...a.plans];
 		a.plans = [];
 		a.actionFor = 0;
@@ -3937,11 +3982,15 @@ export class Battle {
 					const magnet = pool.find(m => m.centerOfAttention);
 					if (magnet && (this.data.moves[act.move.id]?.category !== 'Status')) tgt = magnet;
 				}
-				// NOTE: spread moves here only ever hit the OPPOSING side, so TELEPATHY
-				// (dodge your ally's blast) has nothing to protect against and stays
-				// inert on purpose — wiring it would mean first making Earthquake hit
-				// your own ally, which is a combat change, not a bug fix.
 				const victims = spread ? (isFoe ? this.livingMine() : this.livingFoes()) : [tgt];
+				// Earthquake and its family hit EVERYTHING adjacent — your own partner
+				// included, exactly the cost that balances a spread move. TELEPATHY on
+				// the partner finally has a job: it sidesteps the ally's blast.
+				if (spread && ALL_ADJACENT.has(act.move.id)) {
+					const partner = (isFoe ? [a.foe, a.foeAlly] : [a.me, a.meAlly])
+						.find(m => m && m !== act.user && m.curHP > 0);
+					if (partner && this.abilityOf(partner) !== 'telepathy') victims.push(partner);
+				}
 				for (const v of victims) {
 					this.useMove(act.user, this.boostsOf(act.user), v, this.boostsOf(v), act.move, isFoe,
 						{ spread: victims.length > 1 });
