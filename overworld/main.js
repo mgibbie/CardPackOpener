@@ -1640,7 +1640,31 @@ function bagEntries() {
 // (trade/dex read it whole); the 8 "boxes" are 30-slot pages over it.
 const PC_BOXES = 8, PC_BOX_CAP = 30;
 const PC_SORTS = ['dex', 'level', 'shiny', 'name'];
-const pcMenu = { open: false, side: 0, idx: 0, box: 0, sort: 'dex', confirm: null, releaseMode: false, flash: null };
+const pcMenu = { open: false, side: 0, idx: 0, box: 0, sort: 'dex', confirm: null, releaseMode: false, flash: null, filter: null };
+
+// the search view: real storage indices whose mon matches the query. A query is
+// a name/species fragment, an exact type, or the word "shiny" — enough to find
+// one mon in 1,700 without paging 60 boxes.
+function pcMatches(box, q) {
+	const out = [];
+	box.forEach((m, i) => {
+		const hit = q === 'shiny' ? !!m.shiny
+			: (m.name || '').toLowerCase().includes(q) || (m.speciesId || '').includes(q)
+				|| (m.types || []).some(t => t.toLowerCase() === q);
+		if (hit) out.push(i);
+	});
+	return out;
+}
+// prompt-based like promptRename: headless-safe (no prompt -> filter unchanged)
+function pcPromptSearch() {
+	if (typeof prompt !== 'function') return;
+	const q = prompt('Search storage: name, species, a type, or "shiny". Leave empty to clear.', pcMenu.filter || '');
+	if (q == null) return;
+	pcMenu.filter = q.trim().toLowerCase() || null;
+	pcMenu.side = pcMenu.filter ? 1 : pcMenu.side;
+	pcMenu.idx = 0;
+	pcMenu.flash = pcMenu.filter ? `Searching for "${pcMenu.filter}".` : 'Search cleared.';
+}
 
 function getBox() {
 	const b = safeLoad('magepunk_box_v1', []);
@@ -1975,14 +1999,18 @@ function pcSortStorage(mode) {
 function pcKey(k) {
 	const box = getBox();
 	const pageStart = pcMenu.box * PC_BOX_CAP;
-	const page = box.slice(pageStart, pageStart + PC_BOX_CAP);
+	// with a search active the box side is the hit list across ALL boxes; the
+	// view carries real storage indices so withdraw/release cut the right mon
+	const viewIdx = pcMenu.filter != null ? pcMatches(box, pcMenu.filter) : null;
+	const page = viewIdx ? viewIdx.map(i => box[i]) : box.slice(pageStart, pageStart + PC_BOX_CAP);
+	const realIdx = i => (viewIdx ? viewIdx[i] : pageStart + i);
 	const list = pcMenu.side === 0 ? party : page;
-	// release confirm: Z lets it go, X keeps it
+	// release confirm: Z lets it go, X keeps it (confirm holds the REAL index)
 	if (pcMenu.confirm != null) {
 		if (k === 'z' || k === 'Enter') {
-			const gone = box[pageStart + pcMenu.confirm];
+			const gone = box[pcMenu.confirm];
 			if (gone) {
-				box.splice(pageStart + pcMenu.confirm, 1);
+				box.splice(pcMenu.confirm, 1);
 				setBox(box);
 				pcMenu.flash = `${gone.name} was released. Bye-bye, ${gone.name}!`;
 			}
@@ -1991,10 +2019,15 @@ function pcKey(k) {
 		} else if (k === 'x' || k === 'Escape' || k === 'r') pcMenu.confirm = null;
 		return;
 	}
+	if (k === 'f') { pcPromptSearch(); return; }
 	if (k === 'Tab') { pcMenu.side ^= 1; pcMenu.idx = 0; return; }
 	if (k === 'ArrowLeft' || k === 'ArrowRight') {
 		if (pcMenu.side === 0) { pcMenu.side = 1; pcMenu.idx = 0; }
-		else { // page through the boxes
+		else if (viewIdx) { // paging makes no sense inside a search — leave it first
+			pcMenu.filter = null;
+			pcMenu.idx = 0;
+			pcMenu.flash = 'Search cleared.';
+		} else { // page through the boxes
 			pcMenu.box = (pcMenu.box + (k === 'ArrowRight' ? 1 : PC_BOXES - 1)) % PC_BOXES;
 			pcMenu.idx = 0;
 		}
@@ -2002,8 +2035,8 @@ function pcKey(k) {
 	}
 	if (k === 'ArrowUp' && list.length) pcMenu.idx = (pcMenu.idx + list.length - 1) % list.length;
 	if (k === 'ArrowDown' && list.length) pcMenu.idx = (pcMenu.idx + 1) % list.length;
-	if (k === 'x' || k === 'Escape') { pcMenu.open = false; pcMenu.flash = null; pcMenu.releaseMode = false; }
-	if (k === 'r' && pcMenu.side === 1 && page[pcMenu.idx]) { pcMenu.confirm = pcMenu.idx; return; }
+	if (k === 'x' || k === 'Escape') { pcMenu.open = false; pcMenu.flash = null; pcMenu.releaseMode = false; pcMenu.filter = null; }
+	if (k === 'r' && pcMenu.side === 1 && page[pcMenu.idx]) { pcMenu.confirm = realIdx(pcMenu.idx); return; }
 	if (k === 's') {
 		pcMenu.sort = PC_SORTS[(PC_SORTS.indexOf(pcMenu.sort) + 1) % PC_SORTS.length];
 		pcSortStorage(pcMenu.sort);
@@ -2021,7 +2054,7 @@ function pcKey(k) {
 			saveParty(party);
 		} else {
 			if (party.length >= 6 || !page[pcMenu.idx]) return;
-			const [m] = box.splice(pageStart + pcMenu.idx, 1);
+			const [m] = box.splice(realIdx(pcMenu.idx), 1);
 			party.push(m);
 			setBox(box);
 			saveParty(party);
@@ -5274,16 +5307,19 @@ function drawPcMenu(W, H) {
 	const u = H / 480;
 	const box = getBox();
 	const pageStart = pcMenu.box * PC_BOX_CAP;
-	const page = box.slice(pageStart, pageStart + PC_BOX_CAP);
+	const viewIdx = pcMenu.filter != null ? pcMatches(box, pcMenu.filter) : null;
+	const page = viewIdx ? viewIdx.map(i => box[i]) : box.slice(pageStart, pageStart + PC_BOX_CAP);
 	menuChrome(W, H, u, 'POKEMON STORAGE',
-		pcMenu.confirm != null ? `Release ${page[pcMenu.confirm]?.name}? Z releases — X keeps it.`
+		pcMenu.confirm != null ? `Release ${box[pcMenu.confirm]?.name}? Z releases — X keeps it.`
 			: pcMenu.releaseMode ? 'RELEASE MODE: tap a boxed Pokémon to let it go.'
-			: pcMenu.flash || 'Z moves · ←/→ change box · R release · S sort.');
+			: pcMenu.flash || 'Z moves · ←/→ change box · R release · S sort · F search.');
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	sctx.fillStyle = pcMenu.side === 0 ? BUI.C.accent : BUI.C.dim;
 	sctx.fillText('PARTY', 24 * u, 78 * u);
 	sctx.fillStyle = pcMenu.side === 1 ? BUI.C.accent : BUI.C.dim;
-	sctx.fillText(`BOX ${pcMenu.box + 1}/${PC_BOXES} (${page.length}/${PC_BOX_CAP} · ${box.length} total)`, W * 0.52, 78 * u);
+	sctx.fillText(viewIdx
+		? `SEARCH "${pcMenu.filter}" — ${page.length} found of ${box.length}`
+		: `BOX ${pcMenu.box + 1}/${PC_BOXES} (${page.length}/${PC_BOX_CAP} · ${box.length} total)`, W * 0.52, 78 * u);
 	// tappable controls: box paging + sort + release mode; confirm gets its own pair
 	const navBtns = pcMenu.confirm != null
 		? [['pcnav:yes', 'RELEASE', W * 0.52, 100 * u], ['pcnav:no', 'KEEP', W * 0.52 + 110 * u, 76 * u]]
@@ -5292,6 +5328,7 @@ function drawPcMenu(W, H) {
 			['pcnav:next', '>', W - 40 * u, 24 * u],
 			['pcnav:sort', 'SORT', 24 * u, 60 * u],
 			['pcnav:rel', pcMenu.releaseMode ? 'DONE' : 'RELEASE', 96 * u, 90 * u],
+			['pcnav:find', pcMenu.filter ? 'CLEAR' : 'FIND', 198 * u, 70 * u],
 		];
 	for (const [bid, label, x, w] of navBtns) {
 		const b = { id: bid, x, y: 62 * u, w, h: 22 * u, label, center: true };
@@ -5435,6 +5472,12 @@ function menuTap(id) {
 		if (a === 'no') { pressKey('x'); return; }
 		if (a === 'sort') { pressKey('s'); return; }
 		if (a === 'rel') { pcMenu.releaseMode = !pcMenu.releaseMode; return; }
+		if (a === 'find') {
+			// tapping CLEAR drops the filter without a prompt; FIND asks for one
+			if (pcMenu.filter) { pcMenu.filter = null; pcMenu.idx = 0; pcMenu.flash = 'Search cleared.'; }
+			else pressKey('f');
+			return;
+		}
 		pcMenu.side = 1;
 		pressKey(a === 'prev' ? 'ArrowLeft' : 'ArrowRight');
 		return;

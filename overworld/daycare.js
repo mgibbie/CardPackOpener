@@ -183,10 +183,15 @@ export function applyInheritance(baby, inh, data, canLearn) {
 	Object.assign(baby.ivs, inh.ivs || {});
 	if (inh.nature) baby.nature = inh.nature;
 	if (canLearn) {
+		// TRUE EGG MOVES bypass the canLearn gate: the whole point of the species'
+		// egg-move list is moves the baby can NOT otherwise learn (Dragon Dance on
+		// a Charmander line). Before this, inheritance only passed along moves the
+		// baby could already learn by level/TM — "egg moves" in name only.
+		const eggList = data.eggMoves?.[baby.speciesId] || [];
 		for (const mid of inh.fatherMoves || []) {
 			if (baby.moves.length >= 4) break;
 			if (baby.moves.some(m => m.id === mid)) continue;
-			if (!canLearn(baby, mid)) continue;
+			if (!eggList.includes(mid) && !canLearn(baby, mid)) continue;
 			const info = data.moves?.[mid];
 			if (info) baby.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
 		}
