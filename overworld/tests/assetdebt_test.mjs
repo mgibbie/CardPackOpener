@@ -1,9 +1,10 @@
 // assetdebt_test.mjs — the asset-debt cluster (upscale plan item 28).
 //
-//   * DONOR CRIES: 391 species (Ransei/Uranium fakemon + a couple of forms)
-//     shipped with no cry file — mute "appeared!" lines. gen_cry_donors.mjs
-//     maps each to its nearest real relative (primary type + stat total);
-//     sound.js consults the map on every cry.
+//   * CRIES: 391 species (Ransei/Uranium fakemon + a couple of forms) have no
+//     cry file. USER CALL: no borrowed/donor cries — a silent species stays
+//     silent until it gets an original recording. The worklist lives in the
+//     design wiki ("Missing Cries", data from gen_missing_cries.mjs): the
+//     silent 391 plus the 63 groups sharing one byte-identical file.
 //   * EXP CURVES: the audit's "19 exp curves" were 19 duplicated curve SITES —
 //     already deduplicated into badges.js, whose single split curve is a
 //     documented design decision (per-species curves would re-level every
@@ -27,22 +28,32 @@ const ROOT = path.resolve(HERE, '../../');
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra ? '  ' + extra : '')); } };
 
-// ---------- the donor-cry map ----------
+// ---------- silent species stay silent; the worklist is honest ----------
 {
-	const donors = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/cry_donors.json'), 'utf8'));
+	const crypto = await import('crypto');
 	const species = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
-	const have = new Set(fs.readdirSync(path.join(ROOT, 'overworld/data/sounds/cries'))
-		.filter(f => f.endsWith('.ogg')).map(f => f.slice(0, -4)));
+	const criesDir = path.join(ROOT, 'overworld/data/sounds/cries');
+	const have = new Set(fs.readdirSync(criesDir).filter(f => f.endsWith('.ogg')).map(f => f.slice(0, -4)));
 	const silent = Object.keys(species).filter(id => !have.has(id));
-	A(silent.length > 0 && silent.every(id => donors[id]),
-		`every silent species has a donor (${silent.length} mapped)`);
-	A(Object.values(donors).every(d => have.has(d)), 'every donor actually has a cry file');
-	const typeMatched = Object.entries(donors)
-		.filter(([id, d]) => species[id].types?.[0] === species[d].types?.[0]).length;
-	A(typeMatched / Object.keys(donors).length > 0.95,
-		`donors share the primary type (${typeMatched}/${Object.keys(donors).length})`);
+
 	const snd = fs.readFileSync(path.join(ROOT, 'overworld/sound.js'), 'utf8');
-	A(/cryDonors\[speciesId\] \|\| speciesId/.test(snd), 'sound.js consults the donor map on every cry');
+	A(!/cryDonors|cry_donors/.test(snd) && /cries\/\$\{speciesId\}\.ogg/.test(snd),
+		'sound.js plays only a species\' OWN cry — no borrowed voices (user call)');
+	A(!fs.existsSync(path.join(ROOT, 'overworld/data/cry_donors.json')) && !fs.existsSync(path.join(ROOT, 'tools/gen_cry_donors.mjs')),
+		'the donor machinery is gone, not just unplugged');
+
+	const wl = JSON.parse(fs.readFileSync(path.join(ROOT, 'designwiki/data/missing_cries.json'), 'utf8'));
+	A(silent.length > 0 && wl.missing.length === silent.length && silent.every(id => wl.missing.includes(id)),
+		`the wiki worklist carries every silent species (${silent.length})`);
+	A(wl.missing.every(id => !have.has(id) && species[id]), 'nothing on the silent list actually has a file');
+	const hashOf = id => crypto.createHash('md5').update(fs.readFileSync(path.join(criesDir, id + '.ogg'))).digest('hex');
+	A(wl.shared.length > 0 && wl.shared.every(g => g.length > 1 && new Set(g.map(hashOf)).size === 1),
+		`every shared group really shares one byte-identical recording (${wl.shared.length} groups)`);
+
+	const app = fs.readFileSync(path.join(ROOT, 'designwiki/app.js'), 'utf8');
+	const html = fs.readFileSync(path.join(ROOT, 'designwiki/index.html'), 'utf8');
+	A(/missingCriesView/.test(app) && /section === 'missing-cries'/.test(app) && /#\/missing-cries/.test(html),
+		'the wiki has the Missing Cries page routed and in the sidebar');
 }
 
 // ---------- the exp-curve dedup stays dead ----------
@@ -133,14 +144,6 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				return false;
 			};
 		});
-
-		// the donor map serves from the data dir the page already uses
-		const donorLive = await page.evaluate(async () => {
-			const r = await fetch('data/cry_donors.json');
-			const d = r.ok ? await r.json() : {};
-			return { ok: r.ok, shox: d.shox };
-		});
-		A(donorLive.ok && !!donorLive.shox, 'the page can fetch the donor map (shox has a voice)', JSON.stringify(donorLive));
 
 		// ---------- one doubles battle exercises the whole ledger ----------
 		const live = await page.evaluate(async () => {
