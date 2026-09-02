@@ -25,5 +25,13 @@ export function play(url, vol = 0.6) {
 	} catch (e) { /* no audio */ }
 }
 
-export const cry = speciesId => play(`data/sounds/cries/${speciesId}.ogg`, 0.5);
+// 391 species (the Ransei/Uranium fakemon and a couple of forms) shipped with
+// no cry file at all — every "appeared!" was mute. Each borrows the cry of its
+// nearest real relative (same primary type, closest stat total —
+// tools/gen_cry_donors.mjs). The map loads lazily and quietly; until it lands,
+// a missing cry stays silent, which is exactly what it already was.
+let cryDonors = {};
+fetch('data/cry_donors.json').then(r => (r.ok ? r.json() : {})).then(d => { cryDonors = d || {}; }).catch(() => {});
+
+export const cry = speciesId => play(`data/sounds/cries/${cryDonors[speciesId] || speciesId}.ogg`, 0.5);
 export const sfx = name => play(`data/sounds/sfx/${name}.ogg`, 0.55);

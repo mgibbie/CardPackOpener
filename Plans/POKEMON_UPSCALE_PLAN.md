@@ -136,14 +136,26 @@ Run batches on command, PR-sized as usual. Impact 1-5 / effort S-M-L per item.
     It's just buried under FRIENDS→MAIL with no your-turn signal. Surface an
     indicator; nothing else. main.js:5343-5366. **[2/5 · XS]**
 
-## Batch 6 — Deep cuts (each optional, order freely) — tractable subset DONE (PR #200)
+## Batch 6 — Deep cuts (each optional, order freely) — ALL DONE (PRs #200-#203)
 
-Shipped: 23 (true egg moves via gen_egg_moves.mjs + egg_moves.json), 24 (side
-Wide/Quick Guard, typed Future Sight/Doom Desire, ALL_ADJACENT spread hits the
-ally with Telepathy exempting — Gale Wings turned out ALREADY implemented; the
-audit claim was stale), 27 (PC box search, F key + FIND button).
-Consciously skipped: 25 (Safari mechanic — current normal-battle behaviour
-stands), 26 (Game Corner), 28 (asset-debt cluster).
+Shipped in PR #200: 23 (true egg moves via gen_egg_moves.mjs + egg_moves.json),
+24 (side Wide/Quick Guard, typed Future Sight/Doom Desire, ALL_ADJACENT spread
+hits the ally with Telepathy exempting — Gale Wings turned out ALREADY
+implemented; the audit claim was stale), 27 (PC box search, F key + FIND button).
+The "skips" followed on user order ("do the batch 6 skips"):
+- 25 Safari Zone (PR #201): fee/balls/steps + catch-only BALL/BAIT/ROCK/RUN
+  battles, both zones (Fuchsia + Route 121), sessions persist.
+- 26 Game Corner (PR #202): Voltorb Flip (voltorbflip.js, HGSS rules), COIN
+  CASE coins (cap 9,999), coin counter, prize desk — Celadon/Goldenrod/
+  Mauville/JohKanto Celadon + both prize rooms.
+- 28 Asset debt (PR #203): 391 donor cries (gen_cry_donors.mjs — fakemon
+  borrow their nearest real relative's voice); COACHING/DRAGON CHEER/EMBARGO/
+  MAGIC ROOM/WONDER ROOM/HAPPY HOUR/CELEBRATE/HOLD HANDS implemented (the
+  rest of the noops genuinely need missing machinery — interception,
+  re-ordering, type rewrites — and now say so); the "19 exp curves" were 19
+  duplicated curve SITES, already deduplicated into badges.js, whose single
+  split curve is a documented design decision (per-species curves would
+  re-level every save) — pinned by assetdebt_test so it can't regress.
 
 23. **True egg moves** — inheritance currently can't grant anything the baby
     couldn't already learn; needs a per-species egg-move table from the
