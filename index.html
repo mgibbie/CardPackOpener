@@ -222,6 +222,10 @@
 				<div class="glyph">🗺️</div>
 				<div><h3>Map Editor <span class="arrow">→</span></h3><p>Owner tools — paint tiles, collision and elevation straight onto the overworld maps.</p></div>
 			</a>
+			<a class="tile" id="tile-owreset" href="#" hidden>
+				<div class="glyph">♻️</div>
+				<div><h3>Reset my overworld game <span class="arrow">→</span></h3><p>Owner tools — wipe the Pokémon save and replay the intro from the region picker. Battlecards is untouched.</p></div>
+			</a>
 		</div>
 
 		<footer>
@@ -241,7 +245,10 @@
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
 	if (MP.cachedState()?.username === 'mgibbie') {
-		for (const id of ['tile-todo', 'tile-arttune', 'tile-spritetune', 'tile-mapedit']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+		for (const id of ['tile-todo', 'tile-arttune', 'tile-spritetune', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+		// the reset tile DOES something rather than going somewhere, so it needs a
+		// handler — which re-checks ownership with the server before touching a thing
+		import('./site/owreset.js').then(m => m.mount(document.getElementById('tile-owreset'))).catch(() => {});
 	}
 	try {
 		const p = localStorage.getItem('magepunk_party_v1');
