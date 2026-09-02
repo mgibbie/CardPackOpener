@@ -148,8 +148,12 @@ The "skips" followed on user order ("do the batch 6 skips"):
 - 26 Game Corner (PR #202): Voltorb Flip (voltorbflip.js, HGSS rules), COIN
   CASE coins (cap 9,999), coin counter, prize desk — Celadon/Goldenrod/
   Mauville/JohKanto Celadon + both prize rooms.
-- 28 Asset debt (PR #203): 391 donor cries (gen_cry_donors.mjs — fakemon
-  borrow their nearest real relative's voice); COACHING/DRAGON CHEER/EMBARGO/
+- 28 Asset debt (PR #203, cries amended by #204): the 391 silent fakemon
+  briefly borrowed donor cries — REVERTED by user call ("no mons borrow
+  cries"); silent species stay mute until they get an ORIGINAL recording,
+  and the design wiki's "Missing Cries" page (gen_missing_cries.mjs) is the
+  chip-away worklist: 391 silent + 63 groups sharing one byte-identical
+  file. Also in #203: COACHING/DRAGON CHEER/EMBARGO/
   MAGIC ROOM/WONDER ROOM/HAPPY HOUR/CELEBRATE/HOLD HANDS implemented (the
   rest of the noops genuinely need missing machinery — interception,
   re-ordering, type rewrites — and now say so); the "19 exp curves" were 19

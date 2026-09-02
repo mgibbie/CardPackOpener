@@ -94,6 +94,48 @@ function gapTile(p, badges) {
       h('div', { class: 'dex-types' }, typesArr(p.types).map(typeChip)),
       h('div', { class: 'gap-badges' }, badges)));
 }
+// The cry worklist: species with no cry file at all, plus groups sharing one
+// byte-identical recording (form-shares may be canon-fine; the fakemon batches
+// are placeholders). Donor/borrowed cries were explicitly rejected — a silent
+// species stays silent until it gets an ORIGINAL recording. Data comes from
+// tools/gen_missing_cries.mjs --write; rerun it after adding .ogg files.
+let criesPromise = null;
+const loadMissingCries = () => {
+  if (!criesPromise) criesPromise = fetch('data/missing_cries.json' + CB).then(r => {
+    if (!r.ok) throw new Error('cry worklist unavailable');
+    return r.json();
+  });
+  return criesPromise;
+};
+async function missingCriesView() {
+  content.replaceChildren(h('h1', null, 'Missing Cries'), h('p', { class: 'muted' }, 'Loading the cry worklist…'));
+  let data;
+  try { data = await loadMissingCries(); } catch (e) {
+    return content.replaceChildren(h('h1', null, 'Missing Cries'), h('p', { class: 'muted' }, 'Could not load the cry worklist.'));
+  }
+  if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'missing-cries') return;
+  const q = norm(searchEl.value);
+  const hit = id => { const pk = DB.pokemon[id]; return pk && (!q || norm(pk.name).includes(q) || norm(id).includes(q)); };
+  const missing = (data.missing || []).filter(hit);
+  const groups = (data.shared || []).filter(g => g.some(hit));
+  content.replaceChildren(
+    h('h1', null, 'Missing Cries ', h('span', { class: 'num' },
+      '(' + (data.missing || []).length + ' silent · ' + (data.shared || []).length + ' shared groups)')),
+    h('p', { class: 'muted' }, 'The recording worklist. SILENT species have no cry file and stay mute until an original recording lands '
+      + '(borrowed cries are not used, by design). Below them: groups of species whose files are byte-identical copies of one '
+      + 'recording — regional-form shares may be fine, the fakémon batches are placeholders. Drop new recordings at '
+      + 'overworld/data/sounds/cries/<id>.ogg, then rerun tools/gen_missing_cries.mjs --write.'),
+    h('h2', null, 'No cry at all ', h('span', { class: 'num' }, '(' + missing.length + ')')),
+    missing.length
+      ? h('div', { class: 'dex-grid' }, missing.map(id => gapTile(DB.pokemon[id], [])))
+      : h('p', null, q ? 'No silent species match the search.' : 'None — every species has its own recording.'),
+    h('h2', null, 'Sharing one recording ', h('span', { class: 'num' }, '(' + groups.length + ' groups)')),
+    ...groups.map(g => h('div', null,
+      h('p', { class: 'muted' }, g.map(id => (DB.pokemon[id] || {}).name || id).join(' · ')),
+      h('div', { class: 'dex-grid' }, g.filter(id => DB.pokemon[id]).map(id => gapTile(DB.pokemon[id], [])))))
+  );
+}
+
 function needsTypingView() {
   const q = norm(searchEl.value);
   const list = Object.values(DB.pokemon).filter(p => p.needsType)
@@ -2109,6 +2151,7 @@ function route() {
   if (section === 'tempt') return temptView();
   if (section === 'arena') return arenaView();
   if (section === 'missing-art') return missingArtView();
+  if (section === 'missing-cries') return missingCriesView();
   if (section === 'dungeon') {
     if (id === 'deck' && parts[2]) return dungeonDeckView(parts[2]);
     if (id === 'boss' && parts[2]) return dungeonBossView(parts[2]);
@@ -2144,7 +2187,7 @@ function route() {
 let cardSearchTimer = null;
 searchEl.addEventListener('input', () => {
   const s = (location.hash.slice(1).split('?')[0] || '/').split('/').filter(Boolean);
-  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'missing-art', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
+  if (['pokemon', 'moves', 'abilities', 'tms', 'unlearned', 'battlecards', 'cards', 'missing-art', 'missing-cries', 'needs-typing', 'needs-data'].includes(s[0]) && !s[1]) {
     if (s[0] === 'cards') {
       clearTimeout(cardSearchTimer);
       cardSearchTimer = setTimeout(() => {
