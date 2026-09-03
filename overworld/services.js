@@ -144,8 +144,22 @@ const MISC_VENUES = {
 	MAP_NEW_MAUVILLE_INSIDE: { generator: [[32, 2], [32, 3], [32, 4], [33, 4], [34, 4], [35, 4], [35, 3], [35, 2]] },
 };
 
+// BIKE SHOPS (the bike was free-floating — now the clerks hand out promos)
+// and the Route 113 GLASS WORKSHOP (soot sack + ash-blown glass).
+const BIKE_SHOPS = {
+	MAP_GOLDENROD_BIKE_SHOP: [[7, 2], [7, 3], [6, 2]],
+	MAP_MAUVILLE_CITY_BIKE_SHOP: [[2, 5], [2, 6], [3, 5]],
+	MAP_CERULEAN_CITY_BIKE_SHOP: [[9, 3], [9, 4], [8, 3]],
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (BIKE_SHOPS[mapId]) {
+		return { sprites: [], zones: [{ kind: 'bikeshop', tiles: BIKE_SHOPS[mapId] }], solid: [] };
+	}
+	if (mapId === 'MAP_ROUTE113_GLASS_WORKSHOP') {
+		return { sprites: [], zones: [{ kind: 'glassblower', tiles: [[2, 3], [2, 4], [3, 3]] }], solid: [] };
+	}
 	if (MISC_VENUES[mapId]) {
 		const zones = Object.entries(MISC_VENUES[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
 		return { sprites: [], zones, solid: [] };
