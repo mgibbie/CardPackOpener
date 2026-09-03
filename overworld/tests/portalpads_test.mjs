@@ -81,6 +81,12 @@ async function waitFor(fn, ms) {
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', region);
+			// completed-intro flags, or the boot-time intro-heal replays the
+			// professor's sendoff cutscene over the whole scenario
+			localStorage.setItem('magepunk_story', JSON.stringify({
+				flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true },
+				vars: {},
+			}));
 		}, STATE, PARTY, town.region.toLowerCase());
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=${town.map}`, { waitUntil: 'domcontentloaded' });
 		const booted = await waitFor(() => page.evaluate(() => {
