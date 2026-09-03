@@ -1,0 +1,38 @@
+/* battlecards/theme.css — THE Battlecards visual identity, shared by every
+   Battlecards-facing page (start, replays, boards, collection, …). One token
+   set instead of per-page copy-pasted :root blocks. Pages keep their own
+   layout styles; this file owns the palette, the body backdrop, and the
+   dark/light theme plumbing (the ◐ Theme toggle stamps data-theme on <html>;
+   the game stays dark regardless of OS preference). */
+:root {
+	--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+	--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+	--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
+	--green: #6bd6a0; --red: #ff8a8a;
+	--shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+:root[data-theme="dark"] {
+	--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
+	--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
+	--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
+	--green: #6bd6a0; --red: #ff8a8a;
+	--shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+:root[data-theme="light"] {
+	--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
+	--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
+	--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6;
+	--green: #1f9d63; --red: #c0392b;
+	--shadow: 0 8px 24px rgba(40,50,90,.12);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+	font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+	color: var(--text); min-height: 100vh;
+	background:
+		radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%),
+		radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%),
+		linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%);
+	background-attachment: fixed;
+}
+a { color: inherit; text-decoration: none; }

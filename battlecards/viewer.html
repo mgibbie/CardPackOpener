@@ -75,6 +75,12 @@
 		.tile:focus-visible { outline: 3px solid #a688ff; outline-offset: 2px; z-index: 5; }
 		.tile canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; border-radius: 10px; }
 		.tile.unowned canvas { filter: grayscale(0.95) brightness(0.55); }
+		/* craft-from-gallery: the ⚒ overlay rides the hover zoom on missing tiles */
+		.tile .craft-btn { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); z-index: 6;
+			background: #6b4fd4; color: #fff; border: 0; border-radius: 8px; padding: 4px 10px;
+			font: 700 11px system-ui, sans-serif; cursor: pointer; opacity: 0; transition: opacity .15s; white-space: nowrap; }
+		.tile:hover .craft-btn, .tile:focus-visible .craft-btn, .tile:focus-within .craft-btn { opacity: 1; }
+		.tile .craft-btn:disabled { background: #3a4266; cursor: default; }
 		.tile .owned {
 			position: absolute; right: 4%; top: 3%;
 			background: #241b38; border: 1px solid #8f6fff; border-radius: 10px;

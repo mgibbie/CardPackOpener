@@ -10,38 +10,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
 	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<link rel="stylesheet" href="theme.css">
 	<style>
-	:root {
-		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
-		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
-		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff; --green: #6bd6a0;
-		--shadow: 0 10px 30px rgba(0,0,0,.35);
-	}
-	/* the game keeps its own dark identity regardless of the OS preference —
-	   the explicit ◐ Theme toggle (data-theme) still works */
-	:root[data-theme="dark"] {
-		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
-		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
-		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff; --green: #6bd6a0;
-		--shadow: 0 10px 30px rgba(0,0,0,.35);
-	}
-	:root[data-theme="light"] {
-		--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
-		--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
-		--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6; --green: #1f9d63;
-		--shadow: 0 8px 24px rgba(40,50,90,.12);
-	}
-	* { margin: 0; padding: 0; box-sizing: border-box; }
-	body {
-		font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-		color: var(--text); min-height: 100vh;
-		background:
-			radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%),
-			radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%),
-			linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%);
-		background-attachment: fixed;
-	}
-	a { color: inherit; text-decoration: none; }
 	.wrap { max-width: 1040px; margin: 0 auto; padding: 18px 20px 64px;
 		/* notched phones (landscape especially): keep the mode tiles out of the
 		   rounded corners and off the home indicator */
@@ -234,7 +204,7 @@
 		<div id="cotw" class="cotw"><div class="cotw-empty">Loading this week's card…</div></div>
 		<div id="cotw-archive" class="cotw-archive"></div>
 
-		<div class="section-label">Run Modes</div>
+		<div class="section-label">Run Modes — Climbs</div>
 		<div class="grid">
 			<a class="tile" href="index.html?dungeon=1" data-run="magepunk_dungeon_v1" data-mode="dungeon">
 				<span class="resume">▸ Resume</span>
@@ -256,6 +226,15 @@
 				<div class="glyph" data-art="elise_starseeker">🎲</div>
 				<div><h3>Duels <span class="arrow">→</span></h3><p>Bring a starter deck, then upgrade it with treasures as you win.</p></div>
 			</a>
+			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1" data-mode="arena">
+				<span class="resume">▸ Resume</span>
+				<div class="glyph" data-art="zephrys_the_great">⚔️</div>
+				<div><h3>Arena <span class="arrow">→</span></h3><p>Draft a 30-card deck one pick at a time, then run it until 3 losses.</p></div>
+			</a>
+		</div>
+
+		<div class="section-label">Run Modes — Lorequest Saga</div>
+		<div class="grid">
 			<a class="tile" href="index.html?lorequest=1" data-run="magepunk_lorequest_v1" data-mode="lorequest">
 				<span class="resume">▸ Resume</span>
 				<div class="glyph" data-art="chandra_sig">📖</div>
@@ -281,37 +260,32 @@
 				<div class="glyph" data-art="mv_spiderman_1">🕸️</div>
 				<div><h3>Lorequest: Multiverse <span class="arrow">→</span></h3><p>Pick a Marvel hero — win-parity fights matched to your power, from street-level thugs to Thanos &amp; Galactus.</p></div>
 			</a>
-			<a class="tile" href="index.html?arena=1" data-run="magepunk_arena_v1" data-mode="arena">
-				<span class="resume">▸ Resume</span>
-				<div class="glyph" data-art="zephrys_the_great">⚔️</div>
-				<div><h3>Arena <span class="arrow">→</span></h3><p>Draft a 30-card deck one pick at a time, then run it until 3 losses.</p></div>
-			</a>
 		</div>
 
 		<div class="section-label">Build &amp; Browse</div>
 		<div class="grid">
 			<a class="tile" href="deck.html">
-				<div class="glyph">🛠️</div>
+				<div class="glyph" data-art="zilliax">🛠️</div>
 				<div><h3>Deck Builder <span class="arrow">→</span></h3><p>Craft 40-card decks from your collection — or load a ready-made starter deck.</p></div>
 			</a>
 			<a class="tile" href="packs.html">
-				<div class="glyph">📦</div>
+				<div class="glyph" data-art="marin_the_fox">📦</div>
 				<div><h3>Open Packs <span class="arrow">→</span></h3><p>Crack packs to grow your collection.</p></div>
 			</a>
 			<a class="tile" href="viewer.html">
-				<div class="glyph">🖼️</div>
+				<div class="glyph" data-art="chromaggus">🖼️</div>
 				<div><h3>Card Gallery <span class="arrow">→</span></h3><p>Browse every card, wiki-style, with full art and text.</p></div>
 			</a>
 			<a class="tile" href="replays.html">
-				<div class="glyph">🎬</div>
+				<div class="glyph" data-art="nozdormu">🎬</div>
 				<div><h3>Replays <span class="arrow">→</span></h3><p>Rewatch your recent games frame by frame, from either side.</p></div>
 			</a>
 			<a class="tile" href="boards.html">
-				<div class="glyph">🏆</div>
+				<div class="glyph" data-art="varian_wrynn">🏆</div>
 				<div><h3>Leaderboards <span class="arrow">→</span></h3><p>The PvP Elo ladder, the Arena board, and every run mode's best climbs.</p></div>
 			</a>
 			<a class="tile" href="../learnmagepunk/">
-				<div class="glyph">🎓</div>
+				<div class="glyph" data-art="kazakus">🎓</div>
 				<div><h3>How to Play <span class="arrow">→</span></h3><p>New here? Learn turns, combat, lands, classes, and keywords.</p></div>
 			</a>
 		</div>
@@ -329,28 +303,28 @@
 			<button class="ob-skip" id="ob-skip" title="Skip">Skip ✕</button>
 			<div class="ob-slides" id="ob-slides">
 				<div class="ob-slide" data-i="0">
-					<div class="ob-art">🃏</div>
+					<div class="ob-art" data-art="deathwing">🃏</div>
 					<h2>Welcome to Battlecards</h2>
 					<p>A deep collectible card game — thousands of cards, thirteen classes, and a full deck builder. Play quick matches against the AI, dive into run modes, or challenge your friends.</p>
 				</div>
 				<div class="ob-slide" data-i="1" hidden>
-					<div class="ob-art">⚔️</div>
+					<div class="ob-art" data-art="boulderfist_ogre">⚔️</div>
 					<h2>How a turn works</h2>
 					<p>Each turn you gain a Mana crystal, play creatures and spells, and attack. Reduce your opponent from 40 life to 0. Lands, keywords, and class powers add the depth.</p>
 					<p class="ob-link"><a href="../learnmagepunk/">Read the full rules →</a></p>
 				</div>
 				<div class="ob-slide" data-i="2" hidden>
-					<div class="ob-art">🏞️</div>
+					<div class="ob-art" data-art="druid_of_the_claw">🏞️</div>
 					<h2>Lands & color identity</h2>
 					<p>Click an empty <b>land slot</b> to develop a basic land for 3 mana — each taps for a colored boost. The colors your lands make are your <b>color identity</b>, and they unlock <b>advanced lands</b> with powerful themed card pools. Wastes tap for damage instead of a color.</p>
 				</div>
 				<div class="ob-slide" data-i="3" hidden>
-					<div class="ob-art">🖐️</div>
+					<div class="ob-art" data-art="gadgetzan_auctioneer">🖐️</div>
 					<h2>Your hand</h2>
 					<p>You can hold up to <b>15 cards</b> — but at the end of your turn you must discard down to the limit, so don't hoard forever. Killing things, drawing big, and Discovering all feed the hand; spend it!</p>
 				</div>
 				<div class="ob-slide" data-i="4" hidden>
-					<div class="ob-art">🎁</div>
+					<div class="ob-art" data-art="millhouse_manastorm">🎁</div>
 					<h2>You're ready to play</h2>
 					<p>Your account comes with three ready-made decks — <b>Mage</b>, <b>Warrior</b>, and <b>Hunter</b> — and a stack of packs. Jump into a <b>Quick Match</b> now, then build your own in the <b>Deck Builder</b> as your collection grows.</p>
 				</div>
@@ -370,7 +344,11 @@
 	.ob-card { position: relative; width: min(460px, 100%); background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 30px 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55); text-align: center; }
 	.ob-skip { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--muted); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
 	.ob-skip:hover { color: var(--text); }
-	.ob-art { font-size: 3.4rem; margin-bottom: 8px; filter: drop-shadow(0 8px 20px rgba(0,0,0,.4)); }
+	/* art-backed slide banner: the emoji shows until the signature card art
+	   fades in over it (same [data-art] loader as the mode tiles) */
+	.ob-art { position: relative; overflow: hidden; height: 110px; margin-bottom: 12px; display: grid; place-items: center; font-size: 3.4rem; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--border); filter: drop-shadow(0 8px 20px rgba(0,0,0,.4)); }
+	.ob-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; }
+	.ob-art img.on { opacity: 1; }
 	.ob-slide h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; background: linear-gradient(120deg, var(--gold), var(--violet)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 	.ob-slide p { color: var(--muted); line-height: 1.55; margin: 0 auto; max-width: 40ch; }
 	.ob-slide p + p { margin-top: 10px; }

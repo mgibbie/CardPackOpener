@@ -31,6 +31,8 @@ let PAGE_SIZE = MOBILE.matches ? 6 : 10;
 MOBILE.addEventListener('change', () => { PAGE_SIZE = MOBILE.matches ? 6 : 10; page = 0; renderPage(); });
 let cards = [], collection = {}, filtered = [], page = 0;
 let mpFreshOverride = null; // post-craft account state (the localStorage cache lags)
+// mirrors the server's craft table; the server is still the validator
+const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
 const filters = { search: '', mana: null, type: '', rarity: '', cls: '', ownedOnly: false, showUncollectible: false };
 
 // cards you can't collect: lands (bought from slots), tokens, hero powers,
@@ -171,6 +173,29 @@ function tileFor(card) {
 	}
 	tile.addEventListener('click', () => openZoom(card));
 	tile.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openZoom(card); } });
+	// account mode: craft a missing card straight from its tile on hover — the
+	// affordance the collection page already has (the zoom keeps its button;
+	// touch users reach crafting through the zoom)
+	const st = MP_ON ? (mpFreshOverride || MPX.cachedState()) : null;
+	const cap = card.rarity === 'legendary' ? 1 : 2;
+	if (st && owned < cap && !isUncollectible(card)) {
+		const cost = CRAFT_COST[card.rarity || 'common'];
+		const b = document.createElement('button');
+		b.className = 'craft-btn';
+		b.textContent = `⚒ Craft (${cost})`;
+		b.disabled = (st.dust || 0) < cost;
+		b.addEventListener('click', async ev => {
+			ev.stopPropagation(); // crafting shouldn't also open the zoom
+			b.disabled = true;
+			b.textContent = 'Crafting…';
+			const r = await MPX.call('craft', { id: card.id }).catch(e => ({ error: e.message || 'craft failed' }));
+			if (r.error) { b.textContent = r.error.slice(0, 26); return; }
+			mpFreshOverride = r.state || mpFreshOverride;
+			if (r.state?.collection) collection = r.state.collection;
+			renderPage();
+		});
+		tile.appendChild(b);
+	}
 	return tile;
 }
 
@@ -199,9 +224,8 @@ function openZoom(card) {
 		+ `<div class="z-desc">${card.description ? richHtml(card.description) : '<i>No rules text.</i>'}</div>`
 		+ keywordLinesHtml(card)
 		+ `<div class="z-owned">${owned ? `You own x${owned}` : 'Not in your collection yet'}</div>`;
-	// account mode: craft the missing copy right here (mirrors the server's
-	// CRAFT_COST; the server is still the validator)
-	const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
+	// account mode: craft the missing copy right here (CRAFT_COST mirrors the
+	// server's table; the server is still the validator)
 	const st = MP_ON ? (mpFreshOverride || MPX.cachedState()) : null;
 	const cap = card.rarity === 'legendary' ? 1 : 2;
 	if (st && owned < cap && !isUncollectible(card)) {
