@@ -36,6 +36,7 @@ import { getImage, drawOwMon } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
+import { Contest, CATS, RANKS } from './contest.js';
 import * as Savefile from './savefile.js';
 import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
@@ -838,6 +839,19 @@ function interact() {
 	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
+	if (svc === 'contest') {
+		if (!party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
+		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
+		sfx('ui_select');
+		contestMenu.open = true; contestMenu.mode = 'category'; contestMenu.idx = 0; contestMenu.flash = null;
+		return;
+	}
+	if (svc === 'berryblend') {
+		if (!party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
+		sfx('ui_select');
+		blendMenu.open = true; blendMenu.mode = 'pickmon'; blendMenu.idx = 0; blendMenu.flash = null;
+		return;
+	}
 	if (svc === 'gamecorner') {
 		const openHub = () => { gcMenu.open = true; gcMenu.mode = 'hub'; gcMenu.idx = 0; gcMenu.flash = null; };
 		if (!Bag.count('coincase')) {
@@ -1177,7 +1191,8 @@ function bgmTick() {
 	} else {
 		battle.themeHint = null;               // any finished battle clears its hint
 		const T = BATTLE_THEMES[bgmGame()];
-		want = player.surfing ? T?.surf
+		want = (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
+			: player.surfing ? T?.surf
 			: player.biking ? T?.bike
 			: (musicMap[world.current?.map?.id] || null);
 	}
@@ -1185,6 +1200,7 @@ function bgmTick() {
 }
 function syncMapBgm() { bgmTick(); }
 getJSON('data/music_map.json').then(m => { musicMap = m || {}; syncMapBgm(); }).catch(() => { musicMap = {}; });
+getJSON('data/contest.json').then(d => Contest.init(d)).catch(() => Contest.init(null));
 
 function optionsKey(k) {
 	const om = optionsMenu;
@@ -2391,6 +2407,8 @@ function pressKey(k) {
 	if (pcMenu.open) { pcKey(k); return; }
 	if (vfMenu.open) { vfKey(k); return; }
 	if (gcMenu.open) { gcKey(k); return; }
+	if (contestMenu.open) { contestKey(k); return; }
+	if (blendMenu.open) { blendKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
 	if (townMap.open) { townKey(k); return; }
 	if (tradeMenu.open) { npcTradeKey(k); return; }
@@ -2458,7 +2476,7 @@ function pressKey(k) {
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
@@ -3553,6 +3571,274 @@ function wildBattleEnd(result, inSafari) {
 	if (inSafari) {
 		saveSafari();   // the battle burned balls on the shared session
 		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
+	}
+}
+
+// ---------- Pokémon Contests (Lilycove Contest Hall) ----------
+// The engine lives in contest.js (data harvested from pokeemerald by
+// tools/gen_contest.mjs into data/contest.json). This is the UI: the reception
+// counter runs category -> rank -> entrant -> the five-turn appeal scene, and
+// the Berry Blender corner feeds berries into condition. Rank progress
+// persists per category (magepunk_contest_v1); the RIBBON lands on the
+// winning Pokémon itself and shows on its summary.
+const CONTEST_KEY = 'magepunk_contest_v1';
+const contestMenu = { open: false, mode: 'category', idx: 0, category: null, rank: 0, st: null, entries: null, sprites: {}, flash: null, awarded: false, purse: 0 };
+const blendMenu = { open: false, mode: 'pickmon', idx: 0, mon: null, flash: null };
+function contestProgress() { return safeLoad(CONTEST_KEY, { ranks: { cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0 } }); }
+function contestSpriteFor(speciesId) {
+	if (!(speciesId in contestMenu.sprites)) {
+		contestMenu.sprites[speciesId] = null;
+		const sp = battle.data.species[speciesId];
+		if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => { contestMenu.sprites[speciesId] = img; }).catch(() => {});
+	}
+	return contestMenu.sprites[speciesId];
+}
+function contestRows() {
+	const p = contestProgress();
+	if (contestMenu.mode === 'category') {
+		return CATS.map(c => {
+			const r = Math.min(p.ranks[c] ?? 0, 3);
+			return `${c.toUpperCase()} CONTEST — ${(p.ranks[c] ?? 0) >= 4 ? 'all ranks cleared!' : RANKS[r] + ' RANK open'}`;
+		}).concat(['Leave']);
+	}
+	const unlocked = Math.min(p.ranks[contestMenu.category] ?? 0, 3);
+	return RANKS.map((r, i) => i < unlocked ? `${r} RANK — cleared` : i === unlocked ? `${r} RANK` : `${r} RANK — locked`).concat(['Back']);
+}
+// the win pays out exactly once, on the transition into the results screen
+function contestFinish() {
+	const m = contestMenu, st = m.st;
+	m.mode = 'results';
+	if (!st.placements[0].me || m.awarded) return;
+	m.awarded = true;
+	const p = contestProgress();
+	if ((p.ranks[st.category] ?? 0) <= st.rank) { p.ranks[st.category] = st.rank + 1; safeSave(CONTEST_KEY, p); }
+	const mon = st.cs[0].mon;
+	const ribbon = `${st.category}-${RANKS[st.rank].toLowerCase()}`;
+	mon.ribbons = mon.ribbons || [];
+	if (!mon.ribbons.includes(ribbon)) mon.ribbons.push(ribbon);
+	m.purse = [500, 1000, 2000, 3000][st.rank] || 500;
+	Bag.earn(m.purse);
+	Journal.add(`Won the ${RANKS[st.rank]} ${st.category.toUpperCase()} Contest with ${st.cs[0].name}!`);
+	sfx('levelup');
+	saveParty(party);
+}
+function contestKey(k) {
+	const m = contestMenu;
+	if (m.mode === 'scene') {
+		if (m.entries) {
+			if (k === 'z' || k === 'Enter') { m.entries = null; if (m.st.done) contestFinish(); }
+			return;
+		}
+		const n = m.st.cs[0].moves.length;
+		if (k === 'ArrowUp' && m.idx >= 2) m.idx -= 2;
+		if (k === 'ArrowDown' && m.idx + 2 < n) m.idx += 2;
+		if (k === 'ArrowLeft' && m.idx % 2 === 1) m.idx--;
+		if (k === 'ArrowRight' && m.idx % 2 === 0 && m.idx + 1 < n) m.idx++;
+		if (k === 'z' || k === 'Enter') {
+			const me = m.st.cs[0];
+			m.entries = Contest.playTurn(m.st, me.lockout ? null : me.moves[m.idx]);
+			sfx('ui_select');
+		}
+		return;
+	}
+	if (m.mode === 'results') {
+		if (k === 'z' || k === 'Enter' || k === 'x' || k === 'Escape') { m.open = false; m.st = null; syncMapBgm(); }
+		return;
+	}
+	if (m.mode === 'pickmon') {
+		if (k === 'ArrowUp') m.idx = (m.idx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % party.length;
+		if (k === 'x' || k === 'Escape') { m.mode = 'rank'; m.idx = 0; m.flash = null; return; }
+		if ((k === 'z' || k === 'Enter') && party[m.idx]) {
+			m.awarded = false; m.purse = 0;
+			m.st = Contest.start({ category: m.category, rank: m.rank, mon: party[m.idx], battleTypes: id => battle.data.moves[id]?.type });
+			for (const c of m.st.cs) contestSpriteFor(c.species);
+			m.mode = 'scene'; m.idx = 0; m.entries = null;
+			syncMapBgm(); // the stage theme takes over
+			sfx('ui_select');
+		}
+		return;
+	}
+	const rows = contestRows();
+	if (k === 'ArrowUp') m.idx = (m.idx + rows.length - 1) % rows.length;
+	if (k === 'ArrowDown') m.idx = (m.idx + 1) % rows.length;
+	if (k === 'x' || k === 'Escape') {
+		if (m.mode === 'category') m.open = false;
+		else { m.mode = 'category'; m.idx = 0; }
+		m.flash = null;
+		return;
+	}
+	if (k !== 'z' && k !== 'Enter') return;
+	if (m.mode === 'category') {
+		if (m.idx >= CATS.length) { m.open = false; return; }
+		m.category = CATS[m.idx]; m.mode = 'rank'; m.idx = 0; m.flash = null;
+	} else if (m.mode === 'rank') {
+		if (m.idx >= RANKS.length) { m.mode = 'category'; m.idx = 0; return; }
+		const unlocked = Math.min(contestProgress().ranks[m.category] ?? 0, 3);
+		if (m.idx > unlocked) { sfx('ui_denied'); m.flash = `Win the ${RANKS[unlocked]} RANK first!`; return; }
+		m.rank = m.idx; m.mode = 'pickmon'; m.idx = 0; m.flash = null;
+	}
+}
+// the berries in the bag that the blender knows a flavor for
+function blendBerries() {
+	return Object.keys(Contest.data?.berries || {}).filter(id => Bag.ITEMS[id] && Bag.count(id) > 0).map(id => [id, Bag.count(id)]);
+}
+function blendKey(k) {
+	const b = blendMenu;
+	if (b.mode === 'pickmon') {
+		if (k === 'ArrowUp') b.idx = (b.idx + party.length - 1) % party.length;
+		if (k === 'ArrowDown') b.idx = (b.idx + 1) % party.length;
+		if (k === 'x' || k === 'Escape') { b.open = false; return; }
+		if ((k === 'z' || k === 'Enter') && party[b.idx]) { b.mon = party[b.idx]; b.mode = 'feed'; b.idx = 0; b.flash = null; }
+		return;
+	}
+	const list = blendBerries();
+	const rows = list.length + 1; // + Done
+	if (k === 'ArrowUp') b.idx = (b.idx + rows - 1) % rows;
+	if (k === 'ArrowDown') b.idx = (b.idx + 1) % rows;
+	if (k === 'x' || k === 'Escape') { b.mode = 'pickmon'; b.idx = 0; b.flash = null; return; }
+	if (k !== 'z' && k !== 'Enter') return;
+	if (b.idx >= list.length) { b.mode = 'pickmon'; b.idx = 0; return; }
+	const [id] = list[b.idx];
+	const r = Contest.feed(b.mon, id);
+	if (!r) { sfx('ui_denied'); b.flash = `${b.mon.name} can't eat another bite! (sheen is full)`; return; }
+	Bag.consume(id);
+	sfx('heal');
+	const g = Object.entries(r.gains).map(([c, v]) => `${c.toUpperCase()} +${v}`).join('  ') || 'no rise';
+	b.flash = `${g}   SHEEN ${r.sheen}/255`;
+	saveParty(party); // condition lives on the mon
+	b.idx = Math.min(b.idx, blendBerries().length); // ate the last of a kind -> stay in range
+}
+function drawContest(W, H) {
+	const u = H / 480;
+	const m = contestMenu;
+	if (m.mode === 'category') { optionList(W, H, u, 'CONTEST RECEPTION', 'Which Contest would you like to enter?', contestRows(), m.idx, 'ct:', m.flash); return; }
+	if (m.mode === 'rank') { optionList(W, H, u, `${m.category.toUpperCase()} CONTEST`, 'Which rank?', contestRows(), m.idx, 'ctr:', m.flash); return; }
+	if (m.mode === 'pickmon') {
+		menuChrome(W, H, u, `${m.category.toUpperCase()} CONTEST — ${RANKS[m.rank]} RANK`, 'Which POKeMON will perform?');
+		party.forEach((mo, i) => monRow('ctm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
+		return;
+	}
+	const st = m.st;
+	if (!st) { m.open = false; return; }
+	if (m.mode === 'results') {
+		menuChrome(W, H, u, 'JUDGING!', `${st.category.toUpperCase()} CONTEST — ${RANKS[st.rank]} RANK`);
+		st.placements.forEach((c, i) => {
+			const y = (100 + i * 64) * u;
+			const img = contestSpriteFor(c.species);
+			if (img) { sctx.imageSmoothingEnabled = false; const s = Math.min(48 * u / img.width, 48 * u / img.height); sctx.drawImage(img, 64 * u, y - 24 * u, img.width * s, img.height * s); }
+			sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
+			sctx.fillStyle = i === 0 ? '#ffd27a' : c.me ? BUI.C.accent : BUI.C.text;
+			sctx.fillText(`${i + 1}.  ${c.name}${c.trainer ? '  (' + c.trainer + ')' : '  (YOU)'}`, 124 * u, y);
+			sctx.textAlign = 'right';
+			sctx.fillText(`${c.score} pts`, W - 48 * u, y);
+			sctx.textAlign = 'left';
+		});
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillStyle = st.placements[0].me ? '#ffd27a' : BUI.C.dim;
+		sctx.fillText(st.placements[0].me
+			? `${st.cs[0].name} won the ${st.category.toUpperCase()} ${RANKS[st.rank]} RIBBON!  (+$${m.purse})`
+			: 'So close! Blend some berries and try again.', 40 * u, H - 40 * u);
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText('Z: done', 40 * u, H - 18 * u);
+		return;
+	}
+	// the appeal scene
+	menuChrome(W, H, u, `${st.category.toUpperCase()} CONTEST — ${RANKS[st.rank]} RANK`,
+		`Appeal ${Math.min(st.turn + (m.entries ? 0 : 1), 5)}/5    Crowd: ${'♥'.repeat(st.crowd)}${'—'.repeat(Math.max(0, 5 - st.crowd))}`);
+	st.cs.forEach((c, i) => {
+		const y = (92 + i * 42) * u;
+		const img = contestSpriteFor(c.species);
+		if (img) { sctx.imageSmoothingEnabled = false; const s = Math.min(36 * u / img.width, 36 * u / img.height); sctx.drawImage(img, 28 * u, y - 20 * u, img.width * s, img.height * s); }
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillStyle = c.me ? BUI.C.accent : BUI.C.text;
+		sctx.fillText(`${c.name}${c.trainer ? '  (' + c.trainer + ')' : '  (YOU)'}${c.lockout ? '  *spent*' : ''}`, 76 * u, y);
+		sctx.textAlign = 'right';
+		sctx.fillStyle = '#ff7d9c';
+		sctx.fillText(`${c.total}♥`, W - 36 * u, y);
+		sctx.textAlign = 'left';
+	});
+	if (m.entries) {
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		m.entries.forEach((e, i) => {
+			const y = (278 + i * 24) * u;
+			sctx.fillStyle = e.me ? BUI.C.accent : BUI.C.text;
+			const mv = e.move ? (battle.data.moves[e.move]?.name || e.move) : null;
+			sctx.fillText((mv ? `${e.who} used ${mv}!  +${e.hearts}♥  ` : `${e.who} `) + e.notes.join(' '), 32 * u, y, W - 220 * u);
+		});
+		const b = { id: 'ct-next', x: W - 184 * u, y: H - 60 * u, w: 152 * u, h: 44 * u, label: st.done ? 'RESULTS' : 'NEXT', center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, true, u);
+		return;
+	}
+	const me = st.cs[0];
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText(me.lockout ? `${me.name} is too spent to appeal — pass the turn.` : 'Choose a move to appeal with:', 28 * u, 268 * u);
+	if (me.lockout) {
+		const b = { id: 'ctmv:0', x: 24 * u, y: 280 * u, w: W - 48 * u, h: 46 * u, label: 'PASS', center: true };
+		menuUi.push(b); BUI.button(sctx, b, true, u);
+		return;
+	}
+	const bw = (W - 64 * u) / 2;
+	me.moves.forEach((id, i) => {
+		const mi = Contest.moveInfo(id, battle.data.moves[id]?.type);
+		const prev = me.lastMove ? Contest.moveInfo(me.lastMove, battle.data.moves[me.lastMove]?.type) : null;
+		const combo = prev?.starter && (mi.combos || []).includes(prev.starter);
+		const name = battle.data.moves[id]?.name || id;
+		const b = {
+			id: 'ctmv:' + i, x: 24 * u + (i % 2) * (bw + 16 * u), y: (280 + Math.floor(i / 2) * 56) * u, w: bw, h: 46 * u,
+			label: `${name}  [${mi.cat.toUpperCase().slice(0, 2)} ♥${mi.appeal}${mi.jam ? ' J' + mi.jam : ''}${combo ? ' COMBO!' : ''}]`, center: false,
+		};
+		menuUi.push(b);
+		BUI.button(sctx, b, m.idx === i, u);
+	});
+}
+function drawBlend(W, H) {
+	const u = H / 480;
+	const b = blendMenu;
+	if (b.mode === 'pickmon') {
+		menuChrome(W, H, u, 'BERRY BLENDER', 'Whose condition shall we raise?');
+		party.forEach((mo, i) => monRow('bb:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, b.idx === i, u));
+		return;
+	}
+	const c = Contest.cond(b.mon);
+	menuChrome(W, H, u, `BERRY BLENDER — ${b.mon.name}`, 'Flavor raises its category; smoothness fills SHEEN.');
+	const barW = W * 0.32;
+	CATS.forEach((cat, i) => {
+		const y = (96 + i * 30) * u;
+		sctx.fillStyle = BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText(cat.toUpperCase(), 32 * u, y);
+		BUI.bar(sctx, 110 * u, y - 11 * u, barW, 13 * u, Math.min(1, c[cat] / 255), BUI.C.accent, 4 * u);
+		sctx.fillStyle = BUI.C.text;
+		sctx.fillText(String(c[cat]), 118 * u + barW, y);
+	});
+	const sy = (96 + 5 * 30 + 8) * u;
+	sctx.fillStyle = BUI.C.dim;
+	sctx.fillText('SHEEN', 32 * u, sy);
+	BUI.bar(sctx, 110 * u, sy - 11 * u, barW, 13 * u, Math.min(1, c.sheen / 255), '#c9a24a', 4 * u);
+	sctx.fillStyle = BUI.C.text;
+	sctx.fillText(`${c.sheen}/255`, 118 * u + barW, sy);
+	// the berry shelf
+	const list = blendBerries();
+	const rows = list.map(([id, n]) => `${Bag.ITEMS[id].name}  x${n}`).concat(['Done']);
+	const start = Math.max(0, Math.min(b.idx - 3, rows.length - 7));
+	rows.slice(start, start + 7).forEach((label, i) => {
+		const idx = start + i;
+		const bid = 'bbf:' + idx;
+		const btn = { id: bid, x: W * 0.55, y: (88 + i * 48) * u, w: W * 0.41, h: 42 * u, label, center: false };
+		menuUi.push(btn);
+		BUI.button(sctx, btn, menuHover === bid || b.idx === idx, u);
+	});
+	if (!list.length) {
+		sctx.fillStyle = BUI.C.dim;
+		sctx.fillText('No berries in the bag — they grow on routes!', W * 0.55, 100 * u);
+	}
+	if (b.flash) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+		sctx.fillText(b.flash, 32 * u, H - 18 * u);
 	}
 }
 
@@ -5091,6 +5377,8 @@ function tick(now) {
 		else if (pcMenu.open) drawPcMenu(SW, MH);
 		else if (vfMenu.open) drawVfMenu(SW, MH);
 		else if (gcMenu.open) drawGcMenu(SW, MH);
+		else if (contestMenu.open) drawContest(SW, MH);
+		else if (blendMenu.open) drawBlend(SW, MH);
 		else if (dexMenu.open) drawDexMenu(SW, MH);
 		else if (townMap.open) drawTownMap(SW, MH);
 		else if (tradeMenu.open) drawNpcTrade(SW, MH);
@@ -5316,6 +5604,16 @@ function drawSummary(W, H, u) {
 	sctx.fillText(`ABILITY: ${(m.ability || '—').toUpperCase()}`, 40 * u, 302 * u);
 	sctx.fillText(`ITEM: ${m.heldItem ? (Bag.ITEMS[m.heldItem]?.name || m.heldItem) : '—'}`, 40 * u, 322 * u);
 	sctx.fillText(`NATURE: ${(m.nature || '—').toUpperCase()}   FRIEND: ${m.friend ?? 70}`, 40 * u, 342 * u);
+	// contest life: the ribbon case + condition, once either exists
+	if (m.ribbons?.length) {
+		sctx.fillStyle = '#ffd27a';
+		sctx.fillText(`RIBBONS (${m.ribbons.length}): ${m.ribbons.slice(0, 3).join(', ').toUpperCase()}${m.ribbons.length > 3 ? '…' : ''}`, 40 * u, 382 * u);
+		sctx.fillStyle = BUI.C.dim;
+	}
+	if (m.contest && (m.contest.sheen || CATS.some(c => m.contest[c]))) {
+		sctx.fillText(`CONTEST: CO ${m.contest.cool} BE ${m.contest.beauty} CU ${m.contest.cute} SM ${m.contest.smart} TO ${m.contest.tough}  SHEEN ${m.contest.sheen}`,
+			40 * u, m.ribbons?.length ? 402 * u : 382 * u);
+	}
 	// the stat judge: IV potential in words (shiny star rides the name line)
 	{
 		const ivs = m.ivs || {};
@@ -6177,6 +6475,9 @@ function menuTap(id) {
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
+	if (kind === 'ct' || kind === 'ctr' || kind === 'ctm' || kind === 'ctmv') { contestMenu.idx = +a; contestKey('z'); return; }
+	if (kind === 'ct-next') { contestKey('z'); return; }
+	if (kind === 'bb' || kind === 'bbf') { blendMenu.idx = +a; blendKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); return; }
 	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
 	if (kind === 'bkp') {
@@ -6910,6 +7211,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Journal, Savefile, runSaveAction, loadBackups, restoreBackup, OPTION_ACTIONS, OPTION_KEYS, OW_KEYS, repelWoreOff, setRepel, drawOptions,
+		Contest, get contestMenu() { return contestMenu; }, get blendMenu() { return blendMenu; }, contestKey, blendKey, drawContest, drawBlend, contestProgress, blendBerries,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,

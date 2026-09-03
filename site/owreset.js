@@ -44,6 +44,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_dex_v1', 'magepunk_dexclaims_v1',
 	// Battle Frontier
 	'magepunk_bp', 'magepunk_frontier_best', 'magepunk_frontier_symbols',
+	// Contest rank progress (ribbons + condition live on the mons themselves)
+	'magepunk_contest_v1',
 	// the adventure journal, the last repel used, and a battle left mid-fight
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)
