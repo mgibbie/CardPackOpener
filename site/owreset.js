@@ -49,6 +49,8 @@ export const OW_RESET_KEYS = [
 	// the minigame venues: a running Bug-Catching Contest, Trick House stage,
 	// and which Ruins of Alph puzzles are solved
 	'magepunk_bugcontest_v1', 'magepunk_trickhouse_v1', 'magepunk_ruins_v1',
+	// the living world: where the roamers are (and their wounds), shoal digs
+	'magepunk_roamers_v1', 'magepunk_shoal_v1',
 	// the adventure journal, the last repel used, and a battle left mid-fight
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)

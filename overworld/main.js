@@ -841,6 +841,9 @@ function interact() {
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
+	if (svc === 'shoalspot') { shoalDig(); return; }
+	if (svc === 'shoalhermit') { shoalHermitTalk(); return; }
+	if (svc === 'kurt') { kurtTalk(); return; }
 	if (svc === 'trickmaster') { trickMasterTalk(); return; }
 	if (svc === 'trickscroll') { trickScrollFind(); return; }
 	if (svc === 'trickend') { trickEndTalk(); return; }
@@ -1040,6 +1043,7 @@ addEventListener('beforeunload', () => { battleSaveAt = 0; persistBattle(); });
 // mirrors a live call site; anything unreconstructable degrades safely.
 function resumeEndHandler(end, savedMap) {
 	const kind = end?.kind || 'wild';
+	if (kind === 'roamer' && end.roamer) return roamerEnd(end.roamer);
 	if (kind === 'legendary') return result => {
 		if (result === 'caught' && battle.lastCaught) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
@@ -2627,6 +2631,8 @@ function warmBattleSprites() {
 async function refreshMapContent(label) {
 	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
+	shoalFixup(label);
+	roamersOnMapChange();
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -3041,6 +3047,10 @@ player.onArrive = () => {
 		const th = trickWarp(w);
 		if (th === 'blocked') return;
 		if (th) { warpTo(th.map, th.warp); return; }
+		// SHOAL CAVE tides: high water floods the deep rooms, swaps the inner room
+		const sh = shoalWarp(w);
+		if (sh === 'blocked') return;
+		if (sh) { warpTo(sh.map, sh.warp); return; }
 		// leaving the park mid-Bug-Contest means the judging happens at the gate
 		if (bugContest.active && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
 			warpTo(w.dest_map, w.dest_warp_id);
@@ -3118,7 +3128,12 @@ player.onArrive = () => {
 		// the Bug-Catching Contest swaps in its own bug table while it runs
 		const pick = bugContestRoll() || encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing,
 			repelSteps > 0 ? (lead?.level || 0) : 0);
-		if (pick) startWildBattle(pick);
+		if (pick) {
+			// a roamer on this route takes over half of the encounters here
+			const roam = roamerHere();
+			if (roam && Math.random() < 0.5) { startRoamerBattle(roam); return; }
+			startWildBattle(pick);
+		}
 	}
 };
 
@@ -3596,6 +3611,185 @@ function wildBattleEnd(result, inSafari) {
 		saveSafari();   // the battle burned balls on the shared session
 		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
 	}
+}
+
+// ---------- Shoal Cave tides ----------
+// The Clock drives Emerald's real rhythm: LOW tide 3-9 and 15-21, HIGH tide
+// otherwise. At high tide the Inner Room swaps to its shipped high-tide layout
+// (flooded — Surf country) and the deeper rooms (Stairs/Lower/Ice) are
+// underwater outright. The high-tide map shipped as a layout-only shell (no
+// warps, even in the decomp — events live on the low map), so its warps are
+// injected at load and arrival is re-placed by hand. SHOAL SALT × 4 and SHOAL
+// SHELL × 4 hide at the classic dig spots (once per save — no respawn timers),
+// and the hermit at the entrance trades 4 + 4 for his SHELL BELL.
+const SHOAL_KEY = 'magepunk_shoal_v1';
+const shoalTide = () => { const h = Clock.hour(); return (h >= 3 && h < 9) || (h >= 15 && h < 21) ? 'low' : 'high'; };
+// which dig spot yields what, by map:x,y (the decomp's ShoalSalt1-4/ShoalShell1-4)
+const SHOAL_ITEM_AT = {
+	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:31,8': 'shoalsalt', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:14,26': 'shoalsalt',
+	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:41,20': 'shoalshell', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:41,10': 'shoalshell',
+	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:6,9': 'shoalshell', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:16,13': 'shoalshell',
+	'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM:18,2': 'shoalsalt', 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM:11,11': 'shoalsalt',
+};
+// the low Inner Room's warp list, mirrored into the high-tide shell at load
+const SHOAL_INNER_WARPS = [
+	{ x: 34, y: 29, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '1' },
+	{ x: 38, y: 15, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM', dest_warp_id: '0' },
+	{ x: 42, y: 4, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM', dest_warp_id: '1' },
+	{ x: 19, y: 14, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '0' },
+	{ x: 15, y: 19, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '1' },
+	{ x: 30, y: 25, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '2' },
+	{ x: 14, y: 33, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '2' },
+	{ x: 40, y: 33, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '3' },
+];
+let shoalArrival = null; // set by shoalWarp: where to stand after the shell map loads
+// warp overrides: high tide floods the deep rooms and swaps the Inner Room
+function shoalWarp(w) {
+	if (shoalTide() === 'low') return null;
+	if (/SHOAL_CAVE_LOW_TIDE_(STAIRS|LOWER|ICE)_ROOM$/.test(w.dest_map)) {
+		dialog.open('Seawater surges through the passage!\n\nThe way down is underwater until the tide\ngoes out. (Low tide: 3-9 and 15-21.)');
+		return 'blocked';
+	}
+	// only the ENTRANCE door swaps you into the flooded room — climbing back UP
+	// from a deep room lands in the low layout as a grace (no stranding)
+	if (w.dest_map === 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM' && world.current?.name === 'ShoalCave_LowTideEntranceRoom') {
+		const idx = Math.max(0, parseInt(w.dest_warp_id, 10) || 0);
+		shoalArrival = [SHOAL_INNER_WARPS[idx]?.x ?? 34, SHOAL_INNER_WARPS[idx]?.y ?? 29];
+		return { map: 'MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM', warp: w.dest_warp_id };
+	}
+	return null;
+}
+function shoalFixup(label) {
+	if (label !== 'ShoalCave_HighTideInnerRoom') { shoalArrival = null; return; }
+	for (const wv of SHOAL_INNER_WARPS) {
+		if (!world.warps.some(x => x.x === wv.x && x.y === wv.y)) world.warps.push({ ...wv });
+	}
+	if (shoalArrival) { player.setTile(shoalArrival[0], shoalArrival[1]); shoalArrival = null; }
+}
+function shoalDig() {
+	const key = `${world.current?.map?.id}:${player.tx + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[0])},${player.ty + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[1])}`;
+	const item = SHOAL_ITEM_AT[key];
+	if (!item) { dialog.open('Just wet cave rock.'); return; }
+	const st = safeLoad(SHOAL_KEY, { taken: {} });
+	if (st.taken[key]) { dialog.open('You already dug everything out of this spot.'); return; }
+	st.taken[key] = 1;
+	safeSave(SHOAL_KEY, st);
+	Bag.addItem(item, 1);
+	sfx('item_get');
+	dialog.open(`Buried in the ${item === 'shoalsalt' ? 'briny sand' : 'shallows'}...\n\nYou dug up a ${Bag.ITEMS[item].name}!`);
+}
+function shoalHermitTalk() {
+	const salt = Bag.count('shoalsalt'), shell = Bag.count('shoalshell');
+	if (salt >= 4 && shell >= 4) {
+		dialog.open(`HERMIT: Ooh! ${salt} SHOAL SALT and ${shell} SHOAL SHELL!\nWith 4 of each I can craft my masterpiece.\n\nShall I?   Z = Yes   X = No`, declined => {
+			if (declined === 'x') return;
+			for (let i = 0; i < 4; i++) { Bag.consume('shoalsalt'); Bag.consume('shoalshell'); }
+			Bag.addItem('shellbell', 1);
+			sfx('levelup');
+			Journal.add('The hermit crafted a SHELL BELL from shoal salt and shells!');
+			dialog.open('HERMIT: Grind the salt, polish the shells...\n\nDone! Here — a SHELL BELL! The holder drains\na little life from every hit it lands.');
+		});
+		return;
+	}
+	dialog.open(`HERMIT: I craft SHELL BELLS from what this cave\nhides — 4 SHOAL SALT and 4 SHOAL SHELL.\n(You carry ${salt} salt, ${shell} shell.)\n\nSalt lies deep — low tide only. Shells sit in\nthe inner cavern. Dig at the sparkling spots!`);
+}
+function kurtTalk() {
+	const held = Object.keys(Bag.ITEMS).filter(id => Bag.ITEMS[id].kind === 'apricorn' && Bag.count(id) > 0);
+	if (!held.length) {
+		dialog.open('KURT: I turn APRICORNS into POKe BALLS — my own\nhandiwork, better than store-bought!\n\nAPRICORNS grow on the trees along ROUTE 37\nand ROUTE 42. Bring me any color!');
+		return;
+	}
+	const id = held[0];
+	const ball = Bag.ITEMS[id].ball;
+	dialog.open(`KURT: Ah, a ${Bag.ITEMS[id].name}! I can craft that into\na ${Bag.ITEMS[ball].name}. (You have ${Bag.count(id)}.)\n\nShall I?   Z = Yes   X = No`, declined => {
+		if (declined === 'x') return;
+		Bag.consume(id);
+		Bag.addItem(ball, 1);
+		sfx('levelup');
+		dialog.open(`KURT: Hrmph... rrgh... THERE!\n\nOne ${Bag.ITEMS[ball].name}, made the old way!\nBring me more APRICORNS any time.`);
+	});
+}
+
+// ---------- roaming legendaries ----------
+// RAIKOU and ENTEI prowl Johto's routes, LATIOS and LATIAS Hoenn's, once that
+// region holds 4 badges. They hop to a new route every map change; on their
+// route they can take over a wild encounter — flee-prone (Mean Look holds
+// them) and their wounds persist between meetings, the classic chase. Fainting
+// one loses it for the save, like the old games.
+const ROAM_KEY = 'magepunk_roamers_v1';
+const ROAMERS = {
+	raikou: { region: 'JOHTO', level: 40 },
+	entei: { region: 'JOHTO', level: 40 },
+	latios: { region: 'HOENN', level: 40 },
+	latias: { region: 'HOENN', level: 40 },
+};
+const ROAM_ROUTES = {
+	JOHTO: ['Route29', 'Route30', 'Route31', 'Route32', 'Route33', 'Route34', 'Route35', 'Route36', 'Route37', 'Route38', 'Route39', 'Route42', 'Route43', 'Route44', 'Route45', 'Route46'],
+	HOENN: ['Route110', 'Route111', 'Route112', 'Route113', 'Route114', 'Route115', 'Route116', 'Route117', 'Route118', 'Route119', 'Route120', 'Route121'],
+};
+function roamState() { return safeLoad(ROAM_KEY, {}); }
+function saveRoam(st) { safeSave(ROAM_KEY, st); }
+// every map change, each active roamer bolts to a random route of its region
+function roamersOnMapChange() {
+	const st = roamState();
+	let changed = false;
+	for (const [key, cfg] of Object.entries(ROAMERS)) {
+		if (st[key]?.down) continue;
+		if ((Badges.count(cfg.region) || 0) < 4) continue;
+		const pool = ROAM_ROUTES[cfg.region];
+		if (!st[key]) {
+			st[key] = { map: pool[Math.floor(Math.random() * pool.length)], hp: null, seen: false };
+			Journal.add(`Rumors spread of a strange POKeMON roaming ${cfg.region}...`);
+			hud.textContent = `Rumors tell of something powerful roaming ${cfg.region}'s routes...`;
+			changed = true;
+		} else {
+			st[key].map = pool[Math.floor(Math.random() * pool.length)];
+			changed = true;
+		}
+	}
+	if (changed) saveRoam(st);
+}
+const roamerHere = () => Object.keys(ROAMERS).find(k => {
+	const st = roamState()[k];
+	return st && !st.down && st.map === world.current?.name;
+}) || null;
+function roamerEnd(key) {
+	return result => {
+		const st = roamState();
+		if (result === 'caught' && battle.lastCaught) {
+			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
+			const where = addCaught(party, battle.lastCaught);
+			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
+			offerNickname(battle.lastCaught);
+			st[key] = { down: true }; saveRoam(st);
+			syncOverworldAchievements();
+		} else if (result === 'victory') {
+			st[key] = { down: true }; saveRoam(st); // fainted — gone for this save, like the classics
+			hud.textContent = 'The roaming POKeMON fainted... it will not be seen again.';
+			evolution.check(party, battle.data);
+		} else if (result === 'defeat') {
+			healParty(party);
+			hud.textContent = (world.current.map.name || '') + ' — party healed';
+		} else {
+			// it bolted (or you ran): its wounds travel with it
+			if (st[key] && !st[key].down) {
+				st[key].hp = battle.lastFoe?.curHP ?? st[key].hp;
+				st[key].status = battle.lastFoe?.status || null;
+				saveRoam(st);
+			}
+			saveParty(party);
+		}
+	};
+}
+function startRoamerBattle(key) {
+	if (!party || !leadMon(party) || battle.blocking) return;
+	const st = roamState();
+	Dex.markSeen(key);
+	if (st[key]) { st[key].seen = true; saveRoam(st); }
+	battle.themeHint = 'legendary';
+	battle.endSpec = { kind: 'roamer', roamer: key };
+	battle.start(party, key, ROAMERS[key].level, roamerEnd(key), null,
+		{ roamer: { hp: st[key]?.hp ?? null, status: st[key]?.status || null } });
 }
 
 // ---------- Bug-Catching Contest (National Park, Tue/Thu/Sat) ----------
@@ -6133,6 +6327,18 @@ function drawTownMap(W, H) {
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === 'townfly', u);
 	}
+	// roamer tracker: once you've MET a roamer, the map tracks its current route
+	{
+		const st = roamState();
+		const lines = Object.entries(ROAMERS)
+			.filter(([k, cfg]) => st[k] && !st[k].down && st[k].seen)
+			.map(([k, cfg]) => `${(battle.data.species[k]?.name || k).toUpperCase()} roams ${st[k].map.replace(/^Route/, 'ROUTE ')} (${cfg.region})`);
+		if (lines.length) {
+			sctx.fillStyle = '#ffd27a';
+			sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+			lines.slice(0, 2).forEach((t, i) => sctx.fillText(t, 40 * u, H - (40 + i * 18) * u));
+		}
+	}
 	if (townMap.flash) {
 		sctx.fillStyle = BUI.C.accent;
 		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
@@ -7497,6 +7703,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Contest, get contestMenu() { return contestMenu; }, get blendMenu() { return blendMenu; }, contestKey, blendKey, drawContest, drawBlend, contestProgress, blendBerries,
 		get bugContest() { return bugContest; }, bugOfficerTalk, bugContestCatch, bugContestRoll, bugScore, endBugContest, isBugDay,
 		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk, Slide, get slideMenu() { return slideMenu; }, openRuinsPuzzle, slideKey, drawSlide,
+		shoalTide, shoalWarp, shoalDig, shoalHermitTalk, kurtTalk, roamState, roamersOnMapChange, roamerHere, startRoamerBattle, roamerEnd, ROAMERS, ROAM_ROUTES,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
