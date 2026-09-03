@@ -134,7 +134,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			return o;
 		});
 		A(opt.threw === null, 'the options menu draws (settings, actions, and the backups list)', opt.threw);
-		A(JSON.stringify(opt.actions) === JSON.stringify(['export', 'import', 'backups']), 'EXPORT / IMPORT / SERVER BACKUPS rows exist', JSON.stringify(opt.actions));
+		A(['export', 'import', 'backups'].every(id => opt.actions.includes(id)), 'EXPORT / IMPORT / SERVER BACKUPS rows exist', JSON.stringify(opt.actions));
 		A(opt.hasBattleAnim === true, 'BATTLE ANIM appears among the option rows');
 
 		// --- savefile: build -> corrupt the game -> parse -> apply restores it ---

@@ -1014,8 +1014,47 @@ const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'fo
 const OPTION_ACTIONS = [
 	{ id: 'export', label: 'EXPORT SAVE', hint: 'Download your game as a file' },
 	{ id: 'import', label: 'IMPORT SAVE', hint: 'Restore a downloaded save file' },
-	{ id: 'backups', label: 'SERVER BACKUPS', hint: 'Restore an automatic daily backup' },
+	{ id: 'backups', label: 'BACKUPS', hint: 'Restore an automatic daily backup' },
+	{ id: 'controls', label: 'CONTROLS', hint: 'See every shortcut and rebind the single keys' },
 ];
+// ---------- key bindings ----------
+// The single-key shortcuts (S to swap move slots, F to search the PC, C for
+// the bike, R to re-throw a ball...) were undiscoverable and unmovable. The
+// CONTROLS screen lists every one and lets each be rebound; a custom key
+// TRANSLATES to the action's default at the input door, so the defaults keep
+// working alongside (forgiving, not exclusive). Device preference, like the
+// volume sliders — spared by the owner reset.
+const KEYBIND_KEY = 'magepunk_keys_v1';
+const KEY_ACTIONS = [
+	{ id: 'confirm', label: 'CONFIRM / INTERACT', def: 'z' },
+	{ id: 'cancel', label: 'CANCEL / BACK', def: 'x' },
+	{ id: 'menu', label: 'MAIN MENU', def: 'Enter' },
+	{ id: 'party', label: 'PARTY', def: 'p' },
+	{ id: 'bag', label: 'BAG', def: 'b' },
+	{ id: 'bike', label: 'BIKE ON/OFF', def: 'c' },
+	{ id: 'find', label: 'FIND (PC BOX SEARCH)', def: 'f' },
+	{ id: 'swap', label: 'SWAP MOVE SLOTS (BATTLE)', def: 's' },
+	{ id: 'rethrow', label: 'RE-THROW BALL (BATTLE)', def: 'r' },
+];
+let keyBinds = safeLoad(KEYBIND_KEY, {}); // action id -> custom key
+// keys that may never be rebound over: movement, the defaults, system keys
+const KEY_RESERVED = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd',
+	'z', 'x', 'enter', 'p', 'b', 'c', 'f', 'r', 'escape', 'm', ' ']);
+const normKey = k => (k && k.length === 1 ? k.toLowerCase() : k);
+function translateKey(k) {
+	const kk = normKey(k);
+	for (const a of KEY_ACTIONS) if (keyBinds[a.id] && keyBinds[a.id] === kk) return a.def;
+	return k;
+}
+function assignKeyBind(actionId, rawKey) {
+	const kk = normKey(rawKey);
+	if (kk && kk.toLowerCase() === 'escape') return 'cancelled';
+	if (!kk || kk.length > 12 || KEY_RESERVED.has(kk.toLowerCase())) return 'reserved';
+	for (const a of KEY_ACTIONS) if (keyBinds[a.id] === kk && a.id !== actionId) delete keyBinds[a.id];
+	keyBinds[actionId] = kk;
+	safeSave(KEYBIND_KEY, keyBinds);
+	return 'bound';
+}
 // ---------- leave-and-resume for battles ----------
 // Hitting the gear (or closing the tab) mid-battle used to vaporize the fight
 // AND its ending — a rival or gym win that never landed its flags broke
@@ -1221,6 +1260,24 @@ getJSON('data/contest.json').then(d => Contest.init(d)).catch(() => Contest.init
 
 function optionsKey(k) {
 	const om = optionsMenu;
+	if (om.mode === 'controls') {
+		if (om.capture) return; // the raw keydown listener owns the capture
+		const rows = KEY_ACTIONS.length + 2; // + RESET ALL + BACK
+		if (k === 'ArrowUp') om.idx = (om.idx + rows - 1) % rows;
+		if (k === 'ArrowDown') om.idx = (om.idx + 1) % rows;
+		if (k === 'x' || k === 'Escape') { om.mode = 'main'; om.idx = OPTION_KEYS.length + 3; om.flash = null; return; }
+		if (k !== 'z' && k !== 'Enter') return;
+		if (om.idx === KEY_ACTIONS.length) { // RESET ALL
+			keyBinds = {}; safeSave(KEYBIND_KEY, keyBinds);
+			om.flash = 'Every key is back to its default.';
+			sfx('ui_select');
+			return;
+		}
+		if (om.idx > KEY_ACTIONS.length) { om.mode = 'main'; om.idx = OPTION_KEYS.length + 3; om.flash = null; return; }
+		om.capture = KEY_ACTIONS[om.idx].id;
+		om.flash = null;
+		return;
+	}
 	if (om.mode === 'backups') {
 		const rows = (om.list || []).length + 1; // + BACK
 		if (k === 'ArrowUp') om.idx = (om.idx + rows - 1) % rows;
@@ -2524,10 +2581,21 @@ const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blo
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
-	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(e.key) || KEYMAP[e.key]) {
+	// the CONTROLS screen capturing a new binding owns the next raw key
+	if (optionsMenu.open && optionsMenu.mode === 'controls' && optionsMenu.capture) {
+		e.preventDefault();
+		const r = assignKeyBind(optionsMenu.capture, e.key);
+		optionsMenu.flash = r === 'bound' ? `Bound to ${normKey(e.key) === ' ' ? 'SPACE' : String(normKey(e.key)).toUpperCase()}.`
+			: r === 'reserved' ? 'That key is reserved — pick another.' : null;
+		if (r !== 'reserved') optionsMenu.capture = null;
+		sfx(r === 'bound' ? 'ui_select' : 'ui_denied');
+		return;
+	}
+	const k = translateKey(e.key);
+	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(k) || KEYMAP[k] || k !== e.key) {
 		if (e.key !== 'F5' && e.key !== 'F12') e.preventDefault();
 	}
-	pressKey(e.key);
+	pressKey(k);
 });
 
 // ---------- touch controls ----------
@@ -5830,6 +5898,7 @@ function runSaveAction(id) {
 		loadBackups();
 		return;
 	}
+	if (id === 'controls') { om.mode = 'controls'; om.idx = 0; om.capture = null; om.flash = null; return; }
 }
 async function doImportSave() {
 	const om = optionsMenu;
@@ -6853,6 +6922,15 @@ function drawNameRater(W, H) {
 
 function drawOptions(W, H) {
 	const u = H / 480;
+	if (optionsMenu.mode === 'controls') {
+		const rows = KEY_ACTIONS.map(a => {
+			const cur = keyBinds[a.id];
+			const shown = (cur || a.def) === ' ' ? 'SPACE' : (cur || a.def).toUpperCase();
+			return optionsMenu.capture === a.id ? `${a.label}   >>> PRESS A KEY (Esc cancels)` : `${a.label}   —   ${shown}${cur ? '' : '  (default)'}`;
+		}).concat(['RESET ALL TO DEFAULTS', 'Back']);
+		optionList(W, H, u, 'CONTROLS', 'Every shortcut, rebindable. Arrows + WASD always move.', rows, optionsMenu.idx, 'ctl:', optionsMenu.flash);
+		return;
+	}
 	if (optionsMenu.mode === 'backups') {
 		const list = optionsMenu.list;
 		const rows = list == null ? ['(loading…)'] : [
@@ -6888,11 +6966,11 @@ function drawOptions(W, H) {
 		sctx.fillText('►', b.x + b.w - 20 * u, b.y + 27 * u);
 		sctx.textAlign = 'left';
 	});
-	// SAVE DATA — three action buttons in one row under the settings
+	// SAVE DATA + CONTROLS — four action buttons in one row under the settings
 	const actY = (84 + OPTION_KEYS.length * 46 + 8) * u;
 	OPTION_ACTIONS.forEach((a, i) => {
 		const idx = OPTION_KEYS.length + i;
-		const bw = (W - 80 * u - 16 * u) / 3;
+		const bw = (W - 80 * u - 24 * u) / 4;
 		const bid = 'optact:' + i;
 		const b = { id: bid, x: 40 * u + i * (bw + 8 * u), y: actY, w: bw, h: 44 * u, label: a.label, center: true };
 		menuUi.push(b);
@@ -7303,6 +7381,7 @@ function menuTap(id) {
 	if (kind === 'bb' || kind === 'bbf') { blendMenu.idx = +a; blendKey('z'); return; }
 	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); return; }
 	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
+	if (kind === 'ctl') { optionsMenu.idx = +a; optionsKey('z'); return; }
 	if (kind === 'bkp') {
 		const i = +a;
 		if (i >= (optionsMenu.list || []).length) { optionsMenu.mode = 'main'; optionsMenu.idx = 0; optionsMenu.flash = null; }
@@ -8043,6 +8122,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get decoMenu() { return decoMenu; }, decoKey, drawDecoMenu, drawBaseDeco, DECO_ITEMS,
 		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
 		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
+		KEY_ACTIONS, get keyBinds() { return keyBinds; }, translateKey, assignKeyBind, optionsKey,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,

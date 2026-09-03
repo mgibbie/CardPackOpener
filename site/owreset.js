@@ -65,6 +65,7 @@ export const OW_KEEP_KEYS = {
 	magepunk_mp_state_v1: 'the cached account state that goes with the token',
 	magepunk_class_v1: 'BATTLECARDS: written by the deck builder, only read by the overworld',
 	magepunk_settings: 'preferences (text speed, auto-run) — not progress, and annoying to lose on every run',
+	magepunk_keys_v1: 'custom key bindings — a device preference, like the volume sliders',
 };
 
 export function resetPlan() {
