@@ -112,6 +112,14 @@ try {
 			localStorage.setItem('magepunk_mp_token_v1', 'vil-token');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_region', 'HOENN');
+			// a COMPLETED intro must be part of the seed, not set post-boot: a save
+			// with a party but no intro_done gets the boot-time intro-heal, whose
+			// professor cutscene is still playing when the test warps into the
+			// cavern — and it eats the ARCHIE confrontation (the 2 fails this had)
+			localStorage.setItem('magepunk_story', JSON.stringify({
+				flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true },
+				vars: {},
+			}));
 			localStorage.removeItem('magepunk_badges_v1');
 			localStorage.setItem('magepunk_party_v1', JSON.stringify([{ speciesId: 'mudkip', name: 'MUDKIP', nickname: null, level: 45, gender: 'M', ability: 'Torrent', types: ['Water'], ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, stats: { hp: 120, atk: 90, def: 80, spa: 80, spd: 80, spe: 70 }, maxHP: 120, curHP: 120, exp: 91125, moves: [{ id: 'surf', name: 'Surf', pp: 15, maxPp: 15 }], num: 258, sprite: 'mudkip.png' }]));
 		} catch { }
