@@ -141,8 +141,9 @@ export class NPCs {
 			// fallback put "guys" on Oak's counter (the two POKEDEX devices) and
 			// would park villagers where Littleroot's moving TRUCKs sit
 			// ...and the secret-base rooms carry VAR_0..VAR_F decoration
-			// placeholders stacked at (0,0..6) — never people
-			if (/POKEDEX|TRUCK|GFX_VAR_/.test(ev.graphics_id || '')) return;
+			// placeholders stacked at (0,0..6) — never people. FOSSIL props
+			// (Mirage Tower / Desert Underpass) draw through the fossil overlay.
+			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL/.test(ev.graphics_id || '')) return;
 			// Crystal names its graphics SPRITE_X — the fallback only stripped the
 			// GBA prefix, so sprite files like fisher.png were probed as
 			// sprite_fisher.png, silently emptying whole Johto towns
