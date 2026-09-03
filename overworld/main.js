@@ -819,6 +819,13 @@ function interact() {
 	const fx = player.tx + dx, fy = player.ty + dy;
 	// another player standing on the faced tile — challenge them or offer a trade
 	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
+	// a disguised VOLTORB "item ball" springs its ambush
+	const amb = items.ambushAt(fx, fy);
+	if (amb) {
+		items.takeAmbush(amb);
+		dialog.open("It's not an item — the ball has EYES!\n\nVOLTORB attacked!", () => startWildBattle({ id: amb.ambush, level: 25 }));
+		return;
+	}
 	// item balls / berry trees / hidden items (facing tile, then standing tile)
 	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
 	if (found) { sfx('item_get'); dialog.open(found); return; }
@@ -854,6 +861,14 @@ function interact() {
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
+	if (svc === 'museumpaint') { museumPaintTalk(fx, fy); return; }
+	if (svc === 'museumcurator') { museumCuratorTalk(); return; }
+	if (svc === 'ruinsword') { ruinsWordTalk(); return; }
+	if (svc === 'fossilroot') { fossilPick('root'); return; }
+	if (svc === 'fossilclaw') { fossilPick('claw'); return; }
+	if (svc === 'fossilunder') { fossilUnderpassTalk(); return; }
+	if (svc === 'fossilmaniac') { fossilManiacTalk(); return; }
+	if (svc === 'generator') { generatorTalk(); return; }
 	if (svc === 'trainerhill') { hillReceptionTalk(); return; }
 	if (svc === 'hillprize') { hillPrizeTalk(); return; }
 	if (svc === 'hillelevator') {
@@ -3758,6 +3773,167 @@ function wildBattleEnd(result, inSafari) {
 	}
 }
 
+// ---------- museum paintings, ruins words, fossils, New Mauville ----------
+// Small one-shot venue events, remembered together in magepunk_events_v1.
+const EVENTS_KEY = 'magepunk_events_v1';
+function miscEvents() { return safeLoad(EVENTS_KEY, {}); }
+function saveMiscEvents(e) { safeSave(EVENTS_KEY, e); }
+
+// LILYCOVE MUSEUM 2F — the contest capstone: winning a MASTER rank hangs
+// your Pokémon's portrait in its category's frame (recorded at the win;
+// older master ribbons on party mons backfill on sight).
+const MUSEUM_PAINTINGS = {
+	cool: [[2, 6], [3, 6]], beauty: [[10, 6], [11, 6]], cute: [[18, 6], [19, 6]],
+	smart: [[6, 10], [7, 10]], tough: [[14, 10], [15, 10]],
+};
+function museumBackfill() {
+	const p = contestProgress();
+	p.paintings = p.paintings || {};
+	let changed = false;
+	for (const cat of CATS) {
+		if (p.paintings[cat]) continue;
+		const holder = (party || []).find(m => (m.ribbons || []).includes(`${cat}-master`));
+		if (holder) { p.paintings[cat] = { species: holder.speciesId, name: holder.nickname || holder.name }; changed = true; }
+	}
+	if (changed) safeSave(CONTEST_KEY, p);
+	return p.paintings;
+}
+function museumPaintTalk(fx, fy) {
+	const cat = Object.keys(MUSEUM_PAINTINGS).find(c => MUSEUM_PAINTINGS[c].some(([x, y]) => x === fx && y === fy));
+	if (!cat) return;
+	const paintings = museumBackfill();
+	const art = paintings[cat];
+	if (art) {
+		const sp = battle.data.species[art.species];
+		dialog.open(`"${art.name}" — a masterpiece portrait of the\n${cat.toUpperCase()} MASTER RANK champion.\n\nThe ${(sp?.name || art.species).toUpperCase()} seems to glow with pride.`);
+	} else {
+		dialog.open(`An empty frame, waiting.\n\nA small card reads: "Reserved for the next\n${cat.toUpperCase()} CONTEST MASTER RANK champion."`);
+	}
+}
+function museumCuratorTalk() {
+	const n = Object.keys(museumBackfill()).length;
+	dialog.open(n >= 5
+		? 'CURATOR: All five frames filled... you have given\nthis gallery its golden age. Thank you!'
+		: `CURATOR: This floor honors CONTEST champions.\n${n} of 5 frames hold a masterpiece so far.\n\nWin a MASTER RANK contest and the artist will\npaint your POKeMON for the gallery!`);
+}
+// the hung portraits, drawn over the 2F frames
+function drawMuseum(ctx, camX, camY) {
+	if (world.current?.name !== 'LilycoveCity_LilycoveMuseum_2F') return;
+	const paintings = contestProgress().paintings || {};
+	for (const [cat, tiles] of Object.entries(MUSEUM_PAINTINGS)) {
+		const art = paintings[cat];
+		if (!art) continue;
+		const img = contestSpriteFor(art.species);
+		if (!img) continue;
+		const [x0, y0] = tiles[0];
+		const s = Math.min(26 / img.width, 26 / img.height);
+		const w = img.width * s, h = img.height * s;
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(img, (x0 + 1) * META - w / 2 - camX, y0 * META - h + 10 - camY, w, h);
+	}
+}
+
+// RUINS OF ALPH word rooms — the ancient inscriptions, plus a one-time find
+const WORD_ROOMS = {
+	RuinsOfAlphKabutoWordRoom: ['kabuto', '"THE SEA PARTED AND CARRIED OUR FRIENDS AWAY."'],
+	RuinsOfAlphOmanyteWordRoom: ['omanyte', '"WE SPIRAL DOWN WHERE THE OLD TIDE SLEEPS."'],
+	RuinsOfAlphAerodactylWordRoom: ['aerodactyl', '"ONCE THE SKY ITSELF THUNDERED WITH WINGS."'],
+	RuinsOfAlphHoOhWordRoom: ['hooh', '"LIGHT DESCENDS ON WINGS OF SEVEN COLORS."'],
+};
+function ruinsWordTalk() {
+	const entry = WORD_ROOMS[world.current?.name];
+	if (!entry) return;
+	const [key, text] = entry;
+	const ev = miscEvents();
+	ev.words = ev.words || {};
+	if (ev.words[key]) { dialog.open(`The ancient script crawls across the wall:\n\n${text}`); return; }
+	ev.words[key] = 1;
+	saveMiscEvents(ev);
+	Bag.addItem('starpiece', 1);
+	sfx('item_get');
+	dialog.open(`The ancient script crawls across the wall:\n\n${text}\n\nSomething glitters in a crack below —\na STAR PIECE!`);
+}
+
+// MIRAGE TOWER: take ONE fossil and the other sinks with the tower's rumble —
+// it resurfaces in the DESERT UNDERPASS. The FOSSIL MANIAC revives any fossil.
+function fossilPick(which) {
+	const ev = miscEvents();
+	if (ev.mirage) { dialog.open('Only crumbled sandstone remains here.'); return; }
+	const id = which === 'root' ? 'rootfossil' : 'clawfossil';
+	ev.mirage = which;
+	saveMiscEvents(ev);
+	Bag.addItem(id, 1);
+	sfx('item_get');
+	Journal.add(`Pried the ${Bag.ITEMS[id].name} from Mirage Tower!`);
+	dialog.open(`You pried out the ${Bag.ITEMS[id].name}!\n\nThe tower GROANS — sand pours from the walls,\nand the other fossil sinks out of sight...`);
+}
+function fossilUnderpassTalk() {
+	const ev = miscEvents();
+	if (!ev.mirage) { dialog.open('A fossil is embedded deep in the rock.\nIt won\'t budge... yet.'); return; }
+	if (ev.underpass) { dialog.open('The rock face is bare now.'); return; }
+	const id = ev.mirage === 'root' ? 'clawfossil' : 'rootfossil';
+	ev.underpass = true;
+	saveMiscEvents(ev);
+	Bag.addItem(id, 1);
+	sfx('item_get');
+	dialog.open(`The fossil that sank with MIRAGE TOWER —\nwashed down into the underpass!\n\nYou found the ${Bag.ITEMS[id].name}!`);
+}
+const FOSSIL_MONS = { rootfossil: 'lileep', clawfossil: 'anorith', helixfossil: 'omanyte', domefossil: 'kabuto', oldamber: 'aerodactyl' };
+function fossilManiacTalk() {
+	const held = Object.keys(FOSSIL_MONS).find(id => Bag.count(id) > 0);
+	if (!held) {
+		dialog.open('FOSSIL MANIAC: Fossils! FOSSILS! I can wake the\nold life sleeping inside one — bring me any\nfossil you dig up!');
+		return;
+	}
+	const species = FOSSIL_MONS[held];
+	const name = (battle.data.species[species]?.name || species).toUpperCase();
+	dialog.open(`FOSSIL MANIAC: A ${Bag.ITEMS[held].name}!! May I?! The old\nlife inside still dreams — I can WAKE it!\n\nRevive it into ${name}?   Z = Yes   X = No`, d => {
+		if (d === 'x') return;
+		const mon = battleBuildMon(species, 20, battle.data);
+		if (!mon) return;
+		Bag.consume(held);
+		Dex.markCaught(species); dexMilestoneCheck();
+		const where = addCaught(party, mon);
+		saveParty(party);
+		sfx('levelup');
+		Journal.add(`The Fossil Maniac revived ${name} from the ${Bag.ITEMS[held].name}!`);
+		dialog.open(`The machine hums... a heartbeat!\n\n${name} was revived!${where === 'box' ? '\n(Sent to the box.)' : ''}`);
+	});
+}
+
+// NEW MAUVILLE: the runaway generator, waiting for someone to throw the switch
+function generatorTalk() {
+	const ev = miscEvents();
+	if (ev.newmauville) { dialog.open('The generator sleeps. The hum is gone.'); return; }
+	dialog.open('The generator WHIRS wildly — the whole floor\nvibrates. A heavy switch juts from the console.\n\nThrow it?   Z = Yes   X = No', d => {
+		if (d === 'x') return;
+		const ev2 = miscEvents();
+		ev2.newmauville = true;
+		saveMiscEvents(ev2);
+		Bag.addItem('thunderstone', 1);
+		sfx('levelup');
+		Journal.add('Shut down the runaway New Mauville generator!');
+		dialog.open('KA-CHUNK. The hum dies to a whisper.\n\nA voice crackles from the intercom:\n"WAHAHA! That racket\'s finally done! WATTSON\nowes you one — take what\'s in the console!"\n\nYou found a THUNDERSTONE!');
+	});
+}
+// fossil markers: the pried spots draw a small ammonite swirl until taken
+function drawFossilSpots(ctx, camX, camY) {
+	const here = world.current?.name;
+	const ev = miscEvents();
+	const spots = [];
+	if (here === 'MirageTower_4F' && !ev.mirage) spots.push([5, 4], [7, 4]);
+	if (here === 'DesertUnderpass' && ev.mirage && !ev.underpass) spots.push([132, 10]);
+	for (const [tx, ty] of spots) {
+		const x = tx * META - camX, y = ty * META - camY;
+		ctx.fillStyle = '#c9b28a';
+		ctx.fillRect(x + 3, y + 3, 10, 10);
+		ctx.fillStyle = '#8a7350';
+		ctx.fillRect(x + 5, y + 5, 6, 6);
+		ctx.fillStyle = '#c9b28a';
+		ctx.fillRect(x + 7, y + 7, 2, 2);
+	}
+}
+
 // ---------- Trainer Hill (Hoenn, Route 111) ----------
 // The timed four-floor gauntlet: sign up at the reception desk, the clock
 // starts, and each floor spawns two HILL GUARDS (Emerald loads its trainers
@@ -4723,6 +4899,14 @@ function contestFinish() {
 	m.purse = [500, 1000, 2000, 3000][st.rank] || 500;
 	Bag.earn(m.purse);
 	Journal.add(`Won the ${RANKS[st.rank]} ${st.category.toUpperCase()} Contest with ${st.cs[0].name}!`);
+	// a MASTER rank win commissions the museum portrait
+	if (st.rank === 3) {
+		const pp = contestProgress();
+		pp.paintings = pp.paintings || {};
+		pp.paintings[st.category] = { species: mon.speciesId, name: st.cs[0].name };
+		safeSave(CONTEST_KEY, pp);
+		Journal.add(`${st.cs[0].name}'s portrait now hangs in the Lilycove Museum!`);
+	}
 	sfx('levelup');
 	saveParty(party);
 }
@@ -6435,6 +6619,8 @@ function tick(now) {
 		arcade.draw(ctx, camX, camY);
 		items.draw(ctx, camX, camY);
 		drawBaseDeco(ctx, camX, camY);
+		drawMuseum(ctx, camX, camY);
+		drawFossilSpots(ctx, camX, camY);
 		drawLegendary(ctx, camX, camY);
 		drawAwakening(ctx, camX, camY);
 		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
@@ -8369,6 +8555,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		KEY_ACTIONS, get keyBinds() { return keyBinds; }, translateKey, assignKeyBind, optionsKey,
 		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots,
 		get hillRun() { return hillRun; }, set hillRun(v) { hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
+		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,

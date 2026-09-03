@@ -169,6 +169,15 @@ export class Items {
 				// ball must not sit there grabbable — Birch's bag-scene starter
 				// balls were stacked three-deep on the lab floor
 				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
+				// New Mauville's three "item balls" are VOLTORB in disguise. The
+				// generic parser was minting them as junk pickups named after their
+				// script — they ambush instead (main.js springs the battle).
+				if (/EventScript_Voltorb\d+$/.test(o.script || '')) {
+					const key = this.keyFor('', o);
+					if (this.collected.has(key)) continue;
+					this.balls.push({ tx: +o.x, ty: +o.y, ambush: 'voltorb', key, hidden: false });
+					continue;
+				}
 				const parsed = parseBallScript(o.script) || parseCrystalBall(o.script, this.world.current.name);
 				if (!parsed) continue;
 				const key = this.keyFor('', o);
@@ -199,9 +208,18 @@ export class Items {
 		}
 	}
 
+	// a disguised-Pokémon "ball" waiting at this tile (the host springs the battle)
+	ambushAt(tx, ty) {
+		return this.balls.find(b => b.ambush && b.tx === tx && b.ty === ty) || null;
+	}
+	takeAmbush(b) {
+		this.balls = this.balls.filter(x => x !== b);
+		this.markCollected(b.key);
+	}
+
 	// pickup / harvest at a tile; returns a message or null
 	interactAt(tx, ty) {
-		const i = this.balls.findIndex(b => b.tx === tx && b.ty === ty);
+		const i = this.balls.findIndex(b => !b.ambush && b.tx === tx && b.ty === ty);
 		if (i >= 0) {
 			const b = this.balls[i];
 			this.balls.splice(i, 1);

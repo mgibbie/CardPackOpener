@@ -125,8 +125,31 @@ const TRAINER_HILL = {
 	MAP_TRAINER_HILL_ELEVATOR: { hillelevator: [[0, 6], [0, 7], [1, 6]] },
 };
 
+// LILYCOVE MUSEUM 2F: the five contest-painting frames + the curator.
+// RUINS word rooms, the Mirage Tower / Desert Underpass fossils, the Fossil
+// Maniac's revival desk, and New Mauville's generator — all decomp spots
+// whose scripts never ran.
+const MISC_VENUES = {
+	MAP_LILYCOVE_CITY_LILYCOVE_MUSEUM_2F: {
+		museumpaint: [[2, 6], [3, 6], [10, 6], [11, 6], [18, 6], [19, 6], [6, 10], [7, 10], [14, 10], [15, 10]],
+		museumcurator: [[10, 8], [10, 9]],
+	},
+	MAP_RUINS_OF_ALPH_KABUTO_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
+	MAP_RUINS_OF_ALPH_OMANYTE_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
+	MAP_RUINS_OF_ALPH_AERODACTYL_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
+	MAP_RUINS_OF_ALPH_HO_OH_WORD_ROOM: { ruinsword: [[6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1]] },
+	MAP_MIRAGE_TOWER_4F: { fossilroot: [[5, 4], [5, 5]], fossilclaw: [[7, 4], [7, 5]] },
+	MAP_DESERT_UNDERPASS: { fossilunder: [[132, 10], [132, 11], [131, 10], [133, 10]] },
+	MAP_ROUTE114_FOSSIL_MANIACS_HOUSE: { fossilmaniac: [[3, 2], [3, 3]] },
+	MAP_NEW_MAUVILLE_INSIDE: { generator: [[32, 2], [32, 3], [32, 4], [33, 4], [34, 4], [35, 4], [35, 3], [35, 2]] },
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (MISC_VENUES[mapId]) {
+		const zones = Object.entries(MISC_VENUES[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
+		return { sprites: [], zones, solid: [] };
+	}
 	if (TRAINER_HILL[mapId]) {
 		const zones = Object.entries(TRAINER_HILL[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
 		return { sprites: [], zones, solid: [] };
