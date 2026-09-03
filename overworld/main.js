@@ -869,6 +869,11 @@ function interact() {
 	// a static legendary on the faced tile — walk up and challenge it
 	const leg = legendaryHere();
 	if (leg && fx === leg.x && fy === leg.y) { startLegendaryBattle(leg); return; }
+	// a Silph Co shutter with no CARD KEY in the bag
+	if (silphDoorAt(fx, fy) && !Bag.count('cardkey')) {
+		dialog.open('A heavy security shutter bars the way.\nThe card reader blinks RED.\n\nIt wants a CARD KEY.');
+		return;
+	}
 	// a SECRET BASE spot in the rock/tree/shrub face (Emerald's behaviors survive
 	// in the layouts, so all ~70 real spots work), or decorating inside your own
 	{
@@ -890,6 +895,8 @@ function interact() {
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
+	if (svc === 'bikeshop') { bikeShopTalk(); return; }
+	if (svc === 'glassblower') { glassBlowerTalk(); return; }
 	if (svc === 'museumpaint') { museumPaintTalk(fx, fy); return; }
 	if (svc === 'museumcurator') { museumCuratorTalk(); return; }
 	if (svc === 'ruinsword') { ruinsWordTalk(); return; }
@@ -2406,6 +2413,16 @@ function bagKey(k) {
 		}
 		// the three gadget key-items, inert since day one
 		if (useGadget(id)) return;
+		// the glass flutes: reusable, 250 steps of melody
+		if (item?.kind === 'flute') {
+			fluteState = { mode: item.mode, steps: item.steps || 250 };
+			saveFlute();
+			sfx('ui_select');
+			bagMenu.flash = item.mode === 'black'
+				? `${item.name}: a hush falls — wild POKeMON keep away for ${item.steps} steps.`
+				: `${item.name}: a bright trill — wild POKeMON stir for ${item.steps} steps!`;
+			return;
+		}
 		if (item?.kind === 'seeker') {
 			// VS SEEKER: re-arm this map's beaten trainers at badge-scaled levels
 			const region = playerRegion();
@@ -2792,6 +2809,7 @@ async function refreshMapContent(label) {
 	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
 	shoalFixup(label);
+	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
 	roamersOnMapChange();
 	if (!/^SecretBase_/.test(label || '')) baseCtx = null; // left the base
@@ -2983,11 +3001,115 @@ async function backWarp() {
 // A free field toggle: faster movement, and the only way across Sky Pillar's
 // cracked floors (engine gates those on player.biking). You can't bike on the
 // water, so surfing dismounts it.
+const BIKES = ['bicycle', 'machbike', 'acrobike'];
 function toggleBike() {
 	if (loading || player.moving || player.surfing) return;
+	// you need to OWN a bike now (getting off always works) — the shops in
+	// Goldenrod, Mauville, and Cerulean hand out free promotional ones
+	if (!player.biking && !BIKES.some(b => Bag.count(b) > 0)) {
+		hud.textContent = "You don't own a BIKE! The shops in GOLDENROD, MAUVILLE, and CERULEAN are running promos.";
+		return;
+	}
 	player.biking = !player.biking;
-	hud.textContent = player.biking ? 'You got on the MACH BIKE!' : 'You got off the MACH BIKE.';
+	const name = Bag.count('machbike') ? 'MACH BIKE' : Bag.count('acrobike') ? 'ACRO BIKE' : 'BICYCLE';
+	hud.textContent = player.biking ? `You got on the ${name}!` : `You got off the ${name}.`;
 }
+// the bike-shop promo: your first bike, on the house
+const BIKE_SHOP_STOCK = {
+	MAP_GOLDENROD_BIKE_SHOP: ['bicycle', 'GOLDENROD CYCLES'],
+	MAP_MAUVILLE_CITY_BIKE_SHOP: ['machbike', "RYDEL'S CYCLES"],
+	MAP_CERULEAN_CITY_BIKE_SHOP: ['bicycle', 'the CERULEAN BIKE SHOP'],
+};
+function bikeShopTalk() {
+	const stock = BIKE_SHOP_STOCK[world.current?.map?.id];
+	if (!stock) return;
+	const [bike, shopName] = stock;
+	if (BIKES.some(b => Bag.count(b) > 0)) {
+		dialog.open(`CLERK: Enjoying the ride? Press C out on the\nroad any time — and tell your friends about\n${shopName}!`);
+		return;
+	}
+	dialog.open(`CLERK: Welcome to ${shopName}!\n\nIt's your lucky day — our grand promotion!\nA free ${Bag.ITEMS[bike].name} for every new rider!\n\nTake it?   Z = Yes   X = No`, d => {
+		if (d === 'x') return;
+		Bag.addItem(bike, 1);
+		sfx('item_get');
+		Journal.add(`Got a free ${Bag.ITEMS[bike].name} from ${shopName}!`);
+		dialog.open(`You received the ${Bag.ITEMS[bike].name}!\n\nPress C outdoors to ride it.`);
+	});
+}
+
+// ---------- Silph Co locked doors ----------
+// FireRed closes these with ON_LOAD scripts our port never ran, so every
+// shutter stood open and the CARD KEY (a real item ball on 5F) opened
+// nothing. The barrier tiles are harvested from silphco_doors.inc: without
+// the key they lock (collision set in place, art untouched); with it, the
+// floor's shutters slide open. The 5F key sits OUTSIDE its floor's shutters,
+// so the climb can never strand.
+const SILPH_DOORS = {
+	SilphCo_2F: [[5, 8], [6, 8], [5, 9], [6, 9], [5, 15], [6, 15], [5, 16], [6, 16]],
+	SilphCo_3F: [[9, 11], [10, 11], [9, 12], [10, 12], [9, 13], [10, 13], [20, 11], [21, 11], [20, 12], [21, 12], [20, 13], [21, 13]],
+	SilphCo_4F: [[3, 16], [4, 16], [3, 17], [4, 17], [14, 11], [15, 11], [14, 12], [15, 12]],
+	SilphCo_5F: [[7, 17], [8, 17], [7, 18], [8, 18], [7, 19], [8, 19], [18, 12], [19, 12], [18, 13], [19, 13], [18, 14], [19, 14]],
+	SilphCo_7F: [[11, 8], [12, 8], [11, 9], [12, 9], [24, 7], [25, 7], [24, 8], [25, 8], [25, 13], [26, 13], [25, 14], [26, 14]],
+	SilphCo_9F: [[2, 9], [3, 9], [2, 10], [3, 10], [2, 11], [3, 11], [12, 15], [13, 15], [12, 16], [13, 16], [12, 17], [13, 17], [21, 6], [22, 6], [21, 7], [22, 7], [21, 12], [22, 12], [21, 13], [22, 13]],
+};
+let silphNoted = false;
+function silphDoorsApply(label) {
+	const doors = SILPH_DOORS[label];
+	const lay = doors && world.current?.layout;
+	if (!lay) return;
+	const lock = Bag.count('cardkey') === 0;
+	for (const [x, y] of doors) {
+		if (!lay.map[y]) continue;
+		const v = lay.map[y][x] ?? 0;
+		lay.map[y][x] = lock ? (v | 0x0C00) : (v & ~0x0C00); // collision bits only
+	}
+	if (!lock && !silphNoted) { silphNoted = true; hud.textContent = 'Your CARD KEY hums — the floor shutters slide open.'; }
+}
+function silphDoorAt(fx, fy) {
+	const doors = SILPH_DOORS[world.current?.name];
+	return !!doors && doors.some(([x, y]) => x === fx && y === fy);
+}
+
+// ---------- the Route 113 glass workshop ----------
+// The SOOT SACK fills as you walk ashy grass (MB_ASHGRASS survives in the
+// layout attributes, same machinery as the secret-base spots); the
+// glassblower trades the ash for his blown-glass flutes.
+const GLASS_WARES = [['blueflute', 250], ['whiteflute', 500], ['blackflute', 1000]];
+function glassBlowerTalk() {
+	const ev = miscEvents();
+	if (!ev.sootsack) {
+		ev.sootsack = true;
+		saveMiscEvents(ev);
+		Bag.addItem('sootsack', 1);
+		sfx('item_get');
+		dialog.open("GLASSBLOWER: I shape VOLCANIC ASH into glass!\n\nTake this SOOT SACK — walk the ashy grass out\non ROUTE 113 and it fills itself. Bring me ash\nand I'll blow you something special!");
+		return;
+	}
+	const ash = ev.ash || 0;
+	const wares = GLASS_WARES.filter(([id]) => !Bag.count(id));
+	if (!wares.length) { dialog.open('GLASSBLOWER: You own my whole catalog!\nMay every note ring true.'); return; }
+	const affordable = wares.filter(([, cost]) => ash >= cost);
+	if (!affordable.length) {
+		dialog.open(`GLASSBLOWER: Your sack holds ${ash} ash.\nMy next piece, the ${Bag.ITEMS[wares[0][0]].name}, needs ${wares[0][1]}.\nKeep walking that soot!`);
+		return;
+	}
+	const [id, cost] = affordable[affordable.length - 1]; // the finest piece you can afford
+	dialog.open(`GLASSBLOWER: ${ash} ash! Enough for a ${Bag.ITEMS[id].name}\n(${cost} ash). Shall I fire up the kiln?\n\nZ = Yes   X = Not yet`, d => {
+		if (d === 'x') return;
+		const ev2 = miscEvents();
+		if ((ev2.ash || 0) < cost) return;
+		ev2.ash -= cost;
+		saveMiscEvents(ev2);
+		Bag.addItem(id, 1);
+		sfx('levelup');
+		Journal.add(`The glassblower blew a ${Bag.ITEMS[id].name} from ${cost} ash!`);
+		dialog.open(`The kiln ROARS... glass spins and sings...\n\nYou received the ${Bag.ITEMS[id].name}!`);
+	});
+}
+// the reusable field flutes: 250 steps of louder (white) or hushed (black) grass
+const FLUTE_KEY = 'magepunk_flute_v1';
+let fluteState = safeLoad(FLUTE_KEY, null) || { mode: null, steps: 0 };
+function saveFlute() { safeSave(FLUTE_KEY, fluteState); }
 
 // ---------- Dive ----------
 // Dive/emerge are overlay map connections (same footprint, offset 0): plunging
@@ -3297,6 +3419,19 @@ player.onArrive = () => {
 		safeSaveStr(REPEL_KEY, String(repelSteps));
 		if (repelSteps === 0) repelWoreOff();
 	}
+	// the SOOT SACK drinks the ashy grass underfoot (MB_ASHGRASS = 0x24)
+	if (Bag.count('sootsack') > 0 && world.behaviorAt(player.tx, player.ty) === 0x24) {
+		const ev = miscEvents();
+		ev.ash = (ev.ash || 0) + 1;
+		if (ev.ash % 50 === 0) hud.textContent = `The SOOT SACK swallows more ash... (${ev.ash})`;
+		saveMiscEvents(ev);
+	}
+	// a playing flute fades with the steps
+	if (fluteState.steps > 0) {
+		fluteState.steps--;
+		if (fluteState.steps === 0) { fluteState.mode = null; hud.textContent = "The flute's melody faded away."; }
+		saveFlute();
+	}
 	// wild encounter?
 	if (!battle.blocking) {
 		// guard: this runs inside the rAF step loop, where a throw is silent and
@@ -3305,9 +3440,13 @@ player.onArrive = () => {
 		// CLEANSE TAG: held by the LEAD, it wards off a third of would-be
 		// encounters. A ¥1000 buyable whose payload nothing read until now.
 		if (Bag.ITEMS[lead?.heldItem]?.held?.cleanseTag && Math.random() < 1 / 3) return;
-		// the Bug-Catching Contest swaps in its own bug table while it runs
-		const pick = bugContestRoll() || encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing,
-			repelSteps > 0 ? (lead?.level || 0) : 0);
+		// the Bug-Catching Contest swaps in its own bug table while it runs;
+		// the BLACK FLUTE hushes normal encounters, the WHITE one doubles them
+		const repelLv = repelSteps > 0 ? (lead?.level || 0) : 0;
+		const rollOnce = () => encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing, repelLv);
+		const pick = bugContestRoll()
+			|| (fluteState.mode === 'black' && fluteState.steps > 0 ? null
+				: rollOnce() || (fluteState.mode === 'white' && fluteState.steps > 0 ? rollOnce() : null));
 		if (pick) {
 			// a roamer on this route takes over half of the encounters here
 			const roam = roamerHere();
@@ -8608,6 +8747,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get hillRun() { return hillRun; }, set hillRun(v) { hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
 		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
 		useGadget, HM_FIELD, dexList, dexKey, HEADBUTT_MAPS, HEADBUTT_SETS,
+		toggleBike, bikeShopTalk, glassBlowerTalk, silphDoorsApply, silphDoorAt, SILPH_DOORS, get fluteState() { return fluteState; }, set fluteState(v) { fluteState = v; },
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,

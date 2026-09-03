@@ -20,6 +20,12 @@ export const ITEMS = {
 	// dug from the Shoal Cave at low tide; four of each make the SHELL BELL
 	shoalsalt:   { name: 'SHOAL SALT',   price: 20,  kind: 'sell' },
 	shoalshell:  { name: 'SHOAL SHELL',  price: 20,  kind: 'sell' },
+	// the glassblower's ash-blown wares (Route 113): the BLUE FLUTE wakes its
+	// holder, the WHITE/BLACK flutes are reusable field melodies that lure or
+	// hush wild POKeMON for 250 steps
+	blueflute:   { name: 'BLUE FLUTE',   price: 0, kind: 'held', held: { cure: 'slp' } },
+	whiteflute:  { name: 'WHITE FLUTE',  price: 0, kind: 'flute', mode: 'white', steps: 250 },
+	blackflute:  { name: 'BLACK FLUTE',  price: 0, kind: 'flute', mode: 'black', steps: 250 },
 	greatball:   { name: 'GREAT BALL',   price: 600,  kind: 'ball', mult: 1.5 },
 	ultraball:   { name: 'ULTRA BALL',   price: 1200, kind: 'ball', mult: 2 },
 	potion:      { name: 'POTION',       price: 300,  kind: 'heal', amount: 20 },
