@@ -271,7 +271,8 @@ async function scenarioBattle(browser, vp) {
 
 async function scenarioBoard(browser, vp) {
 	const { page, errors } = await newPage(browser, vp);
-	await page.goto(`http://localhost:${PORT}/battlecards/index.html?players=4`, { waitUntil: 'domcontentloaded' });
+	const nPlayers = Number(arg('players', 4)); // FFA size for the board scenario (2-8)
+	await page.goto(`http://localhost:${PORT}/battlecards/index.html?players=${nPlayers}`, { waitUntil: 'domcontentloaded' });
 	const booted = await waitFor(() => page.evaluate(() =>
 		!!(window.__game && window.__game.state && window.__game.state.players?.length)), 45000);
 	if (!booted) throw new Error('battlecards did not boot');

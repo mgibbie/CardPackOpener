@@ -104,6 +104,13 @@ function playOneGame(seed) {
 			else {
 				const candidates = [];
 				if (perTurn < MAX_PER_TURN) {
+					// cross-seat oracle: legal targets must never point at an eliminated
+					// seat's hero or permanents (throws surface as findings via the
+					// surrounding try/catch, trace attached)
+					const assertLiveTargets = (legal, what) => {
+						const bad = legal.find(t => t.player != null && state.players[t.player]?.eliminated);
+						if (bad) throw new Error(`legalTargets offered eliminated seat p${bad.player} for ${what}`);
+					};
 					for (const c of p.hand) {
 						if (!E.canPlay(state, pi, c)) continue;
 						candidates.push(() => {
@@ -112,6 +119,7 @@ function playOneGame(seed) {
 							let tgt = null;
 							if (spec) {
 								const legal = E.legalTargets(state, pi, spec);
+								assertLiveTargets(legal, `play ${c.id}`);
 								if (spec.required && !legal.length) return false;
 								tgt = legal.length ? pick(legal) : null;
 							}
@@ -121,8 +129,22 @@ function playOneGame(seed) {
 					for (const c of E.attackersFor(state, pi)) {
 						candidates.push(() => {
 							const ts = E.attackTargets(state, pi, c);
+							assertLiveTargets(ts, `attack ${c.id}`);
 							if (!ts.length) return false;
 							return act(`attack ${c.id}`, { k: 'attack', pi, uid: c.uid, target: pick(ts) });
+						});
+					}
+					// FFA only (nPlayers > 2, so legacy 2-player seed streams stay
+					// byte-identical): occasionally a random alive seat concedes mid-game —
+					// the elimination path, stranded-turn handoff, and play-on-after-a-
+					// forfeit were never fuzzed before
+					if (nPlayers > 2) {
+						const alive = state.players.map((pl, i) => pl.eliminated ? -1 : i).filter(i => i >= 0);
+						if (alive.length > 2) candidates.push(() => {
+							if (rng() < 0.7) return false; // keep concedes rare even when picked
+							const who = pick(alive);
+							concedeCount++;
+							return act(`concede p${who}`, { k: 'concede', pi: who });
 						});
 					}
 					if (E.canHeroAttack(state, pi)) candidates.push(() => {
@@ -159,12 +181,12 @@ function playOneGame(seed) {
 				perTurn++;
 			}
 		} catch (e) {
-			return { seed, actions: steps, log: actions, error: `threw: ${e.message}\n${e.stack?.split('\n')[1] || ''}`, trace };
+			return { seed, nPlayers, actions: steps, log: actions, error: `threw: ${e.message}\n${e.stack?.split('\n')[1] || ''}`, trace };
 		}
 
 		steps++;
 		const v = validateGameState(state);
-		if (v.length) return { seed, actions: steps, log: actions, error: `invariant violations: ${v.join(' | ')}`, trace };
+		if (v.length) return { seed, nPlayers, actions: steps, log: actions, error: `invariant violations: ${v.join(' | ')}`, trace };
 		// Degenerate-growth stop: exponential summon cards (e.g. lab_constructor,
 		// "at end of turn summon a copy of this") double every turn, and the engine
 		// has no board cap BY DESIGN (see docs/10-risk-register). A 4000+ board is
@@ -174,10 +196,10 @@ function playOneGame(seed) {
 		if (did === false) {
 			// a legality-checked action was rejected by the engine — that mismatch
 			// between can*/spec and the action fn is itself a finding
-			return { seed, actions: steps, log: actions, error: `legal-looking action rejected: ${trace[trace.length - 1]}`, trace };
+			return { seed, nPlayers, actions: steps, log: actions, error: `legal-looking action rejected: ${trace[trace.length - 1]}`, trace };
 		}
 	}
-	return { seed, actions: steps, error: null, digest: digest(state) };
+	return { seed, nPlayers, actions: steps, error: null, digest: digest(state) };
 }
 
 // determinism digest: gameplay-relevant summary, no uids or event noise
@@ -193,6 +215,7 @@ function digest(state) {
 }
 
 let pass = 0, fail = 0;
+let concedeCount = 0; // FFA-only mid-game forfeits injected (see the nPlayers > 2 candidate)
 const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:', l, extra ?? ''); } };
 
 let totalActions = 0;
@@ -204,8 +227,9 @@ for (let g = 0; g < GAMES; g++) {
 	let shrunk = '';
 	if (r.error && SPLIT && r.log) {
 		// minimal repro via engine/actionlog.js: replay must reproduce, then ddmin
+		// (players/classPicks mirror the failing game — FFA traces replay at FFA size)
 		const sig = r.error.slice(0, 30);
-		const fails = cand => (replayActions(byId, seed, cand, { classPicks: pickClasses(seed) }).error || '').slice(0, 30) === sig;
+		const fails = cand => (replayActions(byId, seed, cand, { players: r.nPlayers, classPicks: pickClasses(seed, r.nPlayers) }).error || '').slice(0, 30) === sig;
 		if (fails(r.log)) {
 			const min = shrinkTrace(r.log, fails);
 			shrunk = `\n  shrunk repro (${min.length}/${r.log.length} actions): ${JSON.stringify(min)}`;
@@ -220,6 +244,6 @@ for (let g = 0; g < GAMES; g++) {
 	const b = playOneGame(BASE_SEED);
 	ok('determinism: same seed, same outcome', a.error === null && b.error === null && a.digest === b.digest);
 }
-console.log(`\n(${totalActions} fuzz actions across ${GAMES} games in ${Date.now() - t0}ms)`);
+console.log(`\n(${totalActions} fuzz actions across ${GAMES} games in ${Date.now() - t0}ms${concedeCount ? `, ${concedeCount} mid-game concedes` : ''})`);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
