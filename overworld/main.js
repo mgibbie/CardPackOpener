@@ -1028,9 +1028,61 @@ function interact() {
 		if (DAYCARE_MAPS.has(mid)) { openDaycare(); return; }
 		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
 		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
+		// MOM heals the party in all three games — the op that does it never
+		// survived the transpile, so she chatted without tucking anyone in.
+		// (During the intro her original script still runs its story beats.)
+		if (npc.ev && MOM_SCRIPTS.has(npc.ev.script) && Story.getFlag('intro_done')) { momTalk(); return; }
 		// ported story script for this NPC (dialogue/movement/flags)
 		if (npc.ev && npc.ev.script && runScriptLabel(npc.ev.script, npc)) return;
 	}
+}
+
+// ---------- water animation ----------
+// The map renders ONCE into cached canvases, so water sat frozen in every
+// region. This re-draws each visible surfable tile from that cache with a
+// GB-style 1px horizontal wobble (4 phases, wrap-around slices) — the sea
+// moves again without any new art. Drawn after the bottom layer and before
+// the top, so bridges stay above the ripple.
+const WATER_PHASE = [0, 1, 0, -1];
+function drawWaterAnim(ctx, camX, camY, forceOff) {
+	const cur = world.current;
+	const src = cur?.canvases?.bottom;
+	const lay = cur?.layout;
+	if (!src || !lay) return;
+	const off = forceOff !== undefined ? forceOff : WATER_PHASE[Math.floor(performance.now() / 280) % 4];
+	if (off === 0) return; // the cached frame IS phase zero
+	const x0 = Math.max(0, Math.floor(camX / META)), y0 = Math.max(0, Math.floor(camY / META));
+	const x1 = Math.min(lay.width - 1, x0 + Math.ceil(VIEW_W / META) + 1);
+	const y1 = Math.min(lay.height - 1, y0 + Math.ceil(VIEW_H / META) + 1);
+	for (let ty = y0; ty <= y1; ty++) {
+		for (let tx = x0; tx <= x1; tx++) {
+			if (!world.isSurfable(tx, ty)) continue;
+			const sx = tx * META, sy = ty * META, dx = tx * META - camX, dy = ty * META - camY;
+			if (off > 0) {
+				ctx.drawImage(src, sx, sy, META - off, META, dx + off, dy, META - off, META);
+				ctx.drawImage(src, sx + META - off, sy, off, META, dx, dy, off, META);
+			} else {
+				const o = -off;
+				ctx.drawImage(src, sx + o, sy, META - o, META, dx, dy, META - o, META);
+				ctx.drawImage(src, sx, sy, o, META, dx + META - o, dy, o, META);
+			}
+		}
+	}
+}
+
+// MOM, in every region's player house: a warm word and a full heal
+const MOM_SCRIPTS = new Set(['MomScript', 'PalletTown_PlayersHouse_1F_EventScript_Mom', 'PlayersHouse_1F_EventScript_Mom']);
+function momTalk() {
+	const hurt = (party || []).some(m => m && (m.curHP < m.maxHP || m.status || (m.moves || []).some(mv => mv.pp < mv.maxPp)));
+	if (!hurt) {
+		dialog.open('MOM: Oh, hi! Your POKeMON look happy\nand healthy to me. Off you go —\nand take care of each other!');
+		return;
+	}
+	dialog.open('MOM: Welcome home! Goodness, you all look\nworn out. Let me look after your POKeMON\nfor a moment...\n\n. . . . .\n\nThere! Rested and raring to go!', () => {
+		sfx('heal');
+		healParty(party);
+		saveParty(party);
+	});
 }
 
 // canonical service buildings (talk to the NPC inside to use the service)
@@ -6802,6 +6854,7 @@ function tick(now) {
 		const [camX, camY] = cameraPos();
 		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 		world.drawLayer(ctx, 'bottom', camX, camY);
+		if (!editView.on) drawWaterAnim(ctx, camX, camY); // the sea moves (editor stays exact)
 		services.draw(ctx, camX, camY);
 		arcade.draw(ctx, camX, camY);
 		items.draw(ctx, camX, camY);
@@ -8748,6 +8801,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
 		useGadget, HM_FIELD, dexList, dexKey, HEADBUTT_MAPS, HEADBUTT_SETS,
 		toggleBike, bikeShopTalk, glassBlowerTalk, silphDoorsApply, silphDoorAt, SILPH_DOORS, get fluteState() { return fluteState; }, set fluteState(v) { fluteState = v; },
+		momTalk, MOM_SCRIPTS, drawWaterAnim,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
