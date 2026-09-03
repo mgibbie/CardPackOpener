@@ -832,6 +832,13 @@ function interact() {
 	// a static legendary on the faced tile — walk up and challenge it
 	const leg = legendaryHere();
 	if (leg && fx === leg.x && fy === leg.y) { startLegendaryBattle(leg); return; }
+	// a SECRET BASE spot in the rock/tree/shrub face (Emerald's behaviors survive
+	// in the layouts, so all ~70 real spots work), or decorating inside your own
+	{
+		const bb = world.behaviorAt(fx, fy);
+		if (bb >= 0x90 && bb <= 0x9D) { secretSpotInteract(fx, fy, bb); return; }
+	}
+	if (baseCtx && baseDecoInteract(fx, fy)) return;
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(party); });
@@ -1736,7 +1743,18 @@ async function openFriends(challengeType) {
 	friendsChallenge.mode = challengeType || null;
 	friendsMenu.open = true;
 	friendsMenu.idx = 0;
+	friendsMenu.badges = null;
+	refreshFriendBadges(); // the inbox row fills in as the counts land
 	await refreshFriends();
+}
+// pending battle challenges + trade offers, surfaced as the INBOX badge —
+// async PvP existed but nothing TOLD you a challenge was waiting
+async function refreshFriendBadges() {
+	if (!MP_ON) { friendsMenu.badges = { ch: 0, tr: 0 }; return; }
+	try {
+		const [c, t] = await Promise.all([MP.call('challenges'), MP.call('trade-list')]);
+		friendsMenu.badges = { ch: (c?.challenges || []).length, tr: (t?.trades || []).length };
+	} catch (e) { friendsMenu.badges = { ch: 0, tr: 0 }; }
 }
 async function refreshFriends() {
 	if (!MP_ON) return;
@@ -1744,14 +1762,15 @@ async function refreshFriends() {
 	if (data.friends) { friends = data.friends; if (mpAccount) mpAccount.friendCode = data.friendCode; }
 }
 function friendsKey(k) {
-	// rows: [Add friend] then each friend
-	const rows = friendsMenu.mode = 1 + friends.length;
+	// rows: [Add friend] [Inbox] then each friend
+	const rows = 2 + friends.length;
 	if (k === 'ArrowUp') friendsMenu.idx = (friendsMenu.idx + rows - 1) % rows;
 	if (k === 'ArrowDown') friendsMenu.idx = (friendsMenu.idx + 1) % rows;
 	if (k === 'x' || k === 'Escape') { friendsMenu.open = false; return; }
 	if (k === 'z') {
 		if (friendsMenu.idx === 0) { promptAddFriend(); return; }
-		const f = friends[friendsMenu.idx - 1];
+		if (friendsMenu.idx === 1) { friendsMenu.open = false; openTradeInbox(); return; }
+		const f = friends[friendsMenu.idx - 2];
 		if (!f) return;
 		friendAction(f);
 	}
@@ -1771,7 +1790,14 @@ function friendAction(f) {
 		sendCardChallenge(f);
 		return;
 	}
-	if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
+	if (!f.online) {
+		// offline is exactly when the ASYNC options matter
+		friendsMenu.open = false;
+		dialog.open(`${f.username} is offline right now.\n\nZ = Offer a POKeMON trade   X = Cancel`, declined => {
+			if (declined !== 'x') openTradeOffer(f);
+		});
+		return;
+	}
 	friendsMenu.open = false;
 	// battling friend → offer to spectate; otherwise a challenge/visit choice
 	if ((f.status || '').startsWith('battling:')) {
@@ -1797,9 +1823,12 @@ function friendAction(f) {
 		});
 		return;
 	}
-	dialog.open(`${f.username}:  Z=Battle challenge  X=Visit world`, (declined) => {
-		if (declined === 'x') visitWorld(f);
-		else sendChallenge(f);
+	dialog.open(`${f.username}:  Z=Battle challenge  X=More…`, (declined) => {
+		if (declined !== 'x') { sendChallenge(f); return; }
+		dialog.open(`${f.username}:  Z=Visit world  X=Offer a trade`, (d2) => {
+			if (d2 === 'x') openTradeOffer(f);
+			else visitWorld(f);
+		});
 	});
 }
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------
@@ -2420,6 +2449,8 @@ function pressKey(k) {
 	if (contestMenu.open) { contestKey(k); return; }
 	if (blendMenu.open) { blendKey(k); return; }
 	if (slideMenu.open) { slideKey(k); return; }
+	if (decoMenu.open) { decoKey(k); return; }
+	if (socialMenu.open) { socialKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
 	if (townMap.open) { townKey(k); return; }
 	if (tradeMenu.open) { npcTradeKey(k); return; }
@@ -2487,7 +2518,7 @@ function pressKey(k) {
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
@@ -2633,6 +2664,8 @@ async function refreshMapContent(label) {
 	trickHouseOpenDoors(label);
 	shoalFixup(label);
 	roamersOnMapChange();
+	if (!/^SecretBase_/.test(label || '')) baseCtx = null; // left the base
+
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -3611,6 +3644,263 @@ function wildBattleEnd(result, inSafari) {
 		saveSafari();   // the battle burned balls on the shared session
 		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
 	}
+}
+
+// ---------- Secret Bases ----------
+// Every one of Emerald's REAL base spots survives in the shipped layouts as a
+// metatile behavior (0x90-0x9D: red/brown/yellow/blue cave, tree, shrub), so
+// detection is mechanical — no hand-placed zones, all ~70 spots work. One base
+// per player: claim a spot, decorate it, and FRIENDS who walk up to your spot
+// can step inside and see your handiwork (D1: base-save/base-get/base-dir).
+const BASE_KEY = 'magepunk_base_v1';
+const DECO_ITEMS = [
+	{ id: 'plant', name: 'POTTED PLANT' }, { id: 'table', name: 'WOOD TABLE' },
+	{ id: 'cushion', name: 'CUSHION' }, { id: 'mat', name: 'SPIN MAT' },
+	{ id: 'lamp', name: 'GLOW LAMP' }, { id: 'rock', name: 'PRETTY ROCK' },
+	{ id: 'doll', name: 'POKe DOLL' }, { id: 'banner', name: 'BANNER' },
+];
+const DECO_CAP = 16;
+function myBase() { return safeLoad(BASE_KEY, null); }
+function saveMyBase(b) { safeSave(BASE_KEY, b); if (MP_ON) { try { MP.call('base-save', { spot: b.spot, deco: b.deco || [] }).catch(() => {}); } catch (e) {} } }
+// spot key: map file + the LEFT tile of a tree pair, so both halves agree
+function baseSpotKey(fx, fy, behavior) {
+	const x = behavior === 0x9C ? fx - 1 : fx;
+	return `${world.current?.name}:${x},${fy}`;
+}
+// whose base is on this spot? friends' claims are cached briefly
+let baseDir = null, baseDirAt = 0;
+async function fetchBaseDir() {
+	if (!MP_ON) return {};
+	if (baseDir && Date.now() - baseDirAt < 60000) return baseDir;
+	try { baseDir = (await MP.call('base-dir'))?.dir || {}; baseDirAt = Date.now(); } catch (e) { baseDir = baseDir || {}; }
+	return baseDir;
+}
+// the live base room context (whose deco to draw, whether you may edit)
+let baseCtx = null;
+function baseRoomFor(spotKey, behavior) {
+	const SNAKE = { 0x90: 'RED_CAVE', 0x92: 'BROWN_CAVE', 0x94: 'YELLOW_CAVE', 0x96: 'TREE', 0x98: 'SHRUB', 0x9A: 'BLUE_CAVE', 0x9C: 'TREE' };
+	let h = 0;
+	for (const c of spotKey) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+	return `MAP_SECRET_BASE_${SNAKE[behavior & ~1] || 'RED_CAVE'}${(h % 4) + 1}`;
+}
+async function enterBase(spotKey, behavior, owner) {
+	const mine = owner == null;
+	let deco = [];
+	if (mine) deco = myBase()?.deco || [];
+	else {
+		try { deco = ((await MP.call('base-get', { user: owner }))?.base?.deco) || []; } catch (e) {}
+	}
+	baseCtx = { mine, owner: owner || null, deco, spot: spotKey };
+	await warpTo(baseRoomFor(spotKey, behavior), '0');
+	hud.textContent = mine ? 'Your SECRET BASE. Press Z on open floor to decorate!' : `${(owner || '').toUpperCase()}'s SECRET BASE!`;
+}
+function secretSpotInteract(fx, fy, behavior) {
+	const key = baseSpotKey(fx, fy, behavior);
+	const mine = myBase();
+	if (mine?.spot === key) {
+		dialog.open('Your SECRET BASE!\n\nStep inside?   Z = Yes   X = No', d => { if (d !== 'x') enterBase(key, behavior, null); });
+		return;
+	}
+	fetchBaseDir().then(dir => {
+		const owner = dir[key];
+		if (owner && owner !== (mpAccount?.username || '')) {
+			dialog.open(`This is ${owner.toUpperCase()}'s SECRET BASE!\n\nPeek inside?   Z = Yes   X = No`, d => { if (d !== 'x') enterBase(key, behavior, owner); });
+			return;
+		}
+		const q = mine
+			? `A perfect hollow for a SECRET BASE!\n\nMove your base HERE? Your decorations\ncome along.   Z = Yes   X = No`
+			: 'A perfect hollow for a SECRET BASE!\n\nMake this your base?   Z = Yes   X = No';
+		dialog.open(q, d => {
+			if (d === 'x') return;
+			const b = { spot: key, behavior, deco: mine?.deco || [] };
+			saveMyBase(b);
+			baseDir = null; // the directory changed
+			Journal.add('Claimed a SECRET BASE!');
+			sfx('levelup');
+			enterBase(key, behavior, null);
+		});
+	});
+}
+// inside your own base, Z on open floor decorates; Z on a decoration removes it
+const decoMenu = { open: false, idx: 0, tx: 0, ty: 0 };
+function baseDecoInteract(fx, fy) {
+	if (!baseCtx) return false;
+	const d = (baseCtx.deco || []).find(x => x.x === fx && x.y === fy);
+	if (d) {
+		if (!baseCtx.mine) { dialog.open(`A lovely ${DECO_ITEMS.find(i => i.id === d.id)?.name || d.id}.`); return true; }
+		dialog.open(`Put the ${DECO_ITEMS.find(i => i.id === d.id)?.name || d.id} away?\n\nZ = Yes   X = No`, k => {
+			if (k === 'x') return;
+			baseCtx.deco = baseCtx.deco.filter(x => x !== d);
+			const b = myBase(); if (b) { b.deco = baseCtx.deco; saveMyBase(b); }
+		});
+		return true;
+	}
+	if (!baseCtx.mine) return false;
+	if (!world.isPassable(fx, fy) || world.warpAt(fx, fy)) return false;
+	decoMenu.open = true; decoMenu.idx = 0; decoMenu.tx = fx; decoMenu.ty = fy;
+	sfx('ui_select');
+	return true;
+}
+function decoKey(k) {
+	const rows = DECO_ITEMS.length + 1;
+	if (k === 'ArrowUp') decoMenu.idx = (decoMenu.idx + rows - 1) % rows;
+	if (k === 'ArrowDown') decoMenu.idx = (decoMenu.idx + 1) % rows;
+	if (k === 'x' || k === 'Escape') { decoMenu.open = false; return; }
+	if (k !== 'z' && k !== 'Enter') return;
+	if (decoMenu.idx >= DECO_ITEMS.length) { decoMenu.open = false; return; }
+	if ((baseCtx?.deco || []).length >= DECO_CAP) { dialog.open(`The base is full! (${DECO_CAP} decorations max.)`); decoMenu.open = false; return; }
+	const it = DECO_ITEMS[decoMenu.idx];
+	baseCtx.deco.push({ id: it.id, x: decoMenu.tx, y: decoMenu.ty });
+	const b = myBase(); if (b) { b.deco = baseCtx.deco; saveMyBase(b); }
+	sfx('item_get');
+	decoMenu.open = false;
+}
+function drawDecoMenu(W, H) {
+	const u = H / 480;
+	optionList(W, H, u, 'DECORATE', `Place what here? (${(baseCtx?.deco || []).length}/${DECO_CAP} placed)`,
+		DECO_ITEMS.map(i => i.name).concat(['Never mind']), decoMenu.idx, 'deco:', null);
+}
+// chunky 16px pixel decorations, drawn in code (no art assets needed)
+function drawDecoSprite(ctx, id, px, py) {
+	const P = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(px + x, py + y, w, h); };
+	switch (id) {
+		case 'plant': P(5, 9, 6, 6, '#8a5a2b'); P(4, 3, 8, 7, '#2e8b3a'); P(6, 1, 4, 4, '#46c455'); break;
+		case 'table': P(2, 5, 12, 7, '#8a5a2b'); P(3, 4, 10, 3, '#c98d4a'); break;
+		case 'cushion': P(3, 6, 10, 7, '#c23b4e'); P(5, 4, 6, 4, '#e26b7c'); break;
+		case 'mat': P(2, 3, 12, 11, '#2c5f9e'); P(5, 6, 6, 5, '#5b8fd0'); break;
+		case 'lamp': P(7, 8, 2, 7, '#666'); P(4, 2, 8, 7, '#ffd75e'); break;
+		case 'rock': P(4, 7, 9, 7, '#8d99a6'); P(6, 5, 5, 4, '#b7c2cc'); break;
+		case 'doll': P(4, 6, 8, 8, '#e87ca0'); P(5, 2, 6, 6, '#f7a8c4'); break;
+		case 'banner': P(3, 2, 10, 10, '#7a4bd0'); P(5, 4, 6, 3, '#ffd75e'); P(3, 12, 10, 2, '#4a2a86'); break;
+		default: P(4, 4, 8, 8, '#999');
+	}
+}
+function drawBaseDeco(ctx, camX, camY) {
+	if (!baseCtx || !/^SecretBase_/.test(world.current?.name || '')) return;
+	for (const d of baseCtx.deco || []) drawDecoSprite(ctx, d.id, d.x * META - camX, d.y * META - camY);
+}
+
+// ---------- async friend trades (mailbox, escrowed) ----------
+// Offer a party POKeMON to a friend whether they're online or not: the mon is
+// escrowed out of your save the moment the offer sends. They accept with a
+// counterpart (which lands in your world as an exactly-once delivery, like a
+// gift) or decline (yours comes home the same way).
+const socialMenu = { open: false, mode: 'offermon', friend: null, trades: null, trade: null, idx: 0, flash: null };
+function monLine(m) { return `${m.nickname || m.name} Lv${m.level}`; }
+function openTradeOffer(f) {
+	if (!party || party.length < 2) { dialog.open('You need at least two POKeMON to offer one.'); return; }
+	socialMenu.open = true; socialMenu.mode = 'offermon'; socialMenu.friend = f; socialMenu.idx = 0; socialMenu.flash = null;
+}
+async function openTradeInbox() {
+	socialMenu.open = true; socialMenu.mode = 'inbox'; socialMenu.idx = 0; socialMenu.trades = null; socialMenu.flash = null;
+	try { socialMenu.trades = (await MP.call('trade-list'))?.trades || []; } catch (e) { socialMenu.trades = []; socialMenu.flash = 'Could not reach the server.'; }
+}
+async function sendTradeOffer(f, monIdx) {
+	const mon = party[monIdx];
+	if (!mon || party.length < 2) return;
+	party.splice(monIdx, 1); // escrow: it leaves the save before the offer sends
+	saveParty(party);
+	socialMenu.open = false;
+	try {
+		const r = await MP.call('trade-offer', { to: f.username, mon });
+		if (r?.error) throw new Error(r.error);
+		Journal.add(`Offered ${monLine(mon)} to ${f.username} in a trade`);
+		dialog.open(`Your trade offer is on its way!\n\n${monLine(mon)} will wait with ${f.username}\nuntil they accept or decline.`);
+	} catch (e) {
+		addCaught(party, mon); saveParty(party); // the escrow comes straight home
+		dialog.open('The offer could not be sent — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
+	}
+}
+async function acceptTrade(trade, monIdx) {
+	const mine = party[monIdx];
+	if (!mine || party.length < 2) return;
+	party.splice(monIdx, 1);
+	saveParty(party);
+	socialMenu.open = false;
+	try {
+		const r = await MP.call('trade-accept', { id: trade.id, mon: mine });
+		if (r?.error) throw new Error(r.error);
+		const got = r.mon;
+		Dex.markCaught(got.speciesId); dexMilestoneCheck();
+		const where = addCaught(party, got);
+		saveParty(party);
+		Journal.add(`Traded ${monLine(mine)} to ${trade.from} for ${monLine(got)}!`);
+		sfx('levelup');
+		dialog.open(`Trade complete!\n\n${monLine(got)} arrived from ${trade.from}${where === 'box' ? ' (sent to the box)' : ''}.\nTake good care of it!`);
+	} catch (e) {
+		addCaught(party, mine); saveParty(party);
+		dialog.open('The trade fell through — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
+	}
+}
+async function declineTrade(trade) {
+	socialMenu.open = false;
+	try { await MP.call('trade-decline', { id: trade.id }); dialog.open(`You declined ${trade.from}'s offer.\nTheir POKeMON is on its way home.`); }
+	catch (e) { dialog.open('Could not decline right now — try again later.'); }
+}
+// on boot: accepted/declined counterparts come home, exactly once each
+async function claimTradeDeliveries() {
+	if (!MP_ON) return;
+	let list = [];
+	try { list = (await MP.call('trade-deliveries'))?.deliveries || []; } catch (e) { return; }
+	for (const d of list) {
+		let got = null;
+		try { got = (await MP.call('trade-claim', { id: d.id }))?.delivery; } catch (e) { continue; }
+		if (!got?.mon) continue;
+		Dex.markCaught(got.mon.speciesId); dexMilestoneCheck();
+		const where = addCaught(party, got.mon);
+		saveParty(party);
+		if (got.returned) {
+			dialog.open(`${monLine(got.mon)} came home —\n${got.from} declined the trade.${where === 'box' ? '\n(Sent to the box.)' : ''}`);
+		} else {
+			Journal.add(`${got.from} accepted the trade — ${monLine(got.mon)} arrived!`);
+			dialog.open(`${got.from} accepted your trade!\n\n${monLine(got.mon)} is yours now${where === 'box' ? ' (sent to the box)' : ''}.`);
+		}
+	}
+}
+function socialKey(k) {
+	const s = socialMenu;
+	if (s.mode === 'inbox') {
+		const list = s.trades || [];
+		const rows = list.length + 1;
+		if (k === 'ArrowUp') s.idx = (s.idx + rows - 1) % rows;
+		if (k === 'ArrowDown') s.idx = (s.idx + 1) % rows;
+		if (k === 'x' || k === 'Escape') { s.open = false; return; }
+		if (k !== 'z' && k !== 'Enter') return;
+		if (s.idx >= list.length) { s.open = false; return; }
+		const t = list[s.idx];
+		dialog.open(`${t.from} offers ${monLine(t.mon)}!\n\nZ = Accept (pick your POKeMON)\nX = Decline (sends theirs home)`, d => {
+			if (d === 'x') { declineTrade(t); return; }
+			if (!party || party.length < 2) { dialog.open('You need at least two POKeMON to trade one.'); return; }
+			s.mode = 'acceptmon'; s.trade = t; s.idx = 0;
+		});
+		return;
+	}
+	// offermon / acceptmon: a party row picker
+	if (k === 'ArrowUp') s.idx = (s.idx + party.length - 1) % party.length;
+	if (k === 'ArrowDown') s.idx = (s.idx + 1) % party.length;
+	if (k === 'x' || k === 'Escape') { s.open = false; return; }
+	if (k !== 'z' && k !== 'Enter') return;
+	if (!party[s.idx]) return;
+	if (s.mode === 'offermon') {
+		const f = s.friend, mon = party[s.idx];
+		dialog.open(`Offer ${monLine(mon)} to ${f.username}?\n\nIt leaves your party until they answer.\nZ = Yes   X = No`, d => { if (d !== 'x') sendTradeOffer(f, s.idx); });
+	} else if (s.mode === 'acceptmon') {
+		const t = s.trade, mine = party[s.idx];
+		dialog.open(`Trade YOUR ${monLine(mine)} for\n${t.from}'s ${monLine(t.mon)}?\n\nZ = Trade!   X = No`, d => { if (d !== 'x') acceptTrade(t, s.idx); });
+	}
+}
+function drawSocial(W, H) {
+	const u = H / 480;
+	const s = socialMenu;
+	if (s.mode === 'inbox') {
+		const list = s.trades;
+		const rows = list == null ? ['(loading…)'] : list.map(t => `${t.from} offers ${monLine(t.mon)}`).concat(['Back']);
+		optionList(W, H, u, 'TRADE OFFERS', 'Z: answer an offer', rows, s.idx, 'soc:', s.flash);
+		return;
+	}
+	menuChrome(W, H, u, s.mode === 'offermon' ? `OFFER A TRADE — to ${s.friend?.username}` : `TRADE WITH ${s.trade?.from}`,
+		s.mode === 'offermon' ? 'Which POKeMON do you offer?' : `Their ${s.trade ? monLine(s.trade.mon) : ''} — pick yours to send.`);
+	party.forEach((mo, i) => monRow('socm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, s.idx === i, u));
 }
 
 // ---------- Shoal Cave tides ----------
@@ -5804,6 +6094,7 @@ function tick(now) {
 		services.draw(ctx, camX, camY);
 		arcade.draw(ctx, camX, camY);
 		items.draw(ctx, camX, camY);
+		drawBaseDeco(ctx, camX, camY);
 		drawLegendary(ctx, camX, camY);
 		drawAwakening(ctx, camX, camY);
 		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
@@ -5856,6 +6147,8 @@ function tick(now) {
 		else if (contestMenu.open) drawContest(SW, MH);
 		else if (blendMenu.open) drawBlend(SW, MH);
 		else if (slideMenu.open) drawSlide(SW, MH);
+		else if (decoMenu.open) drawDecoMenu(SW, MH);
+		else if (socialMenu.open) drawSocial(SW, MH);
 		else if (dexMenu.open) drawDexMenu(SW, MH);
 		else if (townMap.open) drawTownMap(SW, MH);
 		else if (tradeMenu.open) drawNpcTrade(SW, MH);
@@ -6870,12 +7163,23 @@ function drawFriendsMenu(W, H) {
 	const sub = friendsChallenge.mode ? 'Choose a friend to challenge.'
 		: `Your code: ${mpAccount?.friendCode || '……'} — add friends and visit their world.`;
 	menuChrome(W, H, u, 'FRIENDS', sub);
-	// row 0: add friend
-	const rows = [{ id: 'friend:0', label: '+ ADD FRIEND BY CODE', sub: '' }];
+	// row 0: add friend; row 1: the inbox (challenges + trade offers waiting)
+	const bd = friendsMenu.badges;
+	const waiting = bd ? bd.ch + bd.tr : 0;
+	const rows = [
+		{ id: 'friend:0', label: '+ ADD FRIEND BY CODE', sub: '' },
+		{
+			id: 'friend:1',
+			label: `INBOX${waiting ? `  (${waiting}!)` : ''}`,
+			sub: bd == null ? 'checking…' : waiting
+				? [bd.ch ? `${bd.ch} battle challenge${bd.ch === 1 ? '' : 's'}` : '', bd.tr ? `${bd.tr} trade offer${bd.tr === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ')
+				: 'no challenges or trade offers waiting',
+		},
+	];
 	friends.forEach((f, i) => rows.push({
-		id: 'friend:' + (i + 1),
+		id: 'friend:' + (i + 2),
 		label: f.username + (f.online ? '  ●' : '  ○'),
-		sub: f.online ? (friendsChallenge.mode ? 'tap to challenge' : `in ${f.map || 'their world'} — tap to visit`) : 'offline',
+		sub: f.online ? (friendsChallenge.mode ? 'tap to challenge' : `in ${f.map || 'their world'} — tap to visit`) : 'offline — tap to offer a trade',
 		online: f.online,
 	}));
 	rows.forEach((r, i) => {
@@ -6949,6 +7253,8 @@ function menuTap(id) {
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'run') { runMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'deco') { decoMenu.idx = +a; decoKey('z'); return; }
+	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'summary-lead') {
 		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = party.splice(partyMenu.idx, 1); party.unshift(m); partyMenu.idx = 0; saveParty(party); }
@@ -7678,6 +7984,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 			hud.textContent = 'GRAND CHAMPION of all three regions! A GOLD TROPHY awaits in your BAG.';
 		}
 		claimGifts(); // anything the owner sent this account, applied on arrival
+		claimTradeDeliveries(); // trade counterparts and returns come home, exactly once each
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)
@@ -7704,6 +8011,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get bugContest() { return bugContest; }, bugOfficerTalk, bugContestCatch, bugContestRoll, bugScore, endBugContest, isBugDay,
 		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk, Slide, get slideMenu() { return slideMenu; }, openRuinsPuzzle, slideKey, drawSlide,
 		shoalTide, shoalWarp, shoalDig, shoalHermitTalk, kurtTalk, roamState, roamersOnMapChange, roamerHere, startRoamerBattle, roamerEnd, ROAMERS, ROAM_ROUTES,
+		myBase, saveMyBase, baseSpotKey, baseRoomFor, secretSpotInteract, enterBase, baseDecoInteract, get baseCtx() { return baseCtx; }, set baseCtx(v) { baseCtx = v; },
+		get decoMenu() { return decoMenu; }, decoKey, drawDecoMenu, drawBaseDeco, DECO_ITEMS,
+		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
+		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
