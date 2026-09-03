@@ -874,11 +874,11 @@ function openKickerMenu(card, ev, position) {
 }
 
 // having settled the cost, pick a target (if any) then play
-function continuePlay(card, position, useAlt, kicked) {
+function continuePlay(card, position, useAlt, kicked, ev) {
 	const spec = E.targetSpec(state, HUMAN, card);
 	if (spec) {
 		const targets = E.legalTargets(state, HUMAN, spec);
-		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt, kicked }; updateHud(); return; }
+		if (targets.length) { pending = { card, spec, targets, mode: 'play', position, useAlt, kicked, dropX: ev?.clientX, dropY: ev?.clientY }; updateHud(); return; }
 		if (spec.required) return;
 	}
 	actPlay(card.uid, null, undefined, position, useAlt, kicked);
@@ -891,7 +891,7 @@ function playFromHand(card, ev, position) {
 	if (card.kicker && E.canKick(state, HUMAN, card)) { openKickerMenu(card, ev, position); return; }
 	// only one payment option available: pick it automatically
 	const useAlt = !!(card.altCost && !E.canPayMana(state, HUMAN, card) && E.canPayAlt(state, HUMAN, card));
-	continuePlay(card, position, useAlt, false);
+	continuePlay(card, position, useAlt, false, ev);
 }
 
 // which of `targets` did the drop point land on (creature / walker / hero)?
@@ -934,7 +934,7 @@ function releasePlay(c, ev) {
 		const targets = E.legalTargets(state, HUMAN, spec);
 		const t = resolveDropTarget(ev, targets, c.uid);
 		if (t && !c.fight) { actPlay(c.uid, t, undefined, undefined, ua); return; } // dropped right on a legal target
-		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua }; updateHud(); return; } // fight cards always take the two-step path
+		if (targets.length) { pending = { card: c, spec, targets, mode: 'play', useAlt: ua, dropX: ev.clientX, dropY: ev.clientY }; updateHud(); return; } // fight cards always take the two-step path
 		if (spec.required) return;
 	}
 	actPlay(c.uid, null, undefined, undefined, ua);
@@ -1112,6 +1112,18 @@ function layoutTargets() {
 				if (placing && placing.dragging && card.uid === placing.card.uid) {
 					const wp = screenToGround(mouseX, mouseY, 1.35);
 					ent.target.pos.set(wp.x, 1.35, wp.z);
+					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
+					ent.target.scale = 0.9;
+					return;
+				}
+				// a card awaiting its target stays staged on the field where it was
+				// dropped — snapping it back into the hand parked the targeting
+				// arrow's tail behind the hero panel, which read as the red line
+				// "coming from my hero" instead of from the card being aimed
+				if (pending && pending.card.uid === card.uid) {
+					const wp = pending.dropX != null ? screenToGround(pending.dropX, pending.dropY, 1.35) : null;
+					if (wp) ent.target.pos.set(wp.x, 1.35, wp.z);
+					else ent.target.pos.set(0, 1.35, off + 3.6);
 					sliceQuat(_layoutEuler.set(-0.62, 0, 0), HUMAN, ent.target.quat);
 					ent.target.scale = 0.9;
 					return;
@@ -1846,8 +1858,11 @@ let arrowDrawn = false;
 
 function targetSourcePos() {
 	if (selectedAttacker === 'HERO') return heroPos(HUMAN);
-	if (selectedAttacker) return creaturePos(selectedAttacker);
+	if (selectedAttacker) return entities.has(selectedAttacker) ? creaturePos(selectedAttacker) : null;
 	if (pending) {
+		// two-step fight (Prey Upon): once the fighter is picked, the line comes
+		// from the fighter on the board, not from the spell sitting in the hand
+		if (pending.fighter && entities.has(pending.fighter.uid)) return creaturePos(pending.fighter.uid);
 		// hand cards / table cards have entities; the class power lives in the panel
 		if (entities.has(pending.card.uid)) return creaturePos(pending.card.uid);
 		return heroPos(HUMAN);
@@ -3304,6 +3319,7 @@ let state = null;
 let hoverUid = null;
 let pending = null;          // { card, spec, targets } — spell/battlecry targeting
 let selectedAttacker = null; // uid
+let menuDragCandidate = null; // uid — creature whose press opened a menu; a real drag attacks with it instead
 let heroPress = null;        // { power } — orb pressed; a quick release uses it, a hold previews
 let handMini = false;        // true = hand tucked down so the hero panel reads clearly
 let lastCurrent = -1;        // tracks turn changes to auto-raise the hand each turn
@@ -3322,6 +3338,33 @@ function pick(ev, excludeUid = null) {
 	if (heroPanelMesh.visible && excludeUid !== 'heropanel') meshes.push(heroPanelMesh);
 	const hits = raycaster.intersectObjects(meshes);
 	return hits.length ? hits[0].object.userData.uid : null;
+}
+
+// On phones the creature row hugs the hero panel's top edge, so a press aimed
+// at a creature can land on the panel and swing the HERO's weapon instead (the
+// red line draws from the hero, not the creature you grabbed). Before treating
+// a panel-body press as a hero click, check whether an attack-ready creature's
+// on-screen token sits within a thumb's reach of the press and prefer that.
+// Screen-space distance (not a raycast) so the panel itself can't eat the probe.
+function pickAttackReadyCreatureNear(ev, slop) {
+	if (!state) return null;
+	let best = null, bestD = Infinity;
+	for (const c of state.players[HUMAN].board) {
+		if (!E.canAttackWith(state, HUMAN, c)) continue;
+		const ent = entities.get(c.uid);
+		if (!ent) continue;
+		const m = ent.mesh;
+		const g = m.geometry?.parameters;
+		const cen = m.position.clone().project(camera);
+		const cor = m.localToWorld(new THREE.Vector3((g?.width || 1.4) / 2, (g?.height || 1.4) / 2, 0)).project(camera);
+		const cx = (cen.x + 1) / 2 * innerWidth, cy = (1 - cen.y) / 2 * innerHeight;
+		const hw = Math.abs((cor.x + 1) / 2 * innerWidth - cx), hh = Math.abs((1 - cor.y) / 2 * innerHeight - cy);
+		const dx = Math.max(0, Math.abs(ev.clientX - cx) - hw);
+		const dy = Math.max(0, Math.abs(ev.clientY - cy) - hh);
+		const d = Math.hypot(dx, dy);
+		if (d <= slop && d < bestD) { bestD = d; best = c; }
+	}
+	return best;
 }
 
 // project a screen point onto a horizontal world plane (for drag-follow)
@@ -3395,6 +3438,16 @@ addEventListener('pointermove', ev => {
 	mouseY = ev.clientY;
 	wake();
 	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
+	// a real drag off a menu-opening creature closes its menu and arms the attack
+	if (menuDragCandidate != null && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
+		const c = cardOf(menuDragCandidate);
+		menuDragCandidate = null;
+		if (c && state && E.canAttackWith(state, HUMAN, c)) {
+			hideWalkerMenu();
+			selectedAttacker = c.uid;
+			updateHud();
+		}
+	}
 	// hover raycasts + tooltip layout at ~40Hz is plenty; 120Hz pointers
 	// (ProMotion) would otherwise raycast the whole scene per input event
 	if (ev.timeStamp - lastHoverPickT < 25) return;
@@ -3412,6 +3465,7 @@ addEventListener('pointermove', ev => {
 function clearModes() {
 	pending = null;
 	selectedAttacker = null;
+	menuDragCandidate = null;
 	placing = null;
 	heroPress = null;
 	placeMarker.visible = false;
@@ -3690,6 +3744,7 @@ addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
+	menuDragCandidate = null; // each press starts a fresh gesture
 	if (spectateMode || replayMode || duel.busy) return;
 	if (ev.button !== 0 || !state || state.over) return;
 	const uid = pick(ev);
@@ -3711,6 +3766,17 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			// it can't be used right now, opens its reader so the orb is always
 			// inspectable); a press-and-hold previews it instead (see startLongPress)
 			heroPress = { power };
+			return;
+		}
+		// fat-finger guard: a press on the panel's top band that lands within a
+		// thumb's reach of an attack-ready creature was aimed at the creature —
+		// arm it instead of arming a hero weapon swing from the panel
+		const near = (!pending && !selectedAttacker && state && state.current === HUMAN && !state.over)
+			? pickAttackReadyCreatureNear(ev, TOUCH ? 44 : 14) : null;
+		if (near) {
+			showInspect(near);
+			selectedAttacker = near.uid;
+			updateHud();
 		} else {
 			panelClick(HUMAN);
 		}
@@ -3741,7 +3807,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			if (t) { actHeroAttack(t); return; } // relays in a duel (guest)
 		}
 		clearModes();
-		return;
+		if (!card || card.controller !== HUMAN) return; // fall through to reselect own creature
 	}
 	if (selectedAttacker) {
 		const attacker = cardOf(selectedAttacker);
@@ -3770,11 +3836,14 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		return;
 	} else if (card.zone === 'board' && card.controller === HUMAN) {
 		showInspect(card); // read it on the left; the click also does its normal action
+		// menu-opening creatures still honor drag-to-attack: remember the pressed
+		// creature; a real drag (see pointermove) closes the menu and arms it
+		const dragArm = E.canAttackWith(state, HUMAN, card) ? card.uid : null;
 		if (card.type === 'location') { if (E.canTapLand(state, HUMAN, card)) openTapMenu(card, ev); return; }
-		if (card.disguised && E.canUnmask(state, HUMAN, card)) { openUnmaskMenu(card, ev); return; }
+		if (card.disguised && E.canUnmask(state, HUMAN, card)) { menuDragCandidate = dragArm; openUnmaskMenu(card, ev); return; }
 		// A Titan whose abilities are all spent (or all locked this turn) skips the
 		// pick and falls through to attacking; other activated minions always show the menu.
-		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { openAbilityMenu(card, ev); return; }
+		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { menuDragCandidate = dragArm; openAbilityMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
@@ -4036,6 +4105,7 @@ function tryCommitTargetAt(ev) {
 
 addEventListener('pointerup', ev => {
 	clearTimeout(longPressT);
+	menuDragCandidate = null; // the gesture ended; a click keeps its menu open
 	if (spectateMode || replayMode || duel.busy) return;
 	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
 	if (heroPress) {
