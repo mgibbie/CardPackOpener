@@ -255,7 +255,7 @@ function crossRegionWait(rk) {
 	const laggers = laggingRegions().filter(r => r !== rk);
 	const where = laggers.map(r => `${GYMS[r][g].leader} in ${GYMS[r][g].town}`);
 	const lead = where.length ? where.join(' and ') : 'the other regions';
-	return `${rk} is ahead! Beat GYM ${g + 1} in the other regions — ${lead} — to advance. Take the PORTAL by the POKeMON CENTER.`;
+	return `${rk} is ahead! Collect the remaining GYM ${g + 1} BADGE SHARDS — ${lead} — in any order. Take the PORTAL by the POKeMON CENTER.`;
 }
 
 // the player-facing "NEXT:" objective for the current stage. A required villain
@@ -275,7 +275,12 @@ export function objective(region) {
 	const g = GYMS[rk][s];
 	const gb = gateBeat(rk, g.map);
 	if (gb) return gb.objective;
-	return `Head to ${g.town} and defeat ${g.leader} for your ${ordinal(s + 1)} badge.`;
+	// badge-thirds, made visible: the next tier needs its BADGE SHARD from every
+	// region, earned in ANY order — so name the local gym AND the two abroad
+	// instead of railroading the player to the current region's leader
+	const need = SHARED.filter(r => r !== rk && Badges.count(r) <= s).map(r => `${GYMS[r][s].leader} (${GYMS[r][s].town})`);
+	if (need.length) return `Collect all three ${ordinal(s + 1)}-badge SHARDS, any order: ${g.leader} in ${g.town}, or PORTAL to ${need.join(' / ')}.`;
+	return `Defeat ${g.leader} in ${g.town} for the last ${ordinal(s + 1)}-badge SHARD.`;
 }
 
 function ordinal(n) { return { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' }[n] || n + 'th'; }
@@ -286,7 +291,7 @@ export function shortObjective(region) {
 	const s = stage(rk);
 	if (s === INTRO) return 'Get a starter';
 	if (s === DONE) return 'CHAMPION!';
-	if (Badges.count(rk) > globalTier()) return `Portal: GYM ${globalTier() + 1} abroad`; // waiting on the other regions
+	if (Badges.count(rk) > globalTier()) return `Portal: GYM ${globalTier() + 1} SHARDS abroad`; // waiting on the other regions
 	if (s === LEAGUE) { const lb = gateBeat(rk, LEAGUE_MAP[rk]); return lb ? `Stop ${lb.boss}` : 'POKeMON LEAGUE'; }
 	const gb = gateBeat(rk, GYMS[rk][s].map);
 	return gb ? `Stop ${gb.boss}` : GYMS[rk][s].town;
