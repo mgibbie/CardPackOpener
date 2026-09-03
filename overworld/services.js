@@ -117,8 +117,20 @@ const SHOAL_SPOTS = {
 	MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM: [[11, 11]],
 };
 
+// TRAINER HILL: the reception desk, the roof prize-giver, the elevator ride
+// down — all decomp NPCs whose scripts never ran.
+const TRAINER_HILL = {
+	MAP_TRAINER_HILL_ENTRANCE: { trainerhill: [[11, 6], [11, 7], [12, 6]] },
+	MAP_TRAINER_HILL_ROOF: { hillprize: [[12, 7], [12, 8], [11, 7], [13, 7]] },
+	MAP_TRAINER_HILL_ELEVATOR: { hillelevator: [[0, 6], [0, 7], [1, 6]] },
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (TRAINER_HILL[mapId]) {
+		const zones = Object.entries(TRAINER_HILL[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
+		return { sprites: [], zones, solid: [] };
+	}
 	if (SHOAL_SPOTS[mapId] || mapId === 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM') {
 		const zones = [];
 		if (SHOAL_SPOTS[mapId]) zones.push({ kind: 'shoalspot', tiles: SHOAL_SPOTS[mapId] });
