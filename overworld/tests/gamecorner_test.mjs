@@ -140,7 +140,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// ---------- the coin counter ----------
 		const coins = await page.evaluate(() => {
 			const ow = window.__ow;
-			ow.gcKey('ArrowDown'); ow.gcKey('z');                       // hub -> BUY COINS
+			ow.gcKey('ArrowDown'); ow.gcKey('ArrowDown'); ow.gcKey('z'); // hub -> BUY COINS (row 2 since PLAY SLOTS joined)
 			const out = { mode: ow.gcMenu.mode };
 			ow.gcKey('z');                                              // 50 coins for $1,000
 			out.c1 = ow.Bag.getCoins(); out.m1 = ow.Bag.getMoney();
@@ -156,7 +156,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// ---------- the prize desk ----------
 		const prizes = await page.evaluate(() => {
 			const ow = window.__ow;
-			ow.gcKey('ArrowDown'); ow.gcKey('ArrowDown'); ow.gcKey('z'); // hub -> PRIZE CORNER
+			ow.gcKey('ArrowDown'); ow.gcKey('ArrowDown'); ow.gcKey('ArrowDown'); ow.gcKey('z'); // hub -> PRIZE CORNER
 			const out = { mode: ow.gcMenu.mode };
 			ow.gcKey('z');                                               // ABRA, 180 coins
 			out.flash = ow.gcMenu.flash;

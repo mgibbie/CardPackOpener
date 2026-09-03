@@ -53,6 +53,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_roamers_v1', 'magepunk_shoal_v1',
 	// your secret base (the spot + decorations; the server holds a copy too)
 	'magepunk_base_v1',
+	// Trainer Hill best time
+	'magepunk_trainerhill_v1',
 	// the adventure journal, the last repel used, and a battle left mid-fight
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)

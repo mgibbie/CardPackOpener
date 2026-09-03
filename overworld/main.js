@@ -38,6 +38,7 @@ import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
 import { Contest, CATS, RANKS } from './contest.js';
 import * as Slide from './slidepuzzle.js';
+import * as Slots from './slots.js';
 import * as Savefile from './savefile.js';
 import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
@@ -838,6 +839,11 @@ function interact() {
 		const bb = world.behaviorAt(fx, fy);
 		if (bb >= 0x90 && bb <= 0x9D) { secretSpotInteract(fx, fy, bb); return; }
 	}
+	// a HILL GUARD blocking a Trainer Hill floor
+	{
+		const hg = hillGuardAt(fx, fy);
+		if (hg) { startHillBattle(hg.key, hg.i); return; }
+	}
 	if (baseCtx && baseDecoInteract(fx, fy)) return;
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
@@ -848,6 +854,12 @@ function interact() {
 	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
 	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
 	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
+	if (svc === 'trainerhill') { hillReceptionTalk(); return; }
+	if (svc === 'hillprize') { hillPrizeTalk(); return; }
+	if (svc === 'hillelevator') {
+		dialog.open('ATTENDANT: Riding down to the entrance!\n\nZ = Ride   X = Stay', d => { if (d !== 'x') warpTo('MAP_TRAINER_HILL_ENTRANCE', '2'); });
+		return;
+	}
 	if (svc === 'shoalspot') { shoalDig(); return; }
 	if (svc === 'shoalhermit') { shoalHermitTalk(); return; }
 	if (svc === 'kurt') { kurtTalk(); return; }
@@ -2508,6 +2520,7 @@ function pressKey(k) {
 	if (slideMenu.open) { slideKey(k); return; }
 	if (decoMenu.open) { decoKey(k); return; }
 	if (socialMenu.open) { socialKey(k); return; }
+	if (slotsMenu.open) { slotsKey(k); return; }
 	if (dexMenu.open) { dexKey(k); return; }
 	if (townMap.open) { townKey(k); return; }
 	if (tradeMenu.open) { npcTradeKey(k); return; }
@@ -2575,7 +2588,7 @@ function pressKey(k) {
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
-	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open;
+	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
 
@@ -2731,6 +2744,7 @@ async function refreshMapContent(label) {
 	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
 	shoalFixup(label);
+	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
 	roamersOnMapChange();
 	if (!/^SecretBase_/.test(label || '')) baseCtx = null; // left the base
 
@@ -3152,6 +3166,8 @@ player.onArrive = () => {
 		const sh = shoalWarp(w);
 		if (sh === 'blocked') return;
 		if (sh) { warpTo(sh.map, sh.warp); return; }
+		// TRAINER HILL: no climb without a run, no stairs past standing guards
+		if (hillWarp(w) === 'blocked') return;
 		// leaving the park mid-Bug-Contest means the judging happens at the gate
 		if (bugContest.active && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
 			warpTo(w.dest_map, w.dest_warp_id);
@@ -3739,6 +3755,232 @@ function wildBattleEnd(result, inSafari) {
 	if (inSafari) {
 		saveSafari();   // the battle burned balls on the shared session
 		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
+	}
+}
+
+// ---------- Trainer Hill (Hoenn, Route 111) ----------
+// The timed four-floor gauntlet: sign up at the reception desk, the clock
+// starts, and each floor spawns two HILL GUARDS (Emerald loads its trainers
+// dynamically — the shipped floors carry none, so they're injected at floor
+// load onto scanned-passable tiles). Both guards must fall before the stairs
+// up unseal. The gentleman on the roof pays by your time; the elevator rides
+// down. The run lives in memory (leaving voids it); only the BEST time
+// persists (magepunk_trainerhill_v1).
+const HILL_KEY = 'magepunk_trainerhill_v1';
+let hillRun = null; // { start, beatenSet: {'1F:0':true}, guards: {'1F': [[x,y],[x,y]]} }
+const HILL_FLOORS = { TrainerHill_1F: '1F', TrainerHill_2F: '2F', TrainerHill_3F: '3F', TrainerHill_4F: '4F' };
+const HILL_NEXT = { TrainerHill_1F: 'MAP_TRAINER_HILL_2F', TrainerHill_2F: 'MAP_TRAINER_HILL_3F', TrainerHill_3F: 'MAP_TRAINER_HILL_4F', TrainerHill_4F: 'MAP_TRAINER_HILL_ROOF' };
+const HILL_GFX = {
+	'1F': ['OBJ_EVENT_GFX_CAMPER', 'OBJ_EVENT_GFX_PICNICKER'],
+	'2F': ['OBJ_EVENT_GFX_BUG_CATCHER', 'OBJ_EVENT_GFX_LASS'],
+	'3F': ['OBJ_EVENT_GFX_BLACK_BELT', 'OBJ_EVENT_GFX_HIKER'],
+	'4F': ['OBJ_EVENT_GFX_GENTLEMAN', 'OBJ_EVENT_GFX_PSYCHIC_M'],
+};
+const HILL_THEMES = {
+	'1F': ['pidgeotto', 'raticate', 'furret', 'dodrio'],
+	'2F': ['beedrill', 'butterfree', 'ariados', 'ledian'],
+	'3F': ['machoke', 'graveler', 'hitmonchan', 'sudowoodo'],
+	'4F': ['skarmory', 'dragonair', 'magneton', 'lairon'],
+};
+const hillElapsed = () => hillRun ? Math.floor((Date.now() - hillRun.start) / 1000) : 0;
+const hillTimeStr = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+function hillGuardsLeft(key) {
+	return (hillRun?.guards?.[key] || [[], []]).filter((_, i) => !hillRun.beatenSet[`${key}:${i}`]).length;
+}
+// inject this floor's unbeaten guards as real NPC objects before npcs load
+function hillPrepFloor(label) {
+	const key = HILL_FLOORS[label];
+	if (!key) return;
+	const map = world.current?.map;
+	if (!map) return;
+	map.object_events = (map.object_events || []).filter(o => !o._hill); // clear stale injections
+	if (!hillRun) return;
+	if (!hillRun.guards[key]) {
+		// two deterministic interior spots: scan outward from the centerline at
+		// one-third and two-thirds height for plain passable floor
+		const lay = world.current.layout;
+		const spots = [];
+		for (const fy of [Math.floor(lay.height / 3), Math.floor((lay.height * 2) / 3)]) {
+			let placed = false;
+			for (let dx = 0; dx < lay.width && !placed; dx++) {
+				const x = Math.floor(lay.width / 2) + (dx % 2 ? -1 : 1) * Math.ceil(dx / 2);
+				for (const y of [fy, fy + 1, fy - 1]) {
+					if (x > 0 && y > 1 && x < lay.width - 1 && y < lay.height - 1
+						&& world.isPassable(x, y) && !world.warpAt(x, y) && !spots.some(([sx, sy]) => sx === x && sy === y)) {
+						spots.push([x, y]); placed = true; break;
+					}
+				}
+			}
+		}
+		hillRun.guards[key] = spots;
+	}
+	hillRun.guards[key].forEach(([x, y], i) => {
+		if (hillRun.beatenSet[`${key}:${i}`]) return;
+		map.object_events.push({ _hill: `${key}:${i}`, graphics_id: HILL_GFX[key][i] || 'OBJ_EVENT_GFX_CAMPER', x, y, script: '0x0' });
+	});
+	hud.textContent = `TRAINER HILL ${key} — ${hillTimeStr(hillElapsed())} on the clock`;
+}
+function hillGuardAt(fx, fy) {
+	const key = HILL_FLOORS[world.current?.name];
+	if (!key || !hillRun) return null;
+	const i = (hillRun.guards[key] || []).findIndex(([x, y], gi) => x === fx && y === fy && !hillRun.beatenSet[`${key}:${gi}`]);
+	return i >= 0 ? { key, i } : null;
+}
+function startHillBattle(key, idx) {
+	const lead = leadMon(party);
+	const lv = Math.max(20, Math.min(255, lead?.level || 20));
+	const pool = HILL_THEMES[key];
+	const foes = [0, 1].map(() => battleBuildMon(pool[Math.floor(Math.random() * pool.length)], lv, battle.data)).filter(Boolean);
+	if (!foes.length) return;
+	battle.endSpec = null; // leaving mid-bout voids the run anyway (it's in-memory)
+	battle.startTrainer(party, foes, { displayName: `HILL GUARD ${key}-${idx + 1}` }, result => {
+		if (result === 'victory') {
+			hillRun.beatenSet[`${key}:${idx}`] = true;
+			Bag.earn(lv * 40);
+			const [gx, gy] = hillRun.guards[key][idx];
+			const n = npcs.list.find(o => o.tx === gx && o.ty === gy);
+			if (n) n.hidden = true;
+			const left = hillGuardsLeft(key);
+			hud.textContent = left ? `Guard down! ${left} more holds this floor. (${hillTimeStr(hillElapsed())})`
+				: `Floor ${key} cleared — the stairs are open! (${hillTimeStr(hillElapsed())})`;
+			saveParty(party);
+			evolution.check(party, battle.data);
+		} else if (result === 'defeat') {
+			hillRun = null;
+			healParty(party);
+			hud.textContent = 'The Trainer Hill challenge ends — party healed.';
+		}
+	});
+}
+// warp gates: no wandering upstairs without a run, no stairs past unbeaten guards
+function hillWarp(w) {
+	const here = world.current?.name || '';
+	if (here === 'TrainerHill_Entrance' && w.dest_map === 'MAP_TRAINER_HILL_1F' && !hillRun) {
+		dialog.open('The attendant stops you.\n\n"Sign up at the reception desk first —\nthe HILL runs on the clock!"');
+		return 'blocked';
+	}
+	if (HILL_FLOORS[here] && w.dest_map === HILL_NEXT[here] && hillRun && hillGuardsLeft(HILL_FLOORS[here]) > 0) {
+		dialog.open(`The way up is barred!\n\n${hillGuardsLeft(HILL_FLOORS[here])} HILL GUARD${hillGuardsLeft(HILL_FLOORS[here]) === 1 ? '' : 'S'} on this floor still\nstand${hillGuardsLeft(HILL_FLOORS[here]) === 1 ? 's' : ''} undefeated.`);
+		return 'blocked';
+	}
+	return null;
+}
+function hillReceptionTalk() {
+	const best = safeLoad(HILL_KEY, {})?.best;
+	if (hillRun) {
+		dialog.open(`RECEPTION: You're ${hillTimeStr(hillElapsed())} in, climbing well!\n\nRetire from the challenge?   Z = Retire   X = Keep going`, d => {
+			if (d !== 'x') { hillRun = null; hud.textContent = 'You retired from the Trainer Hill challenge.'; }
+		});
+		return;
+	}
+	if (!party.length) { dialog.open('RECEPTION: You need POKeMON to take the HILL!'); return; }
+	dialog.open(`RECEPTION: Welcome to TRAINER HILL!\n\nFour floors, two HILL GUARDS each, and the\nclock runs until the roof. Prizes by your time!${best ? `\nYour best: ${hillTimeStr(best)}.` : ''}\n\nTake the challenge?   Z = Yes   X = No`, d => {
+		if (d === 'x') return;
+		hillRun = { start: Date.now(), beatenSet: {}, guards: {} };
+		sfx('ui_select');
+		hud.textContent = 'The clock is running — up the HILL!';
+	});
+}
+function hillPrizeTalk() {
+	if (!hillRun) { dialog.open('GENTLEMAN: Magnificent view, no? Take the\nchallenge from the entrance to earn it properly!'); return; }
+	const secs = hillElapsed();
+	const prize = secs <= 480 ? 'ppmax' : secs <= 720 ? 'rarecandy' : secs <= 960 ? 'starpiece' : 'nugget';
+	Bag.addItem(prize, 1);
+	const st = safeLoad(HILL_KEY, {});
+	const isBest = !st.best || secs < st.best;
+	if (isBest) { st.best = secs; safeSave(HILL_KEY, st); }
+	if (!st.cleared) { st.cleared = true; safeSave(HILL_KEY, st); Journal.add(`Conquered Trainer Hill in ${hillTimeStr(secs)}!`); }
+	hillRun = null;
+	sfx('levelup');
+	dialog.open(`GENTLEMAN: All eight guards, in ${hillTimeStr(secs)}!${isBest ? '\nA NEW PERSONAL BEST!' : ''}\n\nHere — a ${Bag.ITEMS[prize].name} for your climb.\nThe elevator will take you down.`);
+}
+
+// ---------- Game Corner slots ----------
+// Voltorb Flip carried the coin loop alone; the classic skill-stop three-reel
+// slots (slots.js, pure logic) now spins beside it. Left/Right sets the bet
+// (1-3 coins), Z spins and then freezes each reel in turn; payout is the
+// middle row times the bet.
+const slotsMenu = { open: false, game: null, bet: 1, msg: null, lastTick: 0 };
+function slotsKey(k) {
+	const s = slotsMenu;
+	if (k === 'x' || k === 'Escape') {
+		if (!s.game || s.game.done) { s.open = false; gcMenu.open = true; return; }
+		return; // no walking away mid-spin
+	}
+	if (!s.game || s.game.done) {
+		if (k === 'ArrowLeft') { s.bet = Math.max(1, s.bet - 1); sfx('ui_move'); return; }
+		if (k === 'ArrowRight') { s.bet = Math.min(3, s.bet + 1); sfx('ui_move'); return; }
+	}
+	if (k !== 'z' && k !== 'Enter') return;
+	if (!s.game || s.game.done) {
+		if (Bag.getCoins() < s.bet) { sfx('ui_denied'); s.msg = 'Not enough coins!'; return; }
+		Bag.spendCoins(s.bet);
+		s.game = Slots.newGame();
+		s.msg = null;
+		sfx('ui_select');
+		return;
+	}
+	sfx('ui_select');
+	Slots.stopNext(s.game);
+	if (s.game.done) {
+		const win = Slots.payout(s.game) * s.bet;
+		if (win > 0) {
+			Bag.addCoins(win);
+			sfx(win >= 50 ? 'levelup' : 'money');
+			s.msg = `${Slots.row(s.game).join(' · ').toUpperCase()} — won ${win} coins!`;
+		} else {
+			s.msg = 'No luck this spin...';
+		}
+	}
+}
+const SLOT_ART = {
+	seven: ['7', '#ff5d5d'], bar: ['BAR', '#ffd75e'], pika: ['PIKA', '#f7d02c'],
+	psy: ['PSY', '#e8b34a'], cherry: ['CHR', '#ff7d9c'], berry: ['BRY', '#6be08a'],
+};
+function drawSlots(W, H) {
+	const u = H / 480;
+	const s = slotsMenu;
+	menuChrome(W, H, u, 'SLOTS', s.game && !s.game.done ? 'Z: stop the next reel!' : '◄►: bet 1-3   Z: spin   X: back');
+	// spin: the reels advance on a frame clock
+	if (s.game && !s.game.done) {
+		const now = performance.now();
+		if (now - s.lastTick > 85) { Slots.tick(s.game); s.lastTick = now; }
+	}
+	const cw = 92 * u, ch = 64 * u, gx = (W - cw * 3 - 24 * u) / 2, gy = 120 * u;
+	for (let off = -1; off <= 1; off++) {
+		const syms = s.game ? Slots.row(s.game, off) : ['seven', 'seven', 'seven'];
+		syms.forEach((sym, i) => {
+			const x = gx + i * (cw + 12 * u), y = gy + (off + 1) * ch;
+			sctx.fillStyle = off === 0 ? 'rgba(40,70,110,0.95)' : 'rgba(22,36,60,0.85)';
+			BUI.rr(sctx, x, y, cw, ch - 6 * u, 8 * u); sctx.fill();
+			if (off === 0) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3; BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 8 * u, 8 * u); sctx.stroke(); }
+			const [label, color] = SLOT_ART[sym] || [sym, '#fff'];
+			sctx.fillStyle = off === 0 ? color : 'rgba(255,255,255,0.35)';
+			sctx.font = `${Math.round((off === 0 ? 26 : 20) * u)}px m6x11plus, monospace`;
+			sctx.textAlign = 'center';
+			sctx.fillText(label, x + cw / 2, y + ch / 2 + 8 * u);
+			sctx.textAlign = 'left';
+		});
+	}
+	// reel state pips
+	if (s.game) {
+		s.game.stopped.forEach((st, i) => {
+			sctx.fillStyle = st ? BUI.C.accent : BUI.C.dim;
+			sctx.beginPath();
+			sctx.arc(gx + i * (cw + 12 * u) + cw / 2, gy + 3 * ch + 14 * u, 5 * u, 0, Math.PI * 2);
+			sctx.fill();
+		});
+	}
+	sctx.fillStyle = BUI.C.text;
+	sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+	sctx.fillText(`BET: ${s.bet}   COINS: ${Bag.getCoins()}`, 40 * u, 96 * u);
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+	sctx.fillText('7×3=100  BAR×3=50  PIKA×3=20  PSY×3=10  BRY×3=8  CHR×3=6  CHR×2=2  (× bet)', 40 * u, H - 34 * u);
+	if (s.msg) {
+		sctx.fillStyle = BUI.C.accent;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(s.msg, 40 * u, H - 14 * u);
 	}
 }
 
@@ -4785,7 +5027,7 @@ const GC_PRIZES = [
 	{ item: 'tmthunderbolt', cost: 4000 }, { item: 'tmicebeam', cost: 4000 }, { item: 'tmflamethrower', cost: 4000 },
 ];
 function gcRows() {
-	if (gcMenu.mode === 'hub') return ['PLAY VOLTORB FLIP', 'BUY COINS', 'PRIZE CORNER', 'Leave'];
+	if (gcMenu.mode === 'hub') return ['PLAY VOLTORB FLIP', 'PLAY SLOTS', 'BUY COINS', 'PRIZE CORNER', 'Leave'];
 	if (gcMenu.mode === 'coins') return ['50 COINS — $1,000', '500 COINS — $10,000', 'Back'];
 	return GC_PRIZES.map(pz => {
 		const name = pz.mon ? (battle.data.species[pz.mon]?.name?.toUpperCase() || pz.mon.toUpperCase()) : Bag.ITEMS[pz.item].name;
@@ -4804,8 +5046,9 @@ function gcKey(k) {
 	if (k !== 'z' && k !== 'Enter') return;
 	if (gcMenu.mode === 'hub') {
 		if (gcMenu.idx === 0) { gcMenu.open = false; vfMenu.open = true; vfMenu.game = VFlip.newGame(1); vfMenu.cur = 12; vfMenu.flash = null; }
-		else if (gcMenu.idx === 1) { gcMenu.mode = 'coins'; gcMenu.idx = 0; gcMenu.flash = null; }
-		else if (gcMenu.idx === 2) { gcMenu.mode = 'prizes'; gcMenu.idx = 0; gcMenu.flash = null; }
+		else if (gcMenu.idx === 1) { gcMenu.open = false; slotsMenu.open = true; slotsMenu.game = null; slotsMenu.msg = null; }
+		else if (gcMenu.idx === 2) { gcMenu.mode = 'coins'; gcMenu.idx = 0; gcMenu.flash = null; }
+		else if (gcMenu.idx === 3) { gcMenu.mode = 'prizes'; gcMenu.idx = 0; gcMenu.flash = null; }
 		else gcMenu.open = false;
 	} else if (gcMenu.mode === 'coins') {
 		const deal = [[50, 1000], [500, 10000]][gcMenu.idx];
@@ -6246,6 +6489,7 @@ function tick(now) {
 		else if (slideMenu.open) drawSlide(SW, MH);
 		else if (decoMenu.open) drawDecoMenu(SW, MH);
 		else if (socialMenu.open) drawSocial(SW, MH);
+		else if (slotsMenu.open) drawSlots(SW, MH);
 		else if (dexMenu.open) drawDexMenu(SW, MH);
 		else if (townMap.open) drawTownMap(SW, MH);
 		else if (tradeMenu.open) drawNpcTrade(SW, MH);
@@ -8123,6 +8367,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
 		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
 		KEY_ACTIONS, get keyBinds() { return keyBinds; }, translateKey, assignKeyBind, optionsKey,
+		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots,
+		get hillRun() { return hillRun; }, set hillRun(v) { hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
