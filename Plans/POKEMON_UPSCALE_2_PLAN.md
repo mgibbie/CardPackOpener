@@ -1,5 +1,25 @@
 # Pokemon Upscale 2 — the world's dead venues, and the player's safety net
 
+> **STATUS: FULLY COMPLETE (2026-09-03).** All seven batches shipped in the
+> suggested order D→A→B→C→E→F→G as PRs #215–#221:
+> **D** #215 (save export/import, D1 daily backups + UNDO, full-save sync,
+> repel re-offer, adventure journal) · **A** #216 (contests on real
+> pokeemerald data: 354 moves/96 opponents/berry flavors, berry blender,
+> ribbons on the mon) · **B** #217 (Bug-Catching Contest, all 8 Trick House
+> rooms — BFS proved rooms 2/3 shipped untraversable, doors opened in
+> place — Ruins of Alph slide puzzles into the item rooms) · **C** #218
+> (roaming legendaries w/ persistent wounds, Shoal Cave tides on the live
+> Clock + Shell Bell hermit, apricorn trees restored + Kurt's balls) ·
+> **E** #219 (secret bases on all ~70 authentic behavior-detected spots w/
+> friend visits, escrowed async trades w/ exactly-once deliveries, the
+> friends INBOX badge) · **F** #220 (Heal Block/Electrify/Ion Deluge
+> implemented; follower fallbacks for the 855 sheet-less species; dead-move
+> + doubles audits pinned by tests; NOTE: the shipped evo data has no trade
+> evolutions, so there was nothing to fire) · **G** #221 (CONTROLS screen:
+> every shortcut listed and rebindable; mobile film pass). Tests:
+> savesafety 32 · contest 41 · venues 44 · livingworld 33 · social 34 ·
+> stragglers 18 · inputs 14.
+
 2026-09-02, after Upscale 1 closed completely (PRs #196–#213: caps, boss AI,
 postgame retention, world depth, deep cuts, Safari, Game Corner, music/SFX/
 animations, intro cleanup, battle resume, move swapping). This round comes
