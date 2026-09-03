@@ -6206,6 +6206,10 @@ function seedStoryState(region) {
 		for (const [k, v] of Object.entries(seed.vars || {})) Story.setVar(k, v);
 		for (const f of seed.flags || []) Story.setFlag(f);
 	}
+	// the OTHER regions' seeds too: the portals put all three regions in play
+	// from gym one, and a traveller must not be ambushed by a foreign region's
+	// new-game scripts (vars the chosen region's seed just set are untouched)
+	for (const r of Object.keys(STORY_SEED)) if (r !== region) armStoryScenes(r);
 	// the 8 HMs come in the bag (reusable) — teach them to compatible POKeMON and
 	// use the field move from the party menu wherever it applies
 	for (let i = 1; i <= 8; i++) Bag.addItem('hm' + i);
@@ -6675,7 +6679,7 @@ function afterRival(region) {
 		{ op: 'say', text: sendoff },
 		// the tri-region premise — why the journey spans all three regions, and the portal + rival
 		{ op: 'say', text: `${prof}: One thing you should know: the GYMS of KANTO, JOHTO, and HOENN are linked now.` },
-		{ op: 'say', text: `${prof}: You must earn each tier's badge in ALL THREE regions before the next GYM will admit you anywhere.` },
+		{ op: 'say', text: `${prof}: You must earn each tier's BADGE SHARD in ALL THREE regions — in any order you like — before the next GYM will admit you anywhere.` },
 		{ op: 'say', text: `${prof}: A PORTAL by every GYM town's POKeMON CENTER carries you between the regions — and you won't be climbing alone. Off you go!` },
 	]);
 }
@@ -8601,8 +8605,13 @@ function drawFriendGhosts(ctx, camX, camY) {
 (async () => {
 	hud.textContent = 'Loading…';
 	// BEFORE any map loads: a map's onFrame scenes are checked the moment it
-	// finishes loading, so newly-armed scenes must exist by then
-	armStoryScenes(playerRegion());
+	// finishes loading, so newly-armed scenes must exist by then. ALL regions are
+	// armed, not just the one you're standing in — the portals make every region
+	// same-session reachable, and an unarmed foreign region greets a traveller
+	// with its new-game scripts (Littleroot's truck intro, New Bark's no-starter
+	// block, Pallet's grabbable lab starter balls). Arming only fills vars the
+	// save has NEVER touched, so in-progress regions keep their story state.
+	for (const r of Object.keys(STORY_SEED)) armStoryScenes(r);
 	seedCrystalEvents();      // Crystal's own new-game event state (Misty is out, Blue is at Cinnabar)
 	syncStoryVars();          // VAR_BADGES, for the Crystal scripts that read it
 	await world.init();
@@ -8775,7 +8784,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, portals, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },

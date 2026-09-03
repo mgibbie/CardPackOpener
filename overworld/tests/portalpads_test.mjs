@@ -147,6 +147,37 @@ async function waitFor(fn, ms) {
 			await sleep(900);
 			await page.screenshot({ path: path.join(HERE, 'portalpads_arrived.png') });
 		}
+		if (town.map === 'PewterCity') {
+			// objective wording: at tier 1 with zero badges, the goal must offer all
+			// three regions' gym-1 BADGE SHARDS in any order, not railroad to Brock
+			const obj = await page.evaluate(() => window.__ow.Quest.objective('KANTO'));
+			A(/SHARD/i.test(obj) && /any order/i.test(obj) && /FALKNER/.test(obj) && /ROXANNE/.test(obj),
+				'PewterCity: tier-1 objective offers all three regions\' shards in any order', obj);
+		}
+
+		if (town.map === 'VioletCity') {
+			// cross-region intro safety: a JOHTO starter must find the OTHER regions'
+			// new-game scripts pre-armed — Littleroot's truck intro rested, Pallet's
+			// escort-Oak + grabbable lab starter balls hidden — or the first portal
+			// trip ambushes them with another region's opening
+			const armed = await page.evaluate(() => ({
+				littleroot: window.__ow.Story.getVar('VAR_LITTLEROOT_INTRO_STATE'),
+				pallet: window.__ow.Story.getVar('VAR_MAP_SCENE_PALLET_TOWN_OAK'),
+				balls: window.__ow.Story.getFlag('FLAG_HIDE_BULBASAUR_BALL'),
+				oakProp: window.__ow.Story.getFlag('FLAG_HIDE_OAK_IN_PALLET_TOWN'),
+			}));
+			A(armed.littleroot === 4 && armed.pallet === 1 && !!armed.balls && !!armed.oakProp,
+				'VioletCity (johto save): foreign regions\' intro scripts are pre-armed', JSON.stringify(armed));
+			// and the walk-in probe: a johto starter stepping around Littleroot must
+			// not be grabbed by the moving-truck intro (no dialog, no forced warp)
+			await page.evaluate(() => window.__ow.moveToMap('LittlerootTown'));
+			await sleep(2500);
+			for (let i = 0; i < 4; i++) { await page.evaluate(() => window.__ow.pumpPlayer('down', false, 400).catch(() => 0)); await sleep(150); }
+			const after = await page.evaluate(() => ({ map: window.__ow.world.current.name, dlg: !!window.__ow.dialog.blocking }));
+			A(after.map === 'LittlerootTown' && !after.dlg,
+				'VioletCity (johto save): walking into Littleroot fires no intro ambush', JSON.stringify(after));
+		}
+
 		const fatal = errors.filter(e => !/Failed to load resource/i.test(e));
 		A(fatal.length === 0, `${town.map}: no uncaught errors`, fatal.slice(0, 3).join(' | '));
 		await page.close();
