@@ -8613,6 +8613,15 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// save has NEVER touched, so in-progress regions keep their story state.
 	for (const r of Object.keys(STORY_SEED)) armStoryScenes(r);
 	seedCrystalEvents();      // Crystal's own new-game event state (Misty is out, Blue is at Cinnabar)
+	// Crystal one-shots the free-roam port can never reach: vanilla ends Route
+	// 30's battling-kids scene when you hand ELM the MYSTERY EGG (ElmsLab.asm
+	// sets EVENT_ROUTE_30_BATTLE to hide the four-sprite tableau and reveals
+	// JOEY as a normal trainer) — an errand the authored intro skips, which left
+	// the battle frozen on the road forever. Seed the post-errand state.
+	// Unconditional + idempotent, AFTER seedCrystalEvents, so existing saves
+	// (already past the crystal_events_seeded guard) heal too.
+	Story.setFlag('EVENT_ROUTE_30_BATTLE');
+	Story.clearFlag('EVENT_ROUTE_30_YOUNGSTER_JOEY');
 	syncStoryVars();          // VAR_BADGES, for the Crystal scripts that read it
 	await world.init();
 	await player.init();
