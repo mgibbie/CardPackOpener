@@ -913,6 +913,102 @@ export default async function handler(req, env) {
 		return json({ ok: true, gift: { id: g.id, title: g.title, body: g.body, items: g.items, from: g.from } });
 	}
 
+	// ---------- secret bases ----------
+	// One base per player: the claimed spot key + the decoration list. Friends
+	// resolve each other's claims through base-dir (spot -> owner) and read a
+	// base's contents with base-get; only the owner can write their own.
+	if (action === 'base-save') {
+		const spot = String(body.spot || '').slice(0, 60);
+		if (!spot) return json({ error: 'no spot' }, 400);
+		const deco = Array.isArray(body.deco)
+			? body.deco.slice(0, 24).map(d => ({ id: String(d?.id || '').slice(0, 16), x: d?.x | 0, y: d?.y | 0 }))
+			: [];
+		await store.setJSON('base:' + username, { spot, deco, updated_at: Date.now() });
+		return json({ ok: true });
+	}
+	if (action === 'base-get') {
+		const who = String(body.user || username).trim().toLowerCase().slice(0, 40);
+		return json({ base: (await store.get('base:' + who)) || null, user: who });
+	}
+	if (action === 'base-dir') {
+		const names = [username, ...(user.friends || [])].slice(0, 30);
+		const dir = {};
+		for (const n of names) {
+			const b = await store.get('base:' + n);
+			if (b?.spot) dir[b.spot] = n;
+		}
+		return json({ dir });
+	}
+
+	// ---------- async POKeMON trades (mailbox, escrowed) ----------
+	// The offered mon leaves the sender's save BEFORE the offer is stored (the
+	// client escrows it), so the server-held copy is the only one. Accepting
+	// attaches the counterpart mon: the accepter takes the offer home in the
+	// same response, and the sender's side arrives as a DELIVERY they claim
+	// exactly-once, gift-style. Declines return the mon the same way.
+	if (action === 'trade-offer') {
+		const to = String(body.to || '').trim().toLowerCase();
+		if (!to || to === username) return json({ error: 'bad recipient' }, 400);
+		if (!(await store.get(to))) return json({ error: 'no player with that username' }, 404);
+		const mon = body.mon;
+		if (!mon || typeof mon !== 'object' || Array.isArray(mon)) return json({ error: 'bad mon' }, 400);
+		if (JSON.stringify(mon).length > 20_000) return json({ error: 'mon too large' }, 413);
+		const list = (await store.get('trades:' + to)) || [];
+		if (list.filter(t => !t.done).length >= 10) return json({ error: 'their trade inbox is full' }, 400);
+		const t = { id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), ts: Date.now(), from: username, mon, done: false };
+		list.push(t);
+		await store.setJSON('trades:' + to, list.slice(-40));
+		return json({ ok: true, id: t.id });
+	}
+	if (action === 'trade-list') {
+		const list = (await store.get('trades:' + username)) || [];
+		return json({ trades: list.filter(t => !t.done).map(t => ({ id: t.id, from: t.from, mon: t.mon, ts: t.ts })) });
+	}
+	if (action === 'trade-accept') {
+		const id = String(body.id || '');
+		const back = body.mon;
+		if (!back || typeof back !== 'object' || Array.isArray(back)) return json({ error: 'bad mon' }, 400);
+		if (JSON.stringify(back).length > 20_000) return json({ error: 'mon too large' }, 413);
+		const list = (await store.get('trades:' + username)) || [];
+		const t = list.find(x => x.id === id);
+		if (!t) return json({ error: 'no such trade' }, 404);
+		if (t.done) return json({ error: 'already handled' }, 409);
+		t.done = true; t.acceptedAt = Date.now();
+		await store.setJSON('trades:' + username, list);
+		const dl = (await store.get('tradeback:' + t.from)) || [];
+		dl.push({ id: 'd' + t.id, from: username, mon: back, returned: false, claimed: false, ts: Date.now() });
+		await store.setJSON('tradeback:' + t.from, dl.slice(-40));
+		return json({ ok: true, mon: t.mon, from: t.from });
+	}
+	if (action === 'trade-decline') {
+		const id = String(body.id || '');
+		const list = (await store.get('trades:' + username)) || [];
+		const t = list.find(x => x.id === id);
+		if (!t) return json({ error: 'no such trade' }, 404);
+		if (t.done) return json({ error: 'already handled' }, 409);
+		t.done = true; t.declinedAt = Date.now();
+		await store.setJSON('trades:' + username, list);
+		const dl = (await store.get('tradeback:' + t.from)) || [];
+		dl.push({ id: 'r' + t.id, from: username, mon: t.mon, returned: true, claimed: false, ts: Date.now() });
+		await store.setJSON('tradeback:' + t.from, dl.slice(-40));
+		return json({ ok: true });
+	}
+	if (action === 'trade-deliveries') {
+		const dl = (await store.get('tradeback:' + username)) || [];
+		return json({ deliveries: dl.filter(d => !d.claimed).map(d => ({ id: d.id, from: d.from, mon: d.mon, returned: d.returned })) });
+	}
+	// claim marks it spent and hands the mon back in ONE step (gift semantics)
+	if (action === 'trade-claim') {
+		const id = String(body.id || '');
+		const dl = (await store.get('tradeback:' + username)) || [];
+		const d = dl.find(x => x.id === id);
+		if (!d) return json({ error: 'no such delivery' }, 404);
+		if (d.claimed) return json({ error: 'already claimed' }, 409);
+		d.claimed = true; d.claimedAt = Date.now();
+		await store.setJSON('tradeback:' + username, dl);
+		return json({ ok: true, delivery: { id: d.id, from: d.from, mon: d.mon, returned: d.returned } });
+	}
+
 	// a SAFE public profile of ANY player (clicked from the watcher list / chat).
 	// Public-safe subset only — never the collection contents, decks, packs, or
 	// friends list (those stay in the owner's publicState).
