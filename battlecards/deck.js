@@ -307,6 +307,8 @@ async function renderPage() {
 	$('prev').disabled = page === 0;
 	$('next').disabled = page >= pages - 1;
 	$('pageinfo').textContent = filtered.length ? `Page ${page + 1} / ${pages} · ${filtered.length} cards` : 'No cards here yet.';
+	const jump = $('page-jump');
+	if (jump) { jump.max = pages; jump.value = page + 1; }
 	const token = ++renderToken;
 	await preloadArt(pageCards.map(c => c.id));
 	if (token !== renderToken) return;
@@ -374,7 +376,10 @@ function renderDeckList() {
 		const def = cardsById[id];
 		const row = document.createElement('div');
 		row.className = 'deck-row';
-		row.innerHTML = `<span class="gem">${def.cost ?? 0}</span><span class="dn">${def.name}</span><span class="dx">×${counts[id]}</span>`;
+		// cost gem wears the card's CLASS colour (neutral keeps the blue) so the
+		// deck list reads class-first at a glance
+		const cc = def.cardClass && def.cardClass !== 'neutral' ? classColorOf(def.cardClass) : null;
+		row.innerHTML = `<span class="gem"${cc ? ` style="background:${cc}"` : ''}>${def.cost ?? 0}</span><span class="dn">${def.name}</span><span class="dx">×${counts[id]}</span>`;
 		row.onclick = () => { hideTip(); removeCard(id); };
 		if (!TOUCH) attachTip(row, def); // name-only rows benefit the most from the inspect tip
 		dl.appendChild(row);
@@ -413,12 +418,16 @@ function renderDeckStats() {
 		curve.appendChild(bar);
 	});
 	const avg = (sumCost / deck.length).toFixed(1);
-	const spells = (types.sorcery || 0) + (types.secret || 0) + (types.trap || 0) + (types.quest || 0) + (types.enchantment || 0);
-	const tparts = [`⌀ ${avg} avg`];
-	if (types.creature) tparts.push(`${types.creature} creature${types.creature === 1 ? '' : 's'}`);
-	if (spells) tparts.push(`${spells} spell${spells === 1 ? '' : 's'}`);
-	if (types.weapon) tparts.push(`${types.weapon} weapon${types.weapon === 1 ? '' : 's'}`);
-	$('ds-types').textContent = tparts.join(' · ');
+	const spells = (types.sorcery || 0) + (types.instant || 0) + (types.secret || 0) + (types.trap || 0) + (types.quest || 0) + (types.enchantment || 0);
+	// type-count CHIPS (not a text line) — the counts every quality builder shows
+	const chips = [[`⌀ ${avg}`, 'avg']];
+	if (types.creature) chips.push([types.creature, `creature${types.creature === 1 ? '' : 's'}`]);
+	if (spells) chips.push([spells, `spell${spells === 1 ? '' : 's'}`]);
+	if (types.weapon) chips.push([types.weapon, `weapon${types.weapon === 1 ? '' : 's'}`]);
+	if (types.location) chips.push([types.location, `location${types.location === 1 ? '' : 's'}`]);
+	if (types.artifact) chips.push([types.artifact, `artifact${types.artifact === 1 ? '' : 's'}`]);
+	if (types.planeswalker) chips.push([types.planeswalker, `walker${types.planeswalker === 1 ? '' : 's'}`]);
+	$('ds-types').innerHTML = chips.map(([n, label]) => `<span class="ds-chip"><b>${n}</b> ${label}</span>`).join('');
 	const rparts = [];
 	for (const [k, label] of [['legendary', 'Leg'], ['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Unc'], ['common', 'Com']]) if (rar[k]) rparts.push(`${rar[k]} ${label}`);
 	$('ds-rarity').textContent = rparts.join(' · ');
@@ -628,6 +637,12 @@ $('owned-toggle').addEventListener('click', () => {
 });
 $('prev').addEventListener('click', () => flip(-1));
 $('next').addEventListener('click', () => flip(1));
+// type a page number to jump — hundreds of pages is a long way by arrow alone
+$('page-jump').addEventListener('change', () => {
+	const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+	page = Math.max(0, Math.min(pages - 1, (Number($('page-jump').value) || 1) - 1));
+	renderPage();
+});
 $('back-to-decks').addEventListener('click', backToDecks);
 $('toggle-deck').addEventListener('click', () => $('deck-panel').classList.toggle('open'));
 $('panel-close').addEventListener('click', () => $('deck-panel').classList.remove('open'));

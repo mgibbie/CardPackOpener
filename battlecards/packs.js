@@ -45,7 +45,7 @@ scene.add(rim);
 }
 
 // ---------- pack mesh ----------
-function packTexture() {
+function packTexture(priceText = null) {
 	const c = document.createElement('canvas');
 	c.width = 512; c.height = 716;
 	const ctx = c.getContext('2d');
@@ -111,6 +111,22 @@ function packTexture() {
 	ctx.fillText('BOOSTER PACK', 256, 560);
 	ctx.font = '24px Georgia';
 	ctx.fillText(`${Col.PACK_SIZE} CARDS`, 256, 608);
+	// gold-cost chip on the pack itself (local mode; MP packs are earned, not bought)
+	if (priceText) {
+		ctx.font = 'bold 26px Georgia';
+		const pw = ctx.measureText(`🪙 ${priceText}`).width + 40;
+		const px = 256 - pw / 2, py = 636, ph = 44;
+		ctx.beginPath();
+		ctx.roundRect(px, py, pw, ph, 22);
+		ctx.fillStyle = 'rgba(20,14,36,0.78)';
+		ctx.fill();
+		ctx.lineWidth = 2.5;
+		ctx.strokeStyle = '#d9a94a';
+		ctx.stroke();
+		ctx.font = 'bold 26px Georgia';
+		ctx.fillStyle = '#ffd75e';
+		ctx.fillText(`🪙 ${priceText}`, 256, py + 31);
+	}
 	// vignette
 	const vg = ctx.createRadialGradient(256, 358, 170, 256, 358, 470);
 	vg.addColorStop(0, 'rgba(0,0,0,0)');
@@ -122,7 +138,7 @@ function packTexture() {
 	return tex;
 }
 
-const packMat = new THREE.MeshStandardMaterial({ map: packTexture(), roughness: 0.4, metalness: 0.35 });
+const packMat = new THREE.MeshStandardMaterial({ map: packTexture(MP_ON ? null : `${Col.PACK_PRICE} GOLD`), roughness: 0.4, metalness: 0.35 });
 const packSideMat = new THREE.MeshStandardMaterial({ color: '#241a44', roughness: 0.5 });
 let pack = null;
 // Hearthstone's shape: the sealed pack waits off to one side and you DRAG it
@@ -161,6 +177,7 @@ slotGlow.position.copy(SLOT_POS).setZ(SLOT_POS.z - 0.05);
 scene.add(slotGlow);
 let slotArmed = false;   // a dragged pack is within SNAP_R
 let slotBase = 1;        // layout scale; the armed pulse multiplies this
+let packWobble = 0, lastOverPack = false; // hover-shimmy impulse (see animate)
 function setSlotVisible(v) { slotRing.visible = v; slotGlow.visible = v; }
 
 // Where the pack rests and where the ring sits depends on the shape of the
@@ -241,7 +258,13 @@ function layoutCards() {
 	const { spread, scale } = fitLayout();
 	const N = Col.PACK_SIZE;
 	cardMeshes.forEach((c, i) => {
+		// fanned arc, Hearthstone-style: centre card highest, outer cards dip
+		// and tilt outward slightly (rotation.z persists — the flip animation
+		// only drives rotation.y)
+		const k = (i - (N - 1) / 2) / Math.max(1, (N - 1) / 2); // -1 .. 1
 		c.target.x = (i - (N - 1) / 2) * spread;
+		c.target.y = -0.2 + (1 - k * k) * 0.34;
+		c.mesh.rotation.z = -k * 0.09;
 		c.mesh.scale.setScalar(scale);
 	});
 }
@@ -414,8 +437,10 @@ function flip(i) {
 	c.flipped = true;
 	c.spin = 0; // rotate to face camera
 	if (c.badge) c.badge.visible = true; // NEW! / dust value rides the reveal
-	const col = RARITY_COLORS[c.def.rarity] || '#9aa0a6';
-	SFX.play(c.def.rarity === 'legendary' || c.def.rarity === 'epic' ? 'rare' : 'cardPlay');
+	// legendary bursts TRUE GOLD (the rarity orange reads as epic-adjacent) and
+	// gets its own fanfare instead of sharing the epic chime
+	const col = c.def.rarity === 'legendary' ? '#ffd75e' : (RARITY_COLORS[c.def.rarity] || '#9aa0a6');
+	SFX.play(c.def.rarity === 'legendary' ? 'legendary' : c.def.rarity === 'epic' ? 'rare' : 'cardPlay');
 	burst(c.mesh.position, col, c.def.rarity === 'legendary' ? 60 : c.def.rarity === 'epic' ? 40 : 22);
 	if (c.def.rarity === 'legendary' || c.def.rarity === 'epic') shockwave(c.mesh.position, col);
 	if (c.def.rarity === 'legendary') setTimeout(() => shockwave(c.mesh.position, col), 140);
@@ -626,6 +651,8 @@ renderer.domElement.addEventListener('pointermove', e => {
 	}
 	// the pack invites the tear: brighten + pointer when hovered
 	const overPack = !c && (phase === 'idle' || phase === 'done') && hitPack(e);
+	if (overPack && !lastOverPack) packWobble = 1; // first touch: a quick shimmy
+	lastOverPack = overPack;
 	// the ACTIVE pack has its own cloned material (heldMat); tint that, or the
 	// hover highlight silently stops working while the shared one lights the stack
 	const hoverMat = heldMat || packMat;
@@ -686,6 +713,9 @@ function animate() {
 			pack.position.z += (PACK_REST.z - pack.position.z) * Math.min(1, dt * 6);
 			pack.position.y = PACK_REST.y + Math.sin(t * 1.3) * 0.15;
 			pack.rotation.y = Math.sin(t * 0.7) * 0.18;
+			// hover wobble: a decaying shimmy the first moment the cursor lands
+			if (packWobble > 0) { pack.rotation.z = Math.sin(t * 16) * 0.07 * packWobble; packWobble = Math.max(0, packWobble - dt * 1.6); }
+			else pack.rotation.z += (0 - pack.rotation.z) * Math.min(1, dt * 8);
 			pack.scale.setScalar(1);
 		}
 	}

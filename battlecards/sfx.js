@@ -92,6 +92,13 @@ const LIB = {
 	achievement: () => { [659, 831, 988, 1319].forEach((f, i) => tone({ freq: f, dur: 0.18, type: 'sine', vol: 0.16, at: i * 0.08 })); },
 	packOpen: () => { noise({ dur: 0.18, vol: 0.26, freq: 1800, sweep: 4200, q: 0.5 }); tone({ freq: 350, end: 700, dur: 0.16, type: 'triangle', vol: 0.16 }); },
 	rare: () => { [784, 988, 1175, 1568].forEach((f, i) => tone({ freq: f, dur: 0.2, type: 'sine', vol: 0.15, at: i * 0.07 })); },
+	// legendary pull: low boom, a rising five-note peal, then a glitter tail —
+	// unmistakably bigger than the shared epic/rare chime
+	legendary: () => {
+		tone({ freq: 98, end: 65, dur: 0.4, type: 'triangle', vol: 0.26 });
+		[523, 659, 784, 1047, 1568].forEach((f, i) => tone({ freq: f, dur: 0.26, type: 'sine', vol: 0.16, at: 0.05 + i * 0.09 }));
+		noise({ dur: 0.5, vol: 0.1, freq: 5200, sweep: 7800, q: 0.8, at: 0.3 });
+	},
 	click: () => { tone({ freq: 900, end: 700, dur: 0.035, type: 'square', vol: 0.08 }); },
 };
 
