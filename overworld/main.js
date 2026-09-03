@@ -3376,9 +3376,27 @@ function followSheet(id) {
 	if (!id) return null;
 	if (!followCache.has(id)) {
 		followCache.set(id, null);
-		getImage(`data/pokemon_follow/${id}.png`).then(img => followCache.set(id, img)).catch(() => {});
+		getImage(`data/pokemon_follow/${id}.png`).then(img => followCache.set(id, img)).catch(() => {
+			// a FORM falls back to its base species' walk sheet
+			// (aegislash_blade -> aegislash); 'none' marks the search exhausted
+			const base = id.includes('_') ? id.split('_')[0] : null;
+			if (base) getImage(`data/pokemon_follow/${base}.png`).then(img => followCache.set(id, img)).catch(() => followCache.set(id, 'none'));
+			else followCache.set(id, 'none');
+		});
 	}
-	return followCache.get(id);
+	const v = followCache.get(id);
+	return v === 'none' ? null : v;
+}
+// 855 species (the Ransei fakemon + the newest dex) have no walk sheet at all:
+// their battle sprite trots along as a bobbing mini instead of vanishing
+const followMiniCache = new Map();
+function followMini(id) {
+	if (!followMiniCache.has(id)) {
+		followMiniCache.set(id, null);
+		const sp = battle.data.species[id];
+		if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => followMiniCache.set(id, img)).catch(() => {});
+	}
+	return followMiniCache.get(id);
 }
 const FOLLOW_ROW = { down: 0, left: 1, right: 2, up: 3 };
 let follower = null;
@@ -3422,7 +3440,17 @@ function updateFollower(dt) {
 function drawFollower(ctx, camX, camY) {
 	if (!follower || player.surfing) return;
 	const img = followSheet(follower.id);
-	if (!img) return;
+	if (!img) {
+		if (followCache.get(follower.id) !== 'none') return; // sheets still loading
+		const mini = followMini(follower.id);
+		if (!mini) return;
+		const s = Math.min(20 / mini.width, 20 / mini.height);
+		const w = Math.max(1, Math.round(mini.width * s)), h = Math.max(1, Math.round(mini.height * s));
+		const bob = follower.moving && follower.step ? -1 : 0;
+		ctx.imageSmoothingEnabled = false;
+		ctx.drawImage(mini, Math.round(follower.px + META / 2 - w / 2 - camX), Math.round(follower.py + META - h - camY + bob), w, h);
+		return;
+	}
 	const fs = img.width / 4;                 // 4 columns
 	const col = follower.moving ? (follower.step ? 1 : 3) : 0;
 	const row = FOLLOW_ROW[follower.facing] ?? 0;
@@ -8051,7 +8079,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
-		refreshFollower, get follower() { return follower; } };
+		refreshFollower, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
 	// the mgibbie account only — the username is verified SERVER-side (the

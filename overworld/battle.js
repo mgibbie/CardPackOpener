@@ -380,8 +380,9 @@ const MOVE_FX = {
 	// central itemFx gate, WONDER ROOM rides the damage formula's defense pick.
 	// What still says noop needs machinery this engine genuinely lacks: move
 	// interception (snatch/magiccoat/powder), action re-ordering mid-turn
-	// (afteryou/quash/instruct/mefirst), per-move type rewrites timed against
-	// the opponent's pick (electrify/iondeluge), or berry-forcing (teatime).
+	// (afteryou/quash/instruct/mefirst), or berry-forcing (teatime).
+	// electrify/iondeluge ride the useMove type-rewrite chain now, and
+	// healblock gates the heal/drain paths.
 	allyswitch: { allySwitch: true }, aromaticmist: { allyBoost: { spd: 1 } },
 	helpinghand: { helpingHand: true }, followme: { centerTaunt: true },
 	ragepowder: { centerTaunt: true }, spotlight: { centerTaunt: true },
@@ -403,8 +404,8 @@ const MOVE_FX = {
 	happyhour: { happyHour: true },
 	// doubles support, unlocked by the side-mechanics work
 	coaching: { allyBoost: { atk: 1, def: 1 } }, dragoncheer: { allyCrit: true },
-	healblock: { noop: true }, imprison: { noop: true }, grudge: { noop: true },
-	electrify: { noop: true }, iondeluge: { noop: true },
+	healblock: { healBlock: true }, imprison: { noop: true }, grudge: { noop: true },
+	electrify: { electrifyTarget: true }, iondeluge: { ionDeluge: true },
 	magicroom: { field: 'magicRoom' }, wonderroom: { field: 'wonderRoom' },
 	doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
 	skillswap: { abilitySwap: true }, entrainment: { abilityGive: true },
@@ -1402,6 +1403,8 @@ export class Battle {
 		delete mon.movedThisTurn;
 		delete mon.tookDamageThisTurn;
 		delete mon.bideDmg;
+		delete mon.healBlockTurns;
+		delete mon.electrified;
 		delete mon.seeded;
 		delete mon.badPsn;
 		delete mon.toxicN;
@@ -1704,6 +1707,7 @@ export class Battle {
 			this.pushAnim(sArch, sArch === 'debuff' ? targetSideOf(isFoe) : (isFoe ? 'foe' : 'me'), 0.45, null,
 				{ color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(sArch === 'debuff' ? target : user) });
 			if (fx.heal) {
+				if (user.healBlockTurns > 0) { this.pushMsg(`${user.name} can't heal — Heal Block!`); return; }
 				if (user.curHP >= user.maxHP) { this.pushMsg('But it failed!'); return; }
 				const amt = Math.floor(user.maxHP * fx.heal);
 				this.pushMsg(`${user.name} regained health!`, () => {
@@ -1903,6 +1907,10 @@ export class Battle {
 		// Mold Breaker pierces the defender's ability entirely
 		const tAb = ['moldbreaker', 'teravolt', 'turboblaze'].includes(uAb) ? null : this.abilityOf(target);
 		// -ate abilities turn Normal moves into their element
+		// ELECTRIFY charged this user; ION DELUGE electrifies every Normal move
+		// this turn — both apply before the -ate abilities can see the type
+		if (user.electrified && mv.type !== 'Electric') mv = { ...mv, type: 'Electric' };
+		else if ((a.fieldFx?.ionDeluge || 0) > 0 && mv.type === 'Normal') mv = { ...mv, type: 'Electric' };
 		if (AB_ATE[uAb] && mv.type === 'Normal') mv = { ...mv, type: AB_ATE[uAb], atePower: true };
 		// PROTEAN / LIBERO retype the user to whatever it is about to throw
 		if ((uAb === 'protean' || uAb === 'libero') && mv.type && !user.types.includes(mv.type)) {
@@ -2349,6 +2357,8 @@ export class Battle {
 					user.curHP = Math.max(0, user.curHP - healed);
 					this.float(isFoe ? 'foe' : 'me', `-${healed}`, '#ff7a6b');
 				});
+			} else if (user.healBlockTurns > 0) {
+				this.pushMsg(`${user.name} was prevented from draining by Heal Block!`);
 			} else {
 				this.pushMsg(`${target.name} had its energy drained!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + healed);
@@ -2661,7 +2671,12 @@ export class Battle {
 			if (mon.embargoTurns > 0 && --mon.embargoTurns === 0) {
 				this.pushMsg(`${mon.name} can use items again!`);
 			}
+			if (mon.healBlockTurns > 0 && --mon.healBlockTurns === 0) {
+				this.pushMsg(`${mon.name}'s Heal Block wore off!`);
+			}
+			mon.electrified = false; // Electrify lasts one turn
 		}
+		this.active.fieldFx.ionDeluge = 0; // Ion Deluge is this-turn-only
 		// a foreseen attack arrives. It used to be a flat 35% of the victim's max
 		// HP — typeless, statless, un-dodgeable by a Dark type. It is a REAL typed
 		// special hit now (Psychic; DOOM DESIRE is Steel), computed from the stats
@@ -3678,6 +3693,22 @@ export class Battle {
 			this.pushMsg(`${target.name} can't use items anymore!`);
 			return true;
 		}
+		if (fx.healBlock) {
+			if (target.healBlockTurns > 0) { this.pushMsg('But it failed!'); return true; }
+			target.healBlockTurns = 5;
+			this.pushMsg(`${target.name} was prevented from healing!`);
+			return true;
+		}
+		if (fx.electrifyTarget) {
+			target.electrified = true; // consumed by the type-rewrite chain, cleared each turn
+			this.pushMsg(`${target.name}'s moves were electrified!`);
+			return true;
+		}
+		if (fx.ionDeluge) {
+			a.fieldFx.ionDeluge = 1; // this turn only
+			this.pushMsg('A deluge of ions showers the battlefield!\nNormal moves turn Electric!');
+			return true;
+		}
 		if (fx.noop) { this.pushMsg('But it failed!'); return true; }
 		if (fx.itemSwap) {
 			if (this.abilityOf(target) === 'stickyhold' || (!user.heldItem && !target.heldItem)) {
@@ -3908,6 +3939,7 @@ export class Battle {
 				this.pushMsg(`${user.name} shook off its status!`, () => { user.status = null; delete user.badPsn; delete user.toxicN; });
 			}
 			if (fx.heal) {
+				if (user.healBlockTurns > 0) { this.pushMsg(`${user.name} can't heal — Heal Block!`); return true; }
 				const amt = Math.floor(user.maxHP * fx.heal);
 				this.pushMsg(`${user.name} regained health!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + amt);
