@@ -84,9 +84,15 @@ Plans/KEYWORD_COLOR_PIE.md; wire through the standard card-data shapes
 - **Seasons / ranked resets**: Elo exists (K=32, pvp:board) but never resets;
   add seasons with end-of-season rewards (packs/dust by peak rank) and a
   season badge on the profile.
-- **Boss decklist accuracy**: the protobuf extraction tooling for the frozen
-  HS scenario files is ready — extract the real dungeon/heist/tombs boss
-  decklists and replace the approximations where they differ.
+- ~~Boss decklist accuracy~~ **RESOLVED 2026-08 — do not reopen**: the DBF
+  datamine (Zero-to-Heroes/HearthstoneJSON-legacy) PROVED Heist/Tombs boss
+  decks have no canonical lists — every boss scenario has `m_deckRulesetId=0`
+  and the real game generates them from attribute-filtered pools at runtime,
+  which is exactly what the spell-inclusive `buildBossDeck` models. Dungeon
+  boss decks are static and already hardcoded + audited. The only real lists
+  in the data are the PLAYER starting decks (`DALA_<Class>_Deck1/2/3`,
+  `ULDA_<Explorer>_Deck*`) — optionally extract those and wire them as the
+  heroes' authentic stock decks if ours differ.
 - **Browsable live boards**: boards.html exists; surface a "watch a live
   match" hub entry fed by the presence/spectate plumbing.
 - **Lorequest Urza variety pass**: the one under-built deck (3 card types) of
