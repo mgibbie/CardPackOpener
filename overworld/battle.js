@@ -397,14 +397,14 @@ const MOVE_FX = {
 	magiccoat: { noop: true }, powder: { noop: true },
 	trick: { itemSwap: true }, knockoff: { knockOff: true },
 	thief: { steal: true }, covet: { steal: true },
-	teatime: { noop: true },
 	// the party tricks are canon-cosmetic, so a festive line IS the faithful
 	// model — except HAPPY HOUR, whose payout doubling is real (prizeMoney)
 	celebrate: { festMsg: 'Congratulations!' }, holdhands: { festMsg: 'They held hands. How heartwarming!' },
 	happyhour: { happyHour: true },
 	// doubles support, unlocked by the side-mechanics work
 	coaching: { allyBoost: { atk: 1, def: 1 } }, dragoncheer: { allyCrit: true },
-	healblock: { healBlock: true }, imprison: { noop: true }, grudge: { noop: true },
+	healblock: { healBlock: true }, imprison: { imprison: true }, grudge: { grudgeSelf: true },
+	teatime: { teatime: true },
 	electrify: { electrifyTarget: true }, iondeluge: { ionDeluge: true },
 	magicroom: { field: 'magicRoom' }, wonderroom: { field: 'wonderRoom' },
 	doodle: { abilityCopy: true }, roleplay: { abilityCopy: true },
@@ -1405,6 +1405,9 @@ export class Battle {
 		delete mon.bideDmg;
 		delete mon.healBlockTurns;
 		delete mon.electrified;
+		delete mon.imprisoning;
+		delete mon.grudged;
+		delete mon.exitUsed;
 		delete mon.seeded;
 		delete mon.badPsn;
 		delete mon.toxicN;
@@ -1548,10 +1551,25 @@ export class Battle {
 		// Destiny Bond lasts until the user's next action; Fake Out only works
 		// on the user's first action after entering the field
 		user.destinyBond = fx.destinyBond ? user.destinyBond : false;
+		user.grudged = fx.grudgeSelf ? user.grudged : false; // a grudge lasts until the next action
 		const firstAction = !user.acted;
 		user.acted = true;
 		user.movedThisTurn = true;                      // Payback
 		(user.usedMoves ||= []).push(move.id);          // Last Resort
+		// DANCER: the other side's dancer copies any dance move right after it
+		// resolves (queued behind the original; a copied dance never re-triggers)
+		if (!opts.called && !a.double && /dance$/.test(move.id)) {
+			const other = isFoe ? a.me : a.foe;
+			if (other && other.curHP > 0 && this.abilityOf(other) === 'dancer') {
+				this.pushMsg('', () => {
+					if (other.curHP <= 0 || a.phase === 'done') return;
+					this.pushMsg(`${other.name} danced along! (Dancer)`);
+					const tgt = isFoe ? a.foe : a.me;
+					this.useMove(other, this.boostsOf(other), tgt, this.boostsOf(tgt),
+						{ id: move.id, name: move.name, pp: 1, maxPp: 1 }, !isFoe, { called: true });
+				});
+			}
+		}
 		if (fx.firstTurn && !firstAction) { this.pushMsg(`${user.name} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
 		move.pp = Math.max(0, move.pp - 1);
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
@@ -1897,6 +1915,18 @@ export class Battle {
 						this.pushMsg(`${target.name}'s ${this.abilityName(dAb2)} sharply raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
 					}
 				}
+				// OPPORTUNIST: the other side mirrors the SELF-boost as it lands
+				// (the singles stat-move path — the fx path mirrors in applyBoosts)
+				if (any && !eff.foe && !a.double) {
+					const watcher = who === a.me ? a.foe : a.me;
+					const wBoosts = targetBoosts; // the self-booster's opponent, both directions
+					if (watcher && watcher.curHP > 0 && this.abilityOf(watcher) === 'opportunist') {
+						this.pushMsg(`${watcher.name}'s Opportunist copies the boost!`);
+						for (const [st, d] of Object.entries(changes)) {
+							if (d > 0) wBoosts[st] = Math.max(-6, Math.min(6, (wBoosts[st] || 0) + d));
+						}
+					}
+				}
 			} else {
 				this.pushMsg('But nothing happened!');
 			}
@@ -2210,6 +2240,30 @@ export class Battle {
 			target.lastTaken = { amt: dealt, phys, turn: a.turnCount || 0 };
 			target.tookDamageThisTurn = true;   // Assurance
 			if (target.bideDmg != null) target.bideDmg += dealt;
+			// GRUDGE: felled while bearing one, the killing move loses all its PP
+			if (target.curHP <= 0 && target.grudged && move && move.pp != null) {
+				this.pushMsg(`${target.name}'s GRUDGE drained all the PP\nfrom ${move.name}!`, () => { move.pp = 0; });
+			}
+			// PERISH BODY: a physical hit dooms striker and struck alike
+			if (phys && target.curHP > 0 && user.curHP > 0 && this.abilityOf(target) === 'perishbody'
+				&& !(user.perishN > 0) && !(target.perishN > 0)) {
+				user.perishN = 4; target.perishN = 4;
+				this.pushMsg(`${target.name}'s Perish Body dooms them BOTH —\nthree turns to live!`);
+			}
+			// EMERGENCY EXIT / WIMP OUT: crossing below half sends it packing (wild)
+			{
+				const abT = this.abilityOf(target);
+				if ((abT === 'emergencyexit' || abT === 'wimpout') && !target.exitUsed
+					&& target.curHP > 0 && target.curHP <= target.maxHP / 2 && target.curHP + dealt > target.maxHP / 2) {
+					target.exitUsed = true;
+					if (!a.isTrainer && !a.safari) {
+						this.pushMsg(this.sideOfMon(target) === 'foe'
+							? `${target.name} panicked and fled the fight!`
+							: `${target.name} whisked you out of the battle!`,
+							() => { sfx('flee'); this.finish('escaped'); });
+					}
+				}
+			}
 			// Moxie: a KO with a damaging move fires up the attacker
 			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'moxie') {
 				const ub2 = this.boostsOf(user);
@@ -2905,6 +2959,14 @@ export class Battle {
 		if (mon.choiceLock && this.abilityOf(mon) === 'gorillatactics' && m.id !== mon.choiceLock) return false;
 		if (mon.tauntTurns > 0 && (this.data.moves[m.id]?.category === 'Status')) return false;
 		if (mon.tormented && this.active?.lastMove[side] === m.id) return false;
+		// IMPRISON: an opposing sealer forbids every move it also knows
+		{
+			const a = this.active;
+			if (a) {
+				const opps = side === 'me' ? [a.foe, a.foeAlly] : [a.me, a.meAlly];
+				if (opps.some(o => o && o.curHP > 0 && o.imprisoning && (o.moves || []).some(om => om.id === m.id))) return false;
+			}
+		}
 		return true;
 	}
 
@@ -3106,7 +3168,10 @@ export class Battle {
 		if (a.fieldFx.trickRoom > 0) { mySpe = -mySpe; foeSpe = -foeSpe; }
 		const myQC = !!this.itemFx(a.me)?.quickClaw && Math.random() < 0.2;
 		const foeQC = !!this.itemFx(a.foe)?.quickClaw && Math.random() < 0.2;
+		// STALL waits for everyone else inside its priority bracket
+		const myStall = this.abilityOf(a.me) === 'stall', foeStall = this.abilityOf(a.foe) === 'stall';
 		const meFirst = myPrio !== foePrio ? myPrio > foePrio
+			: myStall !== foeStall ? foeStall
 			: myQC !== foeQC ? myQC
 			: (mySpe === foeSpe ? Math.random() < 0.5 : mySpe > foeSpe);
 
@@ -3615,21 +3680,32 @@ export class Battle {
 		const sideOf = s => s === 'me' ? a.meSide : a.foeSide;
 		const hazardsOf = s => s === 'me' ? a.meHazards : a.foeHazards;
 		const boostWords = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
-		const applyBoosts = (boosts, who, stats) => {
+		const applyBoosts = (boosts, who, stats, copied) => {
 			const ab4 = this.abilityOf(who);
 			const arrows = { atk: 'ATK', def: 'DEF', spa: 'SP.A', spd: 'SP.D', spe: 'SPE', acc: 'ACC', eva: 'EVA' };
+			const gains = {};
 			for (let [st, d] of Object.entries(stats)) {
 				if (ab4 === 'contrary') d = -d;
 				if (ab4 === 'simple') d *= 2;
 				const before = boosts[st] ?? 0;
 				boosts[st] = Math.max(-6, Math.min(6, before + d));
 				if (boosts[st] !== before) {
+					if (boosts[st] > before) gains[st] = boosts[st] - before;
 					this.pushMsg(`${who.name}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
 					// visible punch: the text line alone made buff turns read as
 					// nothing happening — float the arrow on the sprite too
 					sfx(d > 0 ? 'stat_up' : 'stat_dn');
 					this.float(this.sideOfMon(who), `${arrows[st] || st}${d > 0 ? '↑' : '↓'}${Math.abs(d) > 1 ? Math.abs(d) : ''}`,
 						d > 0 ? '#6be08a' : '#e0736b');
+				}
+			}
+			// OPPORTUNIST: the other side's watcher mirrors stat GAINS as they land
+			// (never re-copies a copy, so two Opportunists can't ping-pong)
+			if (!copied && Object.keys(gains).length && !a.double) {
+				const opp = this.sideOfMon(who) === 'me' ? a.foe : a.me;
+				if (opp && opp.curHP > 0 && this.abilityOf(opp) === 'opportunist') {
+					this.pushMsg(`${opp.name}'s Opportunist copies the boost!`);
+					applyBoosts(this.boostsOf(opp), opp, gains, true);
 				}
 			}
 		};
@@ -3697,6 +3773,36 @@ export class Battle {
 			if (target.healBlockTurns > 0) { this.pushMsg('But it failed!'); return true; }
 			target.healBlockTurns = 5;
 			this.pushMsg(`${target.name} was prevented from healing!`);
+			return true;
+		}
+		if (fx.imprison) {
+			if (user.imprisoning) { this.pushMsg('But it failed!'); return true; }
+			user.imprisoning = true;
+			this.pushMsg(`${user.name} sealed the moves it knows —\nits foes can't use them!`);
+			return true;
+		}
+		if (fx.grudgeSelf) {
+			user.grudged = true;
+			this.pushMsg(`${user.name} wants its foe to bear a GRUDGE!`);
+			return true;
+		}
+		if (fx.teatime) {
+			const eaters = this.actorMons().filter(m => m.heldItem && /berry$/.test(m.heldItem) && Bag.ITEMS[m.heldItem]?.held);
+			this.pushMsg(eaters.length ? 'Tea time! Everyone dug into their berries!' : 'But nothing happened!');
+			for (const m of eaters) {
+				const held = Bag.ITEMS[m.heldItem].held;
+				this.pushMsg(`${m.name} ate its ${Bag.ITEMS[m.heldItem].name}!`, () => {
+					if (held.berryHeal) m.curHP = Math.min(m.maxHP, m.curHP + held.berryHeal);
+					if (held.berryHealFrac) m.curHP = Math.min(m.maxHP, m.curHP + Math.max(1, Math.floor(m.maxHP * held.berryHealFrac)));
+					if (held.cure) {
+						if (held.cure === 'any' || held.cure === m.status) { m.status = null; delete m.badPsn; delete m.toxicN; }
+						if (held.cure === 'any' || held.cure === 'confusion') delete m.confuseTurns;
+					}
+					if (held.ppRestore) { const mv = (m.moves || []).find(x => x.pp < x.maxPp); if (mv) mv.pp = Math.min(mv.maxPp, mv.pp + held.ppRestore); }
+					m.heldItem = null;
+					if (this.abilityOf(m) === 'unburden') m.unburdened = true;
+				});
+			}
 			return true;
 		}
 		if (fx.electrifyTarget) {
