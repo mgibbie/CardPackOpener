@@ -8,6 +8,18 @@ export const ITEMS = {
 	pokeball:    { name: 'POKe BALL',    price: 200,  kind: 'ball', mult: 1 },
 	// handed out (20 at a time) by the Bug-Catching Contest — never sold
 	sportball:   { name: 'SPORT BALL',   price: 0,    kind: 'ball', mult: 1.5 },
+	// apricorns grow on the Route 37/42 trees (Crystal's colors); KURT in
+	// Azalea turns each color into his handmade ball
+	redapricorn: { name: 'RED APRICORN', price: 200, kind: 'apricorn', ball: 'levelball' },
+	bluapricorn: { name: 'BLU APRICORN', price: 200, kind: 'apricorn', ball: 'lureball' },
+	ylwapricorn: { name: 'YLW APRICORN', price: 200, kind: 'apricorn', ball: 'moonball' },
+	grnapricorn: { name: 'GRN APRICORN', price: 200, kind: 'apricorn', ball: 'friendball' },
+	whtapricorn: { name: 'WHT APRICORN', price: 200, kind: 'apricorn', ball: 'fastball' },
+	blkapricorn: { name: 'BLK APRICORN', price: 200, kind: 'apricorn', ball: 'heavyball' },
+	pnkapricorn: { name: 'PNK APRICORN', price: 200, kind: 'apricorn', ball: 'loveball' },
+	// dug from the Shoal Cave at low tide; four of each make the SHELL BELL
+	shoalsalt:   { name: 'SHOAL SALT',   price: 20,  kind: 'sell' },
+	shoalshell:  { name: 'SHOAL SHELL',  price: 20,  kind: 'sell' },
 	greatball:   { name: 'GREAT BALL',   price: 600,  kind: 'ball', mult: 1.5 },
 	ultraball:   { name: 'ULTRA BALL',   price: 1200, kind: 'ball', mult: 2 },
 	potion:      { name: 'POTION',       price: 300,  kind: 'heal', amount: 20 },

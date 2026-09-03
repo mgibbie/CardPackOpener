@@ -108,8 +108,26 @@ const RUINS_CHAMBERS = {
 	MAP_RUINS_OF_ALPH_HO_OH_CHAMBER: 'hooh',
 };
 
+// SHOAL CAVE: the salt/shell dig spots (the decomp's mute ShoalSalt/ShoalShell
+// bg events) and the SHELL BELL hermit at the entrance. KURT in Azalea turns
+// apricorns into his handmade balls.
+const SHOAL_SPOTS = {
+	MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM: [[31, 8], [14, 26], [41, 20], [41, 10], [6, 9], [16, 13]],
+	MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM: [[18, 2]],
+	MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM: [[11, 11]],
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (SHOAL_SPOTS[mapId] || mapId === 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM') {
+		const zones = [];
+		if (SHOAL_SPOTS[mapId]) zones.push({ kind: 'shoalspot', tiles: SHOAL_SPOTS[mapId] });
+		if (mapId === 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM') zones.push({ kind: 'shoalhermit', tiles: [[18, 15], [18, 16]] });
+		return { sprites: [], zones, solid: [] };
+	}
+	if (mapId === 'MAP_KURTS_HOUSE') {
+		return { sprites: [], zones: [{ kind: 'kurt', tiles: [[3, 2], [3, 3], [14, 3], [14, 4]] }], solid: [] };
+	}
 	if (BUG_CONTEST_GATES[mapId]) {
 		return { sprites: [], zones: [{ kind: 'bugcontest', tiles: BUG_CONTEST_GATES[mapId] }], solid: [] };
 	}

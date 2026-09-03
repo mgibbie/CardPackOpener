@@ -765,7 +765,10 @@ export class Battle {
 			onEnd,
 			result: null,
 			caughtMon: null,
+			roamer: !!opts?.roamer, // a roaming legendary: flee-prone, wounds persist
 		};
+		if (opts?.roamer?.hp != null) foe.curHP = Math.max(1, Math.min(foe.maxHP, opts.roamer.hp | 0));
+		if (opts?.roamer?.status) foe.status = opts.roamer.status;
 		this._starting = false; // active now drives `blocking`
 		if (restore) { this.applyRestore(restore); return; }
 		for (const m of party) this.clearVolatiles(m);
@@ -2861,6 +2864,15 @@ export class Battle {
 			}
 		}
 		this.pushMsg('', () => this.checkFaints());
+		// a ROAMING legendary bolts at the end of most turns — trap it or catch it
+		// fast. Mean Look / trapping holds it in place like the classics.
+		if (a.roamer && Math.random() < 0.5) {
+			this.pushMsg('', () => {
+				if (a.foe.curHP <= 0 || a.caughtMon || a.phase === 'done') return;
+				if (this.trappedBy(a.foe)) { this.pushMsg(`${a.foe.name} strains to escape, but can't flee!`); return; }
+				this.pushMsg(`The roaming ${a.foe.name} got away!`, () => { sfx('flee'); this.finish('escaped'); });
+			});
+		}
 		// flinch never carries between turns
 		for (const m of [a.me, a.foe, a.meAlly, a.foeAlly]) if (m) m.flinched = false;
 	}
@@ -4633,6 +4645,7 @@ export class Battle {
 			if (a.doneT > 0.8) {
 				const cb = a.onEnd, res = a.result;
 				this.lastCaught = a.caughtMon;
+				this.lastFoe = a.foe; // roamers read their surviving HP from here
 				this.active = null;
 				this.endSpec = null;   // main.js: nothing left to resume
 				cb?.(res);
