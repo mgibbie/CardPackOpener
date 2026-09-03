@@ -28,7 +28,9 @@
 		.panel:hover { box-shadow: 0 0 12px rgba(143,111,255,0.6); }
 		.panel.hit { background: rgba(140,40,40,0.95); }
 		.panel.armed { border-color: #57e389; box-shadow: 0 0 12px rgba(87,227,137,0.55); }
-		.panel.targetable { border-color: #ff5f4f; box-shadow: 0 0 14px rgba(255,95,79,0.75); }
+		/* dashed = a legal target (matches the board rings) so red-vs-green
+		   armed/targetable never rides on hue alone */
+		.panel.targetable { border-color: #ff5f4f; border-style: dashed; box-shadow: 0 0 14px rgba(255,95,79,0.75); }
 		.panel.turn { border-color: #ffd25f; }
 		.panel.dead { opacity: 0.35; filter: grayscale(1); }
 		.panel .gear { color: #ffd25f; font-size: 12.5px; line-height: 1.5; }

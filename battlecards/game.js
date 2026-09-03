@@ -471,6 +471,25 @@ const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, CARD_D);
 
 // selection rings
 const ringGeo = new THREE.RingGeometry(1.08, 1.26, 32);
+// dashed variant: 8 arc segments with gaps. TARGETABLE rings wear this shape
+// so red-vs-green never rides on hue alone (red-green colorblind safety):
+// dashed = a legal target, solid = armed / ready.
+const ringGeoDashed = (() => {
+	const arrs = [];
+	let total = 0;
+	for (let i = 0; i < 8; i++) {
+		const g = new THREE.RingGeometry(1.05, 1.29, 6, 1, (i / 8) * Math.PI * 2, (Math.PI * 2 / 8) * 0.62).toNonIndexed();
+		const a = g.getAttribute('position').array;
+		arrs.push(a); total += a.length;
+		g.dispose();
+	}
+	const merged = new Float32Array(total);
+	let o = 0;
+	for (const a of arrs) { merged.set(a, o); o += a.length; }
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute('position', new THREE.BufferAttribute(merged, 3));
+	return geo;
+})();
 function makeRing(color) {
 	const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
 	m.rotation.x = -Math.PI / 2;
@@ -1533,7 +1552,11 @@ function drawHeroPanel() {
 	ctx.fill();
 	ctx.lineWidth = 4;
 	ctx.strokeStyle = border;
+	// targetable is DASHED (matching the board rings) so red-vs-green state
+	// never rides on hue alone
+	if (heroSelfTargetable()) ctx.setLineDash([14, 9]);
 	ctx.stroke();
+	ctx.setLineDash([]);
 	// portrait + power orb sit in the TOP band of the panel — the hand cards cover
 	// only the lower part, so keep the interactive orb up here where it's clickable
 	const port = drawHeroPortrait(me.heroClass, 128);
@@ -1613,7 +1636,11 @@ function pickHeroPanelUV(ev) {
 	return hit ? hit.uv : null;
 }
 function heroPanelOrbHit(uv) {
-	return !!(uv && heroOrbUV && uv.x >= heroOrbUV.x0 && uv.x <= heroOrbUV.x1 && uv.y >= heroOrbUV.y0 && uv.y <= heroOrbUV.y1);
+	if (!uv || !heroOrbUV) return false;
+	// the orb renders ~30px wide on a 390px phone — under the ~44px touch
+	// floor. Expand the hit box by a thumb's margin on coarse pointers.
+	const m = TOUCH ? 0.045 : 0;
+	return uv.x >= heroOrbUV.x0 - m && uv.x <= heroOrbUV.x1 + m && uv.y >= heroOrbUV.y0 - m && uv.y <= heroOrbUV.y1 + m;
 }
 
 // read-only HUD for a watcher: fill both sides' stats, mark whose turn it is,
@@ -1890,7 +1917,22 @@ function drawTargetArrow() {
 	const v = src.project(camera);
 	const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
 	const dist = Math.hypot(mouseX - sx, mouseY - sy);
-	if (dist < 30) return;
+	if (dist < 30) {
+		// armed but the cursor hasn't left the source yet (click-then-click):
+		// pulse the socket so the armed state reads before any drag starts
+		const pr = 9 + Math.sin(performance.now() / 260) * 2.5;
+		ctx.shadowColor = 'rgba(255,60,40,0.55)';
+		ctx.shadowBlur = 12;
+		ctx.beginPath();
+		ctx.arc(sx, sy, pr, 0, Math.PI * 2);
+		ctx.fillStyle = 'rgba(216,58,46,0.85)';
+		ctx.fill();
+		ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.shadowBlur = 0;
+		return;
+	}
 	// quadratic bezier arced toward the top of the screen
 	const mx = (sx + mouseX) / 2, my = (sy + mouseY) / 2 - Math.min(160, dist * 0.35);
 	const P = t => ({
@@ -3340,12 +3382,23 @@ function pick(ev, excludeUid = null) {
 	return hits.length ? hits[0].object.userData.uid : null;
 }
 
+// screen-space distance from a point to a mesh's projected rect (0 = inside).
+// Used by the fat-finger guards on both the press and the release side —
+// distance math, not a raycast, so an overlapping panel can't eat the probe.
+function meshScreenDist(m, x, y) {
+	const g = m.geometry?.parameters;
+	const cen = m.position.clone().project(camera);
+	const cor = m.localToWorld(new THREE.Vector3((g?.width || 1.4) / 2, (g?.height || 1.4) / 2, 0)).project(camera);
+	const cx = (cen.x + 1) / 2 * innerWidth, cy = (1 - cen.y) / 2 * innerHeight;
+	const hw = Math.abs((cor.x + 1) / 2 * innerWidth - cx), hh = Math.abs((1 - cor.y) / 2 * innerHeight - cy);
+	return Math.hypot(Math.max(0, Math.abs(x - cx) - hw), Math.max(0, Math.abs(y - cy) - hh));
+}
+
 // On phones the creature row hugs the hero panel's top edge, so a press aimed
 // at a creature can land on the panel and swing the HERO's weapon instead (the
 // red line draws from the hero, not the creature you grabbed). Before treating
 // a panel-body press as a hero click, check whether an attack-ready creature's
 // on-screen token sits within a thumb's reach of the press and prefer that.
-// Screen-space distance (not a raycast) so the panel itself can't eat the probe.
 function pickAttackReadyCreatureNear(ev, slop) {
 	if (!state) return null;
 	let best = null, bestD = Infinity;
@@ -3353,16 +3406,33 @@ function pickAttackReadyCreatureNear(ev, slop) {
 		if (!E.canAttackWith(state, HUMAN, c)) continue;
 		const ent = entities.get(c.uid);
 		if (!ent) continue;
-		const m = ent.mesh;
-		const g = m.geometry?.parameters;
-		const cen = m.position.clone().project(camera);
-		const cor = m.localToWorld(new THREE.Vector3((g?.width || 1.4) / 2, (g?.height || 1.4) / 2, 0)).project(camera);
-		const cx = (cen.x + 1) / 2 * innerWidth, cy = (1 - cen.y) / 2 * innerHeight;
-		const hw = Math.abs((cor.x + 1) / 2 * innerWidth - cx), hh = Math.abs((1 - cor.y) / 2 * innerHeight - cy);
-		const dx = Math.max(0, Math.abs(ev.clientX - cx) - hw);
-		const dy = Math.max(0, Math.abs(ev.clientY - cy) - hh);
-		const d = Math.hypot(dx, dy);
+		const d = meshScreenDist(ent.mesh, ev.clientX, ev.clientY);
 		if (d <= slop && d < bestD) { bestD = d; best = c; }
+	}
+	return best;
+}
+
+// The release-side twin: a drop on the seam between an enemy creature and its
+// hero panel (or just off a token's edge) commits whichever LEGAL target is
+// nearest the release point, instead of silently cancelling the whole gesture.
+function nearestTargetAt(ev, targets, slop) {
+	let best = null, bestD = Infinity;
+	const consider = (d, t) => { if (d <= slop && d < bestD) { bestD = d; best = t; } };
+	for (const t of targets) {
+		if (t.uid != null && entities.has(t.uid)) {
+			consider(meshScreenDist(entities.get(t.uid).mesh, ev.clientX, ev.clientY), t);
+		} else if (t.type === 'hero') {
+			if (t.player === HUMAN && heroPanelMesh.visible) {
+				consider(meshScreenDist(heroPanelMesh, ev.clientX, ev.clientY), t);
+			} else {
+				const pel = foePanelEls.get(t.player);
+				if (!pel) continue;
+				const r = pel.getBoundingClientRect();
+				const dx = Math.max(0, r.left - ev.clientX, ev.clientX - r.right);
+				const dy = Math.max(0, r.top - ev.clientY, ev.clientY - r.bottom);
+				consider(Math.hypot(dx, dy), t);
+			}
+		}
 	}
 	return best;
 }
@@ -4061,6 +4131,7 @@ function tryCommitTargetAt(ev) {
 	const uid = pick(ev);
 	const card = cardOf(uid);
 	const heroPi = heroPanelAt(ev.clientX, ev.clientY);
+	const slop = TOUCH ? 44 : 14; // release-side fat-finger reach (see nearestTargetAt)
 	if (pending) {
 		if (card && card.uid != null) {
 			const t = pending.targets.find(t => t.uid === card.uid);
@@ -4070,6 +4141,10 @@ function tryCommitTargetAt(ev) {
 			const t = pending.targets.find(t => t.type === 'hero' && t.player === heroPi);
 			if (t) { commitPending(t); return true; }
 		}
+		// near-miss rescue — but never slop-commit onto your OWN hero (a heal you
+		// meant is still one direct panel-tap away; a misfired Fireball isn't)
+		const near = nearestTargetAt(ev, pending.targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
+		if (near) { commitPending(near); return true; }
 		return false;
 	}
 	if (selectedAttacker === 'HERO') {
@@ -4083,6 +4158,8 @@ function tryCommitTargetAt(ev) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
 			if (t) { actHeroAttack(t); return true; } // relays in a duel (guest)
 		}
+		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
+		if (near) { actHeroAttack(near); return true; }
 		return false;
 	}
 	if (selectedAttacker) {
@@ -4098,6 +4175,8 @@ function tryCommitTargetAt(ev) {
 			const t = targets.find(t => t.type === 'hero' && t.player === heroPi);
 			if (t) { actAttack(selectedAttacker, t); return true; }
 		}
+		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
+		if (near) { actAttack(selectedAttacker, near); return true; }
 		return false;
 	}
 	return false;
@@ -4321,6 +4400,8 @@ function updateRings() {
 		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land' || c.zone === 'artifact')) {
 			ent.ring.visible = true;
 			ent.ring.material.color.set(color);
+			// shape carries the state too: targetable = dashed, armed/ready = solid
+			ent.ring.geometry = color === '#ff5f4f' ? ringGeoDashed : ringGeo;
 			ent.ring.scale.setScalar(c.zone === 'board' ? 1 : c.zone === 'planeswalker' ? 0.72 : 0.62);
 			ent.ring.position.set(ent.mesh.position.x, 0.02, ent.mesh.position.z);
 		} else if (color && c.zone === 'hand') {
