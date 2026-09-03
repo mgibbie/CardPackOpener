@@ -20,7 +20,8 @@ import * as Fly from './flydata.js';
 import * as Clock from './clock.js';
 import * as Daycare from './daycare.js';
 import * as VFlip from './voltorbflip.js';
-import { bgm, bgmNow, syncBgmVolume, sfx } from './sound.js';
+import { bgm, bgmNow, syncBgmVolume, sfx, cry } from './sound.js';
+import { HEADBUTT_SETS, HEADBUTT_MAPS } from './headbutt_data.js';
 import { POSTGAME_LEGENDS } from './legendaries_postgame.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Settings from './settings.js';
@@ -510,7 +511,7 @@ function onTrainerDefeated(script, opts) {
 		const slice = badgeSliceFor(info.region);
 		const beforeTier = Quest.globalTier();
 		const earned = Badges.earn(slice, info.id);
-		if (earned) Journal.add(`Earned the ${info.name}`);
+		if (earned) { Journal.add(`Earned the ${info.name}`); sfx('fanfare_badge'); }
 		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
 		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
 		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
@@ -781,6 +782,34 @@ const REPEL_KEY = 'magepunk_repel_v1';
 const REPEL_LAST_KEY = 'magepunk_repellast'; // which repel kind was last used, for the wear-off re-offer
 let repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
 function setRepel(n) { repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(repelSteps)); }
+// the gadget key-items (Escape Rope / Itemfinder / Town Map), inert since
+// day one. Returns true when the id was one of them (handled or refused).
+function useGadget(id) {
+	if (id === 'escaperope') {
+		if ((world.current?.map?.map_type || '') !== 'MAP_TYPE_UNDERGROUND' || !lastOutdoor) {
+			bagMenu.flash = 'Nothing to escape from here.';
+			return true;
+		}
+		Bag.consume(id);
+		bagMenu.open = false;
+		dialog.open('You climbed the ESCAPE ROPE\nback to the open air!', () => moveToMap(lastOutdoor.map, lastOutdoor.x, lastOutdoor.y));
+		return true;
+	}
+	if (id === 'itemfinder') {
+		const hidden = items.balls.filter(b => b.hidden);
+		if (!hidden.length) { sfx('ui_denied'); bagMenu.flash = 'The ITEMFINDER stays silent. Nothing buried here.'; return true; }
+		let best = hidden[0], bd = Infinity;
+		for (const b of hidden) { const d = Math.abs(b.tx - player.tx) + Math.abs(b.ty - player.ty); if (d < bd) { bd = d; best = b; } }
+		const dx = best.tx - player.tx, dy = best.ty - player.ty;
+		sfx('notice');
+		bagMenu.flash = bd === 0 ? "BEEP BEEP BEEP! It's right under you!"
+			: `BEEP! Something is buried to the ${[dy < 0 ? 'north' : dy > 0 ? 'south' : '', dx > 0 ? 'east' : dx < 0 ? 'west' : ''].filter(Boolean).join('-')}${bd <= 6 ? ' — close by!' : '.'}`;
+		return true;
+	}
+	if (id === 'townmap') { bagMenu.open = false; openTownMap(); return true; }
+	return false;
+}
+
 // the gen-5 nicety: when a repel runs out and the bag holds another of the same
 // kind, offer it on the spot instead of making the player dig through the bag
 function repelWoreOff() {
@@ -1781,6 +1810,8 @@ function dexKey(k) {
 	if (dexMenu.detail) {
 		if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
 		if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
+		// 1,366 cries shipped and the dex never played one — Z gives it a voice
+		if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) cry(e.id); }
 		if (k === 'x' || k === 'Escape') dexMenu.detail = false;
 		return;
 	}
@@ -2373,6 +2404,8 @@ function bagKey(k) {
 			bagMenu.flash = `${item.name} will keep weak POKeMON away for ${item.steps} steps.`;
 			return;
 		}
+		// the three gadget key-items, inert since day one
+		if (useGadget(id)) return;
 		if (item?.kind === 'seeker') {
 			// VS SEEKER: re-arm this map's beaten trainers at badge-scaled levels
 			const region = playerRegion();
@@ -3020,6 +3053,21 @@ function fieldHealTransfer(user, label) {
 
 const HM_FIELD = {
 	// ---- field-utility moves (not HMs — no badge gate; hmReq returns 0) ----
+	// Crystal's tree-shaking classic, the last missing encounter modality.
+	// Face something solid (a tree, as far as a route cares), slam it, and the
+	// harvested treemon tables answer — 10% of shakes read the RARE table,
+	// where HERACROSS lives.
+	headbutt: { name: 'HEADBUTT', use() {
+		const set = HEADBUTT_MAPS[world.current?.name];
+		if (!set || !HEADBUTT_SETS[set]) { dialog.open('No sturdy trees around here would\nanswer a HEADBUTT.'); return; }
+		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+		if (world.isPassable(player.tx + dx, player.ty + dy)) { dialog.open('Face a tree first — THEN slam it!'); return; }
+		const table = HEADBUTT_SETS[set][Math.random() < 0.1 ? 'rare' : 'common'];
+		if (Math.random() < 0.2 || !table.length) { dialog.open('You slammed into the tree...\n\nNothing came out but leaves.'); return; }
+		let r = Math.random() * table.reduce((s, e) => s + e[0], 0), pick = table[table.length - 1];
+		for (const e of table) { r -= e[0]; if (r <= 0) { pick = e; break; } }
+		dialog.open('You slammed into the tree!\n\nSomething dropped out!', () => startWildBattle({ id: pick[1], level: pick[2] }));
+	} },
 	sweetscent: { name: 'SWEET SCENT', use() {
 		const pick = encounters.pick(world.current.map.id, player.surfing ? 'water' : 'land');
 		if (!pick) { dialog.open('The sweet scent drifted away...\n\nNothing came.'); return; }
@@ -7040,6 +7088,9 @@ function drawDexDetail(W, H, u, e) {
 		sctx.textAlign = 'left';
 		BUI.bar(sctx, sx + 108 * u, y - 11 * u, sw - 40 * u, 12 * u, Math.min(1, v / 200), BUI.C.accent, 4 * u);
 	});
+	sctx.fillStyle = BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText('Z: hear its cry   ▲▼: browse   X: back', 40 * u, H - 16 * u);
 }
 
 // simple playtime accumulator (seconds), persisted; region stored on starter pick
@@ -8556,6 +8607,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots,
 		get hillRun() { return hillRun; }, set hillRun(v) { hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
 		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
+		useGadget, HM_FIELD, dexList, dexKey, HEADBUTT_MAPS, HEADBUTT_SETS,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
