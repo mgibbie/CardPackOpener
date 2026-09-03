@@ -3,6 +3,7 @@
 import { getImage, VIEW_W, VIEW_H } from './engine.js';
 import { statsFor } from './battle.js';
 import * as Clock from './clock.js';
+import { sfx } from './sound.js';
 
 export class Evolution {
 	constructor() {
@@ -81,7 +82,7 @@ export class Evolution {
 		if (!c) return;
 		c.t += dt;
 		if (c.phase === 'intro' && c.t > 1.6) { c.phase = 'flash'; c.t = 0; }
-		else if (c.phase === 'flash' && c.t > 2.4) { this.apply(); c.phase = 'done'; c.t = 0; }
+		else if (c.phase === 'flash' && c.t > 2.4) { this.apply(); sfx('fanfare_evolve'); c.phase = 'done'; c.t = 0; }
 		else if (c.phase === 'done' && c.t > 1.8) {
 			const data = c.data;
 			this.cur = null;

@@ -48,6 +48,16 @@ const SPECS = {
 	stat_dn: [sq(900, 700, 0.05), sq(700, 500, 0.07)],
 	faint: [sq(600, 80, 0.35, 0.28)],
 	flee: [sq(1200, 400, 0.12), ns(0.05, 0.18)],
+	// ---- fanfares: the big moments were single blips before ----
+	// badge: a proud rising call with an answering flourish
+	fanfare_badge: [sq(N.G5, N.G5, 0.09), sq(N.C6, N.C6, 0.09), sq(N.E6, N.E6, 0.09), sq(N.G6, N.G6, 0.16),
+		gap(0.05), sq(N.E6, N.E6, 0.08), sq(N.G6, N.G6, 0.08), sq(N.C7, N.C7, 0.3)],
+	// evolve: a slow swell that bursts into the new form
+	fanfare_evolve: [sq(N.C5, N.E5, 0.16), sq(N.E5, N.G5, 0.16), sq(N.G5, N.C6, 0.16),
+		gap(0.04), sq(N.C6, N.C6, 0.09), sq(N.E6, N.E6, 0.09), sq(N.G6, N.G6, 0.28)],
+	// capture: the classic three-step gotcha roll
+	fanfare_capture: [sq(N.C6, N.C6, 0.07), sq(N.G5, N.G5, 0.07), sq(N.E5, N.E5, 0.07), sq(N.C5, N.C5, 0.1),
+		gap(0.05), sq(N.C5, N.C5, 0.06), sq(N.E5, N.E5, 0.06), sq(N.G5, N.G5, 0.06), sq(N.C6, N.C6, 0.24)],
 };
 
 function segSrc(seg) {

@@ -3405,7 +3405,7 @@ export class Battle {
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { a.caughtMon = a.foe; });
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { sfx('fanfare_capture'); a.caughtMon = a.foe; });
 			// Catching pays experience like a KO (the Gen-6 rule). It used to pay
 			// nothing, which quietly taught players that catching is bad for training.
 			// The AWARD half only — grantExp's tail decides "is the battle over" on
@@ -3445,7 +3445,7 @@ export class Battle {
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { a.caughtMon = a.foe; });
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { sfx('fanfare_capture'); a.caughtMon = a.foe; });
 			this.awardBattleExp();
 			this.pushMsg('', () => this.finish('caught'));
 		} else {
