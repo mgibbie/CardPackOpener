@@ -1,5 +1,19 @@
 # Pokemon Upscale 3 — the bottom of the barrel, and the proof passes
 
+> **STATUS: FULLY COMPLETE (2026-09-03).** All four batches shipped as PRs
+> #224–#227: **1** Trainer Hill timed gauntlet (dynamic guard injection,
+> time-tiered prizes, best-time memory) + Game Corner slots · **2** museum
+> paintings (master-rank capstone w/ backfill), ruins word rooms, the
+> Mirage Tower → Desert Underpass → Fossil Maniac loop, the New Mauville
+> generator, and the disguised-Voltorb junk-pickup BUG fixed · **3**
+> Imprison/Grudge/Teatime + Dancer/Opportunist/Perish Body/Emergency
+> Exit/Wimp Out/Stall ('arenaaura' proved vacuous — no species carries it;
+> form-change abilities stay honestly out of scope) · **4** the story-arc
+> talk-to-everyone sweep across 9 villain-arc venues (every actor answers;
+> Rocket B2F's mute props are pokecrystal's own `ObjectEvent` no-ops) and
+> all three 2026-07 multiplayer bugs verified fixed + pinned. Tests: hill
+> 31 · venues2 23 · mechanics 15 · storyarcs 14.
+
 2026-09-03, from the fresh gap audit after round two closed (PRs #215–#222).
 The world is genuinely full now: this round is smaller by design — the last
 dead venues, the last three tractable battle noops, one ability, and two
