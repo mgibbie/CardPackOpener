@@ -118,7 +118,10 @@ const GC_TABLE = [
 // row so the account blob stays small; each carries `updated_at` for last-write-wins reconciliation.
 const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1']);
 const RUN_MAX_BYTES = 700_000; // a run may carry a mid-fight snapshot (both hands/board/deck order)
-const OW_MAX_BYTES = 400_000;
+// The overworld blob now carries the WHOLE canonical save (story flags, badges,
+// bag, dex, collected items — not just party/boxes), so the ceiling moved up.
+const OW_MAX_BYTES = 1_000_000;
+const OW_HISTORY_KEEP = 7; // automatic daily backups retained per user (plus the UNDO slot)
 
 // A ready-made 40-card mage deck so a fresh account can duel without building.
 // Deletable like any slot — an account with zero decks can't start a card battle.
@@ -2273,16 +2276,58 @@ export default async function handler(req, env) {
 		await store.setJSON('run:' + username, doc);
 		return json({ ok: true });
 	}
-	// ---- authoritative overworld state: starter (party), region, position, boxes ----
+	// ---- authoritative overworld state: the whole overworld save, keyed strings ----
 	if (action === 'ow-save') {
 		const ow = body.ow;
 		if (!ow || typeof ow !== 'object' || Array.isArray(ow)) return json({ error: 'bad ow' }, 400);
 		if (JSON.stringify(ow).length > OW_MAX_BYTES) return json({ error: 'ow too large' }, 413);
+		// The daily safety net: the FIRST save of each UTC day stashes the blob the
+		// day started with (the PREVIOUS stored value, not the incoming one), so
+		// "yesterday's game" is always recoverable. Only date-shaped keys are
+		// pruned — the UNDO slot written by ow-restore is never aged out. A backup
+		// failure must never block the save itself.
+		try {
+			const prev = await store.get('ow:' + username);
+			if (prev && prev.ow && Object.keys(prev.ow).length) {
+				const day = new Date().toISOString().slice(0, 10);
+				const hk = 'owh:' + username + ':' + day;
+				if (!(await store.get(hk))) {
+					await store.setJSON(hk, { ow: prev.ow, updated_at: prev.updated_at || Date.now() });
+					const dailies = (await store.list('owh:' + username + ':')).filter(r => /\d{4}-\d{2}-\d{2}$/.test(r.key));
+					if (dailies.length > OW_HISTORY_KEEP) {
+						await store.deleteKeys(dailies.slice(0, dailies.length - OW_HISTORY_KEEP).map(r => r.key));
+					}
+				}
+			}
+		} catch (e) {}
 		await store.setJSON('ow:' + username, { ow, updated_at: Date.now() });
 		return json({ ok: true });
 	}
 	if (action === 'ow-load') {
 		return json({ ow: (await store.get('ow:' + username)) || null });
+	}
+	// the automatic backups, newest first (the UNDO slot leads when present)
+	if (action === 'ow-history') {
+		const prefix = 'owh:' + username + ':';
+		const rows = await store.list(prefix);
+		const backups = rows.map(r => ({
+			slot: r.key.slice(prefix.length),
+			updated_at: r.value?.updated_at || 0,
+			bytes: JSON.stringify(r.value?.ow || {}).length,
+		})).reverse(); // keys ascend by date with 'undo' last → reversed, undo then newest→oldest
+		return json({ backups });
+	}
+	// restore one backup into the live slot. The game being replaced goes into
+	// the UNDO slot first, so a restore is always itself reversible.
+	if (action === 'ow-restore') {
+		const slot = String(body.slot || '');
+		if (!/^(\d{4}-\d{2}-\d{2}|undo)$/.test(slot)) return json({ error: 'bad slot' }, 400);
+		const snap = await store.get('owh:' + username + ':' + slot);
+		if (!snap || !snap.ow) return json({ error: 'no such backup' }, 404);
+		const cur = await store.get('ow:' + username);
+		if (cur && cur.ow) await store.setJSON('owh:' + username + ':undo', cur);
+		await store.setJSON('ow:' + username, { ow: snap.ow, updated_at: Date.now() });
+		return json({ ok: true, ow: snap.ow });
 	}
 
 	return json({ error: 'unknown action' }, 400);
