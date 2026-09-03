@@ -10,6 +10,7 @@
 //   { k: 'dredge', id } / { k: 'discard', uids } / { k: 'sac' }
 //   { k: 'respond', pi, uid, target } / { k: 'pass', pi }
 //   { k: 'trade', pi, uid } / { k: 'prepare', pi, uid }
+//   { k: 'concede', pi }                               → concede (FFA elimination)
 //
 // dispatch() is the ONE mapping from records to engine calls — the fuzzer
 // records through it and replayActions() replays through it, so a recorded
@@ -25,7 +26,7 @@ import { validateGameState } from './validate.js';
 import {
 	createGame, playCard, attack, heroAttack, useHeroPower, endTurn,
 	resolvePick, resolveAsk, resolveScry, resolveDredge, resolveDiscard,
-	resolveSac, resolveResponse, tradeCard, prepareCard, settleTurn,
+	resolveSac, resolveResponse, tradeCard, prepareCard, settleTurn, concede,
 } from './core.js';
 
 export function dispatch(state, a) {
@@ -53,6 +54,7 @@ function dispatchOne(state, a) {
 		case 'pass': return resolveResponse(state, a.pi, null);
 		case 'trade': return tradeCard(state, a.pi, a.uid);
 		case 'prepare': return prepareCard(state, a.pi, a.uid);
+		case 'concede': concede(state, a.pi); return true; // settleTurn (above) hands off a stranded turn
 		default: throw new Error(`dispatch: unknown action kind '${a.k}'`);
 	}
 }
