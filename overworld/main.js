@@ -35,6 +35,9 @@ import * as Frontier from './frontier.js';
 import { getImage, drawOwMon } from './engine.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
+import { Journal } from './journal.js';
+import * as Savefile from './savefile.js';
+import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
 import * as Chat from '../battlecards/chat.js';
@@ -483,6 +486,7 @@ function onTrainerDefeated(script, opts) {
 		const fresh = !Story.getFlag('beat_red');
 		Story.setFlag('beat_red');
 		if (fresh) {
+			Journal.add('Defeated RED at the summit of MT SILVER');
 			syncOverworldAchievements();
 			// the CAPSTONE. The hardest fight in the game (lead+3/+5, up to Lv255)
 			// used to pay a flag and silence, while the Grand Champion got $50k and
@@ -503,6 +507,7 @@ function onTrainerDefeated(script, opts) {
 		const slice = badgeSliceFor(info.region);
 		const beforeTier = Quest.globalTier();
 		const earned = Badges.earn(slice, info.id);
+		if (earned) Journal.add(`Earned the ${info.name}`);
 		// did this badge push the SHARED tier up (i.e. was this the last region to clear it)?
 		const tierUp = (earned && Quest.globalTier() > beforeTier) ? Quest.globalTier() : 0;
 		refreshLevelCap(); // the cap is a function of the badges; keep the engine in step
@@ -522,6 +527,7 @@ function onTrainerDefeated(script, opts) {
 		}
 	} else if (info.kind === 'champion') {
 		const fresh = Badges.crown(info.region);
+		if (fresh) Journal.add(`Became the ${info.region} Champion!`);
 		// becoming JOHTO Champion opens the legendary-bird tower hunt (the HO-OH/LUGIA
 		// wings) and restores the power that lets the MAGNET TRAIN run to KANTO
 		if (info.region === 'JOHTO') {
@@ -725,6 +731,7 @@ function recordHallOfFame(region, roster) {
 	} catch { }
 }
 evolution.onDone = () => saveParty(party);
+evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
 let loading = true;
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
@@ -768,8 +775,25 @@ const POS_KEY = 'magepunk_pos_v1';
 // REPEL steps remaining. Persisted so it survives a reload mid-cave, and read by
 // the step handler + encounters.roll. Nothing read the repel items before this.
 const REPEL_KEY = 'magepunk_repel_v1';
+const REPEL_LAST_KEY = 'magepunk_repellast'; // which repel kind was last used, for the wear-off re-offer
 let repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
 function setRepel(n) { repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(repelSteps)); }
+// the gen-5 nicety: when a repel runs out and the bag holds another of the same
+// kind, offer it on the spot instead of making the player dig through the bag
+function repelWoreOff() {
+	const id = localStorage.getItem(REPEL_LAST_KEY);
+	const item = id && Bag.ITEMS[id];
+	if (!item || item.kind !== 'repel' || Bag.count(id) < 1) {
+		hud.textContent = 'REPEL\'s effect wore off...';
+		return;
+	}
+	dialog.open(`REPEL's effect wore off...\nUse another ${item.name}? (${Bag.count(id)} left)\n\nZ = Yes   X = No`, declined => {
+		if (declined === 'x') return;
+		Bag.consume(id);
+		setRepel(item.steps || 100);
+		hud.textContent = `${item.name} is working again. (${item.steps} steps)`;
+	});
+}
 // standalone Battle Factory mini-game (?factory=1 from the home page): rentals only,
 // no save/party needed — and it must never write over a real overworld save
 let factoryStandalone = false;
@@ -949,10 +973,19 @@ function ghostAt(tx, ty) {
 const cardsMenu = { open: false, idx: 0 };
 const runMenu = { open: false, idx: 0 };
 const dexMenu = { open: false, idx: 0, detail: false, list: null };
-const trainerCard = { open: false };
+const trainerCard = { open: false, page: 0 }; // page 0 = the card, 1 = the adventure JOURNAL
 const townMap = { open: false, region: 0, idx: 0 };
-const optionsMenu = { open: false, idx: 0 };
-const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'followers'];
+// mode 'backups' lists the server's automatic daily saves; list is fetched lazily
+const optionsMenu = { open: false, idx: 0, mode: 'main', list: null, flash: null, busy: false };
+// battleAnim was in Settings.OPTIONS but never listed here — the setting existed
+// with no way to reach it
+const OPTION_KEYS = ['textSpeed', 'bgmVol', 'sfxVol', 'autoRun', 'dayNight', 'followers', 'battleAnim'];
+// rows below the settings: save-data actions, not cyclable values
+const OPTION_ACTIONS = [
+	{ id: 'export', label: 'EXPORT SAVE', hint: 'Download your game as a file' },
+	{ id: 'import', label: 'IMPORT SAVE', hint: 'Restore a downloaded save file' },
+	{ id: 'backups', label: 'SERVER BACKUPS', hint: 'Restore an automatic daily backup' },
+];
 // ---------- leave-and-resume for battles ----------
 // Hitting the gear (or closing the tab) mid-battle used to vaporize the fight
 // AND its ending — a rival or gym win that never landed its flags broke
@@ -1154,11 +1187,29 @@ function syncMapBgm() { bgmTick(); }
 getJSON('data/music_map.json').then(m => { musicMap = m || {}; syncMapBgm(); }).catch(() => { musicMap = {}; });
 
 function optionsKey(k) {
-	if (k === 'ArrowUp') optionsMenu.idx = (optionsMenu.idx + OPTION_KEYS.length - 1) % OPTION_KEYS.length;
-	if (k === 'ArrowDown') optionsMenu.idx = (optionsMenu.idx + 1) % OPTION_KEYS.length;
-	if (k === 'ArrowLeft') { Settings.cycle(OPTION_KEYS[optionsMenu.idx], -1); syncBgmVolume(); }
-	if (k === 'ArrowRight' || k === 'z' || k === 'Enter') { Settings.cycle(OPTION_KEYS[optionsMenu.idx], 1); syncBgmVolume(); }
-	if (k === 'x' || k === 'Escape') optionsMenu.open = false;
+	const om = optionsMenu;
+	if (om.mode === 'backups') {
+		const rows = (om.list || []).length + 1; // + BACK
+		if (k === 'ArrowUp') om.idx = (om.idx + rows - 1) % rows;
+		if (k === 'ArrowDown') om.idx = (om.idx + 1) % rows;
+		if (k === 'x' || k === 'Escape') { om.mode = 'main'; om.idx = 0; om.flash = null; }
+		if (k === 'z' || k === 'Enter') {
+			if (om.idx >= (om.list || []).length) { om.mode = 'main'; om.idx = 0; om.flash = null; }
+			else restoreBackup(om.list[om.idx]);
+		}
+		return;
+	}
+	const total = OPTION_KEYS.length + OPTION_ACTIONS.length;
+	if (k === 'ArrowUp') om.idx = (om.idx + total - 1) % total;
+	if (k === 'ArrowDown') om.idx = (om.idx + 1) % total;
+	const act = OPTION_ACTIONS[om.idx - OPTION_KEYS.length];
+	if (act) {
+		if (k === 'z' || k === 'Enter') runSaveAction(act.id);
+	} else {
+		if (k === 'ArrowLeft') { Settings.cycle(OPTION_KEYS[om.idx], -1); syncBgmVolume(); }
+		if (k === 'ArrowRight' || k === 'z' || k === 'Enter') { Settings.cycle(OPTION_KEYS[om.idx], 1); syncBgmVolume(); }
+	}
+	if (k === 'x' || k === 'Escape') { om.open = false; om.flash = null; }
 }
 const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
 // in-game NPC trade: the offer, then a party picker (see trades.js)
@@ -1314,6 +1365,7 @@ function daycareKey(k) {
 			if (baby) {
 				Dex.markCaught(baby.speciesId); dexMilestoneCheck();
 				const where = addCaught(party, baby);
+				Journal.add(`The EGG hatched into ${baby.name}!`);
 				daycareMenu.flash = `The EGG hatched into ${baby.name}! ${where === 'box' ? '(sent to the box)' : ''}`;
 			}
 			daycareMenu.idx = 0;
@@ -1336,6 +1388,7 @@ function nameRaterKey(k) {
 // of capture, which is when you actually care and when the games ask.
 function offerNickname(mon) {
 	if (!mon) return;
+	Journal.add(`Caught ${mon.name} (Lv${mon.level})`); // every catch path funnels through here
 	dialog.open(`Give a nickname to ${mon.name}?\n\nZ = Yes   X = No`, declined => {
 		if (declined !== 'x') promptRename(mon);
 	});
@@ -1488,7 +1541,7 @@ function startKey(k) {
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
-		else if (it === 'CARD') { trainerCard.open = true; }
+		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
@@ -1496,7 +1549,7 @@ function startKey(k) {
 		// party silently goes to a box you then could not open
 		else if (it === 'PC') { pcMenu.open = true; }
 		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
-		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; }
+		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; optionsMenu.mode = 'main'; optionsMenu.flash = null; optionsMenu.busy = false; }
 		else if (it === 'EXIT' && visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
@@ -2177,6 +2230,7 @@ function bagKey(k) {
 			if (repelSteps > 0) { bagMenu.flash = 'A REPEL is already working.'; return; }
 			Bag.consume(id);
 			setRepel(item.steps || 100);
+			safeSaveStr(REPEL_LAST_KEY, id); // the wear-off prompt re-offers this same kind
 			bagMenu.flash = `${item.name} will keep weak POKeMON away for ${item.steps} steps.`;
 			return;
 		}
@@ -2345,7 +2399,11 @@ function pressKey(k) {
 	if (moveShop.open) { moveShopKey(k); return; }
 	if (optionsMenu.open) { optionsKey(k); return; }
 	if (questMenu.open) { questKey(k); return; }
-	if (trainerCard.open) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false; return; }
+	if (trainerCard.open) {
+		if (k === 'ArrowLeft' || k === 'ArrowRight') { trainerCard.page = 1 - trainerCard.page; return; }
+		if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false;
+		return;
+	}
 	if (partyMenu.open) {
 		// the per-POKeMON action menu (field moves / summary / switch)
 		if (partyMenu.action) {
@@ -3010,7 +3068,7 @@ player.onArrive = () => {
 	if (repelSteps > 0) {
 		repelSteps--;
 		safeSaveStr(REPEL_KEY, String(repelSteps));
-		if (repelSteps === 0) hud.textContent = 'REPEL\'s effect wore off...';
+		if (repelSteps === 0) repelWoreOff();
 	}
 	// wild encounter?
 	if (!battle.blocking) {
@@ -4597,11 +4655,15 @@ function syncOverworldAchievements() {
 	try { MP.call('overworld-sync', { ow: overworldSummary() }).catch(() => {}); } catch (e) {}
 }
 // ---------- server-authoritative overworld save (Phase 2) ----------
-// Which starter you picked, which region you're on, your position/boxes/money — these lived only in
-// localStorage, so a different device/browser saw stale data. Persist the raw save strings to the
-// server (D1, ow:<user>) so a logged-in player gets the same, current game everywhere. The server is
-// authoritative on boot (hydrateOw overwrites the local cache); a deduped push keeps it current.
-const OW_KEYS = ['magepunk_party_v1', 'magepunk_region', POS_KEY, 'magepunk_box_v1', 'magepunk_rival', 'magepunk_name', 'magepunk_money', 'magepunk_playtime', 'magepunk_starter'];
+// The raw save strings persist to the server (D1, ow:<user>) so a logged-in player gets the same,
+// current game everywhere. The server is authoritative on boot (hydrateOw overwrites the local
+// cache); a deduped push keeps it current. This used to cover only nine keys (party/region/
+// position/boxes/money...), which meant story flags, badges, the bag, and the dex silently did NOT
+// follow you across devices — and the server's automatic daily backups could only protect a
+// fraction of the game. Now the whole canonical inventory syncs, except the live mid-battle
+// snapshot: it changes every battle action (churn), and a stale copy resuming on another device
+// after the fight already ended locally would replay a finished battle.
+const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1');
 function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
 }
@@ -4614,11 +4676,11 @@ function pushOw() {
 	try { MP.call('ow-save', { ow }).catch(() => {}); } catch (e) {}
 }
 // ---------- gifts ----------
-// The bag is device-local (magepunk_bag_v1 is not in OW_KEYS), so the server
-// can only hold the PROMISE of items — this is the client half that turns a
-// claimed gift into real inventory. gift-claim marks it spent and returns the
+// A gift is a server-side PROMISE of items — this is the client half that turns
+// a claimed gift into real inventory. gift-claim marks it spent and returns the
 // payload in one step, so a retry can never pay out twice; the bag write
-// happens immediately after, with no await in between.
+// happens immediately after, with no await in between. (The bag itself now
+// syncs via OW_KEYS, but the exactly-once claim is what stops double payouts.)
 async function claimGifts() {
 	if (!MP_ON) return;
 	let gifts = [];
@@ -4646,10 +4708,85 @@ async function hydrateOw() {
 		const r = await MP.call('ow-load');
 		const ow = r && r.ow && r.ow.ow; // ow-load returns { ow: { ow:<snapshot>, updated_at } }
 		if (ow && typeof ow === 'object') {
-			for (const k of OW_KEYS) { try { if (ow[k] != null) localStorage.setItem(k, ow[k]); } catch (e) {} }
+			let changed = false;
+			for (const k of OW_KEYS) {
+				try {
+					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { localStorage.setItem(k, ow[k]); changed = true; }
+				} catch (e) {}
+			}
 			_lastOwJson = JSON.stringify(owSnapshot()); // don't immediately re-push what we just pulled
+			// Story/Bag/Badges/Dex read their strings at IMPORT time, so a hydration
+			// that actually changed something must reload once — otherwise a stale
+			// in-memory module would quietly save itself back over the fresh data.
+			// The sessionStorage latch stops a reload loop when a write can't stick.
+			if (changed && !sessionStorage.getItem('mp_ow_hydrated')) {
+				sessionStorage.setItem('mp_ow_hydrated', '1');
+				location.reload();
+				return;
+			}
+			if (!changed) { try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {} }
 		}
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
+}
+
+// ---------- save data actions (OPTIONS menu) ----------
+// Export/import move the whole game as a file; SERVER BACKUPS restores one of
+// the automatic daily snapshots D1 keeps. An import or restore must update the
+// server copy BEFORE reloading — hydrateOw is authoritative on boot, so a stale
+// server blob would quietly re-impose the game that was just replaced.
+function runSaveAction(id) {
+	const om = optionsMenu;
+	if (om.busy) return;
+	if (id === 'export') {
+		try {
+			const n = Savefile.exportSave();
+			om.flash = `Saved ${n} items to a file. Keep it somewhere safe!`;
+		} catch (e) { om.flash = 'Export failed: ' + (e?.message || e); }
+		return;
+	}
+	if (id === 'import') { doImportSave(); return; }
+	if (id === 'backups') {
+		om.mode = 'backups'; om.idx = 0; om.list = null; om.flash = null;
+		loadBackups();
+		return;
+	}
+}
+async function doImportSave() {
+	const om = optionsMenu;
+	const picked = await Savefile.pickSaveFile();
+	if (!picked) return;
+	let parsed;
+	try { parsed = Savefile.parseSave(picked.text); } catch (e) { om.flash = e?.message || String(e); return; }
+	const when = parsed.exported_at ? parsed.exported_at.slice(0, 10) : 'an unknown date';
+	if (!confirm(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\n\nEverything you have now will be overwritten.`)) return;
+	om.busy = true;
+	Savefile.applySave(parsed.keys);
+	if (MP_ON) {
+		try { await MP.call('ow-save', { ow: owSnapshot() }); }
+		catch (e) { alert('The save was restored locally, but the SERVER copy could not be updated.\nIf you are online next load, the old game may come back — try importing again then.'); }
+	}
+	location.reload();
+}
+async function loadBackups() {
+	const om = optionsMenu;
+	if (!MP_ON) { om.list = []; om.flash = 'Backups need a logged-in account.'; return; }
+	try { om.list = ((await MP.call('ow-history'))?.backups) || []; }
+	catch (e) { om.list = []; om.flash = 'Could not reach the server.'; }
+	if (om.list.length === 0 && !om.flash) om.flash = 'No backups yet — they appear after a day of play.';
+}
+async function restoreBackup(b) {
+	const om = optionsMenu;
+	if (!b || om.busy) return;
+	const label = b.slot === 'undo' ? 'the UNDO slot (your game before the last restore)' : `the automatic backup from ${b.slot}`;
+	if (!confirm(`Restore ${label}?\n\nYour current game is stashed in the UNDO slot first, so this can be reversed.`)) return;
+	om.busy = true;
+	let r = null;
+	try { r = await MP.call('ow-restore', { slot: b.slot }); } catch (e) {}
+	if (!r || !r.ow) { om.busy = false; om.flash = 'Restore failed — the backup may be gone.'; loadBackups(); return; }
+	// same discipline as a file import: clear, then lay the snapshot down
+	for (const k of OW_KEYS) { try { localStorage.removeItem(k); } catch (e) {} }
+	for (const [k, v] of Object.entries(r.ow)) { try { if (typeof v === 'string') localStorage.setItem(k, v); } catch (e) {} }
+	location.reload();
 }
 
 // open the on-screen starter picker locked to one region's trio
@@ -4674,6 +4811,7 @@ function finishStarterPick(region, col) {
 	const id = STARTERS[idx].ids[col];
 	safeSaveStr('magepunk_starter', id); // Kanto's champion roster is chosen by it
 	party = createStarter(id, battle.data);
+	Journal.add(`Began the adventure in ${region} with ${(party[0]?.name || id).toUpperCase()}`);
 	Dex.markCaught(id);
 	Dex.seedFrom(party);
 	refreshFollower();
@@ -5423,7 +5561,33 @@ function drawTownMap(W, H) {
 
 function drawTrainerCard(W, H) {
 	const u = H / 480;
-	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.');
+	// page 1 — the ADVENTURE JOURNAL: the newest entries of the rolling log
+	if (trainerCard.page === 1) {
+		menuChrome(W, H, u, 'ADVENTURE JOURNAL', '◄ ► card   X: close');
+		const list = Journal.list();
+		const cardX = 60 * u, cardY = 84 * u, cardW = W - 120 * u, cardH = H - 170 * u;
+		sctx.fillStyle = 'rgba(30,54,92,0.9)';
+		BUI.rr(sctx, cardX, cardY, cardW, cardH, 16 * u); sctx.fill();
+		sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
+		BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
+		if (!list.length) {
+			sctx.fillStyle = BUI.C.dim;
+			sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+			sctx.fillText('Nothing yet — badges, catches, and evolutions land here.', cardX + 24 * u, cardY + 40 * u);
+		}
+		const rows = Math.floor((cardH - 40 * u) / (26 * u));
+		list.slice(0, rows).forEach((e, i) => {
+			const y = cardY + (30 + i * 26) * u;
+			sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+			sctx.fillStyle = BUI.C.dim;
+			sctx.fillText(Journal.when(e), cardX + 20 * u, y);
+			sctx.fillStyle = BUI.C.text;
+			sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+			sctx.fillText(e.text, cardX + 92 * u, y);
+		});
+		return;
+	}
+	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal');
 	const c = Dex.counts();
 	const name = localStorage.getItem('magepunk_name') || 'PLAYER';
 	const region = localStorage.getItem('magepunk_region') || '—';
@@ -5581,12 +5745,22 @@ function drawNameRater(W, H) {
 
 function drawOptions(W, H) {
 	const u = H / 480;
+	if (optionsMenu.mode === 'backups') {
+		const list = optionsMenu.list;
+		const rows = list == null ? ['(loading…)'] : [
+			...list.map(b => (b.slot === 'undo' ? 'UNDO — before the last restore' : b.slot)
+				+ `   (${Math.max(1, Math.round((b.bytes || 0) / 1024))} KB)`),
+			'BACK',
+		];
+		optionList(W, H, u, 'SERVER BACKUPS', 'One automatic save kept per day, plus UNDO.  Z: restore', rows, optionsMenu.idx, 'bkp:', optionsMenu.flash);
+		return;
+	}
 	menuChrome(W, H, u, 'OPTIONS', 'Arrows: ▲▼ pick   ◄► change   X: close');
 	OPTION_KEYS.forEach((key, i) => {
 		const o = Settings.OPTIONS[key];
 		const sel = optionsMenu.idx === i;
 		const bid = 'opt:' + i;
-		const b = { id: bid, x: 40 * u, y: (96 + i * 62) * u, w: W - 80 * u, h: 52 * u };
+		const b = { id: bid, x: 40 * u, y: (84 + i * 46) * u, w: W - 80 * u, h: 40 * u };
 		menuUi.push(b);
 		sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
 		BUI.rr(sctx, b.x, b.y, b.w, b.h, 8 * u); sctx.fill();
@@ -5595,21 +5769,32 @@ function drawOptions(W, H) {
 		BUI.rr(sctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 8 * u); sctx.stroke();
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-		sctx.fillText(o.label, b.x + 20 * u, b.y + 32 * u);
+		sctx.fillText(o.label, b.x + 20 * u, b.y + 27 * u);
 		// value with ◄ ► chevrons
 		const val = Settings.displayValue(key);
 		sctx.textAlign = 'right';
 		sctx.fillStyle = BUI.C.accent;
-		sctx.fillText(val, b.x + b.w - 44 * u, b.y + 32 * u);
+		sctx.fillText(val, b.x + b.w - 44 * u, b.y + 27 * u);
 		sctx.fillStyle = sel ? BUI.C.text : BUI.C.dim;
-		sctx.fillText('◄', b.x + b.w - 132 * u, b.y + 32 * u);
-		sctx.fillText('►', b.x + b.w - 20 * u, b.y + 32 * u);
+		sctx.fillText('◄', b.x + b.w - 132 * u, b.y + 27 * u);
+		sctx.fillText('►', b.x + b.w - 20 * u, b.y + 27 * u);
 		sctx.textAlign = 'left';
 	});
-	// live preview line so text-speed changes are visible
-	sctx.fillStyle = BUI.C.dim;
+	// SAVE DATA — three action buttons in one row under the settings
+	const actY = (84 + OPTION_KEYS.length * 46 + 8) * u;
+	OPTION_ACTIONS.forEach((a, i) => {
+		const idx = OPTION_KEYS.length + i;
+		const bw = (W - 80 * u - 16 * u) / 3;
+		const bid = 'optact:' + i;
+		const b = { id: bid, x: 40 * u + i * (bw + 8 * u), y: actY, w: bw, h: 44 * u, label: a.label, center: true };
+		menuUi.push(b);
+		BUI.button(sctx, b, menuHover === bid || optionsMenu.idx === idx, u);
+	});
+	// hint for the selected action (or a flash from the last one), else the default footer
+	const act = OPTION_ACTIONS[optionsMenu.idx - OPTION_KEYS.length];
+	sctx.fillStyle = optionsMenu.flash ? BUI.C.accent : BUI.C.dim;
 	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
-	sctx.fillText('Changes save automatically.', 40 * u, H - 24 * u);
+	sctx.fillText(optionsMenu.flash || (act ? act.hint + '.' : 'Changes save automatically.'), 40 * u, H - 12 * u);
 }
 
 function drawMoveShop(W, H) {
@@ -5992,7 +6177,14 @@ function menuTap(id) {
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
-	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); return; }
+	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); return; }
+	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
+	if (kind === 'bkp') {
+		const i = +a;
+		if (i >= (optionsMenu.list || []).length) { optionsMenu.mode = 'main'; optionsMenu.idx = 0; optionsMenu.flash = null; }
+		else restoreBackup(optionsMenu.list[i]);
+		return;
+	}
 }
 const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
 
@@ -6717,6 +6909,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
+		Journal, Savefile, runSaveAction, loadBackups, restoreBackup, OPTION_ACTIONS, OPTION_KEYS, OW_KEYS, repelWoreOff, setRepel, drawOptions,
 		Story, get cutscene() { return cutscene; }, startCutscene, npcById, maybeIntroCutscene, starterMenu,
 		runScriptLabel, checkCoordTrigger, checkOnFrame, cutsceneCtx, syncStoryVars, seedCrystalEvents,
 		postgameObjective, postgameLog, legendStats, shopStockNow, services, pickupCheck, mapWeatherNow,
