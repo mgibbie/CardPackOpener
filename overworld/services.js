@@ -75,8 +75,51 @@ const CONTEST_LOBBIES = {
 	},
 };
 
+// BUG-CATCHING CONTEST: the officers in both National Park gates (the decomp
+// NPCs whose Contest scripts never ran) become the sign-up/finish desk.
+const BUG_CONTEST_GATES = {
+	MAP_ROUTE_36_NATIONAL_PARK_GATE: [[3, 2], [3, 3], [0, 3], [1, 3]],
+	MAP_ROUTE_35_NATIONAL_PARK_GATE: [[2, 1], [2, 2], [0, 3], [1, 3]],
+};
+
+// TRICK HOUSE (Route 110): the man in the entrance is the Trick Master's
+// front; each puzzle room hides the SCROLL at its sign tile (the same spot
+// Emerald tucks it near); the man in the End room takes the scroll and pays.
+const TRICK_HOUSE = {
+	MAP_ROUTE110_TRICK_HOUSE_ENTRANCE: { trickmaster: [[6, 2], [6, 3], [5, 2]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE1: { trickscroll: [[3, 16], [3, 17]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE2: { trickscroll: [[14, 14], [14, 15]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE3: { trickscroll: [[0, 14], [0, 15]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE4: { trickscroll: [[14, 13], [14, 14]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE5: { trickscroll: [[11, 21], [11, 22]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE6: { trickscroll: [[0, 10], [0, 11]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE7: { trickscroll: [[6, 17], [6, 18]] },
+	MAP_ROUTE110_TRICK_HOUSE_PUZZLE8: { trickscroll: [[3, 21], [3, 22]] },
+	MAP_ROUTE110_TRICK_HOUSE_END: { trickend: [[4, 5], [4, 6], [3, 5], [5, 5]] },
+};
+
+// RUINS OF ALPH: the ancient replica wall in each chamber is the sliding-tile
+// puzzle; solving it opens the floor to that chamber's item room. All four
+// chambers share the same layout (replica at (2,3)/(5,3)).
+const RUINS_CHAMBERS = {
+	MAP_RUINS_OF_ALPH_KABUTO_CHAMBER: 'kabuto',
+	MAP_RUINS_OF_ALPH_OMANYTE_CHAMBER: 'omanyte',
+	MAP_RUINS_OF_ALPH_AERODACTYL_CHAMBER: 'aerodactyl',
+	MAP_RUINS_OF_ALPH_HO_OH_CHAMBER: 'hooh',
+};
+
 // per-map service spec: sprites to draw + interact zones
 function specFor(mapId) {
+	if (BUG_CONTEST_GATES[mapId]) {
+		return { sprites: [], zones: [{ kind: 'bugcontest', tiles: BUG_CONTEST_GATES[mapId] }], solid: [] };
+	}
+	if (TRICK_HOUSE[mapId]) {
+		const zones = Object.entries(TRICK_HOUSE[mapId]).map(([kind, tiles]) => ({ kind, tiles }));
+		return { sprites: [], zones, solid: [] };
+	}
+	if (RUINS_CHAMBERS[mapId]) {
+		return { sprites: [], zones: [{ kind: 'ruinspuzzle', tiles: [[2, 3], [2, 4], [5, 3], [5, 4]] }], solid: [] };
+	}
 	if (GAME_CORNERS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'gamecorner', tiles: GAME_CORNERS[mapId] }], solid: [] };
 	}

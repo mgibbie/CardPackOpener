@@ -6,6 +6,8 @@ const STARTING_MONEY = 3000;
 
 export const ITEMS = {
 	pokeball:    { name: 'POKe BALL',    price: 200,  kind: 'ball', mult: 1 },
+	// handed out (20 at a time) by the Bug-Catching Contest — never sold
+	sportball:   { name: 'SPORT BALL',   price: 0,    kind: 'ball', mult: 1.5 },
 	greatball:   { name: 'GREAT BALL',   price: 600,  kind: 'ball', mult: 1.5 },
 	ultraball:   { name: 'ULTRA BALL',   price: 1200, kind: 'ball', mult: 2 },
 	potion:      { name: 'POTION',       price: 300,  kind: 'heal', amount: 20 },
