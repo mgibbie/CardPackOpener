@@ -40,8 +40,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_coins_v1', 'magepunk_safari_v1',
 	// what you have picked up off the ground, and what has regrown
 	'magepunk_collected_v1', 'magepunk_berrytimes_v1',
-	// the dex
-	'magepunk_dex_v1', 'magepunk_dexclaims_v1',
+	// the dex (national seen/caught + claimed milestones + the Unown-letter dex)
+	'magepunk_dex_v1', 'magepunk_dexclaims_v1', 'magepunk_unown_v1',
 	// Battle Frontier
 	'magepunk_bp', 'magepunk_frontier_best', 'magepunk_frontier_symbols',
 	// Contest rank progress (ribbons + condition live on the mons themselves)

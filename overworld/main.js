@@ -2643,6 +2643,7 @@ function pressKey(k) {
 	if (playerMenu.open) { playerMenuKey(k); return; }
 	if (deckSelect.open) { deckSelectKey(k); return; }
 	if (radioMenu.open) { radioKey(k); return; }
+	if (unownDex.open) { unownDexKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (runMenu.open) { runKey(k); return; }
@@ -2727,7 +2728,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
-	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
@@ -3994,6 +3995,10 @@ function checkSafariGate() {
 
 function startWildBattle(pick, forceDouble) {
 	if (!party || !leadMon(party)) return;
+	// a wild Unown always rolled as the base "unown" (letter A) because no other
+	// letter had a species entry. Now each letter is its own species, so pick one
+	// at random — A..Z always, and ! / ? once every Ruins puzzle is solved.
+	if (pick.id === 'unown') pick = { ...pick, id: rollUnownLetter() };
 	// RANSEI RIFT (post-Champion): a slice of wild encounters tears open into
 	// the imported fakemon — the only place they appear in the wild
 	if (Math.random() < 0.05 && Badges.isChampion?.(playerRegion())) {
@@ -5243,6 +5248,56 @@ function drawSlide(W, H) {
 	sctx.fillText(`Restore the ancient image of ${(sp?.name || s.species).toUpperCase()}.`, gx - 8 * u, gy + size + 30 * u);
 }
 
+// ---------- the UNOWN DEX (Ruins of Alph) ----------
+// 28 letters, one species each (unown = A, then unown_b … unown_z, unown_exclaim,
+// unown_question). Every catchable letter is recorded in pokedex.js; this shows
+// the collection and gates the ! / ? forms behind solving all four puzzles — the
+// classic reveal. The research-center scientists open this report.
+const UNOWN_ORDER = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '?'];
+const UNOWN_ID = { A: 'unown', '!': 'unown_exclaim', '?': 'unown_question' };
+const unownIdFor = L => UNOWN_ID[L] || 'unown_' + L.toLowerCase();
+const allRuinsSolved = () => { const s = safeLoad(RUINS_KEY, { solved: {} }).solved || {}; return ['kabuto', 'omanyte', 'aerodactyl', 'hooh'].every(k => s[k]); };
+// the letters available in the wild right now: A..Z always, ! and ? once every
+// chamber puzzle is solved
+function rollUnownLetter() {
+	const letters = UNOWN_ORDER.slice(0, allRuinsSolved() ? 28 : 26);
+	return unownIdFor(letters[Math.floor(Math.random() * letters.length)]);
+}
+const unownDex = { open: false };
+function openUnownDex() { unownDex.open = true; sfx('ui_open'); }
+function unownDexKey(k) { if (['x', 'Escape', 'z', 'Enter'].includes(k)) unownDex.open = false; }
+function drawUnownDex(W, H) {
+	const u = H / 480;
+	const got = Dex.unownCount();
+	const secret = allRuinsSolved();
+	menuChrome(W, H, u, 'UNOWN DEX', `Letters recorded: ${got}/28.   ${secret ? 'The ! and ? forms have appeared!' : 'Solve all four Ruins puzzles to reveal ! and ?.'}   X: close`);
+	const cols = 7, gx = (W - cols * 54 * u) / 2 + 6 * u, gy = 96 * u;
+	UNOWN_ORDER.forEach((L, i) => {
+		const cx = gx + (i % cols) * 54 * u, cy = gy + Math.floor(i / cols) * 66 * u;
+		const caught = Dex.isUnownCaught(L);
+		sctx.fillStyle = caught ? 'rgba(72,120,196,0.9)' : 'rgba(30,40,60,0.85)';
+		BUI.rr(sctx, cx, cy, 48 * u, 56 * u, 6 * u); sctx.fill();
+		sctx.strokeStyle = caught ? BUI.C.accent : 'rgba(255,255,255,0.15)'; sctx.lineWidth = 2;
+		BUI.rr(sctx, cx, cy, 48 * u, 56 * u, 6 * u); sctx.stroke();
+		const img = caught ? contestSpriteFor(unownIdFor(L)) : null;
+		if (img) {
+			sctx.imageSmoothingEnabled = false;
+			sctx.drawImage(img, cx + 6 * u, cy + 4 * u, 36 * u, 36 * u);
+		} else {
+			sctx.fillStyle = caught ? '#fff' : 'rgba(255,255,255,0.25)';
+			sctx.font = `${Math.round(26 * u)}px m6x11plus, monospace`;
+			sctx.textAlign = 'center';
+			sctx.fillText(caught ? L : '?', cx + 24 * u, cy + 30 * u);
+			sctx.textAlign = 'left';
+		}
+		sctx.fillStyle = caught ? '#fff' : 'rgba(255,255,255,0.3)';
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.textAlign = 'center';
+		sctx.fillText(L, cx + 24 * u, cy + 52 * u);
+		sctx.textAlign = 'left';
+	});
+}
+
 // ---------- Pokémon Contests (Lilycove Contest Hall) ----------
 // The engine lives in contest.js (data harvested from pokeemerald by
 // tools/gen_contest.mjs into data/contest.json). This is the UI: the reception
@@ -5946,6 +6001,10 @@ function runScriptLabel(label, talker) {
 	// the flavour-only Radio2Script; hijack them into the real tune-in menu. The
 	// intro tutorial radios end in "RadioScript", so /Radio$/ leaves them alone.
 	if (/Radio$/.test(label)) { openRadio(); return true; }
+	// the Ruins of Alph research-center scientists open the Unown Dex report. The
+	// full Crystal flow (VAR_UNOWNCOUNT/UnownPrinter) was inert; the scientists are
+	// the reliably-reachable hook (Scientist1/2 are always visible).
+	if (/^RuinsOfAlphResearchCenterScientist\d?Script$/.test(label)) { openUnownDex(); return true; }
 	if (!mapScripts[label]) {
 		// Crystal factors its common NPCs through `jumpstd`, which the transpiler
 		// drops — so 237 bookshelves, signs and trash cans have no label at all.
@@ -6332,6 +6391,7 @@ function syncScriptVars() {
 	Story.setVar('VAR_FACING', FACING_VALUE[player?.facing] || 1);
 	Story.setVar('VAR_WEEKDAY', new Date().getDay());          // SUNDAY = 0 .. SATURDAY = 6
 	Story.setVar('VAR_PARTYCOUNT', (party || []).length);
+	Story.setVar('VAR_UNOWNCOUNT', Dex.unownCount());          // lights up the Ruins research-center branches
 }
 
 // pokecrystal runs InitializeEventsScript before a new save's first step, and now
@@ -6388,6 +6448,7 @@ function runSpecial(name, store) {
 	switch (name) {
 		// --- action specials ---
 		case 'HealPlayerParty': healParty(party); return;
+		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
 			const here = world.current.map.id;
 			const dest = here === 'MAP_GOLDENROD_MAGNET_TRAIN_STATION'
@@ -7203,6 +7264,7 @@ function tick(now) {
 		else if (playerMenu.open) drawPlayerMenu(SW, MH);
 		else if (deckSelect.open) drawDeckSelect(SW, MH);
 		else if (radioMenu.open) drawRadio(SW, MH);
+		else if (unownDex.open) drawUnownDex(SW, MH);
 		else if (startMenu.open) drawStartMenu(SW, MH);
 		else if (cardsMenu.open) drawCardsMenu(SW, MH);
 		else if (runMenu.open) drawRunMenu(SW, MH);
@@ -9134,6 +9196,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		openRadio, radioKey, drawRadio, get radioMenu() { return radioMenu; }, get radioTune() { return radioTune; }, playerTID, tidStr, oakTalkText, buenaText, luckyText,
+		openUnownDex, unownDexKey, drawUnownDex, get unownDex() { return unownDex; }, rollUnownLetter, unownIdFor, allRuinsSolved, UNOWN_ORDER,
 		refreshFollower, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
