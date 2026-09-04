@@ -92,9 +92,17 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   trailing digits are matched against a new stable 5-digit **Trainer ID**, now
   shown on the Trainer Card). Daily pieces use the Bug-Contest `toDateString()`
   guard; new keys registered in `owreset.js`. 17-assertion `radio_test.mjs`.
-- **Unown properly** — remaining: 28 letter forms (one exists today) + the Unown
-  Dex report at the Ruins research center (its scene flag exists, no UI behind
-  it). Next PR.
+- **Unown properly** — DONE (PR #249, stacked on #248). The one `unown` entry
+  became 28 real species (A + B..Z + ! + ?) via `tools/gen_unown.mjs` — identical
+  to A but for name + sprite (the 28 letter sprites already shipped on disk). A
+  wild Ruins Unown now rolls a specific letter (`rollUnownLetter`, remapped in
+  `startWildBattle`); ! and ? stay hidden until all four Ruins puzzles are solved.
+  A per-letter **UNOWN DEX** (`pokedex.js`) records each letter but folds them to
+  #201 so the National dex isn't inflated. The inert research-center flow is now
+  live: `NUM_UNOWN`=28 in SCRIPT_CONSTANTS, `VAR_UNOWNCOUNT` synced each script
+  run, `UnownPrinter` special implemented, and the scientists open a drawn
+  28-cell dex report. 15-assertion `unown_test.mjs`. ⚠ needs the `overworld/data`
+  offload deploy (27 new species entries).
 
 ## Batch 5 — Battle sparkle: the small iconic beats **[4/5 · S]**
 

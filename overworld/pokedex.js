@@ -17,7 +17,38 @@ function save(d) {
 
 let dex = load();
 
+// ---------- the UNOWN DEX ----------
+// Each Unown letter is its own species (unown, unown_b … unown_z, unown_exclaim,
+// unown_question). For the NATIONAL dex they must all count as the single #201
+// "unown" — otherwise catching a letter would inflate the owned count by up to
+// 28. So the letter is recorded in a dedicated set, and the id is folded to the
+// base before it touches seen/caught.
+const UNOWN_KEY = 'magepunk_unown_v1';
+let unownSet = new Set(safeLoad(UNOWN_KEY, []));
+const UNOWN_SPECIAL = { unown: 'A', unown_exclaim: '!', unown_question: '?' };
+function unownLetterOf(id) {
+	if (UNOWN_SPECIAL[id]) return UNOWN_SPECIAL[id];
+	const m = /^unown_([a-z])$/.exec(id || '');
+	return m ? m[1].toUpperCase() : null;
+}
+export function markUnown(letter) {
+	if (!letter || unownSet.has(letter)) return;
+	unownSet.add(letter);
+	safeSave(UNOWN_KEY, [...unownSet]);
+}
+export function unownLetters() { return [...unownSet]; }
+export function unownCount() { return unownSet.size; }
+export function isUnownCaught(letter) { return unownSet.has(letter); }
+// fold any Unown letter id to the base #201, recording the letter on the way
+function foldUnown(id) {
+	const L = unownLetterOf(id);
+	if (!L) return id;
+	markUnown(L);
+	return 'unown';
+}
+
 export function markSeen(id) {
+	id = foldUnown(id);
 	if (!id || dex.seen.has(id)) return;
 	dex.seen.add(id);
 	save(dex);
@@ -25,6 +56,7 @@ export function markSeen(id) {
 // caught implies seen
 export function markCaught(id) {
 	if (!id) return;
+	id = foldUnown(id);
 	let changed = false;
 	if (!dex.seen.has(id)) { dex.seen.add(id); changed = true; }
 	if (!dex.caught.has(id)) { dex.caught.add(id); changed = true; }
@@ -70,8 +102,9 @@ export function seedFrom(mons) {
 	let changed = false;
 	for (const m of mons || []) {
 		if (!m || !m.speciesId) continue;
-		if (!dex.seen.has(m.speciesId)) { dex.seen.add(m.speciesId); changed = true; }
-		if (!dex.caught.has(m.speciesId)) { dex.caught.add(m.speciesId); changed = true; }
+		const id = foldUnown(m.speciesId); // an Unown in the party seeds its letter too
+		if (!dex.seen.has(id)) { dex.seen.add(id); changed = true; }
+		if (!dex.caught.has(id)) { dex.caught.add(id); changed = true; }
 	}
 	if (changed) save(dex);
 }
