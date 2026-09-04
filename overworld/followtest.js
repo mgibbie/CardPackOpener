@@ -22,11 +22,11 @@ export function mount(ow) {
 	(async () => {
 		try { await ow.moveToMap('FollowTest', 5, 5); } catch (e) { /* stay put if the arena fails */ }
 		try { ow.Settings.set('followers', true); } catch (e) {}
-		for (let t = 0; t < 20; t++) {                 // ensure the follower object exists, then park it a tile south
+		for (let t = 0; t < 20; t++) {                 // force a follower (party-independent), then park it a tile south
 			try {
-				if (!ow.follower) ow.refreshFollower();
+				ow.setFollowerSpecies(ids[i]);            // works even with no party (refreshFollower doesn't)
 				const f = ow.follower, pl = ow.player;
-				if (f && pl) { f.id = ids[i]; f.tx = pl.tx; f.ty = pl.ty + 1; f.px = pl.tx * META; f.py = (pl.ty + 1) * META; f.facing = 'down'; break; }
+				if (f && pl) { f.tx = pl.tx; f.ty = pl.ty + 1; f.px = pl.tx * META; f.py = (pl.ty + 1) * META; f.facing = 'down'; break; }
 			} catch (e) {}
 			await new Promise(r => setTimeout(r, 150));
 		}
@@ -64,10 +64,10 @@ export function mount(ow) {
 	let raf;
 	const tick = () => {
 		try { if (ow.Settings.get && !ow.Settings.get('followers')) ow.Settings.set('followers', true); } catch (e) {}
-		let f = ow.follower;
-		if (!f) { try { ow.refreshFollower(); f = ow.follower; } catch (e) {} }
 		const id = ids[i] || FALLBACK[0];
-		if (f) f.id = id;
+		let f = ow.follower;
+		if (!f) { try { ow.setFollowerSpecies(id); f = ow.follower; } catch (e) {} } // party-independent
+		else f.id = id;
 		// live readout so we can see what's actually happening on any session
 		const sheet = ow.followSheet ? ow.followSheet(id) : null;
 		const sheetState = sheet ? 'loaded' : (ow.followCache && ow.followCache.get(id) === 'none' ? 'mini-fallback' : 'loading');

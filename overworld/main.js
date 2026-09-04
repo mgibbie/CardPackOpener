@@ -3888,6 +3888,15 @@ function refreshFollower() {
 	follower = { id: lead.speciesId, tx: player.tx, ty: player.ty, px: player.tx * META, py: player.ty * META,
 		facing: player.facing, moving: false, from: null, to: null, t: 0, dur: 0.13, step: 0 };
 }
+// force a follower of ANY species, independent of the party — the owner
+// follower-test tool must preview sprites even on a save with no party (which is
+// why refreshFollower(), which builds from the party lead, made no follower).
+function setFollowerSpecies(id) {
+	if (!id) { follower = null; return; }
+	follower = { id, tx: player.tx, ty: player.ty, px: player.tx * META, py: player.ty * META,
+		facing: player.facing, moving: false, from: null, to: null, t: 0, dur: 0.13, step: 0 };
+	lastPlayerTile = { x: player.tx, y: player.ty };
+}
 function stepFollower(tx, ty) {
 	if (!follower) return;
 	if (follower.tx === tx && follower.ty === ty) return;
@@ -9376,7 +9385,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
 		openRadio, radioKey, drawRadio, get radioMenu() { return radioMenu; }, get radioTune() { return radioTune; }, playerTID, tidStr, oakTalkText, buenaText, luckyText,
 		openUnownDex, unownDexKey, drawUnownDex, get unownDex() { return unownDex; }, rollUnownLetter, unownIdFor, allRuinsSolved, UNOWN_ORDER,
-		refreshFollower, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
+		refreshFollower, setFollowerSpecies, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for
 	// the mgibbie account only — the username is verified SERVER-side (the
