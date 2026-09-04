@@ -3510,6 +3510,8 @@ player.onArrive = () => {
 		if (fluteState.steps === 0) { fluteState.mode = null; hud.textContent = "The flute's melody faded away."; }
 		saveFlute();
 	}
+	// ambient step fx: rustle the grass / print the sand under the new tile
+	spawnStepFx();
 	// wild encounter?
 	if (!battle.blocking) {
 		// guard: this runs inside the rAF step loop, where a throw is silent and
@@ -6806,6 +6808,54 @@ function drawDayNightTint(context) {
 	context.restore();
 }
 
+// ---------- step ambience: grass rustle + sand/ash footprints ----------
+// Static grass was the giveaway that this is a port. onArrive spawns a one-shot
+// rustle when you step into tall/long grass, and a fading footprint pair when
+// you step in deep sand / ashy grass. Purely cosmetic, screen-decay by real
+// time, camera-relative, capped, REDUCED_MOTION-silent.
+const stepFx = []; // { kind:'rustle'|'print', tx, ty, born, facing }
+const MB_DEEP_SAND = 0x0c, MB_ASHGRASS = 0x24; // desert floor (Route 111) + ashy grass (Route 113)
+function spawnStepFx() {
+	if (REDUCED_MOTION_OW || !world.current) return;
+	const b = world.behaviorAt(player.tx, player.ty);
+	const now = performance.now();
+	if (world.isTallGrass(player.tx, player.ty)) stepFx.push({ kind: 'rustle', tx: player.tx, ty: player.ty, born: now });
+	else if (b === MB_DEEP_SAND || b === MB_ASHGRASS) stepFx.push({ kind: 'print', tx: player.tx, ty: player.ty, born: now, facing: player.facing });
+	if (stepFx.length > 40) stepFx.splice(0, stepFx.length - 40);
+}
+// footprints go down with the ground (under sprites); rustle goes over feet.
+function drawStepFx(ctx, camX, camY, kind) {
+	const now = performance.now();
+	for (let i = stepFx.length - 1; i >= 0; i--) {
+		const f = stepFx[i];
+		const life = f.kind === 'print' ? 4500 : 260;
+		const t = (now - f.born) / life;
+		if (t >= 1) { if (kind === 'rustle') stepFx.splice(i, 1); continue; } // one pass owns removal
+		if (f.kind !== kind) continue;
+		const bx = f.tx * META - camX, by = f.ty * META - camY, cx = bx + META / 2, cy = by + META / 2;
+		if (f.kind === 'print') {
+			ctx.save();
+			ctx.globalAlpha = 0.4 * (1 - t);
+			ctx.fillStyle = '#5a4a34';
+			const off = { down: [-3, 2], up: [3, -2], left: [2, 3], right: [-2, 3] }[f.facing] || [0, 3];
+			ctx.fillRect(Math.round(cx - 3 + off[0]), Math.round(cy + off[1]), 2, 3);
+			ctx.fillRect(Math.round(cx + 1 + off[0]), Math.round(cy + off[1]), 2, 3);
+			ctx.restore();
+		} else { // rustle: a quick low puff of pale-green flecks
+			const k = Math.sin(Math.min(1, t) * Math.PI); // 0→1→0
+			ctx.save();
+			ctx.globalAlpha = 0.8 * k;
+			ctx.fillStyle = '#e6ffcf';
+			const spread = 3 + k * 5;
+			for (const dx of [-spread, -1, spread]) ctx.fillRect(Math.round(cx + dx), Math.round(cy + 6 - k * 3), 2, 2);
+			ctx.strokeStyle = `rgba(120,180,90,${0.7 * k})`;
+			ctx.lineWidth = 1;
+			ctx.beginPath(); ctx.moveTo(cx - spread, cy + 7); ctx.lineTo(cx, cy + 7 - k * 4); ctx.lineTo(cx + spread, cy + 7); ctx.stroke();
+			ctx.restore();
+		}
+	}
+}
+
 // ---------- overworld weather ----------
 // MAP_WEATHER only ever fed BATTLE weather; the route itself showed clear sky.
 // A full-screen particle layer (rain/sandstorm/hail/ash) drawn on the GBA frame
@@ -6948,6 +6998,7 @@ function tick(now) {
 		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 		world.drawLayer(ctx, 'bottom', camX, camY);
 		if (!editView.on) drawWaterAnim(ctx, camX, camY); // the sea moves (editor stays exact)
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'print'); // footprints lie on the ground
 		services.draw(ctx, camX, camY);
 		arcade.draw(ctx, camX, camY);
 		items.draw(ctx, camX, camY);
@@ -6966,6 +7017,7 @@ function tick(now) {
 		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
 		sprites.sort((a, b) => a.py - b.py);
 		for (const s of sprites) s.draw(ctx, camX, camY);
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
 		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
 		drawCaveDark(ctx, camX, camY);
@@ -8892,7 +8944,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
