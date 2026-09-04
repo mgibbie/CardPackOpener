@@ -3884,7 +3884,7 @@ function followMini(id) {
 // single nearest-neighbour shrink to ~20px aliased it to mush. This box-downscales
 // in halving steps at high quality (the standard way to shrink detailed art),
 // caches the result canvas, and the follower draws it 1:1 — much cleaner.
-const MINI_PX = 16; // one grid square (META) — keep the mini inside its tile
+const MINI_PX = 20; // a touch over a grid square (META 16) — more detail, still tile-ish
 const miniCvCache = new Map();
 function followMiniCanvas(id) {
 	if (miniCvCache.has(id)) return miniCvCache.get(id);
