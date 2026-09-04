@@ -116,6 +116,15 @@ async function boot(browser, username) {
 			return { present: !!el, src: el ? el.src : '' };
 		});
 		A(fr.present && /data\/pokemon\/.+\.png/.test(fr.src), 'the battle front sprite shows on the left and matches the selection', fr.src);
+
+		// fakemon never load a follower sheet (mini fallback, cache-proof); canonical do
+		const sheets = await page.evaluate(() => {
+			const ow = window.__ow;
+			ow.followSheet('gigalion'); ow.followSheet('bulbasaur');
+			return { fakemon: ow.followCache.get('gigalion'), canonical: ow.followCache.get('bulbasaur') };
+		});
+		A(sheets.fakemon === 'none', 'a fakemon (gigalion) uses the mini, never a sheet', sheets.fakemon);
+		A(sheets.canonical !== 'none', 'a canonical species still loads its follower sheet', String(sheets.canonical));
 		await page.close();
 
 		// --- a non-owner is refused ---
