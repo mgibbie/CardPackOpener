@@ -285,7 +285,7 @@ export class Trainers {
 				// authentic movesets / held items when the roster carries them
 				// (gen_trainer_movesets.mjs backfills these from the decomps);
 				// otherwise buildMon's level-up moveset stands in
-				if (e.moves?.length) {
+				if (e.moves?.length && !bump) { // round 2: skip the fixed low-level moves → higher-level learnset
 					const mv = e.moves.map(id => {
 						const info = data.moves[id];
 						return info ? { id, name: info.name, pp: info.pp, maxPp: info.pp } : null;
@@ -317,6 +317,27 @@ export class Trainers {
 				if (opts?.length) m.ability = opts[0];
 				// a roster-supplied (authentic) item always wins over this fallback
 				if (!m.heldItem) m.heldItem = m === ace ? 'sitrusberry' : (TYPE_ITEM[m.types[0]] || 'leftovers');
+			}
+		}
+		// ROUND 2 (Batch 6 follow-up): a re-armed boss (rematch) doesn't just gain
+		// levels — movesets modernise (the fixed low-level roster moves are skipped
+		// above when bump>0) and the squad fills out toward six with extra threats
+		// drawn from the leader's class pool, each with its canonical ability + a
+		// type item. Ordinary trainers (bump 0, non-boss) are untouched.
+		if (bump > 0 && boss && party.length && party.length < 6) {
+			const ace = party.reduce((a, m) => (m.level > (a?.level ?? -1) ? m : a), null);
+			const pool = this.data.classPools[t.ev.graphics_id] || this.data.defaultPool || [];
+			const have = new Set(party.map(m => m.speciesId));
+			for (let i = 0; i < pool.length && party.length < 6; i++) {
+				const s = pool[i];
+				if (have.has(s)) continue;
+				const mon = buildMon(s, Math.max(5, (ace?.level || 30) - 2), data);
+				if (!mon) continue;
+				have.add(s);
+				const opts = data.abilities?.[s];
+				if (opts?.length) mon.ability = opts[0];
+				mon.heldItem = TYPE_ITEM[mon.types[0]] || 'leftovers';
+				party.push(mon);
 			}
 		}
 		const className = roster?.class || this.data.classNames[t.ev.graphics_id] || 'Trainer';
