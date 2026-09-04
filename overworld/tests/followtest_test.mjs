@@ -27,7 +27,9 @@ async function boot(browser, username) {
 		localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 		localStorage.setItem('magepunk_region', 'johto');
 		localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
-		localStorage.setItem('magepunk_party_v1', JSON.stringify([{ speciesId: 'quilava', name: 'QUILAVA', level: 30, gender: 'M', ability: 'blaze', types: ['Fire'], ivs: { hp: 20, atk: 20, def: 20, spa: 20, spd: 20, spe: 20 }, stats: { hp: 90, atk: 60, def: 55, spa: 65, spd: 55, spe: 70 }, maxHP: 90, curHP: 90, exp: 27000, num: 156, sprite: 's4992.png', moves: [{ id: 'ember', name: 'Ember', pp: 25, maxPp: 25 }] }]));
+		// NO party — the real bug: refreshFollower() builds from the party lead and made
+		// no follower on an empty save; the tool must force one regardless
+		localStorage.setItem('magepunk_party_v1', JSON.stringify([]));
 	}, mkState(username));
 	return page;
 }
