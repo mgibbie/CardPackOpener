@@ -9434,6 +9434,28 @@ function drawFriendGhosts(ctx, camX, camY) {
 			return import('./followtest.js').then(m => { window.__followtest = m.mount(window.__ow); });
 		}).catch(e => { console.warn('followtest failed', e); note('Follower Test failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
+	// owner quick-launcher: a small FOLLOW TEST button in the top-right (by where the
+	// Sprite Tuner mounts) so it's one click, no URL param. Only rendered when the
+	// CACHED account is mgibbie (cheap, no API call for normal players); the click
+	// still server-verifies before mounting, exactly like ?followtest=1.
+	try {
+		if (!window.__followtest && MP.cachedState?.()?.username === 'mgibbie' && !new URLSearchParams(location.search).has('followtest')) {
+			const b = document.createElement('button');
+			b.textContent = '🐾 Follow Test';
+			b.title = 'Preview the AI-generated follower sprites (owner tool)';
+			b.style.cssText = 'position:fixed;top:8px;right:8px;z-index:210;background:#2a2440;color:#e8e2f4;'
+				+ 'border:1px solid #6a5f8a;border-radius:8px;padding:6px 10px;font:12px "Segoe UI",sans-serif;cursor:pointer;';
+			b.onclick = () => {
+				if (window.__followtest) return;
+				b.disabled = true; b.textContent = 'loading…';
+				MP.call('state').then(r => {
+					if ((r?.state?.username || '') !== 'mgibbie') { b.textContent = 'owner only'; return; }
+					return import('./followtest.js').then(m => { window.__followtest = m.mount(window.__ow); b.remove(); });
+				}).catch(() => { b.disabled = false; b.textContent = '🐾 Follow Test (retry)'; });
+			};
+			document.body.appendChild(b);
+		}
+	} catch (e) { /* launcher is best-effort */ }
 	// The MAIL badge ("MAIL (2)") only counted after you opened the mailbox — the
 	// one thing a your-move indicator must not require. Populate it at boot and
 	// keep it fresh; play-by-mail is fully built and was just invisible.

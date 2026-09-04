@@ -78,13 +78,25 @@ async function boot(browser, username) {
 		A(back === out.ids[0], "'[' goes back to the previous sprite", back);
 		await page.close();
 
-		// --- a non-owner is refused ---
+		// --- owner sees the quick-launch button (no URL param) and clicking mounts ---
+		const { page: page3 } = await boot(browser, 'mgibbie');
+		await page3.goto(`http://localhost:${PORT}/overworld/index.html?map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
+		await waitFor(() => page3.evaluate(() => !!window.__ow), 30000);
+		const btnShown = await waitFor(() => page3.evaluate(() => [...document.querySelectorAll('button')].some(b => /Follow Test/.test(b.textContent))), 8000);
+		A(btnShown, 'owner sees the FOLLOW TEST launcher button (no URL param)');
+		await page3.evaluate(() => [...document.querySelectorAll('button')].find(b => /Follow Test/.test(b.textContent))?.click());
+		const clickMounted = await waitFor(() => page3.evaluate(() => !!window.__followtest), 10000);
+		A(clickMounted, 'clicking the launcher mounts the follower test');
+		await page3.close();
+
+		// --- a non-owner is refused (no mount, no button) ---
 		const { page: page2 } = await boot(browser, 'grunt');
 		await page2.goto(`http://localhost:${PORT}/overworld/index.html?followtest=1&map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page2.evaluate(() => !!window.__ow), 30000);
 		await new Promise(r => setTimeout(r, 1500));
-		const nonOwnerMounted = await page2.evaluate(() => !!window.__followtest);
-		A(!nonOwnerMounted, 'a non-owner account does NOT get the tool');
+		const nonOwner = await page2.evaluate(() => ({ mounted: !!window.__followtest, btn: [...document.querySelectorAll('button')].some(b => /Follow Test/.test(b.textContent)) }));
+		A(!nonOwner.mounted, 'a non-owner account does NOT get the tool');
+		A(!nonOwner.btn, 'a non-owner does NOT see the launcher button');
 		await page2.close();
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { await browser.close(); server.close(); }
