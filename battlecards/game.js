@@ -214,6 +214,9 @@ function clearRunSnapshot() {
 	const run = io.load();
 	if (run && run.snapshot) { delete run.snapshot; delete run.snapshotAt; io.save(run); }
 }
+// set when a boot restored a fight from a snapshot — the boot tail then re-opens
+// any pending scry/Discover/etc. choice the snapshot was frozen on (see resumePendingChoices)
+let _resumedFight = false;
 // restore the live `state` from a run's snapshot; returns true on success (else caller boots fresh)
 function resumeRunSnapshot(run, byId) {
 	if (!run || !run.snapshot) return false;
@@ -223,6 +226,7 @@ function resumeRunSnapshot(run, byId) {
 		state = E.fromSnapshot(snap, byId);
 		E.ensureUidsAbove(E.maxSnapshotUid(snap));
 		heistBossName = state.classPicks?.[1]?.name || heistBossName; // enemy name for nameOf()
+		_resumedFight = true;
 		return true;
 	} catch (e) { console.warn('resume: snapshot restore failed, booting fresh', e); return false; }
 }
@@ -2057,6 +2061,27 @@ function pump() {
 	E.settleTurn(state);
 	queue.push(...E.takeEvents(state));
 	if (!queueBusy) nextEvent();
+}
+
+// After a snapshot RESUME the engine's event queue is empty, so the reactive
+// per-event modal opens (openScryModal on a 'scry' event, openPickModal on a
+// 'pick'/Discover event, …) never fire — a decision the fight was frozen on
+// would sit in state with no UI and soft-lock. Re-drive it here: settle any
+// AI-seat choices, then re-open the ONE human decision the snapshot preserved.
+// The pending queues (scry/pick/discard/ask/sac/dredge) are all serialized by
+// toSnapshot, so they survive the close; this just reconnects them to the UI.
+// A no-op when nothing is pending (e.g. a fresh boot — the queues are empty).
+function resumePendingChoices() {
+	if (!state) return;
+	resolveAIScries(); resolveAIDiscards(); resolveAIPicks(); resolveAIAsks(); resolveAISacs(); resolveAIDredges(); resolveAIResponds();
+	const s = state;
+	if (s.scryQueue.length && s.scryQueue[0].chooser === HUMAN) return openScryModal();
+	if (s.pickQueue.length && s.pickQueue[0].player === HUMAN) return openPickModal();
+	if (s.discardQueue.length && s.discardQueue[0].player === HUMAN) return openDiscardModal();
+	if (s.askQueue.length && s.askQueue[0].player === HUMAN) return openAskModal();
+	if (s.sacQueue.length && s.sacQueue[0].player === HUMAN) return openSacModal();
+	if (s.dredgeQueue.length && s.dredgeQueue[0].player === HUMAN) return openDredgeModal();
+	if (s.priority === HUMAN) return openRespondModal();
 }
 
 // AI discards: end-of-turn cleanup keeps the bombs and sheds chaff (AI.cleanupDiscardUids);
@@ -5865,6 +5890,9 @@ async function start() {
 	buildSlotMarkers();
 	pump();
 	updateHud();
+	// resumed mid-decision? re-open the scry/Discover/etc. choice the snapshot froze on
+	// (the event that would normally open it was consumed before the close)
+	if (_resumedFight) resumePendingChoices();
 	// once in MP mode, broadcast the board so friends can spectate the run/battle
 	if (MP_ON && !spectateMode && !publishStarted) { publishStarted = true; startPublishLoop(); }
 }
