@@ -1116,7 +1116,36 @@ const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE
 
 const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null };
 const startMenu = { open: false, idx: 0 };
-const questMenu = { open: false, idx: 0 }; // the main-quest log (read-only list)
+const questMenu = { open: false, idx: 0, page: 0 }; // page 0 = quest log, 1 = THINGS TO DO
+// THINGS TO DO — the discovery checklist (Batch 6). Whole subsystems shipped as
+// reachable content that nothing ever pointed you at: contests, the Ruins, secret
+// bases, the Frontier, apricorns, Dive... This surfaces them with a where-to-start
+// hint and a live state ([x] done, [>] available now, [ ] locked/where-to-unlock).
+// `done`/`avail` are optional predicates read at draw time; default avail = true.
+const THINGS_TO_DO = [
+	{ label: 'BUG-CATCHING CONTEST', where: 'National Park gate (Johto) — Tue/Thu/Sat', avail: () => isBugDay() },
+	{ label: 'POKeMON CONTESTS', where: 'Lilycove Contest Hall (Hoenn)', done: () => Object.values(contestProgress().ranks || {}).some(v => v > 0) },
+	{ label: 'THE RUINS OF ALPH', where: 'Solve the sliding tile puzzles (Johto)', done: () => allRuinsSolved() },
+	{ label: 'UNOWN DEX', where: 'Catch every Unown letter in the Ruins (Johto)', done: () => Dex.unownCount() >= 28 },
+	{ label: 'APRICORNS & KURT', where: 'Pick apricorns on Routes 37/42, see Kurt in Azalea (Johto)' },
+	{ label: 'THE RADIO', where: 'Tune in to a radio in any Johto house' },
+	{ label: 'SECRET BASE', where: 'SECRET POWER on a tree, rock or cave wall (Hoenn)', done: () => !!myBase() },
+	{ label: 'HEADBUTT TREES', where: 'Use HEADBUTT on a leafy tree for hidden POKeMON' },
+	{ label: 'DIVE SPOTS', where: 'DIVE on deep water — Route 128 / Sootopolis (Hoenn)' },
+	{ label: 'THE SAFARI ZONE', where: 'Fuchsia City (Kanto) / Route 121 (Hoenn)' },
+	{ label: 'GAME CORNER', where: 'Voltorb Flip — Celadon / Goldenrod' },
+	{ label: 'TRAINER HILL', where: 'Climb for the best time (Hoenn)' },
+	{ label: 'SHOAL CAVE', where: 'Time the tides for shells & a Shell Bell (Hoenn)' },
+	{ label: 'BATTLE FRONTIER', where: 'Battle facilities for BP (Hoenn)', done: () => Frontier.getBP() > 0 || Frontier.bestStreak() > 0 },
+	{ label: 'ASYNC TRADES', where: 'Send & accept trade offers via the FRIENDS menu' },
+];
+function todoRows() {
+	return THINGS_TO_DO.map(t => {
+		let mark = '[ ] ';
+		try { mark = t.done?.() ? '[x] ' : (t.avail ? (t.avail() ? '[>] ' : '[ ] ') : '[>] '); } catch (e) { mark = '[>] '; }
+		return `${mark}${t.label} — ${t.where}`;
+	});
+}
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 const playerMenu = { open: false, idx: 0, target: null };
 const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
@@ -1770,7 +1799,7 @@ function startKey(k) {
 		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
 		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
-		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
+		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; questMenu.page = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
 		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full
@@ -1784,7 +1813,9 @@ function startKey(k) {
 }
 
 function questKey(k) {
-	const n = Quest.log(playerRegion()).length;
+	// ◄ ► flips between the quest LOG (page 0) and the THINGS TO DO checklist (1)
+	if (k === 'ArrowLeft' || k === 'ArrowRight') { questMenu.page = 1 - questMenu.page; questMenu.idx = 0; return; }
+	const n = questMenu.page === 1 ? THINGS_TO_DO.length : Quest.log(playerRegion()).length;
 	if (k === 'ArrowUp') questMenu.idx = (questMenu.idx + n - 1) % n;
 	if (k === 'ArrowDown') questMenu.idx = (questMenu.idx + 1) % n;
 	if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') questMenu.open = false;
@@ -8264,6 +8295,13 @@ function drawStartMenu(W, H) {
 }
 function drawQuest(W, H) {
 	const rk = playerRegion();
+	if (questMenu.page === 1) {
+		// THINGS TO DO — the discovery checklist
+		const rows = todoRows();
+		const left = rows.filter(r => r.startsWith('[ ]') || r.startsWith('[>]')).length;
+		optionList(W, H, H / 480, 'THINGS TO DO', `◄ ► quest log   ·   ${THINGS_TO_DO.length - left} explored, ${left} to discover`, rows, questMenu.idx, 'todo:', null);
+		return;
+	}
 	const mark = r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label;
 	// the postgame arc appends below the region log — the log used to end at the
 	// League row while sixteen more badges, RED and the legendary hunt existed
@@ -8272,7 +8310,7 @@ function drawQuest(W, H) {
 	const next = (Quest.stage(rk) === Quest.DONE && postgameObjective()) || Quest.objective(rk);
 	// the title carries the SHARED gym tier (all three regions must clear each tier); the
 	// subtitle's objective already spells out the cross-region "who's behind" when relevant
-	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + next, rows, questMenu.idx, 'quest:', null);
+	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + next + '   ·   ◄ ► things to do', rows, questMenu.idx, 'quest:', null);
 }
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
@@ -9183,7 +9221,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
