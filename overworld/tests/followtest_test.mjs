@@ -75,6 +75,19 @@ async function boot(browser, username) {
 		await new Promise(r => setTimeout(r, 250));
 		const after = await page.evaluate(() => ({ idx: window.__followtest.index, pinned: window.__ow.follower?.id }));
 		A(after.idx === 1 && after.pinned === (await page.evaluate(() => window.__followtest.ids[1])), "']' advances to the next sprite", JSON.stringify(after));
+
+		// the on-screen ▶ button also switches (and there is NO sprite-preview canvas)
+		const ui = await page.evaluate(() => {
+			const bar = document.getElementById('ft-bar');
+			const noCanvas = !document.querySelector('#ft-overlay canvas') && !(bar && bar.querySelector('canvas'));
+			const next = bar && [...bar.querySelectorAll('button')].find(b => b.textContent.includes('▶'));
+			if (next) next.click();
+			return { hasBar: !!bar, noCanvas, clicked: !!next };
+		});
+		await new Promise(r => setTimeout(r, 200));
+		const afterBtn = await page.evaluate(() => ({ idx: window.__followtest.index, pinned: window.__ow.follower?.id }));
+		A(ui.hasBar && ui.noCanvas, 'the control bar is switch-only (no sprite panel)');
+		A(ui.clicked && afterBtn.idx === 2, 'the on-screen ▶ button advances the follower', JSON.stringify(afterBtn));
 		await page.close();
 
 		// --- a non-owner is refused ---
