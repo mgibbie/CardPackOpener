@@ -99,8 +99,10 @@
 			position: fixed; display: none; z-index: 11; left: 50%; top: 42%;
 			transform: translate(-50%, -50%); padding: 14px 16px;
 			background: rgba(24,17,40,0.97); border: 1px solid #8f6fff; border-radius: 12px;
-			/* the huge-spread shadow dims the whole board — decision points get a spotlight */
-			box-shadow: 0 0 0 100vmax rgba(5,3,10,0.6), 0 10px 40px rgba(0,0,0,0.8);
+			/* the huge-spread shadow dims the whole board — decision points get a spotlight.
+			   0.9 (not 0.6) so the board/hero plates don't bleed through behind the cards,
+			   which read badly on phone-portrait where the card column leaves wide margins */
+			box-shadow: 0 0 0 100vmax rgba(5,3,10,0.9), 0 10px 40px rgba(0,0,0,0.8);
 			color: #e8e2f4;
 		}
 		#scry-modal .wm-title { color: #c9b8ff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
