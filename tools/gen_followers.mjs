@@ -76,21 +76,23 @@ const doProbe = flag('probe');         // also save the RAW provider output (to 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = (...a) => console.log(...a);
 
-// ---------- Retro Diffusion (api.retrodiffusion.ai/v2) ----------
-// Real contract: POST /v2/inferences returns {status:'accepted',task_id}; poll
-// GET /v2/inferences/tasks/{id} until status 'succeeded' -> result.base64_images
-// (base64 PNG, no data: prefix). Auth header X-RD-Token. Input images must be RGB
-// (no alpha). The four-angle walking style returns a 4-direction walk cycle; with
-// return_spritesheet:true it's a PNG grid.
+// ---------- Retro Diffusion (api.retrodiffusion.ai) ----------
+// Live-verified contract: POST /v2/inferences -> {status:'accepted',task_id};
+// poll GET /v2/inferences/tasks/{id} until 'succeeded' -> result.base64_images
+// (base64 PNG, no data: prefix) + result.remaining_balance. Credits: GET
+// /v1/inferences/credits -> {credits, balance}. Auth header X-RD-Token. Input
+// images must be RGB (no alpha). Style rd_animation__four_angle_walking at 48px
+// honours the img2img input_image (keeps the creature's look) and returns a
+// 4-direction, 4-frame walk grid — ~$0.07/sprite. check_cost:true prices for free.
 let lastBalance = null; // RD remaining credit balance, updated after each success
-const RD_BASE = 'https://api.retrodiffusion.ai/v2';
+const RD_BASE = 'https://api.retrodiffusion.ai'; // paths carry their own /v1 or /v2
 const RD_STYLE = process.env.RD_STYLE || 'rd_animation__four_angle_walking';
 const RD_SIZE = +(process.env.RD_SIZE || 48);       // native frame size the style wants
 const RD_STRENGTH = +(process.env.RD_STRENGTH || 0.62); // img2img: lower = truer to the front sprite
-const RD_MIN_BALANCE = +(process.env.RD_MIN_BALANCE || 1); // stop the run if credits fall below this
-// RD's four-angle sheet layout — the frame grid and which rows map to our
-// down/left/right/up. UNVERIFIED until a --probe sample is inspected; override via
-// env once known (RD_GRID_COLS, RD_GRID_ROWS, RD_ROW_ORDER="down,left,right,up").
+const RD_MIN_BALANCE = +(process.env.RD_MIN_BALANCE || 0.05); // stop if the $ balance falls below this
+// RD's four-angle sheet layout. VERIFIED on a live probe: at 48px this style
+// returns a 192x192 image = a 4x4 grid, rows in order down/left/right/up, 4 walk
+// frames per row — already our exact layout. Override via env only if RD changes.
 const RD_GRID_COLS = +(process.env.RD_GRID_COLS || 4);
 const RD_GRID_ROWS = +(process.env.RD_GRID_ROWS || 4);
 const RD_ROW_ORDER = (process.env.RD_ROW_ORDER || 'down,left,right,up').split(',');
@@ -102,7 +104,7 @@ async function rdFetch(pathname, key, init) {
 	if (!res.ok) throw new Error(`RD ${res.status} ${pathname}: ${text.slice(0, 200)}`);
 	return json;
 }
-async function rdCredits(key) { return rdFetch('/v2/inferences/credits', key, { method: 'GET' }); }
+async function rdCredits(key) { return rdFetch('/v1/inferences/credits', key, { method: 'GET' }); } // credits live on v1
 async function rdInfer(key, body) {
 	const acc = await rdFetch('/v2/inferences', key, { method: 'POST', body: JSON.stringify(body) });
 	if (acc.result?.base64_images || acc.base64_images) return acc.result || acc; // some responses come back sync
