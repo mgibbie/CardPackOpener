@@ -1738,16 +1738,41 @@ function moveShopKey(k) {
 }
 
 // full species list for the Pokédex, sorted by dex number (built once)
-function dexList() {
-	if (dexMenu.list) return dexMenu.list;
+// dex filters (Batch 6): narrow the 1,751-entry national list by type, region,
+// and caught-status — the completionist lens. Cycled by T/R/F in dexKey.
+const DEX_TYPES = ['ALL', 'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
+const DEX_REGIONS = [['ALL', () => true], ['KANTO', n => n >= 1 && n <= 151], ['JOHTO', n => n >= 152 && n <= 251], ['HOENN', n => n >= 252 && n <= 386], ['OTHER', n => n > 386 || n < 1]];
+const DEX_CAUGHT = ['ALL', 'OWNED', 'SEEN', 'MISSING'];
+function dexAll() {
+	if (dexMenu._all) return dexMenu._all;
 	const sp = battle.data.species;
 	// standard dex (positive nums) first, ascending; fakemon/custom (num <= 0)
 	// after, ordered by magnitude so they group sensibly
 	const key = n => (n > 0 ? n : 100000 + Math.abs(n || 99999));
-	dexMenu.list = Object.keys(sp)
-		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name }))
+	dexMenu._all = Object.keys(sp)
+		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name, types: sp[id].types || [] }))
 		.sort((a, b) => key(a.num) - key(b.num) || a.name.localeCompare(b.name));
-	return dexMenu.list;
+	return dexMenu._all;
+}
+function dexList() {
+	const t = DEX_TYPES[dexMenu.typeI || 0];
+	const inRegion = DEX_REGIONS[dexMenu.regionI || 0][1];
+	const cf = DEX_CAUGHT[dexMenu.caughtI || 0];
+	if (!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI)) return dexAll(); // unfiltered: the full list
+	return dexAll().filter(e => {
+		if (t !== 'ALL' && !e.types.includes(t)) return false;
+		if (!inRegion(e.num)) return false;
+		if (cf !== 'ALL') {
+			const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
+			if (cf === 'OWNED' && !caught) return false;
+			if (cf === 'SEEN' && !(seen && !caught)) return false;
+			if (cf === 'MISSING' && caught) return false;
+		}
+		return true;
+	});
+}
+function dexFilterLabel() {
+	return `${DEX_TYPES[dexMenu.typeI || 0]} · ${DEX_REGIONS[dexMenu.regionI || 0][0]} · ${DEX_CAUGHT[dexMenu.caughtI || 0]}`;
 }
 const friendsMenu = { open: false, idx: 0 };
 // MAIL BATTLES: correspondence Pokémon matches (server-authoritative, played a
@@ -1928,11 +1953,20 @@ function dexKey(k) {
 		if (k === 'x' || k === 'Escape') dexMenu.detail = false;
 		return;
 	}
+	// T / R / F cycle the type, region and caught-status filters
+	if (k === 't' || k === 'r' || k === 'f') {
+		if (k === 't') dexMenu.typeI = ((dexMenu.typeI || 0) + 1) % DEX_TYPES.length;
+		if (k === 'r') dexMenu.regionI = ((dexMenu.regionI || 0) + 1) % DEX_REGIONS.length;
+		if (k === 'f') dexMenu.caughtI = ((dexMenu.caughtI || 0) + 1) % DEX_CAUGHT.length;
+		dexMenu.idx = 0;
+		return;
+	}
+	if (!list.length) { if (k === 'x' || k === 'Escape') dexMenu.open = false; return; }
 	if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
 	if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
 	if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 9);
 	if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 9);
-	if (k === 'z' || k === 'Enter') { if (Dex.isSeen(list[dexMenu.idx].id)) dexMenu.detail = true; }
+	if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) dexMenu.detail = true; }
 	if (k === 'x' || k === 'Escape') dexMenu.open = false;
 }
 
@@ -7593,7 +7627,16 @@ function drawDexMenu(W, H) {
 	const list = dexList();
 	const c = Dex.counts();
 	if (dexMenu.detail) { drawDexDetail(W, H, u, list[dexMenu.idx]); return; }
-	menuChrome(W, H, u, 'POKeDEX', `Seen ${c.seen}   Caught ${c.caught}   —   tap a seen entry for details`);
+	const filtered = !!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI);
+	menuChrome(W, H, u, 'POKeDEX', filtered
+		? `${dexFilterLabel()} · ${list.length} shown   —   T/R/F filter`
+		: `Seen ${c.seen}   Caught ${c.caught}   —   T/R/F filter, Z details`);
+	if (!list.length) {
+		sctx.fillStyle = BUI.C.faint;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText('No POKeMON match this filter.', 40 * u, 140 * u);
+		return;
+	}
 	const rows = 9;
 	const start = Math.max(0, Math.min(dexMenu.idx - 4, list.length - rows));
 	list.slice(start, start + rows).forEach((e, i) => {
