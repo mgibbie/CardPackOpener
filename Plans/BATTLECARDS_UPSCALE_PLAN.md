@@ -30,6 +30,39 @@ sampling of the arrow overlay, full 452-suite pass + replay smoke.
 
 ---
 
+## Batch 0 — URGENT: touch drag-to-attack never commits **[5/5 · S]** (do FIRST, next session)
+
+User retest 2026-09-03 (after #232/#236 shipped): "targeting is still fucked"
+AND "not able to attack with hero weapon." Root-caused in the gesture harness
+(both symptoms, ONE cause) — deployed code confirmed current, works on desktop,
+fails on TOUCH:
+
+- A deliberate drag-to-attack on touch (aim slowly to line up the target) trips
+  the **380ms long-press timer** (`startLongPress`, game.js ~4103). It sets
+  `longPressFired = true`, and the window `pointerup` commit path bails at
+  `if (longPressFired) return;` (game.js ~4231) BEFORE `tryCommitTargetAt`. The
+  target stays armed, nothing resolves. Confirmed via trace: `[up] … sel HERO
+  dist 149 lpf true` → the `reached tryCommit` line never prints.
+- Hits BOTH creature attacks (`mineAttacksUsed:0, armed:15` after a touch drag)
+  and hero-weapon attacks (`heroAtks:0, armed:HERO`). Desktop passes because the
+  mouse drag registers >12px movement before the timer, so the long-press guard
+  returns without arming the flag.
+- Why #232/#236 missed it: those harnesses verified touch ARMING + arrow
+  pixel-position + DESKTOP commit; the touch RELEASE-commit with a slow/held
+  drag was never asserted.
+
+**Fix direction**: a gesture that became a real drag must not stay "long-
+pressed." Options: clear `longPressFired` the moment a drag passes the 14px
+threshold (in the pointermove that already sets `placing.dragging` /
+`menuDragCandidate`); OR in the pointerup commit path, treat "long-press fired
+but the pointer then travelled >14px" as a drag, not a hold; OR cancel the
+long-press timer once movement exceeds its own 12px guard. Whichever — add a
+harness assertion for touch RELEASE-commit (creature + hero weapon) with a
+deliberate >380ms drag, the exact gap here. Likely also re-verify the touch
+release-commit for pending SPELLS (same path).
+
+---
+
 ## Batch A — Finish the input feel **[5/5 · S]**
 
 - **Colorblind-safe board states**: the in-scene red (targetable) vs green
