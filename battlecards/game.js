@@ -3507,6 +3507,18 @@ addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
 	wake();
+	// An armed attack / pending target dragged past the click threshold is a
+	// DRAG to a target, never a press-and-hold preview — cancel the long-press
+	// so its 380ms timer can't fire mid-drag, and clear the flag if a hesitation
+	// BEFORE the drag already fired it. Without this, the natural gesture "press
+	// the attacker, glance at your targets, drag to one, release" did nothing:
+	// the pointerup commit path bails on `longPressFired`. Desktop AND touch —
+	// the pause to pick a target is what trips the timer. Gated on an armed
+	// attack/pending target so hand-card press-and-hold PREVIEW is untouched.
+	if ((selectedAttacker || pending) && !placing && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
+		clearTimeout(longPressT);
+		longPressFired = false;
+	}
 	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
 	// a real drag off a menu-opening creature closes its menu and arms the attack
 	if (menuDragCandidate != null && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
