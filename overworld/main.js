@@ -1743,6 +1743,7 @@ function moveShopKey(k) {
 const DEX_TYPES = ['ALL', 'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
 const DEX_REGIONS = [['ALL', () => true], ['KANTO', n => n >= 1 && n <= 151], ['JOHTO', n => n >= 152 && n <= 251], ['HOENN', n => n >= 252 && n <= 386], ['OTHER', n => n > 386 || n < 1]];
 const DEX_CAUGHT = ['ALL', 'OWNED', 'SEEN', 'MISSING'];
+const DEX_GRID_COLS = 12; // the LIVING DEX completion grid
 function dexAll() {
 	if (dexMenu._all) return dexMenu._all;
 	const sp = battle.data.species;
@@ -1822,7 +1823,7 @@ function startKey(k) {
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it.startsWith('MAIL')) { openMailbox(); }
-		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
+		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; dexMenu.grid = false; }
 		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; questMenu.page = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
@@ -1961,11 +1962,22 @@ function dexKey(k) {
 		dexMenu.idx = 0;
 		return;
 	}
+	// G toggles the LIVING DEX grid (a visual completion wall) vs the list
+	if (k === 'g') { dexMenu.grid = !dexMenu.grid; return; }
 	if (!list.length) { if (k === 'x' || k === 'Escape') dexMenu.open = false; return; }
-	if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
-	if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
-	if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 9);
-	if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 9);
+	// the grid steps a full row (DEX_GRID_COLS) up/down; the list steps a page of 9
+	const rowStep = dexMenu.grid ? DEX_GRID_COLS : 9;
+	if (dexMenu.grid) {
+		if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 1);
+		if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 1);
+		if (k === 'ArrowUp') dexMenu.idx = Math.max(0, dexMenu.idx - rowStep);
+		if (k === 'ArrowDown') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + rowStep);
+	} else {
+		if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
+		if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
+		if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - rowStep);
+		if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + rowStep);
+	}
 	if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) dexMenu.detail = true; }
 	if (k === 'x' || k === 'Escape') dexMenu.open = false;
 }
@@ -2258,6 +2270,31 @@ function setBox(box) {
 // total shinies owned across the party and PC boxes (Trainer Card, Batch 6c)
 function shinyOwnedCount() {
 	return (party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
+}
+// snapshot the current frame (the Trainer Card is up) → PNG, then share it via the
+// Web Share API when available, else save it as a download. Mirrors battlecards'
+// deck/replay sharing. Returns the data URL (for tests). (Batch 6 follow-up)
+async function shareTrainerCard() {
+	let url;
+	try { url = screen.toDataURL('image/png'); } catch (e) { return null; }
+	const name = localStorage.getItem('magepunk_name') || 'TRAINER';
+	const fname = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-trainer-card.png`;
+	try {
+		const blob = await (await fetch(url)).blob();
+		const file = new File([blob], fname, { type: 'image/png' });
+		if (navigator.canShare && navigator.canShare({ files: [file] })) {
+			await navigator.share({ files: [file], title: 'Trainer Card', text: `${name}'s Magepunk trainer card` });
+			hud.textContent = 'Shared your Trainer Card!';
+			return url;
+		}
+	} catch (e) { /* share unavailable or cancelled → save instead */ }
+	try {
+		const a = document.createElement('a');
+		a.href = url; a.download = fname;
+		document.body.appendChild(a); a.click(); a.remove();
+		hud.textContent = 'Saved your Trainer Card as an image.';
+	} catch (e) { /* no-op */ }
+	return url;
 }
 
 function shopKey(k) {
@@ -2742,6 +2779,7 @@ function pressKey(k) {
 	if (questMenu.open) { questKey(k); return; }
 	if (trainerCard.open) {
 		if (k === 'ArrowLeft' || k === 'ArrowRight') { trainerCard.page = 1 - trainerCard.page; return; }
+		if (k === 's') { shareTrainerCard(); return; } // snapshot -> share/save
 		if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false;
 		return;
 	}
@@ -7626,15 +7664,66 @@ function drawSummary(W, H, u) {
 	BUI.button(sctx, lead, menuHover === lead.id, u);
 }
 
+// LIVING DEX — the completion wall: the whole (filtered) roster as an icon grid,
+// owned bright, seen dim, missing a silhouette. A visual sibling of the list.
+function drawDexGrid(W, H, u, list) {
+	const c = Dex.counts();
+	const filtered = !!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI);
+	menuChrome(W, H, u, 'LIVING DEX', filtered
+		? `${dexFilterLabel()} · ${list.length} shown   —   G list, T/R/F filter`
+		: `${c.caught} owned · ${c.seen} seen   —   G list, T/R/F filter, Z details`);
+	if (!list.length) {
+		sctx.fillStyle = BUI.C.faint;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText('No POKeMON match this filter.', 40 * u, 140 * u);
+		return;
+	}
+	const cols = DEX_GRID_COLS;
+	const marginX = 24 * u, top = 74 * u;
+	const cell = Math.floor((W - marginX * 2) / cols);
+	const visRows = Math.max(1, Math.floor((H - top - 16 * u) / cell));
+	const totalRows = Math.ceil(list.length / cols);
+	const curRow = Math.floor(dexMenu.idx / cols);
+	const startRow = Math.max(0, Math.min(curRow - Math.floor(visRows / 2), totalRows - visRows));
+	const startI = Math.max(0, startRow * cols);
+	for (let i = startI; i < Math.min(list.length, startI + visRows * cols); i++) {
+		const e = list[i];
+		const gx = marginX + (i % cols) * cell, gy = top + (Math.floor(i / cols) - startRow) * cell;
+		const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
+		const sel = dexMenu.idx === i, bid = 'dex:' + i;
+		menuUi.push({ id: bid, x: gx, y: gy, w: cell, h: cell }); // tap → menuTap sets idx + opens detail
+		sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : 'rgba(255,255,255,0.04)';
+		BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.fill();
+		if (sel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2; BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.stroke(); }
+		if (seen) {
+			const img = iconOf({ sprite: battle.data.species[e.id]?.sprite });
+			if (img) {
+				sctx.imageSmoothingEnabled = false;
+				sctx.globalAlpha = caught ? 1 : 0.4; // seen-not-owned dims
+				const s = Math.min((cell - 6 * u) / img.width, (cell - 6 * u) / img.height);
+				sctx.drawImage(img, gx + (cell - img.width * s) / 2, gy + (cell - img.height * s) / 2, img.width * s, img.height * s);
+				sctx.globalAlpha = 1;
+			}
+			if (caught) { sctx.fillStyle = BUI.C.accent; sctx.beginPath(); sctx.arc(gx + cell - 8 * u, gy + 8 * u, 3 * u, 0, Math.PI * 2); sctx.fill(); }
+		} else {
+			sctx.fillStyle = 'rgba(255,255,255,0.16)';
+			sctx.font = `${Math.round(cell * 0.42)}px m6x11plus, monospace`;
+			sctx.textAlign = 'center';
+			sctx.fillText('?', gx + cell / 2, gy + cell * 0.66);
+			sctx.textAlign = 'left';
+		}
+	}
+}
 function drawDexMenu(W, H) {
 	const u = H / 480;
 	const list = dexList();
 	const c = Dex.counts();
 	if (dexMenu.detail) { drawDexDetail(W, H, u, list[dexMenu.idx]); return; }
+	if (dexMenu.grid) { drawDexGrid(W, H, u, list); return; }
 	const filtered = !!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI);
 	menuChrome(W, H, u, 'POKeDEX', filtered
-		? `${dexFilterLabel()} · ${list.length} shown   —   T/R/F filter`
-		: `Seen ${c.seen}   Caught ${c.caught}   —   T/R/F filter, Z details`);
+		? `${dexFilterLabel()} · ${list.length} shown   —   T/R/F filter, G grid`
+		: `Seen ${c.seen}   Caught ${c.caught}   —   T/R/F filter, G grid, Z details`);
 	if (!list.length) {
 		sctx.fillStyle = BUI.C.faint;
 		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
@@ -7857,7 +7946,7 @@ function drawTrainerCard(W, H) {
 		});
 		return;
 	}
-	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal');
+	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal   ·   S share');
 	const c = Dex.counts();
 	const name = localStorage.getItem('magepunk_name') || 'PLAYER';
 	const region = localStorage.getItem('magepunk_region') || '—';
@@ -9272,7 +9361,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel, shareTrainerCard,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
