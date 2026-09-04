@@ -3880,6 +3880,33 @@ function followMini(id) {
 	}
 	return followMiniCache.get(id);
 }
+// a crisp, pre-shrunk mini for fakemon followers. A battle sprite is 64–256px; a
+// single nearest-neighbour shrink to ~20px aliased it to mush. This box-downscales
+// in halving steps at high quality (the standard way to shrink detailed art),
+// caches the result canvas, and the follower draws it 1:1 — much cleaner.
+const MINI_PX = 28;
+const miniCvCache = new Map();
+function followMiniCanvas(id) {
+	if (miniCvCache.has(id)) return miniCvCache.get(id);
+	const src = followMini(id);
+	if (!src || !src.width) return null;              // still loading — retry next frame (not cached)
+	let cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
+	let cx = cv.getContext('2d'); cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+	cx.drawImage(src, 0, 0);
+	while (Math.max(cv.width, cv.height) > MINI_PX * 2) {   // halve until within 2x of target
+		const nw = Math.max(1, Math.round(cv.width / 2)), nh = Math.max(1, Math.round(cv.height / 2));
+		const nc = document.createElement('canvas'); nc.width = nw; nc.height = nh;
+		const ncx = nc.getContext('2d'); ncx.imageSmoothingEnabled = true; ncx.imageSmoothingQuality = 'high';
+		ncx.drawImage(cv, 0, 0, nw, nh); cv = nc;
+	}
+	const s = MINI_PX / Math.max(cv.width, cv.height);
+	const fw = Math.max(1, Math.round(cv.width * s)), fh = Math.max(1, Math.round(cv.height * s));
+	const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
+	const fcx = fc.getContext('2d'); fcx.imageSmoothingEnabled = true; fcx.imageSmoothingQuality = 'high';
+	fcx.drawImage(cv, 0, 0, fw, fh);
+	miniCvCache.set(id, fc);
+	return fc;
+}
 const FOLLOW_ROW = { down: 0, left: 1, right: 2, up: 3 };
 let follower = null;
 let lastPlayerTile = null;
@@ -3933,10 +3960,9 @@ function drawFollower(ctx, camX, camY) {
 	const img = followSheet(follower.id);
 	if (!img) {
 		if (followCache.get(follower.id) !== 'none') return; // sheets still loading
-		const mini = followMini(follower.id);
+		const mini = followMiniCanvas(follower.id);          // pre-shrunk, crisp (see followMiniCanvas)
 		if (!mini) return;
-		const s = Math.min(20 / mini.width, 20 / mini.height);
-		const w = Math.max(1, Math.round(mini.width * s)), h = Math.max(1, Math.round(mini.height * s));
+		const w = mini.width, h = mini.height;               // already at final size — draw 1:1
 		const bob = follower.moving && follower.step ? -1 : 0;
 		const mx = Math.round(follower.px + META / 2 - w / 2 - camX);
 		const my = Math.round(follower.py + META - h - camY + bob);
@@ -3944,10 +3970,10 @@ function drawFollower(ctx, camX, camY) {
 		if (follower.facing === 'right') {          // mirror the single sprite to face the way it's walking
 			ctx.save();
 			ctx.translate(mx + w, my); ctx.scale(-1, 1);
-			ctx.drawImage(mini, 0, 0, w, h);
+			ctx.drawImage(mini, 0, 0);
 			ctx.restore();
 		} else {
-			ctx.drawImage(mini, mx, my, w, h);
+			ctx.drawImage(mini, mx, my);
 		}
 		return;
 	}
