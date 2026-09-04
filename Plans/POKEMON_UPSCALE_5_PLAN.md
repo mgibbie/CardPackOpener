@@ -153,12 +153,18 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   - Still deferred: **real per-badge art** (needs 24 sourced badge sprites — the
     tier tracker stays as pips).
 
-## Batch 7 — Rider sprites **[2/5 · S-M]**
+## Batch 7 — Rider sprites **[2/5 · S-M]** — DONE (PR #254)
 
-`player.biking`/running change speed only, and Surf draws a generic blue
-mount ellipse. The decomps carry the real bike/surf player sheets — wire
-bike, running, and a proper surf-mount sprite (+ follower pace already
-adapts). Pure authenticity, self-contained.
+Biking changed speed only and Surf drew a generic blue ellipse. The real decomp
+bike/surf player sheets were already sitting in `data/people` (red_bike.png /
+red_surf.png, 18-frame, same 9-frame walk layout the NPCs use) — just unwired.
+`Player.init` now loads them and `Player.rideImg()` selects the surf-mount /
+bike / walk sheet in `draw()` (surf outranks bike); the blue ellipse survives
+only as a fallback when the surf sheet is missing. Running keeps the walk sheet
+(faster) — Crystal has no separate run body sheet. Code-only (the sheets already
+ship in owdata). 9-assertion `ridersprites_test.mjs`; boot/stepfx/dive/warpfade
+green. **ROUND 5 COMPLETE** (batches 1-7 + the Batch-6 follow-up; only real
+per-badge art remains deferred as an art-sourcing task).
 
 ## Parked (needs design or the standing call)
 
