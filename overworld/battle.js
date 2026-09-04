@@ -1997,6 +1997,14 @@ export class Battle {
 		if (phys && (uAb === 'hugepower' || uAb === 'purepower')) A *= 2;
 		if (phys && uAb === 'hustle') A = Math.floor(A * 1.5);
 		if (phys && tAb === 'marvelscale' && target.status) D = Math.floor(D * 1.5);
+		// alt-stat damage: a few moves measure against a different stat than the
+		// category implies. Applied AFTER the atk-modifying abilities above, so
+		// e.g. Huge Power doesn't touch Body Press (it uses Defense, not Attack).
+		if (move.id === 'bodypress') A = this.statOf(user, aBoosts, 'def');            // uses the USER's Defense
+		else if (move.id === 'foulplay') A = this.statOf(target, dBoosts, 'atk');       // uses the TARGET's Attack
+		if (move.id === 'psyshock' || move.id === 'psystrike' || move.id === 'secretsword') {
+			D = this.statOf(target, dBoosts, 'def');                                    // Special move that hits Defense
+		}
 		// state-dependent power (Gyro Ball, Flail, Hex, Weather Ball, ...)
 		const L = user.level;
 		let Pw = mv.power || 0;
