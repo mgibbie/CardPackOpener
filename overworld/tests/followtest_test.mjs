@@ -125,6 +125,12 @@ async function boot(browser, username) {
 		});
 		A(sheets.fakemon === 'none', 'a fakemon (gigalion) uses the mini, never a sheet', sheets.fakemon);
 		A(sheets.canonical !== 'none', 'a canonical species still loads its follower sheet', String(sheets.canonical));
+
+		// walking right faces the follower right (the mini mirrors to match)
+		await page.keyboard.down('ArrowRight'); await new Promise(r => setTimeout(r, 220)); await page.keyboard.up('ArrowRight');
+		await new Promise(r => setTimeout(r, 150));
+		const facing = await page.evaluate(() => window.__ow.follower?.facing);
+		A(facing === 'right', 'walking right faces the follower right (mini flips)', facing);
 		await page.close();
 
 		// --- a non-owner is refused ---

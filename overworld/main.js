@@ -3938,8 +3938,17 @@ function drawFollower(ctx, camX, camY) {
 		const s = Math.min(20 / mini.width, 20 / mini.height);
 		const w = Math.max(1, Math.round(mini.width * s)), h = Math.max(1, Math.round(mini.height * s));
 		const bob = follower.moving && follower.step ? -1 : 0;
+		const mx = Math.round(follower.px + META / 2 - w / 2 - camX);
+		const my = Math.round(follower.py + META - h - camY + bob);
 		ctx.imageSmoothingEnabled = false;
-		ctx.drawImage(mini, Math.round(follower.px + META / 2 - w / 2 - camX), Math.round(follower.py + META - h - camY + bob), w, h);
+		if (follower.facing === 'right') {          // mirror the single sprite to face the way it's walking
+			ctx.save();
+			ctx.translate(mx + w, my); ctx.scale(-1, 1);
+			ctx.drawImage(mini, 0, 0, w, h);
+			ctx.restore();
+		} else {
+			ctx.drawImage(mini, mx, my, w, h);
+		}
 		return;
 	}
 	const fs = img.width / 4;                 // 4 columns
