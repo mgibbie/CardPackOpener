@@ -30,9 +30,17 @@ export function mount(ow) {
 			await new Promise(r => setTimeout(r, 150));
 		}
 		if (!custom.length) {
-			const grab = async (u, d) => { try { const r = await fetch(new URL(u, location.href)); if (r.ok) { const j = await r.json(); if (Array.isArray(j) && j.length) return j; } } catch (e) {} return d; };
-			ids = await grab('data/pokemon_follow_index.json', ids);
-			aiIds = await grab('data/pokemon_follow_ai_index.json', aiIds);
+			// list EVERY species from the game's own catalog — fakemon show their mini
+			// fallback, sheeted species show their sheet — so any fakemon is selectable
+			let sp = null;
+			for (let t = 0; t < 40 && !(sp && Object.keys(sp).length); t++) { try { sp = ow.battle?.data?.species; } catch (e) {} if (!(sp && Object.keys(sp).length)) await new Promise(r => setTimeout(r, 100)); }
+			if (sp && Object.keys(sp).length) {
+				const key = n => (n > 0 ? n : 100000 + Math.abs(n || 99999));
+				ids = Object.keys(sp).sort((a, b) => key(sp[a].num || 9999) - key(sp[b].num || 9999) || a.localeCompare(b));
+				aiIds = ids.filter(id => (sp[id].num || 0) <= 0);   // fakemon = non-standard dex number
+				const start = ids.indexOf('gigalion');              // open on gigalion, else the first fakemon
+				i = start >= 0 ? start : (aiIds.length ? ids.indexOf(aiIds[0]) : 0);
+			}
 		}
 		buildSelect(); render();
 	})();
@@ -76,7 +84,7 @@ export function mount(ow) {
 	function buildSelect() {
 		sel.innerHTML = '';
 		if (aiIds.length) {
-			const g = document.createElement('optgroup'); g.label = `★ Testing — new fakemon (${aiIds.length})`;
+			const g = document.createElement('optgroup'); g.label = `★ Fakemon (${aiIds.length})`;
 			aiIds.forEach(id => g.appendChild(opt(id))); sel.appendChild(g);
 		}
 		const g2 = document.createElement('optgroup'); g2.label = `All species (${ids.length})`;
