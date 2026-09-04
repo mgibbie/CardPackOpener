@@ -18,7 +18,7 @@ import * as Chat from './chat.js';
 import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave } from './safestore.js';
-import { keepLocalRun } from './runsync.js';
+import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
@@ -214,6 +214,24 @@ function clearRunSnapshot() {
 	const run = io.load();
 	if (run && run.snapshot) { delete run.snapshot; delete run.snapshotAt; io.save(run); }
 }
+// ---------- async (correspondence) mid-turn snapshot ----------
+// Async matches are server-authoritative and only publish at TURN END, so a
+// mid-turn close would restart your current turn. Keep a LOCAL mid-turn snapshot
+// too — safe because during YOUR turn the server is frozen (the opponent can't
+// act until you submit), so this never fights the server; it just lets a
+// same-device reopen resume the exact point. Reconciled on load via
+// useLocalAsyncTurn (same match + same unsubmitted turn), else discarded.
+const asyncSnapKey = id => 'magepunk_async_snap_v1:' + id;
+function saveAsyncSnapshot() {
+	if (!asyncGame.on || !asyncGame.live || !asyncGame.id || !state || state.over) return;
+	if (state.current !== HUMAN || !asyncGame.myTurnStarted) return; // only during MY live turn
+	try {
+		const json = JSON.stringify(E.toSnapshot(state));
+		if (json.length > RUN_SNAP_MAX) return;
+		safeSave(asyncSnapKey(asyncGame.id), { id: asyncGame.id, turnNumber: state.turnNumber, at: Date.now(), snap: JSON.parse(json) });
+	} catch (e) { /* never let a save break play */ }
+}
+function clearAsyncSnapshot() { if (asyncGame.id) { try { safeSave(asyncSnapKey(asyncGame.id), null); } catch (e) { /* ignore */ } } }
 // set when a boot restored a fight from a snapshot — the boot tail then re-opens
 // any pending scry/Discover/etc. choice the snapshot was frozen on (see resumePendingChoices)
 let _resumedFight = false;
@@ -267,9 +285,9 @@ async function hydrateRunsFromServer() {
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
 }
 try {
-	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); pushActiveRun(true); } });
+	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); saveAsyncSnapshot(); pushActiveRun(true); } });
 	// pagehide is the real unload — keepalive so the final push survives a hard tab-close
-	window.addEventListener('pagehide', () => { saveRunSnapshot(); pushActiveRun(true, true); });
+	window.addEventListener('pagehide', () => { saveRunSnapshot(); saveAsyncSnapshot(); pushActiveRun(true, true); });
 	setInterval(() => pushActiveRun(false), 5000); // coarse metadata heartbeat to the server
 } catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
 
@@ -4339,6 +4357,7 @@ $('concede').addEventListener('click', () => {
 			try { await MPX.call('async-resign', { id: asyncGame.id }); } catch (e) {}
 			state.over = true;
 			asyncGame.overSent = true;
+			clearAsyncSnapshot(); // match's done — drop any local mid-turn copy
 			const done = dungeonOverlay('MATCH RESIGNED', `${asyncGame.opp || 'Your opponent'} takes it.`);
 			done.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 			updateHud();
@@ -5545,8 +5564,25 @@ async function startAsync(cardsById) {
 			E.addCoin(state, 1);
 		}
 	} else if (m.snap) {
-		state = E.fromSnapshot(m.snap, cardsById);
-		E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
+		// prefer a fresher LOCAL mid-turn snapshot (same match, same unsubmitted turn) —
+		// the server only holds the turn START, so a same-device mid-turn close kept the rest
+		const localMid = safeLoad(asyncSnapKey(asyncGame.id), null);
+		if (useLocalAsyncTurn(localMid, m.snap, asyncGame.id, mySeat)) {
+			try {
+				state = E.fromSnapshot(localMid.snap, cardsById);
+				E.ensureUidsAbove(E.maxSnapshotUid(localMid.snap));
+				_resumedFight = true; // re-open any pending scry/Discover the turn was frozen on
+				log('Resumed your in-progress turn.');
+			} catch (e) {
+				state = E.fromSnapshot(m.snap, cardsById);
+				E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
+				clearAsyncSnapshot();
+			}
+		} else {
+			state = E.fromSnapshot(m.snap, cardsById);
+			E.ensureUidsAbove(E.maxSnapshotUid(m.snap));
+			if (localMid) clearAsyncSnapshot(); // stale — the match moved on
+		}
 	} else {
 		// accepted but the opening deal never arrived (their tab died mid-accept)
 		const el = dungeonOverlay('SETTING UP', `${asyncGame.opp} is dealing the opening — check back shortly.`);
@@ -5561,6 +5597,8 @@ async function startAsync(cardsById) {
 	buildSlotMarkers();
 	pump();
 	updateHud();
+	// resumed a mid-turn snapshot? re-open the scry/Discover/etc. it was frozen on
+	if (_resumedFight) resumePendingChoices();
 	log(`Correspondence duel: you vs ${asyncGame.opp}.`);
 
 	if (asyncGame.myTurnStarted && Array.isArray(m.lines) && m.lines.length) {
@@ -5631,6 +5669,7 @@ async function maybePublishAsync() {
 		if (r.error) { log('Could not send the turn: ' + r.error); asyncGame.sending = false; return; }
 		asyncGame.needDeal = false;
 		asyncGame.myTurnStarted = false;
+		clearAsyncSnapshot(); // turn committed to the server — drop the local mid-turn copy
 		if (over) {
 			asyncGame.overSent = true;
 			asyncReportElo(r.match || { winner: payload.winner });
@@ -8372,6 +8411,7 @@ function maybeRecordFrame() {
 	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
 	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim());
 	saveRunSnapshot(); // persist the live fight into the active run so resume restores this exact board
+	saveAsyncSnapshot(); // and the async mid-turn so a correspondence match resumes exactly too
 }
 function finalizeReplay(winner, resultOverride) {
 	if (replayMode || spectateMode || !Rec.isRecording()) return;

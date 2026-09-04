@@ -25,3 +25,19 @@ export function keepLocalRun(local, serverRun) {
 	// one wins (covers legit cross-device: whichever device you touched last)
 	return (local.snapshotAt || 0) >= (serverRun.snapshotAt || 0);
 }
+
+// Async (correspondence) matches are server-authoritative and only publish at TURN
+// END, so a mid-turn close would restart your current turn. We keep a LOCAL mid-turn
+// snapshot too — but must only restore it when it's genuinely the SAME unsubmitted
+// turn on THIS match (else the server has moved on and the local copy is stale).
+// `local`      = { id, turnNumber, snap } saved by the client mid-turn
+// `serverSnap` = the match's server snapshot (published at the start of your turn)
+// `matchId`    = the async match we're opening
+// `mySeat`     = our player index in the match
+export function useLocalAsyncTurn(local, serverSnap, matchId, mySeat) {
+	if (!local || !local.snap || local.id !== matchId) return false; // no local, or a different match
+	if (!serverSnap) return false;
+	if (serverSnap.current !== mySeat) return false;                 // server says it isn't your turn (you already submitted)
+	// same turn number on the same match = the exact unsubmitted turn the local copy extends
+	return local.snap.turnNumber === serverSnap.turnNumber;
+}
