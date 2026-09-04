@@ -737,6 +737,28 @@ function recordHallOfFame(region, roster) {
 evolution.onDone = () => saveParty(party);
 evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
 let loading = true;
+// ---------- screen fade (warp/door transitions) ----------
+// Warps used to hard-cut between maps. A short fade-to-black on the way out and
+// a fade-in on the new map reads instantly more finished. The main tick BAILS
+// while `loading` is true, so the fade animates in the loading=false windows on
+// either side of the load: fadeTo(1) (out) → set loading + swap the map →
+// fadeTo(0) (in). While a fade runs, `fading` freezes input via menuBlocking so
+// no stray step slips through the black. Honors REDUCED_MOTION (instant cut).
+const REDUCED_MOTION_OW = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fade = { alpha: 0, target: 0 };
+const FADE_SPEED = 6; // alpha units/sec (~170ms each way)
+const fading = () => fade.alpha > 0.001 || fade.target > 0.001;
+function fadeTo(target) {
+	if (REDUCED_MOTION_OW) { fade.alpha = target; fade.target = target; return Promise.resolve(); }
+	fade.target = target;
+	return new Promise(res => {
+		const check = () => {
+			if (Math.abs(fade.alpha - fade.target) < 0.02) { fade.alpha = fade.target; res(); }
+			else requestAnimationFrame(check);
+		};
+		check();
+	});
+}
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
 // block forever with no player-facing UI. Both self-recover after a grace period.
@@ -2707,7 +2729,7 @@ const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open |
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -2966,6 +2988,7 @@ function afterLoadError(where, err) {
 }
 
 async function moveToMap(file, px, py) {
+	await fadeTo(1);              // dip to black before the swap (fades in below)
 	loading = true;
 	try {
 		await world.load(file);
@@ -2975,6 +2998,7 @@ async function moveToMap(file, px, py) {
 		player.surfing = false;
 		await refreshMapContent(file);
 	} catch (e) { afterLoadError('moveToMap ' + file, e); }
+	fadeTo(0);                    // reveal the new map
 }
 
 async function warpTo(mapId, destWarpId) {
@@ -2991,9 +3015,10 @@ async function warpTo(mapId, destWarpId) {
 		await backWarp();
 		return;
 	}
-	loading = true;
 	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
+	await fadeTo(1);             // dip to black as the door opens (fades in below)
+	loading = true;
 	try {
 		await world.load(file);
 		let idx = parseInt(destWarpId, 10);
@@ -3004,6 +3029,7 @@ async function warpTo(mapId, destWarpId) {
 		world.lastWarpSource = source;
 		await refreshMapContent(file);
 	} catch (e) { afterLoadError('warpTo ' + mapId, e); }
+	fadeTo(0);                   // reveal the destination
 }
 
 // Fly: warp straight to a town's landing tile (no warp-index lookup)
@@ -3484,6 +3510,8 @@ player.onArrive = () => {
 		if (fluteState.steps === 0) { fluteState.mode = null; hud.textContent = "The flute's melody faded away."; }
 		saveFlute();
 	}
+	// ambient step fx: rustle the grass / print the sand under the new tile
+	spawnStepFx();
 	// wild encounter?
 	if (!battle.blocking) {
 		// guard: this runs inside the rAF step loop, where a throw is silent and
@@ -3877,9 +3905,11 @@ function dexMilestoneCheck() {
 // it with their own timed spells as usual. Emerald's canonical weather routes,
 // plus hail on the Mt Silver climb (its Gen-4 identity).
 const MAP_WEATHER = {
-	MAP_ROUTE111: 'sandstorm',
-	MAP_ROUTE119: 'rain',
+	MAP_ROUTE111: 'sandstorm',   // the Hoenn desert
+	MAP_ROUTE113: 'ash',         // volcanic ashfall from Mt Chimney
+	MAP_ROUTE119: 'rain',        // the rain belt
 	MAP_ROUTE120: 'rain',
+	MAP_ROUTE123: 'rain',
 	MAP_SILVER_CAVE_OUTSIDE: 'hail',
 };
 function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
@@ -6778,6 +6808,108 @@ function drawDayNightTint(context) {
 	context.restore();
 }
 
+// ---------- step ambience: grass rustle + sand/ash footprints ----------
+// Static grass was the giveaway that this is a port. onArrive spawns a one-shot
+// rustle when you step into tall/long grass, and a fading footprint pair when
+// you step in deep sand / ashy grass. Purely cosmetic, screen-decay by real
+// time, camera-relative, capped, REDUCED_MOTION-silent.
+const stepFx = []; // { kind:'rustle'|'print', tx, ty, born, facing }
+const MB_DEEP_SAND = 0x0c, MB_ASHGRASS = 0x24; // desert floor (Route 111) + ashy grass (Route 113)
+function spawnStepFx() {
+	if (REDUCED_MOTION_OW || !world.current) return;
+	const b = world.behaviorAt(player.tx, player.ty);
+	const now = performance.now();
+	if (world.isTallGrass(player.tx, player.ty)) stepFx.push({ kind: 'rustle', tx: player.tx, ty: player.ty, born: now });
+	else if (b === MB_DEEP_SAND || b === MB_ASHGRASS) stepFx.push({ kind: 'print', tx: player.tx, ty: player.ty, born: now, facing: player.facing });
+	if (stepFx.length > 40) stepFx.splice(0, stepFx.length - 40);
+}
+// footprints go down with the ground (under sprites); rustle goes over feet.
+function drawStepFx(ctx, camX, camY, kind) {
+	const now = performance.now();
+	for (let i = stepFx.length - 1; i >= 0; i--) {
+		const f = stepFx[i];
+		const life = f.kind === 'print' ? 4500 : 260;
+		const t = (now - f.born) / life;
+		if (t >= 1) { if (kind === 'rustle') stepFx.splice(i, 1); continue; } // one pass owns removal
+		if (f.kind !== kind) continue;
+		const bx = f.tx * META - camX, by = f.ty * META - camY, cx = bx + META / 2, cy = by + META / 2;
+		if (f.kind === 'print') {
+			ctx.save();
+			ctx.globalAlpha = 0.4 * (1 - t);
+			ctx.fillStyle = '#5a4a34';
+			const off = { down: [-3, 2], up: [3, -2], left: [2, 3], right: [-2, 3] }[f.facing] || [0, 3];
+			ctx.fillRect(Math.round(cx - 3 + off[0]), Math.round(cy + off[1]), 2, 3);
+			ctx.fillRect(Math.round(cx + 1 + off[0]), Math.round(cy + off[1]), 2, 3);
+			ctx.restore();
+		} else { // rustle: a quick low puff of pale-green flecks
+			const k = Math.sin(Math.min(1, t) * Math.PI); // 0→1→0
+			ctx.save();
+			ctx.globalAlpha = 0.8 * k;
+			ctx.fillStyle = '#e6ffcf';
+			const spread = 3 + k * 5;
+			for (const dx of [-spread, -1, spread]) ctx.fillRect(Math.round(cx + dx), Math.round(cy + 6 - k * 3), 2, 2);
+			ctx.strokeStyle = `rgba(120,180,90,${0.7 * k})`;
+			ctx.lineWidth = 1;
+			ctx.beginPath(); ctx.moveTo(cx - spread, cy + 7); ctx.lineTo(cx, cy + 7 - k * 4); ctx.lineTo(cx + spread, cy + 7); ctx.stroke();
+			ctx.restore();
+		}
+	}
+}
+
+// ---------- overworld weather ----------
+// MAP_WEATHER only ever fed BATTLE weather; the route itself showed clear sky.
+// A full-screen particle layer (rain/sandstorm/hail/ash) drawn on the GBA frame
+// keyed off mapWeatherNow() gives the weather routes their sky. Particles live
+// in screen space (they blanket the viewport, not the world), so no camera math.
+// REDUCED_MOTION draws the colour wash only, no motion.
+const weatherFx = { type: null, parts: [], last: 0 };
+const WEATHER_SPEC = {
+	// n: particle count · tint [r,g,b,a] multiply wash · per-particle draw+move
+	rain: { n: 90, tint: [70, 90, 130, 0.16], vx: -60, vy: 620, len: 9, draw(ctx, p) { ctx.strokeStyle = 'rgba(170,200,255,0.55)'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 1.4, p.y - p.spec.len); ctx.stroke(); } },
+	sandstorm: { n: 130, tint: [150, 120, 70, 0.30], vx: 340, vy: 40, len: 7, draw(ctx, p) { ctx.strokeStyle = `rgba(214,188,130,${p.a})`; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.spec.len, p.y - 1); ctx.stroke(); } },
+	hail: { n: 70, tint: [150, 170, 200, 0.16], vx: -20, vy: 200, len: 0, draw(ctx, p) { ctx.fillStyle = 'rgba(230,240,255,0.85)'; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
+	ash: { n: 60, tint: [90, 80, 78, 0.20], vx: 12, vy: 55, len: 0, draw(ctx, p) { ctx.fillStyle = `rgba(120,110,108,${p.a})`; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
+};
+function spawnWeatherPart(spec, anywhere) {
+	return {
+		x: Math.random() * (VIEW_W + 40) - 20,
+		y: anywhere ? Math.random() * VIEW_H : -Math.random() * 20,
+		a: 0.35 + Math.random() * 0.5,
+		vj: 0.6 + Math.random() * 0.8, // per-particle speed jitter
+		spec,
+	};
+}
+function drawWeather(ctx) {
+	const type = (Settings.get('weather') && !world.current?.map?.indoor
+		&& world.current?.map?.map_type !== 'MAP_TYPE_INDOOR') ? mapWeatherNow() : null;
+	if (!type || !WEATHER_SPEC[type]) { weatherFx.type = null; weatherFx.parts.length = 0; return; }
+	const spec = WEATHER_SPEC[type];
+	if (weatherFx.type !== type) {
+		weatherFx.type = type;
+		weatherFx.parts = Array.from({ length: spec.n }, () => spawnWeatherPart(spec, true));
+	}
+	// colour wash (multiply) — the sky's mood, drawn even under REDUCED_MOTION
+	ctx.save();
+	ctx.globalCompositeOperation = 'multiply';
+	ctx.globalAlpha = spec.tint[3];
+	ctx.fillStyle = `rgb(${spec.tint[0]},${spec.tint[1]},${spec.tint[2]})`;
+	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.restore();
+	if (REDUCED_MOTION_OW) return;
+	const now = performance.now();
+	const dt = Math.min((now - weatherFx.last) / 1000, 0.05);
+	weatherFx.last = now;
+	ctx.save();
+	ctx.lineWidth = 1;
+	for (const p of weatherFx.parts) {
+		p.x += spec.vx * p.vj * dt;
+		p.y += spec.vy * p.vj * dt;
+		if (p.y > VIEW_H + 12 || p.x < -24 || p.x > VIEW_W + 24) Object.assign(p, spawnWeatherPart(spec, false));
+		spec.draw(ctx, p);
+	}
+	ctx.restore();
+}
+
 // ---------- loop ----------
 let last = performance.now();
 let playAccum = 0;
@@ -6785,6 +6917,13 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// advance the warp fade before any `loading` bail so it keeps animating in the
+	// loading=false windows on either side of a map swap (it sits at full black
+	// during the load itself, when the loop bails and the screen is frozen anyway)
+	if (fade.alpha !== fade.target) {
+		const d = FADE_SPEED * dt;
+		fade.alpha = fade.alpha < fade.target ? Math.min(fade.target, fade.alpha + d) : Math.max(fade.target, fade.alpha - d);
+	}
 	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
 	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
 	// hides too — battles are entirely tap-driven. Landscape phones get the
@@ -6859,6 +6998,7 @@ function tick(now) {
 		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
 		world.drawLayer(ctx, 'bottom', camX, camY);
 		if (!editView.on) drawWaterAnim(ctx, camX, camY); // the sea moves (editor stays exact)
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'print'); // footprints lie on the ground
 		services.draw(ctx, camX, camY);
 		arcade.draw(ctx, camX, camY);
 		items.draw(ctx, camX, camY);
@@ -6877,10 +7017,12 @@ function tick(now) {
 		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
 		sprites.sort((a, b) => a.py - b.py);
 		for (const s of sprites) s.draw(ctx, camX, camY);
+		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
 		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
 		drawCaveDark(ctx, camX, camY);
 		drawDayNightTint(ctx);
+		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood
 		evolution.draw(ctx);
 
 		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
@@ -6946,6 +7088,15 @@ function tick(now) {
 	// while your run is being spectated, show a live "N watching" badge on top
 	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
 	drawTouchHud(SW, SH);
+	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
+	// dips to black between maps
+	if (fade.alpha > 0.001) {
+		sctx.save();
+		sctx.globalAlpha = Math.min(1, fade.alpha);
+		sctx.fillStyle = '#000';
+		sctx.fillRect(0, 0, SW, SH);
+		sctx.restore();
+	}
 }
 
 // ---------- the touch HUD ----------
@@ -8793,7 +8944,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
