@@ -737,6 +737,28 @@ function recordHallOfFame(region, roster) {
 evolution.onDone = () => saveParty(party);
 evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
 let loading = true;
+// ---------- screen fade (warp/door transitions) ----------
+// Warps used to hard-cut between maps. A short fade-to-black on the way out and
+// a fade-in on the new map reads instantly more finished. The main tick BAILS
+// while `loading` is true, so the fade animates in the loading=false windows on
+// either side of the load: fadeTo(1) (out) → set loading + swap the map →
+// fadeTo(0) (in). While a fade runs, `fading` freezes input via menuBlocking so
+// no stray step slips through the black. Honors REDUCED_MOTION (instant cut).
+const REDUCED_MOTION_OW = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fade = { alpha: 0, target: 0 };
+const FADE_SPEED = 6; // alpha units/sec (~170ms each way)
+const fading = () => fade.alpha > 0.001 || fade.target > 0.001;
+function fadeTo(target) {
+	if (REDUCED_MOTION_OW) { fade.alpha = target; fade.target = target; return Promise.resolve(); }
+	fade.target = target;
+	return new Promise(res => {
+		const check = () => {
+			if (Math.abs(fade.alpha - fade.target) < 0.02) { fade.alpha = fade.target; res(); }
+			else requestAnimationFrame(check);
+		};
+		check();
+	});
+}
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
 // block forever with no player-facing UI. Both self-recover after a grace period.
@@ -2707,7 +2729,7 @@ const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open |
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
-	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen();
+	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
@@ -2966,6 +2988,7 @@ function afterLoadError(where, err) {
 }
 
 async function moveToMap(file, px, py) {
+	await fadeTo(1);              // dip to black before the swap (fades in below)
 	loading = true;
 	try {
 		await world.load(file);
@@ -2975,6 +2998,7 @@ async function moveToMap(file, px, py) {
 		player.surfing = false;
 		await refreshMapContent(file);
 	} catch (e) { afterLoadError('moveToMap ' + file, e); }
+	fadeTo(0);                    // reveal the new map
 }
 
 async function warpTo(mapId, destWarpId) {
@@ -2991,9 +3015,10 @@ async function warpTo(mapId, destWarpId) {
 		await backWarp();
 		return;
 	}
-	loading = true;
 	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
+	await fadeTo(1);             // dip to black as the door opens (fades in below)
+	loading = true;
 	try {
 		await world.load(file);
 		let idx = parseInt(destWarpId, 10);
@@ -3004,6 +3029,7 @@ async function warpTo(mapId, destWarpId) {
 		world.lastWarpSource = source;
 		await refreshMapContent(file);
 	} catch (e) { afterLoadError('warpTo ' + mapId, e); }
+	fadeTo(0);                   // reveal the destination
 }
 
 // Fly: warp straight to a town's landing tile (no warp-index lookup)
@@ -6785,6 +6811,13 @@ function tick(now) {
 	requestAnimationFrame(tick);
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
+	// advance the warp fade before any `loading` bail so it keeps animating in the
+	// loading=false windows on either side of a map swap (it sits at full black
+	// during the load itself, when the loop bails and the screen is frozen anyway)
+	if (fade.alpha !== fade.target) {
+		const d = FADE_SPEED * dt;
+		fade.alpha = fade.alpha < fade.target ? Math.min(fade.target, fade.alpha + d) : Math.max(fade.target, fade.alpha - d);
+	}
 	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
 	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
 	// hides too — battles are entirely tap-driven. Landscape phones get the
@@ -6946,6 +6979,15 @@ function tick(now) {
 	// while your run is being spectated, show a live "N watching" badge on top
 	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
 	drawTouchHud(SW, SH);
+	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
+	// dips to black between maps
+	if (fade.alpha > 0.001) {
+		sctx.save();
+		sctx.globalAlpha = Math.min(1, fade.alpha);
+		sctx.fillStyle = '#000';
+		sctx.fillRect(0, 0, SW, SH);
+		sctx.restore();
+	}
 }
 
 // ---------- the touch HUD ----------
@@ -8793,7 +8835,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
