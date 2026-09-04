@@ -2271,6 +2271,31 @@ function setBox(box) {
 function shinyOwnedCount() {
 	return (party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
 }
+// snapshot the current frame (the Trainer Card is up) → PNG, then share it via the
+// Web Share API when available, else save it as a download. Mirrors battlecards'
+// deck/replay sharing. Returns the data URL (for tests). (Batch 6 follow-up)
+async function shareTrainerCard() {
+	let url;
+	try { url = screen.toDataURL('image/png'); } catch (e) { return null; }
+	const name = localStorage.getItem('magepunk_name') || 'TRAINER';
+	const fname = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-trainer-card.png`;
+	try {
+		const blob = await (await fetch(url)).blob();
+		const file = new File([blob], fname, { type: 'image/png' });
+		if (navigator.canShare && navigator.canShare({ files: [file] })) {
+			await navigator.share({ files: [file], title: 'Trainer Card', text: `${name}'s Magepunk trainer card` });
+			hud.textContent = 'Shared your Trainer Card!';
+			return url;
+		}
+	} catch (e) { /* share unavailable or cancelled → save instead */ }
+	try {
+		const a = document.createElement('a');
+		a.href = url; a.download = fname;
+		document.body.appendChild(a); a.click(); a.remove();
+		hud.textContent = 'Saved your Trainer Card as an image.';
+	} catch (e) { /* no-op */ }
+	return url;
+}
 
 function shopKey(k) {
 	// TAB / left-right flips between BUY and SELL
@@ -2754,6 +2779,7 @@ function pressKey(k) {
 	if (questMenu.open) { questKey(k); return; }
 	if (trainerCard.open) {
 		if (k === 'ArrowLeft' || k === 'ArrowRight') { trainerCard.page = 1 - trainerCard.page; return; }
+		if (k === 's') { shareTrainerCard(); return; } // snapshot -> share/save
 		if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') trainerCard.open = false;
 		return;
 	}
@@ -7920,7 +7946,7 @@ function drawTrainerCard(W, H) {
 		});
 		return;
 	}
-	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal');
+	menuChrome(W, H, u, 'TRAINER CARD', 'Your journey so far.   ◄ ► journal   ·   S share');
 	const c = Dex.counts();
 	const name = localStorage.getItem('magepunk_name') || 'PLAYER';
 	const region = localStorage.getItem('magepunk_region') || '—';
@@ -9335,7 +9361,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel, shareTrainerCard,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,

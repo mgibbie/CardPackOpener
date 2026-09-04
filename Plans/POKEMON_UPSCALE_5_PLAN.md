@@ -140,12 +140,18 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   (party + boxes, `shinyOwnedCount`) and FRONTIER (BP + symbols). Real per-badge
   art deferred (needs 24 sourced sprites — pips stay). 5-assertion
   `trainercard_test.mjs`.
-- **DEFERRED to a follow-up PR** (heavier / different concern):
-  - **Round-2 rosters**: rematch bosses get upgraded species/items/movesets
-    (HGSS-style) rather than a flat level bump — touches the shared trainer-build
-    path, wants its own tested PR.
-  - **Share from the overworld**: trainer-card / dex snapshot → image → share.
-  - **Living-dex view in the PC**.
+- **Follow-up PR (#253)** shipped the deferred items:
+  - **Round-2 rosters** — a re-armed BOSS rematch modernises movesets (skips the
+    fixed low-level roster moves when `bump>0` → higher-level learnset) and pads
+    the squad toward six from the class pool. Ordinary trainers untouched.
+    `round2_test.mjs` (7).
+  - **Living-dex grid** — `G` in the Pokédex toggles a completion wall (icon grid,
+    owned bright / seen dim / missing silhouette; honours the T/R/F filters).
+    `livingdex_test.mjs` (9).
+  - **Share the Trainer Card** — `S` snapshots the frame → PNG → Web Share, else a
+    named download. `cardshare_test.mjs` (5).
+  - Still deferred: **real per-badge art** (needs 24 sourced badge sprites — the
+    tier tracker stays as pips).
 
 ## Batch 7 — Rider sprites **[2/5 · S-M]**
 
