@@ -57,7 +57,7 @@ handlers):
 Split into 2 PRs if needed: (a) table-only groups, (b) pivots + alt-stat +
 foe-pivot + conditions. Extend the seeded battle-test suite per group.
 
-## Batch 3 — Forms: the missing subsystem **[4/5 · L]**
+## Batch 3 — Forms: the missing subsystem **[4/5 · L]** — DONE (PR #247)
 
 No mid-battle form machinery exists (every form is a standalone species entry).
 Castform never shifts with weather, Cherrim never blooms, Aegislash has no
@@ -67,6 +67,19 @@ Cramorant inert, Arceus/Silvally can't change type — and **Illusion**
 (Zoroark) is unhandled. Build one form-change subsystem (swap stats/types/
 sprite on trigger; the form species entries already exist as data), then wire
 the ~17 form abilities through it. Illusion is standalone and can lead.
+
+**Built the subsystem** — `changeForm(mon, formId, side, msg)` recomputes stats
+from the form's `baseStats` (same level/IVs/EVs/nature), swaps types + sprite,
+and carries HP across a max-HP change (Zygarde-Complete keeps the gain). Six
+iconic triggers wired through it: **Stance Change** (Aegislash, inline in
+`useMove` — any attack → Blade, King's Shield → Shield), **Zen Mode**
+(Darmanitan ≤50%), **Schooling** (Wishiwashi >25% & Lv20+), **Power Construct**
+(Zygarde ≤50%, one-way), **Forecast** (Castform matches sun/rain/hail), and
+**Hunger Switch** (Morpeko flips each end of turn). HP-threshold and weather
+rules live in `checkFormTriggers()`, called from `checkFaints()` (post-damage)
+and `endOfTurn()`. 24-assertion `formchange_test.mjs`. Deferred to a follow-up:
+Ice Face, Palafin Zero to Hero, Minior shield-break, Cherrim Flower Gift,
+Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
 
 ## Batch 4 — Johto's voice: radio, roamer news, Unown **[3/5 · M]**
 

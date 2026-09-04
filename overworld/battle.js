@@ -171,6 +171,13 @@ const STAT_MOVES = {
 };
 
 const freshBoosts = () => ({ atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 });
+// mid-battle HP-threshold form changes, keyed by ability (Batch 3). Stance
+// Change (Aegislash) and Hunger Switch (Morpeko) are event-driven, handled inline.
+const FORM_RULES = {
+	zenmode:        { base: 'darmanitan', alt: 'darmanitan_zen',    hp: 0.5,  when: 'below', msg: 'entered Zen Mode' },
+	schooling:      { base: 'wishiwashi', alt: 'wishiwashi_school', hp: 0.25, when: 'above', minLevel: 20, msg: 'formed a School' },
+	powerconstruct: { base: 'zygarde',    alt: 'zygarde_complete',  hp: 0.5,  when: 'below', oneWay: true, msg: 'assembled into Complete Forme' },
+};
 
 const stageMult = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
 
@@ -756,6 +763,7 @@ export class Battle {
 			return await getImage(`data/pokemon/${name}`).catch(() =>
 				getImage(`data/pokemon/${file}`).catch(() => null));
 		};
+		this._loadSprite = loadSprite; // reused by mid-battle form changes (changeForm)
 		// build the ally pair FIRST so every sprite — foe, allies, party backs —
 		// loads in ONE parallel round (two serialized rounds doubled the frozen
 		// pre-battle wait on cold caches)
@@ -849,6 +857,7 @@ export class Battle {
 			return await getImage(`data/pokemon/${name}`).catch(() =>
 				getImage(`data/pokemon/${file}`).catch(() => null));
 		};
+		this._loadSprite = loadSprite; // reused by mid-battle form changes (changeForm)
 		const backSprites = new Map(), foeSprites = new Map();
 		await Promise.all([
 			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
@@ -986,6 +995,53 @@ export class Battle {
 	}
 
 	// ---------- actors (doubles-aware helpers) ----------
+	// ---------- mid-battle form changes (Upscale 5 Batch 3) ----------
+	// Swap a battle mon to another form's species entry: recompute its stats from
+	// the form's base stats (same level/IVs/EVs/nature), swap types + sprite, and
+	// carry HP sensibly across a max-HP change (Zygarde-Complete gains the extra).
+	changeForm(mon, formId, side, msg) {
+		const sp = this.data.species[formId];
+		if (!sp || (mon.form || mon.speciesId) === formId || mon.curHP <= 0) return false;
+		mon.form = formId;
+		const oldMax = mon.maxHP;
+		mon.stats = statsFor(sp, mon.ivs, mon.level, { nature: mon.nature, evs: mon.evs });
+		mon.types = [...sp.types];
+		mon.maxHP = mon.stats.hp;
+		if (mon.maxHP > oldMax) mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
+		else if (mon.curHP > mon.maxHP) mon.curHP = mon.maxHP;
+		if (msg) this.pushMsg(msg);
+		// best-effort sprite swap so the change reads on-screen
+		if (sp.sprite && this._loadSprite) {
+			this._loadSprite(sp.sprite, side === 'me').then(img => {
+				const a = this.active; if (!a || !img) return; // keep the old sprite if the form has none
+				if (side === 'me' && mon === a.me) a.meImg = img;
+				else if (side === 'foe' && mon === a.foe) a.foeImg = img;
+			}).catch(() => {});
+		}
+		return true;
+	}
+	// HP/level-threshold + weather forms, checked after damage and each end of turn
+	checkFormTriggers() {
+		const a = this.active;
+		for (const mon of [a.me, a.foe, a.meAlly, a.foeAlly]) {
+			if (!mon || mon.curHP <= 0) continue;
+			const ab = this.abilityOf(mon), side = this.sideOfMon(mon);
+			const rule = FORM_RULES[ab];
+			if (rule && mon.speciesId === rule.base) {
+				const cur = mon.form || mon.speciesId;
+				const frac = mon.curHP / mon.maxHP;
+				const wantAlt = (rule.when === 'below' ? frac <= rule.hp : frac > rule.hp) && (!rule.minLevel || mon.level >= rule.minLevel);
+				if (wantAlt && cur !== rule.alt) this.changeForm(mon, rule.alt, side, `${mon.name} ${rule.msg}!`);
+				else if (!wantAlt && cur !== rule.base && !rule.oneWay) this.changeForm(mon, rule.base, side, `${mon.name} returned to normal!`);
+			}
+			// FORECAST: Castform matches the sky (sun→Fire, rain→Water, hail→Ice)
+			if (ab === 'forecast' && mon.speciesId === 'castform') {
+				const want = { sun: 'castform_sunny', rain: 'castform_rainy', hail: 'castform_snowy' }[this.weatherKind()] || 'castform';
+				if ((mon.form || mon.speciesId) !== want) this.changeForm(mon, want, side, `${mon.name} transformed with the weather!`);
+			}
+		}
+	}
+
 	actorMons() {
 		const a = this.active;
 		const out = [a.me, a.foe];
@@ -1598,6 +1654,16 @@ export class Battle {
 		user.acted = true;
 		user.movedThisTurn = true;                      // Payback
 		(user.usedMoves ||= []).push(move.id);          // Last Resort
+		// STANCE CHANGE: Aegislash draws its blade for any attack, sheathes it on
+		// King's Shield. Done up-front so the Blade Forme's stats apply to THIS move.
+		if (this.abilityOf(user) === 'stancechange') {
+			const cur = user.form || user.speciesId;
+			if (move.id === 'kingsshield' && cur === 'aegislash_blade') {
+				this.changeForm(user, 'aegislash', this.sideOfMon(user), `${user.name} returned to Shield Forme!`);
+			} else if (move.id !== 'kingsshield' && (mv.category && mv.category !== 'Status') && cur === 'aegislash') {
+				this.changeForm(user, 'aegislash_blade', this.sideOfMon(user), `${user.name} drew its blade! (Blade Forme)`);
+			}
+		}
 		// DANCER: the other side's dancer copies any dance move right after it
 		// resolves (queued behind the original; a copied dance never re-triggers)
 		if (!opts.called && !a.double && /dance$/.test(move.id)) {
@@ -2952,6 +3018,12 @@ export class Battle {
 				boosts.spe = Math.min(6, (boosts.spe || 0) + 1);
 				this.pushMsg(`${mon.name}'s Speed Boost raised its Speed!`);
 			}
+			// HUNGER SWITCH: Morpeko flips Full Belly ↔ Hangry every end of turn
+			if (ab === 'hungerswitch' && (mon.speciesId === 'morpeko' || mon.form === 'morpeko_hangry')) {
+				const want = (mon.form || mon.speciesId) === 'morpeko_hangry' ? 'morpeko' : 'morpeko_hangry';
+				this.changeForm(mon, want, this.sideOfMon(mon),
+					want === 'morpeko_hangry' ? `${mon.name} got hangry!` : `${mon.name} calmed down.`);
+			}
 			if (ab === 'raindish' && this.weatherKind() === 'rain' && mon.curHP < mon.maxHP) {
 				this.pushMsg(`${mon.name}'s Rain Dish restored a little HP!`, () => {
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
@@ -3300,6 +3372,7 @@ export class Battle {
 
 	checkFaints() {
 		const a = this.active;
+		this.checkFormTriggers(); // HP dropped past a threshold → Zen Mode / Schooling / Power Construct
 		const meDown = a.me.curHP <= 0;
 		if (a.foe.curHP <= 0) {
 			this.pushMsg(a.isTrainer ? `${a.foe.name} fainted!` : `The wild ${a.foe.name} fainted!`,
