@@ -9416,6 +9416,24 @@ function drawFriendGhosts(ctx, camX, camY) {
 			return import('./mapedit.js').then(m => { window.__mapedit = m.mount(window.__ow); });
 		}).catch(e => { console.warn('mapedit failed', e); note('Map Editor failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
+	// owner tooling: ?followtest=1 mounts the follower-sprite previewer (cycle the
+	// trailing follower through the AI-generated walk sheets). Same server-verified
+	// owner gate as the sprite tuner / map editor.
+	if (new URLSearchParams(location.search).has('followtest')) {
+		const note = t => {
+			const d = document.createElement('div');
+			d.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;max-width:88vw;'
+				+ 'background:rgba(20,15,34,0.95);color:#ffd25f;border:1px solid #6a5f8a;border-radius:10px;'
+				+ 'padding:10px 16px;font:13px "Segoe UI",sans-serif;text-align:center;';
+			d.textContent = t;
+			document.body.appendChild(d);
+			setTimeout(() => d.remove(), 8000);
+		};
+		MP.call('state').then(r => {
+			if ((r?.state?.username || '') !== 'mgibbie') { note('The Follower Test is an owner tool.'); return; }
+			return import('./followtest.js').then(m => { window.__followtest = m.mount(window.__ow); });
+		}).catch(e => { console.warn('followtest failed', e); note('Follower Test failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
+	}
 	// The MAIL badge ("MAIL (2)") only counted after you opened the mailbox — the
 	// one thing a your-move indicator must not require. Populate it at boot and
 	// keep it fresh; play-by-mail is fully built and was just invisible.
