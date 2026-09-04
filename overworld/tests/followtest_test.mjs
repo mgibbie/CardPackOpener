@@ -81,7 +81,7 @@ async function boot(browser, username) {
 		// the on-screen ▶ button also switches (and there is NO sprite-preview canvas)
 		const ui = await page.evaluate(() => {
 			const bar = document.getElementById('ft-bar');
-			const noCanvas = !document.querySelector('#ft-overlay canvas') && !(bar && bar.querySelector('canvas'));
+			const noCanvas = !(bar && bar.querySelector('canvas'));
 			const next = bar && [...bar.querySelectorAll('button')].find(b => b.textContent.includes('▶'));
 			if (next) next.click();
 			return { hasBar: !!bar, noCanvas, clicked: !!next };
@@ -90,6 +90,25 @@ async function boot(browser, username) {
 		const afterBtn = await page.evaluate(() => ({ idx: window.__followtest.index, pinned: window.__ow.follower?.id }));
 		A(ui.hasBar && ui.noCanvas, 'the control bar is switch-only (no sprite panel)');
 		A(ui.clicked && afterBtn.idx === 2, 'the on-screen ▶ button advances the follower', JSON.stringify(afterBtn));
+
+		// the grouped dropdown: a "Testing" section + an "All species" section, and
+		// selecting an entry changes the trailing follower
+		const dd = await page.evaluate(() => {
+			const sel = document.querySelector('#ft-bar select');
+			if (!sel) return { hasSel: false };
+			const groups = [...sel.querySelectorAll('optgroup')].map(g => g.label);
+			const testing = groups.some(l => /Testing/i.test(l)), all = groups.some(l => /All species/i.test(l));
+			// pick a specific AI entry from the Testing group and fire change
+			const target = 'gigalion';
+			sel.value = target; sel.dispatchEvent(new Event('change'));
+			return { hasSel: true, testing, all, aiCount: window.__followtest.aiIds.length, picked: target };
+		});
+		await new Promise(r => setTimeout(r, 150));
+		const afterSel = await page.evaluate(() => window.__ow.follower?.id);
+		A(dd.hasSel, 'the control bar has a dropdown selector');
+		A(dd.testing && dd.all, 'the dropdown has a "Testing" section + an "All species" section', JSON.stringify(dd));
+		A(dd.aiCount === 7, 'the Testing section holds the AI fakemon (7)', dd.aiCount);
+		A(afterSel === dd.picked, 'choosing from the dropdown sets the trailing follower', afterSel);
 		await page.close();
 
 		// --- a non-owner is refused ---

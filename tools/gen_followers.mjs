@@ -339,10 +339,13 @@ function promote(manifest) {
 	const manifest = loadManifest();
 	if (contactOnly) { buildContact(manifest); return; }
 	if (doPromote) { promote(manifest); return; }
-	if (flag('index')) { // (re)write data/pokemon_follow_index.json — every species with a walk sheet, for the follower-test previewer to cycle
+	if (flag('index')) { // (re)write the follower-test indexes for the previewer's dropdown
 		const list = fs.readdirSync(FOLLOW).filter(f => f.endsWith('.png')).map(f => f.replace(/\.png$/, '')).sort();
 		fs.writeFileSync(path.join(DATA, 'pokemon_follow_index.json'), JSON.stringify(list));
-		log(`wrote data/pokemon_follow_index.json (${list.length} species) — deploy overworld/data to owdata`);
+		// the AI-generated set we're reviewing = manifest entries done by a real provider (not the stub)
+		const ai = Object.keys(manifest).filter(id => manifest[id].status === 'done' && manifest[id].provider && manifest[id].provider !== 'stub').sort();
+		fs.writeFileSync(path.join(DATA, 'pokemon_follow_ai_index.json'), JSON.stringify(ai));
+		log(`wrote pokemon_follow_index.json (${list.length}) + pokemon_follow_ai_index.json (${ai.length}) — deploy overworld/data to owdata`);
 		return;
 	}
 	if (doCredits) { // RD balance check
