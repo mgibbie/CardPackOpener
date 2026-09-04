@@ -3904,6 +3904,14 @@ function followMiniCanvas(id) {
 	const fc = document.createElement('canvas'); fc.width = fw; fc.height = fh;
 	const fcx = fc.getContext('2d'); fcx.imageSmoothingEnabled = true; fcx.imageSmoothingQuality = 'high';
 	fcx.drawImage(cv, 0, 0, fw, fh);
+	// crisp it: the smooth shrink leaves a soft semi-transparent edge halo that
+	// looks blurry once the frame is nearest-upscaled. Snap alpha to hard on/off so
+	// the silhouette reads sharp (canvas is CORS-clean, so getImageData works).
+	try {
+		const im = fcx.getImageData(0, 0, fw, fh), d = im.data;
+		for (let p = 3; p < d.length; p += 4) d[p] = d[p] >= 96 ? 255 : 0;
+		fcx.putImageData(im, 0, 0);
+	} catch (e) { /* tainted (no CORS) — keep the smooth version */ }
 	miniCvCache.set(id, fc);
 	return fc;
 }
