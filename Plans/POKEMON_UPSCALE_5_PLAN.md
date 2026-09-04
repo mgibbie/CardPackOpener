@@ -173,9 +173,17 @@ per-badge art remains deferred as an art-sourcing task).
 - **Mystery Gift** — no mechanism exists; could ride the MP server like mail
   battles do. Needs a design for what it grants.
 - **Title screen / intro cinematics** — functional today; cosmetic.
-- **Fakemon follower art** — 389 Ransei species follow as bobbing battle-
-  sprite minis (fallback works); dedicated 49-sheet follower art exists only
-  for legendaries. Art-sourcing project, not code.
+- **Fakemon follower art** — 751 species (622 fakemon) trail as bobbing
+  battle-sprite minis (fallback works). No source art exists → must be AI-
+  generated from each front battle sprite. **Harness built**:
+  `tools/gen_followers.mjs` — enumerates the missing, preprocesses the front
+  sprite (sharp trim/resize), calls a pluggable PROVIDER, assembles the exact
+  128×128 down/left/right/up ×4 sheet, resumes via a manifest, rate-limits +
+  retries, stages to `tools/data/followers_out/` (never the live data until
+  `--promote`), and writes a QA contact sheet with a live walk preview. A `stub`
+  provider works today (proves the pipeline); `pixellab` / `retrodiffusion`
+  adapters are wired but need their API key + `framesToSheet()` validated against
+  a live response. Then: pilot ~20 → full run → review → promote → owdata deploy.
 
 ## Verification pattern
 
