@@ -284,6 +284,11 @@ const MOVE_FX = {
 	// recharge (were pure upside)
 	roaroftime: { recharge: true }, rockwrecker: { recharge: true }, prismaticlaser: { recharge: true },
 	eternabeam: { recharge: true }, meteorassault: { recharge: true },
+	// PIVOT: deal damage, then the user switches out (U-turn is on 228 species and
+	// just dealt damage before). Reuses the mid-turn a.me/a.foe swap Baton Pass
+	// proves safe; no boosts pass. Auto-picks the next healthy benchmon (matching
+	// Baton Pass's convention — no mid-move switch-choice UI).
+	uturn: { pivot: true }, voltswitch: { pivot: true }, flipturn: { pivot: true },
 	// fixed damage + OHKO
 	seismictoss: { fixed: 'level' }, nightshade: { fixed: 'level' },
 	dragonrage: { fixed: 40 }, sonicboom: { fixed: 20 }, psywave: { fixed: 'psywave' },
@@ -2664,6 +2669,40 @@ export class Battle {
 					if (fx.sec.status === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 					if (fx.sec.bad) { target.badPsn = true; target.toxicN = 1; }
 					this.pushMsg(`${target.name} ${fx.sec.bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[fx.sec.status]}`);
+				}
+			});
+		}
+		// PIVOT (U-turn / Volt Switch / Flip Turn): after the damage, the user
+		// switches out to a healthy benchmon. Mirrors the Baton Pass swap (which
+		// proves a mid-turn a.me/a.foe change is safe — later moves read them live)
+		// but passes NO boosts. Only when a replacement exists.
+		if (fx.pivot) {
+			this.pushMsg('', () => {
+				if (user.curHP <= 0) return;
+				if (!isFoe) {
+					const next = a.party.find(m => m !== user && m.curHP > 0);
+					if (!next) return;
+					this.pushMsg(`${user.name} went back!`, () => {
+						this.clearVolatiles(user);
+						a.me = next; a.meImg = a.backSprites.get(next);
+						Object.assign(a.meBoosts, freshBoosts());
+						a.meShownHP = next.curHP; a.meHidden = false;
+					});
+					this.pushAnim('enter', 'me', 0.4);
+					this.pushMsg('', () => { cry(a.me.speciesId); this.applyHazards(a.me, 'me'); });
+				} else if (a.isTrainer && a.foes) {
+					let idx = -1;
+					for (let i = 0; i < a.foes.length; i++) if (a.foes[i] !== a.foe && a.foes[i].curHP > 0) { idx = i; break; }
+					if (idx < 0) return;
+					const next = a.foes[idx];
+					this.pushMsg(`${a.info.displayName} withdrew ${a.foe.name}!`, () => {
+						this.clearVolatiles(a.foe);
+						a.foe = next; a.foeIdx = idx; a.foeImg = a.foeSprites.get(next);
+						Object.assign(a.foeBoosts, freshBoosts());
+						a.foeShownHP = next.curHP; a.foeHidden = false;
+					});
+					this.pushAnim('enter', 'foe', 0.4);
+					this.pushMsg('', () => { cry(a.foe.speciesId); this.applyHazards(a.foe, 'foe'); });
 				}
 			});
 		}
