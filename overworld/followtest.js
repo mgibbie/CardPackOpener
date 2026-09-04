@@ -54,6 +54,24 @@ export function mount(ow) {
 	bar.append(row, status);
 	document.body.appendChild(bar);
 
+	// left-side reference: the BATTLE FRONT sprite of the current species, to
+	// compare against the follower trailing you in the world
+	const front = document.createElement('div');
+	front.id = 'ft-front';
+	front.style.cssText = 'position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:400;display:flex;flex-direction:column;align-items:center;gap:6px;'
+		+ 'background:rgba(18,14,30,0.94);color:#a99fc9;border:1px solid #6a5f8a;border-radius:10px;padding:10px;font:11px "Segoe UI",sans-serif';
+	const frontImg = document.createElement('img');
+	frontImg.alt = 'battle front sprite';
+	frontImg.style.cssText = 'width:168px;height:168px;object-fit:contain;image-rendering:pixelated;background:#0d0b16;border-radius:6px';
+	const frontCap = document.createElement('div'); frontCap.textContent = 'BATTLE FRONT SPRITE';
+	front.append(frontImg, frontCap);
+	document.body.appendChild(front);
+	const showFront = id => {
+		let sprite = null;
+		try { sprite = ow.battle?.data?.species?.[id]?.sprite; } catch (e) {}
+		if (sprite) { const u = new URL('data/pokemon/' + sprite, location.href).href; if (frontImg.src !== u) frontImg.src = u; }
+	};
+
 	const opt = id => { const o = document.createElement('option'); o.value = id; o.textContent = id; return o; };
 	function buildSelect() {
 		sel.innerHTML = '';
@@ -66,7 +84,7 @@ export function mount(ow) {
 	}
 	const pin = id => { try { if (ow.follower) ow.follower.id = id; else ow.setFollowerSpecies(id); } catch (e) {} };
 	const step = d => { if (ids.length) i = (i + ids.length + d) % ids.length; };
-	const render = () => { const id = ids[i] || FALLBACK[0]; if (sel.value !== id) sel.value = id; pin(id); };
+	const render = () => { const id = ids[i] || FALLBACK[0]; if (sel.value !== id) sel.value = id; pin(id); showFront(id); };
 
 	const onKey = e => {
 		if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return; // don't hijack the open dropdown
@@ -89,5 +107,5 @@ export function mount(ow) {
 	raf = requestAnimationFrame(tick);
 
 	return { get ids() { return ids; }, get aiIds() { return aiIds; }, get index() { return i; },
-		stop: () => { cancelAnimationFrame(raf); removeEventListener('keydown', onKey); bar.remove(); window.__followTest = false; } };
+		stop: () => { cancelAnimationFrame(raf); removeEventListener('keydown', onKey); bar.remove(); front.remove(); window.__followTest = false; } };
 }
