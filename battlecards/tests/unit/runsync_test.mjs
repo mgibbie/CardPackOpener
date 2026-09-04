@@ -3,7 +3,7 @@
 // so hydrate used to overwrite the exact local mid-fight snapshot with the server's stale
 // (snapshot-less) copy → resume booted a fresh fight at turn 1. keepLocalRun() must protect
 // a fresher local snapshot while still yielding to genuine cross-device progress.
-import { keepLocalRun } from '../../runsync.js';
+import { keepLocalRun, useLocalAsyncTurn } from '../../runsync.js';
 
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
@@ -43,6 +43,31 @@ ok('legacy local snapshot (no snapshotAt) still kept when server has none',
 // ── level guard beats snapshot presence: a server further along wins even if it has a snapshot ──
 ok('server snapshot on a HIGHER floor -> take the server',
 	keepLocalRun({ snapshot: snap, snapshotAt: 999, level: 2 }, { snapshot: snap, snapshotAt: 1, level: 3 }) === false);
+
+// ── useLocalAsyncTurn: only restore a local mid-turn copy for the SAME unsubmitted turn ──
+const L = (id, turn) => ({ id, turnNumber: turn, snap: { turnNumber: turn, players: [] } });
+const srv = (current, turn) => ({ current, turnNumber: turn, players: [] });
+
+ok('async: same match + same turn + server says it\'s my turn -> use local',
+	useLocalAsyncTurn(L('m1', 7), srv(0, 7), 'm1', 0) === true);
+
+ok('async: wrong match -> ignore local',
+	useLocalAsyncTurn(L('m1', 7), srv(0, 7), 'm2', 0) === false);
+
+ok('async: server says it is the OPPONENT\'s turn (already submitted) -> ignore local',
+	useLocalAsyncTurn(L('m1', 7), srv(1, 7), 'm1', 0) === false);
+
+ok('async: server advanced to a later turn -> local is stale, ignore',
+	useLocalAsyncTurn(L('m1', 7), srv(0, 9), 'm1', 0) === false);
+
+ok('async: no local copy -> use the server turn-start',
+	useLocalAsyncTurn(null, srv(0, 7), 'm1', 0) === false);
+
+ok('async: no server snapshot -> nothing to reconcile against',
+	useLocalAsyncTurn(L('m1', 7), null, 'm1', 0) === false);
+
+ok('async: seat 1 works symmetrically',
+	useLocalAsyncTurn(L('m1', 4), srv(1, 4), 'm1', 1) === true);
 
 console.log(`\n${pass}/${pass + fail} checks passed`);
 process.exit(fail ? 1 : 0);
