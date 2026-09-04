@@ -104,14 +104,25 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   28-cell dex report. 15-assertion `unown_test.mjs`. ⚠ needs the `overworld/data`
   offload deploy (27 new species entries).
 
-## Batch 5 — Battle sparkle: the small iconic beats **[4/5 · S]**
+## Batch 5 — Battle sparkle: the small iconic beats **[4/5 · S]** — DONE (PR #251)
 
-- Player send-out **ball throw + burst** (foe capture already has the full
-  ball anim to mirror; the player's mon just slides in).
-- **Low-HP beep** + red-bar pulse.
-- **Victory jingle** on trainer/wild wins (fanfares exist for everything else).
-- Move-select **speed-order hint** and damage-range estimate (PP/type/power/
-  effectiveness already shown).
+- **Send-out ball throw + burst** — the player mon starts hidden (`meHidden` at
+  init + `applyRestore` un-hides on resume); `queueSendOut` throws a ball that
+  arcs from the trainer's corner, bursts open (cry + reveal), then the mon slides
+  in via the existing `enter` fx. New `sendthrow`/`sendburst` fx drawn in
+  `drawSide` for the me side. Wired at every player send-out (wild + trainer start,
+  after-faint, manual switch).
+- **Low-HP beep + red-bar pulse** — a `lowhp` beep re-fired on a 0.6s timer in
+  `update()` while the lead sits ≤20%, silenced on recovery; the HP bar pulses
+  toward white via a new `opts.pulse` + `mix()` in `battleui.js`.
+- **Victory jingle** — `fanfare_victory` played in `finish('victory')` (covers
+  wild + trainer, one hook).
+- **Move-select hints** — `dmgHint(mv)` (a % range / "KO?" from the AI's real
+  damage core) on each move's sub line, and `speedOrder(mv)` → a "You/Foe move
+  first" line (honours priority, paralysis, Trick Room), in both bar layouts.
+- Two new synthesized sounds via `gen_sfx.mjs` (`lowhp`, `fanfare_victory`).
+  13-assertion `battlesparkle_test.mjs`. ⚠ needs the `overworld/data` sfx offload
+  deploy.
 
 ## Batch 6 — Completionist & discovery **[4/5 · M]**
 

@@ -83,6 +83,12 @@ export function bar(ctx, x, y, w, h, frac, color, r = 3) {
 }
 
 export const hpColor = frac => frac > 0.5 ? C.hpGreen : frac > 0.2 ? C.hpYellow : C.hpRed;
+// lerp two #rrggbb colors (t = 0 → a, 1 → b) — used for the low-HP pulse
+function mix(a, b, t) {
+	const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+	const l = (sh) => Math.round(((pa >> sh) & 255) + (((pb >> sh) & 255) - ((pa >> sh) & 255)) * t);
+	return `rgb(${l(16)},${l(8)},${l(0)})`;
+}
 
 export function badge(ctx, x, y, w, h, color, label, font) {
 	ctx.fillStyle = color;
@@ -156,7 +162,10 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	const frac = Math.max(0, shown / mon.maxHP);
 	const barW = w - pad * 2 - (opts.showNumbers ? 74 * u : 0);
 	const hpY = y + h - (opts.showXP ? 38 : 24) * u;
-	bar(ctx, x + pad, hpY, barW, 11 * u, frac, hpColor(frac), 4 * u);
+	// low-HP pulse: brighten the red bar toward white on the caller's sine (Batch 5)
+	let hpCol = hpColor(frac);
+	if (opts.pulse) hpCol = mix(hpCol, '#ffffff', 0.55 * opts.pulse);
+	bar(ctx, x + pad, hpY, barW, 11 * u, frac, hpCol, 4 * u);
 	if (opts.showNumbers) {
 		ctx.fillStyle = C.text;
 		ctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;

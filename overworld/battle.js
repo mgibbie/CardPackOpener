@@ -794,7 +794,7 @@ export class Battle {
 			meImg: backSprites.get(playerMon),
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
-			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meShownHP: playerMon.curHP, foeShownHP: foe.curHP, meHidden: true, // revealed by the send-out ball throw
 			meShownExp: playerMon.exp ?? expForLevel(playerMon.level),
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
@@ -833,13 +833,13 @@ export class Battle {
 			this.pushMsg(`Wild ${foe.name} and ${foeAlly.name} appeared!`, () => cry(foe.speciesId));
 			if (foe.shiny || foeAlly.shiny) this.pushMsg(`✨ It's SHINY! ✨`);
 			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
-			this.pushMsg(`Go! ${playerMon.name} and ${meAlly.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+			this.queueSendOut(`Go! ${playerMon.name} and ${meAlly.name}!`, playerMon, 'me');
 			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 		} else {
 			this.pushMsg(`A wild ${foe.name} appeared!`, () => cry(foe.speciesId));
 			if (foe.shiny) this.pushMsg(`✨ It's SHINY! ✨`);
 			this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
-			this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+			this.queueSendOut(`Go! ${playerMon.name}!`, playerMon, 'me');
 			this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 		}
 	}
@@ -882,7 +882,7 @@ export class Battle {
 			meImg: backSprites.get(playerMon),
 			meBoosts: freshBoosts(),
 			foeBoosts: freshBoosts(),
-			meShownHP: playerMon.curHP, foeShownHP: foe.curHP,
+			meShownHP: playerMon.curHP, foeShownHP: foe.curHP, meHidden: true, // revealed by the send-out ball throw
 			meShownExp: playerMon.exp ?? expForLevel(playerMon.level),
 			meScreens: { reflect: 0, light: 0 }, foeScreens: { reflect: 0, light: 0 },
 			meSide: {}, foeSide: {},               // tailwind/safeguard/mist/luckychant turns
@@ -911,7 +911,7 @@ export class Battle {
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
 		this.pushMsg(`${info.displayName} sent out ${foe.name}${this.active.double ? ' and ' + this.active.foeAlly.name : ''}!`, () => cry(foe.speciesId));
 		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
-		this.pushMsg(`Go! ${playerMon.name}!`, () => { sfx('ball_open'); cry(playerMon.speciesId); });
+		this.queueSendOut(`Go! ${playerMon.name}!`, playerMon, 'me');
 		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
 	}
 
@@ -925,6 +925,19 @@ export class Battle {
 	pushAnim(kind, side, dur, done, extra) {
 		const k = animScale();
 		this.active.queue.push({ anim: { kind, side, dur: Math.max(0.01, dur * k), done, ...extra } });
+	}
+
+	// send a mon out with a thrown ball (Batch 5 sparkle): the name line, then a
+	// ball arcs in from the trainer's corner, bursts open (cry + reveal), and the
+	// mon slides in. Mirrors the capture ball on the player's side — before this
+	// the player's mon just popped in. `assign` (optional) swaps a.me/images first.
+	queueSendOut(text, mon, side = 'me', assign) {
+		const a = this.active;
+		const H = side === 'me' ? 'meHidden' : 'foeHidden';
+		this.pushMsg(text, () => { assign?.(); a[H] = true; });
+		this.pushAnim('sendthrow', side, 0.5, () => sfx('ball_open'));
+		this.pushAnim('sendburst', side, 0.42, () => { a[H] = false; cry((mon || (side === 'me' ? a.me : a.foe))?.speciesId); });
+		this.pushAnim('enter', side, 0.35);
 	}
 
 	// ---------- leave-and-resume ----------
@@ -986,6 +999,7 @@ export class Battle {
 		a.runAttempts = snap.runAttempts || 0;
 		a.meShownHP = a.me.curHP; a.foeShownHP = a.foe.curHP;
 		a.meAllyShownHP = a.meAlly?.curHP ?? 0; a.foeAllyShownHP = a.foeAlly?.curHP ?? 0;
+		a.meHidden = false; // a resumed battle skips the send-out that would reveal it
 		this.pushMsg('The battle picks up right where it left off!');
 	}
 
@@ -1078,6 +1092,48 @@ export class Battle {
 		if (!a || a.double || !info.type || info.category === 'Status') return '';
 		const e = effectiveness(info.type, a.foe.types);
 		return e === 0 ? ' ×0' : e >= 4 ? ' ×4' : e >= 2 ? ' ×2' : e <= 0.25 ? ' ×¼' : e < 1 ? ' ×½' : '';
+	}
+	// move-menu damage forecast vs the current foe (singles only): a % range of the
+	// foe's max HP, or KO? when the median estimate already finishes it. '' for
+	// status / powerless moves. Uses the AI's real damage core (estimateDamage).
+	dmgHint(mv) {
+		const a = this.active;
+		if (!a || a.double) return '';
+		const info = this.data.moves[mv.id] || {};
+		if (info.category === 'Status' || (!info.power && !AI_EST_POWER[mv.id])) return '';
+		const est = this.estimateDamage(a.me, a.foe, mv, a.meBoosts, a.foeBoosts);
+		if (est <= 0) return '';
+		const hi = Math.round(100 * est / Math.max(1, a.foe.maxHP));
+		if (hi >= 100) return ' · KO?';
+		return ` · ~${Math.max(1, Math.round(hi * 0.85))}-${hi}%`;
+	}
+	// who acts first if the player picks this move: compares effective Speed with
+	// the move's priority bracket (the foe's move is unknown, assumed priority 0),
+	// honouring paralysis and Trick Room. Returns 'FIRST' | 'SECOND' | 'TIE' | ''.
+	speedOrder(mv) {
+		const a = this.active;
+		if (!a || a.double) return '';
+		const info = this.data.moves[mv.id] || {};
+		const pr = info.priority || 0;
+		if (pr > 0) return 'FIRST';
+		if (pr < 0) return 'SECOND';
+		const eff = mon => this.statOf(mon, this.boostsOf(mon), 'spe') * (mon.status === 'par' ? 0.5 : 1);
+		const me = eff(a.me), foe = eff(a.foe);
+		if (me === foe) return 'TIE';
+		const meFaster = (a.fieldFx?.trickroom > 0) ? me < foe : me > foe; // Trick Room flips it
+		return meFaster ? 'FIRST' : 'SECOND';
+	}
+	// the one-line speed forecast for the currently-highlighted move
+	drawSpeedHint(ctx, a, x, y, ub) {
+		const chooser = a.double ? this.chooser() : a.me;
+		const mv = chooser?.moves?.[a.moveIdx];
+		const so = mv ? this.speedOrder(mv) : '';
+		if (!so) return;
+		ctx.save();
+		ctx.font = `${Math.round(12 * ub)}px m6x11plus, monospace`;
+		ctx.fillStyle = so === 'FIRST' ? UI.C.statUp : so === 'SECOND' ? UI.C.hpRed : UI.C.dim;
+		ctx.fillText(so === 'FIRST' ? '► You move first' : so === 'SECOND' ? '► Foe moves first' : '► Speed tie', x, y);
+		ctx.restore();
 	}
 	// which slot (0 = lead, 1 = ally) a mon occupies — so double-battle animations
 	// only move the mon that's actually acting
@@ -3385,20 +3441,17 @@ export class Battle {
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
-				this.pushMsg(`Go! ${next.name}!`, () => {
-					sfx('ball_open'); cry(next.speciesId);
+				this.queueSendOut(`Go! ${next.name}!`, next, 'me', () => {
 					a.me = next;
 					a.meImg = a.backSprites.get(next);
 					a.meBoosts = freshBoosts();
 					a.meShownHP = next.curHP;
-					a.meHidden = false;
 					if (a.healingWish) {
 						a.healingWish = false;
 						next.curHP = next.maxHP;
 						next.status = null;
 					}
 				});
-				this.pushAnim('enter', 'me', 0.4);
 				this.pushMsg('', () => { this.applyHazards(a.me, 'me'); this.switchInAbility(a.me, 'me'); });
 			} else {
 				this.pushMsg('You blacked out...', () => this.finish('defeat'));
@@ -3693,6 +3746,9 @@ export class Battle {
 
 	finish(result) {
 		const a = this.active;
+		// a triumphant fanfare on a win (wild + trainer) — every other big beat
+		// already had one; victory was silent
+		if (result === 'victory') sfx('fanfare_victory');
 		for (const m of a.party) this.clearVolatiles(m, true);
 		a.result = result;
 		a.phase = 'done';
@@ -4804,20 +4860,17 @@ export class Battle {
 		this.startQueue(() => {
 			this.pushMsg(`Come back, ${a.me.name}!`, () => this.clearVolatiles(a.me, true));
 			this.pushAnim('recall', 'me', 0.3, () => { a.meHidden = true; });
-			this.pushMsg(`Go! ${mon.name}!`, () => {
-				sfx('ball_open'); cry(mon.speciesId);
+			this.queueSendOut(`Go! ${mon.name}!`, mon, 'me', () => {
 				a.me = mon;
 				a.meImg = a.backSprites.get(mon);
 				a.meBoosts = freshBoosts();
 				a.meShownHP = mon.curHP;
-				a.meHidden = false;
 				if (a.healingWish) {
 					a.healingWish = false;
 					mon.curHP = mon.maxHP;
 					mon.status = null;
 				}
 			});
-			this.pushAnim('enter', 'me', 0.4);
 			this.pushMsg('', () => { this.applyHazards(a.me, 'me'); this.switchInAbility(a.me, 'me'); });
 			this.foeFreeMove();
 		});
@@ -4828,6 +4881,13 @@ export class Battle {
 		const a = this.active;
 		if (!a) return;
 		a.t += dt;
+		// the iconic low-HP warning beep — re-fired on a timer while the player's
+		// lead mon sits in the red (curHP <= 20%), silenced the instant it recovers
+		const meFrac = a.me && a.me.maxHP ? a.me.curHP / a.me.maxHP : 1;
+		if (a.phase !== 'done' && a.me?.curHP > 0 && meFrac <= 0.2) {
+			a.lowHpBeepT = (a.lowHpBeepT || 0) - dt;
+			if (a.lowHpBeepT <= 0) { sfx('lowhp'); a.lowHpBeepT = 0.6; }
+		} else a.lowHpBeepT = 0;
 		a.introT = (a.introT || 0);
 		if (a.phase !== 'flash') a.introT += dt;
 		if (a.shakeT > 0) a.shakeT -= dt;
@@ -5127,6 +5187,22 @@ export class Battle {
 				ctx.beginPath(); ctx.arc(pose.x, pose.y - 12 * u, (10 + p * 60) * u, 0, Math.PI * 2); ctx.fill();
 			}
 		}
+		// the player's SEND-OUT ball (Batch 5): arcs from the trainer's corner, then
+		// bursts open in a flash + ring as the mon appears (drawn while it's hidden)
+		if (side === 'me' && fx?.side === 'me' && fx.kind === 'sendthrow') {
+			const p = Math.min(1, fx.t / fx.dur);
+			const sx = W * 0.1, sy = H * 0.72, ex = pose.x, ey = pose.y - 12 * u;
+			const bx = sx + (ex - sx) * p, by = sy + (ey - sy) * p - Math.sin(Math.PI * p) * 130 * u;
+			UI.drawBall(ctx, bx, by, 12 * u, p * 8);
+		} else if (side === 'me' && fx?.side === 'me' && fx.kind === 'sendburst') {
+			const p = Math.min(1, fx.t / fx.dur);
+			ctx.save();
+			ctx.fillStyle = `rgba(255,255,255,${0.85 * (1 - p)})`;
+			ctx.beginPath(); ctx.arc(pose.x, pose.y - 14 * u, (8 + p * 68) * u, 0, Math.PI * 2); ctx.fill();
+			ctx.strokeStyle = `rgba(255,235,150,${0.9 * (1 - p)})`; ctx.lineWidth = 3 * u;
+			ctx.beginPath(); ctx.arc(pose.x, pose.y - 14 * u, (10 + p * 84) * u, 0, Math.PI * 2); ctx.stroke();
+			ctx.restore();
+		}
 		if (!img || hidden || pose.blink) return;
 		ctx.save();
 		ctx.globalAlpha = pose.alpha;
@@ -5266,7 +5342,9 @@ export class Battle {
 		UI.monPanel(ctx, a.me, W - 14 * u - 300 * u, meY, 300 * u, u,
 			{ shownHP: a.meShownHP, boosts: a.meBoosts, showXP: true, showNumbers: true,
 				expFrac: this.expFracFor(a.me, a.meShownExp ?? (a.me.exp ?? expForLevel(a.me.level))), abilityName: this.abilityName(a.me.ability),
-				itemName: a.me.heldItem ? this.itemName(a.me) : null });
+				itemName: a.me.heldItem ? this.itemName(a.me) : null,
+				// low-HP red-bar pulse (pairs with the beep in update)
+				pulse: (a.me.curHP > 0 && a.me.curHP / a.me.maxHP <= 0.2) ? (0.5 + 0.5 * Math.sin(a.t * 9)) : 0 });
 		// party dots sit in a row just above the panel's right edge
 		UI.teamDots(ctx, a.party, a.me,
 			W - 14 * u - 10 * u - (a.party.length - 1) * 18 * u - 6 * u, meY - 12 * u, u);
@@ -5300,7 +5378,7 @@ export class Battle {
 				btn({
 					x, y, w: bw, h: bh,
 					label: (a.swapFrom === i ? '⇄ ' : '') + mv.name.toUpperCase().slice(0, 16),
-					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}`,
+					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}${this.dmgHint(mv)}`,
 					subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
 					// while a swap is armed every slot is a valid target — no gray-out
@@ -5308,6 +5386,7 @@ export class Battle {
 					kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
+			this.drawSpeedHint(ctx, a, 20 * ub, barY + barH - 6 * ub, ub);
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 44 * ub, label: 'BACK', center: true }, 'back');
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 61 * ub, w: backW, h: 44 * ub,
 				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
@@ -5412,16 +5491,18 @@ export class Battle {
 					x: pad + (i % 2) * (bw + gap), y: barY + 12 * u + Math.floor(i / 2) * (bh + gap),
 					w: bw, h: bh,
 					label: (a.swapFrom === i ? '⇄ ' : '') + mv.name.toUpperCase().slice(0, 16),
-					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}`,
+					sub: a.swapFrom === i ? 'SWAPPING...' : `PP ${mv.pp}/${mv.maxPp}${this.dmgHint(mv)}`,
 					subColor: mv.pp === 0 ? UI.C.hpRed : UI.C.dim,
 					right: (info.power ? `Pwr ${info.power}` : (info.category || '')) + this.effHint(info),
 					type: info.type, disabled: a.swapFrom == null && !this.moveUsable(a.double ? this.chooser() : a.me, mv, 'me'),
 					kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
-			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: (fullW - gap) / 2, h: 60 * u, label: 'BACK', center: true }, 'back');
-			btn({ x: pad + (fullW + gap) / 2, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: (fullW - gap) / 2, h: 60 * u,
+			const rowY = barY + 12 * u + 2 * (bh + gap) + 6 * u;
+			btn({ x: pad, y: rowY, w: (fullW - gap) / 2, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad + (fullW + gap) / 2, y: rowY, w: (fullW - gap) / 2, h: 60 * u,
 				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+			this.drawSpeedHint(ctx, a, pad, rowY + 60 * u + 16 * u, u);
 		} else if (a.phase === 'target') {
 			ctx.fillStyle = UI.C.text;
 			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
