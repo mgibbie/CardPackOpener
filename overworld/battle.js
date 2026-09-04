@@ -247,6 +247,43 @@ const MOVE_FX = {
 	leafstorm: { selfDrop: { spa: -2 } }, psychoboost: { selfDrop: { spa: -2 } },
 	closecombat: { selfDrop: { def: -1, spd: -1 } }, superpower: { selfDrop: { atk: -1, def: -1 } },
 	hammerarm: { selfDrop: { spe: -1 } },
+	// ---- Upscale 5 Batch 2: canonical mechanics restored to damaging moves that
+	// were doing plain damage only (all confirmed absent + present in the data). ----
+	// burn secondaries
+	scald: { sec: { status: 'brn', ch: 30 } }, sacredfire: { sec: { status: 'brn', ch: 50 } },
+	blueflare: { sec: { status: 'brn', ch: 20 } }, pyroball: { sec: { status: 'brn', ch: 10 } },
+	steameruption: { sec: { status: 'brn', ch: 30 } }, scorchingsands: { sec: { status: 'brn', ch: 30 } },
+	inferno: { sec: { status: 'brn', ch: 100 } }, searingshot: { sec: { status: 'brn', ch: 30 } },
+	// flinch secondaries
+	waterfall: { sec: { flinch: true, ch: 20 } }, iciclecrash: { sec: { flinch: true, ch: 30 } },
+	steamroller: { sec: { flinch: true, ch: 30 } }, boneclub: { sec: { flinch: true, ch: 10 } },
+	heartstamp: { sec: { flinch: true, ch: 30 } }, needlearm: { sec: { flinch: true, ch: 30 } },
+	dragonrush: { sec: { flinch: true, ch: 20 } }, stomp: { sec: { flinch: true, ch: 30 } },
+	// para / poison / accuracy-drop / confuse secondaries
+	nuzzle: { sec: { status: 'par', ch: 100 } }, boltstrike: { sec: { status: 'par', ch: 20 } },
+	forcepalm: { sec: { status: 'par', ch: 30 } }, gunkshot: { sec: { status: 'psn', ch: 30 } },
+	barbbarrage: { sec: { status: 'psn', ch: 50 } }, direclaw: { sec: { status: 'psn', ch: 50 } }, // direclaw picks psn/par/slp; psn-only approximation
+	nightdaze: { sec: { stat: 'acc', d: -1, ch: 40 } }, mudbomb: { sec: { stat: 'acc', d: -1, ch: 30 } },
+	mirrorshot: { sec: { stat: 'acc', d: -1, ch: 30 } }, leaftornado: { sec: { stat: 'acc', d: -1, ch: 50 } },
+	axekick: { sec: { confuse: true, ch: 30 } }, rockclimb: { sec: { confuse: true, ch: 20 } }, // crash-on-miss deferred
+	// self-boost after a damaging hit
+	flamecharge: { postBoost: { spe: 1 } }, trailblaze: { postBoost: { spe: 1 } },
+	poweruppunch: { postBoost: { atk: 1 } }, torchsong: { postBoost: { spa: 1 } },
+	chargebeam: { postBoost: { spa: 1 }, postBoostCh: 70 }, fierydance: { postBoost: { spa: 1 }, postBoostCh: 50 },
+	meteormash: { postBoost: { atk: 1 }, postBoostCh: 20 },
+	// multi-hit (were hitting once)
+	bonerush: { hits: [2, 5] }, tailslap: { hits: [2, 5] }, watershuriken: { hits: [2, 5] }, armthrust: { hits: [2, 5] },
+	dragondarts: { hits: [2, 2] }, geargrind: { hits: [2, 2] }, dualwingbeat: { hits: [2, 2] },
+	twineedle: { hits: [2, 2], sec: { status: 'psn', ch: 20 } }, doubleironbash: { hits: [2, 2], sec: { flinch: true, ch: 30 } },
+	tripleaxel: { hits: [3, 3] }, triplekick: { hits: [3, 3] }, tripledive: { hits: [3, 3] }, // flat ×3 (ramping power not modeled)
+	scaleshot: { hits: [5, 5], postBoost: { spe: 1 }, selfDrop: { def: -1 } },
+	// recoil (were pure upside)
+	woodhammer: { recoil: 1 / 3 }, wavecrash: { recoil: 1 / 3 }, headcharge: { recoil: 0.25 },
+	volttackle: { recoil: 1 / 3, sec: { status: 'par', ch: 10 } }, lightofruin: { recoil: 0.5 },
+	chloroblast: { recoil: 0.5 }, steelbeam: { recoil: 0.5 }, mindblown: { recoil: 0.5 }, // steelbeam/mindblown: damage-based ≈ (real: half max HP)
+	// recharge (were pure upside)
+	roaroftime: { recharge: true }, rockwrecker: { recharge: true }, prismaticlaser: { recharge: true },
+	eternabeam: { recharge: true }, meteorassault: { recharge: true },
 	// fixed damage + OHKO
 	seismictoss: { fixed: 'level' }, nightshade: { fixed: 'level' },
 	dragonrage: { fixed: 40 }, sonicboom: { fixed: 20 }, psywave: { fixed: 'psywave' },
@@ -2562,6 +2599,23 @@ export class Battle {
 					userBoosts[st] = Math.max(-6, Math.min(6, before + d));
 					if (userBoosts[st] !== before) {
 						this.pushMsg(`${user.name}'s ${words[st]} ${d < -1 ? 'fell harshly' : 'fell'}!`);
+					}
+				}
+			});
+		}
+		// self stat change AFTER a damaging hit lands (Flame Charge speed, Power-Up
+		// Punch attack, Charge Beam 70% Sp. Atk, …). Optional postBoostCh (default
+		// 100); Serene Grace doubles it. Positive rises, negative falls.
+		const postCh = fx.postBoostCh == null ? 100 : fx.postBoostCh * (uAb === 'serenegrace' ? 2 : 1);
+		if (fx.postBoost && Math.random() * 100 < postCh) {
+			this.pushMsg('', () => {
+				if (user.curHP <= 0) return;
+				const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy', eva: 'evasiveness' };
+				for (const [st, d] of Object.entries(fx.postBoost)) {
+					const before = userBoosts[st] ?? 0;
+					userBoosts[st] = Math.max(-6, Math.min(6, before + d));
+					if (userBoosts[st] !== before) {
+						this.pushMsg(`${user.name}'s ${words[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
 					}
 				}
 			});
