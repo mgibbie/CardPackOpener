@@ -18,6 +18,7 @@ import * as Chat from './chat.js';
 import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { keepLocalRun } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
@@ -202,6 +203,7 @@ function saveRunSnapshot() {
 		const json = JSON.stringify(E.toSnapshot(state));
 		if (json.length > RUN_SNAP_MAX) return; // don't persist absurd sizes
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
+		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
 		safeSave(io.key, run); // local only
 	} catch (e) { /* never let a save break play */ }
 }
@@ -210,7 +212,7 @@ function clearRunSnapshot() {
 	const io = activeRunIO();
 	if (!io) return;
 	const run = io.load();
-	if (run && run.snapshot) { delete run.snapshot; io.save(run); }
+	if (run && run.snapshot) { delete run.snapshot; delete run.snapshotAt; io.save(run); }
 }
 // restore the live `state` from a run's snapshot; returns true on success (else caller boots fresh)
 function resumeRunSnapshot(run, byId) {
@@ -231,15 +233,17 @@ function resumeRunSnapshot(run, byId) {
 // seconds (snapshot stripped, deduped) and the FULL run (with the mid-fight snapshot) only when you
 // leave (tab hidden / pagehide) — the moment a cross-device handoff matters.
 let _lastPushedRunJson = '';
-function pushActiveRun(withSnapshot) {
+function pushActiveRun(withSnapshot, keepalive) {
 	if (!MP_ON || (typeof isGuest === 'function' && isGuest())) return;
 	const io = activeRunIO(); if (!io) return;
 	const run = io.load(); if (!run || !run.active) return;
-	const toPush = withSnapshot ? run : { ...run, snapshot: undefined };
+	const toPush = withSnapshot ? run : { ...run, snapshot: undefined, snapshotAt: undefined };
 	const json = JSON.stringify(toPush);
 	if (!withSnapshot && json === _lastPushedRunJson) return; // metadata unchanged
 	_lastPushedRunJson = json;
-	MPX.call('run-save', { key: io.key, run: toPush }).catch(() => {});
+	// keepalive lets the final push survive a hard tab-close (small snapshots only —
+	// keepalive caps the body at ~64KB, so large boards fall back to the local snapshot)
+	MPX.call('run-save', { key: io.key, run: toPush }, { keepalive: !!keepalive }).catch(() => {});
 }
 function serverClearRun(key) { if (MP_ON) MPX.call('run-clear', { key }).catch(() => {}); }
 // server is authoritative on boot: overwrite the localStorage run caches with the server's copies
@@ -249,13 +253,19 @@ async function hydrateRunsFromServer() {
 		const r = await MPX.call('run-load');
 		const runs = r && r.runs;
 		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
-			if (entry && entry.run && typeof entry.run === 'object') safeSave(key, entry.run);
+			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
+			// Don't let the server's copy clobber a fresher local in-fight snapshot — after a
+			// hard tab-close the server is behind (its async final push never landed) while
+			// localStorage is exact. This is what made resume drop you to turn 1.
+			if (keepLocalRun(safeLoad(key, null), entry.run)) continue;
+			safeSave(key, entry.run);
 		}
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
 }
 try {
 	document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveRunSnapshot(); pushActiveRun(true); } });
-	window.addEventListener('pagehide', () => { saveRunSnapshot(); pushActiveRun(true); });
+	// pagehide is the real unload — keepalive so the final push survives a hard tab-close
+	window.addEventListener('pagehide', () => { saveRunSnapshot(); pushActiveRun(true, true); });
 	setInterval(() => pushActiveRun(false), 5000); // coarse metadata heartbeat to the server
 } catch (e) { /* non-browser (headless test) — listeners are best-effort */ }
 

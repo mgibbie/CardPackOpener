@@ -23,10 +23,13 @@ export function requireLogin() {
 	return true;
 }
 
-export async function call(action, payload = {}) {
+export async function call(action, payload = {}, opts = {}) {
 	// hard 20s timeout: without one, a hung fetch wedges every caller that
 	// awaits it (the PvP submit/poll loops most painfully — the player would sit
 	// on "Waiting…" forever with no way out)
+	// opts.keepalive: let a final save survive page unload (pagehide). keepalive
+	// supports our auth header (unlike sendBeacon) but caps the body at ~64KB, so
+	// callers must tolerate rejection for large payloads.
 	const res = await fetch(API, {
 		method: 'POST',
 		headers: {
@@ -34,6 +37,7 @@ export async function call(action, payload = {}) {
 			authorization: 'Bearer ' + (localStorage.getItem(TOKEN_KEY) || ''),
 		},
 		body: JSON.stringify({ action, ...payload }),
+		keepalive: !!opts.keepalive,
 		signal: AbortSignal.timeout ? AbortSignal.timeout(20000) : undefined,
 	});
 	const data = await res.json().catch(() => ({ error: 'bad response' }));
