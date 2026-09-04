@@ -1116,7 +1116,36 @@ const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE
 
 const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null };
 const startMenu = { open: false, idx: 0 };
-const questMenu = { open: false, idx: 0 }; // the main-quest log (read-only list)
+const questMenu = { open: false, idx: 0, page: 0 }; // page 0 = quest log, 1 = THINGS TO DO
+// THINGS TO DO — the discovery checklist (Batch 6). Whole subsystems shipped as
+// reachable content that nothing ever pointed you at: contests, the Ruins, secret
+// bases, the Frontier, apricorns, Dive... This surfaces them with a where-to-start
+// hint and a live state ([x] done, [>] available now, [ ] locked/where-to-unlock).
+// `done`/`avail` are optional predicates read at draw time; default avail = true.
+const THINGS_TO_DO = [
+	{ label: 'BUG-CATCHING CONTEST', where: 'National Park gate (Johto) — Tue/Thu/Sat', avail: () => isBugDay() },
+	{ label: 'POKeMON CONTESTS', where: 'Lilycove Contest Hall (Hoenn)', done: () => Object.values(contestProgress().ranks || {}).some(v => v > 0) },
+	{ label: 'THE RUINS OF ALPH', where: 'Solve the sliding tile puzzles (Johto)', done: () => allRuinsSolved() },
+	{ label: 'UNOWN DEX', where: 'Catch every Unown letter in the Ruins (Johto)', done: () => Dex.unownCount() >= 28 },
+	{ label: 'APRICORNS & KURT', where: 'Pick apricorns on Routes 37/42, see Kurt in Azalea (Johto)' },
+	{ label: 'THE RADIO', where: 'Tune in to a radio in any Johto house' },
+	{ label: 'SECRET BASE', where: 'SECRET POWER on a tree, rock or cave wall (Hoenn)', done: () => !!myBase() },
+	{ label: 'HEADBUTT TREES', where: 'Use HEADBUTT on a leafy tree for hidden POKeMON' },
+	{ label: 'DIVE SPOTS', where: 'DIVE on deep water — Route 128 / Sootopolis (Hoenn)' },
+	{ label: 'THE SAFARI ZONE', where: 'Fuchsia City (Kanto) / Route 121 (Hoenn)' },
+	{ label: 'GAME CORNER', where: 'Voltorb Flip — Celadon / Goldenrod' },
+	{ label: 'TRAINER HILL', where: 'Climb for the best time (Hoenn)' },
+	{ label: 'SHOAL CAVE', where: 'Time the tides for shells & a Shell Bell (Hoenn)' },
+	{ label: 'BATTLE FRONTIER', where: 'Battle facilities for BP (Hoenn)', done: () => Frontier.getBP() > 0 || Frontier.bestStreak() > 0 },
+	{ label: 'ASYNC TRADES', where: 'Send & accept trade offers via the FRIENDS menu' },
+];
+function todoRows() {
+	return THINGS_TO_DO.map(t => {
+		let mark = '[ ] ';
+		try { mark = t.done?.() ? '[x] ' : (t.avail ? (t.avail() ? '[>] ' : '[ ] ') : '[>] '); } catch (e) { mark = '[>] '; }
+		return `${mark}${t.label} — ${t.where}`;
+	});
+}
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 const playerMenu = { open: false, idx: 0, target: null };
 const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
@@ -1709,16 +1738,41 @@ function moveShopKey(k) {
 }
 
 // full species list for the Pokédex, sorted by dex number (built once)
-function dexList() {
-	if (dexMenu.list) return dexMenu.list;
+// dex filters (Batch 6): narrow the 1,751-entry national list by type, region,
+// and caught-status — the completionist lens. Cycled by T/R/F in dexKey.
+const DEX_TYPES = ['ALL', 'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
+const DEX_REGIONS = [['ALL', () => true], ['KANTO', n => n >= 1 && n <= 151], ['JOHTO', n => n >= 152 && n <= 251], ['HOENN', n => n >= 252 && n <= 386], ['OTHER', n => n > 386 || n < 1]];
+const DEX_CAUGHT = ['ALL', 'OWNED', 'SEEN', 'MISSING'];
+function dexAll() {
+	if (dexMenu._all) return dexMenu._all;
 	const sp = battle.data.species;
 	// standard dex (positive nums) first, ascending; fakemon/custom (num <= 0)
 	// after, ordered by magnitude so they group sensibly
 	const key = n => (n > 0 ? n : 100000 + Math.abs(n || 99999));
-	dexMenu.list = Object.keys(sp)
-		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name }))
+	dexMenu._all = Object.keys(sp)
+		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name, types: sp[id].types || [] }))
 		.sort((a, b) => key(a.num) - key(b.num) || a.name.localeCompare(b.name));
-	return dexMenu.list;
+	return dexMenu._all;
+}
+function dexList() {
+	const t = DEX_TYPES[dexMenu.typeI || 0];
+	const inRegion = DEX_REGIONS[dexMenu.regionI || 0][1];
+	const cf = DEX_CAUGHT[dexMenu.caughtI || 0];
+	if (!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI)) return dexAll(); // unfiltered: the full list
+	return dexAll().filter(e => {
+		if (t !== 'ALL' && !e.types.includes(t)) return false;
+		if (!inRegion(e.num)) return false;
+		if (cf !== 'ALL') {
+			const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
+			if (cf === 'OWNED' && !caught) return false;
+			if (cf === 'SEEN' && !(seen && !caught)) return false;
+			if (cf === 'MISSING' && caught) return false;
+		}
+		return true;
+	});
+}
+function dexFilterLabel() {
+	return `${DEX_TYPES[dexMenu.typeI || 0]} · ${DEX_REGIONS[dexMenu.regionI || 0][0]} · ${DEX_CAUGHT[dexMenu.caughtI || 0]}`;
 }
 const friendsMenu = { open: false, idx: 0 };
 // MAIL BATTLES: correspondence Pokémon matches (server-authoritative, played a
@@ -1770,7 +1824,7 @@ function startKey(k) {
 		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; }
 		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
-		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; }
+		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; questMenu.page = 0; }
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
 		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full
@@ -1784,7 +1838,9 @@ function startKey(k) {
 }
 
 function questKey(k) {
-	const n = Quest.log(playerRegion()).length;
+	// ◄ ► flips between the quest LOG (page 0) and the THINGS TO DO checklist (1)
+	if (k === 'ArrowLeft' || k === 'ArrowRight') { questMenu.page = 1 - questMenu.page; questMenu.idx = 0; return; }
+	const n = questMenu.page === 1 ? THINGS_TO_DO.length : Quest.log(playerRegion()).length;
 	if (k === 'ArrowUp') questMenu.idx = (questMenu.idx + n - 1) % n;
 	if (k === 'ArrowDown') questMenu.idx = (questMenu.idx + 1) % n;
 	if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') questMenu.open = false;
@@ -1897,11 +1953,20 @@ function dexKey(k) {
 		if (k === 'x' || k === 'Escape') dexMenu.detail = false;
 		return;
 	}
+	// T / R / F cycle the type, region and caught-status filters
+	if (k === 't' || k === 'r' || k === 'f') {
+		if (k === 't') dexMenu.typeI = ((dexMenu.typeI || 0) + 1) % DEX_TYPES.length;
+		if (k === 'r') dexMenu.regionI = ((dexMenu.regionI || 0) + 1) % DEX_REGIONS.length;
+		if (k === 'f') dexMenu.caughtI = ((dexMenu.caughtI || 0) + 1) % DEX_CAUGHT.length;
+		dexMenu.idx = 0;
+		return;
+	}
+	if (!list.length) { if (k === 'x' || k === 'Escape') dexMenu.open = false; return; }
 	if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
 	if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
 	if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 9);
 	if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 9);
-	if (k === 'z' || k === 'Enter') { if (Dex.isSeen(list[dexMenu.idx].id)) dexMenu.detail = true; }
+	if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) dexMenu.detail = true; }
 	if (k === 'x' || k === 'Escape') dexMenu.open = false;
 }
 
@@ -2189,6 +2254,10 @@ function getBox() {
 }
 function setBox(box) {
 	safeSave('magepunk_box_v1', box);
+}
+// total shinies owned across the party and PC boxes (Trainer Card, Batch 6c)
+function shinyOwnedCount() {
+	return (party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
 }
 
 function shopKey(k) {
@@ -7562,7 +7631,16 @@ function drawDexMenu(W, H) {
 	const list = dexList();
 	const c = Dex.counts();
 	if (dexMenu.detail) { drawDexDetail(W, H, u, list[dexMenu.idx]); return; }
-	menuChrome(W, H, u, 'POKeDEX', `Seen ${c.seen}   Caught ${c.caught}   —   tap a seen entry for details`);
+	const filtered = !!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI);
+	menuChrome(W, H, u, 'POKeDEX', filtered
+		? `${dexFilterLabel()} · ${list.length} shown   —   T/R/F filter`
+		: `Seen ${c.seen}   Caught ${c.caught}   —   T/R/F filter, Z details`);
+	if (!list.length) {
+		sctx.fillStyle = BUI.C.faint;
+		sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+		sctx.fillText('No POKeMON match this filter.', 40 * u, 140 * u);
+		return;
+	}
 	const rows = 9;
 	const start = Math.max(0, Math.min(dexMenu.idx - 4, list.length - rows));
 	list.slice(start, start + rows).forEach((e, i) => {
@@ -7794,6 +7872,9 @@ function drawTrainerCard(W, H) {
 	const laggers = Quest.laggingRegions();
 	const allChamp = Quest.SHARED.every(r => Badges.isChampion(r));
 	// LEFT COLUMN — stats (values right-align to the column split)
+		// shiny count (party + PC boxes) + Battle Frontier progress (Batch 6c)
+		const shinyCount = shinyOwnedCount();
+		const frBP = Frontier.getBP(), frSym = Object.keys(Frontier.getSymbols()).length;
 	const lines = [
 		['NAME', name],
 		['ID No.', tidStr()],
@@ -7803,15 +7884,16 @@ function drawTrainerCard(W, H) {
 		['OBJECTIVE', Quest.shortObjective(rk)],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
-		['POKeDEX SEEN', String(c.seen)],
-		['POKeDEX OWNED', String(c.caught)],
+		['POKeDEX', `${c.seen} seen / ${c.caught} own`],
+		['SHINIES', `${shinyCount} ★`],
+		['FRONTIER', `${frBP} BP · ${frSym} sym`],
 		['PARTY', `${party.length}/6`],
 		['PLAYTIME', playtimeStr()],
 	];
 	const midX = cardX + cardW * 0.54;
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	lines.forEach(([k, v], i) => {
-		const y = cardY + (34 + i * 28) * u;
+		const y = cardY + (34 + i * 26) * u;
 		sctx.fillStyle = BUI.C.dim;
 		sctx.fillText(k, cardX + 28 * u, y);
 		sctx.fillStyle = (k === 'GYM TIER' && gTier > 0) || k === 'LEVEL CAP' ? BUI.C.accent : BUI.C.text;
@@ -8264,6 +8346,13 @@ function drawStartMenu(W, H) {
 }
 function drawQuest(W, H) {
 	const rk = playerRegion();
+	if (questMenu.page === 1) {
+		// THINGS TO DO — the discovery checklist
+		const rows = todoRows();
+		const left = rows.filter(r => r.startsWith('[ ]') || r.startsWith('[>]')).length;
+		optionList(W, H, H / 480, 'THINGS TO DO', `◄ ► quest log   ·   ${THINGS_TO_DO.length - left} explored, ${left} to discover`, rows, questMenu.idx, 'todo:', null);
+		return;
+	}
 	const mark = r => (r.state === 'done' ? '[x] ' : r.state === 'current' ? '[>] ' : '[ ] ') + r.label;
 	// the postgame arc appends below the region log — the log used to end at the
 	// League row while sixteen more badges, RED and the legendary hunt existed
@@ -8272,7 +8361,7 @@ function drawQuest(W, H) {
 	const next = (Quest.stage(rk) === Quest.DONE && postgameObjective()) || Quest.objective(rk);
 	// the title carries the SHARED gym tier (all three regions must clear each tier); the
 	// subtitle's objective already spells out the cross-region "who's behind" when relevant
-	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + next, rows, questMenu.idx, 'quest:', null);
+	optionList(W, H, H / 480, `${rk} — GYM TIER ${Quest.globalTier()}/8`, 'NEXT: ' + next + '   ·   ◄ ► things to do', rows, questMenu.idx, 'quest:', null);
 }
 function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
@@ -9183,7 +9272,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,

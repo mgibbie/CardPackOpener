@@ -124,20 +124,28 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   13-assertion `battlesparkle_test.mjs`. ⚠ needs the `overworld/data` sfx offload
   deploy.
 
-## Batch 6 — Completionist & discovery **[4/5 · M]**
+## Batch 6 — Completionist & discovery **[4/5 · M]** — CORE DONE (PR #252)
 
-- **A discovery layer**: contests, Frontier, apricorns, headbutt, dive,
-  secret bases, async trades — all built, none surfaced. A "THINGS TO DO"
-  page in the QUEST menu (region-aware checklist with where-to-start hints)
-  turns dead content into destinations.
-- **Dex UX**: type/region/caught filters (the PC's search UI is the template),
-  and a living-dex view in the PC.
-- **Trainer Card**: Trainer ID (also unlocks the lottery), real badge art
-  instead of pips, Frontier symbols + BP, shiny count.
-- **Share from the overworld**: trainer-card/dex-progress snapshot → image →
-  share, mirroring battlecards' deck/replay sharing.
-- **Round-2 rosters**: VS Seeker rematches scale levels only; post-Champion
-  gym leaders + E4 deserve upgraded species/items/movesets (HGSS-style).
+- **A discovery layer** — DONE. The QUEST menu grew a second page (◄ ►): THINGS
+  TO DO, a 15-activity checklist (contests, the Ruins, secret bases, the Frontier,
+  apricorns, Dive, headbutt, radio...) with where-to-start hints and live
+  `[x]/[>]/[ ]` state from real predicates (`todoRows`). 12-assertion
+  `discovery_test.mjs`.
+- **Dex UX** — filters DONE. `T/R/F` cycle type (18+ALL) / region
+  (Kanto/Johto/Hoenn/Other) / caught (ALL/OWNED/SEEN/MISSING); compose; empty
+  state; header shows the active filter + count. `dexList` rebuilt around a cached
+  `dexAll` + live filter. 12-assertion `dexfilter_test.mjs`. (Living-dex PC view
+  deferred with the follow-up.)
+- **Trainer Card** — DONE. Trainer ID already on it (Batch 4); added SHINIES
+  (party + boxes, `shinyOwnedCount`) and FRONTIER (BP + symbols). Real per-badge
+  art deferred (needs 24 sourced sprites — pips stay). 5-assertion
+  `trainercard_test.mjs`.
+- **DEFERRED to a follow-up PR** (heavier / different concern):
+  - **Round-2 rosters**: rematch bosses get upgraded species/items/movesets
+    (HGSS-style) rather than a flat level bump — touches the shared trainer-build
+    path, wants its own tested PR.
+  - **Share from the overworld**: trainer-card / dex snapshot → image → share.
+  - **Living-dex view in the PC**.
 
 ## Batch 7 — Rider sprites **[2/5 · S-M]**
 
