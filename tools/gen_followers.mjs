@@ -15,11 +15,24 @@
 //
 //   node tools/gen_followers.mjs --list                 # what's missing (count + ids)
 //   node tools/gen_followers.mjs --limit=20             # stub a 20-sprite pilot
-//   node tools/gen_followers.mjs --provider=pixellab    # real run (needs PIXELLAB_API_KEY)
 //   node tools/gen_followers.mjs --only=pignite,tepig   # just these ids
 //   node tools/gen_followers.mjs --redo=pignite         # regenerate (ignore manifest)
 //   node tools/gen_followers.mjs --contact              # (re)build the QA contact sheet
 //   node tools/gen_followers.mjs --promote              # copy staged sheets -> live data
+//
+// RETRO DIFFUSION (recommended): a prepaid rdpk- key from retrodiffusion.ai.
+//   export RETRODIFFUSION_API_KEY=rdpk-...
+//   node tools/gen_followers.mjs --credits                                  # check balance
+//   node tools/gen_followers.mjs --provider=retrodiffusion --check-cost     # price one image x targets
+//   node tools/gen_followers.mjs --provider=retrodiffusion --probe --only=gigalion,vintera,twydra
+//        # ^ generates a few AND saves RD's RAW output to tools/data/followers_probe/.
+//          Open one: if RD's four-angle grid isn't 4 rows down/left/right/up x4 cols,
+//          set RD_GRID_ROWS / RD_GRID_COLS / RD_ROW_ORDER env vars to match, then:
+//   node tools/gen_followers.mjs --provider=retrodiffusion --limit=20       # pilot
+//   node tools/gen_followers.mjs --provider=retrodiffusion                  # full run (resumes)
+//   node tools/gen_followers.mjs --redo=<ids>                               # fix the misses
+//   node tools/gen_followers.mjs --promote                                  # -> live data, then deploy owdata
+// Tunables (env): RD_STYLE, RD_SIZE, RD_STRENGTH (img2img fidelity), RD_MIN_BALANCE.
 //
 // Staged output lives in tools/data/followers_out/ — nothing touches the live
 // overworld/data/pokemon_follow until you review the contact sheet and --promote.
@@ -56,9 +69,71 @@ const fakemonOnly = flag('fakemon');
 const doList = flag('list');
 const contactOnly = flag('contact');
 const doPromote = flag('promote');
+const doCredits = flag('credits');     // print Retro Diffusion balance and exit
+const doCheckCost = flag('check-cost'); // free dry-run cost estimate for one target, then exit
+const doProbe = flag('probe');         // also save the RAW provider output (to calibrate the layout remap)
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = (...a) => console.log(...a);
+
+// ---------- Retro Diffusion (api.retrodiffusion.ai/v2) ----------
+// Real contract: POST /v2/inferences returns {status:'accepted',task_id}; poll
+// GET /v2/inferences/tasks/{id} until status 'succeeded' -> result.base64_images
+// (base64 PNG, no data: prefix). Auth header X-RD-Token. Input images must be RGB
+// (no alpha). The four-angle walking style returns a 4-direction walk cycle; with
+// return_spritesheet:true it's a PNG grid.
+let lastBalance = null; // RD remaining credit balance, updated after each success
+const RD_BASE = 'https://api.retrodiffusion.ai/v2';
+const RD_STYLE = process.env.RD_STYLE || 'rd_animation__four_angle_walking';
+const RD_SIZE = +(process.env.RD_SIZE || 48);       // native frame size the style wants
+const RD_STRENGTH = +(process.env.RD_STRENGTH || 0.62); // img2img: lower = truer to the front sprite
+const RD_MIN_BALANCE = +(process.env.RD_MIN_BALANCE || 1); // stop the run if credits fall below this
+// RD's four-angle sheet layout — the frame grid and which rows map to our
+// down/left/right/up. UNVERIFIED until a --probe sample is inspected; override via
+// env once known (RD_GRID_COLS, RD_GRID_ROWS, RD_ROW_ORDER="down,left,right,up").
+const RD_GRID_COLS = +(process.env.RD_GRID_COLS || 4);
+const RD_GRID_ROWS = +(process.env.RD_GRID_ROWS || 4);
+const RD_ROW_ORDER = (process.env.RD_ROW_ORDER || 'down,left,right,up').split(',');
+const PROBE_DIR = path.join(WORK, 'followers_probe');
+async function rdFetch(pathname, key, init) {
+	const res = await fetch(RD_BASE + pathname, { ...init, headers: { 'X-RD-Token': key, 'content-type': 'application/json', ...(init?.headers || {}) } });
+	const text = await res.text();
+	let json; try { json = JSON.parse(text); } catch { json = null; }
+	if (!res.ok) throw new Error(`RD ${res.status} ${pathname}: ${text.slice(0, 200)}`);
+	return json;
+}
+async function rdCredits(key) { return rdFetch('/v2/inferences/credits', key, { method: 'GET' }); }
+async function rdInfer(key, body) {
+	const acc = await rdFetch('/v2/inferences', key, { method: 'POST', body: JSON.stringify(body) });
+	if (acc.result?.base64_images || acc.base64_images) return acc.result || acc; // some responses come back sync
+	if (!acc.task_id) throw new Error('RD: no task_id in ' + JSON.stringify(acc).slice(0, 160));
+	for (let i = 0; i < 120; i++) { // poll up to ~2 min
+		await sleep(1000);
+		const t = await rdFetch(`/v2/inferences/tasks/${acc.task_id}`, key, { method: 'GET' });
+		if (t.status === 'succeeded') return t.result;
+		if (t.status === 'failed') throw new Error('RD task failed: ' + JSON.stringify(t).slice(0, 160));
+	}
+	throw new Error('RD task timed out');
+}
+// remap RD's four-angle spritesheet PNG into our 128x128 down/left/right/up x4
+async function rdAssemble(sheetB64, id) {
+	const raw = Buffer.from(sheetB64, 'base64');
+	if (doProbe) { fs.mkdirSync(PROBE_DIR, { recursive: true }); fs.writeFileSync(path.join(PROBE_DIR, id + '.raw.png'), raw); }
+	const meta = await sharp(raw).metadata();
+	const cw = Math.floor(meta.width / RD_GRID_COLS), ch = Math.floor(meta.height / RD_GRID_ROWS);
+	const frames = [];
+	for (const dir of ROWS) {                    // our output row order
+		const rdRow = RD_ROW_ORDER.indexOf(dir);
+		const row = rdRow < 0 ? 0 : rdRow;
+		for (let c = 0; c < COLS; c++) {
+			const src = Math.min(RD_GRID_COLS - 1, Math.round(c * (RD_GRID_COLS - 1) / (COLS - 1))); // sample COLS frames evenly
+			const cell = await sharp(raw).extract({ left: src * cw, top: row * ch, width: cw, height: ch })
+				.resize(CELL, CELL, { fit: 'contain', kernel: 'nearest', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+			frames.push(cell);
+		}
+	}
+	return assembleSheet(frames);
+}
 
 // ---------- species + targets ----------
 const species = JSON.parse(fs.readFileSync(path.join(DATA, 'species_index.json'), 'utf8'));
@@ -142,24 +217,33 @@ const PROVIDERS = {
 			return framesToSheet(data); // normalize the API's directional frames -> our 128x128 layout
 		},
 	},
-	// Retro Diffusion — RD Animation model, 32x32 grid, img2img from the reference.
+	// Retro Diffusion (v2) — the four-angle walking style is a purpose-built
+	// 4-direction walk cycle. img2img from the fakemon's front sprite keeps its
+	// look; return_spritesheet gives a PNG grid we remap to our layout.
 	retrodiffusion: {
 		rpm: 10, // documented 10 req/min per key
-		async gen({ name, refBuf }) {
+		async gen({ id, name, refBuf, checkCost }) {
 			const key = process.env.RETRODIFFUSION_API_KEY;
-			if (!key) throw new Error('set RETRODIFFUSION_API_KEY');
-			const res = await fetch('https://api.retrodiffusion.ai/v1/inferences', {
-				method: 'POST',
-				headers: { 'X-RD-Token': key, 'content-type': 'application/json' },
-				body: JSON.stringify({
-					model: 'RD_ANIMATION', width: 32, height: 32,
-					prompt: `top-down overworld follower sprite of ${name}, 4-direction walk cycle`,
-					input_image: refBuf.toString('base64'),
-				}),
-			});
-			if (!res.ok) throw new Error('retrodiffusion ' + res.status + ': ' + (await res.text()).slice(0, 160));
-			const data = await res.json();
-			return framesToSheet(data);
+			if (!key) throw new Error('set RETRODIFFUSION_API_KEY (your rdpk- key)');
+			// RD inputs must be RGB (no alpha) — flatten the reference onto white,
+			// and ask RD to strip the background back out of the result
+			const rgb = await sharp(refBuf).flatten({ background: '#ffffff' }).png().toBuffer();
+			const body = {
+				prompt: `${name}, full-body creature, simple`,
+				prompt_style: RD_STYLE,
+				width: RD_SIZE, height: RD_SIZE,
+				num_images: 1,
+				input_image: rgb.toString('base64'),
+				strength: RD_STRENGTH,
+				return_spritesheet: true,
+				remove_bg: true,
+			};
+			if (checkCost) { body.check_cost = true; return rdInfer(key, body); } // returns cost estimate, no image
+			const result = await rdInfer(key, body);
+			if (result.remaining_balance != null) lastBalance = result.remaining_balance;
+			const b64 = (result.base64_images || [])[0];
+			if (!b64) throw new Error('RD returned no image: ' + JSON.stringify(result).slice(0, 160));
+			return rdAssemble(b64, id);
 		},
 	},
 };
@@ -253,8 +337,25 @@ function promote(manifest) {
 	const manifest = loadManifest();
 	if (contactOnly) { buildContact(manifest); return; }
 	if (doPromote) { promote(manifest); return; }
+	if (doCredits) { // RD balance check
+		const key = process.env.RETRODIFFUSION_API_KEY;
+		if (!key) { console.error('set RETRODIFFUSION_API_KEY'); process.exit(1); }
+		log('Retro Diffusion credits:', JSON.stringify(await rdCredits(key)));
+		return;
+	}
 
 	const targets = computeTargets();
+	if (doCheckCost) { // free dry-run: estimate the per-image cost on the first target
+		const key = process.env.RETRODIFFUSION_API_KEY;
+		if (!key) { console.error('set RETRODIFFUSION_API_KEY'); process.exit(1); }
+		const id = (only ? targets.filter(t => only.includes(t)) : targets)[0];
+		if (!id) { log('no target to price'); return; }
+		const refBuf = await prepRef(path.join(SPRITES, species[id].sprite));
+		const est = await PROVIDERS.retrodiffusion.gen({ id, name: species[id].name, refBuf, checkCost: true });
+		log(`cost estimate for '${id}': ${JSON.stringify(est)}`);
+		log(`≈ ${targets.length} targets → rough total ${(targets.length * (est.balance_cost || est.cost || 0)).toFixed(2)} credits (before retries)`);
+		return;
+	}
 	if (doList) {
 		log(`${targets.length} species need a follower sheet${fakemonOnly ? ' (fakemon only)' : ''}${only ? ' (filtered)' : ''}.`);
 		log(targets.slice(0, 60).join(', ') + (targets.length > 60 ? `, … (+${targets.length - 60} more)` : ''));
@@ -273,9 +374,10 @@ function promote(manifest) {
 	log(`provider=${provider}  targets=${targets.length}  queued=${queue.length}  out=${path.relative(ROOT, outDir)}`);
 	if (!queue.length) { log('nothing to do (all done or none match) — building contact sheet.'); buildContact(manifest); return; }
 
-	let done = 0, failed = 0, since = 0;
+	let done = 0, failed = 0, since = 0, stopped = false;
 	const P = PROVIDERS[provider];
 	await pool(queue, concurrency, async (id) => {
+		if (stopped) return; // low-balance kill switch tripped
 		const sp = species[id];
 		try {
 			const refBuf = await prepRef(path.join(SPRITES, sp.sprite));
@@ -291,7 +393,8 @@ function promote(manifest) {
 			failed++;
 		}
 		if (++since >= 10) { saveManifest(manifest); since = 0; } // checkpoint for resume
-		if ((done + failed) % 25 === 0) log(`  ${done + failed}/${queue.length}  (ok ${done}, fail ${failed})`);
+		if ((done + failed) % 25 === 0) log(`  ${done + failed}/${queue.length}  (ok ${done}, fail ${failed})${lastBalance != null ? `  bal ${lastBalance}` : ''}`);
+		if (lastBalance != null && lastBalance < RD_MIN_BALANCE && !stopped) { stopped = true; log(`\n⚠ RD balance ${lastBalance} below floor ${RD_MIN_BALANCE} — stopping (resume later, manifest saved).`); }
 	});
 	saveManifest(manifest);
 	buildContact(manifest);
