@@ -17,5 +17,6 @@ tools/perf-shots/
 tools/data/sprite_audit.json
 # follower-sheet harness: staged art + manifest + contact sheet are all generated
 tools/data/followers_out/
+tools/data/followers_probe/
 tools/data/followers_manifest.json
 tools/data/followers_contact.html
