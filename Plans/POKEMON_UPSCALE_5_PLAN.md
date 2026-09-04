@@ -173,17 +173,17 @@ per-badge art remains deferred as an art-sourcing task).
 - **Mystery Gift** — no mechanism exists; could ride the MP server like mail
   battles do. Needs a design for what it grants.
 - **Title screen / intro cinematics** — functional today; cosmetic.
-- **Fakemon follower art** — 751 species (622 fakemon) trail as bobbing
-  battle-sprite minis (fallback works). No source art exists → must be AI-
-  generated from each front battle sprite. **Harness built**:
-  `tools/gen_followers.mjs` — enumerates the missing, preprocesses the front
-  sprite (sharp trim/resize), calls a pluggable PROVIDER, assembles the exact
-  128×128 down/left/right/up ×4 sheet, resumes via a manifest, rate-limits +
-  retries, stages to `tools/data/followers_out/` (never the live data until
-  `--promote`), and writes a QA contact sheet with a live walk preview. A `stub`
-  provider works today (proves the pipeline); `pixellab` / `retrodiffusion`
-  adapters are wired but need their API key + `framesToSheet()` validated against
-  a live response. Then: pilot ~20 → full run → review → promote → owdata deploy.
+- **Fakemon follower art** — RESOLVED (not via AI). Explored AI generation of
+  128×128 4-direction follower sheets from each front battle sprite (a Retro
+  Diffusion batch harness + owner preview tool). Tested `rd_animation__four_angle_
+  walking` on 7 fakemon: it preserves colour but bipedalizes creatures and faces
+  wrong — because true top-down back/side views can't be derived from a single
+  front sprite (any generic model hallucinates). **Decision: keep the battle-sprite
+  mini fallback for all fakemon.** `followSheet()` hard-routes negative-dex species
+  to the mini (cache-proof), and the mini mirrors when walking right. The RD
+  generation harness (`tools/gen_followers.mjs`) + its indexes were REMOVED; the
+  owner Follower Test previewer (`?followtest=1`, blank grass arena, reads the live
+  species catalog) was KEPT.
 
 ## Verification pattern
 
