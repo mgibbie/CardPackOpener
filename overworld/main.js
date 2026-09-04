@@ -2255,6 +2255,10 @@ function getBox() {
 function setBox(box) {
 	safeSave('magepunk_box_v1', box);
 }
+// total shinies owned across the party and PC boxes (Trainer Card, Batch 6c)
+function shinyOwnedCount() {
+	return (party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
+}
 
 function shopKey(k) {
 	// TAB / left-right flips between BUY and SELL
@@ -7868,6 +7872,9 @@ function drawTrainerCard(W, H) {
 	const laggers = Quest.laggingRegions();
 	const allChamp = Quest.SHARED.every(r => Badges.isChampion(r));
 	// LEFT COLUMN — stats (values right-align to the column split)
+		// shiny count (party + PC boxes) + Battle Frontier progress (Batch 6c)
+		const shinyCount = shinyOwnedCount();
+		const frBP = Frontier.getBP(), frSym = Object.keys(Frontier.getSymbols()).length;
 	const lines = [
 		['NAME', name],
 		['ID No.', tidStr()],
@@ -7877,15 +7884,16 @@ function drawTrainerCard(W, H) {
 		['OBJECTIVE', Quest.shortObjective(rk)],
 		['MONEY', `$${money}`],
 		['TIME', `${Clock.label()} (${Clock.phaseLabel()})`],
-		['POKeDEX SEEN', String(c.seen)],
-		['POKeDEX OWNED', String(c.caught)],
+		['POKeDEX', `${c.seen} seen / ${c.caught} own`],
+		['SHINIES', `${shinyCount} ★`],
+		['FRONTIER', `${frBP} BP · ${frSym} sym`],
 		['PARTY', `${party.length}/6`],
 		['PLAYTIME', playtimeStr()],
 	];
 	const midX = cardX + cardW * 0.54;
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	lines.forEach(([k, v], i) => {
-		const y = cardY + (34 + i * 28) * u;
+		const y = cardY + (34 + i * 26) * u;
 		sctx.fillStyle = BUI.C.dim;
 		sctx.fillText(k, cardX + 28 * u, y);
 		sctx.fillStyle = (k === 'GYM TIER' && gTier > 0) || k === 'LEVEL CAP' ? BUI.C.accent : BUI.C.text;
@@ -9264,7 +9272,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		editLoadMap: file => moveToMap(file),
 		grantTierReward, showTierRewardDialog, TIER_REWARDS, applyGymLevelFloors, TIER_LEVEL_FLOOR,
 		grantGrandChampionReward, grandChampionFinale,
-		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey,
+		Quest, get questMenu() { return questMenu; }, refreshObjective, drawQuest, drawTownMap, todoRows, THINGS_TO_DO, questKey, shinyOwnedCount, dexAll, dexFilterLabel,
 		checkVillainTrigger, startVillainBattle, completeVillainBeat,
 		checkRivalTrigger, startRivalEncounter, RIVAL_TIERS, rivalDue,
 	checkAwakeningTrigger, drawAwakening, AWAKENING_SCENES, awState, blockers,
