@@ -3903,9 +3903,11 @@ function dexMilestoneCheck() {
 // it with their own timed spells as usual. Emerald's canonical weather routes,
 // plus hail on the Mt Silver climb (its Gen-4 identity).
 const MAP_WEATHER = {
-	MAP_ROUTE111: 'sandstorm',
-	MAP_ROUTE119: 'rain',
+	MAP_ROUTE111: 'sandstorm',   // the Hoenn desert
+	MAP_ROUTE113: 'ash',         // volcanic ashfall from Mt Chimney
+	MAP_ROUTE119: 'rain',        // the rain belt
 	MAP_ROUTE120: 'rain',
+	MAP_ROUTE123: 'rain',
 	MAP_SILVER_CAVE_OUTSIDE: 'hail',
 };
 function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
@@ -6804,6 +6806,60 @@ function drawDayNightTint(context) {
 	context.restore();
 }
 
+// ---------- overworld weather ----------
+// MAP_WEATHER only ever fed BATTLE weather; the route itself showed clear sky.
+// A full-screen particle layer (rain/sandstorm/hail/ash) drawn on the GBA frame
+// keyed off mapWeatherNow() gives the weather routes their sky. Particles live
+// in screen space (they blanket the viewport, not the world), so no camera math.
+// REDUCED_MOTION draws the colour wash only, no motion.
+const weatherFx = { type: null, parts: [], last: 0 };
+const WEATHER_SPEC = {
+	// n: particle count · tint [r,g,b,a] multiply wash · per-particle draw+move
+	rain: { n: 90, tint: [70, 90, 130, 0.16], vx: -60, vy: 620, len: 9, draw(ctx, p) { ctx.strokeStyle = 'rgba(170,200,255,0.55)'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 1.4, p.y - p.spec.len); ctx.stroke(); } },
+	sandstorm: { n: 130, tint: [150, 120, 70, 0.30], vx: 340, vy: 40, len: 7, draw(ctx, p) { ctx.strokeStyle = `rgba(214,188,130,${p.a})`; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.spec.len, p.y - 1); ctx.stroke(); } },
+	hail: { n: 70, tint: [150, 170, 200, 0.16], vx: -20, vy: 200, len: 0, draw(ctx, p) { ctx.fillStyle = 'rgba(230,240,255,0.85)'; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
+	ash: { n: 60, tint: [90, 80, 78, 0.20], vx: 12, vy: 55, len: 0, draw(ctx, p) { ctx.fillStyle = `rgba(120,110,108,${p.a})`; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
+};
+function spawnWeatherPart(spec, anywhere) {
+	return {
+		x: Math.random() * (VIEW_W + 40) - 20,
+		y: anywhere ? Math.random() * VIEW_H : -Math.random() * 20,
+		a: 0.35 + Math.random() * 0.5,
+		vj: 0.6 + Math.random() * 0.8, // per-particle speed jitter
+		spec,
+	};
+}
+function drawWeather(ctx) {
+	const type = (Settings.get('weather') && !world.current?.map?.indoor
+		&& world.current?.map?.map_type !== 'MAP_TYPE_INDOOR') ? mapWeatherNow() : null;
+	if (!type || !WEATHER_SPEC[type]) { weatherFx.type = null; weatherFx.parts.length = 0; return; }
+	const spec = WEATHER_SPEC[type];
+	if (weatherFx.type !== type) {
+		weatherFx.type = type;
+		weatherFx.parts = Array.from({ length: spec.n }, () => spawnWeatherPart(spec, true));
+	}
+	// colour wash (multiply) — the sky's mood, drawn even under REDUCED_MOTION
+	ctx.save();
+	ctx.globalCompositeOperation = 'multiply';
+	ctx.globalAlpha = spec.tint[3];
+	ctx.fillStyle = `rgb(${spec.tint[0]},${spec.tint[1]},${spec.tint[2]})`;
+	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+	ctx.restore();
+	if (REDUCED_MOTION_OW) return;
+	const now = performance.now();
+	const dt = Math.min((now - weatherFx.last) / 1000, 0.05);
+	weatherFx.last = now;
+	ctx.save();
+	ctx.lineWidth = 1;
+	for (const p of weatherFx.parts) {
+		p.x += spec.vx * p.vj * dt;
+		p.y += spec.vy * p.vj * dt;
+		if (p.y > VIEW_H + 12 || p.x < -24 || p.x > VIEW_W + 24) Object.assign(p, spawnWeatherPart(spec, false));
+		spec.draw(ctx, p);
+	}
+	ctx.restore();
+}
+
 // ---------- loop ----------
 let last = performance.now();
 let playAccum = 0;
@@ -6914,6 +6970,7 @@ function tick(now) {
 		world.drawLayer(ctx, 'top', camX, camY);
 		drawCaveDark(ctx, camX, camY);
 		drawDayNightTint(ctx);
+		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood
 		evolution.draw(ctx);
 
 		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
@@ -8835,7 +8892,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },

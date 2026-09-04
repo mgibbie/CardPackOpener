@@ -16,12 +16,13 @@ export const OPTIONS = {
 	sfxVol: { label: 'SOUND FX', values: PCTS, show: pctBar },
 	autoRun: { label: 'AUTO-RUN', values: [false, true], show: v => (v ? 'ON' : 'OFF') },
 	dayNight: { label: 'DAY & NIGHT', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
+	weather: { label: 'WEATHER FX', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
 	followers: { label: 'FOLLOWERS', values: [true, false], show: v => (v ? 'ON' : 'OFF') },
 	// every modern game ships this; grinding here meant eating full ball-shake and
 	// attack sequences forever, with only a per-message tap to skip
 	battleAnim: { label: 'BATTLE ANIM', values: ['full', 'fast', 'off'], show: v => v.toUpperCase() },
 };
-const DEFAULTS = { textSpeed: 'mid', bgmVol: 70, sfxVol: 100, autoRun: false, dayNight: true, followers: true, battleAnim: 'full' };
+const DEFAULTS = { textSpeed: 'mid', bgmVol: 70, sfxVol: 100, autoRun: false, dayNight: true, weather: true, followers: true, battleAnim: 'full' };
 
 function load() {
 	const d = safeLoad(KEY, null);
