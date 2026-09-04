@@ -502,6 +502,12 @@ export class Player {
 
 	async init() {
 		this.img = await getImage(`${DATA}/sprites/red_normal.png`);
+		// the real ride sheets (decomp, same 9-frame layout as the walk sheet):
+		// wired in draw() so biking and surfing show a proper mount instead of a
+		// speed change and a plain blue ellipse. Best-effort — a missing sheet
+		// falls back to the walk sprite (+ the drawn ellipse for surf).
+		this.bikeImg = await getImage(`${DATA}/people/red_bike.png`).catch(() => null);
+		this.surfImg = await getImage(`${DATA}/people/red_surf.png`).catch(() => null);
 	}
 
 	setTile(tx, ty) {
@@ -602,10 +608,19 @@ export class Player {
 		}
 	}
 
+	// the sprite sheet for the current mode: surf mount / bike / walk. Each ride
+	// sheet draws the character ON the mount, so it replaces the walk sprite.
+	rideImg() {
+		return this.surfing ? (this.surfImg || this.img)
+			: this.biking ? (this.bikeImg || this.img)
+			: this.img;
+	}
+
 	draw(ctx, camX, camY) {
 		if (!this.img) return;
-		// a simple surf mount under the sprite while riding the waves
-		if (this.surfing) {
+		const sheet = this.rideImg();
+		// only draw the fallback water ellipse when the real surf sheet is missing
+		if (this.surfing && !this.surfImg) {
 			const bob = Math.sin(this.animT * 4) * 1.2;
 			ctx.fillStyle = 'rgba(40,90,160,0.85)';
 			ctx.beginPath();
@@ -630,7 +645,7 @@ export class Player {
 		ctx.save();
 		if (mirror) { ctx.translate(x + 16, y); ctx.scale(-1, 1); }
 		else ctx.translate(x, y);
-		ctx.drawImage(this.img, frame * 16, 0, 16, 32, 0, 0, 16, 32);
+		ctx.drawImage(sheet, frame * 16, 0, 16, 32, 0, 0, 16, 32);
 		ctx.restore();
 	}
 }
