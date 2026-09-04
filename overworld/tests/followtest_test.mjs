@@ -109,6 +109,13 @@ async function boot(browser, username) {
 		A(dd.testing && dd.all, 'the dropdown has a "Testing" section + an "All species" section', JSON.stringify(dd));
 		A(dd.aiCount === 7, 'the Testing section holds the AI fakemon (7)', dd.aiCount);
 		A(afterSel === dd.picked, 'choosing from the dropdown sets the trailing follower', afterSel);
+
+		// the left-side battle FRONT sprite reference updates with the selection
+		const fr = await page.evaluate(() => {
+			const el = document.querySelector('#ft-front img');
+			return { present: !!el, src: el ? el.src : '' };
+		});
+		A(fr.present && /data\/pokemon\/.+\.png/.test(fr.src), 'the battle front sprite shows on the left and matches the selection', fr.src);
 		await page.close();
 
 		// --- a non-owner is refused ---
