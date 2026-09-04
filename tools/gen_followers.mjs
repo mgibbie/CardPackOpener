@@ -339,6 +339,12 @@ function promote(manifest) {
 	const manifest = loadManifest();
 	if (contactOnly) { buildContact(manifest); return; }
 	if (doPromote) { promote(manifest); return; }
+	if (flag('index')) { // (re)write data/pokemon_follow_index.json — every species with a walk sheet, for the follower-test previewer to cycle
+		const list = fs.readdirSync(FOLLOW).filter(f => f.endsWith('.png')).map(f => f.replace(/\.png$/, '')).sort();
+		fs.writeFileSync(path.join(DATA, 'pokemon_follow_index.json'), JSON.stringify(list));
+		log(`wrote data/pokemon_follow_index.json (${list.length} species) — deploy overworld/data to owdata`);
+		return;
+	}
 	if (doCredits) { // RD balance check
 		const key = process.env.RETRODIFFUSION_API_KEY;
 		if (!key) { console.error('set RETRODIFFUSION_API_KEY'); process.exit(1); }

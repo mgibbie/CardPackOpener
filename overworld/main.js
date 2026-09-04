@@ -853,6 +853,7 @@ function repelWoreOff() {
 let factoryStandalone = false;
 function savePos() {
 	if (factoryStandalone) return; // the mini-game never persists position
+	if (window.__followTest) return; // the follower-test arena must never become your saved position
 	// `back` rides along because a few Crystal maps leave by a -1 "return to
 	// where you came from" warp (Pokecenter2F, the dept-store elevators, the Fast
 	// Ship). That source lived only in memory, so reloading inside one of them
@@ -9434,35 +9435,6 @@ function drawFriendGhosts(ctx, camX, camY) {
 			return import('./followtest.js').then(m => { window.__followtest = m.mount(window.__ow); });
 		}).catch(e => { console.warn('followtest failed', e); note('Follower Test failed to start: ' + String(e?.message || e).slice(0, 80) + ' — reload to retry'); });
 	}
-	// owner quick-launcher: a small FOLLOW TEST button in the top-right (by where the
-	// Sprite Tuner mounts) so it's one click, no URL param. Shown on the cached fast
-	// path OR, if the cache is stale/missing, a SERVER-verified fallback (the same
-	// gate the Sprite Tuner uses) — so it can't silently no-show for the real owner.
-	// The click re-verifies before mounting.
-	try {
-		if (!new URLSearchParams(location.search).has('followtest')) {
-			const showFollowLauncher = () => {
-				if (window.__followtest || document.getElementById('ft-launch')) return;
-				const b = document.createElement('button');
-				b.id = 'ft-launch';
-				b.textContent = '🐾 Follow Test';
-				b.title = 'Preview the AI-generated follower sprites (owner tool)';
-				b.style.cssText = 'position:fixed;top:8px;right:8px;z-index:210;background:#2a2440;color:#e8e2f4;'
-					+ 'border:1px solid #6a5f8a;border-radius:8px;padding:6px 10px;font:12px "Segoe UI",sans-serif;cursor:pointer;';
-				b.onclick = () => {
-					if (window.__followtest) return;
-					b.disabled = true; b.textContent = 'loading…';
-					MP.call('state').then(r => {
-						if ((r?.state?.username || '') !== 'mgibbie') { b.textContent = 'owner only'; return; }
-						return import('./followtest.js').then(m => { window.__followtest = m.mount(window.__ow); b.remove(); });
-					}).catch(() => { b.disabled = false; b.textContent = '🐾 Follow Test (retry)'; });
-				};
-				document.body.appendChild(b);
-			};
-			if (MP.cachedState?.()?.username === 'mgibbie') showFollowLauncher();           // fast path
-			else if (MP.hasToken?.()) MP.call('state').then(r => { if ((r?.state?.username || '') === 'mgibbie') showFollowLauncher(); }).catch(() => {}); // verified fallback
-		}
-	} catch (e) { /* launcher is best-effort */ }
 	// The MAIL badge ("MAIL (2)") only counted after you opened the mailbox — the
 	// one thing a your-move indicator must not require. Populate it at boot and
 	// keep it fresh; play-by-mail is fully built and was just invisible.
