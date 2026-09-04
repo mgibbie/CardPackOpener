@@ -51,6 +51,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_bugcontest_v1', 'magepunk_trickhouse_v1', 'magepunk_ruins_v1',
 	// the living world: where the roamers are (and their wounds), shoal digs
 	'magepunk_roamers_v1', 'magepunk_shoal_v1',
+	// the radio's daily draws (Buena's Blue Points, the Lucky Channel) + Trainer ID
+	'magepunk_buena_v1', 'magepunk_lottery_v1', 'magepunk_tid',
 	// your secret base (the spot + decorations; the server holds a copy too)
 	'magepunk_base_v1',
 	// Trainer Hill best time; the one-shot venue events (generator, fossils,
