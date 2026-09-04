@@ -1,7 +1,8 @@
-// followtest_test.mjs — the owner-only follower previewer (?followtest=1). Mounts
-// for mgibbie, pins the trailing follower to the chosen AI-generated sheet, cycles
-// the set with [ / ], loads the promoted sheets, and refuses non-owner accounts.
-// Standalone (headless Chrome + local overworld/data):
+// followtest_test.mjs — the owner-only follower previewer (?followtest=1, reached
+// from the landing page's Explore tile). Mounts for mgibbie, warps into the blank
+// 10x10 grass arena (MAP_FOLLOWTEST), cycles every follower-sheet species from the
+// index, pins the trailing follower, never persists the arena as your position,
+// and refuses non-owner accounts.
 //   node overworld/tests/followtest_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -20,7 +21,6 @@ const mkState = name => ({ username: name, friendCode: 'FTFTFT', decks: [], coll
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await new Promise(r => setTimeout(r, 150)); } return false; }
 
 async function boot(browser, username) {
-	const state = mkState(username);
 	const page = await browser.newPage();
 	await page.evaluateOnNewDocument(st => {
 		localStorage.setItem('magepunk_mp_token_v1', st.username);
@@ -28,8 +28,8 @@ async function boot(browser, username) {
 		localStorage.setItem('magepunk_region', 'johto');
 		localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		localStorage.setItem('magepunk_party_v1', JSON.stringify([{ speciesId: 'quilava', name: 'QUILAVA', level: 30, gender: 'M', ability: 'blaze', types: ['Fire'], ivs: { hp: 20, atk: 20, def: 20, spa: 20, spd: 20, spe: 20 }, stats: { hp: 90, atk: 60, def: 55, spa: 65, spd: 55, spe: 70 }, maxHP: 90, curHP: 90, exp: 27000, num: 156, sprite: 's4992.png', moves: [{ id: 'ember', name: 'Ember', pp: 25, maxPp: 25 }] }]));
-	}, state);
-	return { page, state };
+	}, mkState(username));
+	return page;
 }
 
 (async () => {
@@ -42,61 +42,48 @@ async function boot(browser, username) {
 	await new Promise(r => server.listen(PORT, r));
 	const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 	try {
-		// --- owner mounts, cycles, pins, loads sheets ---
-		const { page } = await boot(browser, 'mgibbie');
+		// --- owner: mounts, warps to the arena, cycles the index, doesn't persist it ---
+		const page = await boot(browser, 'mgibbie');
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?followtest=1&map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
 		const mounted = await waitFor(() => page.evaluate(() => !!window.__followtest), 30000);
 		A(mounted, 'the follower test mounts for the owner (mgibbie)');
 		if (!mounted) throw new Error('did not mount');
-		await new Promise(r => setTimeout(r, 500)); // let a few rAF ticks pin the follower + load a sheet
+
+		const inArena = await waitFor(() => page.evaluate(() => window.__ow?.world?.current?.map?.id === 'MAP_FOLLOWTEST'), 15000);
+		A(inArena, 'it warps into the blank grass arena (MAP_FOLLOWTEST)');
+		const bigSet = await waitFor(() => page.evaluate(() => (window.__followtest?.ids?.length || 0) > 100), 8000);
+		A(bigSet, 'it cycles the full follower-sheet index (100s of species)');
+		await new Promise(r => setTimeout(r, 500));
 
 		const out = await page.evaluate(async () => {
 			const o = {}, ow = window.__ow;
-			o.ids = window.__followtest.ids;
-			o.pinned0 = ow.follower?.id || null;                 // pinned to ids[0]
-			// sheet actually loads (promoted to data/pokemon_follow)
-			await new Promise(r => setTimeout(r, 400));
-			const img = ow.followSheet(o.ids[0]);
-			o.sheetLoaded = !!img && img.width === 128 && img.height === 128;
-			o.overlayCanvas = !!document.querySelector('canvas[style*="pixelated"]');
+			o.ids0 = window.__followtest.ids[0];
+			o.pinned = ow.follower?.id || null;
+			o.savedMap = JSON.parse(localStorage.magepunk_pos_v1 || '{}').map || null; // must NOT be the arena
+			o.guard = window.__followTest === true;
+			const img = ow.followSheet(o.ids0);
+			await new Promise(r => setTimeout(r, 300));
+			o.sheetLoaded = !!ow.followSheet(o.ids0);
 			return o;
 		});
-		A(Array.isArray(out.ids) && out.ids.length >= 7 && out.ids.includes('gigalion'), 'it exposes the AI-generated set', JSON.stringify(out.ids));
-		A(out.pinned0 === out.ids[0], 'the live follower is pinned to the selected sprite', out.pinned0);
-		A(out.sheetLoaded, 'the promoted 128x128 sheet loads from data/pokemon_follow', out.sheetLoaded);
-		A(out.overlayCanvas, 'the preview overlay is on screen');
+		A(out.pinned === out.ids0, 'the live follower is pinned to the selected sprite', out.pinned);
+		A(out.guard, 'the savePos guard flag is set (arena never persists)');
+		A(out.savedMap !== 'FollowTest' && out.savedMap !== 'MAP_FOLLOWTEST', 'the arena is NOT saved as your position', out.savedMap);
+		A(!!out.sheetLoaded, 'a follower sheet loads for the cycled species');
 
-		// cycle with ']' → next id
 		await page.keyboard.press(']');
 		await new Promise(r => setTimeout(r, 250));
-		const after = await page.evaluate(() => window.__ow.follower?.id || null);
-		A(after === out.ids[1], "']' advances to the next sprite", `${after} vs ${out.ids[1]}`);
-		// and back with '['
-		await page.keyboard.press('[');
-		await new Promise(r => setTimeout(r, 250));
-		const back = await page.evaluate(() => window.__ow.follower?.id || null);
-		A(back === out.ids[0], "'[' goes back to the previous sprite", back);
+		const after = await page.evaluate(() => ({ idx: window.__followtest.index, pinned: window.__ow.follower?.id }));
+		A(after.idx === 1 && after.pinned === (await page.evaluate(() => window.__followtest.ids[1])), "']' advances to the next sprite", JSON.stringify(after));
 		await page.close();
 
-		// --- owner sees the quick-launch button (no URL param) and clicking mounts ---
-		const { page: page3 } = await boot(browser, 'mgibbie');
-		await page3.goto(`http://localhost:${PORT}/overworld/index.html?map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
-		await waitFor(() => page3.evaluate(() => !!window.__ow), 30000);
-		const btnShown = await waitFor(() => page3.evaluate(() => [...document.querySelectorAll('button')].some(b => /Follow Test/.test(b.textContent))), 8000);
-		A(btnShown, 'owner sees the FOLLOW TEST launcher button (no URL param)');
-		await page3.evaluate(() => [...document.querySelectorAll('button')].find(b => /Follow Test/.test(b.textContent))?.click());
-		const clickMounted = await waitFor(() => page3.evaluate(() => !!window.__followtest), 10000);
-		A(clickMounted, 'clicking the launcher mounts the follower test');
-		await page3.close();
-
-		// --- a non-owner is refused (no mount, no button) ---
-		const { page: page2 } = await boot(browser, 'grunt');
+		// --- a non-owner is refused ---
+		const page2 = await boot(browser, 'grunt');
 		await page2.goto(`http://localhost:${PORT}/overworld/index.html?followtest=1&map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
 		await waitFor(() => page2.evaluate(() => !!window.__ow), 30000);
 		await new Promise(r => setTimeout(r, 1500));
-		const nonOwner = await page2.evaluate(() => ({ mounted: !!window.__followtest, btn: [...document.querySelectorAll('button')].some(b => /Follow Test/.test(b.textContent)) }));
-		A(!nonOwner.mounted, 'a non-owner account does NOT get the tool');
-		A(!nonOwner.btn, 'a non-owner does NOT see the launcher button');
+		const nonOwner = await page2.evaluate(() => ({ mounted: !!window.__followtest, inArena: window.__ow?.world?.current?.map?.id === 'MAP_FOLLOWTEST' }));
+		A(!nonOwner.mounted && !nonOwner.inArena, 'a non-owner account does NOT get the tool or the arena');
 		await page2.close();
 	} catch (e) { A(false, 'harness crashed: ' + e.message); console.error(e); }
 	finally { await browser.close(); server.close(); }

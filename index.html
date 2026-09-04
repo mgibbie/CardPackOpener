@@ -218,6 +218,10 @@
 				<div class="glyph">🦴</div>
 				<div><h3>Sprite Tuner <span class="arrow">→</span></h3><p>Owner tools — size and position battle sprites in a live battle scene.</p></div>
 			</a>
+			<a class="tile" id="tile-followtest" href="overworld/?followtest=1" hidden>
+				<div class="glyph">🐾</div>
+				<div><h3>Follower Test <span class="arrow">→</span></h3><p>Owner tools — a blank grass arena to walk and cycle through every follower sprite.</p></div>
+			</a>
 			<a class="tile" id="tile-mapedit" href="overworld/?mapedit=1" hidden>
 				<div class="glyph">🗺️</div>
 				<div><h3>Map Editor <span class="arrow">→</span></h3><p>Owner tools — paint tiles, collision and elevation straight onto the overworld maps.</p></div>
@@ -245,7 +249,7 @@
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
 	if (MP.cachedState()?.username === 'mgibbie') {
-		for (const id of ['tile-todo', 'tile-arttune', 'tile-spritetune', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+		for (const id of ['tile-todo', 'tile-arttune', 'tile-spritetune', 'tile-followtest', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
 		// the reset tile DOES something rather than going somewhere, so it needs a
 		// handler — which re-checks ownership with the server before touching a thing
 		import('./site/owreset.js').then(m => m.mount(document.getElementById('tile-owreset'))).catch(() => {});
