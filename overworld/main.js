@@ -1385,6 +1385,7 @@ function bgmTick() {
 		battle.themeHint = null;               // any finished battle clears its hint
 		const T = BATTLE_THEMES[bgmGame()];
 		want = (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
+			: radioTune ? radioTune                // a tuned-in radio takes over the room's music
 			: player.surfing ? T?.surf
 			: player.biking ? T?.bike
 			: (musicMap[world.current?.map?.id] || null);
@@ -2641,6 +2642,7 @@ function pressKey(k) {
 	if (trade.open) { tradeKey(k); return; }
 	if (playerMenu.open) { playerMenuKey(k); return; }
 	if (deckSelect.open) { deckSelectKey(k); return; }
+	if (radioMenu.open) { radioKey(k); return; }
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (runMenu.open) { runKey(k); return; }
@@ -2725,7 +2727,7 @@ function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
-	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
@@ -2886,6 +2888,7 @@ async function refreshMapContent(label) {
 	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
 	roamersOnMapChange();
+	radioTune = null; // leaving the room switches the radio off; map track resumes
 	if (!/^SecretBase_/.test(label || '')) baseCtx = null; // left the base
 
 	await npcs.loadForMap();
@@ -4865,6 +4868,123 @@ function startRoamerBattle(key) {
 		{ roamer: { hp: st[key]?.hp ?? null, status: st[key]?.status || null } });
 }
 
+// ---------- the Johto RADIO ----------
+// Every radio object used to print one static "cheerful march" line. Tune in for
+// real: four channels — POKeMON MUSIC (swaps the BGM), OAK'S PKMN TALK (reports
+// where the roaming legendaries were last seen), BUENA'S PASSWORD (a daily
+// Blue-Point draw with a prize ladder) and the LUCKY CHANNEL (a daily lottery
+// against your Trainer ID). Driven as a stateful canvas menu (the gcMenu/shopMenu
+// pattern), intercepted in runScriptLabel before the std body would run.
+const RADIO_CHANNELS = ['POKeMON MUSIC', "OAK'S PKMN TALK", "BUENA'S PASSWORD", 'LUCKY CHANNEL', 'TURN IT OFF'];
+// Crystal's radio-only tunes weren't ported, so real, present city themes stand
+// in as "stations" (each key is confirmed live in music_map.json).
+const RADIO_STATIONS = [
+	{ name: 'POKeMON MARCH', key: 'crystal_MUSIC_GOLDENROD_CITY' },
+	{ name: 'POKeMON LULLABY', key: 'crystal_MUSIC_POKEMON_CENTER' },
+	{ name: 'UNOWN RADIO', key: 'crystal_MUSIC_ECRUTEAK_CITY' },
+];
+let radioTune = null;   // BGM override while a music channel plays; cleared on map change
+const radioMenu = { open: false, idx: 0, station: 0 };
+// deterministic 32-bit FNV-1a — daily draws hash the date so a channel can't be
+// re-rolled by tuning in twice
+const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+
+// a stable 5-digit Trainer ID. Derived from the account name (identical across
+// devices when signed in), else a once-seeded local id. Zero-padded at display.
+function playerTID() {
+	const name = (MP.cachedState?.() || {}).username || localStorage.getItem('magepunk_name') || '';
+	if (name) return hashStr(name) % 100000;
+	let tid = parseInt(localStorage.getItem('magepunk_tid') || '0', 10);
+	if (!tid) { tid = 1 + Math.floor(Math.random() * 99998); safeSaveStr('magepunk_tid', String(tid)); }
+	return tid % 100000;
+}
+const tidStr = () => String(playerTID()).padStart(5, '0');
+
+function openRadio() { radioMenu.open = true; radioMenu.idx = 0; sfx('ui_open'); }
+
+// POKeMON MUSIC: cycle to the next station and take over the BGM until you leave
+function playRadioStation() {
+	const s = RADIO_STATIONS[radioMenu.station % RADIO_STATIONS.length];
+	radioMenu.station++;
+	radioTune = s.key; bgmTick();   // apply the override immediately
+	return `The RADIO tunes to POKeMON MUSIC.  ♪ Now playing: ${s.name} ♪`;
+}
+
+// OAK'S PKMN TALK: the roaming-legendary sighting report. The roamer system
+// already moves Raikou/Entei/Latios/Latias each map change but nothing announced
+// where — this is that missing readout.
+function oakTalkText() {
+	const st = roamState();
+	const sightings = [];
+	for (const key of Object.keys(ROAMERS)) {
+		const r = st[key];
+		if (!r || r.down || !r.map) continue;
+		const nm = (battle.data?.species?.[key]?.name || key).toUpperCase();
+		sightings.push(`${nm} near ${r.map.replace(/^Route/, 'ROUTE ')}`);
+	}
+	if (!sightings.length) return "PROF. OAK'S PKMN TALK: ...and remember, different POKeMON appear by day and by night! Keep exploring, and you'll fill that POKeDEX.";
+	return 'PROF. OAK\'S PKMN TALK: We have sighting reports! ' + sightings.join('.  ') + '.  Go get \'em!';
+}
+
+// BUENA'S PASSWORD: one tune-in per day earns a Blue Point; crossing a threshold
+// on the ladder hands a prize (once each). The daily password itself is flavour.
+const BUENA_KEY = 'magepunk_buena_v1';
+const BUENA_WORDS = ['LAPRAS', 'PIKACHU', 'MACHOP', 'EEVEE', 'ODDISH', 'SLOWPOKE', 'DIGLETT', 'PIDGEY', 'GEODUDE', 'GENGAR', 'ONIX', 'ABRA', 'MAGIKARP', 'DITTO'];
+const BUENA_PRIZES = [ // Blue-Point balance -> a one-time prize when you reach it
+	{ at: 3, item: 'pokeball', n: 5 }, { at: 7, item: 'ultraball', n: 3 },
+	{ at: 15, item: 'ppup', n: 1 }, { at: 25, item: 'rarecandy', n: 1 }, { at: 40, item: 'maxrevive', n: 2 },
+];
+function buenaText() {
+	const st = safeLoad(BUENA_KEY, { date: '', points: 0, claimed: 0 });
+	const today = new Date().toDateString();
+	const word = BUENA_WORDS[hashStr(today) % BUENA_WORDS.length];
+	if (st.date === today) return `BUENA'S PASSWORD: Today's password is still "${word}"! You've already tuned in today. (Blue Points: ${st.points})`;
+	st.date = today; st.points = (st.points || 0) + 1;
+	let msg = `BUENA'S PASSWORD: Today's password is "${word}"! Thanks for listening — +1 Blue Point! (Total: ${st.points})`;
+	for (const p of BUENA_PRIZES) {
+		if (st.points >= p.at && (st.claimed || 0) < p.at) {
+			st.claimed = p.at; Bag.addItem(p.item, p.n);
+			msg += `  ★ ${p.at} points reached! BUENA sends you ${p.n}x ${(Bag.ITEMS[p.item]?.name || p.item)}!`;
+			break;
+		}
+	}
+	safeSave(BUENA_KEY, st);
+	return msg;
+}
+
+// LUCKY CHANNEL: the daily Lucky Number Show. Today's number is fixed per date;
+// the more trailing digits it shares with your Trainer ID, the bigger the prize.
+const LOTTO_KEY = 'magepunk_lottery_v1';
+const LOTTO_PRIZES = { 5: ['masterball', 1, 'the GRAND PRIZE — a MASTER BALL'], 4: ['ppup', 1, '2nd prize — a PP UP'], 3: ['rarecandy', 1, '3rd prize — a RARE CANDY'], 2: ['ultraball', 2, '4th prize — 2 ULTRA BALLS'] };
+function luckyText() {
+	const st = safeLoad(LOTTO_KEY, { date: '' });
+	const today = new Date().toDateString();
+	const tid = tidStr();
+	if (st.date === today) return `LUCKY CHANNEL: Today's drawing is over! Please come back tomorrow. (Your ID: ${tid})`;
+	st.date = today; safeSave(LOTTO_KEY, st);
+	const draw = String(hashStr('lotto:' + today) % 100000).padStart(5, '0');
+	let match = 0; for (let i = 1; i <= 5; i++) { if (draw.slice(-i) === tid.slice(-i)) match = i; else break; }
+	if (match >= 2) { const [item, n, label] = LOTTO_PRIZES[match]; Bag.addItem(item, n); return `LUCKY CHANNEL: Today's Lucky Number is ${draw}! Your ID ${tid} matches the last ${match} digits — you win ${label}!`; }
+	return `LUCKY CHANNEL: Today's Lucky Number is ${draw}. Your ID is ${tid}. No match today — better luck tomorrow!`;
+}
+
+function radioKey(k) {
+	const n = RADIO_CHANNELS.length;
+	if (k === 'ArrowUp') { radioMenu.idx = (radioMenu.idx + n - 1) % n; return; }
+	if (k === 'ArrowDown') { radioMenu.idx = (radioMenu.idx + 1) % n; return; }
+	if (k === 'x' || k === 'Escape') { radioMenu.open = false; return; }
+	if (k === 'z' || k === 'Enter') {
+		const ch = radioMenu.idx;
+		if (ch === 4) { radioTune = null; bgmTick(); radioMenu.open = false; return; } // TURN IT OFF
+		const text = ch === 0 ? playRadioStation() : ch === 1 ? oakTalkText() : ch === 2 ? buenaText() : luckyText();
+		radioMenu.open = false;                      // hand off to the dialog...
+		dialog.open(text, () => { radioMenu.open = true; }); // ...then reopen so you can keep tuning
+	}
+}
+function drawRadio(W, H) {
+	drawVertical(W, H, H / 480, 'RADIO', 'Tune in — up/down pick, Z listen, X off.', RADIO_CHANNELS, radioMenu.idx, 'radio');
+}
+
 // ---------- Bug-Catching Contest (National Park, Tue/Thu/Sat) ----------
 // The classic: sign up with the gate officer, hunt the park with 20 SPORT
 // BALLS, keep exactly ONE catch as your entry (swap any time), and get judged
@@ -5822,6 +5942,10 @@ function runScriptLabel(label, talker) {
 	// serves both -- see trades.js.
 	const tr = Trades.forScript(world.current.name, label);
 	if (tr) { startNpcTrade(tr, talker); return true; }
+	// every std radio object (BillsHouseRadio, KurtsHouseRadio, ...) resolves to
+	// the flavour-only Radio2Script; hijack them into the real tune-in menu. The
+	// intro tutorial radios end in "RadioScript", so /Radio$/ leaves them alone.
+	if (/Radio$/.test(label)) { openRadio(); return true; }
 	if (!mapScripts[label]) {
 		// Crystal factors its common NPCs through `jumpstd`, which the transpiler
 		// drops — so 237 bookshelves, signs and trash cans have no label at all.
@@ -7078,6 +7202,7 @@ function tick(now) {
 		else if (trade.open) drawTrade(SW, MH);
 		else if (playerMenu.open) drawPlayerMenu(SW, MH);
 		else if (deckSelect.open) drawDeckSelect(SW, MH);
+		else if (radioMenu.open) drawRadio(SW, MH);
 		else if (startMenu.open) drawStartMenu(SW, MH);
 		else if (cardsMenu.open) drawCardsMenu(SW, MH);
 		else if (runMenu.open) drawRunMenu(SW, MH);
@@ -7609,6 +7734,7 @@ function drawTrainerCard(W, H) {
 	// LEFT COLUMN — stats (values right-align to the column split)
 	const lines = [
 		['NAME', name],
+		['ID No.', tidStr()],
 		['REGION', region],
 		['GYM TIER', allChamp ? `${gTier}/8  GRAND CHAMP` : `${gTier}/8`],
 		['LEVEL CAP', gTier >= 8 ? 'NONE' : `Lv${levelCapNow()}`],
@@ -9007,6 +9133,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
+		openRadio, radioKey, drawRadio, get radioMenu() { return radioMenu; }, get radioTune() { return radioTune; }, playerTID, tidStr, oakTalkText, buenaText, luckyText,
 		refreshFollower, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);
 	// owner tooling: ?spritetune=1 mounts the battle-sprite tuning overlay for

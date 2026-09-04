@@ -83,15 +83,18 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
 
 ## Batch 4 — Johto's voice: radio, roamer news, Unown **[3/5 · M]**
 
-- **The radio does something**: every radio in Johto prints one flavor line.
-  Channels worth building: Pokémon Music (BGM switch), **Buena's Password**
-  (daily answer → points → prizes), Prof. Oak's talk w/ **roamer sightings**
-  ("RAIKOU was spotted on Route 38!" — roamers already move; nothing reports
-  them), and the Lucky Channel **Lottery** (daily draw vs trainer ID — needs a
-  Trainer ID on the card, which the card currently lacks). ⚠ standing-call
-  check for the daily pieces.
-- **Unown properly**: 28 letter forms (one exists today) + the Unown Dex
-  report at the Ruins research center (its scene flag exists, no UI behind it).
+- **The radio does something** — DONE (PR #248). Every std radio object now opens
+  a tune-in menu instead of the one static march line: **POKéMON MUSIC** (swaps
+  the BGM to a station track until you leave the room), **OAK'S PKMN TALK** (reads
+  the live roamer state and reports "RAIKOU near ROUTE 38!" — roamers already
+  moved, nothing announced them), **BUENA'S PASSWORD** (a daily Blue-Point draw
+  with a one-time prize ladder) and the **LUCKY CHANNEL** (a daily lottery whose
+  trailing digits are matched against a new stable 5-digit **Trainer ID**, now
+  shown on the Trainer Card). Daily pieces use the Bug-Contest `toDateString()`
+  guard; new keys registered in `owreset.js`. 17-assertion `radio_test.mjs`.
+- **Unown properly** — remaining: 28 letter forms (one exists today) + the Unown
+  Dex report at the Ruins research center (its scene flag exists, no UI behind
+  it). Next PR.
 
 ## Batch 5 — Battle sparkle: the small iconic beats **[4/5 · S]**
 
