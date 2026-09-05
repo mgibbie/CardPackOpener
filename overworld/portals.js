@@ -17,7 +17,7 @@
 // Pixelnauta (https://pixelnauta.itch.io/pixel-dimensional-portal-32x32), CC-BY 4.0;
 // recolouring is expressly permitted by the author. Credit: @pxlnauta.
 import { META, getImage } from './engine.js';
-import { GYMS } from './quest.js';
+import { GYMS, globalTier } from './quest.js';
 import { FLY } from './flydata.js';
 
 let portalSheet = null; // 192x32 (6 frames); the procedural glow is the fallback
@@ -84,11 +84,18 @@ export class Portals {
 		const pc = warps.find(w => PC_RE.test(String(w.dest_map || '')));
 		const ax = pc ? +pc.x : Math.floor(this.world.current.layout.width / 2);
 		const ay = pc ? +pc.y : Math.floor(this.world.current.layout.height / 2);
-		const dests = destsFor(spec.region, spec.tier);
+		// Match the SHARED PROGRESSION, not this town's gym number. Town order != gym
+		// order — Kanto's first reachable gym town is VIRIDIAN, whose gym is #8 — so a
+		// tier-by-gym-number portal would fling an early player to the other regions'
+		// endgame towns (too far), where the badge gate then TRAPS them (they can't
+		// step out of that town's Pokemon Center). Clamp to globalTier so the pad never
+		// sends you past where you're allowed to be.
+		const destTier = Math.min(spec.tier, globalTier());
+		const dests = destsFor(spec.region, destTier);
 		for (const side of [LEFT_OFFSETS, RIGHT_OFFSETS]) {
 			const tile = this.placeNear(ax, ay, side);
 			if (!tile) continue; // this side has no open spot — skip rather than wall anything
-			this.list.push({ tx: tile[0], ty: tile[1], tier: spec.tier, region: spec.region, dests });
+			this.list.push({ tx: tile[0], ty: tile[1], tier: destTier, region: spec.region, dests });
 		}
 	}
 
