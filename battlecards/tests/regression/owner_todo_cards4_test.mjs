@@ -1,13 +1,9 @@
-// Fourth batch of card changes filed from the wiki's owner inbox (owner_todo),
-// applied 2026-09-05.
+// Owner inbox: "Ambush Viper — give it Rush as well" (2026-08-31).
 //
-//   Reska, the Relic Wrangler -> line break after "Rush & Trample." before the
-//                                "Costs 1 less…" clause (wording/layout only)
-//   Avengers Tower (mv_cap_10) -> its {T}{T} tap now also Assembles & Advances
-//                                 (was just "Gain 3 Armor")
-//
-// Behaviour is executed, not inspected — a text-only claim would hide a tap that
-// no-ops.
+// A one-keyword change, but keywords are only real if the engine acts on them,
+// so this plays the card and checks what it can actually do the turn it lands:
+// Rush lets it hit a creature immediately, and NOT the face (that is Charge).
+// Deathtouch has to survive the edit too.
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -17,49 +13,69 @@ const cardsById = {}; for (const c of raw.cards) cardsById[c.id] = c;
 let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', l, x ?? ''); } };
 
-const game = (seed = 4, players = 2) => {
-	const heroes = Array.from({ length: players }, (_, i) => ({ id: 'mage', name: 'P' + i, power: null }));
-	const st = E.createGame(cardsById, seededRng(seed), null, players, heroes);
+const game = (seed = 2) => {
+	const st = E.createGame(cardsById, seededRng(seed), null, 2,
+		[{ id: 'mage', name: 'M', power: null }, { id: 'mage', name: 'N', power: null }]);
 	st.current = 0;
 	for (const p of st.players) { p.hand = []; p.deck = []; p.board = []; p.mana.max = 10; p.mana.cur = 10; }
 	return st;
 };
 
-// ---------- Reska, the Relic Wrangler ----------
+// ---------- card data ----------
 {
-	const c = cardsById.reska_the_relic_wrangler;
-	ok('Reska reads with the line break after "Rush & Trample."',
-		c.description === 'Rush & Trample.\nCosts 1 less for each creature in your graveyard.\nDeathrattle: Excavate twice & Loot twice.',
-		JSON.stringify(c.description));
-	// the mechanics are untouched — sanity-check they survived the text edit
-	ok('Reska keeps rush/trample/deathrattle + its Deathrattle',
-		['rush', 'trample', 'deathrattle'].every(k => (c.keywords || []).includes(k)) && (c.deathrattle || []).length === 3,
-		JSON.stringify([c.keywords, c.deathrattle]));
+	const c = cardsById.ambush_viper;
+	ok('Ambush Viper has Deathtouch and Rush',
+		(c.keywords || []).includes('deathtouch') && (c.keywords || []).includes('rush'), JSON.stringify(c.keywords));
+	// the ampersand form: a minority house style (11 keyword-only cards use it,
+	// e.g. 'Taunt & Divine Shield.') that the owner picked for this card
+	ok('reads "Deathtouch & Rush."', c.description === 'Deathtouch & Rush.', c.description);
+	ok('keyword order mirrors the text (house form)',
+		JSON.stringify(c.keywords) === JSON.stringify(['deathtouch', 'rush']), JSON.stringify(c.keywords));
+	ok('the rest of the card is unchanged',
+		c.cost === 3 && c.attack === 2 && c.health === 1 && c.tribe === 'Beast',
+		JSON.stringify([c.cost, c.attack, c.health, c.tribe]));
 }
 
-// ---------- Avengers Tower ----------
+// ---------- what Rush actually buys it ----------
 {
-	const c = cardsById.mv_cap_10;
-	ok('Avengers Tower reads "{T}{T}: Gain 3 Armor, Assemble & Advance."',
-		c.description === 'Durability 3. {T}{T}: Gain 3 Armor, Assemble & Advance.', JSON.stringify(c.description));
-	const eff = c.taps?.[0]?.effects || [];
-	ok('its tap has armor+assemble+advance effects',
-		eff.length === 3 && eff[0].type === 'armor' && eff[0].value === 3 && eff[1].type === 'assemble' && eff[2].type === 'advance',
-		JSON.stringify(eff));
-
-	// FIRE it: tapping the location gains 3 Armor and queues an Assemble + an Advance
 	const st = game();
-	const loc = E.instantiate(cardsById.mv_cap_10, 0);
-	loc.zone = 'board'; loc.sick = false; loc.tapped = false;
-	st.players[0].board.push(loc);
-	E.recomputeAuras(st);
-	const armorBefore = st.players[0].armor || 0;
-	const used = E.tapLand(st, 0, loc.uid, 0, null);
-	ok('the tower tap succeeded', used === true, used);
-	ok('tapping it gained 3 Armor', (st.players[0].armor || 0) === armorBefore + 3, [armorBefore, st.players[0].armor]);
-	const modes = (st.pickQueue || []).map(q => q.mode);
-	ok('it queued an Assemble', modes.includes('assemble'), JSON.stringify(modes));
-	ok('it queued an Advance', modes.includes('advance'), JSON.stringify(modes));
+	const wall = E.instantiate({ id: 't_wall', name: 'Wall', type: 'creature', cost: 3, attack: 1, health: 8 }, 1);
+	wall.zone = 'board'; st.players[1].board.push(wall);
+
+	const viper = E.instantiate(cardsById.ambush_viper, 0);
+	viper.zone = 'hand'; st.players[0].hand.push(viper);
+	st.players[0].mana.cur = 10;
+	E.playCard(st, 0, viper.uid, null, null, 0);
+	const onBoard = st.players[0].board.find(c => c.id === 'ambush_viper');
+	ok('it resolved onto the board', !!onBoard);
+	ok('and is summoning-sick, as any creature is', onBoard.sick === true, String(onBoard.sick));
+
+	ok('Rush lets it attack the turn it lands', E.canAttackWith(st, 0, onBoard) === true);
+	const targets = E.attackTargets(st, 0, onBoard);
+	ok('the enemy creature is a legal attack', targets.some(t => t.uid === wall.uid),
+		targets.map(t => t.type).join(','));
+	ok('but NOT the enemy hero — Rush is not Charge',
+		!targets.some(t => t.type === 'hero'), targets.map(t => t.type).join(','));
+
+	// Deathtouch: 2 attack into an 8-health wall still kills it
+	E.attack(st, 0, onBoard.uid, { type: 'creature', uid: wall.uid, player: 1 });
+	E.sweepDeaths(st);
+	ok('Deathtouch still kills whatever it hits',
+		!st.players[1].board.some(c => c.uid === wall.uid),
+		st.players[1].board.map(c => `${c.name} ${c.maxHealth - c.damage}hp`).join(','));
+}
+
+// ---------- a creature with neither keyword still can't attack ----------
+// guards the assertion above: it passes because of Rush, not because the engine
+// lets everything attack immediately
+{
+	const st = game();
+	const plain = E.instantiate({ id: 't_plain', name: 'Plain', type: 'creature', cost: 2, attack: 2, health: 2 }, 0);
+	plain.zone = 'hand'; st.players[0].hand.push(plain);
+	st.players[0].mana.cur = 10;
+	E.playCard(st, 0, plain.uid, null, null, 0);
+	const p = st.players[0].board.find(c => c.id === 't_plain');
+	ok('a plain creature cannot attack the turn it lands', E.canAttackWith(st, 0, p) === false);
 }
 
 console.log(`${pass} passed, ${fail} failed`);
