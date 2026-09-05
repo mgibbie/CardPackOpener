@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Your Bag — Magepunk</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="The items in your bag from the Magepunk Overworld.">
+	<meta name="robots" content="noindex">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%92</text></svg>">
+	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<style>
+	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --shadow:0 10px 30px rgba(0,0,0,.35); }
+	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --shadow:0 8px 24px rgba(40,50,90,.12); }
+	* { margin:0; padding:0; box-sizing:border-box; }
+	html { background:var(--bg-0); }
+	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(110,168,255,.14), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
+	header { display:flex; align-items:center; gap:14px; padding:12px 16px; background:var(--panel); border-bottom:1px solid var(--border); }
+	header .brand { font-weight:800; letter-spacing:.5px; color:var(--text); text-decoration:none; }
+	header a { color:var(--blue); text-decoration:none; font-size:14px; }
+	#wrap { max-width:1000px; margin:0 auto; padding:18px 16px 60px; }
+	.hero { text-align:center; margin:10px 0 4px; }
+	.hero h1 { font-size:clamp(2rem,6vw,3rem); font-weight:900; letter-spacing:-1px; background:linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+	.hero p { color:var(--muted); margin-top:2px; }
+	.money { display:inline-flex; gap:8px; align-items:center; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:6px 16px; font-weight:700; color:var(--gold); margin:12px auto; }
+	.section-label { display:flex; align-items:center; gap:10px; color:var(--muted); font-weight:700; font-size:.82rem; letter-spacing:1.5px; margin:22px 0 10px; }
+	.section-label::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--border), transparent); }
+	.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+	.item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
+	.item .ico { flex:0 0 40px; width:40px; height:40px; display:grid; place-items:center; background:var(--panel-2); border-radius:9px; }
+	.item .ico img, .item .ico canvas { width:32px; height:32px; image-rendering:pixelated; }
+	.item .nm { font-weight:600; font-size:.92rem; line-height:1.15; }
+	.item .ct { color:var(--muted); font-size:.8rem; margin-top:1px; }
+	.empty { color:var(--muted); text-align:center; padding:40px 0; }
+	.foot { color:var(--muted); text-align:center; margin-top:26px; font-size:.85rem; }
+	</style>
+</head>
+<body>
+	<header>
+		<a class="brand" href="/">Magepunk</a>
+		<a href="/overworld/">Overworld</a>
+		<a href="/monsters/">Monsters</a>
+		<a href="/collection/">Cards</a>
+	</header>
+	<div id="wrap">
+		<div class="hero"><h1>Your Bag</h1><p>The items you've gathered across the Overworld.</p></div>
+		<div style="text-align:center"><span class="money" id="money">$0</span></div>
+		<div id="content"><p class="empty">Loading…</p></div>
+		<p class="foot">Your bag lives on this device — items you find in the <a href="/overworld/" style="color:var(--blue)">Overworld</a> show up here.</p>
+	</div>
+
+	<script type="module">
+	import { ITEMS, getBag, getMoney, nameOf } from '../overworld/bag.js';
+	import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
+
+	// pockets mirror the in-game bag (main.js BAG_POCKETS), minus the ALL tab
+	const POCKETS = [
+		{ label: 'BALLS', test: (it) => it?.kind === 'ball' },
+		{ label: 'MEDICINE', test: (it) => ['heal', 'revive', 'cure', 'ether'].includes(it?.kind) },
+		{ label: 'BERRIES', test: (it, id) => /berry$/.test(id) },
+		{ label: 'HELD ITEMS', test: (it, id) => it?.kind === 'held' && !/berry$/.test(id) },
+		{ label: 'TMs & HMs', test: (it, id) => it?.kind === 'tm' || it?.kind === 'hm' || /^tm|^hm/.test(id) },
+		{ label: 'KEY ITEMS', test: (it) => ['key', 'charm', 'seeker', 'rod', 'form'].includes(it?.kind) },
+		{ label: 'OTHER', test: () => true },
+	];
+
+	function iconEl(id, item) {
+		const file = itemIconFile(id);
+		if (file) { const img = document.createElement('img'); img.src = '../overworld/item_icons/' + file; img.alt = ''; img.loading = 'lazy'; return img; }
+		const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
+		drawCategoryIcon(cv.getContext('2d'), item?.kind || 'misc', id, 0, 0, 32);
+		return cv;
+	}
+
+	(async () => {
+		await loadItemIcons('../overworld/');
+		document.getElementById('money').textContent = '$' + (getMoney() || 0).toLocaleString();
+		const bag = getBag() || {};
+		const owned = Object.entries(bag).filter(([, n]) => n > 0);
+		const content = document.getElementById('content');
+		if (!owned.length) { content.innerHTML = '<p class="empty">Your bag is empty. Explore the Overworld to pick things up!</p>'; return; }
+		content.innerHTML = '';
+		const used = new Set();
+		for (const p of POCKETS) {
+			const rows = owned.filter(([id]) => !used.has(id) && p.test(ITEMS[id], id));
+			if (!rows.length) continue;
+			rows.forEach(([id]) => used.add(id));
+			const lbl = document.createElement('div'); lbl.className = 'section-label'; lbl.textContent = `${p.label}  ${rows.length}`; content.appendChild(lbl);
+			const grid = document.createElement('div'); grid.className = 'grid';
+			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) {
+				const card = document.createElement('div'); card.className = 'item';
+				const ico = document.createElement('div'); ico.className = 'ico'; ico.appendChild(iconEl(id, ITEMS[id]));
+				const txt = document.createElement('div');
+				txt.innerHTML = `<div class="nm">${nameOf(id)}</div><div class="ct">×${n}</div>`;
+				card.append(ico, txt); grid.appendChild(card);
+			}
+			content.appendChild(grid);
+		}
+	})();
+	</script>
+</body>
+</html>

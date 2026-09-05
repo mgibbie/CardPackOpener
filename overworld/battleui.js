@@ -210,17 +210,18 @@ export function button(ctx, b, hovered, u) {
 	rr(ctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 6 * u); ctx.stroke();
 	ctx.fillStyle = b.disabled ? C.faint : C.text;
 	ctx.font = `${Math.round((b.big ? 17 : 14) * u)}px m6x11plus, monospace`;
+	const lx = b.x + (b.iconPad || 9 * u); // iconPad: leave room for a left-aligned icon
 	if (b.center) {
 		ctx.textAlign = 'center';
 		ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 6 * u);
 		ctx.textAlign = 'left';
 	} else {
-		ctx.fillText(b.label, b.x + 9 * u, b.y + 17 * u);
+		ctx.fillText(b.label, lx, b.y + 17 * u);
 	}
 	if (b.sub) {
 		ctx.fillStyle = b.subColor || C.dim;
 		ctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		ctx.fillText(b.sub, b.x + 9 * u, b.y + b.h - 8 * u);
+		ctx.fillText(b.sub, lx, b.y + b.h - 8 * u);
 	}
 	if (b.right) {
 		ctx.fillStyle = C.dim;

@@ -34,6 +34,7 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
 import * as Frontier from './frontier.js';
 import { getImage, drawOwMon } from './engine.js';
+import { loadItemIcons, itemIconFile, drawCategoryIcon } from './itemicon.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
@@ -8480,6 +8481,23 @@ function drawShopMenu(W, H) {
 	}
 }
 
+// item icons for the canvas bag menu. Real sprites load lazily (getImage is
+// async; the draw loop is sync), cached once resolved; a procedural category
+// icon fills the box until then / when the item has no sprite. See itemicon.js.
+const _bagIconImg = {}; // id -> HTMLImageElement | null | 'loading'
+function drawBagIcon(ctx, id, x, y, s) {
+	const file = itemIconFile(id);
+	if (file) {
+		const c = _bagIconImg[id];
+		if (c && c !== 'loading') { ctx.imageSmoothingEnabled = false; ctx.drawImage(c, x, y, s, s); return; }
+		if (c !== 'loading') {
+			_bagIconImg[id] = 'loading';
+			getImage(`item_icons/${file}`).then(im => { _bagIconImg[id] = im; }).catch(() => { _bagIconImg[id] = null; });
+		}
+	}
+	drawCategoryIcon(ctx, (Bag.ITEMS[id] || {}).kind, id, x, y, s); // placeholder while loading / no sprite
+}
+
 function drawBagMenu(W, H) {
 	const u = H / 480;
 	const pocket = BAG_POCKETS[bagMenu.pocket] || BAG_POCKETS[0];
@@ -8497,9 +8515,10 @@ function drawBagMenu(W, H) {
 		const idx = start + i;
 		const bid = 'item:' + idx;
 		const b = { id: bid, x: 24 * u, y: (76 + i * 52) * u, w: colW, h: 46 * u,
-			label: Bag.nameOf(id), right: `x${n}` };
+			label: Bag.nameOf(id), right: `x${n}`, iconPad: 46 * u };
 		menuUi.push(b);
 		BUI.button(sctx, b, menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
+		drawBagIcon(sctx, id, b.x + 8 * u, b.y + (b.h - 32 * u) / 2, 32 * u);
 	});
 	if (bagMenu.forget) {
 		const f = bagMenu.forget;
@@ -9324,6 +9343,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await world.init();
 	await player.init();
 	await npcs.init();
+	loadItemIcons();          // bag-menu item icons (index; sprites lazy-load per row)
 	await encounters.init();
 	await battle.init();
 	// hand PvP a sprite->battleScale lookup (its mons come over the wire without a species
