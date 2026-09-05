@@ -110,7 +110,7 @@ export const ITEMS = {
 	// common overworld pickups that map onto shop items
 	fullrestore: { name: 'FULL RESTORE', price: 0, kind: 'heal', amount: 999, cures: 'any' },
 	maxpotion:   { name: 'MAX POTION',   price: 2500, kind: 'heal', amount: 999 },
-	maxrevive:   { name: 'MAX REVIVE',   price: 4000, kind: 'revive' },
+	maxrevive:   { name: 'MAX REVIVE',   price: 4000, kind: 'revive', full: true },
 
 	// STATUS CURES. The port had none: a burn or a paralysis could only be slept
 	// off at a POKeMON CENTER, and the Full Heals and Antidotes that events hand
@@ -163,7 +163,7 @@ export const ITEMS = {
 	berryjuice:  { name: 'BERRY JUICE',  price: 100, kind: 'heal', amount: 20 },
 	energypowder:{ name: 'ENERGYPOWDER', price: 500, kind: 'heal', amount: 50 },
 	energyroot:  { name: 'ENERGY ROOT',  price: 800, kind: 'heal', amount: 200 },
-	revivalherb: { name: 'REVIVAL HERB', price: 2800, kind: 'revive' },
+	revivalherb: { name: 'REVIVAL HERB', price: 2800, kind: 'revive', full: true },
 
 	masterball:  { name: 'MASTER BALL',  price: 0, kind: 'ball', mult: 255 },
 
@@ -255,6 +255,8 @@ export const ITEMS = {
 	loveball:    { name: 'LOVE BALL',    price: 1000, kind: 'ball', mult: 1.5 },
 	lureball:    { name: 'LURE BALL',    price: 1000, kind: 'ball', mult: 1.5 },
 	moonball:    { name: 'MOON BALL',    price: 1000, kind: 'ball', mult: 1.5 },
+	quickball:   { name: 'QUICK BALL',   price: 1000, kind: 'ball', mult: 1 },
+	duskball:    { name: 'DUSK BALL',    price: 1000, kind: 'ball', mult: 1 },
 
 	elixir:      { name: 'ELIXIR',       price: 3000, kind: 'ether', amount: 10 }, // US spelling: both reach here
 	lavacookie:  { name: 'LAVA COOKIE',  price: 200,  kind: 'heal', amount: 20, cures: 'any' },
@@ -309,8 +311,8 @@ export const ITEMS = {
 	repel:       { name: 'REPEL',      price: 350,  kind: 'repel', steps: 100 },
 	superrepel:  { name: 'SUPER REPEL', price: 500, kind: 'repel', steps: 200 },
 	maxrepel:    { name: 'MAX REPEL',  price: 700,  kind: 'repel', steps: 250 },
-	ppup:        { name: 'PP UP',      price: 0,    kind: 'misc' },
-	ppmax:       { name: 'PP MAX',     price: 0,    kind: 'misc' },
+	ppup:        { name: 'PP UP',      price: 0,    kind: 'ppup' },              // +1 PP stage (20% of base, max 3) on a chosen move
+	ppmax:       { name: 'PP MAX',     price: 0,    kind: 'ppup', ppMax: true }, // maxes a chosen move's PP stages
 	// contest scarves and mail: cosmetic in the source games too
 	redscarf:    { name: 'RED SCARF',    price: 100, kind: 'misc' },
 	bluescarf:   { name: 'BLUE SCARF',   price: 100, kind: 'misc' },

@@ -1821,7 +1821,7 @@ function startKey(k) {
 		const it = items[startMenu.idx];
 		startMenu.open = false;
 		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; }
-		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; }
+		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it.startsWith('MAIL')) { openMailbox(); }
@@ -2410,12 +2410,42 @@ function castRod(id, item) {
 	// 60% the fish bites; the rod tier decides which slot band you can hook (encounters.fish)
 	const hit = Math.random() <= 0.6 ? encounters.fish(world.current.map.id, item.tier) : null;
 	if (!hit) { dialog.open(`You cast the ${item.name}...\n\nNot even a nibble.`); return; }
+	hit.method = 'fish'; // so LURE BALL knows this was a hooked catch
 	dialog.open(`You cast the ${item.name}...\n\nOh! A bite!`, () => startWildBattle(hit));
 }
+
+// A couple of evolution items target rare "Antique/Artisan" forms whose species
+// don't exist in this game's data (their source forms don't either), which left
+// the stones unusable. Alias them to the working base-line stone so they still
+// evolve the Sinistea / Poltchageist you can actually own.
+const STONE_ALIAS = { chippedpot: 'crackedpot', masterpieceteacup: 'unremarkableteacup' };
+const evoParam = id => STONE_ALIAS[id] || id;
 
 function bagKey(k) {
 	const entries = bagEntries();
 	// forgetting a move to make room for a TM
+	if (bagMenu.ppPick) {
+		const p = bagMenu.ppPick, moves = p.mon.moves;
+		if (k === 'ArrowUp') p.idx = (p.idx + moves.length - 1) % moves.length;
+		if (k === 'ArrowDown') p.idx = (p.idx + 1) % moves.length;
+		if (k === 'x' || k === 'Escape') { bagMenu.ppPick = null; bagMenu.picking = false; }
+		if (k === 'z' || k === 'Enter') {
+			const mv = moves[p.idx];
+			const base = battle.data.moves[mv.id]?.pp || mv.maxPp;
+			const step = Math.max(1, Math.floor(base / 5));       // one PP stage = 20% of base PP
+			const curStages = Math.round((mv.maxPp - base) / step);
+			if (curStages >= 3) { bagMenu.flash = `${mv.name}'s PP is already maxed.`; }
+			else {
+				const delta = ((p.ppMax ? 3 : curStages + 1) - curStages) * step;
+				mv.maxPp += delta; mv.pp += delta;
+				Bag.consume(p.itemId);
+				saveParty(party);
+				bagMenu.flash = `${mv.name}'s max PP ${p.ppMax ? 'was maxed out' : 'rose'}!`;
+				bagMenu.ppPick = null; bagMenu.picking = false;
+			}
+		}
+		return;
+	}
 	if (bagMenu.forget) {
 		const f = bagMenu.forget;
 		if (k === 'ArrowUp') f.idx = (f.idx + 3) % 4;
@@ -2529,6 +2559,10 @@ function bagKey(k) {
 						bagMenu.flash = `${mon.name}'s ability became ${String(mon.ability).toUpperCase()}!`;
 						bagMenu.picking = false;
 					}
+				} else if (item?.kind === 'ppup') {
+					// PP UP / PP MAX raise ONE move's PP ceiling — open a move sub-picker
+					if (!mon.moves?.length) bagMenu.flash = `${mon.name} has no moves.`;
+					else bagMenu.ppPick = { itemId: id, ppMax: !!item.ppMax, mon, idx: 0 };
 				} else if (item?.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
 					Bag.consume(id);
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
@@ -2536,10 +2570,10 @@ function bagKey(k) {
 					bagMenu.picking = false;
 				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0
 					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
-						.some(e => e.type === 'item' && e.param === id && battle.data.species[e.target])) {
+						.some(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target])) {
 					// an evolution item the selected species responds to
 					const evo = battle.data.extra[mon.speciesId].evos
-						.find(e => e.type === 'item' && e.param === id && battle.data.species[e.target]);
+						.find(e => e.type === 'item' && e.param === evoParam(id) && battle.data.species[e.target]);
 					Bag.consume(id);
 					bagMenu.picking = false;
 					bagMenu.open = false;
@@ -2616,7 +2650,7 @@ function bagKey(k) {
 				: 'No defeated trainers respond around here.';
 			return;
 		}
-		if (['heal', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin', 'mint', 'capsule'].includes(item?.kind) || tmMoveId(id)) {
+		if (['heal', 'cure', 'revive', 'candy', 'ether', 'held', 'stone', 'vitamin', 'mint', 'capsule', 'form', 'ppup'].includes(item?.kind) || tmMoveId(id)) {
 			bagMenu.picking = true;
 			bagMenu.pickIdx = 0;
 		}
@@ -2830,7 +2864,7 @@ function pressKey(k) {
 	}
 	if ((k === 'Enter' || k === 'm') && !loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
 	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
-	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.flash = null; return; }
+	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
 	if (k === 'c' && !loading) { toggleBike(); return; }
 	if (k === 'z' && !loading) interact();
 }
@@ -4205,8 +4239,10 @@ function startWildBattle(pick, forceDouble) {
 		? encounters.pick(world.current.map.id) : null;
 	if (second) Dex.markSeen(second.id);
 	battle.endSpec = { kind: 'wild' };
+	// special-ball context: how we ran into it (LURE BALL) + dex ownership (REPEAT BALL)
+	const catchCtx = { method: pick.method || (player.surfing ? 'surf' : 'walk'), owns: id => Dex.isCaught(id) };
 	battle.start(party, pick.id, pick.level, result => wildBattleEnd(result, inSafari),
-		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null });
+		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null, catchCtx });
 }
 
 // the standard wild-battle ending — shared by live battles and RESUMED ones
@@ -8464,7 +8500,19 @@ function drawBagMenu(W, H) {
 		BUI.button(sctx, b, menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
 		drawBagIcon(sctx, id, b.x + 8 * u, b.y + (b.h - 32 * u) / 2, 32 * u);
 	});
-	if (bagMenu.forget) {
+	if (bagMenu.ppPick) {
+		const p = bagMenu.ppPick;
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+		sctx.fillText(`${p.mon.name}: boost which move's PP?`, W * 0.5, 70 * u);
+		p.mon.moves.forEach((mv, i) => {
+			const bid = 'pppick:' + i;
+			const b = { id: bid, x: W * 0.5, y: (76 + i * 52) * u, w: W * 0.47, h: 46 * u,
+				label: mv.name, right: `${mv.pp}/${mv.maxPp}` };
+			menuUi.push(b);
+			BUI.button(sctx, b, menuHover === bid || p.idx === i, u);
+		});
+	} else if (bagMenu.forget) {
 		const f = bagMenu.forget;
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
@@ -8665,6 +8713,7 @@ function menuTap(id) {
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
 	if (kind === 'forget') { if (bagMenu.forget) bagMenu.forget.idx = +a; pressKey('z'); return; }
+	if (kind === 'pppick') { if (bagMenu.ppPick) bagMenu.ppPick.idx = +a; pressKey('z'); return; }
 	if (kind === 'mail') { mailMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'pcp') { pcMenu.side = 0; pcMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'gc') { gcMenu.idx = +a; pressKey('z'); return; }

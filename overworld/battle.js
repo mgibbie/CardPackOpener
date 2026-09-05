@@ -818,6 +818,7 @@ export class Battle {
 			// overwrite it with their own timed spells as usual
 			weather: opts?.weather ? { kind: opts.weather, turns: Infinity } : null, terrain: null,
 			stage: (this.stageOf && this.stageOf()) || { terrain: 'grass', night: false }, // visual backdrop/platform
+			catchCtx: opts?.catchCtx || null, // {method, owns(id)} — special-ball conditions (lure/repeat)
 			// the LIVE safari session object from main (balls decrement in place);
 			// null everywhere but a Safari Zone encounter
 			safari: opts?.safari || null,
@@ -3639,8 +3640,41 @@ export class Battle {
 		}
 	}
 
+	// The effective catch multiplier for a ball, applying its SPECIAL condition
+	// (net/nest/dive/timer/quick/dusk/repeat/level/love/lure/moon/fast) against
+	// the current foe + battle context. Plain balls (poke/great/ultra/premier/
+	// sport) just use their static `.mult`. Special balls fall back to 1x when
+	// their condition isn't met, exactly as the real games do.
+	ballMultFor(itemId, item) {
+		const a = this.active, foe = a.foe;
+		const sp = this.data.species?.[foe.speciesId] || {};
+		const ext = this.data.extra?.[foe.speciesId] || {};
+		const myLvl = a.me?.level || 1, foeLvl = foe.level || 1;
+		const stage = a.stage || {};
+		const ctx = a.catchCtx || {};
+		const evoParams = (ext.evos || []).map(e => (e.param || '') + '');
+		switch (itemId) {
+			case 'masterball': return 255;                                           // guaranteed (also forced below)
+			case 'netball':    return (foe.types || []).some(t => t === 'Bug' || t === 'Water') ? 3.5 : 1;
+			case 'nestball':   return Math.max(1, (41 - foeLvl) / 10);               // best on low-level foes
+			case 'diveball':   return stage.terrain === 'water' ? 3.5 : 1;           // surfing/underwater
+			case 'timerball':  return Math.min(4, 1 + (a.turnCount || 0) * 0.3);     // grows each turn
+			case 'quickball':  return (a.turnCount || 0) < 1 ? 5 : 1;                // first turn only
+			case 'duskball':   return (stage.terrain === 'cave' || stage.night) ? 3 : 1;
+			case 'repeatball': return ctx.owns && ctx.owns(foe.speciesId) ? 3.5 : 1; // already in the dex
+			case 'lureball':   return ctx.method === 'fish' ? 4 : 1;                 // hooked while fishing
+			case 'fastball':   return (sp.baseStats?.spe || 0) >= 100 ? 4 : 1;       // fast species
+			case 'moonball':   return evoParams.some(p => /moon/i.test(p)) ? 4 : 1;  // Moon-Stone family
+			case 'loveball':   return (a.me?.speciesId === foe.speciesId && a.me?.gender && foe.gender && a.me.gender !== foe.gender) ? 8 : 1;
+			case 'levelball':  return myLvl >= 4 * foeLvl ? 8 : myLvl >= 2 * foeLvl ? 4 : myLvl > foeLvl ? 2 : 1;
+			case 'heavyball':  return 1.5;                                           // no weight data — modest flat bonus
+			case 'friendball': case 'luxuryball': case 'premierball': return 1;      // perk is friendship, not catch rate
+			default:           return item.mult || 1;                               // poke/great/ultra/sport/etc
+		}
+	}
+
 	// Gen3-style catch: HP factor + species rate x ball multiplier, 4 shakes
-	throwBall(ballName = 'POKe BALL', ballMult = 1) {
+	throwBall(ballName = 'POKe BALL', ballMult = 1, ballId = 'pokeball') {
 		const a = this.active;
 		this.pushMsg(`You threw a ${ballName}!`);
 		this.pushAnim('ballthrow', 'foe', 0.55, () => { sfx('ball_open'); a.foeHidden = true; a.ballShown = true; });
@@ -3651,10 +3685,17 @@ export class Battle {
 		const b = Math.floor(1048560 / Math.sqrt(Math.sqrt(16711680 / f)));
 		let shakes = 0;
 		while (shakes < 4 && Math.floor(Math.random() * 65536) < b) shakes++;
+		if (ballId === 'masterball') shakes = 4;   // MASTER BALL never fails
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { sfx('fanfare_capture'); a.caughtMon = a.foe; });
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
+				sfx('fanfare_capture');
+				// FRIEND BALL sends it home already fond of you; LUXURY BALL primes fast bonding.
+				if (ballId === 'friendball') a.foe.friend = 200;
+				else if (ballId === 'luxuryball') a.foe.friend = Math.max(a.foe.friend || 70, 120);
+				a.caughtMon = a.foe;
+			});
 			// Catching pays experience like a KO (the Gen-6 rule). It used to pay
 			// nothing, which quietly taught players that catching is bad for training.
 			// The AWARD half only — grantExp's tail decides "is the battle over" on
@@ -4779,7 +4820,7 @@ export class Battle {
 		if (item.kind === 'ball') {
 			a.lastBall = itemId;          // R re-throws it; see the battle key handler
 			Bag.consume(itemId);
-			this.startQueue(() => this.throwBall(item.name, item.mult || 1));
+			this.startQueue(() => this.throwBall(item.name, this.ballMultFor(itemId, item), itemId));
 			return;
 		}
 		if (item.kind === 'ether') {
@@ -4795,11 +4836,13 @@ export class Battle {
 			return;
 		}
 		if (item.kind === 'heal') {
-			if (a.me.curHP >= a.me.maxHP) return; // nothing to heal, stay in bag
+			const canCure = item.cures && a.me.status;               // FULL RESTORE / LAVA COOKIE clear status too
+			if (a.me.curHP >= a.me.maxHP && !canCure) return;         // nothing to do, stay in bag
 			Bag.consume(itemId);
 			this.startQueue(() => {
 				this.pushMsg(`You used a ${item.name}!`, () => {
 					a.me.curHP = Math.min(a.me.maxHP, a.me.curHP + item.amount);
+					if (item.cures) a.me.status = null;
 				});
 				this.pushMsg(`${a.me.name}'s HP was restored.`);
 				this.foeFreeMove();
@@ -4811,8 +4854,8 @@ export class Battle {
 			if (!fainted) return;
 			Bag.consume(itemId);
 			this.startQueue(() => {
-				this.pushMsg(`You used a REVIVE!`, () => {
-					fainted.curHP = Math.floor(fainted.maxHP / 2);
+				this.pushMsg(`You used a ${item.name}!`, () => {
+					fainted.curHP = item.full ? fainted.maxHP : Math.floor(fainted.maxHP / 2); // MAX REVIVE / REVIVAL HERB restore full HP
 					fainted.status = null;
 				});
 				this.pushMsg(`${fainted.name} came back to its senses!`);
