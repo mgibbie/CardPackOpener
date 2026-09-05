@@ -20,6 +20,7 @@ export class Evolution {
 	async check(party, data) {
 		const timeOk = e => !e.time || (e.time === 'day' ? Clock.isDay() : Clock.isNight());
 		for (const mon of party) {
+			if (mon.heldItem === 'everstone') continue; // EVERSTONE halts natural level/friendship evolution
 			const evos = data.extra?.[mon.speciesId]?.evos || [];
 			const evo = evos.find(e => data.species[e.target] && timeOk(e)
 				&& ((e.type === 'level' && mon.level >= e.param)
