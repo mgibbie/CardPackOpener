@@ -5183,6 +5183,67 @@ export class Battle {
 		if (this._stage.cv) ctx.drawImage(this._stage.cv, 0, 0);
 		else { ctx.fillStyle = P.sky[1]; ctx.fillRect(0, 0, W, H); } // headless fallback
 	}
+	// subtle per-terrain atmosphere behind the mons (pollen / dust / sparkles) — Batch B
+	drawStageAmbient(ctx, stage, W, H, u) {
+		const spec = {
+			grass:  { c: 'rgba(222,240,150,0.5)',  rise: true,  n: 14 },
+			forest: { c: 'rgba(190,225,150,0.45)', rise: false, n: 16 },
+			cave:   { c: 'rgba(150,150,175,0.28)', rise: false, n: 12 },
+			water:  { c: 'rgba(222,240,255,0.55)', rise: true,  n: 12 },
+			sand:   { c: 'rgba(212,190,130,0.35)', rise: false, n: 14 },
+			city:   { c: 'rgba(205,205,215,0.22)', rise: false, n: 8 },
+			indoor: { c: 'rgba(212,202,222,0.22)', rise: false, n: 8 },
+		}[stage?.terrain || 'grass'];
+		if (!spec) return;
+		const T = (typeof performance !== 'undefined' ? performance.now() : 0) * 0.001;
+		ctx.save(); ctx.fillStyle = spec.c;
+		for (let i = 0; i < spec.n; i++) {
+			const sx = (i * 173.3) % W;
+			const prog = (T * 20 + i * 60) % (H + 40);
+			const y = spec.rise ? H - prog : prog - 20;
+			const x = (sx + Math.sin(T * 0.4 + i) * 22 * u + W) % W;
+			ctx.beginPath(); ctx.arc(x, y, (1.2 + (i % 3) * 0.5) * u, 0, Math.PI * 2); ctx.fill();
+		}
+		ctx.restore();
+	}
+	// real in-battle weather (was a flat tint + label only) — Batch B
+	drawBattleWeather(ctx, kind, W, H, u) {
+		const T = (typeof performance !== 'undefined' ? performance.now() : 0) * 0.001;
+		ctx.save();
+		if (kind === 'rain') {
+			ctx.strokeStyle = 'rgba(185,210,255,0.5)'; ctx.lineWidth = 1.5 * u;
+			for (let i = 0; i < 70; i++) {
+				const y = ((T * (900 + (i % 5) * 120) + i * 53) % (H + 40)) - 20;
+				const x = ((i * 137.5) + y * 0.35) % W;
+				ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6 * u, y + 16 * u); ctx.stroke();
+			}
+		} else if (kind === 'hail') {
+			ctx.fillStyle = 'rgba(228,242,255,0.9)';
+			for (let i = 0; i < 55; i++) {
+				const y = ((T * (260 + (i % 4) * 60) + i * 41) % (H + 20)) - 10;
+				const x = ((i * 149) + Math.sin((T + i) * 2) * 8 * u + W) % W;
+				ctx.beginPath(); ctx.arc(x, y, 2.2 * u, 0, Math.PI * 2); ctx.fill();
+			}
+		} else if (kind === 'sand') {
+			ctx.fillStyle = 'rgba(222,196,120,0.42)';
+			for (let i = 0; i < 60; i++) {
+				const x = ((T * (700 + (i % 6) * 90) + i * 71) % (W + 40)) - 20;
+				const y = ((i * 97) + Math.sin(T * 2 + i) * 6 * u + H) % H;
+				ctx.fillRect(x, y, 12 * u, 1.5 * u);
+			}
+		} else if (kind === 'sun') {
+			ctx.globalAlpha = 0.1 + 0.03 * Math.sin(T * 0.8);
+			ctx.fillStyle = 'rgba(255,235,150,1)';
+			ctx.translate(W * 0.15, 0); ctx.rotate(0.5);
+			for (let i = 0; i < 5; i++) ctx.fillRect(i * 90 * u - 100, -200, 26 * u, H + 400);
+			ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+		}
+		ctx.globalAlpha = 1; ctx.fillStyle = UI.C.dim;
+		ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; ctx.textAlign = 'center';
+		ctx.fillText({ rain: '☔ RAIN', sun: '☀ HARSH SUNLIGHT', sand: '≋ SANDSTORM', hail: '❄ HAIL' }[kind] || '', W / 2, 22 * u);
+		ctx.textAlign = 'left';
+		ctx.restore();
+	}
 	drawSide(ctx, a, side, W, H, u, slot = 0) {
 		const mon = slot === 1 ? (side === 'foe' ? a.foeAlly : a.meAlly)
 			: (side === 'foe' ? a.foe : a.me);
@@ -5309,17 +5370,12 @@ export class Battle {
 		if (a.shakeT > 0) ctx.translate((Math.random() - 0.5) * 8 * u, (Math.random() - 0.5) * 8 * u);
 		// per-terrain backdrop (cached offscreen — rebuilt only when stage/size changes)
 		this.drawStage(ctx, a.stage, W, H);
+		this.drawStageAmbient(ctx, a.stage, W, H, u); // subtle drifting motes behind the mons
 
-		if (a.weather) {
-			const tint = { rain: 'rgba(70,110,200,0.18)', sun: 'rgba(255,190,80,0.16)',
-				sand: 'rgba(200,170,90,0.2)', hail: 'rgba(180,220,255,0.18)' }[a.weather.kind];
-			ctx.fillStyle = tint;
+		if (a.weather) { // colour wash behind the combatants; the particles + label sit in front
+			ctx.fillStyle = { rain: 'rgba(70,110,200,0.18)', sun: 'rgba(255,190,80,0.16)',
+				sand: 'rgba(200,170,90,0.2)', hail: 'rgba(180,220,255,0.18)' }[a.weather.kind] || 'transparent';
 			ctx.fillRect(0, 0, W, H);
-			ctx.fillStyle = UI.C.dim;
-			ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-			ctx.textAlign = 'center';
-			ctx.fillText({ rain: '☔ RAIN', sun: '☀ HARSH SUNLIGHT', sand: '≋ SANDSTORM', hail: '❄ HAIL' }[a.weather.kind], W / 2, 22 * u);
-			ctx.textAlign = 'left';
 		}
 		this.drawSide(ctx, a, 'foe', W, H, u);
 		this.drawSide(ctx, a, 'me', W, H, u);
@@ -5328,6 +5384,7 @@ export class Battle {
 			this.drawSide(ctx, a, 'me', W, H, u, 1);
 		}
 		this.drawMoveFx(ctx, a, W, H, u);
+		if (a.weather) this.drawBattleWeather(ctx, a.weather.kind, W, H, u); // rain/hail/sand/sun in front + label
 
 		// hit sparks + floating combat text ride each combatant's pose
 		for (const p of a.particles || []) {
