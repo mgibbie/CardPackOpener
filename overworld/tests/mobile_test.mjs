@@ -84,6 +84,11 @@ async function waitFor(fn, ms) {
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'KANTO');
+			// own a bike — toggleBike() now requires one (getting off always works)
+			localStorage.setItem('magepunk_bag_v1', JSON.stringify({ bicycle: 1 }));
+			// seed the intro as done, else its cutscene blocks (menuBlocking) and the
+			// d-pad takes the discrete-press path instead of holding heldKeys
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		}, STATE, PARTY);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PalletTown`, { waitUntil: 'domcontentloaded' });
 		const ready = await waitFor(() => page.evaluate(() => !!(window.__ow?.battle?.data)), 30000);
