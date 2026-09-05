@@ -838,11 +838,12 @@ export function drawCardFace(card, opts = {}) {
 	ctx.lineWidth = 4;
 	ctx.stroke();
 
-	// name (shrink to fit)
+	// name (shrink to fit) — floor low enough for long qualified run-card names
+	// like "King of the Oathbreakers' Haunt of the Dead Marshes"
 	let size = 38;
 	ctx.font = `bold ${size}px Georgia`;
-	while (ctx.measureText(card.name).width > W - 120 && size > 19) {
-		size -= 2;
+	while (ctx.measureText(card.name).width > W - 120 && size > 13) {
+		size -= 1;
 		ctx.font = `bold ${size}px Georgia`;
 	}
 	ctx.textAlign = 'center';
