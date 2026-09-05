@@ -989,7 +989,7 @@ export function drawCardFace(card, opts = {}) {
 		ctx.fillStyle = '#fff';
 		ctx.fillText(`${opts.progress ?? 0} / ${opts.goal}`, W / 2, H - 54);
 		ctx.textAlign = 'left';
-	} else if (card.tribe || card.type === 'weapon' || SPELL_TYPES_SET.has(card.type)) {
+	} else if (card.tribe || card.type === 'weapon' || card.type === 'location' || SPELL_TYPES_SET.has(card.type)) {
 		roundRect(ctx, W / 2 - 90, H - 78, 180, 40, 18);
 		ctx.fillStyle = 'rgba(0,0,0,0.65)';
 		ctx.fill();
@@ -999,11 +999,12 @@ export function drawCardFace(card, opts = {}) {
 		ctx.textAlign = 'center';
 		ctx.fillStyle = '#d9d2ea';
 		// a spell's tribe is its school — label it as such ("Frost Spell"); weapons
-		// carry no tribe, so the plate names the card type ("Hero Weapon"); and a
-		// school-less spell names its type ("Instant" / "Sorcery")
+		// and locations carry no tribe, so the plate names the card type ("Hero
+		// Weapon" / "Location"); and a school-less spell names its type ("Instant")
 		const isSpell = SPELL_TYPES_SET.has(card.type);
 		const SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
 		const plateLabel = card.type === 'weapon' ? 'Hero Weapon'
+			: card.type === 'location' ? 'Location'
 			: card.tribe ? (isSpell && SCHOOLS.includes(card.tribe) ? `${card.tribe} Spell` : card.tribe)
 				: card.type.charAt(0).toUpperCase() + card.type.slice(1);
 		// shrink the font so a long tribe (e.g. "Elemental Golem Explorer") stays
