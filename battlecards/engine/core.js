@@ -242,6 +242,11 @@ export function instantiate(def, controller) {
 		trap: def.trap || null,
 		mana: def.mana || 0,        // legacy lands: synthesized into a tap ability
 		colors: def.colors || [],   // W/U/B/R/G identity ([] = colorless/class card)
+		// Lorequest variant-deck tags — preserved so the card FACE colours by CLASS
+		// (cardart bodyColorOf), matching the wiki, instead of by its mixed WUBRG
+		// colours. Undefined on every non-variant card, so nothing else changes.
+		meDeck: def.meDeck, meSide: def.meSide, scDeck: def.scDeck, scSide: def.scSide,
+		ffDeck: def.ffDeck, ffSide: def.ffSide, mvDeck: def.mvDeck, mvSide: def.mvSide,
 		taps: def.taps || null,     // land tap abilities: [{ text, effects }]
 		tapped: false,
 		choices: def.choices || null, // Choose One branches: [{ text, effects }]
