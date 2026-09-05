@@ -59,7 +59,10 @@ export function resetStory() { store = { flags: {}, vars: {} }; save(); }
 //   FLAG_HIDE_SECRET_BASE_*  the secret-base trainer, same placeholder graphics.
 // Same call crystal_stds.js made about Strength boulders: do not hand an object to
 // a system that is not there to receive it.
-const UNMODELLED_SYSTEM = /^FLAG_DECORATION_|^FLAG_HIDE_SECRET_BASE/;
+// systems this port doesn't model, so their objects stay hidden: secret-base
+// decorations, and the invisible-until-Devon-Scope KECLEON bridge obstacles
+// (a chameleon is meant to be unseen — showing it as a lone standing mon/man is wrong)
+const UNMODELLED_SYSTEM = /^FLAG_DECORATION_|^FLAG_HIDE_SECRET_BASE|^FLAG_HIDE_.*KECLEON/;
 
 export function objectHiddenByFlag(ev, _crystal) {
 	const f = ev && ev.flag;
