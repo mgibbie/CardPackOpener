@@ -3014,6 +3014,8 @@ async function refreshMapContent(label) {
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
 	hud.textContent = world.current.map.name || label;
+	// classic sliding area-name banner on entering a new OUTDOOR area (not buildings)
+	if (world.current.map.map_type !== 'MAP_TYPE_INDOOR' && !world.current.map.indoor) showAreaBanner(world.current.map.name);
 	// arriving on a Fly-destination map registers it so you can fly back later
 	markFlyPoint(world.current.map.id);
 	savePos();
@@ -7220,6 +7222,35 @@ function drawStepFx(ctx, camX, camY, kind) {
 			ctx.restore();
 		}
 	}
+}
+
+// ---------- area-name banner ----------
+// The classic location plaque that slides in when you enter a new outdoor area
+// (town / route / cave). DOM overlay (crisp text, no canvas-scale math), like the
+// MENU cluster; only fires on a name CHANGE so re-entries don't spam it.
+let _areaBannerEl = null, _lastAreaName = null;
+function showAreaBanner(name) {
+	if (!name || name === _lastAreaName || typeof document === 'undefined') return;
+	_lastAreaName = name;
+	if (!_areaBannerEl) {
+		_areaBannerEl = document.createElement('div');
+		_areaBannerEl.id = 'area-banner';
+		Object.assign(_areaBannerEl.style, {
+			position: 'fixed', top: '16px', left: '0', zIndex: '38', padding: '6px 18px 6px 22px',
+			background: 'linear-gradient(90deg, rgba(18,14,30,0.94), rgba(34,26,54,0.9))', color: '#f4ecc9',
+			font: '700 15px m6x11plus, "Segoe UI", sans-serif', letterSpacing: '1.5px',
+			borderRadius: '0 10px 10px 0', borderRight: '2px solid #c9a24a',
+			borderTop: '1px solid #6a5f3a', borderBottom: '1px solid #6a5f3a',
+			boxShadow: '0 3px 10px rgba(0,0,0,0.5)', transform: 'translateX(-110%)',
+			transition: 'transform 0.35s cubic-bezier(.2,.8,.2,1)', pointerEvents: 'none', whiteSpace: 'nowrap',
+		});
+		document.body.appendChild(_areaBannerEl);
+	}
+	// space out camelCase / number runs so "CherrygroveCity" reads "CHERRYGROVE CITY", "Route119" → "ROUTE 119"
+	_areaBannerEl.textContent = name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2').toUpperCase();
+	clearTimeout(_areaBannerEl._t);
+	_areaBannerEl.style.transform = 'translateX(0)';                    // slide in
+	_areaBannerEl._t = setTimeout(() => { if (_areaBannerEl) _areaBannerEl.style.transform = 'translateX(-110%)'; }, 2300); // hold, then out
 }
 
 // ---------- overworld weather ----------
