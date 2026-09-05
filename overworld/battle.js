@@ -2582,6 +2582,12 @@ export class Battle {
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
 		if (crits) this.pushMsg('A critical hit!');
 		if (eff > 1) this.pushMsg("It's super effective!");
+		// visual punch for the hit that's about to animate: crit = hard shake + white
+		// flash, super-effective = medium shake + orange flash (consumed by the 'hit' anim)
+		if (this.active && total > 0) {
+			if (crits) this.active.hitPunch = { t: 0.34, mag: 14, flash: 'rgba(255,255,255,0.5)' };
+			else if (eff > 1) this.active.hitPunch = { t: 0.3, mag: 11, flash: 'rgba(255,150,60,0.4)' };
+		}
 		// Weakness Policy: eating a super-effective hit sharply boosts both attacks
 		if (eff > 1 && total > 0 && !hitsSub && target.curHP > 0 && this.itemFx(target)?.weakPolicy) {
 			this.pushMsg(`${target.name}'s Weakness Policy sharply raised its stats!`, () => {
@@ -4907,6 +4913,7 @@ export class Battle {
 		a.introT = (a.introT || 0);
 		if (a.phase !== 'flash') a.introT += dt;
 		if (a.shakeT > 0) a.shakeT -= dt;
+		if (a.flash) { a.flash.t -= dt; if (a.flash.t <= 0) a.flash = null; } // crit/super-effective screen flash
 		// HP bar easing
 		a.foeShownHP += (a.foe.curHP - a.foeShownHP) * Math.min(1, dt * 6);
 		a.meShownHP += (a.me.curHP - a.meShownHP) * Math.min(1, dt * 6);
@@ -4943,7 +4950,12 @@ export class Battle {
 		// a playing sprite animation pauses the message queue
 		if (a.fx) {
 			a.fx.t += dt;
-			if (a.fx.kind === 'hit' && a.fx.t < 0.15) a.shakeT = 0.15;
+			if (a.fx.kind === 'hit' && a.fx.t < 0.15) {
+				const hp = a.hitPunch; // crit/super-effective punch set at damage time
+				a.shakeT = hp ? hp.t : 0.15; a.shakeMag = hp ? hp.mag : 8;
+				if (hp && hp.flash) a.flash = { t: 0.26, dur: 0.26, color: hp.flash };
+				a.hitPunch = null;
+			}
 			if (a.fx.t >= a.fx.dur) {
 				a.fx.done?.();
 				a.fx = null;
@@ -5361,13 +5373,24 @@ export class Battle {
 		const { portrait, compact, u, ubar: ub, barY, barH } = UI.layout(W, H);
 		this.ui = [];
 		if (a.phase === 'flash') {
-			const k = Math.floor(a.t / 0.1);
-			ctx.fillStyle = k % 2 === 0 ? 'rgba(255,255,255,0.9)' : 'rgba(10,8,18,0.9)';
-			ctx.fillRect(0, 0, W, H);
+			// battle-start burst: dark field + a quick opening flash + expanding rings
+			// (was a 2-frame black/white strobe)
+			const p = Math.min(1, a.t / 0.6);
+			ctx.fillStyle = '#0b0914'; ctx.fillRect(0, 0, W, H);
+			const cx = W / 2, cy = H * 0.44;
+			ctx.save(); ctx.lineWidth = 5 * u;
+			for (let i = 0; i < 3; i++) {
+				const rp = p - i * 0.12; if (rp <= 0) continue;
+				ctx.globalAlpha = Math.max(0, 0.7 - rp);
+				ctx.strokeStyle = i % 2 ? '#9cc0ff' : '#ffffff';
+				ctx.beginPath(); ctx.arc(cx, cy, rp * W * 0.9, 0, Math.PI * 2); ctx.stroke();
+			}
+			ctx.restore();
+			ctx.globalAlpha = Math.max(0, 1 - p * 3); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
 			return;
 		}
 		ctx.save();
-		if (a.shakeT > 0) ctx.translate((Math.random() - 0.5) * 8 * u, (Math.random() - 0.5) * 8 * u);
+		if (a.shakeT > 0) { const m = (a.shakeMag || 8) * u; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
 		// per-terrain backdrop (cached offscreen — rebuilt only when stage/size changes)
 		this.drawStage(ctx, a.stage, W, H);
 		this.drawStageAmbient(ctx, a.stage, W, H, u); // subtle drifting motes behind the mons
@@ -5385,6 +5408,7 @@ export class Battle {
 		}
 		this.drawMoveFx(ctx, a, W, H, u);
 		if (a.weather) this.drawBattleWeather(ctx, a.weather.kind, W, H, u); // rain/hail/sand/sun in front + label
+		if (a.flash) { ctx.save(); ctx.globalAlpha = Math.max(0, a.flash.t / a.flash.dur); ctx.fillStyle = a.flash.color; ctx.fillRect(0, 0, W, H); ctx.restore(); } // crit/super-effective punch
 
 		// hit sparks + floating combat text ride each combatant's pose
 		for (const p of a.particles || []) {
