@@ -28,7 +28,8 @@
 	.item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
 	.item .ico { flex:0 0 40px; width:40px; height:40px; display:grid; place-items:center; background:var(--panel-2); border-radius:9px; }
 	.item .ico img, .item .ico canvas { width:32px; height:32px; image-rendering:pixelated; }
-	.item .nm { font-weight:600; font-size:.92rem; line-height:1.15; }
+	.item > div { min-width:0; } /* let the text column shrink so long names wrap instead of clipping */
+	.item .nm { font-weight:600; font-size:.92rem; line-height:1.15; overflow-wrap:anywhere; }
 	.item .ct { color:var(--muted); font-size:.8rem; margin-top:1px; }
 	.empty { color:var(--muted); text-align:center; padding:40px 0; }
 	.foot { color:var(--muted); text-align:center; margin-top:26px; font-size:.85rem; }
