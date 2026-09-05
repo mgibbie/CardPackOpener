@@ -109,7 +109,8 @@ export class Items {
 
 	async init() {
 		this.fruitMap = await getJSON('data/berry_trees.json').catch(() => ({}));
-		this.ballImg = await getImage('data/npcs/pokeball.png').catch(() => null);
+		// item balls are drawn procedurally now (drawBall) — the old data/npcs/pokeball.png
+		// was a lumpy off-centre blob with no band/button
 	}
 
 	markCollected(key) {
@@ -258,6 +259,21 @@ export class Items {
 		obj.tx = tx; obj.ty = ty;
 	}
 
+	// a crisp procedural Poké Ball (red top / white bottom / black band + button),
+	// drawn like the boulders/trees — replaces the old blurry npcs/pokeball.png blob
+	drawBall(ctx, x, y) {
+		const cx = x + 8, cy = y + 9, r = 5.5;
+		ctx.save();
+		ctx.fillStyle = '#f6f6f6'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+		ctx.beginPath(); ctx.rect(cx - r - 1, cy - r - 1, (r + 1) * 2, r + 1); ctx.clip();
+		ctx.fillStyle = '#e23b32'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+		ctx.restore();
+		ctx.strokeStyle = '#17171d'; ctx.lineWidth = 1.4;
+		ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.stroke();
+		ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+		ctx.fillStyle = '#17171d'; ctx.beginPath(); ctx.arc(cx, cy, 1.9, 0, Math.PI * 2); ctx.fill();
+		ctx.fillStyle = '#f6f6f6'; ctx.beginPath(); ctx.arc(cx, cy, 0.9, 0, Math.PI * 2); ctx.fill();
+	}
 	draw(ctx, camX, camY) {
 		for (const o of this.fieldObjs) {
 			const x = o.tx * META - camX, y = o.ty * META - camY;
@@ -293,8 +309,7 @@ export class Items {
 		for (const b of this.balls) {
 			if (b.hidden) continue;
 			const x = b.tx * META - camX, y = b.ty * META - camY;
-			if (this.ballImg) ctx.drawImage(this.ballImg, x, y, 16, 16);
-			else { ctx.fillStyle = '#e04040'; ctx.fillRect(x + 4, y + 4, 8, 8); }
+			this.drawBall(ctx, x, y);
 		}
 		for (const t of this.trees) {
 			const x = t.tx * META - camX, y = t.ty * META - camY;
