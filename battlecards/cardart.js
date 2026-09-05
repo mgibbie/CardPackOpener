@@ -64,8 +64,14 @@ export function classColorOf(cls) {
 // WUBRG-coloured cards tint their frame body with the colour's identity rather
 // than the neutral class brown (White reads as a pale ivory/silver frame).
 const COLOR_BODY = { W: '#ece7d4', U: '#356fb8', B: '#3c3742', R: '#b23a2c', G: '#3f8038' };
+// Lorequest dungeon-run cards (Middle-earth / Sword Coast / Final Fantasy /
+// Multiverse) are grouped by HERO but built from real MTG cards of mixed WUBRG
+// colours, so a hero's card pool read as a rainbow. Each hero deck is a single
+// class, so colour these by CLASS instead — the pool becomes one cohesive colour.
+const LORE_VARIANT_TAGS = ['meDeck', 'meSide', 'scDeck', 'scSide', 'ffDeck', 'ffSide', 'mvDeck', 'mvSide'];
 export function bodyColorOf(card) {
 	if (card && card.passive) return '#7a5a1e'; // passive treasures wear a gold treasure frame
+	if (card && LORE_VARIANT_TAGS.some(t => card[t])) return classColorOf(card.cardClass);
 	const cols = (card && card.colors) || [];
 	for (const k of ['W', 'U', 'B', 'R', 'G']) if (COLOR_BODY[k] && cols.includes(k)) return COLOR_BODY[k];
 	return classColorOf(card && card.cardClass);
