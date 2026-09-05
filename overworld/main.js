@@ -7254,61 +7254,6 @@ function showAreaBanner(name) {
 	_areaBannerEl._t = setTimeout(() => { if (_areaBannerEl) _areaBannerEl.style.transform = 'translateX(-110%)'; }, 2300); // hold, then out
 }
 
-// ---------- ambient overworld life ----------
-// Drifting butterflies over routes/towns, falling leaves in forests, and the odd
-// bird gliding past — screen-space, subtle, reduced-motion-silent, indoor/cave
-// free, and suppressed while weather runs (the weather owns the sky then).
-const ambientFx = { type: null, parts: [], bird: null, nextBird: 0, last: 0 };
-function ambientKindFor() {
-	const m = world.current?.map; if (!m) return null;
-	if (m.indoor || m.map_type === 'MAP_TYPE_INDOOR' || m.map_type === 'MAP_TYPE_UNDERGROUND') return null;
-	return /FOREST|WOODS|ILEX/.test(m.id || '') ? 'leaves' : 'flutter';
-}
-function drawAmbientLife(ctx) {
-	if (REDUCED_MOTION_OW) return;
-	if (mapWeatherNow()) { ambientFx.type = null; ambientFx.parts.length = 0; return; }
-	const kind = ambientKindFor();
-	if (!kind) { ambientFx.type = null; ambientFx.parts.length = 0; return; }
-	const now = performance.now();
-	const dt = Math.min((now - ambientFx.last) / 1000, 0.05); ambientFx.last = now;
-	if (ambientFx.type !== kind) {
-		ambientFx.type = kind;
-		const n = kind === 'leaves' ? 7 : 4;
-		ambientFx.parts = Array.from({ length: n }, () => ({ x: Math.random() * VIEW_W, y: Math.random() * VIEW_H, ph: Math.random() * 6.28, vj: 0.6 + Math.random() * 0.8, hue: Math.random() }));
-	}
-	ctx.save();
-	for (const p of ambientFx.parts) {
-		if (kind === 'leaves') {
-			p.ph += dt * 1.6;
-			p.x += (10 + Math.sin(p.ph) * 14) * p.vj * dt; p.y += 26 * p.vj * dt;
-			if (p.y > VIEW_H + 8 || p.x > VIEW_W + 8) { p.x = Math.random() * VIEW_W - 20; p.y = -8; }
-			ctx.globalAlpha = 0.7; ctx.fillStyle = p.hue < 0.5 ? '#c98a3a' : '#7fae4a';
-			ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ph); ctx.beginPath(); ctx.ellipse(0, 0, 3, 1.6, 0, 0, 6.28); ctx.fill(); ctx.restore();
-		} else { // butterflies
-			p.ph += dt * 3;
-			p.x += (8 + Math.sin(p.ph * 0.7) * 14) * p.vj * dt; p.y += Math.sin(p.ph) * 8 * dt;
-			if (p.x > VIEW_W + 10) { p.x = -10; p.y = VIEW_H * 0.1 + Math.random() * VIEW_H * 0.6; }
-			const flap = Math.abs(Math.sin(p.ph * 4)); ctx.globalAlpha = 0.85;
-			ctx.fillStyle = p.hue < 0.5 ? '#f4f0d8' : '#f2d24a';
-			ctx.save(); ctx.translate(p.x, p.y);
-			ctx.beginPath(); ctx.ellipse(-2, 0, 2, 1 + flap * 2, 0, 0, 6.28); ctx.fill();
-			ctx.beginPath(); ctx.ellipse(2, 0, 2, 1 + flap * 2, 0, 0, 6.28); ctx.fill();
-			ctx.restore();
-		}
-	}
-	if (!ambientFx.bird && now > ambientFx.nextBird) {
-		ambientFx.nextBird = now + 12000 + Math.random() * 16000;
-		const dir = Math.random() < 0.5 ? 1 : -1;
-		ambientFx.bird = { x: dir > 0 ? -20 : VIEW_W + 20, y: 18 + Math.random() * 40, dir, ph: 0 };
-	}
-	if (ambientFx.bird) {
-		const b = ambientFx.bird; b.x += b.dir * 55 * dt; b.ph += dt * 9;
-		if (b.x < -30 || b.x > VIEW_W + 30) ambientFx.bird = null;
-		else { ctx.globalAlpha = 0.5; ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 1.5; const w = 5 + Math.sin(b.ph) * 2; ctx.beginPath(); ctx.moveTo(b.x - w, b.y + 2); ctx.lineTo(b.x, b.y - 1); ctx.lineTo(b.x + w, b.y + 2); ctx.stroke(); }
-	}
-	ctx.restore(); ctx.globalAlpha = 1;
-}
-
 // ---------- overworld weather ----------
 // MAP_WEATHER only ever fed BATTLE weather; the route itself showed clear sky.
 // A full-screen particle layer (rain/sandstorm/hail/ash) drawn on the GBA frame
@@ -7493,7 +7438,6 @@ function tick(now) {
 		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
 		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
-		if (!editView.on) drawAmbientLife(ctx); // butterflies / leaves / a passing bird (under the day-night mood)
 		drawCaveDark(ctx, camX, camY);
 		drawDayNightTint(ctx);
 		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood
