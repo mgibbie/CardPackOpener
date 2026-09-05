@@ -4081,6 +4081,23 @@ const MAP_WEATHER = {
 	MAP_SILVER_CAVE_OUTSIDE: 'hail',
 };
 function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
+// which visual battle STAGE this encounter happens on — the battle can't see the
+// overworld, so we hand it a { terrain, night } derived from the current map.
+// Terrain drives the backdrop + platform (battle.js drawStage/drawSide).
+function battleStageNow() {
+	let terrain = 'grass';
+	const m = world.current?.map || {};
+	const t = m.map_type || '', id = m.id || '';
+	if (player.surfing) terrain = 'water';
+	else if (t === 'MAP_TYPE_UNDERGROUND') terrain = 'cave';
+	else if (t === 'MAP_TYPE_INDOOR') terrain = 'indoor';
+	else if (/DESERT|SAND|BEACH/.test(id)) terrain = 'sand';
+	else if (/FOREST|WOODS|ILEX/.test(id)) terrain = 'forest';
+	else if (/CITY|TOWN/.test(id)) terrain = 'city';
+	let night = false; try { night = Clock.phase() === 'night'; } catch (e) { /* clock optional */ }
+	return { terrain, night };
+}
+battle.stageOf = battleStageNow; // battle.js reads this at start()/startTrainer()
 
 // last position on an outdoor map — DIG's exit point. Updated on every map
 // entry (refreshMapContent), so stepping into a cave remembers the doorstep.
