@@ -19,6 +19,7 @@ const K = [
 	{ p: ['Investigate'], t: 'Create a Clue token (Sacrifice, pay 2: draw a card).', tag: 'investigate' },
 	{ p: ['Enrich'], t: 'Create a Treasure token (Sacrifice: choose — gain 1 mana, color-boost a creature, or Discover a card of a colour).', tag: 'enrich' },
 	{ p: ['Cook'], t: 'Create a Food token (Sacrifice, pay 2: restore 3 Health).', tag: 'cook' },
+	{ p: ['Loot'], t: 'Draw a card, then discard a card.', tag: 'loot' },
 	{ p: ['Deathtouch'], t: 'Any damage it deals to a creature destroys that creature.', tag: 'deathtouch' },
 	{ p: ['Venomous'], t: 'Like Deathtouch, but one-shot: the first time it damages a creature that creature is destroyed, then Venomous is used up.', tag: 'venomous' },
 	{ p: ['Poisonous'], t: 'A creature this damages becomes Poisoned: it loses 2 Health at the end of its controller\'s turn (until cleansed or destroyed).', tag: 'poisonous' },
