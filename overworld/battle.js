@@ -481,6 +481,20 @@ function animArchFor(move, mv) {
 	return mv.category === 'Special' ? 'burst' : 'strike';
 }
 
+// Per-terrain battle STAGE look (Batch A): sky = 3 gradient stops, ground = the
+// lower band, plat = the platform disc under each mon. main.js battleStageNow()
+// picks the terrain; night darkens it. Replaces the one flat sky for every fight.
+const STAGE_PALETTES = {
+	grass:  { sky: ['#7db8e0', '#bfe0bf', '#6aa05f'], ground: '#4e7a44', plat: 'rgba(40,70,50,0.85)' },
+	forest: { sky: ['#5f8f7a', '#77a56f', '#3f6a3a'], ground: '#365f30', plat: 'rgba(28,52,32,0.88)' },
+	cave:   { sky: ['#2a2636', '#39344a', '#211c2c'], ground: '#2b2436', plat: 'rgba(58,52,70,0.85)' },
+	water:  { sky: ['#6fb0e0', '#8fcae8', '#3f7fb8'], ground: '#3a78b0', plat: 'rgba(40,92,132,0.72)' },
+	sand:   { sky: ['#e6c98a', '#ecdca0', '#c9a25f'], ground: '#c4a05a', plat: 'rgba(150,120,70,0.85)' },
+	city:   { sky: ['#9fb4c8', '#c0ccd6', '#8a8f98'], ground: '#7a7f88', plat: 'rgba(78,82,90,0.85)' },
+	indoor: { sky: ['#8a7f9a', '#9c92ac', '#645a74'], ground: '#6a5f7a', plat: 'rgba(70,62,84,0.85)' },
+};
+const stagePalette = stage => STAGE_PALETTES[stage?.terrain] || STAGE_PALETTES.grass;
+
 // moves whose power is computed from battle state; (battle, user, target,
 // userBoosts, targetBoosts) => power. Falls back to data power when absent.
 const hpScale = (u) => Math.max(1, Math.floor(150 * u.curHP / u.maxHP));
@@ -803,6 +817,7 @@ export class Battle {
 			// environmental weather arrives from the MAP (endless); moves/abilities
 			// overwrite it with their own timed spells as usual
 			weather: opts?.weather ? { kind: opts.weather, turns: Infinity } : null, terrain: null,
+			stage: (this.stageOf && this.stageOf()) || { terrain: 'grass', night: false }, // visual backdrop/platform
 			// the LIVE safari session object from main (balls decrement in place);
 			// null everywhere but a Safari Zone encounter
 			safari: opts?.safari || null,
@@ -889,6 +904,7 @@ export class Battle {
 			meHazards: {}, foeHazards: {},         // spikes/toxicspikes/stealthrock/stickyweb
 			meFuture: null, foeFuture: null,       // a pending FUTURE SIGHT / DOOM DESIRE
 			weather: info?.weather ? { kind: info.weather, turns: Infinity } : null, terrain: null,
+			stage: (this.stageOf && this.stageOf()) || { terrain: 'grass', night: false }, // visual backdrop/platform
 			fieldFx: {},                           // trickRoom/gravity/mudSport/waterSport turns
 			lastMove: {},                          // last move id per side
 			phase: 'flash', t: 0,
@@ -5142,6 +5158,31 @@ export class Battle {
 		ctx.globalAlpha = 1;
 	}
 
+	// per-terrain backdrop: sky gradient + a ground band for depth + a night wash,
+	// cached to an offscreen canvas keyed by terrain|night|size (Batch A)
+	drawStage(ctx, stage, W, H) {
+		const P = stagePalette(stage);
+		const night = !!(stage && stage.night);
+		const key = (stage?.terrain || 'grass') + '|' + night + '|' + W + 'x' + H;
+		if (!this._stage || this._stage.key !== key) {
+			const cv = (typeof document !== 'undefined') ? document.createElement('canvas') : null;
+			if (!cv) { this._stage = { key, cv: null, P, night }; }
+			else {
+				cv.width = W; cv.height = H;
+				const c = cv.getContext('2d');
+				const g = c.createLinearGradient(0, 0, 0, H);
+				g.addColorStop(0, P.sky[0]); g.addColorStop(0.55, P.sky[1]); g.addColorStop(1, P.sky[2]);
+				c.fillStyle = g; c.fillRect(0, 0, W, H);
+				const gy = Math.round(H * 0.64);                     // horizon
+				c.fillStyle = P.ground; c.fillRect(0, gy, W, H - gy);
+				c.fillStyle = 'rgba(255,255,255,0.06)'; c.fillRect(0, gy - 2, W, 2);
+				if (night) { c.fillStyle = 'rgba(18,22,55,0.4)'; c.fillRect(0, 0, W, H); }
+				this._stage = { key, cv, P, night };
+			}
+		}
+		if (this._stage.cv) ctx.drawImage(this._stage.cv, 0, 0);
+		else { ctx.fillStyle = P.sky[1]; ctx.fillRect(0, 0, W, H); } // headless fallback
+	}
 	drawSide(ctx, a, side, W, H, u, slot = 0) {
 		const mon = slot === 1 ? (side === 'foe' ? a.foeAlly : a.meAlly)
 			: (side === 'foe' ? a.foe : a.me);
@@ -5157,7 +5198,7 @@ export class Battle {
 		ctx.fillStyle = tc;
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 118 * u, 30 * u, 0, 0, Math.PI * 2); ctx.fill();
 		ctx.globalAlpha = 0.5;
-		ctx.fillStyle = 'rgba(40,70,50,0.8)';
+		ctx.fillStyle = stagePalette(a.stage).plat; // platform disc tinted to the terrain
 		ctx.beginPath(); ctx.ellipse(pose.x, pose.y, 104 * u, 24 * u, 0, 0, Math.PI * 2); ctx.fill();
 		ctx.restore();
 		// the ball, mid-catch
@@ -5266,16 +5307,8 @@ export class Battle {
 		}
 		ctx.save();
 		if (a.shakeT > 0) ctx.translate((Math.random() - 0.5) * 8 * u, (Math.random() - 0.5) * 8 * u);
-		// backdrop (static — cache the gradient instead of rebuilding it per frame)
-		if (!this._bg || this._bgH !== H) {
-			this._bg = ctx.createLinearGradient(0, 0, 0, H);
-			this._bg.addColorStop(0, '#7db8e0');
-			this._bg.addColorStop(0.55, '#b8d8b8');
-			this._bg.addColorStop(1, '#5f8f5f');
-			this._bgH = H;
-		}
-		ctx.fillStyle = this._bg;
-		ctx.fillRect(0, 0, W, H);
+		// per-terrain backdrop (cached offscreen — rebuilt only when stage/size changes)
+		this.drawStage(ctx, a.stage, W, H);
 
 		if (a.weather) {
 			const tint = { rain: 'rgba(70,110,200,0.18)', sun: 'rgba(255,190,80,0.16)',
