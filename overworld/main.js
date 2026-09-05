@@ -3589,7 +3589,12 @@ player.onArrive = () => {
 		// strict-corridor / gym-door gate: block entering a map the current stage
 		// hasn't unlocked (the player stays on the door tile)
 		const destFile = world.fileFor(w.dest_map);
-		const qb = destFile ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
+		// Leaving a POKeMON CENTER is never gated: you must always be able to step back
+		// out into the town you're standing in. (A portal could drop you in a town above
+		// your shared tier; the badge gate then trapped you INSIDE its PC — you'd walk in
+		// and never get out. This also frees any save already stuck that way.)
+		const leavingPC = /poke\w*center/i.test(world.current.map?.id || world.current.name || '');
+		const qb = (destFile && !leavingPC) ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
 		if (qb) { maybePortalTutorial(qb); return; } // silent strand backstop — the physical blocker shows the reason
 		warpTo(w.dest_map, w.dest_warp_id);
 		return;
