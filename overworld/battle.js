@@ -5166,6 +5166,18 @@ export class Battle {
 			ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4 * u;
 			ctx.beginPath(); ctx.arc(tx, ty, r, 0, Math.PI * 2); ctx.stroke();
 		}
+		// unified impact pop at contact — a white + type ring, so beam/shot/slash all
+		// land with a satisfying hit (burst already has its own ring, so skip it)
+		const impactAt = fx.kind === 'shot' ? 0.82 : fx.kind === 'slash' ? 0.66 : fx.kind === 'beam' ? 0.5 : -1;
+		if (impactAt >= 0 && p >= impactAt) {
+			const ip = (p - impactAt) / (1 - impactAt);
+			ctx.globalAlpha = 0.7 * (1 - ip);
+			ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4 * u;
+			ctx.beginPath(); ctx.arc(tx, ty, (10 + ip * 60) * u, 0, Math.PI * 2); ctx.stroke();
+			ctx.globalAlpha = 0.4 * (1 - ip);
+			ctx.strokeStyle = fx.color; ctx.lineWidth = 8 * u;
+			ctx.beginPath(); ctx.arc(tx, ty, (10 + ip * 44) * u, 0, Math.PI * 2); ctx.stroke();
+		}
 		ctx.restore();
 		ctx.globalAlpha = 1;
 	}
