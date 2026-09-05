@@ -40,8 +40,10 @@ const game = (seed = 4, players = 2) => {
 // ---------- Avengers Tower ----------
 {
 	const c = cardsById.mv_cap_10;
-	ok('Avengers Tower reads "{T}{T}: Gain 3 Armor, Assemble & Advance."',
-		c.description === 'Durability 3. {T}{T}: Gain 3 Armor, Assemble & Advance.', JSON.stringify(c.description));
+	// tap notation later normalized to the land-style ⟳ ⟳ glyph + durability dropped
+	// from text (it's shown in the corner) — see locations_double_tap_test.mjs
+	ok('Avengers Tower reads "⟳ ⟳: Gain 3 Armor, Assemble & Advance."',
+		c.description === '⟳ ⟳: Gain 3 Armor, Assemble & Advance.', JSON.stringify(c.description));
 	const eff = c.taps?.[0]?.effects || [];
 	ok('its tap has armor+assemble+advance effects',
 		eff.length === 3 && eff[0].type === 'armor' && eff[0].value === 3 && eff[1].type === 'assemble' && eff[2].type === 'advance',
