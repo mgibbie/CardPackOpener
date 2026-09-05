@@ -2,7 +2,7 @@
 // collision. Sprite sheets share the player's frame layout (16x32 frames:
 // 0 down, 1 up, 2 left stills; 3-8 walk pairs; right = mirrored left).
 // Sight-range trainers are excluded here — trainers.js owns them.
-import { getJSON, getImage, META } from './engine.js';
+import { getJSON, getImage, META, drawOwMon } from './engine.js';
 import { isTrainerEvent, spritePath } from './trainers.js';
 import { itemsOwns } from './items.js';
 import { objectHiddenByFlag } from './events.js';
@@ -26,10 +26,11 @@ function facesFor(movementType) {
 }
 
 class NPC {
-	constructor(ev, img) {
+	constructor(ev, img, isMon = false) {
 		this.ev = ev;
 		this.img = img;
-		this.frames = Math.floor(img.width / 16);
+		this.isMon = isMon; // a Pokémon object_event — drawn via drawOwMon, not the 16x32 people sheet
+		this.frames = isMon ? 1 : Math.floor(img.width / 16);
 		this.homeX = ev.x; this.homeY = ev.y;
 		this.tx = ev.x; this.ty = ev.y;
 		this.px = ev.x * META; this.py = ev.y * META;
@@ -93,6 +94,7 @@ class NPC {
 
 	draw(ctx2d, camX, camY) {
 		if (this.hidden) return; // hidden by a script (removeobject/set_invisible)
+		if (this.isMon) { drawOwMon(ctx2d, this.img, this.px + META / 2, this.py + META, camX, camY); return; }
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		const walks = { down: [3, 4], up: [5, 6], left: [7, 8], right: [7, 8] };
 		let frame = stills[this.facing];
@@ -114,10 +116,25 @@ export class NPCs {
 		this.player = player;
 		this.list = [];
 		this.gfx = null;
+		this.owSpecies = new Set(); // species with a data/pokemon_ow sprite (so mon object_events draw as the mon, not a generic man)
 	}
 
 	async init() {
 		this.gfx = await getJSON('data/gfx_map.json');
+		// git-tracked manifest (not under data/) so it deploys with the site
+		const ow = await getJSON('pokemon_ow_index.json').catch(() => []);
+		this.owSpecies = new Set(Array.isArray(ow) ? ow : []);
+	}
+	// map an object graphics_id to a Pokémon overworld sprite name, or null
+	speciesOf(graphicsId) {
+		let s = (graphicsId || '').replace('OBJ_EVENT_GFX_', '').replace(/^SPRITE_/, '').toLowerCase();
+		if (this.owSpecies.has(s)) return s;
+		s = s.replace(/_(front|back|side|asleep|still|normal|standing)$/, '');
+		if (this.owSpecies.has(s)) return s;
+		s = s.replace(/_\d+$/, '');
+		if (this.owSpecies.has(s)) return s;
+		const j = s.replace(/_/g, ''); // ho_oh -> hooh, nidoran_f -> nidoranf
+		return this.owSpecies.has(j) ? j : null;
 	}
 
 	async loadForMap() {
@@ -143,7 +160,18 @@ export class NPCs {
 			// ...and the secret-base rooms carry VAR_0..VAR_F decoration
 			// placeholders stacked at (0,0..6) — never people. FOSSIL props
 			// (Mirage Tower / Desert Underpass) draw through the fossil overlay.
-			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL/.test(ev.graphics_id || '')) return;
+			// non-person props were drawing as a generic "man" (the spritePath fallback):
+			// statues (44 of them!), the SS Tidal / Seagallop / Mr Briney's boat, the
+			// submarine + Kecleon-bridge shadows, cable car, moving boxes, dolls, etc.
+			// Draw nothing rather than a wrong villager.
+			if (/POKEDEX|TRUCK|GFX_VAR_|GFX_FOSSIL|STATUE|SUBMARINE|SS_TIDAL|SS_ANNE|SEAGALLOP|MR_BRINEY|_BOAT|CABLE_CAR|SHADOW|MOVING_BOX|BIRCHS_BAG|CLIPBOARD|CONSOLE|TOWN_MAP|OLD_AMBER|_DOLL|WEIRD_TREE/.test(ev.graphics_id || '')) return;
+			// Pokémon object_events (Kecleon, roamers, dept-store pets, legendaries) were
+			// ALSO drawn as a man — render the actual overworld mon sprite instead
+			const species = this.speciesOf(ev.graphics_id);
+			if (species) {
+				const mimg = await getImage(`data/pokemon_ow/${species}.png`).catch(() => null);
+				if (mimg) { this.list.push(new NPC(ev, mimg, true)); return; }
+			}
 			// Crystal names its graphics SPRITE_X — the fallback only stripped the
 			// GBA prefix, so sprite files like fisher.png were probed as
 			// sprite_fisher.png, silently emptying whole Johto towns
