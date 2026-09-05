@@ -69,6 +69,8 @@ const COLOR_BODY = { W: '#ece7d4', U: '#356fb8', B: '#3c3742', R: '#b23a2c', G: 
 // colours, so a hero's card pool read as a rainbow. Each hero deck is a single
 // class, so colour these by CLASS instead — the pool becomes one cohesive colour.
 const LORE_VARIANT_TAGS = ['meDeck', 'meSide', 'scDeck', 'scSide', 'ffDeck', 'ffSide', 'mvDeck', 'mvSide'];
+// spell card types — used to label a school-less spell by its type on the tribe plate
+const SPELL_TYPES_SET = new Set(['sorcery', 'instant', 'secret', 'trap']);
 export function bodyColorOf(card) {
 	if (card && card.passive) return '#7a5a1e'; // passive treasures wear a gold treasure frame
 	if (card && LORE_VARIANT_TAGS.some(t => card[t])) return classColorOf(card.cardClass);
@@ -987,7 +989,7 @@ export function drawCardFace(card, opts = {}) {
 		ctx.fillStyle = '#fff';
 		ctx.fillText(`${opts.progress ?? 0} / ${opts.goal}`, W / 2, H - 54);
 		ctx.textAlign = 'left';
-	} else if (card.tribe || card.type === 'weapon') {
+	} else if (card.tribe || card.type === 'weapon' || SPELL_TYPES_SET.has(card.type)) {
 		roundRect(ctx, W / 2 - 90, H - 78, 180, 40, 18);
 		ctx.fillStyle = 'rgba(0,0,0,0.65)';
 		ctx.fill();
@@ -997,11 +999,13 @@ export function drawCardFace(card, opts = {}) {
 		ctx.textAlign = 'center';
 		ctx.fillStyle = '#d9d2ea';
 		// a spell's tribe is its school — label it as such ("Frost Spell"); weapons
-		// carry no tribe, so the plate names the card type instead ("Hero Weapon")
-		const isSpell = card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
+		// carry no tribe, so the plate names the card type ("Hero Weapon"); and a
+		// school-less spell names its type ("Instant" / "Sorcery")
+		const isSpell = SPELL_TYPES_SET.has(card.type);
 		const SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
 		const plateLabel = card.type === 'weapon' ? 'Hero Weapon'
-			: isSpell && SCHOOLS.includes(card.tribe) ? `${card.tribe} Spell` : card.tribe;
+			: card.tribe ? (isSpell && SCHOOLS.includes(card.tribe) ? `${card.tribe} Spell` : card.tribe)
+				: card.type.charAt(0).toUpperCase() + card.type.slice(1);
 		// shrink the font so a long tribe (e.g. "Elemental Golem Explorer") stays
 		// inside its plate instead of overrunning into the attack/health plates
 		let tfs = 25;
