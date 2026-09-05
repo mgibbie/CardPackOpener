@@ -880,6 +880,7 @@ async function cardSubsetView(kind, slug) {
     h('h1', null, title + ' ', h('span', { class: 'num' }, '(' + list.length + ')')),
     blurb ? h('p', { class: 'muted' }, blurb) : null,
     h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')),
+    cardSizeControl(grid), // S/M/L picker (also applies the default size-medium column template)
     grid, more);
   renderMore();
 }
