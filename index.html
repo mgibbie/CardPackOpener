@@ -194,6 +194,10 @@
 				<div class="glyph">🐾</div>
 				<div><h3>Your Monsters <span class="arrow">→</span></h3><p>See the Pokémon in your party and PC boxes from the Overworld.</p></div>
 			</a>
+			<a class="tile" id="tile-inventory" href="inventory/" hidden>
+				<div class="glyph">🎒</div>
+				<div><h3>Your Bag <span class="arrow">→</span></h3><p>Browse every item you've gathered in the Overworld, sorted by pocket.</p></div>
+			</a>
 			<a class="tile" href="learnmagepunk/">
 				<div class="glyph">🎓</div>
 				<div><h3>Learn Magepunk <span class="arrow">→</span></h3><p>How to play Battlecards — turns, combat, lands, classes, and every keyword.</p></div>
@@ -256,7 +260,11 @@
 	}
 	try {
 		const p = localStorage.getItem('magepunk_party_v1');
-		if (p && p !== '[]' && p !== 'null') { const m = document.getElementById('tile-monsters'); if (m) m.hidden = false; }
+		if (p && p !== '[]' && p !== 'null') {
+			const m = document.getElementById('tile-monsters'); if (m) m.hidden = false;
+			// the bag comes with the overworld save — reveal it alongside the party
+			const inv = document.getElementById('tile-inventory'); if (inv) inv.hidden = false;
+		}
 	} catch (e) {}
 	</script>
 	<script>
