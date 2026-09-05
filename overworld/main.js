@@ -7274,6 +7274,26 @@ function drawWeather(ctx) {
 		spec.draw(ctx, p);
 	}
 	ctx.restore();
+	// storm extras for rain (past the REDUCED_MOTION_OW gate): ground ripples + lightning
+	if (type === 'rain') {
+		weatherFx.ripples = weatherFx.ripples || [];
+		weatherFx.rippleAcc = (weatherFx.rippleAcc || 0) + dt;
+		while (weatherFx.rippleAcc > 0.05) { weatherFx.rippleAcc -= 0.05; weatherFx.ripples.push({ x: Math.random() * VIEW_W, y: VIEW_H * (0.5 + Math.random() * 0.5), t: 0 }); }
+		weatherFx.ripples = weatherFx.ripples.filter(r => (r.t += dt) < 0.5);
+		ctx.save(); ctx.strokeStyle = 'rgba(190,215,255,1)'; ctx.lineWidth = 1;
+		for (const r of weatherFx.ripples) { const rp = r.t / 0.5; ctx.globalAlpha = 0.4 * (1 - rp); ctx.beginPath(); ctx.ellipse(r.x, r.y, 2 + rp * 10, (2 + rp * 10) * 0.4, 0, 0, Math.PI * 2); ctx.stroke(); }
+		ctx.restore();
+		weatherFx.nextBolt = weatherFx.nextBolt || now + 6000 + Math.random() * 12000;
+		if (now > weatherFx.nextBolt && !weatherFx.bolt) { weatherFx.bolt = now; weatherFx.nextBolt = now + 9000 + Math.random() * 15000; }
+		if (weatherFx.bolt) {
+			const age = now - weatherFx.bolt;
+			if (age > 520) weatherFx.bolt = null;
+			else {
+				let a = age < 90 ? 0.15 + 0.5 * (1 - age / 90) : (age > 160 && age < 260) ? 0.3 * (1 - (age - 160) / 100) : 0;
+				if (a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#e0e8ff'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.restore(); }
+			}
+		}
+	}
 }
 
 // ---------- loop ----------
