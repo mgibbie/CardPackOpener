@@ -84,7 +84,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 			// --- LOW-HP beep: fires on a timer while the lead is in the red ---
 			window.__sfx.length = 0;
 			me.curHP = Math.floor(me.maxHP * 0.15);
-			B.update(0.7); // dt > the 0.6 beep interval → one beep
+			B.update(0.7); // dt > the ~0.54s beep-cycle interval → one beep
 			o.lowBeep1 = window.__sfx.some(s => /lowhp\.ogg/.test(s));
 			B.update(0.7); // re-fires
 			o.lowBeep2 = window.__sfx.filter(s => /lowhp\.ogg/.test(s)).length >= 2;

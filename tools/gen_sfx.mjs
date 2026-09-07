@@ -14,11 +14,15 @@ import path from 'path';
 import { execFileSync } from 'child_process';
 
 const WRITE = process.argv.includes('--write');
+// --only=<name> renders just that one sound (leaves the rest untouched on disk)
+const ONLY = (process.argv.find(a => a.startsWith('--only=')) || '').split('=')[1] || null;
 const OUT = path.resolve('overworld/data/sounds/sfx');
 
 // segment kinds: sq = square-wave chirp f0->f1 over d seconds; ns = noise
-// burst; gap = silence. vol is linear (squares are LOUD — keep them low).
-const sq = (f0, f1, d, vol = 0.22) => ({ k: 'sq', f0, f1, d, vol });
+// burst; gap = silence. vol is linear (squares are LOUD — keep them low). An
+// optional decay>0 fades the square's amplitude by exp(-decay*t) over the
+// segment, mimicking the Game Boy's decreasing volume envelope.
+const sq = (f0, f1, d, vol = 0.22, decay = 0) => ({ k: 'sq', f0, f1, d, vol, decay });
 const ns = (d, vol = 0.25) => ({ k: 'ns', d, vol });
 const gap = d => ({ k: 'gap', d });
 // note helper for the jingles
@@ -48,9 +52,15 @@ const SPECS = {
 	stat_dn: [sq(900, 700, 0.05), sq(700, 500, 0.07)],
 	faint: [sq(600, 80, 0.35, 0.28)],
 	flee: [sq(1200, 400, 0.12), ns(0.05, 0.18)],
-	// the iconic low-HP warning: a single piercing beep, re-fired on a timer while
-	// a mon sits in the red (battle.js update loop)
-	lowhp: [sq(1976, 1976, 0.085, 0.18)],
+	// the iconic low-HP alarm — the AUTHENTIC Crystal-engine "danger" sound, which
+	// ALTERNATES a high beep and a low beep (not the flat single tone it was). From
+	// pokecrystal: DangerSoundHigh freq $750 -> 131072/(2048-0x750) ≈ 745 Hz,
+	// DangerSoundLow freq $6ee ≈ 478 Hz, both 50% duty at volume 14 with a
+	// decreasing envelope, restarted ~16 frames (~0.268s) apart for a full
+	// high->low cycle of ~0.536s. The whole cycle is baked into one file and
+	// battle.js re-fires it every ~0.54s so it loops seamlessly while a mon sits in
+	// the red. exp decay ≈ the GB volume envelope.
+	lowhp: [sq(745, 745, 0.268, 0.2, 3), sq(478, 478, 0.268, 0.2, 3)],
 	// ---- fanfares: the big moments were single blips before ----
 	// badge: a proud rising call with an answering flourish
 	fanfare_badge: [sq(N.G5, N.G5, 0.09), sq(N.C6, N.C6, 0.09), sq(N.E6, N.E6, 0.09), sq(N.G6, N.G6, 0.16),
@@ -75,7 +85,9 @@ function segSrc(seg) {
 	const phase = seg.f0 === seg.f1
 		? `${seg.f0}*t`
 		: `${seg.f0}*t+${((seg.f1 - seg.f0) / (2 * seg.d)).toFixed(3)}*t*t`;
-	return `aevalsrc=${seg.vol}*(2*gt(sin(2*PI*(${phase}))\\,0)-1):d=${seg.d}`;
+	// optional exponential amplitude decay to mimic the GB volume envelope
+	const amp = seg.decay ? `${seg.vol}*exp(${(-seg.decay).toFixed(3)}*t)` : `${seg.vol}`;
+	return `aevalsrc=${amp}*(2*gt(sin(2*PI*(${phase}))\\,0)-1):d=${seg.d}`;
 }
 
 const names = Object.keys(SPECS);
@@ -84,6 +96,7 @@ if (!WRITE) { console.log('\n(dry run — pass --write)'); process.exit(0); }
 
 fs.mkdirSync(OUT, { recursive: true });
 for (const [name, segs] of Object.entries(SPECS)) {
+	if (ONLY && name !== ONLY) continue;
 	const args = [];
 	segs.forEach(s => args.push('-f', 'lavfi', '-i', segSrc(s)));
 	// tiny per-segment fades kill the clicks; a final fade-out settles the tail
@@ -95,6 +108,7 @@ for (const [name, segs] of Object.entries(SPECS)) {
 		path.join(OUT, name + '.ogg'));
 	execFileSync('ffmpeg', args);
 }
-const total = names.reduce((s, n) => s + fs.statSync(path.join(OUT, n + '.ogg')).size, 0);
-console.log(`rendered ${names.length} sounds (${(total / 1024).toFixed(0)} KB) — owdata deploys separately:`);
+const rendered = ONLY ? [ONLY] : names;
+const total = rendered.reduce((s, n) => s + fs.statSync(path.join(OUT, n + '.ogg')).size, 0);
+console.log(`rendered ${rendered.length} sound(s) (${(total / 1024).toFixed(0)} KB) — owdata deploys separately:`);
 console.log('  npx wrangler pages deploy overworld/data --project-name=magepunk-owdata --branch=main --commit-dirty=true');
