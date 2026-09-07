@@ -4946,12 +4946,14 @@ export class Battle {
 		const a = this.active;
 		if (!a) return;
 		a.t += dt;
-		// the iconic low-HP warning beep — re-fired on a timer while the player's
-		// lead mon sits in the red (curHP <= 20%), silenced the instant it recovers
+		// the iconic low-HP alarm — re-fired on a timer while the player's lead mon
+		// sits in the red (curHP <= 20%), silenced the instant it recovers. lowhp.ogg
+		// is the authentic Crystal "danger" sound: one full high->low beep cycle of
+		// ~0.536s, so we re-arm at that cadence to loop it seamlessly.
 		const meFrac = a.me && a.me.maxHP ? a.me.curHP / a.me.maxHP : 1;
 		if (a.phase !== 'done' && a.me?.curHP > 0 && meFrac <= 0.2) {
 			a.lowHpBeepT = (a.lowHpBeepT || 0) - dt;
-			if (a.lowHpBeepT <= 0) { sfx('lowhp'); a.lowHpBeepT = 0.6; }
+			if (a.lowHpBeepT <= 0) { sfx('lowhp'); a.lowHpBeepT = 0.536; }
 		} else a.lowHpBeepT = 0;
 		a.introT = (a.introT || 0);
 		if (a.phase !== 'flash') a.introT += dt;
