@@ -64,7 +64,8 @@ const onBoard = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; inst
 // ---------- Nessian Courser: Ward 2 ----------
 {
 	const c = cardsById.nessian_courser;
-	ok('Nessian Courser reads "Rush & Ward 2."', c.description === 'Rush & Ward 2.', JSON.stringify(c.description));
+	// Ward's mana number now renders as a mana pip "(2)" (see keywords.js) — later batch
+	ok('Nessian Courser reads "Rush & Ward (2)."', c.description === 'Rush & Ward (2).', JSON.stringify(c.description));
 	const inst = E.instantiate(c, 0);
 	ok('instance carries rush + ward {mana:2}', inst.keywords.includes('rush') && inst.ward?.mana === 2, JSON.stringify([inst.keywords, inst.ward]));
 
