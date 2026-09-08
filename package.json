@@ -10,6 +10,8 @@
   "scripts": {
     "deploy-art": "wrangler pages deploy battlecards/art --project-name magepunk-cardart --branch main --commit-dirty=true",
     "test": "node battlecards/tests/run-all.mjs",
-    "test-overworld": "node overworld/tests/run-all.mjs"
+    "test-overworld": "node overworld/tests/run-all.mjs",
+    "normalize-cards": "node tools/normalize-cards.mjs",
+    "prepare": "git config core.hooksPath tools/githooks || true"
   }
 }
