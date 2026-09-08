@@ -343,6 +343,7 @@ export function instantiate(def, controller) {
 		adventureSpent: false,        // the Adventure half has been cast; only the creature remains
 		ongoings: def.ongoings ? JSON.parse(JSON.stringify(def.ongoings)) : null, // combined triggers
 		medic: def.medic || 0,        // heals adjacent creatures N at end of turn
+		regen: def.regen || 0,        // Regenerate N: restores N of its own Health at end of turn
 		overheal: def.overheal || null, // fires when a heal overflows past full Health (Overheal)
 		corrupt: def.corrupt || null, // id of the corrupted (upgraded) form for Corrupt
 		corruptGrow: def.corruptGrow ? { ...def.corruptGrow } : null, // endless Corrupt: +stats in place
@@ -1011,6 +1012,7 @@ export function silenceCreature(state, c) {
 	c.ward = null;
 	c.honorableKill = null;
 	c.medic = 0;
+	c.regen = 0;
 	c.offTurnAttack = 0;
 	c.battlecryDouble = false;
 	c.rattleDouble = false;
@@ -4641,7 +4643,14 @@ export function endTurn(state) {
 			emit(state, { type: 'heal', targetType: 'creature', uid: nb.uid, amount: healed, hp: hp(nb) });
 		}
 	}
-	recomputeAuras(state); // medic heals may retract enrage/Lightspawn states
+	// Regenerate N: the creature restores N of its own Health at end of turn
+	for (const c of p.board) {
+		if (!c.regen || isDead(c) || c.damage <= 0) continue;
+		const healed = Math.min(c.regen, c.damage);
+		c.damage -= healed;
+		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: healed, hp: hp(c) });
+	}
+	recomputeAuras(state); // medic/regen heals may retract enrage/Lightspawn states
 	// "this turn" bonuses expire
 	for (const c of p.board) {
 		if (c.tempAttack || c.tempHealth) {
