@@ -149,11 +149,22 @@ register('destroy-permanent', ({ state, pi, target, source, enemies, scaled }, e
 				if (!target || target.uid == null) return;
 				const c = findPermanent(state, target.uid);
 				if (!c) return;
+				if (e.only && c.type !== e.only) return;
+				// locations sit on the board, not in the artifact/enchantment zones
+				// destroyPermanent knows, so pull them off the board directly
+				if (c.type === 'location') {
+					const own = state.players.findIndex(p => p.board.includes(c));
+					if (own < 0) return;
+					state.players[own].board = state.players[own].board.filter(x => x !== c);
+					emit(state, { type: 'destroy', uid: c.uid });
+					if (e.healOwner) healHero(state, own, e.healOwner);
+					recomputeAuras(state);
+					return;
+				}
 				// only artifacts and enchantments live in zones destroyPermanent knows;
 				// anything else that reached here simply isn't a legal victim
 				const own = state.players.findIndex(p => p.artifacts.includes(c) || p.enchantments.includes(c));
 				if (own < 0) return;
-				if (e.only && c.type !== e.only) return;
 				destroyPermanent(state, own, c, !!e.exile); // runs the permanent's own deathrattle
 				// "its controller gains N Life" — whoever owned it, not every enemy
 				if (e.healOwner) healHero(state, own, e.healOwner);
