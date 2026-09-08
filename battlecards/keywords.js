@@ -37,6 +37,7 @@ const K = [
 	{ p: ['Chromatic'], t: 'Its colour boosts roll twice and keep both results.', tag: 'chromatic' },
 	{ p: ['Firebreathing'], t: 'Spend 1 mana any number of times: +1 Attack until end of turn.', tag: 'firebreathing' },
 	{ p: ['Static'], t: '50% chance to Paralyze any creature that survives combat with it.', tag: 'static' },
+	{ p: ['Meteoric'], t: 'Can attack enemy enchantments as if they were 1/1 creatures.', tag: 'meteoric' },
 	{ p: ['Paralyzed', 'Paralyze'], t: "A Paralyzed creature's attacks fail 50% of the time (coin flip)." },
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear

@@ -279,6 +279,9 @@ export function attackTargets(state, pi, attacker) {
 		// piercing ignores taunt walls
 		const taunts = has(attacker, KW.PIERCING) ? [] : board.filter(c => has(c, KW.TAUNT));
 		out.push(...(taunts.length ? taunts : board).map(c => ({ type: 'creature', uid: c.uid, player: opp })));
+		// Meteoric: enemy enchantments are attackable as if they were 1/1 creatures
+		if (!taunts.length && has(attacker, KW.METEORIC))
+			for (const e of state.players[opp].enchantments) out.push({ type: 'enchantment', uid: e.uid, player: opp });
 		if (!taunts.length) {
 			for (const w of state.players[opp].planeswalkers) out.push({ type: 'walker', uid: w.uid, player: opp });
 			// the hero is only a legal target if pi can afford the attack tax (Ghostly Prison)
