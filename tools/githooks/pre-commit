@@ -1,0 +1,10 @@
+#!/bin/sh
+# Auto-canonicalize battlecards/cards.json when it's part of a commit, so new
+# cards never need manual keyword-order fixups. Only runs when cards.json is
+# staged; re-stages it if the normalizer changed anything.
+#
+# Enabled via:  git config core.hooksPath tools/githooks   (npm run prepare sets it)
+if git diff --cached --name-only | grep -q '^battlecards/cards.json$'; then
+	node tools/normalize-cards.mjs || exit 1
+	git add battlecards/cards.json
+fi
