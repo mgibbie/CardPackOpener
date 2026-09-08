@@ -34,8 +34,8 @@ const onBoard = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; inst
 // ---------- Axebane Beast: Trample, Medic 1, weapon-break Battlecry ----------
 {
 	const c = cardsById.axebane_beast;
-	ok('Axebane Beast reads "Trample & Medic 1.\\nBattlecry: Destroy target Hero Weapon."',
-		c.description === 'Trample & Medic 1.\nBattlecry: Destroy target Hero Weapon.', JSON.stringify(c.description));
+	ok('Axebane Beast reads "Medic 1 & Trample.\\nBattlecry: Destroy target Hero Weapon."',
+		c.description === 'Medic 1 & Trample.\nBattlecry: Destroy target Hero Weapon.', JSON.stringify(c.description));
 	const inst = E.instantiate(c, 0);
 	ok('instance carries trample + battlecry + medic 1', inst.keywords.includes('trample') && inst.keywords.includes('battlecry') && inst.medic === 1, JSON.stringify([inst.keywords, inst.medic]));
 	ok('battlecry is destroy-weapon', c.effects?.[0]?.type === 'destroy-weapon', JSON.stringify(c.effects));

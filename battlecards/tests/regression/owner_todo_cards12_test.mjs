@@ -31,7 +31,7 @@ const onBoard = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; inst
 // ---------- Leatherback Baloth: Regenerate 3 ----------
 {
 	const c = cardsById.leatherback_baloth;
-	ok('Leatherback Baloth reads "Trample & Regenerate 3."', c.description === 'Trample & Regenerate 3.', JSON.stringify(c.description));
+	ok('Leatherback Baloth reads "Regenerate 3 & Trample."', c.description === 'Regenerate 3 & Trample.', JSON.stringify(c.description));
 	const inst = E.instantiate(c, 0);
 	ok('instance carries trample + regen 3', inst.keywords.includes('trample') && inst.regen === 3, JSON.stringify([inst.keywords, inst.regen]));
 

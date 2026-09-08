@@ -29,7 +29,7 @@ const onBoard = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; inst
 {
 	const c = cardsById.argothian_swine;
 	ok('Argothian Swine is now a Beast', c.tribe === 'Beast', c.tribe);
-	ok('Argothian Swine keeps its Trample & Poisonous + 3/3', c.description === 'Trample & Poisonous.'
+	ok('Argothian Swine keeps its Poisonous & Trample + 3/3', c.description === 'Poisonous & Trample.'
 		&& ['trample', 'poisonous'].every(k => (c.keywords || []).includes(k)) && c.attack === 3 && c.health === 3,
 		JSON.stringify([c.keywords, c.attack, c.health]));
 }
