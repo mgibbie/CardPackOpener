@@ -39,7 +39,7 @@ const playChoice = (st, pi, id, choice) => { const c = E.instantiate(byId[id], p
 // Lemon Magician Girl — Spell Damage static + Deathrattle tutors a Holy spell
 { const st = game(); const lem = put(st, 0, 'lemon_magician_girl');
   ok('Lemon Magician Girl grants Spell Damage +1', staticValue(st.players[0], 'spell-damage') === 1);
-  ok('Lemon Magician Girl has Ward 2', byId.lemon_magician_girl.ward === 2);
+  ok('Lemon Magician Girl has Ward 2', byId.lemon_magician_girl.ward?.mana === 2);
   st.players[0].deck = ['_v', '_holy', '_v']; runDeathrattle(st, 0, lem);
   ok('Lemon Deathrattle tutors a Holy spell', st.players[0].hand.some(c => c.id === '_holy'), st.players[0].hand.map(c => c.id)); }
 

@@ -126,7 +126,13 @@ export function segmentKeywords(text) {
 		const re = new RegExp('\\b' + escRe(p) + '\\b', 'gi');
 		let m;
 		while ((m = re.exec(text))) {
-			const s = m.index, e = s + m[0].length;
+			const s = m.index;
+			let e = s + m[0].length;
+			// a keyword's numeric magnitude bolds with it: "Medic 1", "Regenerate 3",
+			// "Spell Damage +2". A mana-pip "(N)" (e.g. "Ward (2)") is NOT a bare digit,
+			// so it's left untouched for the symbol renderer to draw as a mana circle.
+			const tail = text.slice(e).match(/^[ \t]*\+?\d+/);
+			if (tail) e += tail[0].length;
 			if (!ranges.some(r => s < r.e && e > r.s)) ranges.push({ s, e });
 		}
 	}
