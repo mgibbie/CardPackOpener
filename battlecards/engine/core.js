@@ -21,6 +21,8 @@ export const KW = {
 	FIREBREATHING: 'firebreathing', // pay 1 mana any number of times: +1 Attack this turn
 	STATIC: 'static', // 50% chance to Paralyze any creature that survives combat with it
 	METEORIC: 'meteoric', // can attack enemy enchantments as if they were 1/1 creatures
+	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
+	BUSHIDO: 'bushido',   // gains +1/+1 whenever it attacks
 };
 
 // a Paralyzed creature's attacks fail 50% of the time (coin flip after targeting)
@@ -3053,6 +3055,8 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
+	// Bushido: gains +1/+1 whenever it attacks
+	if (has(attacker, KW.BUSHIDO)) execEffects(state, pi, [{ type: 'buff-self', attack: 1, health: 1 }], null, attacker);
 	// The Ring, tier 2: whenever your Ring-bearer attacks, draw a card, then discard one
 	if ((state.players[pi].ring || 0) >= 2 && attacker.uid === state.players[pi].ringBearer)
 		execEffects(state, pi, [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }], null, null);
@@ -3137,14 +3141,16 @@ export function resolveCombat(state, pi, attackerUid, target) {
 			damageWalker(state, w, attacker.attack * cmult * slash);
 			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult * slash);
 		}
-	} else if (target.type === 'enchantment') {
-		// Meteoric: strike an enemy enchantment as if it were a 1/1 creature —
-		// the swing destroys it, and (unless the attacker has First Strike) the
-		// "1/1" deals 1 back. Trample carries the excess to its controller.
+	} else if (target.type === 'enchantment' || target.type === 'artifact') {
+		// Meteoric (enchantments) / Bash (artifacts): strike an enemy permanent as
+		// if it were a 1/1 creature — the swing destroys it, and (unless the attacker
+		// has First Strike) the "1/1" deals 1 back. Trample carries the excess to its
+		// controller.
 		const ep = state.players[target.player];
-		const ench = ep && ep.enchantments.find(x => x.uid === target.uid);
-		if (!ench) { sweepDeaths(state); return; }
-		destroyPermanent(state, target.player, ench); // fires the enchantment's own deathrattle
+		const zone = target.type === 'artifact' ? 'artifacts' : 'enchantments';
+		const perm = ep && ep[zone].find(x => x.uid === target.uid);
+		if (!perm) { sweepDeaths(state); return; }
+		destroyPermanent(state, target.player, perm); // fires the permanent's own deathrattle
 		if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, 1);
 		if (has(attacker, KW.TRAMPLE)) { const excess = attacker.attack * cmult - 1; if (excess > 0) damageHero(state, target.player, excess, pi); }
 		if (!has(attacker, KW.FIRST_STRIKE) && !attacker._attackingImmune) damageCreature(state, attacker, 1, null);
