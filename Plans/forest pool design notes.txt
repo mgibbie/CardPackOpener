@@ -1,0 +1,230 @@
+========================================================================
+FOREST POOL DESIGN NOTES  (Green / G advanced-land pool)
+========================================================================
+Purpose: a working reference for redesigning the 70-card Forest pool so it
+reads as a cohesive GREEN toolbox — consistent with MTG's green color pie
+AND buildable with mechanics that already exist in this game's engine.
+
+What the Forest pool IS: 70 uncollectible, mono-green, no-rarity cards. A
+Forest-based deck "Discovers" from this set (see landSet:'Forest'), so the
+pool should feel like green's answer to every situation: ramp, fat beasts,
+counters, fights, trample finishers, adaptation. Every card is colors:['G'],
+collectible:false, no rarity, landSet:'Forest'. Keep those invariants — the
+pool tests (pool_forest_test / abzan_pool_test family) enforce them.
+
+Everything below is grounded in what's actually implemented: keyword tags
+live in battlecards/keywords.js; effect "type" strings are registered
+handlers in battlecards/engine/effects/*.js. If it's named here, it works.
+
+------------------------------------------------------------------------
+1. GREEN'S COLOR-PIE LANE  (what green is allowed to do well)
+------------------------------------------------------------------------
+GREEN DOES:
+  - Big, efficient creatures (best stats-per-mana of any color)
+  - Trample / combat dominance
+  - Ramp (mana acceleration, extra mana crystals, lands-matter)
+  - +1/+1 counters and growth
+  - Fight (creature-vs-creature removal) — green does NOT get clean burn
+  - Adapt / evolve (roll upgrades onto a creature)
+  - Beasts, Elves, Wurms, and other natural tribes; creatures-matter payoffs
+  - Reach-style big blockers (Taunt) and haste on beasts (Rush)
+  - Naturalize — destroy artifacts / enchantments (and now locations)
+  - Nature's bounty: gain Life, Regenerate, heal, Food (Cook)
+  - Protection for its own things: Hexproof / Ward
+  - Card advantage tied to CREATURES ("draw for each creature", draw a Beast)
+
+GREEN DOES NOT (push these elsewhere; flag if seen in the pool):
+  - Direct damage to face / burn ............. Red
+  - Unconditional single-target "Destroy target creature" ... Black
+    (green removal must be conditional: Fight, destroy the biggest,
+     destroy an attacker/flyer, or trade in combat)
+  - Card draw for its own sake, tutoring any card ... Blue/Black
+  - Mill / self-mill as a plan ............... Blue/Black
+  - Counterspells, bounce, Freeze ............ Blue
+  - Discard ................................... Black/Red
+  - Divine Shield, Lifesteal, mass buffs of tokens ... White (Alliance = G+W)
+  - Stealth, Windfury, evasion-as-a-theme .... Blue/Rogue/Red
+  - Spell Damage / "spells matter" ........... Blue/Red
+
+------------------------------------------------------------------------
+2. KEYWORDS  (tag string in keywords.js) — sorted by fit
+------------------------------------------------------------------------
+CORE GREEN — use freely, these define the pool:
+  trample ....... excess lethal carries to the hero. Green's signature.
+  adapt ......... "Battlecry: Adapt" (roll a d10 x3, pick one upgrade).
+                  Effect shape: {type:'adapt', target:'self'} (or
+                  'friendly-creature' / 'friendly-creatures', or times:N).
+  landfall ...... lands-matter payoff (pair with ramp effects below).
+  deathtouch .... green/black "big-game hunter"; great on small bodies.
+  poisonous ..... damaged creature dies at end of turn; green/black.
+  venomous ...... one-shot deathtouch variant; use sparingly.
+  taunt ......... green's reach/vigilance analog — fat wall blockers.
+  rush .......... haste on beasts (R/G). Fine on aggressive green.
+  ward .......... "Ward N" — opponent pays extra to target it. Green/blue
+                  protection; good on your ramp dorks and finishers.
+  proliferate ... adds to existing counters (G+U). Pairs with +1/+1 kit.
+  regenerate .... nature's resilience (via 'regenerate' effect/keyword).
+  frenzy ........ one-time trigger the first time it survives damage —
+                  green "bloodrush"/enrage flavor (grow when hurt).
+  overkill ...... bonus when it overkills on your turn — trample synergy.
+  emerge ........ big-creature discount from hand; green fatties.
+  colossal ...... enters huge with Appendage tokens (buff-colossal /
+                  grant-colossal-parts exist). Reserve for top-end.
+
+SITUATIONAL — on-pie in small doses, don't overuse:
+  first_strike (shows as "Swift") ... ok on fighters; more W/R, keep rare.
+  cleave / piercing / slashing ...... trample-adjacent combat; a few only.
+  scry .............................. mild card selection; "Ranger" flavor.
+  inspire ........................... after Hero Power; already used in pool.
+  medic ............................. heal beside it end of turn (nature).
+  coven ............................. 3 different-Attack creatures; go-tall.
+  chromatic ......................... multicolor payoff; niche in a mono pool.
+  cook .............................. Food -> heal (G+W nourishment).
+
+OFF-PIE FOR GREEN — avoid in new designs; reconsider where present:
+  static ....... paralyze-on-survive (currently on 1 pool beast). Blue/red
+                 control feel; prefer Frenzy or Trample instead.
+  elusive ...... tag doubles as "Hexproof". FINE when the intent is
+                 Hexproof (protect your own). NOT fine as evasion/unblockable
+                 (that's blue). Current pool has "Elusive & Trample" beasts —
+                 reflavor those to Ward/Trample or plain Trample.
+  divine_shield, lifesteal, freezer, stealth, windfury, spell-damage,
+  firebreathing, sanguine, secret ... all off-pie; move to their colors.
+  (Reito Sentinel's "target player mills 3" is owner-requested but mill is
+   off-pie blue/black — treat as a one-off, don't multiply it.)
+
+------------------------------------------------------------------------
+3. EFFECTS  (registered handler 'type' strings) grouped by green theme
+------------------------------------------------------------------------
+RAMP / LANDS-MATTER (very green — the pool is currently light on this):
+  gain-empty-mana-crystal ..... "Battlecry: Gain an empty Mana Crystal."
+  gain-mana ................... temporary mana this turn (Landfall payoff).
+  gain-max-mana / set-own-max-mana ... permanent ramp (top-end only).
+  temp-mana / temp-crystal-next-turn ... burst ramp.
+  (Landfall card already does {type:'gain-mana'} on a land drop — lean in.)
+
++1/+1 COUNTERS & GROWTH:
+  add-counters ................ put +1/+1 counter(s) on a creature.
+  grow ....................... permanent self-buff over time.
+  proliferate ................ multiply existing counters.
+  buff / buff-self / buff-target / buff-target-and-adjacent
+  adjacent-buff / bolster (buff weakest) / buff-all-tribe
+  buff-friendly-tribe / buff-hand-tribe (Beast-lord "anthem" effects)
+  buff-random-friendly / buff-self-per-other-friendly (go-wide payoff)
+
+FIGHT & GREEN-LEGAL REMOVAL (never clean "destroy target creature"):
+  fight ...................... your creature fights theirs (core green).
+  fight-random-beast ......... beast-flavored fight.
+  destroy-strongest / destroy-weaker-minion ... "hunt the biggest".
+  destroy-permanent .......... Naturalize; use target
+                               'artifact-or-enchantment' or
+                               'artifact-location-or-enchantment'
+                               (Reclamation Sage uses the latter).
+  destroy-art-ench ........... random artifact/enchantment removal.
+  damage-target-by-attack .... "deal damage equal to a creature's Attack"
+                               (green's fight-as-a-spell).
+
+BEASTS / CREATURES-MATTER (green tribal glue):
+  summon / summon-with-stats / fill-board-token ... make Beast/Insect tokens.
+  summon-from-deck-tribe / recruit ... pull creatures from your deck.
+  summon-died-tribe / resurrect-tribe ... regrow fallen beasts.
+  discover (tribe:'Beast') ... green "tutor a creature" (already used).
+  draw-beast-gain-stats / draw-minion-tribe-then ... beast card advantage.
+  hatch-egg / summon-hatch-egg ... token/beast generation flavor.
+
+CARD ADVANTAGE (green-legal: tie it to creatures/lands, not raw):
+  draw with a per-creature count ("Draw a card for each creature you
+    control" already exists as a sorcery) — this is the green way.
+  return-from-graveyard / gy-return ... regrow a creature (green recursion).
+  draw-beast-gain-stats ...... conditional, on-pie.
+  (Avoid flat "draw 3" as the pool's identity — it's fine as one blue-splash
+   outlier but shouldn't define green.)
+
+LIFE / NATURE'S BOUNTY:
+  heal / heal-full / heal-adjacent-full / heal-hero-full
+  gain life via {type:'heal', target:'self'/'hero'} (Wurm lifegain)
+  regenerate ................. resilience
+  cook ...................... Food token -> later heal (G+W)
+  medic (keyword) ........... passive end-of-turn heal of neighbors
+
+BIG FINISHERS / TOP-END (green closes games with size, not burn):
+  Cost-reducers that scale with your board: the pool's 12/12 "Costs X less,
+    X = total Attack you control, Trample" is the model — replicate this
+    pattern (buff-self-per-*, discount-by-board) for other fatties.
+  colossal / emerge fatties, trample + overkill, spend-mana-double-stats.
+
+------------------------------------------------------------------------
+4. TRIBES  (keep green-flavored; retag the off-color ones)
+------------------------------------------------------------------------
+ON-FLAVOR (keep / expand): Beast, Elf (Shaman/Scout/Knight/Warrior/
+  Ranger/Druid), Wurm, Insect, Wolf, Bear, Boar, Ape, Spider, Hydra,
+  Dinosaur, Treefolk, Dryad, Fungus (Saproling tokens), Centaur, Elemental,
+  Snake/Naga (nature-ish), Spirit (nature spirits ok).
+OFF-FLAVOR IN A GREEN POOL (reconsider): Mech / Mech Beast / Mech Construct
+  (Mechs are artifact/colorless — either reflavor to Beast/Construct-of-
+  living-wood or accept as a deliberate "wildlife-machine" oddball; don't
+  add more). "Archer" subtypes are fine as flavor.
+NOTE: several current cards are just "Beast" — that's fine, but vary the
+  creature types to make the pool feel like an ecosystem.
+
+------------------------------------------------------------------------
+5. ARCHETYPES the pool should support (pick lanes per card)
+------------------------------------------------------------------------
+  A) RAMP -> FATTIES: mana dorks / Landfall ramp that pay off into
+     Trample/Colossal/Emerge finishers. (Pool is short on the ramp half.)
+  B) +1/+1 COUNTERS: add-counters + proliferate + grow + Adapt, with an
+     anthem or two (buff-friendly-tribe). "Go tall."
+  C) BEASTS TRIBAL: Beast-lords (buff-hand-tribe / buff-friendly-tribe),
+     Discover a Beast, summon/recruit beasts, draw-beast-gain-stats.
+  D) STOMP / COMBAT: Trample + Rush + Frenzy + Overkill + Fight removal.
+     Green's "I have the bigger creatures, now what?" answer.
+  E) GO-WIDE (light G+W splash): token makers + adjacent/mass buffs +
+     Alliance-style payoffs. Keep small so it stays green, not white.
+
+------------------------------------------------------------------------
+6. POWER LEVEL & STRUCTURAL NOTES
+------------------------------------------------------------------------
+  - These are pool cards a deck DISCOVERS; keep rates fair (roughly on-curve
+    vanilla + one keyword, or a modest body + one effect). The 12/12 cost-
+    scaler and 7/7 lifegain wurm are the intended ceiling.
+  - Preserve invariants on every card: type creature/spell/etc., colors:['G'],
+    collectible:false, NO rarity field, landSet:'Forest', set:'wubrg'.
+    Adding/removing cards changes the count (pool_forest_test expects 70) and
+    can only be colored/uncollectible members — don't introduce a collectible
+    or a second color.
+  - Editing existing pool cards is SAFE for seeded tests (they're
+    uncollectible, so they're not in the collectible default-deck RNG). Only
+    ADD/REMOVE with care.
+  - Keyword text convention: multiple plain keywords join with " & " and end
+    with "." (e.g. "Trample & Poisonous."); a triggered ability goes on its
+    own line (e.g. "Trample.\nBattlecry: Adapt."). Keyword names in
+    description must match keywords.js display words (e.g. "Swift" for
+    first_strike, "Hexproof"/"Elusive" for elusive).
+  - Verify by FIRING, not by inspecting JSON: instantiate the card, play it
+    or kill it, and assert the mechanic resolved (see the owner_todo_cardsN
+    regression tests for the pattern). Keyword arrays ARE what combat reads.
+
+------------------------------------------------------------------------
+7. CURRENT POOL — QUICK OBSERVATIONS (redesign opportunities)
+------------------------------------------------------------------------
+  - HEAVILY vanilla: ~20+ cards are plain "Trample." beasts of assorted
+    stats. That's a lot of dead texture. Keep a handful as honest green
+    beaters; convert the rest into the archetypes above (ramp, counters,
+    beast synergy, fight).
+  - Under-served green identity: RAMP (only ~2 mana-crystal cards) and
+    +1/+1 COUNTERS (only the artifact "{T}: put a +1/+1 counter"). These are
+    green's backbone — add more.
+  - Off-pie to revisit: "Rush & Static" beast (static), the "Elusive &
+    Trample" beasts (evasion), any Mech tribes, and any flat unconditional
+    "Destroy target creature" (make it a Fight or a "destroy the biggest").
+  - Good models already present to imitate: "Costs X less = total Attack,
+    Trample" finisher; "Deathtouch & Rush" hunter; "Battlecry: Adapt";
+    "Deathrattle: Discover a Beast"; the +1/+1-counter artifact; Landfall
+    "gain 1 mana"; "fight" sorcery; Naturalize variants.
+
+========================================================================
+Grounding: keyword tags -> battlecards/keywords.js ; effect 'type' strings
+-> battlecards/engine/effects/*.js (1,138 handlers registered) ; green
+color-pie lane cross-checked with Plans/KEYWORD_COLOR_PIE.md. Pool queried
+from cards.json where landSet == 'Forest' (70 cards).
+========================================================================
