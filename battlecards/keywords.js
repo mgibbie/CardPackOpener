@@ -54,6 +54,10 @@ const K = [
 	{ p: ['Combo'], t: 'A bonus effect if you already played a card this turn.' },
 	{ p: ['Finale'], t: 'A bonus effect that happens if you spent all your remaining mana to play this card.' },
 	{ p: ['Emerge'], t: 'Triggers from your hand the moment this card is drawn or discovered (not from your opening hand).' },
+	// school-qualified variants bold as one phrase (they're longer than bare "Spell
+	// Damage", and ALL_PHRASES is sorted longest-first, so they win the overlap).
+	// Only real schools are listed, so "Gain/Has Spell Damage" still bold just the tail.
+	{ p: ['Arcane Spell Damage', 'Fel Spell Damage', 'Fire Spell Damage', 'Frost Spell Damage', 'Holy Spell Damage', 'Nature Spell Damage', 'Shadow Spell Damage', 'Song Spell Damage'], t: 'Your spells of that school deal extra damage.' },
 	{ p: ['Spell Damage'], t: 'Your spells deal extra damage.' },
 	{ p: ['Magnetic'], t: 'Drop it onto a friendly Mech to merge its stats and text onto that Mech (some can Magnetize to other tribes too).' },
 	{ p: ['Inspire'], t: 'Triggers after you use your Hero Power.' },
