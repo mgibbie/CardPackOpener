@@ -478,13 +478,15 @@ function paintEmblem(ctx, card, x, y, w, h) {
 	}
 }
 
-// deterministic per-card generative art, painted inside the art window clip
-function paintArt(ctx, card, x, y, w, h) {
+// deterministic per-card generative art, painted inside the art window clip.
+// `tuning` overrides ART_TUNING[card.id] (the board token passes its own framing
+// so the face and token can be cropped independently — see drawBoardToken).
+function paintArt(ctx, card, x, y, w, h, tuning) {
 	// real art wins when it's ready: cover-fit the crop into the window,
 	// then apply the card's hand-tuned framing ({z, fx, fy} — see ART_TUNING)
 	const img = artFor(card.id);
 	if (img) {
-		const t = ART_TUNING[card.id];
+		const t = tuning !== undefined ? tuning : ART_TUNING[card.id];
 		const z = Math.max(1, t?.z || 1); // z < 1 would break the cover fit (gaps)
 		const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight) * z;
 		const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
@@ -1090,10 +1092,11 @@ export function drawBoardToken(card, opts = {}, scale = 1) {
 		ctx.beginPath(); ctx.ellipse(cx, cy, rx + 18, ry + 18, 0, 0, Math.PI * 2); ctx.stroke();
 	}
 
-	// oval art window
+	// oval art window — the token can carry its OWN framing (ART_TUNING[id].token);
+	// falls back to the card-face framing when no separate token tuning is set
 	ctx.save();
 	ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
-	paintArt(ctx, card, cx - rx, cy - ry, rx * 2, ry * 2);
+	paintArt(ctx, card, cx - rx, cy - ry, rx * 2, ry * 2, ART_TUNING[card.id]?.token ?? ART_TUNING[card.id]);
 	if (opts.stealthed) {
 		ctx.fillStyle = 'rgba(16,16,30,0.55)';
 		ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);

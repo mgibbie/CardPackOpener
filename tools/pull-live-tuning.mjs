@@ -63,7 +63,9 @@ for (const row of rows) {
 	// arttune sends {z:1, fx:0.5, fy:0.5} to neutralize a committed entry the
 	// owner reset — folding one means REMOVING the entry, not keeping a default
 	if (file.endsWith('art_tuning.json')) {
-		for (const [id, t] of Object.entries(merged)) if (t && t.z === 1 && t.fx === 0.5 && t.fy === 0.5) delete merged[id];
+		// a fully-default entry is a reset -> drop it; but keep one that only looks
+		// default on the face yet carries an independent board-token framing
+		for (const [id, t] of Object.entries(merged)) if (t && t.z === 1 && t.fx === 0.5 && t.fy === 0.5 && !t.token) delete merged[id];
 	}
 	fs.writeFileSync(file, (file.endsWith('art_tuning.json')
 		? JSON.stringify(merged, null, '\t')
