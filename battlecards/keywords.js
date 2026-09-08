@@ -39,6 +39,9 @@ const K = [
 	{ p: ['Static'], t: '50% chance to Paralyze any creature that survives combat with it.', tag: 'static' },
 	{ p: ['Meteoric'], t: 'Can attack enemy enchantments as if they were 1/1 creatures.', tag: 'meteoric' },
 	{ p: ['Bash'], t: 'Can attack enemy artifacts as if they were 1/1 creatures.', tag: 'bash' },
+	{ p: ['Smoldering'], t: '50% chance to Burn any creature that survives combat with it.', tag: 'smoldering' },
+	{ p: ['Burned'], t: "Attack halved (once); takes 1 damage at the end of its controller's turn.", tag: 'burned' },
+	{ p: ['Cascade'], t: 'When cast, cast the first card off your deck that costs less, for free with random targeting (cheaper card not found: it fizzles).', tag: 'cascade' },
 	{ p: ['Paralyzed', 'Paralyze'], t: "A Paralyzed creature's attacks fail 50% of the time (coin flip)." },
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear
