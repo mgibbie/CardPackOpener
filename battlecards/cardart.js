@@ -647,13 +647,18 @@ function drawPip(ctx, tok, cx, cy, size) {
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 	ctx.fillStyle = '#241f18';
-	const cp = key === 'N' ? 0xe605 + Math.min(9, Math.max(0, parseInt(tok.label, 10) || 0)) : MANA_CP[key];
-	if (manaReady && cp) {
+	if (key === 'N') {
+		// generic-mana amount (e.g. Ward 2): draw a clean bold sans digit centered
+		// in the circle. The Mana font's small generic glyphs render awkwardly at
+		// inline size, so we always custom-draw the number for a crisp, fitted look.
+		ctx.font = `600 ${Math.round(size * 0.7)}px 'Segoe UI', Arial, sans-serif`;
+		ctx.fillText(String(tok.label ?? ''), cx, cy + size * 0.04);
+	} else if (manaReady && MANA_CP[key]) {
 		// the real MTG symbol glyph from the Mana font
 		ctx.font = `${Math.round(size * 0.98)}px "Mana"`;
-		ctx.fillText(String.fromCharCode(cp), cx, cy + size * 0.02);
+		ctx.fillText(String.fromCharCode(MANA_CP[key]), cx, cy + size * 0.02);
 	} else {
-		// fallback until the font finishes loading: a letter / number / tap mark
+		// fallback until the font finishes loading: a letter / tap mark
 		ctx.font = `bold ${Math.round(size * 0.72)}px 'Segoe UI Symbol', Georgia, sans-serif`;
 		ctx.fillText(key === 'tap' ? '⟳' : tok.label, cx, cy + size * 0.03);
 	}
