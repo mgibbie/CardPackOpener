@@ -13,7 +13,7 @@ const st = E.createGame(cardsById, seededRng(45), null, 2, [{ id: 'mage', name: 
 st.current = 0; for (const p of st.players) { p.hand = []; p.deck = []; p.board = []; p.mana.max = 10; p.mana.cur = 10; }
 
 const c = cardsById.balduvian_bears;
-ok('reads "Taunt & Rush.\\nBattlecry: Target creature gains +1/+1."', c.description === 'Taunt & Rush.\nBattlecry: Target creature gains +1/+1.', JSON.stringify(c.description));
+ok('reads "Rush & Taunt.\\nBattlecry: Target creature gains +1/+1."', c.description === 'Rush & Taunt.\nBattlecry: Target creature gains +1/+1.', JSON.stringify(c.description));
 ok('keeps taunt/rush + gains battlecry', ['taunt', 'rush', 'battlecry'].every(k => c.keywords.includes(k)), JSON.stringify(c.keywords));
 ok('battlecry buffs a friendly creature +1/+1', c.effects?.[0]?.type === 'buff' && c.effects[0].attack === 1 && c.effects[0].health === 1 && c.effects[0].target === 'friendly-creature', JSON.stringify(c.effects));
 

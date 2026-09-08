@@ -29,7 +29,7 @@ const foeEnch = (st) => { const e = E.instantiate({ id: 'ench', name: 'Ench', ty
 // ---------- card + keyword wiring ----------
 {
 	const c = cardsById.fusion_elemental;
-	ok('Fusion Elemental reads "Trample & Meteoric."', c.description === 'Trample & Meteoric.', JSON.stringify(c.description));
+	ok('Fusion Elemental reads "Meteoric & Trample."', c.description === 'Meteoric & Trample.', JSON.stringify(c.description));
 	ok('instance carries trample + meteoric', E.instantiate(c, 0).keywords.includes('trample') && E.instantiate(c, 0).keywords.includes('meteoric'), JSON.stringify(c.keywords));
 }
 

@@ -29,7 +29,7 @@ const game = (seed = 7) => {
 // ---------- Argothian Swine ----------
 {
 	const c = cardsById.argothian_swine;
-	ok('Argothian Swine reads "Trample & Poisonous."', c.description === 'Trample & Poisonous.', JSON.stringify(c.description));
+	ok('Argothian Swine reads "Poisonous & Trample."', c.description === 'Poisonous & Trample.', JSON.stringify(c.description));
 	const inst = E.instantiate(c, 0);
 	ok('instantiated with the trample + poisonous the engine reads at combat',
 		inst.keywords.includes('trample') && inst.keywords.includes('poisonous'), JSON.stringify(inst.keywords));

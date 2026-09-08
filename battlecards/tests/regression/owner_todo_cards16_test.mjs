@@ -31,7 +31,7 @@ const foeEnch = (st) => { const e = E.instantiate({ id: 'ench', name: 'Ench', ty
 {
 	const c = cardsById.mistweaver_ronin;
 	ok('Mistweaver Ronin keywords match its text', JSON.stringify(c.keywords) === JSON.stringify(['bushido', 'windfury', 'bash', 'meteoric']), JSON.stringify(c.keywords));
-	ok('description reads "Bushido, Windfury, Bash & Meteoric."', c.description === 'Bushido, Windfury, Bash & Meteoric.', JSON.stringify(c.description));
+	ok('description reads "Bash, Bushido, Meteoric & Windfury."', c.description === 'Bash, Bushido, Meteoric & Windfury.', JSON.stringify(c.description));
 }
 
 // ---------- attackTargets offers enemy artifacts (Bash) + enchantments (Meteoric) ----------
