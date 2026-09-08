@@ -32,6 +32,7 @@ export function execEffects(state, pi, effects, target, source) {
 	};
 	const chosenCreature = () => target?.type === 'creature' ? findCreature(state, target.uid) : null;
 	const healCreature = (c, v) => {
+		if (v > 0 && state.players[pi].board.some(x => x.healDoubleAura && !isDead(x))) v *= 2; // Crystalsmith Kangor: your healing is doubled
 		const healed = c.damage > 0 && v > 0;
 		const landed = Math.min(v, c.damage); // Xyrella: healing that actually restored Health
 		// Overheal: the healing that overflows past full Health (wasted, but a bonus)

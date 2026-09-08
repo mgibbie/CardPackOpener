@@ -23,6 +23,7 @@ export const KW = {
 	METEORIC: 'meteoric', // can attack enemy enchantments as if they were 1/1 creatures
 	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
 	BUSHIDO: 'bushido',   // gains +1/+1 whenever it attacks
+	EPHEMERAL: 'ephemeral', // destroyed at the end of your turn
 };
 
 // a Paralyzed creature's attacks fail 50% of the time (coin flip after targeting)
@@ -329,6 +330,9 @@ export function instantiate(def, controller) {
 		titanPassive: def.titanPassive ? JSON.parse(JSON.stringify(def.titanPassive)) : null, // "After this uses an ability, ..."
 		firstSpellDiscountAura: def.firstSpellDiscountAura || false, // Golganneth: your first spell each turn costs (3) less
 		damageCapAura: def.damageCapAura || false, // Amitus: your minions can't take more than 2 damage at a time
+		damageCapSelf: def.damageCapSelf != null ? def.damageCapSelf : null, // Draconic Delicacy: this can only take N damage at a time
+		shieldMultiHit: def.shieldMultiHit || 0, // Toreth: your Divine Shields take this many hits to break
+		healDoubleAura: def.healDoubleAura || false, // Crystalsmith Kangor: your healing is doubled
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
@@ -4668,6 +4672,8 @@ export function endTurn(state) {
 		c.damage -= healed;
 		emit(state, { type: 'heal', targetType: 'creature', uid: c.uid, amount: healed, hp: hp(c) });
 	}
+	// Ephemeral: creatures that vanish at the end of your turn
+	{ let any = false; for (const c of p.board) if (has(c, KW.EPHEMERAL) && !isDead(c)) { c.doomed = true; any = true; } if (any) sweepDeaths(state); }
 	recomputeAuras(state); // medic/regen heals may retract enrage/Lightspawn states
 	// "this turn" bonuses expire
 	for (const c of p.board) {

@@ -51,7 +51,12 @@ export function damageCreature(state, target, amount, source) {
 	if (target.immuneWhile && state.players[target.controller].board.some(c =>
 		!isDead(c) && c.name === target.immuneWhile)) return 0;
 	if (target.shield) {
+		// Toreth, the Unbreaking: your Divine Shields absorb multiple hits before breaking
+		const need = Math.max(1, ...state.players[target.controller].board.filter(c => c.shieldMultiHit && !isDead(c)).map(c => c.shieldMultiHit));
+		target._shieldHits = (target._shieldHits || 0) + 1;
+		if (target._shieldHits < need) { emit(state, { type: 'shieldAbsorb', uid: target.uid, hits: target._shieldHits, need }); return 0; }
 		target.shield = false;
+		target._shieldHits = 0;
 		if (target.shieldLossRecruits) { const sp2 = state.players[target.controller]; sp2.recruitHealthBonus = (sp2.recruitHealthBonus || 0) + 1; for (const rc of sp2.board) if (rc.name === 'Silver Hand Recruit' && !isDead(rc)) { rc.maxHealth += 1; } } // Resilient Savior
 		emit(state, { type: 'shieldPop', uid: target.uid });
 		fireOngoing(state, target.controller, 'friendly-divine-shield-lost', {}); // Bolvar, Fireblood
@@ -60,6 +65,7 @@ export function damageCreature(state, target, amount, source) {
 	}
 	if (target.frozen && amount > 0) { for (let fsi = 0; fsi < state.players.length; fsi++) if (fsi !== target.controller && state.players[fsi].freezeSolid) { amount += 2; break; } } // Freeze Solid (Duels): +2 damage to Frozen enemies
 	if (amount > 2 && state.players[target.controller].board.some(c => c.damageCapAura && !isDead(c))) amount = 2; // Amitus, the Peacekeeper: your minions can't take more than 2 damage at a time
+	if (target.damageCapSelf != null && amount > target.damageCapSelf) amount = target.damageCapSelf; // Draconic Delicacy: can only take N damage at a time
 	const _hpBefore = hp(target);
 	target.damage += amount;
 	if (target.diesToAnyDamage && amount > 0) target.damage = target.maxHealth; // Reverberations: any damage is lethal to the copy
@@ -246,6 +252,7 @@ export function healHero(state, pi, amount) {
 	const p = state.players[pi];
 	if (staticValue(p, 'life-locked') > 0) return; // Platinum Emperion: you can't gain Life
 	if (p.healLockUntilTurn != null && state.turnNumber < p.healLockUntilTurn) return; // Crater Gator: can't be healed
+	if (amount > 0 && p.board.some(c => c.healDoubleAura && !isDead(c))) amount *= 2; // Crystalsmith Kangor: your healing is doubled
 	const before = p.life;
 	// MTG-style: starting life is not a ceiling — a hero can be healed above it.
 	p.life += amount;
