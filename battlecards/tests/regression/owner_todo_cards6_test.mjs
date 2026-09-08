@@ -33,7 +33,8 @@ const game = (seed = 7) => {
 	const inst = E.instantiate(c, 0);
 	ok('instantiated with the trample + poisonous the engine reads at combat',
 		inst.keywords.includes('trample') && inst.keywords.includes('poisonous'), JSON.stringify(inst.keywords));
-	ok('Argothian Swine keeps its Boar tribe (no retribe was asked)', c.tribe === 'Boar', c.tribe);
+	// batch 6 added the keywords only; batch 7 later retribed Boar -> Beast (see owner_todo_cards7_test)
+	ok('Argothian Swine tribe is Beast (retribed in batch 7)', c.tribe === 'Beast', c.tribe);
 }
 
 // ---------- Barbary Apes ----------
