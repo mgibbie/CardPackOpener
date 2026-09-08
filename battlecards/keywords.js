@@ -38,6 +38,7 @@ const K = [
 	{ p: ['Firebreathing'], t: 'Spend 1 mana any number of times: +1 Attack until end of turn.', tag: 'firebreathing' },
 	{ p: ['Static'], t: '50% chance to Paralyze any creature that survives combat with it.', tag: 'static' },
 	{ p: ['Meteoric'], t: 'Can attack enemy enchantments as if they were 1/1 creatures.', tag: 'meteoric' },
+	{ p: ['Bash'], t: 'Can attack enemy artifacts as if they were 1/1 creatures.', tag: 'bash' },
 	{ p: ['Paralyzed', 'Paralyze'], t: "A Paralyzed creature's attacks fail 50% of the time (coin flip)." },
 	{ p: ['Freeze', 'Frozen', 'Freezer'], t: 'A Frozen character skips its next attack.', tag: 'freezer' },
 	// text-only keywords: no engine tag, but worth explaining where they appear
@@ -105,7 +106,7 @@ const K = [
 	{ p: ['Static'], t: "A plane's continuous effect that applies while it is the active plane.", plane: true },
 	{ p: ['Regenerate'], t: 'Regenerate N — restores N Health to itself at the end of your turn.' },
 	{ p: ['Ephemeral'], t: 'Destroyed at the end of the turn.' },
-	{ p: ['Bushido'], t: 'Gains +1/+1 whenever it attacks.' },
+	{ p: ['Bushido'], t: 'Gains +1/+1 whenever it attacks.', tag: 'bushido' },
 ];
 
 const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
