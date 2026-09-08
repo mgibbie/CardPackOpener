@@ -30,17 +30,23 @@ let sel = null;         // selected card def
 const pendingArt = new Map(); // id -> jpeg dataURL, previewed live, written on Save
 
 const r3 = v => Math.round(v * 1000) / 1000;
+const isDefault = t => !t || (r3(Math.max(1, +t.z || 1)) === 1 && r3(t.fx ?? 0.5) === 0.5 && r3(t.fy ?? 0.5) === 0.5);
+const trim = t => ({ z: r3(Math.max(1, +t.z || 1)), fx: r3(t.fx ?? 0.5), fy: r3(t.fy ?? 0.5) });
 function cleaned() {
 	const out = {};
 	for (const [id, t] of Object.entries(ART_TUNING)) {
 		if (!t) continue;
-		const z = r3(Math.max(1, +t.z || 1)), fx = r3(t.fx ?? 0.5), fy = r3(t.fy ?? 0.5);
-		if (z === 1 && fx === 0.5 && fy === 0.5) continue;
-		out[id] = { z, fx, fy };
+		const baseDefault = isDefault(t), tokenSet = t.token && !isDefault(t.token);
+		if (baseDefault && !tokenSet) continue;      // fully default framing — omit
+		const e = trim(t);                            // card-face framing
+		if (tokenSet) e.token = trim(t.token);        // board-token framing (independent)
+		out[id] = e;
 	}
 	return out;
 }
 const entry = id => (ART_TUNING[id] = ART_TUNING[id] || { z: 1, fx: 0.5, fy: 0.5 });
+// the board token's OWN framing (created lazily the first time you tune the token)
+const tokenEntry = id => { const e = entry(id); return (e.token = e.token || { z: 1, fx: 0.5, fy: 0.5 }); };
 
 function repaint() {
 	if (!sel) return;
@@ -129,7 +135,10 @@ function buildList(filter = '') {
 }
 
 // ---------- pointer interaction on the previews ----------
-function wirePreview(canvas) {
+// which = 'face' edits the card-face framing; 'token' edits the board token's
+// OWN framing, so the two can be cropped independently.
+function wirePreview(canvas, which) {
+	const target = () => (which === 'token' ? tokenEntry(sel.id) : entry(sel.id));
 	let drag = null;
 	canvas.addEventListener('pointerdown', e => {
 		if (!sel) return;
@@ -138,7 +147,7 @@ function wirePreview(canvas) {
 	});
 	canvas.addEventListener('pointermove', e => {
 		if (!drag || !sel) return;
-		const t = entry(sel.id);
+		const t = target();
 		// dragging carries the ART with the pointer: the focal point moves the
 		// other way, scaled by the drawn art size so the motion tracks 1:1-ish
 		const k = 1.2 / (canvas.getBoundingClientRect().width * Math.max(1, t.z));
@@ -151,7 +160,7 @@ function wirePreview(canvas) {
 	canvas.addEventListener('wheel', e => {
 		if (!sel) return;
 		e.preventDefault();
-		const t = entry(sel.id);
+		const t = target();
 		t.z = Math.min(4, Math.max(1, t.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08)));
 		repaint();
 	}, { passive: false });
@@ -179,8 +188,8 @@ function wirePreview(canvas) {
 	const withArt = cards.filter(c => hasArt(c.id)).length;
 	$('msg').textContent = `${cards.length} cards (${withArt} with art)`;
 	buildList($('search').value);
-	wirePreview($('face'));
-	wirePreview($('token'));
+	wirePreview($('face'), 'face');
+	wirePreview($('token'), 'token'); // drag/scroll the token preview to frame it independently
 
 	// replacement images: picker button or drop a file on a preview
 	$('upload').addEventListener('click', () => $('file').click());
