@@ -25,7 +25,7 @@ const game = (seed = 11) => {
 	const c = cardsById.pelakka_wurm;
 	ok('Pelakka Wurm is now a Beast', c.tribe === 'Beast', c.tribe);
 	ok('Pelakka Wurm keeps its 7/7 body + Battlecry/Deathrattle text',
-		c.attack === 7 && c.health === 7 && c.description === 'Battlecry: Gain 7 life.\nDeathrattle: Draw a card.', JSON.stringify([c.attack, c.health, c.description]));
+		c.attack === 7 && c.health === 7 && c.description === 'Battlecry: Gain 7 Life.\nDeathrattle: Draw a card.', JSON.stringify([c.attack, c.health, c.description]));
 	ok('keeps battlecry + deathrattle keywords', ['battlecry', 'deathrattle'].every(k => (c.keywords || []).includes(k)), JSON.stringify(c.keywords));
 
 	// FIRE the Deathrattle: put it on board with a card in deck, kill it, sweep → a draw

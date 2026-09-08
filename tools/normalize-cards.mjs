@@ -1,10 +1,13 @@
 // normalize-cards.mjs — canonicalize battlecards/cards.json before it lands.
 //
-// Currently: alphabetize multi-keyword description lists ("Smoldering &
-// Chromatic" -> "Chromatic & Smoldering"). A "keyword list" is a sentence made
-// ONLY of keyword tokens joined by ", " and " & "; prose and triggered-ability
-// clauses ("Battlecry: …", "Ward: Discard a card") are left untouched. Value
-// keywords sort by name ("Regenerate 3", "Ward (2)", "Spell Damage+2").
+// 1. Alphabetize multi-keyword description lists ("Smoldering & Chromatic" ->
+//    "Chromatic & Smoldering"). A "keyword list" is a sentence made ONLY of
+//    keyword tokens joined by ", " and " & "; prose and triggered-ability
+//    clauses ("Battlecry: …", "Ward: Discard a card") are left untouched. Value
+//    keywords sort by name ("Regenerate 3", "Ward (2)", "Spell Damage+2").
+// 2. Capitalize the resource "Life" everywhere ("gain 5 life" -> "gain 5 Life"),
+//    EXCEPT the resurrect idiom "to life" ("return it to life"). "Lifesteal" is
+//    one word so \blife\b never touches it.
 //
 // Idempotent. Wired into the pre-commit hook (tools/githooks/pre-commit) so new
 // cards get fixed automatically — no need to re-order keywords by hand.
@@ -55,22 +58,27 @@ function normalizeDescription(desc) {
 	return changed ? lines.join('\n') : null;
 }
 
+// the game resource "Life" is Capitalized; "to life" (resurrect) stays lowercase
+const capitalizeLife = desc => desc.replace(/(?<!\bto )\blife\b/g, 'Life');
+
 const data = JSON.parse(fs.readFileSync(CARDS, 'utf8'));
 const changed = [];
 for (const c of data.cards) {
-	if (!c.description || c.token) continue;
-	const nd = normalizeDescription(c.description);
-	if (nd != null && nd !== c.description) { changed.push(c.id); c.description = nd; }
+	if (!c.description) continue;
+	let nd = c.description;
+	if (!c.token) nd = normalizeDescription(nd) ?? nd; // keyword-list reorder: real cards only
+	nd = capitalizeLife(nd);                            // "Life" capitalization: everywhere, incl. tokens/planes
+	if (nd !== c.description) { changed.push(c.id); c.description = nd; }
 }
 
 if (CHECK) {
-	if (changed.length) { console.error(`normalize-cards: ${changed.length} card(s) have unsorted keyword lists — run: node tools/normalize-cards.mjs\n  ${changed.slice(0, 10).join(', ')}`); process.exit(1); }
-	console.log('normalize-cards: keyword lists already alphabetical.');
+	if (changed.length) { console.error(`normalize-cards: ${changed.length} card(s) need normalizing (keyword order / "Life" caps) — run: node tools/normalize-cards.mjs\n  ${changed.slice(0, 10).join(', ')}`); process.exit(1); }
+	console.log('normalize-cards: descriptions already normalized.');
 	process.exit(0);
 }
 if (changed.length) {
 	const out = JSON.stringify(data); JSON.parse(out); fs.writeFileSync(CARDS, out);
-	console.log(`normalize-cards: alphabetized ${changed.length} keyword list(s): ${changed.slice(0, 10).join(', ')}${changed.length > 10 ? ' …' : ''}`);
+	console.log(`normalize-cards: normalized ${changed.length} description(s): ${changed.slice(0, 10).join(', ')}${changed.length > 10 ? ' …' : ''}`);
 } else {
 	console.log('normalize-cards: nothing to do.');
 }

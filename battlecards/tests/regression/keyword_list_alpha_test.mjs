@@ -38,6 +38,10 @@ for (const c of cards) {
 ok('every multi-keyword description list is alphabetical', offenders.length === 0,
 	'\n  - ' + offenders.slice(0, 30).join('\n  - ') + (offenders.length > 30 ? `\n  ... +${offenders.length - 30} more` : ''));
 
+// the game resource "Life" is Capitalized everywhere, except the resurrect idiom "to life"
+const lifeOffenders = cards.filter(c => c.description && /(?<!\bto )\blife\b/.test(c.description)).map(c => c.id);
+ok('"Life" is capitalized (except "to life")', lifeOffenders.length === 0, lifeOffenders.slice(0, 20).join(', '));
+
 // spot-checks
 const byId = Object.fromEntries(cards.map(c => [c.id, c]));
 ok('Fusion Elemental -> "Meteoric & Trample."', byId.fusion_elemental.description === 'Meteoric & Trample.');
