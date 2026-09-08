@@ -24,6 +24,8 @@ export const KW = {
 	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
 	BUSHIDO: 'bushido',   // gains +1/+1 whenever it attacks
 	EPHEMERAL: 'ephemeral', // destroyed at the end of your turn
+	SMOLDERING: 'smoldering', // 50% chance to Burn any creature that survives combat with it
+	CASCADE: 'cascade',   // on cast: cast the first cheaper card off your deck free (random targets)
 };
 
 // a Paralyzed creature's attacks fail 50% of the time (coin flip after targeting)
@@ -31,6 +33,15 @@ function maybeParalyze(state, c) {
 	if (!c || c.paralyzed || isDead(c) || state.rng() >= 0.5) return;
 	c.paralyzed = true;
 	emit(state, { type: 'paralyzed', uid: c.uid, name: c.name });
+}
+// Smoldering: 50% chance to Burn a surviving combatant. Burned halves the
+// creature's Attack (rounded down, once) and burns it for 1 at the end of its
+// controller's turn (see the end-of-turn tick).
+function maybeBurn(state, c) {
+	if (!c || c.burned || isDead(c) || state.rng() >= 0.5) return;
+	c.burned = true;
+	c.attack = Math.floor((c.attack || 0) / 2);
+	emit(state, { type: 'burned', uid: c.uid, name: c.name, attack: c.attack });
 }
 
 // Firebreathing grants a repeatable activated ability (spend 1 mana → +1 Attack
@@ -471,6 +482,8 @@ export function instantiate(def, controller) {
 		shield: (def.keywords || []).includes(KW.DIVINE_SHIELD),
 		marked: false, // mark_target
 		paralyzed: false, // attacks fail 50% of the time (from a Static creature)
+		burned: false,    // Burned: Attack halved once + 1 damage at end of your turn (from Smoldering)
+		cascadeSchools: def.cascadeSchools || null, // nak: your spells of these schools have Cascade
 	};
 	// Firebreathing creatures gain the repeatable "pay 1: +1 Attack" ability
 	if (card.keywords.includes(KW.FIREBREATHING)) {
@@ -1851,6 +1864,45 @@ export function resolveSac(state, uid) {
 	return true;
 }
 
+// Cascade: a spell has Cascade if it carries the keyword itself OR you control a
+// creature that grants Cascade to your spells of its school (nak: Frost & Nature).
+function hasCascade(state, pi, card) {
+	if ((card.keywords || []).includes(KW.CASCADE)) return true;
+	const sch = schoolOf(card);
+	return !!sch && state.players[pi].board.some(c => !isDead(c) && Array.isArray(c.cascadeSchools) && c.cascadeSchools.includes(sch));
+}
+// Cast the top card of your deck for free with random targeting, as long as it
+// costs less than `cost`. Cards that cost >= go to the bottom; repeat until a
+// cheaper card is cast or the whole deck has been scanned once (then it fizzles).
+function cascade(state, pi, cost) {
+	const p = state.players[pi];
+	let tries = p.deck.length;
+	while (tries-- > 0 && p.deck.length) {
+		const id = p.deck[p.deck.length - 1]; // top of deck (draw side)
+		const def = state.cardsById[id];
+		if (!def) { p.deck.pop(); continue; } // drop unknown ids
+		if ((def.cost || 0) < cost && (def.type === 'creature' || isSpellType(def))) {
+			p.deck.pop();
+			emit(state, { type: 'cascade', player: pi, cardId: id, name: def.name });
+			if (def.type === 'creature') { summon(state, pi, def); }
+			else {
+				const spell = instantiate(def, pi);
+				const spec = targetSpec(state, pi, spell, null);
+				let tgt = null;
+				if (spec) { const legal = legalTargets(state, pi, spec); tgt = legal.length ? legal[Math.floor(state.rng() * legal.length)] : null; }
+				emit(state, { type: 'conjure', player: pi, card: spell, color: null });
+				runSpell(state, pi, spell, tgt, null);
+			}
+			sweepDeaths(state);
+			return true;
+		}
+		// too expensive (or an uncastable cheaper type): send it to the bottom, try again
+		p.deck.pop(); p.deck.unshift(id);
+	}
+	emit(state, { type: 'cascadeFizzle', player: pi }); // "Cascade fizzles!"
+	return false;
+}
+
 export function runSpell(state, pi, card, target, choice) {
 	// Urchin Spines: while one of YOUR spells is resolving, creature damage it
 	// deals inflicts Poisoned (state-scoped — many damage branches pass no source)
@@ -1922,6 +1974,13 @@ export function runSpell(state, pi, card, target, choice) {
 			break;
 		}
 		case 'regroup': drawCards(state, pi, state.players[pi].diedThisTurn); break;
+	}
+	// Cascade: after this spell resolves, if it (or a school-grant) has Cascade,
+	// cast the first cheaper card off your deck for free with random targeting.
+	if (!state._inCascade && hasCascade(state, pi, card)) {
+		state._inCascade = true;
+		cascade(state, pi, card.cost || 0);
+		state._inCascade = false;
 	}
 	if (_spines) state._spellPoisonActive = false;
 }
@@ -3188,6 +3247,9 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// Static: 50% chance to Paralyze whichever combatant survives against it
 		if (has(attacker, KW.STATIC)) maybeParalyze(state, defender);
 		if (has(defender, KW.STATIC)) maybeParalyze(state, attacker);
+		// Smoldering: 50% chance to Burn whichever combatant survives against it
+		if (has(attacker, KW.SMOLDERING)) maybeBurn(state, defender);
+		if (has(defender, KW.SMOLDERING)) maybeBurn(state, attacker);
 		// cleave: the hit splashes onto the defender's board neighbors
 		if (has(attacker, KW.CLEAVE)) {
 			const db = state.players[target.player].board;
@@ -4644,6 +4706,10 @@ export function endTurn(state) {
 	// your turn (the condition persists until the creature is cleansed or dies).
 	for (const c of [...p.board]) {
 		if (c.poisoned && !isDead(c)) { emit(state, { type: 'poisonTick', uid: c.uid }); damageCreature(state, c, 2, null); }
+	}
+	// Burned: each Burned creature you control takes 1 damage at the end of your turn
+	for (const c of [...p.board]) {
+		if (c.burned && !isDead(c)) { emit(state, { type: 'burnTick', uid: c.uid }); damageCreature(state, c, 1, null); }
 	}
 	// Gruul-style triggers tick at the end of EVERY player's turn
 	for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'every-turn-end', {});
