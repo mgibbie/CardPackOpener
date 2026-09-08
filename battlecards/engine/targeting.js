@@ -91,7 +91,7 @@ const CHOSEN = {
 	// 'permanent' target kind (legalTargets already enumerates artifacts,
 	// enchantments and walkers, and the board UI already lights permanents up
 	// for a pending spell); the filter below narrows it to the two zones.
-	'destroy-permanent': { 'artifact-or-enchantment': 'permanent', artifact: 'permanent', enchantment: 'permanent', permanent: 'permanent' },
+	'destroy-permanent': { 'artifact-or-enchantment': 'permanent', 'artifact-location-or-enchantment': 'permanent', artifact: 'permanent', enchantment: 'permanent', permanent: 'permanent' },
 	'copy-to-hand': { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
 	frostburn: { creature: 'creature' },
 	'deck-minions-become-copies': { 'friendly-creature': 'friendly-creature' },
@@ -190,6 +190,7 @@ export function targetSpec(state, pi, card, choice) {
 		// the 'permanent' kind offers creatures too — narrow it to the zones these
 		// effects can actually act on, so a creature is never a legal Naturalize target
 		if (e.target === 'artifact-or-enchantment') { filter = c => c.type === 'artifact' || c.type === 'enchantment'; why = 'an artifact or enchantment'; }
+		if (e.target === 'artifact-location-or-enchantment') { filter = c => c.type === 'artifact' || c.type === 'enchantment' || c.type === 'location'; why = 'an artifact, location or enchantment'; }
 		if (e.target === 'artifact') { filter = c => c.type === 'artifact'; why = 'an artifact'; }
 		if (e.target === 'enchantment') { filter = c => c.type === 'enchantment'; why = 'an enchantment'; }
 		if (e.maxAttack != null) { filter = c => c.attack <= e.maxAttack; why = `a creature with ${e.maxAttack} or less Attack`; }
