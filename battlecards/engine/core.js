@@ -20,6 +20,7 @@ export const KW = {
 	CHROMATIC: 'chromatic', // color boosts roll twice and keep both
 	FIREBREATHING: 'firebreathing', // pay 1 mana any number of times: +1 Attack this turn
 	STATIC: 'static', // 50% chance to Paralyze any creature that survives combat with it
+	METEORIC: 'meteoric', // can attack enemy enchantments as if they were 1/1 creatures
 };
 
 // a Paralyzed creature's attacks fail 50% of the time (coin flip after targeting)
@@ -3136,6 +3137,17 @@ export function resolveCombat(state, pi, attackerUid, target) {
 			damageWalker(state, w, attacker.attack * cmult * slash);
 			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult * slash);
 		}
+	} else if (target.type === 'enchantment') {
+		// Meteoric: strike an enemy enchantment as if it were a 1/1 creature —
+		// the swing destroys it, and (unless the attacker has First Strike) the
+		// "1/1" deals 1 back. Trample carries the excess to its controller.
+		const ep = state.players[target.player];
+		const ench = ep && ep.enchantments.find(x => x.uid === target.uid);
+		if (!ench) { sweepDeaths(state); return; }
+		destroyPermanent(state, target.player, ench); // fires the enchantment's own deathrattle
+		if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, 1);
+		if (has(attacker, KW.TRAMPLE)) { const excess = attacker.attack * cmult - 1; if (excess > 0) damageHero(state, target.player, excess, pi); }
+		if (!has(attacker, KW.FIRST_STRIKE) && !attacker._attackingImmune) damageCreature(state, attacker, 1, null);
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (!defender) return false;
