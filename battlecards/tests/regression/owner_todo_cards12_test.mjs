@@ -46,7 +46,8 @@ const onBoard = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; inst
 // ---------- Alpine Grizzly: Overkill gains +1/+2 ----------
 {
 	const c = cardsById.alpine_grizzly;
-	ok('Alpine Grizzly reads "Rush.\\nOverkill: This gains +1/+2."', c.description === 'Rush.\nOverkill: This gains +1/+2.', JSON.stringify(c.description));
+	// batch 12 set the Overkill; batch 13 reworded the clause to "Gain +1/+2" (see owner_todo_cards13_test)
+	ok('Alpine Grizzly reads "Rush.\\nOverkill: Gain +1/+2."', c.description === 'Rush.\nOverkill: Gain +1/+2.', JSON.stringify(c.description));
 	const inst = E.instantiate(c, 0);
 	ok('instance carries rush + overkill buff', inst.keywords.includes('rush') && inst.keywords.includes('overkill')
 		&& inst.overkill?.[0]?.type === 'buff-self' && inst.overkill[0].attack === 1 && inst.overkill[0].health === 2, JSON.stringify([inst.keywords, inst.overkill]));
