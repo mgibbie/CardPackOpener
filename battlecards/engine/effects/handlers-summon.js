@@ -1341,8 +1341,8 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
 			}
-			if (!e.eachPlayer && !e.forEnemy && state.players[pi].board.some(c => c.id === 'khadgar' && !isDead(c))) n *= 2; // Khadgar: summon twice as many
-			if (!e.eachPlayer && !e.forEnemy) { const _dv = staticValue(state.players[pi], 'token-doubler'); if (_dv > 0) n *= 2 ** _dv; } // Mondrak: doublers double token creation (stack multiplicatively)
+			if (!e.eachPlayer && !e.forEnemy && !e.forController && state.players[pi].board.some(c => c.id === 'khadgar' && !isDead(c))) n *= 2; // Khadgar: summon twice as many (your side only)
+			if (!e.eachPlayer && !e.forEnemy && !e.forController) { const _dv = staticValue(state.players[pi], 'token-doubler'); if (_dv > 0) n *= 2 ** _dv; } // Mondrak: doublers double token creation (your side only)
 			const isCompanions = e.options && e.options.some(o => o.name === 'Huffer');
 			if (isCompanions && state.players[pi].companionExtra) n += state.players[pi].companionExtra; // Talya Earthstrider
 			const summonOne = (ownerIdx) => {
@@ -1374,9 +1374,12 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
 			};
+			// forController: the token goes to the effect TARGET's controller — the
+			// owner of the destroyed creature (Beast Within). Falls back to pi.
 			const owners = e.eachPlayer
 				? state.players.map((_, idx) => idx)
-				: [e.forEnemy && enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : pi];
+				: [e.forController && target?.player != null ? target.player
+					: e.forEnemy && enemies.length ? enemies[Math.floor(state.rng() * enemies.length)] : pi];
 			for (const ownerIdx of owners) for (let i = 0; i < n; i++) summonOne(ownerIdx);
 } });
 
