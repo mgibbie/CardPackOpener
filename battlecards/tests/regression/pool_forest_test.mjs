@@ -43,13 +43,13 @@ const beasts = (st, pi) => st.players[pi].board.filter(c => c.name === 'Beast').
 // ---- cowl_prowler ARTIFACT: tap +1/+1 counter ----
 { const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack; play(st, 0, 'cowl_prowler', null);
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'cowl_prowler').uid, { type: 'creature', uid: v.uid, player: 0 });
-  ok('Cowl Prowler (artifact) taps to put a +1/+1 counter', v.attack === a0 + 1, [a0, v.attack]); }
+  ok('Verdant Vessel (artifact) taps to put a +1/+1 counter', v.attack === a0 + 1, [a0, v.attack]); }
 
 // ---- ferocious_zheng LOCATION: tap for a Beast ----
 { const st = game(); play(st, 0, 'ferocious_zheng', null); const loc = st.players[0].board.find(c => c.id === 'ferocious_zheng'); const b0 = beasts(st, 0);
   E.tapLand(st, 0, loc.uid, 0);
   const b = st.players[0].board.find(c => c.name === 'Beast');
-  ok('Ferocious Zheng (location) taps for a 3/3 Trample Beast', beasts(st, 0) === b0 + 1 && b && has(b, 'trample'), [b0, beasts(st, 0)]); }
+  ok('Terraced Jungle Garden (location) taps for a 3/3 Trample Beast', beasts(st, 0) === b0 + 1 && b && has(b, 'trample'), [b0, beasts(st, 0)]); }
 
 // ---- elvish_herder: ramp ----
 { const st = game(); const max0 = st.players[0].mana.max;
