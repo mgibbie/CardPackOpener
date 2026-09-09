@@ -32,13 +32,14 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 	const c = cardsById.blanchwood_treefolk;
 	ok('renamed to "Folklore Sycamore Ritual"', c.name === 'Folklore Sycamore Ritual', c.name);
 	ok('id is unchanged (rename is display-only)', c.id === 'blanchwood_treefolk');
-	// the enchantment still bolsters your weakest creature at turn start
+	// the enchantment still bolsters your weakest creature at turn end
+	// (batch 38 moved the trigger from turn-start to turn-end)
 	const st = game();
 	const v = put(st, 0, E.instantiate({ id: 'v', name: 'V', type: 'creature', cost: 2, attack: 2, health: 2 }, 0));
 	const ench = E.instantiate(c, 0); ench.zone = 'enchantment'; st.players[0].enchantments.push(ench);
 	const a0 = v.attack;
-	E.fireOngoing(st, 0, 'turn-start', {});
-	ok('still bolsters (+1/+1) at turn start after the rename', v.attack === a0 + 1, [a0, v.attack]);
+	E.fireOngoing(st, 0, 'turn-end', {});
+	ok('still bolsters (+1/+1) at turn end after the rename', v.attack === a0 + 1, [a0, v.attack]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

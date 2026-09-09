@@ -16,7 +16,7 @@ const hand = (st, pi, def) => { const c = E.instantiate(def, pi); c.zone = 'hand
 // ---------- card data ----------
 {
 	const c = cardsById.armored_wolf_rider;
-	ok('reads "Taunt. Your Beasts cost (1) less."', c.description === 'Taunt. Your Beasts cost (1) less.', JSON.stringify(c.description));
+	ok('reads "Taunt.\\nYour Beasts cost (1) less."', c.description === 'Taunt.\nYour Beasts cost (1) less.', JSON.stringify(c.description));
 	ok('keeps Taunt', (c.keywords || []).includes('taunt'), JSON.stringify(c.keywords));
 	ok('carries a Beast cost aura (own creatures, -1)', c.costMod && c.costMod.tribe === 'Beast' && c.costMod.amount === -1 && c.costMod.cardType === 'creature' && c.costMod.scope === 'own', JSON.stringify(c.costMod));
 }
