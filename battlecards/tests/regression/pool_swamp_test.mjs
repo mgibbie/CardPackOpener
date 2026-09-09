@@ -47,9 +47,42 @@ const undead = (st, pi) => st.players[pi].board.filter(c => c.name === 'Undead')
   const u = st.players[0].board.find(c => c.name === 'Undead');
   ok('Catacomb Slug (location) taps for a deathtouch Undead', undead(st, 0) === u0 + 1 && u && has(u, 'deathtouch'), [u0, undead(st, 0)]); }
 
-// ---- arrogant_vampire: elusive lifesteal ----
+// ---- arrogant_vampire: elusive lifesteal + Frenzy ----
 { const st = game(); const { c } = play(st, 0, 'arrogant_vampire', null);
-  ok('Arrogant Vampire has Elusive + Lifesteal', has(c, 'elusive') && has(c, 'lifesteal'), c.keywords); }
+  ok('Arrogant Vampire has Elusive + Lifesteal', has(c, 'elusive') && has(c, 'lifesteal'), c.keywords);
+  ok('Arrogant Vampire gained a Frenzy pump', byId.arrogant_vampire.ongoing && byId.arrogant_vampire.ongoing.survives === true, byId.arrogant_vampire.ongoing); }
+
+// ---- diregraf_ghoul: corpse feeder ----
+{ const st = game(); const c = put(st, 0, 'diregraf_ghoul'); const v = put(st, 0, '_v'); const a0 = c.attack;
+  v.damage = v.maxHealth; E.sweepDeaths(st);
+  ok('Diregraf Ghoul grows when a friendly creature dies', c.attack === a0 + 1, [a0, c.attack]); }
+
+// ---- shambling_ghoul / dreg_reaver: undead deathrattles ----
+{ const st = game(); const c = put(st, 0, 'shambling_ghoul'); const u0 = undead(st, 0);
+  c.damage = c.maxHealth; E.sweepDeaths(st);
+  ok('Shambling Ghoul leaves a 1/1 Undead', undead(st, 0) === u0 + 1, [u0, undead(st, 0)]); }
+{ const st = game(); const c = put(st, 0, 'dreg_reaver');
+  c.damage = c.maxHealth; E.sweepDeaths(st);
+  const u = st.players[0].board.find(x => x.name === 'Undead');
+  ok('Dreg Reaver leaves a 2/2 Undead', u && u.attack === 2, u && [u.attack, u.health]); }
+
+// ---- blood_glutton: lifegain-matters ----
+{ const st = game(); st.players[0].life = 30; const c = put(st, 0, 'blood_glutton'); const a0 = c.attack;
+  play(st, 0, 'cabal_evangel', null);
+  ok('Blood Glutton grows when you gain Life', c.attack === a0 + 1, [a0, c.attack]); }
+
+// ---- bog_imp / cursed_minotaur: death stings ----
+{ const st = game(); const c = put(st, 0, 'bog_imp'); const life0 = st.players[1].life;
+  c.damage = c.maxHealth; E.sweepDeaths(st);
+  ok('Bog Imp drains 1 on death', st.players[1].life === life0 - 1, [life0, st.players[1].life]); }
+
+// ---- keyword spice ----
+{ ok('Walking Corpse is Deathtouch + Reborn', (byId.walking_corpse.keywords || []).includes('reborn'), byId.walking_corpse.keywords);
+  ok('Alley Strangler is Deathtouch + Stealth', (byId.alley_strangler.keywords || []).includes('stealth'), byId.alley_strangler.keywords);
+  ok('Canal Monitor is Poisonous + Rush', (byId.canal_monitor.keywords || []).includes('poisonous'), byId.canal_monitor.keywords);
+  ok('Bartizan Bats are Elusive + Windfury', (byId.bartizan_bats.keywords || []).includes('windfury'), byId.bartizan_bats.keywords);
+  ok('Catacomb Crocodile regenerates', byId.catacomb_crocodile.regen === 2, byId.catacomb_crocodile.regen);
+  ok('Bogstomper Connect forces a discard', byId.bogstomper.ongoing && byId.bogstomper.ongoing.on === 'self-hit-player' && byId.bogstomper.ongoing.effects[0].type === 'enemy-discard', byId.bogstomper.ongoing); }
 
 // ---- plagued_rusalka: deathtouch + ping ----
 { const st = game(); const foe = put(st, 1, '_wall');
@@ -66,7 +99,7 @@ const undead = (st, pi) => st.players[pi].board.filter(c => c.name === 'Undead')
   ok('Viscera Seer plays without throwing', !threw, threw && threw.message); }
 
 // ---- enhanced cards leave state valid ----
-for (const id of ['diregraf_ghoul', 'grimclaw_bats', 'dakmor_scorpion', 'catacomb_crocodile', 'bogstomper', 'canal_monitor', 'walking_corpse']) {
+for (const id of ['diregraf_ghoul', 'grimclaw_bats', 'dakmor_scorpion', 'catacomb_crocodile', 'bogstomper', 'canal_monitor', 'walking_corpse', 'shambling_ghoul', 'dreg_reaver', 'carrion_screecher', 'cursed_minotaur', 'alley_strangler', 'bog_imp', 'bartizan_bats', 'child_of_night', 'daggerdrome_imp', 'barony_vampire', 'blood_glutton', 'charity_extractor', 'nantuko_shade']) {
   const st = game(); let threw = null;
   try { play(st, 0, id, null); } catch (e) { threw = e; }
   ok(`${id} plays without throwing`, !threw, threw && threw.message);
