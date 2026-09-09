@@ -44,7 +44,8 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 // ---------- Axebane Stag: Battlecry destroys the enemy weapon; Connect intact ----------
 {
 	const c = cardsById.axebane_stag;
-	ok('reads "Trample.\\nBattlecry: Destroy target Hero Weapon.\\nConnect: Gain +2/+2."', c.description === 'Trample.\nBattlecry: Destroy target Hero Weapon.\nConnect: Gain +2/+2.', JSON.stringify(c.description));
+	// (batch 38 later removed Trample)
+	ok('reads "Battlecry: Destroy target Hero Weapon.\\nConnect: Gain +2/+2."', c.description === 'Battlecry: Destroy target Hero Weapon.\nConnect: Gain +2/+2.', JSON.stringify(c.description));
 	ok('has Battlecry keyword + destroy-weapon effect', (c.keywords || []).includes('battlecry') && c.effects?.[0]?.type === 'destroy-weapon', JSON.stringify([c.keywords, c.effects]));
 	ok('still carries the Connect trigger', c.ongoing?.on === 'self-hit-player', JSON.stringify(c.ongoing));
 

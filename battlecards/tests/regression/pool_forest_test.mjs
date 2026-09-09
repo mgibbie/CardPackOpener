@@ -35,10 +35,10 @@ const put = (st, pi, id, sick = false) => { const c = E.instantiate(byId[id], pi
 const play = (st, pi, id, target) => { const c = E.instantiate(byId[id], pi); c.zone = 'hand'; st.players[pi].hand.push(c); const okp = E.playCard(st, pi, c.uid, target ?? null); return { c, okp }; };
 const beasts = (st, pi) => st.players[pi].board.filter(c => c.name === 'Beast').length;
 
-// ---- blanchwood_treefolk ENCHANTMENT: turn-start bolster ----
+// ---- blanchwood_treefolk ENCHANTMENT: turn-end bolster ----
 { const st = game(); const v = put(st, 0, '_v'); play(st, 0, 'blanchwood_treefolk', null); const a0 = v.attack;
-  E.fireOngoing(st, 0, 'turn-start');
-  ok('Folklore Sycamore Ritual (enchantment) bolsters at turn start', v.attack === a0 + 1, [a0, v.attack]); }
+  E.fireOngoing(st, 0, 'turn-end');
+  ok('Folklore Sycamore Ritual (enchantment) bolsters at turn end', v.attack === a0 + 1, [a0, v.attack]); }
 
 // ---- cowl_prowler ARTIFACT: tap +1/+1 counter ----
 { const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack; play(st, 0, 'cowl_prowler', null);
