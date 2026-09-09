@@ -1,6 +1,6 @@
 // Twenty-ninth batch from the wiki's owner inbox (owner_todo), 2026-09-08.
 //   Ferocious Zheng (location) -> renamed "Terraced Jungle Garden"
-//   Cowl Prowler   (artifact)  -> renamed "Vermillion Vessel"
+//   Cowl Prowler   (artifact)  -> renamed "Verdant Vessel"
 // Ids stay stable; only the display name changes. Mechanics must still fire.
 import fs from 'fs';
 import * as E from '../../engine.js';
@@ -15,20 +15,20 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 
 // ---------- names ----------
 ok('ferocious_zheng is now "Terraced Jungle Garden"', cardsById.ferocious_zheng.name === 'Terraced Jungle Garden', cardsById.ferocious_zheng.name);
-ok('cowl_prowler is now "Vermillion Vessel"', cardsById.cowl_prowler.name === 'Vermillion Vessel', cardsById.cowl_prowler.name);
+ok('cowl_prowler is now "Verdant Vessel"', cardsById.cowl_prowler.name === 'Verdant Vessel', cardsById.cowl_prowler.name);
 // ids unchanged (rename is display-only)
 ok('ferocious_zheng id is unchanged', !!cardsById.ferocious_zheng && cardsById.ferocious_zheng.id === 'ferocious_zheng');
 ok('cowl_prowler id is unchanged', !!cardsById.cowl_prowler && cardsById.cowl_prowler.id === 'cowl_prowler');
 
 // ---------- mechanics still fire after the rename ----------
-// Vermillion Vessel (artifact): {T} -> +1/+1 to a friendly creature
+// Verdant Vessel (artifact): {T} -> +1/+1 to a friendly creature
 {
 	const st = game();
 	const vessel = E.instantiate(cardsById.cowl_prowler, 0); vessel.zone = 'artifact'; vessel.tapped = false; st.players[0].artifacts.push(vessel);
 	const buddy = put(st, 0, E.instantiate({ id: 'v', name: 'V', type: 'creature', cost: 2, attack: 2, health: 2 }, 0));
 	E.recomputeAuras(st);
 	E.tapArtifact(st, 0, vessel.uid, { type: 'creature', uid: buddy.uid, player: 0 });
-	ok('Vermillion Vessel still taps for +1/+1', buddy.attack === 3 && buddy.maxHealth === 3, [buddy.attack, buddy.maxHealth]);
+	ok('Verdant Vessel still taps for +1/+1', buddy.attack === 3 && buddy.maxHealth === 3, [buddy.attack, buddy.maxHealth]);
 }
 
 // Terraced Jungle Garden (location): tap -> 3/3 Trample Beast
