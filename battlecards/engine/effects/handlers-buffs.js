@@ -1052,6 +1052,7 @@ register('adapt', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 			let targets;
 			if (e.name) targets = state.players[pi].board.filter(c => !isDead(c) && c.name === e.name); // Lightfused Stegodon: Silver Hand Recruits
 			else if (e.target === 'friendly-creatures') targets = state.players[pi].board.filter(c => !isDead(c));
+			else if (e.target === 'random-friendly') { const pool = state.players[pi].board.filter(c => !isDead(c) && c.type !== 'location'); targets = pool.length ? [pool[Math.floor(state.rng() * pool.length)]] : []; } // Alpha Tyrranax: Adapt a random creature you control
 			else if (e.tribe) targets = state.players[pi].board.filter(c => !isDead(c) && (c.tribe || '').includes(e.tribe));
 			else { const t = chosenCreature() || (source && source.zone === 'board' && !isDead(source) ? source : null); targets = t ? [t] : []; }
 			targets = targets.filter(c => c.type !== 'location');
