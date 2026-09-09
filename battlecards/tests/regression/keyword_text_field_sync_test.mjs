@@ -48,11 +48,32 @@ const norm = tok => {
 };
 const prefix = desc => { const out = []; for (let raw of desc.split(/\s*[,&.\n]\s*/)) { raw = raw.trim(); if (!raw) continue; const n = norm(raw); if (n === null) break; out.push(n); } return out; };
 
+// A card also DECLARES keywords in any sentence that is a PURE keyword list —
+// even one that sits AFTER a triggered-ability clause, which the leading
+// `prefix` scan never reaches (e.g. "Battlecry: …\nDivine Shield & Tradeable.").
+// A sentence counts only if EVERY comma/&-separated part is a known keyword, so
+// prose ("Give a creature Taunt.", "Deal 1 damage.") is ignored.
+const keywordSentences = desc => {
+	const out = [];
+	for (const line of desc.split('\n')) {
+		for (const sent of line.split(/(?<=\.)\s+/)) {
+			const body = sent.replace(/\.$/, '').trim();
+			if (!body) continue;
+			const parts = body.split(/,\s+|\s+&\s+/).map(s => s.trim()).filter(Boolean);
+			if (!parts.length) continue;
+			const normed = parts.map(norm);
+			if (normed.every(n => n !== null)) out.push(...normed); // pure keyword-list sentence
+		}
+	}
+	return out;
+};
+
 const mismatches = [];
 for (const c of cards) {
 	if (c.token || (c.type !== 'creature' && c.type !== 'weapon') || !c.description) continue;
 	const kw = c.keywords || [];
-	for (const w of prefix(c.description)) {
+	const declared = [...new Set([...prefix(c.description), ...keywordSentences(c.description)])];
+	for (const w of declared) {
 		if (DECL[w] && !kw.includes(DECL[w])) mismatches.push(`${c.id}: names ${w} but keywords[] lacks '${DECL[w]}'`);
 		else if (VALUE[w] && !VALUE[w](c)) mismatches.push(`${c.id}: names ${w} but its backing field is missing`);
 	}
