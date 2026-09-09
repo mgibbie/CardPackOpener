@@ -31,7 +31,8 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 // ---------- Axebane Stag: Connect: Gain +2/+2 ----------
 {
 	const c = cardsById.axebane_stag;
-	ok('Axebane Stag reads "Trample.\\nConnect: Gain +2/+2."', c.description === 'Trample.\nConnect: Gain +2/+2.', JSON.stringify(c.description));
+	// (batch 36 later added the "Battlecry: Destroy target opponent's weapon." line)
+	ok('Axebane Stag description ends with "Connect: Gain +2/+2."', c.description.endsWith('Connect: Gain +2/+2.'), JSON.stringify(c.description));
 	ok('Connect is a self-hit-player +2/+2 trigger', c.ongoing?.on === 'self-hit-player' && c.ongoing.effects[0].type === 'buff-self' && c.ongoing.effects[0].attack === 2 && c.ongoing.effects[0].health === 2, JSON.stringify(c.ongoing));
 
 	// FIRE it: hitting the enemy hero grows it +2/+2 (base 4/5 -> 6/7)
