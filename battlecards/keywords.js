@@ -114,6 +114,7 @@ const K = [
 	{ p: ['Static'], t: "A plane's continuous effect that applies while it is the active plane.", plane: true },
 	{ p: ['Regenerate'], t: 'Regenerate N — restores N Health to itself at the end of your turn.' },
 	{ p: ['Bolster'], t: 'Bolster N — give the creature you control with the least Health +N/+N.' },
+	{ p: ['Bounce'], t: "Return a creature to its owner's hand." },
 	{ p: ['Ephemeral'], t: 'Destroyed at the end of your turn.', tag: 'ephemeral' },
 ];
 
