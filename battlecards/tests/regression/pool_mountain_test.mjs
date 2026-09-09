@@ -66,8 +66,41 @@ const soldiers = (st, pi) => st.players[pi].board.filter(c => c.name === 'Soldie
 { const st = game(); const { c } = play(st, 0, 'axegrinder_giant', null);
   ok('Axegrinder Giant has Trample', has(c, 'trample'), c.keywords); }
 
+// ---- ball_lightning / spark_elemental: Ephemeral replaces the turn-end suicide hack ----
+{ const st = game(); const { c } = play(st, 0, 'ball_lightning', null);
+  ok('Ball Lightning is Charge + Ephemeral + Trample', has(c, 'charge') && has(c, 'ephemeral') && has(c, 'trample'), c.keywords);
+  ok('Ball Lightning lost the damage-self ongoing', !byId.ball_lightning.ongoing, byId.ball_lightning.ongoing);
+  ok('Spark Elemental is Ephemeral too', (byId.spark_elemental.keywords || []).includes('ephemeral') && !byId.spark_elemental.ongoing); }
+
+// ---- ash_zealot: Spellburst pings each opponent ----
+{ const st = game(); play(st, 0, 'ash_zealot', null); const life0 = st.players[1].life;
+  play(st, 0, 'flame_rift', null);
+  ok('Ash Zealot Spellburst adds 1 to the spell hit (4+1)', st.players[1].life === life0 - 5, [life0, st.players[1].life]); }
+
+// ---- barbarian_horde: battlecry token ----
+{ const st = game(); play(st, 0, 'barbarian_horde', null);
+  const tok = st.players[0].board.find(c => c.name === 'Barbarian');
+  ok('Barbarian Horde brings a 1/1 Rush Barbarian', tok && tok.attack === 1 && has(tok, 'rush'), st.players[0].board.map(c => c.name)); }
+
+// ---- fervent_champion: Alliance pump ----
+{ const st = game(); const { c } = play(st, 0, 'fervent_champion', null); const a0 = c.attack;
+  play(st, 0, 'raging_goblin', null);
+  ok('Fervent Champion grows when another creature is played', c.attack === a0 + 1, [a0, c.attack]); }
+
+// ---- keyword spice: piercing-free checks on redesigned keyword pairs ----
+{ ok('Boggart Brute is Piercing + Rush', (byId.boggart_brute.keywords || []).includes('piercing') && (byId.boggart_brute.keywords || []).includes('rush'), byId.boggart_brute.keywords);
+  ok('Cerodon Yearling is Charge + Firebreathing', (byId.cerodon_yearling.keywords || []).includes('firebreathing'), byId.cerodon_yearling.keywords);
+  ok('Blistering Barrier is Defender + Smoldering', (byId.blistering_barrier.keywords || []).includes('smoldering'), byId.blistering_barrier.keywords);
+  ok('Balduvian Barbarians are Sanguine', (byId.balduvian_barbarians.keywords || []).includes('sanguine'), byId.balduvian_barbarians.keywords);
+  ok('Borderland Minotaur has an Overkill payoff', Array.isArray(byId.borderland_minotaur.overkill) && byId.borderland_minotaur.overkill[0].type === 'damage', byId.borderland_minotaur.overkill);
+  ok('Breakneck Berserker Frenzy grants Windfury', byId.breakneck_berserker.ongoing && byId.breakneck_berserker.ongoing.survives === true && byId.breakneck_berserker.ongoing.effects[0].keyword === 'windfury', byId.breakneck_berserker.ongoing); }
+
+// ---- burn text repaired ----
+{ ok('Lava Spike text no longer says "this creature"', !/this creature/i.test(byId.lava_spike.description), byId.lava_spike.description);
+  ok('all burn spells lost the transpiled text', ['searing_spear', 'lightning_strike', 'flame_slash', 'volcanic_hammer', 'flame_javelin', 'magma_jet', 'pyroclasm'].every(id => !/this creature/i.test(byId[id].description))); }
+
 // ---- enhanced cards leave state valid ----
-for (const id of ['goblin_sledder', 'blazing_rootwalla', 'bold_impaler', 'boggart_brute', 'canyon_minotaur', 'bonebreaker_giant', 'barbarian_horde', 'scorched_rusalka']) {
+for (const id of ['goblin_sledder', 'blazing_rootwalla', 'bold_impaler', 'boggart_brute', 'canyon_minotaur', 'bonebreaker_giant', 'scorched_rusalka', 'raging_goblin', 'breakneck_berserker', 'balduvian_barbarians', 'borderland_minotaur', 'brazen_scourge', 'cerodon_yearling', 'charging_monstrosaur', 'bull_cerodon', 'anaba_bodyguard', 'blistering_barrier', 'goblin_guide', 'spark_elemental']) {
   const st = game(); let threw = null;
   try { play(st, 0, id, null); } catch (e) { threw = e; }
   ok(`${id} plays without throwing`, !threw, threw && threw.message);
