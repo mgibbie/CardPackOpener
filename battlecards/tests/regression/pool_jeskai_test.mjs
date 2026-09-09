@@ -1,4 +1,4 @@
-// pool_jeskai_test.mjs — Jeskai land pool (RUW / Tarkir wedge, 30 cards: Monk tokens + prowess + burn + tempo).
+﻿// pool_jeskai_test.mjs â€” Jeskai land pool (RUW / Tarkir wedge, 30 cards: Monk tokens + prowess + burn + tempo).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -70,7 +70,7 @@ for (const c of pool) {
 // ---- NEW: Soulfire Grand Master lifegain on cast ----
 { const st = game(); put(st, 0, 'jeskai_soulfire_grand_master'); const life0 = st.players[0].life;
   cast(st, 0, '_cantrip');
-  ok('Soulfire gains 1 life when you cast a spell', st.players[0].life === life0 + 1, [life0, st.players[0].life]); }
+  ok('Soulfire gains 2 Life when you cast a spell (T3 push)', st.players[0].life === life0 + 2, [life0, st.players[0].life]); }
 
 // ---- NEW: Ponyback Brigade tokens ----
 { const st = game(); const m0 = monks(st, 0);
