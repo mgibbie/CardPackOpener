@@ -151,8 +151,10 @@ export function segmentKeywords(text) {
 }
 
 // ---------- inline mana / tap symbols ----------
-// rules text stores them as plain tokens: '⟳' (tap) and '(W)/(U)/(B)/(R)/(G)/(N)'
-// (coloured mana / generic). We render them as little coloured pips.
+// rules text stores them as plain tokens: '⟳' or '{T}' (tap — both notations
+// appear: locations use ⟳, artifacts use the MTG-style {T}) and
+// '(W)/(U)/(B)/(R)/(G)/(N)' (coloured mana / generic). We render them as little
+// coloured pips.
 export const SYM = {
 	tap: { label: '⟳', bg: '#4a4a52', fg: '#f5f5f7', ring: '#26262c' },
 	W: { label: 'W', bg: '#f6f0cf', fg: '#3a3416', ring: '#c7bf8c' },
@@ -162,7 +164,7 @@ export const SYM = {
 	G: { label: 'G', bg: '#41ab61', fg: '#eefff2', ring: '#237c42' },
 	C: { label: 'C', bg: '#bbb4a6', fg: '#2a271f', ring: '#8a857a' },
 };
-const SYM_RE = /⟳|\((W|U|B|R|G|C|\d+)\)/g;
+const SYM_RE = /⟳|\{T\}|\((W|U|B|R|G|C|\d+)\)/g;
 
 // ordered word / symbol tokens; words carry the keyword bold flag, symbols carry
 // a SYM key + label. Drives both the canvas card face and the HTML tooltips.
@@ -180,7 +182,7 @@ export function richTokens(text) {
 		SYM_RE.lastIndex = 0;
 		while ((m = SYM_RE.exec(seg.text))) {
 			if (m.index > last) pushWords(seg.text.slice(last, m.index), seg.bold);
-			if (m[0] === '⟳') out.push({ kind: 'sym', key: 'tap', label: SYM.tap.label });
+			if (m[0] === '⟳' || m[0] === '{T}') out.push({ kind: 'sym', key: 'tap', label: SYM.tap.label });
 			else if (SYM[m[1]]) out.push({ kind: 'sym', key: m[1], label: m[1] });
 			else out.push({ kind: 'sym', key: 'N', label: m[1] }); // generic number
 			last = m.index + m[0].length;
