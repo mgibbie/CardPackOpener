@@ -10,7 +10,9 @@ export const KW = {
 	DIVINE_SHIELD: 'divine_shield', STEALTH: 'stealth', DEATHTOUCH: 'deathtouch',
 	POISONOUS: 'poisonous', VENOMOUS: 'venomous', FREEZER: 'freezer',
 	IMMUNE: 'immune', // can't take damage; "destroy" effects don't kill it either (only sacrifice)
-	ELUSIVE: 'elusive', PIERCING: 'piercing',
+	ELUSIVE: 'elusive',   // can't be targeted by spells/Hero Powers — by ANYONE (incl. its controller)
+	HEXPROOF: 'hexproof', // your opponents can't target it; its controller still can
+	PIERCING: 'piercing',
 	SLASHING: 'slashing',   // deals double combat damage to players & planeswalkers
 	PACIFIST: 'pacifist',   // can't attack (Ragnaros, Ancient Watcher)
 	CLEAVE: 'cleave',       // combat damage splashes to the defender's neighbors
@@ -122,7 +124,7 @@ export const BOOST_TABLES = {
 		{ label: 'Spell Damage +1', static: { type: 'spell-damage', value: 1 } },
 		{ label: 'Prowess', ongoing: { on: 'spell-played', effects: [{ type: 'temp-buff-self', attack: 1, health: 1 }] } },
 		PENDING('Connect: Excavate'),
-		{ label: 'Hexproof', keyword: 'elusive' },
+		{ label: 'Hexproof', keyword: 'hexproof' },
 	],
 	B: [
 		{ label: 'Venomous', keyword: 'venomous' },

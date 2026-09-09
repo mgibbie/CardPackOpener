@@ -54,11 +54,11 @@ function assertEagillPayload(label, st) {
   put(st, 0, 'gold_morwynn_eagill'); fireOngoing(st, 0, 'hero-power-used', {});
   assertEagillPayload('Gold Morwynn Eagill Inspire', st); }
 
-// Luto — Battlecry grants Divine Shield & Hexproof(elusive) to the target; Inspire Plunders
+// Luto — Battlecry grants Divine Shield & Hexproof to the target; Inspire Plunders
 { const st = game(); const tgt = put(st, 0, '_v');
   const l = toHand(st, 0, 'luto_exalted_rebel'); E.playCard(st, 0, l.uid, { type: 'creature', uid: tgt.uid, player: 0 });
   ok('Luto grants Divine Shield to the target', tgt.keywords.includes('divine_shield') && tgt.shield === true, tgt.keywords);
-  ok('Luto grants Hexproof (elusive) to the target', tgt.keywords.includes('elusive'), tgt.keywords);
+  ok('Luto grants Hexproof to the target', tgt.keywords.includes('hexproof'), tgt.keywords);
   // Inspire: Plunder — steal the top of the enemy deck into your hand
   st.players[1].deck = ['_plund']; const h0 = st.players[0].hand.length;
   fireOngoing(st, 0, 'hero-power-used', {});

@@ -41,7 +41,7 @@ byId._arcane = { id: '_arcane', name: 'Zap', type: 'sorcery', cost: 1, rarity: '
   ok('spell damage is 0 before equipping', staticValue(st.players[0], 'spell-damage') === 0);
   wand.attachedTo = bear.uid; E.recomputeAuras(st);
   ok('Vulshok Wand grants +0/+3 to the holder', bear.maxHealth - byId._beast.health === 3, bear.maxHealth);
-  ok('Vulshok Wand grants Hexproof (elusive)', (bear.keywords || []).includes('elusive'));
+  ok('Vulshok Wand grants Hexproof', (bear.keywords || []).includes('hexproof'));
   ok('Vulshok Wand grants Spell Damage +2 WHILE equipped', staticValue(st.players[0], 'spell-damage') === 2, staticValue(st.players[0], 'spell-damage'));
   wand.attachedTo = null; E.recomputeAuras(st);
   ok('spell damage returns to 0 when unequipped', staticValue(st.players[0], 'spell-damage') === 0);
@@ -65,7 +65,7 @@ byId._arcane = { id: '_arcane', name: 'Zap', type: 'sorcery', cost: 1, rarity: '
 
 // --- Farscape Fiend: the keyword fix (Lifesteal & Hexproof actually granted) + Tradeable ---
 {
-  ok('Farscape Fiend keywords now include lifesteal + elusive', ['lifesteal', 'elusive'].every(k => (byId.farscape_fiend.keywords || []).includes(k)), byId.farscape_fiend.keywords);
+  ok('Farscape Fiend keywords now include lifesteal + hexproof', ['lifesteal', 'hexproof'].every(k => (byId.farscape_fiend.keywords || []).includes(k)), byId.farscape_fiend.keywords);
   ok('Farscape Fiend is Tradeable', byId.farscape_fiend.tradeable === true);
 }
 
