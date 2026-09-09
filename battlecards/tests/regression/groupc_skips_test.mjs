@@ -62,10 +62,10 @@ const handCost = (st, pi, def) => { const c = E.instantiate(def, pi); c.zone = '
 	E.playCard(st, 0, right.uid, null, null, 0); // right neighbor played (still adjacent after left removed? re-check indices)
 	ok('Red Giant: base 8 minus adjacent plays', E.effectiveCost(st, 0, rg) === 8 - (rg.adjacentPlayedWhileHeld || 0), [rg.adjacentPlayedWhileHeld, E.effectiveCost(st, 0, rg)]);
 }
-// Quietblade Shinobi: keywords restored + Bushido aura present
+// Quietblade Shinobi: keywords restored + Swing/Connect cost aura present
 {
 	ok('Quietblade Shinobi has Poisonous + Rush + Firebreathing', ['poisonous', 'rush', 'firebreathing'].every(k => cardsById['quietblade_shinobi'].keywords.includes(k)));
-	ok('Quietblade Shinobi carries a Bushido costMod', cardsById['quietblade_shinobi'].costMod && cardsById['quietblade_shinobi'].costMod.keyword === 'bushido');
+	ok('Quietblade Shinobi carries a Swing/Connect costMod', cardsById['quietblade_shinobi'].costMod && Array.isArray(cardsById['quietblade_shinobi'].costMod.triggerAny) && cardsById['quietblade_shinobi'].costMod.triggerAny.includes('self-attacks'));
 }
 // Eldraine Sprite: Adventure OR Nature spells cost 1 less
 {

@@ -2,13 +2,14 @@
 // imports named keywords in their text that their keywords arrays never carried,
 // so those abilities were inert. This wires them all and FIRES each:
 //
-//   prophet_of_wanderwood -> + Bushido
-//   red_eyes_black_dragon -> + Impulsive, Firebreathing, Bushido, Taunt
-//   mistweaver_champion   -> Taunt, Trample, Spell Damage+1, Bushido
-//   mistweaver_shogun     -> Taunt, Prowess, Bushido
-//   hyperspace_ronin      -> Spell Damage+2, Bushido
-//   quietblade_shinobi    -> "Your cards with Bushido cost 1 less" (costMod)
+//   prophet_of_wanderwood -> + Swing: Gain +1/+1
+//   red_eyes_black_dragon -> + Impulsive, Firebreathing, Swing, Taunt
+//   mistweaver_champion   -> Taunt, Trample, Spell Damage+1, Swing
+//   mistweaver_shogun     -> Taunt, Prowess, Swing
+//   hyperspace_ronin      -> Spell Damage+2, Swing
+//   quietblade_shinobi    -> "Your cards with Swing or Connect cost 1 less" (costMod)
 //   xiongmao_bladedancer  -> "Your Hero Weapons have +6 Attack" (weaponAura)
+// (Bushido was later retired; each Bushido card now carries "Swing: Gain +1/+1".)
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -29,23 +30,25 @@ const enemyCreature = (st, hp) => put(st, 1, E.instantiate({ id: 'v', name: 'V',
 // spell damage only applies to real spell types (sorcery/instant), not type:'spell'
 const zapAt = (st, tgtUid) => { const sp = E.instantiate({ id: 'zap', name: 'Zap', type: 'sorcery', cost: 1, effects: [{ type: 'damage', value: 2, target: 'creature' }] }, 0); sp.zone = 'hand'; st.players[0].hand.push(sp); st.players[0].mana.cur = 10; E.playCard(st, 0, sp.uid, { type: 'creature', uid: tgtUid, player: 1 }, null, 0); };
 
-// ---------- Bushido (prophet + red eyes): +1/+1 on attack ----------
+// ---------- Swing (prophet + red eyes): +1/+1 on attack ----------
 {
 	const st = game();
 	const prophet = put(st, 0, E.instantiate(cardsById.prophet_of_wanderwood, 0)); // base 4/5
-	ok('Prophet has Bushido wired', prophet.keywords.includes('bushido'), JSON.stringify(prophet.keywords));
+	// Swing lives in `ongoings` here (its `ongoing` slot holds Inspire)
+	ok('Prophet has a Swing trigger wired', (prophet.ongoings || []).some(o => o.on === 'self-attacks'), JSON.stringify(prophet.ongoings));
 	E.attack(st, 0, prophet.uid, { type: 'hero', player: 1 });
-	ok('Prophet Bushido grew it +1/+1 on attack (5/6)', prophet.attack === 5 && prophet.maxHealth === 6, [prophet.attack, prophet.maxHealth]);
+	ok('Prophet Swing grew it +1/+1 on attack (5/6)', prophet.attack === 5 && prophet.maxHealth === 6, [prophet.attack, prophet.maxHealth]);
 }
 {
 	const re = cardsById.red_eyes_black_dragon;
 	const inst = E.instantiate(re, 0);
-	ok('Red Eyes carries impulsive/firebreathing/bushido/taunt/deathrattle',
-		['impulsive', 'firebreathing', 'bushido', 'taunt', 'deathrattle'].every(k => inst.keywords.includes(k)), JSON.stringify(inst.keywords));
+	ok('Red Eyes carries impulsive/firebreathing/taunt/deathrattle',
+		['impulsive', 'firebreathing', 'taunt', 'deathrattle'].every(k => inst.keywords.includes(k)), JSON.stringify(inst.keywords));
+	ok('Red Eyes has a Swing trigger wired', inst.ongoing?.on === 'self-attacks', JSON.stringify(inst.ongoing));
 	const st = game();
 	const dragon = put(st, 0, E.instantiate(re, 0)); // base 9/6
 	E.attack(st, 0, dragon.uid, { type: 'hero', player: 1 });
-	ok('Red Eyes Bushido grew it +1/+1 on attack (10/7)', dragon.attack === 10 && dragon.maxHealth === 7, [dragon.attack, dragon.maxHealth]);
+	ok('Red Eyes Swing grew it +1/+1 on attack (10/7)', dragon.attack === 10 && dragon.maxHealth === 7, [dragon.attack, dragon.maxHealth]);
 }
 
 // ---------- Spell Damage (champion +1, hyperspace +2) ----------
@@ -53,7 +56,7 @@ const zapAt = (st, tgtUid) => { const sp = E.instantiate({ id: 'zap', name: 'Zap
 	const st = game();
 	put(st, 0, E.instantiate(cardsById.mistweaver_champion, 0));
 	const inst = E.instantiate(cardsById.mistweaver_champion, 0);
-	ok('Champion carries taunt/trample/bushido', ['taunt', 'trample', 'bushido'].every(k => inst.keywords.includes(k)), JSON.stringify(inst.keywords));
+	ok('Champion carries taunt/trample + a Swing trigger', ['taunt', 'trample'].every(k => inst.keywords.includes(k)) && inst.ongoing?.on === 'self-attacks', JSON.stringify(inst.keywords));
 	const foe = enemyCreature(st, 9);
 	zapAt(st, foe.uid);
 	ok('Champion Spell Damage+1: a 2-damage spell deals 3', foe.damage === 3, ['damage', foe.damage]);
@@ -71,21 +74,24 @@ const zapAt = (st, tgtUid) => { const sp = E.instantiate({ id: 'zap', name: 'Zap
 	const st = game();
 	const shogun = put(st, 0, E.instantiate(cardsById.mistweaver_shogun, 0)); // base 5/3
 	const inst = E.instantiate(cardsById.mistweaver_shogun, 0);
-	ok('Shogun carries taunt/bushido', ['taunt', 'bushido'].every(k => inst.keywords.includes(k)), JSON.stringify(inst.keywords));
+	ok('Shogun carries Taunt + Prowess (ongoing) + a Swing trigger (ongoings)', inst.keywords.includes('taunt') && inst.ongoing?.on === 'spell-played' && (inst.ongoings || []).some(o => o.on === 'self-attacks'), JSON.stringify([inst.keywords, inst.ongoing, inst.ongoings]));
 	E.fireOngoing(st, 0, 'spell-played', {});
 	ok('Shogun Prowess grew it +1 Attack on a spell (6)', shogun.attack === 6, ['attack', shogun.attack]);
 }
 
-// ---------- quietblade_shinobi: your cards with Bushido cost 1 less ----------
+// ---------- quietblade_shinobi: your cards with Swing or Connect cost 1 less ----------
 {
 	const st = game();
 	put(st, 0, E.instantiate(cardsById.quietblade_shinobi, 0));
-	const bushidoCard = E.instantiate({ id: 'bx', name: 'BX', type: 'creature', cost: 4, attack: 2, health: 2, keywords: ['bushido'] }, 0);
-	bushidoCard.zone = 'hand'; st.players[0].hand.push(bushidoCard);
+	const swingCard = E.instantiate({ id: 'sx', name: 'SX', type: 'creature', cost: 4, attack: 2, health: 2, ongoing: { on: 'self-attacks', effects: [{ type: 'buff-self', attack: 1, health: 1 }] } }, 0);
+	swingCard.zone = 'hand'; st.players[0].hand.push(swingCard);
+	const connectCard = E.instantiate({ id: 'cx', name: 'CX', type: 'creature', cost: 4, attack: 2, health: 2, ongoing: { on: 'self-hit-player', effects: [{ type: 'draw', value: 1 }] } }, 0);
+	connectCard.zone = 'hand'; st.players[0].hand.push(connectCard);
 	const plainCard = E.instantiate({ id: 'px', name: 'PX', type: 'creature', cost: 4, attack: 2, health: 2 }, 0);
 	plainCard.zone = 'hand'; st.players[0].hand.push(plainCard);
-	ok('a Bushido card costs 1 less (4 -> 3)', E.effectiveCost(st, 0, bushidoCard) === 3, ['cost', E.effectiveCost(st, 0, bushidoCard)]);
-	ok('a non-Bushido card is unaffected (still 4)', E.effectiveCost(st, 0, plainCard) === 4, ['cost', E.effectiveCost(st, 0, plainCard)]);
+	ok('a Swing card costs 1 less (4 -> 3)', E.effectiveCost(st, 0, swingCard) === 3, ['cost', E.effectiveCost(st, 0, swingCard)]);
+	ok('a Connect card costs 1 less (4 -> 3)', E.effectiveCost(st, 0, connectCard) === 3, ['cost', E.effectiveCost(st, 0, connectCard)]);
+	ok('a card with neither is unaffected (still 4)', E.effectiveCost(st, 0, plainCard) === 4, ['cost', E.effectiveCost(st, 0, plainCard)]);
 }
 
 // ---------- xiongmao_bladedancer: your Hero Weapons have +6 Attack ----------

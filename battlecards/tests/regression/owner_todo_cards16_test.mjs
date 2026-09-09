@@ -2,12 +2,13 @@
 // applied 2026-09-08.
 //
 //   Mistweaver Ronin: wire the keywords its text already names —
-//   "Bushido, Windfury, Bash & Meteoric." (only `windfury` was wired).
+//   Bash, Meteoric & Windfury, plus "Swing: Gain +1/+1."
+//   (Bushido was later retired and replaced by the Swing trigger.)
 //
-// NEW keyword Bash = Meteoric for ARTIFACTS: attack enemy artifacts as if they
-// were 1/1 creatures (KW.BASH + glossary + attackTargets + the shared
-// resolveCombat 1/1 branch). Bushido (glossary-defined, previously unwired):
-// gains +1/+1 whenever it attacks. Both are FIRED here.
+// Bash = Meteoric for ARTIFACTS: attack enemy artifacts as if they were 1/1
+// creatures (KW.BASH + glossary + attackTargets + the shared resolveCombat
+// 1/1 branch). Swing (self-attacks ongoing): gains +1/+1 whenever it attacks.
+// Both are FIRED here.
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -30,8 +31,8 @@ const foeEnch = (st) => { const e = E.instantiate({ id: 'ench', name: 'Ench', ty
 // ---------- wiring ----------
 {
 	const c = cardsById.mistweaver_ronin;
-	ok('Mistweaver Ronin keywords match its text', JSON.stringify(c.keywords) === JSON.stringify(['bushido', 'windfury', 'bash', 'meteoric']), JSON.stringify(c.keywords));
-	ok('description reads "Bash, Bushido, Meteoric & Windfury."', c.description === 'Bash, Bushido, Meteoric & Windfury.', JSON.stringify(c.description));
+	ok('Mistweaver Ronin keywords match its text', JSON.stringify(c.keywords) === JSON.stringify(['windfury', 'bash', 'meteoric']), JSON.stringify(c.keywords));
+	ok('description reads "Bash, Meteoric & Windfury.\\nSwing: Gain +1/+1."', c.description === 'Bash, Meteoric & Windfury.\nSwing: Gain +1/+1.', JSON.stringify(c.description));
 }
 
 // ---------- attackTargets offers enemy artifacts (Bash) + enchantments (Meteoric) ----------
@@ -55,24 +56,24 @@ const foeEnch = (st) => { const e = E.instantiate({ id: 'ench', name: 'Ench', ty
 	ok('a non-Bash creature is offered no artifact targets', !E.attackTargets(st, 0, plain).some(x => x.type === 'artifact'));
 }
 
-// ---------- FIRE Bash (+ Bushido on the same swing) ----------
+// ---------- FIRE Bash (+ Swing on the same attack) ----------
 {
 	const st = game();
-	const r = ronin(st);          // 3/5, Bushido/Windfury/Bash/Meteoric
+	const r = ronin(st);          // 3/5, Swing/Windfury/Bash/Meteoric
 	const art = foeArtifact(st);
 	E.recomputeAuras(st);
 	E.attack(st, 0, r.uid, { type: 'artifact', uid: art.uid, player: 1 });
 	ok('Bash destroyed the enemy artifact', !st.players[1].artifacts.some(x => x.uid === art.uid), st.players[1].artifacts.length);
-	ok('Bushido grew the Ronin +1/+1 on the attack (now 4/6)', r.attack === 4 && r.maxHealth === 6, [r.attack, r.maxHealth]);
+	ok('Swing grew the Ronin +1/+1 on the attack (now 4/6)', r.attack === 4 && r.maxHealth === 6, [r.attack, r.maxHealth]);
 	ok('the 1/1 artifact dealt 1 back', r.damage === 1, ['damage', r.damage]);
 }
 
-// ---------- FIRE Bushido in isolation (attack the hero) ----------
+// ---------- FIRE Swing in isolation (attack the hero) ----------
 {
 	const st = game();
 	const r = ronin(st);
 	E.attack(st, 0, r.uid, { type: 'hero', player: 1 });
-	ok('Bushido: +1/+1 on attacking the hero (4/6), no retaliation', r.attack === 4 && r.maxHealth === 6 && r.damage === 0, [r.attack, r.maxHealth, r.damage]);
+	ok('Swing: +1/+1 on attacking the hero (4/6), no retaliation', r.attack === 4 && r.maxHealth === 6 && r.damage === 0, [r.attack, r.maxHealth, r.damage]);
 }
 
 // ---------- Meteoric still works on this card (enchantment) ----------

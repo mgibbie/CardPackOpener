@@ -29,7 +29,7 @@ const DECL = {
 	'Piercing': 'piercing', 'Slashing': 'slashing', 'Cleave': 'cleave', 'Pacifist': 'pacifist',
 	'Defender': 'defender', 'Sanguine': 'sanguine', 'Impulsive': 'impulsive', 'Chromatic': 'chromatic',
 	'Firebreathing': 'firebreathing', 'Static': 'static', 'Meteoric': 'meteoric', 'Bash': 'bash',
-	'Bushido': 'bushido', 'Immune': 'immune',
+	'Immune': 'immune',
 };
 const VALUE = {
 	'Tradeable': c => !!c.tradeable, // field-backed (card.tradeable), not a keyword-array keyword
