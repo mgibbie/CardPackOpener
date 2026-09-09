@@ -1,7 +1,7 @@
 // Thirty-sixth batch from the wiki's owner inbox (owner_todo), 2026-09-08.
 //   Grizzled Outrider -> add "Alliance: Gain +1/+1"
 //   Invigorate        -> also "each player gains 4 Life" (on top of +4/+4)
-//   Axebane Stag      -> add "Battlecry: Destroy target opponent's weapon" (keeps Connect)
+//   Axebane Stag      -> add "Battlecry: Destroy target Hero Weapon" (keeps Connect)
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -44,7 +44,7 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 // ---------- Axebane Stag: Battlecry destroys the enemy weapon; Connect intact ----------
 {
 	const c = cardsById.axebane_stag;
-	ok('reads "Trample.\\nBattlecry: Destroy target opponent\'s weapon.\\nConnect: Gain +2/+2."', c.description === "Trample.\nBattlecry: Destroy target opponent's weapon.\nConnect: Gain +2/+2.", JSON.stringify(c.description));
+	ok('reads "Trample.\\nBattlecry: Destroy target Hero Weapon.\\nConnect: Gain +2/+2."', c.description === 'Trample.\nBattlecry: Destroy target Hero Weapon.\nConnect: Gain +2/+2.', JSON.stringify(c.description));
 	ok('has Battlecry keyword + destroy-weapon effect', (c.keywords || []).includes('battlecry') && c.effects?.[0]?.type === 'destroy-weapon', JSON.stringify([c.keywords, c.effects]));
 	ok('still carries the Connect trigger', c.ongoing?.on === 'self-hit-player', JSON.stringify(c.ongoing));
 
