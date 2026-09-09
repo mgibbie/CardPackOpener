@@ -54,6 +54,7 @@ for (const c of pool) {
 // ---- bear spirit enchantment: lifegain -> counters ----
 { const st = game(); const v = put(st, 0, '_v'); play(st, 0, 'bretagard_bear_spirit', null); const a0 = v.attack;
   play(st, 0, 'bretagard_healer', null); // gain 3 -> bolster
+  if (st.pickQueue?.length) E.resolvePick(st, v.uid); // v ties the healer for weakest -> choose v
   ok('Bear Spirit bolsters when you gain life', v.attack === a0 + 1, [a0, v.attack]); }
 
 // ---- charm artifact: +1/+1 counter ----
