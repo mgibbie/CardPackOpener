@@ -2370,6 +2370,13 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 			// Scattered Caltrops (Duels): the opponent's first creature each turn takes 1
 			for (const o of opponentsOf(state, pi)) { const op = state.players[o]; if (op.scatteredCaltrops && op._caltropsTurn !== state.turnNumber && p.board.includes(card) && !isDead(card)) { op._caltropsTurn = state.turnNumber; damageCreature(state, card, 1, null); } }
 			applyPlaneOnCreaturePlayed(state, pi, card);
+				// Cascade: a creature with Cascade cascades when it's CAST (from hand),
+				// same as a spell — cast the first cheaper card off your deck for free.
+				if (!state._inCascade && hasCascade(state, pi, card)) {
+					state._inCascade = true;
+					cascade(state, pi, card.cost || 0);
+					state._inCascade = false;
+				}
 		}
 	} else if (card.type === 'location') {
 		// locations sit in the creature row (adjacency counts them as neighbors)
