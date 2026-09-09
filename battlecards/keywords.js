@@ -113,7 +113,6 @@ const K = [
 	{ p: ['Static'], t: "A plane's continuous effect that applies while it is the active plane.", plane: true },
 	{ p: ['Regenerate'], t: 'Regenerate N — restores N Health to itself at the end of your turn.' },
 	{ p: ['Ephemeral'], t: 'Destroyed at the end of your turn.', tag: 'ephemeral' },
-	{ p: ['Bushido'], t: 'Gains +1/+1 whenever it attacks.', tag: 'bushido' },
 ];
 
 const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

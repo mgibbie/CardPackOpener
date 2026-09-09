@@ -1,7 +1,7 @@
 // keyword_list_alpha_test.mjs (2026-09-08)
 // Owner convention: whenever a card's description LISTS multiple keywords
-// ("Taunt & Rush", "Bushido, Windfury, Bash & Meteoric"), they must appear
-// ALPHABETICALLY ("Rush & Taunt", "Bash, Bushido, Meteoric & Windfury").
+// ("Taunt & Rush", "Windfury, Bash & Meteoric"), they must appear
+// ALPHABETICALLY ("Rush & Taunt", "Bash, Meteoric & Windfury").
 // Only pure keyword-list sentences are checked; prose and triggered-ability
 // clauses ("Battlecry: ...") are ignored.
 import fs from 'fs';
@@ -45,7 +45,7 @@ ok('"Life" is capitalized (except "to life")', lifeOffenders.length === 0, lifeO
 // spot-checks
 const byId = Object.fromEntries(cards.map(c => [c.id, c]));
 ok('Fusion Elemental -> "Meteoric & Trample."', byId.fusion_elemental.description === 'Meteoric & Trample.');
-ok('Mistweaver Ronin -> "Bash, Bushido, Meteoric & Windfury."', byId.mistweaver_ronin.description === 'Bash, Bushido, Meteoric & Windfury.');
+ok('Mistweaver Ronin -> "Bash, Meteoric & Windfury.\\nSwing: Gain +1/+1."', byId.mistweaver_ronin.description === 'Bash, Meteoric & Windfury.\nSwing: Gain +1/+1.');
 ok('Leatherback Baloth -> "Regenerate 3 & Trample."', byId.leatherback_baloth.description === 'Regenerate 3 & Trample.');
 
 console.log(`\n${pass} passed, ${fail} failed`);

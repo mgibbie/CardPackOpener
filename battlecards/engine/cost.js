@@ -189,6 +189,7 @@ export function effectiveCost(state, pi, card) {
 			if (m.keyword && !(card.keywords || []).includes(m.keyword)) continue; // Nerub'ar Weblord: Battlecry creatures cost more
 			if (m.foreignOnly && card.fromDeck) continue; // Customs Enforcer: cards that didn't start in their deck
 			if (m.keywordAny || m.schoolAny) { const kwOk = (m.keywordAny || []).some(k => (card.keywords || []).includes(k)); const schOk = (m.schoolAny || []).some(s => schoolOf(card) === s); if (!kwOk && !schOk) continue; } // Eldraine Sprite: Adventure OR Nature spells
+			if (m.triggerAny) { const ons = []; if (card.ongoing?.on) ons.push(card.ongoing.on); if (card.ongoings) for (const o of card.ongoings) if (o.on) ons.push(o.on); if (!m.triggerAny.some(t => ons.includes(t))) continue; } // Quietblade Shinobi: your Swing/Connect cards cost less
 			if (m.minCost != null && card.cost < m.minCost) continue;
 			// "the first <X> you play each turn": skip once a card matching this aura's
 			// filter (type + tribe + keyword) has already been played this turn.

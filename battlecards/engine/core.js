@@ -22,7 +22,6 @@ export const KW = {
 	STATIC: 'static', // 50% chance to Paralyze any creature that survives combat with it
 	METEORIC: 'meteoric', // can attack enemy enchantments as if they were 1/1 creatures
 	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
-	BUSHIDO: 'bushido',   // gains +1/+1 whenever it attacks
 	EPHEMERAL: 'ephemeral', // destroyed at the end of your turn
 	SMOLDERING: 'smoldering', // 50% chance to Burn any creature that survives combat with it
 	CASCADE: 'cascade',   // on cast: cast the first cheaper card off your deck free (random targets)
@@ -3118,8 +3117,6 @@ export function attack(state, pi, attackerUid, target) {
 	attacker.attacksUsed++;
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
-	// Bushido: gains +1/+1 whenever it attacks
-	if (has(attacker, KW.BUSHIDO)) execEffects(state, pi, [{ type: 'buff-self', attack: 1, health: 1 }], null, attacker);
 	// The Ring, tier 2: whenever your Ring-bearer attacks, draw a card, then discard one
 	if ((state.players[pi].ring || 0) >= 2 && attacker.uid === state.players[pi].ringBearer)
 		execEffects(state, pi, [{ type: 'draw', value: 1 }, { type: 'discard-random', count: 1 }], null, null);
@@ -3135,10 +3132,14 @@ export function attack(state, pi, attackerUid, target) {
 		const d0 = findCreature(state, target.uid);
 		if (d0 && has(d0, KW.SANGUINE)) gainBloodToken(state, d0.controller);
 	}
-	// Swing: when this creature attacks
+	// Swing: when this creature attacks (singular `ongoing` or any combined `ongoings`)
 	if (attacker.ongoing?.on === 'self-attacks') {
 		runSecretEffects(state, pi, attacker.ongoing.effects, { self: attacker });
 		if (attacker.ongoing?.once) attacker.ongoing = null;
+	}
+	if (attacker.ongoings) for (const o of attacker.ongoings) if (o.on === 'self-attacks' && !o.spent) {
+		runSecretEffects(state, pi, o.effects, { self: attacker });
+		if (o.once) o.spent = true;
 	}
 	fireOngoing(state, pi, 'friendly-attacks', { minion: attacker }); // Gaia-style reactions
 	if (!isDead(attacker)) fireOngoing(state, pi, 'friendly-attacks-survives', { minion: attacker }); // Rokara
