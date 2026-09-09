@@ -1,4 +1,4 @@
-// pool_mardu_test.mjs — Mardu land pool (BRW / Tarkir wedge, 30 cards: Warrior go-wide + dash/haste + raid + burn + anthems).
+﻿// pool_mardu_test.mjs â€” Mardu land pool (BRW / Tarkir wedge, 30 cards: Warrior go-wide + dash/haste + raid + burn + anthems).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -90,9 +90,9 @@ for (const c of pool) {
   ok('Wingmate Roc summons a 3/4 Elusive Roc', st.players[0].board.some(c => c.name === 'Roc' && has(c, 'elusive')), st.players[0].board.map(c => c.name)); }
 
 // ---- NEW Chief of the Edge: anthem ----
-{ const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack;
-  play(st, 0, 'mardu_chief_of_the_edge', null);
-  ok('Chief of the Edge gives your creatures +1/+0', v.attack === a0 + 1, [a0, v.attack]); }
+{ const st = game(); const w = put(st, 0, 'mardu_woe_reaper'); const a0 = w.attack;
+  play(st, 0, 'mardu_chief_of_the_edge', null); E.recomputeAuras(st);
+  ok('Chief of the Edge is a Warrior lord (+1/+0 aura)', w.attack === a0 + 1, [a0, w.attack]); }
 
 // ---- NEW Herald of Anafenza: a Warrior ----
 { const st = game(); const w0 = warriors(st, 0);
