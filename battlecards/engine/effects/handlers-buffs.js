@@ -502,13 +502,20 @@ register('buff-hand-keyword', ({ state, pi, target, source, enemies, scaled, hm,
 
 
 register('bolster', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// +N/+N to your creature with the least health (MTG-style default)
-			const pool = state.players[pi].board.filter(c => !isDead(c));
-			if (pool.length) {
-				const t = pool.reduce((a, b) => hp(b) < hp(a) ? b : a);
-				t.attack += e.value;
-				t.maxHealth += e.value;
+			// +N/+N to your creature with the least Health (MTG-style default).
+			// On a TIE for least Health, the controller PICKS which one gets it.
+			const pool = state.players[pi].board.filter(c => c.type === 'creature' && !isDead(c));
+			if (!pool.length) return;
+			const minHp = Math.min(...pool.map(c => hp(c)));
+			const tied = pool.filter(c => hp(c) === minHp);
+			if (tied.length === 1) {
+				const t = tied[0];
+				t.attack += e.value; t.maxHealth += e.value;
 				emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+			} else {
+				// reuse the buff-target pick (auto-resolved by the AI, like Inflation Station)
+				state.pickQueue.push({ player: pi, mode: 'buff-target', attack: e.value, health: e.value, ids: tied.map(c => c.uid) });
+				emit(state, { type: 'pickStart', player: pi, count: tied.length });
 			}
 } });
 

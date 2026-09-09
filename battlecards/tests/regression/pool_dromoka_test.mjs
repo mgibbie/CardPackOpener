@@ -51,6 +51,7 @@ for (const c of pool) {
 // ---- radiance enchantment: lifegain -> counters ----
 { const st = game(); const v = put(st, 0, '_v'); play(st, 0, 'dromoka_radiance', null); const a0 = v.attack;
   play(st, 0, 'dromoka_sunscorcher', null); // gains 4 life -> bolster
+  if (st.pickQueue?.length) E.resolvePick(st, v.uid); // v ties for weakest -> choose v
   ok('Radiance bolsters your weakest creature when you gain life', v.attack === a0 + 1, [a0, v.attack]); }
 
 // ---- ascendancy artifact: +1/+1 counter ----
