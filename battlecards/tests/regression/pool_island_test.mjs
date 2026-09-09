@@ -51,6 +51,41 @@ const merfolk = (st, pi) => st.players[pi].board.filter(c => c.name === 'Merfolk
 { const st = game(); const { c } = play(st, 0, 'cloud_manta', null);
   ok('Cloud Manta has Elusive + Windfury', has(c, 'elusive') && has(c, 'windfury'), c.keywords); }
 
+// ---- azure_drake: Spell Damage +1 + cantrip ----
+{ const st = game(); const h0 = st.players[0].hand.length;
+  const { c } = play(st, 0, 'azure_drake', null);
+  ok('Azure Drake draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]);
+  ok('Azure Drake carries Spell Damage +1', byId.azure_drake.static && byId.azure_drake.static.type === 'spell-damage' && byId.azure_drake.static.value === 1, byId.azure_drake.static);
+  ok('Azure Drake is Elusive', has(c, 'elusive'), c.keywords); }
+
+// ---- air_elemental: spell-played temp pump ----
+{ const st = game(); const { c } = play(st, 0, 'air_elemental', null); const a0 = c.attack;
+  play(st, 0, 'divination', null);
+  ok('Air Elemental gains +2/+0 when a spell is cast', c.attack === a0 + 2, [a0, c.attack]); }
+
+// ---- benthic_giant: landfall growth ----
+{ const st = game(); const c = put(st, 0, 'benthic_giant'); const a0 = c.attack;
+  E.fireOngoing(st, 0, 'landfall');
+  ok('Benthic Giant grows on Landfall', c.attack === a0 + 1, [a0, c.attack]); }
+
+// ---- coral_merfolk: merfolk lord aura ----
+{ const st = game(); const g = put(st, 0, 'maritime_guard'); const a0 = g.attack;
+  put(st, 0, 'coral_merfolk'); E.recomputeAuras(st);
+  ok('Coral Merfolk gives other Merfolk +1/+0', g.attack === a0 + 1, [a0, g.attack]); }
+
+// ---- naga_eternal: reborn + rush ----
+{ const st = game(); const { c } = play(st, 0, 'naga_eternal', null);
+  ok('Naga Eternal has Reborn + Rush', has(c, 'reborn') && has(c, 'rush'), c.keywords); }
+
+// ---- horned_turtle: ward wall ----
+{ const st = game(); const { c } = play(st, 0, 'horned_turtle', null);
+  ok('Horned Turtle has Taunt + Ward (2)', has(c, 'taunt') && byId.horned_turtle.ward && byId.horned_turtle.ward.mana === 2, byId.horned_turtle.ward); }
+
+// ---- ancient_carp: deathrattle draw ----
+{ const st = game(); const c = put(st, 0, 'ancient_carp'); const h0 = st.players[0].hand.length;
+  c.damage = c.maxHealth; E.sweepDeaths(st);
+  ok('Ancient Carp draws on death', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
+
 // ---- ancient_crab: taunt divine shield wall ----
 { const st = game(); const { c } = play(st, 0, 'ancient_crab', null);
   ok('Ancient Crab has Taunt + Divine Shield', has(c, 'taunt') && has(c, 'divine_shield') && c.shield === true, c.keywords); }
@@ -70,7 +105,7 @@ const merfolk = (st, pi) => st.players[pi].board.filter(c => c.name === 'Merfolk
   ok('Sigiled Starfish has Taunt', has(c, 'taunt'), c.keywords); }
 
 // ---- enhanced cards leave state valid ----
-for (const id of ['wind_drake', 'storm_crow', 'air_elemental', 'giant_octopus', 'horned_turtle', 'coral_commando', 'naga_eternal', 'tolarian_scholar']) {
+for (const id of ['wind_drake', 'storm_crow', 'giant_octopus', 'coral_commando', 'tolarian_scholar', 'faerie_miscreant', 'faerie_invaders', 'fighting_drake', 'bay_falcon', 'amphin_cutthroat', 'jhessian_lookout', 'armored_whirl_turtle', 'armored_cancrix', 'aven_fleetwing', 'maritime_guard', 'mulldrifter']) {
   const st = game(); let threw = null;
   try { play(st, 0, id, null); } catch (e) { threw = e; }
   ok(`${id} plays without throwing`, !threw, threw && threw.message);
