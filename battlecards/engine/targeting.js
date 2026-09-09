@@ -222,8 +222,8 @@ export function legalTargets(state, pi, spec) {
 		for (const c of state.players[side].board) {
 			if (c.type === 'location') continue; // locations aren't creatures
 			if (c.dormantLeft > 0) continue;     // dormant: untouchable
-			if (side !== pi && c.stealthed) continue; // stealth: untargetable by opponent
-			if (side !== pi && has(c, KW.ELUSIVE)) continue; // elusive: no enemy spells/powers
+			if (has(c, KW.ELUSIVE)) continue; // Elusive: can't be targeted by anyone (incl. its controller)
+			if (side !== pi && (c.stealthed || has(c, KW.HEXPROOF))) continue; // Stealth / Hexproof: opponents can't target it
 			if (!spec.filter || spec.filter(c)) out.push({ type: 'creature', uid: c.uid, player: side });
 		}
 	};
@@ -250,7 +250,8 @@ export function legalTargets(state, pi, spec) {
 			const P = state.players[side];
 			for (const c of P.board) {
 				if (c.dormantLeft > 0) continue;
-				if (side !== pi && (c.stealthed || has(c, KW.ELUSIVE))) continue;
+				if (has(c, KW.ELUSIVE)) continue; // Elusive: untargetable by anyone
+				if (side !== pi && (c.stealthed || has(c, KW.HEXPROOF))) continue; // Stealth / Hexproof: opponents can't target
 				if (!spec.filter || spec.filter(c)) out.push({ type: c.type === 'location' ? 'location' : 'creature', uid: c.uid, player: side });
 			}
 			for (const c of P.artifacts) if (!spec.filter || spec.filter(c)) out.push({ type: 'artifact', uid: c.uid, player: side });

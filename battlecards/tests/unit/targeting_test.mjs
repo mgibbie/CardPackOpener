@@ -66,7 +66,8 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 	ok('elusive enemy untargetable', !t.some(x => x.uid === eBoard[2].uid));
 	ok('dormant enemy untargetable', !t.some(x => x.uid === 88801));
 	const own = legalTargets(state, 1, { targets: 'friendly-creature' });
-	ok('own stealth/elusive still targetable by owner', own.some(x => x.uid === eBoard[1].uid) && own.some(x => x.uid === eBoard[2].uid));
+	ok('own stealth still targetable by owner', own.some(x => x.uid === eBoard[1].uid));
+	ok('own Elusive is NOT targetable even by its owner', !own.some(x => x.uid === eBoard[2].uid));
 	// Spellward Jeweler: hero untargetable this window
 	state.players[1].heroElusiveUntil = state.turnNumber;
 	const t2 = legalTargets(state, 0, { targets: 'enemy-hero' });

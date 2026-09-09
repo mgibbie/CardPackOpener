@@ -49,7 +49,7 @@ ok('Heartblossom has 3 Choose-two branches', (byId.heartblossom.choices || []).l
 { const st = game(); const od = put(st, 0, 'opal_drake'); od.sick = false;
   E.attack(st, 0, od.uid, { type: 'hero', player: 1 });
   ok('Opal Drake Connect: Enrich makes a treasure_token', st.players[0].artifacts.some(a => a.id === 'treasure_token'), st.players[0].artifacts.map(a => a.id));
-  ok('Opal Drake has Chromatic & Hexproof(elusive)', byId.opal_drake.keywords.includes('chromatic') && byId.opal_drake.keywords.includes('elusive')); }
+  ok('Opal Drake has Chromatic & Hexproof', byId.opal_drake.keywords.includes('chromatic') && byId.opal_drake.keywords.includes('hexproof')); }
 
 // play-without-throw + valid-state sweep
 for (const id of WAVE) {

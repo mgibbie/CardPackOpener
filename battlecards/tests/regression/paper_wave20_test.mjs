@@ -50,7 +50,7 @@ const cast = (st, pi, id, tgtUid, tgtPl) => { const c = E.instantiate(byId[id], 
 { const st = game(); put(st, 0, 'shorigo_eastern_wind'); const foe = put(st, 1, '_v');
   cast(st, 0, '_fire', foe.uid, 1);
   ok('Shorigo: a non-Arcane spell is unaffected (3)', foe.damage === 3, foe.damage);
-  ok('Shorigo has Hexproof(elusive) & Windfury', byId.shorigo_eastern_wind.keywords.includes('elusive') && byId.shorigo_eastern_wind.keywords.includes('windfury')); }
+  ok('Shorigo has Hexproof & Windfury', byId.shorigo_eastern_wind.keywords.includes('hexproof') && byId.shorigo_eastern_wind.keywords.includes('windfury')); }
 { const st = game(); put(st, 0, 'shorigo_eastern_wind'); put(st, 0, '_v'); // Shorigo(5) + _v(2) = 7 total attack
   const c = E.instantiate(byId._samurai, 0); c.zone = 'hand'; st.players[0].hand.push(c); E.playCard(st, 0, c.uid, null); // +3 base, then +2 buff
   const total = st.players[0].board.reduce((s, x) => s + (x.attack || 0), 0);

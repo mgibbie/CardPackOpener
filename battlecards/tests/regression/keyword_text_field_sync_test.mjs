@@ -25,7 +25,7 @@ const DECL = {
 	'Taunt': 'taunt', 'Charge': 'charge', 'Rush': 'rush', 'Divine Shield': 'divine_shield',
 	'Lifesteal': 'lifesteal', 'Windfury': 'windfury', 'Stealth': 'stealth', 'Reborn': 'reborn',
 	'Deathtouch': 'deathtouch', 'Venomous': 'venomous', 'Poisonous': 'poisonous', 'Trample': 'trample',
-	'Hexproof': 'elusive', 'Elusive': 'elusive', 'Swift': 'first_strike', 'First Strike': 'first_strike',
+	'Hexproof': 'hexproof', 'Elusive': 'elusive', 'Swift': 'first_strike', 'First Strike': 'first_strike',
 	'Piercing': 'piercing', 'Slashing': 'slashing', 'Cleave': 'cleave', 'Pacifist': 'pacifist',
 	'Defender': 'defender', 'Sanguine': 'sanguine', 'Impulsive': 'impulsive', 'Chromatic': 'chromatic',
 	'Firebreathing': 'firebreathing', 'Static': 'static', 'Meteoric': 'meteoric', 'Bash': 'bash',
