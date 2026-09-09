@@ -1,6 +1,6 @@
 // Thirty-seventh batch from the wiki's owner inbox (owner_todo), 2026-09-08.
 //   Invigorate           -> remove the "If you control a Forest…" altCost clause
-//   Blanchwood Treefolk  -> renamed "Folkore Sycamore Ritual" (display only)
+//   Blanchwood Treefolk  -> renamed "Folklore Sycamore Ritual" (display only)
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -27,10 +27,10 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 	ok('the effect still fires (+4 Attack, both heroes +4 Life)', tgt.attack === 6 && st.players[0].life === 24 && st.players[1].life === 24, [tgt.attack, st.players[0].life, st.players[1].life]);
 }
 
-// ---------- Blanchwood Treefolk -> Folkore Sycamore Ritual ----------
+// ---------- Blanchwood Treefolk -> Folklore Sycamore Ritual ----------
 {
 	const c = cardsById.blanchwood_treefolk;
-	ok('renamed to "Folkore Sycamore Ritual"', c.name === 'Folkore Sycamore Ritual', c.name);
+	ok('renamed to "Folklore Sycamore Ritual"', c.name === 'Folklore Sycamore Ritual', c.name);
 	ok('id is unchanged (rename is display-only)', c.id === 'blanchwood_treefolk');
 	// the enchantment still bolsters your weakest creature at turn start
 	const st = game();
