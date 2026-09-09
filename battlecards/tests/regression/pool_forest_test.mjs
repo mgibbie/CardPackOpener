@@ -38,7 +38,7 @@ const beasts = (st, pi) => st.players[pi].board.filter(c => c.name === 'Beast').
 // ---- blanchwood_treefolk ENCHANTMENT: turn-start bolster ----
 { const st = game(); const v = put(st, 0, '_v'); play(st, 0, 'blanchwood_treefolk', null); const a0 = v.attack;
   E.fireOngoing(st, 0, 'turn-start');
-  ok('Blanchwood Treefolk (enchantment) bolsters at turn start', v.attack === a0 + 1, [a0, v.attack]); }
+  ok('Folkore Sycamore Ritual (enchantment) bolsters at turn start', v.attack === a0 + 1, [a0, v.attack]); }
 
 // ---- cowl_prowler ARTIFACT: tap +1/+1 counter ----
 { const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack; play(st, 0, 'cowl_prowler', null);
