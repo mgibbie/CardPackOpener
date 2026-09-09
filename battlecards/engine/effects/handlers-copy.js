@@ -1202,7 +1202,6 @@ const _h_conjure = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 	do {
 			// create a random card from outside the game: by color, or by a
 			// named theme pool (falling back to any colored card, then anything)
-			const p = state.players[pi];
 			const defs = Object.values(state.cardsById).filter(d => d.type !== 'land');
 			let pool;
 			if (e.landSet) {
@@ -1225,17 +1224,23 @@ const _h_conjure = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				if (!pool.length) pool = defs.filter(d => d.colors?.length);
 			}
 			if (!pool.length) pool = defs;
-			for (let i = 0; i < (e.count || 1) && pool.length; i++) {
-				if (p.hand.length >= MAX_HAND) break;
-				const def = pool[Math.floor(state.rng() * pool.length)];
-				const card = instantiate(def, pi);
-				card.zone = 'hand';
-				const cmod = e.heraldScaled ? -hm() : (e.costMod || 0);
-				if (cmod) card.cost = Math.max(0, (card.cost || 0) + cmod);
-				p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: e.color || null });
-				fireEmerge(state, pi, card);
-			}
+			const addTo = (own) => {
+				const op = state.players[own];
+				for (let i = 0; i < (e.count || 1) && pool.length; i++) {
+					if (op.hand.length >= MAX_HAND) break;
+					const def = pool[Math.floor(state.rng() * pool.length)];
+					const card = instantiate(def, own);
+					card.zone = 'hand';
+					const cmod = e.heraldScaled ? -hm() : (e.costMod || 0);
+					if (cmod) card.cost = Math.max(0, (card.cost || 0) + cmod);
+					op.hand.push(card);
+					emit(state, { type: 'conjure', player: own, card, color: e.color || null });
+					fireEmerge(state, own, card);
+				}
+			};
+			// Rumbling Baloth: eachPlayer gives every player their own random card
+			if (e.eachPlayer) { for (let i = 0; i < state.players.length; i++) if (!state.players[i].eliminated) addTo(i); }
+			else addTo(pi);
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
 };
 register('conjure', _h_conjure);
