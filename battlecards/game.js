@@ -20,6 +20,7 @@ import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
+import { correspondenceOffenders, filterCorrespondence } from './format.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -5532,6 +5533,16 @@ async function startAsync(cardsById) {
 			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 			return;
 		}
+		// correspondence format: countering is banned — pre-flight the deck with a
+		// readable overlay before the server (which also enforces this) sees it
+		const offenders = correspondenceOffenders(deck.cards, cardsById);
+		if (offenders.length) {
+			const names = offenders.slice(0, 4).map(id => cardsById[id]?.name || id).join(', ');
+			const el = dungeonOverlay('DECK NOT LEGAL',
+				`Play-by-mail is its own format: countering cards are banned. Remove ${names}${offenders.length > 4 ? '…' : ''} or pick another deck.`);
+			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
+			return;
+		}
 		const party = { deck: deck.cards, classId: deck.classId, commander: deck.commander || null, companion: deck.companion || null };
 		const acc = await MPX.call('async-accept', { id: asyncGame.id, party }).catch(e => ({ error: e.message }));
 		if (acc.error) {
@@ -5557,6 +5568,18 @@ async function startAsync(cardsById) {
 			m.winner == null ? 'This match ended without a result.' : won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} took this one.`);
 		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 		return;
+	}
+
+	// correspondence format: countering is banned. Filter the match's card
+	// universe so conjure/discover/random generation can never produce a counter
+	// mid-game; ids referenced by either submitted deck or the snapshot's deck
+	// piles are grandfathered so pre-format matches still resume and draw.
+	{
+		const keep = new Set([
+			...(m.decks?.[0]?.deck || []), ...(m.decks?.[1]?.deck || []),
+			...((m.snap?.players || []).flatMap(p => (p.deck || []).filter(x => typeof x === 'string'))),
+		]);
+		cardsById = filterCorrespondence(cardsById, keep);
 	}
 
 	// active: deal the opening (invitee, first visit) or load the latest snapshot
