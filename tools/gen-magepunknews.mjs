@@ -74,8 +74,10 @@ for (let c of log) {
 		for (const [id, card] of now) if (!prevCards.has(id)) added.push(card);
 		prevCards = now;
 	}
-	// tokens/uncollectibles ride along with releases but aren't "new cards" to open
-	const collectible = added.filter(k => k.collectible !== false && !k.token);
+	// tokens/uncollectibles ride along with releases but aren't "new cards" to
+	// open — EXCEPT run-mode treasures (token-flagged by design, but they're
+	// player-facing loot worth announcing)
+	const collectible = added.filter(k => (k.collectible !== false && !k.token) || k.treasure);
 
 	// strip the repo's commit-trailer noise from patch-note bodies
 	const body = c.body

@@ -4,10 +4,331 @@
 		{
 			"sha": "c356600",
 			"date": "2026-09-10",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels active treasures: the close-out wave (38 new + 16 shared, pool now ~97) (#408)",
 			"body": "The remaining real actives in the PVPDR extract, all FIRED in the new\n87-assertion duels_actives_test:\n\n- 38 new treasures + 2 tokens: Slate's Syringe, Forge in Light, Magister\n  Unchained, For the Horde!/Alliance! (Start of Game + 15 Tradeable\n  discover tokens), Spymaster's Gambit, Stalker's Supplies, Rending\n  Ambush, Devout Blessings, Valorous Display (discover-and-EQUIP),\n  Pact of the Lich, Stalking Pride, Men at Arms, Acquired Allies, Gift\n  of the Old Gods (arrives Corrupted), Mask of Mimicry, the Curio/Coins/\n  Horn/Mob upgrade chains, Chaos Theory, the Diablo package (Fire Stomp,\n  Apocalypse, Uber Apocalypse, Soulstone Trap, Black Soulstone, Stone of\n  Jordan), Fractured Spirits, Ace in the Hole, Demonology 101, Binding\n  Chains, Vision of the Warden, Warden's Insight, Remembrance of Ice,\n  Unholy Embrace, Contagion Concoction, Smarty Pants, Elemental Chaos,\n  Yogg-tastic Tasties.\n- 16 existing Tombs/Heist treasures HS Duels reused are TAGGED\n  duelsTreasure (no duplicate cards, per the collision rule) and join\n  the shared pool via the new Duels.isActiveTreasure predicate — which\n  lorequest and all four spinoff modes now read, so the whole wave\n  reaches six run modes at once.\n- 21 new handlers + option riders (steal-stats, hand-copies, class\n  secrets, edge-ambush, turn-stamped death log, dormant randomEnemies,\n  corpse spend-to-conjure, frost-kill memory via the runSpell scoping\n  trick, takes-double-damage flags, discover equip/corrupt picks,\n  Start-of-Game tutor-id, and more). Registry 1146 -> 1167.\n- Two latent bugs fixed on shipped cards: ulda_canopic_jars' \"random\n  Legendary\" had NO rarity filter (summoned any creature) and\n  ulda_book_of_the_dead advertised a per-death discount it never had.\n- Deliberate skips (documented): Draconic Munition (Cannon system),\n  Infinite Arcane, Journey to the East/Uber Diablo hero transform,\n  Marvelous Mycelium, AV Tactics, hero-power sub-spells (the powers\n  pass owns those).\n\nArt for all 42 fetched, indexed (12,229) and deployed. designwiki\nbattlecards design data regenerated. Suite 522/522.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_slates_syringe",
+					"name": "Slate's Syringe",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_forge_in_light",
+					"name": "Forge in Light",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_magister_unchained",
+					"name": "Magister Unchained",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_for_the_horde",
+					"name": "For the Horde!",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_for_the_alliance",
+					"name": "For the Alliance!",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_spymasters_gambit",
+					"name": "Spymaster's Gambit",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "duels_stalkers_supplies",
+					"name": "Stalker's Supplies",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_rending_ambush",
+					"name": "Rending Ambush",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_devout_blessings",
+					"name": "Devout Blessings",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_valorous_display",
+					"name": "Valorous Display",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_pact_of_the_lich",
+					"name": "Pact of the Lich",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_stalking_pride",
+					"name": "Stalking Pride",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_men_at_arms",
+					"name": "Men at Arms",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_acquired_allies",
+					"name": "Acquired Allies",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_gift_of_the_old_gods",
+					"name": "Gift of the Old Gods",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_mask_of_mimicry",
+					"name": "Mask of Mimicry",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_haunted_curio",
+					"name": "Haunted Curio",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_sack_of_coins",
+					"name": "Sack of Coins",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_militia_horn",
+					"name": "Militia Horn",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_angry_mob",
+					"name": "Angry Mob",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_crazed_mob",
+					"name": "Crazed Mob",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_chaos_theory",
+					"name": "Chaos Theory",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_fire_stomp",
+					"name": "Fire Stomp",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_apocalypse",
+					"name": "Apocalypse",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "duels_uber_apocalypse",
+					"name": "Uber Apocalypse",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "duels_soulstone_trap",
+					"name": "Soulstone Trap",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_black_soulstone",
+					"name": "Black Soulstone",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_stone_of_jordan",
+					"name": "The Stone of Jordan",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_fractured_spirits",
+					"name": "Fractured Spirits",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_ace_in_the_hole",
+					"name": "Ace in the Hole",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_demonology_101",
+					"name": "Demonology 101",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_binding_chains",
+					"name": "Binding Chains",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_vision_of_the_warden",
+					"name": "Vision of the Warden",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_wardens_insight",
+					"name": "Warden's Insight",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_remembrance_of_ice",
+					"name": "Remembrance of Ice",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_unholy_embrace",
+					"name": "Unholy Embrace",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_contagion_concoction",
+					"name": "Contagion Concoction",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_smarty_pants",
+					"name": "Smarty Pants",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_elemental_chaos",
+					"name": "Elemental Chaos",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "duels_yogg_tastic_tasties",
+					"name": "Yogg-tastic Tasties",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 10
+				}
+			]
 		},
 		{
 			"sha": "7220ece",
@@ -21868,50 +22189,400 @@
 		{
 			"sha": "8a94680",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 6: 6 treasures + 3 transform/destroy-summon handlers",
 			"body": "Three new engine effects (registry 952->955): transform-all (Puzzle Box —\nevery creature becomes a random one costing N more), destroy-summon-copy\n(Holy Book — silence+destroy a creature, summon a fixed-stat copy),\ndestroy-summon-tokens-by-health (Shadow Word: Void — destroy, summon tokens =\nhalf its Health). Plus 3 reuse: Safe Harbor (bounce setCost:0), Scourge\nStrike (destroy+draw, Corpse dropped), Gift of the Legion (extended\nhero-attack with valueFromDeaths). 43 Duels actives now imported. Test 55\nasserts; battery 59/59; split+legacy fuzz clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_safe_harbor",
+					"name": "Safe Harbor",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_scourge_strike",
+					"name": "Scourge Strike",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_gift_of_the_legion",
+					"name": "Gift of the Legion",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_puzzle_box",
+					"name": "Puzzle Box",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_holy_book",
+					"name": "Holy Book",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "duels_shadow_word_void",
+					"name": "Shadow Word: Void",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
 		},
 		{
 			"sha": "f42a6d1",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 5: 6 treasures + set-stats/amalgamate handlers",
 			"body": "Two new engine effects (registry 950->952): set-stats (set friendly\ncreatures to fixed Attack/Health — Humble Blessings) and amalgamate (destroy\nyour creatures, summon one with their combined stats — Amalgamate). Plus 4\npure-reuse cards after discovering existing handlers fit: Mindpocalypse\n(draw+add-mana-crystal, extended add-mana-crystal to honor target:'all'),\nEnhance-a-matic (conjure-random spells), Wish (summon-random legendary +\nheal-hero-full), Embers of Ragnaros (random-damage pool:'enemies'). 37 Duels\nactives now imported. Test 48 asserts; battery 59/59; split+legacy fuzz clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_mindpocalypse",
+					"name": "Mindpocalypse",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_enhance_a_matic",
+					"name": "Enhance-a-matic",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_wish",
+					"name": "Wish",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "duels_embers_of_ragnaros",
+					"name": "Embers of Ragnaros",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "duels_humble_blessings",
+					"name": "Humble Blessings",
+					"type": "sorcery",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_amalgamate",
+					"name": "Amalgamate",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				}
+			]
 		},
 		{
 			"sha": "de81b86",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 4: 8 treasures + summon-from-deck handler",
 			"body": "New engine effect summon-from-deck (registry 949->950): pull creatures out\nof your deck by tribe list or tribe+count and summon them — Collector's Ire\n(Mech/Pirate/Dragon) and Summoning Ritual (3 Demons). Plus 6 more reusing\nexisting effects (upgrade/Allied riders dropped): Gift of the Heart\n(add-mana-crystal), Spyglass (copy-random-enemy-hand), Creepy Curio (summon\nGhosts), Coin Pouch (summon-random cost), Old Militia Horn (buff+grant\nTaunt), Surly Mob (destroy-random). 31 Duels actives now imported. Test 39\nasserts; battery 59/59; split+legacy fuzz clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_gift_of_the_heart",
+					"name": "Gift of the Heart",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_spyglass",
+					"name": "Spyglass",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_creepy_curio",
+					"name": "Creepy Curio",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_coin_pouch",
+					"name": "Coin Pouch",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_old_militia_horn",
+					"name": "Old Militia Horn",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_surly_mob",
+					"name": "Surly Mob",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_collectors_ire",
+					"name": "Collector's Ire",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_summoning_ritual",
+					"name": "Summoning Ritual",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 5
+				}
+			]
 		},
 		{
 			"sha": "32bddb5",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 3: 4 more active treasures + manifest refresh",
 			"body": "Elemental Learning (conjure-random Elementals), Hunter's Insight\n(discount-hand), Deadly Weapons 101 (buff-weapon), Invoke the Void\n(summon + overload) — all reuse existing handlers (conditional/combo riders\ndropped for faithful-lite). Re-ran extract_duels.py so duels_pool.json's\ninBattlecards flags reflect batches 1-3 (40 actives now present).\n\nNote: the trivially-reusable active-treasure seam is ~exhausted (23 imported;\n~80 real actives remain, most needing new handlers for novel Duels mechanics).\nTest now 29 asserts; battery 59/59.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_elemental_learning",
+					"name": "Elemental Learning",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_hunters_insight",
+					"name": "Hunter's Insight",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_deadly_weapons_101",
+					"name": "Deadly Weapons 101",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_invoke_the_void",
+					"name": "Invoke the Void",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
 		},
 		{
 			"sha": "02bd490",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 2: 7 more active treasures (existing effects)",
 			"body": "Necrotic Poison (destroy target), Devouring Hunger (destroy-all), Wand of\nDisintegration (silence + destroy all enemy), Will of the Warden\n(refresh-mana), Water Invocation (heal friendly-characters), Bag of\nStuffing (draw-until-full), Stroke of Midnight (destroy-random + Echo). All\nreuse registered handlers; skipped cards already in the pool (e.g.\nTitan-Forged Grapnel, Banana Split). Test now 23 asserts; battery 59/59.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_necrotic_poison",
+					"name": "Necrotic Poison",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_devouring_hunger",
+					"name": "Devouring Hunger",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_wand_of_disintegration",
+					"name": "Wand of Disintegration",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_will_of_the_warden",
+					"name": "Will of the Warden",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_water_invocation",
+					"name": "Water Invocation",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_bag_of_stuffing",
+					"name": "Bag of Stuffing",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_stroke_of_midnight",
+					"name": "Stroke of Midnight",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				}
+			]
 		},
 		{
 			"sha": "7922b84",
 			"date": "2026-07-30",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Duels import batch 1: 12 active treasures (existing effects)",
 			"body": "First batch of Hearthstone Duels active treasures into Battlecards, set\nDUELS, ids duels_<name>, token+treasure (like the Tombs treasures). All 12\nmap to already-registered engine effects — no new handlers:\nEarth/Fire/Lightning Invocation (summon/damage), Cursed Curio (summon\nlifesteal), Blood Moon / Veteran's Militia Horn / Supercharge (board buffs),\nMage Armor (armor), Pure Cold (burn), Hefty Sack of Coins / Astral Portal\n(summon-random by cost/rarity), Bag of Coins (gain-coin). New\nduels_treasures_test.mjs (13 asserts). Battery 59/59, fuzz clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "duels_earth_invocation",
+					"name": "Earth Invocation",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_fire_invocation",
+					"name": "Fire Invocation",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_lightning_invocation",
+					"name": "Lightning Invocation",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_cursed_curio",
+					"name": "Cursed Curio",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_blood_moon",
+					"name": "Blood Moon",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_veterans_militia_horn",
+					"name": "Veteran's Militia Horn",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_supercharge",
+					"name": "Supercharge",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "duels_mage_armor",
+					"name": "Mage Armor",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_pure_cold",
+					"name": "Pure Cold",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_hefty_sack_of_coins",
+					"name": "Hefty Sack of Coins",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_astral_portal",
+					"name": "Astral Portal",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_bag_of_coins",
+					"name": "Bag of Coins",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				}
+			]
 		},
 		{
 			"sha": "5b1abdf",
@@ -21956,10 +22627,83 @@
 		{
 			"sha": "0cd047d",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror: the deferred run-only/ctx-heavy treasures (9)",
 			"body": "Builds the last parked treasures, mostly by reusing existing effects:\n- Jr./Sr. Navigator: new trigger `add-targeting-spell-copies` on the\n  existing `spell-cast-on-creature`/selfTarget hook — a spell targeting\n  it adds 2 copies to hand (your spells only).\n- Jr./Sr. Tomb Diver: `conditional {secretsThisGame}` (new if-key +\n  a secretsThisGame counter at the secret-played site) -> `set-hero-power`\n  to the shared Discover-a-Treasure power.\n- Aegis of Death: weapon grants hero Immune (damage.js checks the weapon\n  too), bleeds 1 durability each turn (new turn-start tick +\n  loseDurabilityEachTurn passthrough in instantiate), and its existing\n  weapon deathrattle deals 100 to your own hero on break.\n- Kodo Hide Whip: new single-fire `hero-attacks-survivor` event (no\n  weapon double-fire) + trigger `bounce-attacked-survivor-to-hand`.\n- Explorer Retraining -> `discover heroPower`; Stolen Titan Secrets ->\n  `copy-enemy-hero-power`; House Special -> new `replace-deck-bobs`.\n\nRegistry 948->949 (one effect handler; triggers aren't counted). New\n21-assert regression suite (57/57 battery, split+legacy fuzz clean, so\ndeterminism intact — every hook gates on a new field/event). Art fetched\nfor all 9. Skipped only Hearthstone (its entire function is Tavern-escape;\nTombs has no Tavern) and \"Work Work\" (not in the ULDA pool).",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_jr_navigator",
+					"name": "Jr. Navigator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_sr_navigator",
+					"name": "Sr. Navigator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_jr_tomb_diver",
+					"name": "Jr. Tomb Diver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_sr_tomb_diver",
+					"name": "Sr. Tomb Diver",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_aegis_of_death",
+					"name": "Aegis of Death",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_kodo_hide_whip",
+					"name": "Kodo Hide Whip",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_explorer_retraining",
+					"name": "Explorer Retraining",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_stolen_titan_secrets",
+					"name": "Stolen Titan Secrets",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_house_special",
+					"name": "House Special",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
 		},
 		{
 			"sha": "b4bc719",
@@ -21972,10 +22716,147 @@
 		{
 			"sha": "c3908db",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3f: final active treasures batch (17) — treasure layer complete",
 			"body": "The remaining in-battle + Start-of-Game + Adventure-Deck treasures, with the\nrun-layer deck edits approximated onto the in-game deck:\n- Scales of Justice: transform every creature into a 1/1 Murloc + hand Murlocs\n- Advanced Targeting Monocle: cast a copy of every spell in your deck\n- Mystical Mirage: refresh Mana + draw 3\n- Bob's Bouncer: Brawl\n- Zephrys's Lamp (+ Sack of Lamps): Discover the perfect card\n- Academic Research / Tea Time: gain Mana Crystals (+draw)\n- Tracking Device: draw 4\n- Pack Mule / Upgraded Pack Mule: your deck costs 1 less\n- Do the Math: remove cost-2-or-less cards from your deck\n- Study Break / Friendly Smith / Party of Four: Discover a spell/weapon/creature\n- Fast Food: shuffle enemy creatures into your deck\n- Map of Uldum: Discover a card + a Mana Crystal\n\nEngine: 5 new handlers in handlers-tombs.js (transform-all-into-token,\ncast-deck-spells, reduce-deck-cost, remove-cheap-deck, add-mana-crystal;\nregistry 943->948).\n\nDeferred to phase 6 (genuinely run-only — no meaningful in-battle form):\nExplorer Retraining, Stolen Titan Secrets, House Special, Hearthstone,\nWork Work; plus a few needing ctx plumbing (Jr/Sr Navigator spell-target\ntrigger, Jr/Sr Tomb Diver secret-count power-swap, Aegis of Death, Kodo\nHide Whip).\n\nArt fetched for all 17. Tests: 11 more assertions (76 total in\ntombs_treasures_test). 55/55 suites green; census 0 unhandled; fuzz clean\nboth modes. ~62 active treasures now imported.",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_scales_of_justice",
+					"name": "Scales of Justice",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_advanced_targeting_monocle",
+					"name": "Advanced Targeting Monocle",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_mystical_mirage",
+					"name": "Mystical Mirage",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_bobs_bouncer",
+					"name": "Bob's Bouncer",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_zephyrs_lamp",
+					"name": "Zephrys's Lamp",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_sack_of_lamps",
+					"name": "Sack of Lamps",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_academic_research",
+					"name": "Academic Research",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_tracking_device",
+					"name": "Tracking Device",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_pack_mule",
+					"name": "Pack Mule",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_upgraded_pack_mule",
+					"name": "Upgraded Pack Mule",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_do_the_math",
+					"name": "Do the Math",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_study_break",
+					"name": "Study Break",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_friendly_smith",
+					"name": "Friendly Smith",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_fast_food",
+					"name": "Fast Food",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_party_of_four",
+					"name": "Party of Four",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_map_of_uldum",
+					"name": "Map of Uldum",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_tea_time",
+					"name": "Tea Time",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				}
+			]
 		},
 		{
 			"sha": "8917225",
@@ -22012,26 +22893,197 @@
 		{
 			"sha": "795f268",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3e: active treasures batch 5 (6) + Lei Flamepaw spell-echo",
 			"body": "- Amakir the Light (3) 3/6: after it attacks, add 2 cost-0 spells\n  (self-attacks ongoing + conjure-random)\n- Sand Trap (0): Casts When Drawn, mills the top 2 of your own deck\n- LOCUUUUSTS!!! (3): fill your board with 2/2 Rush Locusts (+ Giant Locust token)\n- Jr. Excavator (4) 2/5 / Sr. Excavator (4) 3/6: Battlecry draw 3\n- Lei Flamepaw (2) 2/6: while it's on your board, your spells cast an extra\n  time — new `spellEcho` board flag (instantiate + runSpell, mirroring the\n  existing cheapSpellDouble path). Behind a board flag, so digests unchanged.\n\nReuses existing effects for the rest (mill target:self, self-attacks\nongoing, conjure setCost, draw). The two Excavators drop their\ndraw-discount rider (no engine support yet); the drop is noted in text.\n\nArt fetched for all 7, cropped. Tests: 6 more assertions (63 total in\ntombs_treasures_test, incl. a with/without-Lei double-cast check). 51/51\nsuites green; census 0 unhandled; fuzz clean both modes. 45 active\ntreasures done. Still deferred: Kodo Hide Whip (bounce attacked survivor\nneeds weapon-ongoing target ctx).",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_amakir_the_light",
+					"name": "Amakir the Light",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_sand_trap",
+					"name": "Sand Trap",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "ulda_locuuuusts",
+					"name": "LOCUUUUSTS!!!",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_jr_excavator",
+					"name": "Jr. Excavator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_sr_excavator",
+					"name": "Sr. Excavator",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_lei_flamepaw",
+					"name": "Lei Flamepaw",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				}
+			]
 		},
 		{
 			"sha": "9191b25",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3d: active treasures batch 4 (7) + shared Treasure Cache power",
 			"body": "- Flo Slatebrand (2) 4/4: Battlecry & Deathrattle add a random Treasure\n- Addarah (3) 3/6: Battlecry shuffle all enemy creatures into your deck\n- The Gatling Wand (5): 3 damage split among enemies\n- Brann's Saddle (2): +3/+3 to a friendly creature\n- Reno's Magical Torch (2): Deal 4; Combo also shuffles a copy into your deck\n- Staff of Ammunae (4): your whole board gets Windfury & Immune this turn\n- Blade of the Burning Sun (4) 4/0: Battlecry gives your deck +2 Attack,\n  Deathrattle returns the weapon to your hand\n- Uldum Treasure Cache: the shared Explorer hero power (add a random Treasure)\n\nEngine: 3 new handlers in handlers-tombs.js (add-random-treasure,\nshuffle-enemy-board-into-deck, return-weapon-to-hand; registry 940->943),\nplus grant-immune-turn now accepts target 'friendly-creatures' (whole board).\n\nDeferred to a later batch (need deeper ctx plumbing): Kodo Hide Whip\n(bounce the attacked survivor), Lei Flamepaw (spells cast twice while\nalive), Amakir the Light (conjure on attack).\n\nArt fetched for all 8, cropped. Tests: 12 more assertions (57 total in\ntombs_treasures_test). 51/51 suites green; census 0 unhandled; fuzz clean\nboth modes.",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_flo_slatebrand",
+					"name": "Flo Slatebrand",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_addarah",
+					"name": "Addarah",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_the_gatling_wand",
+					"name": "The Gatling Wand",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_branns_saddle",
+					"name": "Brann's Saddle",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_renos_magical_torch",
+					"name": "Reno's Magical Torch",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_staff_of_ammunae",
+					"name": "Staff of Ammunae",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_blade_of_the_burning_sun",
+					"name": "Blade of the Burning Sun",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				}
+			]
 		},
 		{
 			"sha": "3cc87af",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3c: active treasures batch 3 (8) — all reuse existing effects",
 			"body": "No new handlers this batch — everything maps onto effects already in the\nengine (incl. the batch-2 extensions):\n- Maxwell, Mighty Steed (3) 3/5: Rush, Reborn, +2 Attack per other creature\n  (selfScale with no tribe = counts all, from the batch-2 aura change)\n- Rakanishu (2) 4/4: Battlecry sets your Lackeys to 4/4 (set-lackey-buff)\n- Servant of Siamat (2) 1/4: Taunt + Divine Shield\n- Murky's Battle Horn (7): seven Rush Murlocs now, seven more next turn\n  (delay-to-turn-start, reused from the Heist's Big Boomba)\n- Bauble of Beetles (4): resurrect 4 dead friendlies with Reborn\n  (resurrect count+grant, batch-2 extension)\n- Flex-plosion (7): destroy 3 random enemy creatures\n- Phaoris' Blade (5): Windfury weapon, +2/+1 after it kills a creature\n  (buff-weapon on the hero-kills-creature ongoing — single-fire, no double)\n- Canopic Jars (3): give your creatures \"Deathrattle: Summon a random\n  Legendary creature\" (grant-deathrattle to all friendly + summon-random)\n\nArt fetched for all 8, white-bar cropped. Tests: 10 more assertions in\ntombs_treasures_test.mjs (45 total). 51/51 suites green; census 0\nunhandled; split-fuzz clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_maxwell_mighty_steed",
+					"name": "Maxwell, Mighty Steed",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_rakanishu",
+					"name": "Rakanishu",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_servant_of_siamat",
+					"name": "Servant of Siamat",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_murkys_battle_horn",
+					"name": "Murky's Battle Horn",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "ulda_bauble_of_beetles",
+					"name": "Bauble of Beetles",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_flex_plosion",
+					"name": "Flex-plosion",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "ulda_phaoris_blade",
+					"name": "Phaoris' Blade",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_canopic_jars",
+					"name": "Canopic Jars",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
 		},
 		{
 			"sha": "3898732",
@@ -22044,18 +23096,204 @@
 		{
 			"sha": "505839f",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3b: active treasures batch 2 (9) + engine extensions",
 			"body": "Second batch of active treasures:\n- Book of the Dead (12): 7 to all enemies, costs 1 less per creature died\n  this game (selfCost minions-died-game)\n- Gnomebliterator (2): Deal 10 damage\n- Starseeker's Tools (2): Discover a creature & a spell, both cost 2 less\n- Stone Fox Statue (5): two 0-cost copies of a chosen creature\n- Staff of Renewal (7): resurrect the 7 highest-cost dead friendlies w/ Taunt\n- Titan-Forged Grapnel (3): destroy 2 random enemies, gain Armor = their Attack\n- Ancient Reflections (5): fill your board with 1/1 copies of a chosen creature\n- Crusty the Crustacean (1) 3/4: Battlecry destroy a creature, gain double\n  its stats\n- Brann's Epic Egg (6) 0/5: after it takes damage, summon King Krush (once)\n\nEngine: new handlers-tombs.js (destroy-random-gain-armor,\nfill-board-copies-of-target; registry 938->940). Extensions: copy-to-hand\n`count`; devour-target `double` + any-creature target; resurrect-highest-died\n`count`+`grant`; selfScale aura with no tribe counts all other creatures\n(future Maxwell). census scan list + targeting CHOSEN updated.\n\nArt fetched for all 9, white-bar cropped. Tests: 14 more assertions in\ntombs_treasures_test.mjs (35 total). 50/50 suites green; census 0\nunhandled. NOTE: split-fuzz seed 909090 hits a pre-existing nondeterministic\nstack overflow in summon (a deathrattle/summon chain, umbra-doubled) —\nconfirmed identical on the pre-change baseline, not from this batch.",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_book_of_the_dead",
+					"name": "Book of the Dead",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 12
+				},
+				{
+					"id": "ulda_gnomebliterator",
+					"name": "Gnomebliterator",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_starseekers_tools",
+					"name": "Starseeker's Tools",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_stone_fox_statue",
+					"name": "Stone Fox Statue",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_staff_of_renewal",
+					"name": "Staff of Renewal",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "ulda_titan_forged_grapnel",
+					"name": "Titan-Forged Grapnel",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_ancient_reflections",
+					"name": "Ancient Reflections",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_crusty_the_crustacean",
+					"name": "Crusty the Crustacean",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_branns_epic_egg",
+					"name": "Brann's Epic Egg",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				}
+			]
 		},
 		{
 			"sha": "365bc74",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Tombs of Terror phase 3a: active treasures batch 1 (14) + weapon Lifesteal fix",
 			"body": "First batch of in-battle active treasures, all mapping to existing effects:\n- Staff of Scales (+ Ancient Snake token): three 1/1 Rush/Poisonous/Reborn\n- Jr. Scout / Sr. Scout: Charge+Windfury, end-of-turn 4/6 to a random enemy\n- Sanctum Golem: 6/6 Can't Attack (pacifist); Enflamed Golem: DR nukes all\n  creatures for 3 & summons a Sanctum Golem\n- Runaway Gyrocopter: DR 5 to enemy creatures then shuffles itself back\n- Crawling Claw: Rush/Reborn, DR steals a card (fires on its final death,\n  per this engine's Reborn-skips-first-deathrattle rule)\n- Reno's Crafty Lasso / Elise's Machete / Ol' Faithful: after-attack weapons\n  (steal a card / summon two Rush Treants / 1 to all enemies)\n- Reno's Lucky Hat: +2/+2 & Spell Damage +2; Karl the Lost: six Recruits +\n  Taunt; Finley's Pith Helmet: +2 Health to your board, reshuffles;\n  Truesilver Lance: 5-attack Lifesteal weapon\n\nTwo fixes found while wiring these:\n- The treasure weapons store durability 0 in the HS dump (persistent\n  treasures) — gave them sensible durability so the hero can actually swing.\n- Weapon ongoings on 'hero-attacks' double-fire (the explicit heroAttack\n  block AND fireOngoing both hit the weapon) — switched them to\n  'hero-attacked' (fireOngoing-only). And a real engine gap: weapon\n  Lifesteal healed on creature hits but not face attacks — now it heals on\n  both (matches HS + the creature branch).\n\nArt fetched for all 15 (ULDA_ ids), white-bar cropped. Tests:\ntests/regression/tombs_treasures_test.mjs (21 assertions). 50/50 suites\ngreen; census 0 unhandled; fuzz 120 split + 100 legacy clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "ulda_staff_of_scales",
+					"name": "Staff of Scales",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_jr_scout",
+					"name": "Jr. Scout",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_sr_scout",
+					"name": "Sr. Scout",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_sanctum_golem",
+					"name": "Sanctum Golem",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_enflamed_golem",
+					"name": "Enflamed Golem",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ulda_runaway_gyrocopter",
+					"name": "Runaway Gyrocopter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_crawling_claw",
+					"name": "Crawling Claw",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_renos_crafty_lasso",
+					"name": "Reno's Crafty Lasso",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_renos_lucky_hat",
+					"name": "Reno's Lucky Hat",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ulda_elises_machete",
+					"name": "Elise's Machete",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_ol_faithful",
+					"name": "Ol' Faithful",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "ulda_karl_the_lost",
+					"name": "Karl the Lost",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ulda_finleys_pith_helmet",
+					"name": "Finley's Pith Helmet",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ulda_truesilver_lance",
+					"name": "Truesilver Lance",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
 		},
 		{
 			"sha": "3a00a20",
@@ -22124,10 +23362,243 @@
 		{
 			"sha": "2213778",
 			"date": "2026-07-29",
-			"kind": "patch",
+			"kind": "cards",
 			"title": "Dalaran Heist phase 1: 52 cards imported — 29 treasures + 18 alt hero powers, all effects wired",
 			"body": "Active treasures (29 + chain/bomb tokens), every one with real machinery:\nContinuum Collider (new extra-turns via forcedTurns), The Box + Shifting\nChameleon (new handTransform.intoRandom morphs: random treasure /\n1-cost minion), Gnomish Army Knife, The Muscle, Super Simian Sphere\n(summonId grant rider: Mukla with Immune+Elusive), Grimmer Patron, EVIL\nPropaganda (mind-control gains all:true), Loyal Henchman (startOfGame\ntutor-by-id + new handGrow in-hand growth), Untold Splendor + The Box\npool (cards carry treasure:true), Golden Candle, Dreamgrove Ring\n(discover summonCopy gains count+noHand), Orb of the Untold, Elder\nTaggawag, the THE... Candles? Twinspell chain, Overpowered (playCard\nreplay hook, random targets), Fly-By/Kadoom Bot (50 on draw), Case\nStudy, Elistra (recast-spells-played, chaos-locked), Soulreaper's\nScythe (weapon kill log + summon-reaped deathrattle), Swampqueen's\nCall (Echo + real-def legendary transform), Duplatransmogrifier,\nAnnoy-o Horn, Hyperblaster (immune-attacking + weapon Poisonous),\nBig Boomba (new delay-to-turn-start queue), Banana Split (copy-summon\ncount), Master Scheme (schemeGrow hand tick), Sow the Seeds\n(deckIdBuffs), Dagwik Stickytoe (self-attacks-hero steal), Murgatha\n(add-overload forEnemy).\n\n18 alternate class hero powers (2 per class) as heropower cards with\npower effects: Lifebloom/Touch of Bark, Opportunist/Pet Training,\nBurning Wit/Frostburn (new freeze-or-damage), Backup!/Boon of Light,\nDistort/Soothe, Yoink!/Cut-less, Evolution/Refresh, Pain Split/The\nPact, Invigorating Brew/Undermine (+Improvised Explosive).\n\nEngine: 13 new handlers in engine/effects/handlers-heist.js (registry\n925 -> 938), census file list + registry count test updated. Art: all\n52 fetched from HearthstoneJSON at their DALA_ ids, white-bar cropped.\n\nTests: tests/regression/heist_treasures_test.mjs (46 assertions\ncovering every treasure mechanic + power). 44/44 suites green; census\n0 unhandled; identifier audit clean; fuzz 150 split + 100 legacy clean.",
-			"cards": []
+			"cards": [
+				{
+					"id": "dala_continuum_collider",
+					"name": "Continuum Collider",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dala_the_box",
+					"name": "The Box",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "dala_gnomish_army_knife",
+					"name": "Gnomish Army Knife",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "dala_the_muscle",
+					"name": "The Muscle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dala_super_simian_sphere",
+					"name": "Super Simian Sphere",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "dala_grimmer_patron",
+					"name": "Grimmer Patron",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_evil_propaganda",
+					"name": "EVIL Propaganda",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 10
+				},
+				{
+					"id": "dala_loyal_henchman",
+					"name": "Loyal Henchman",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "dala_untold_splendor",
+					"name": "Untold Splendor",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "dala_golden_candle",
+					"name": "Golden Candle",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dala_dreamgrove_ring",
+					"name": "Dreamgrove Ring",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 9
+				},
+				{
+					"id": "dala_orb_of_the_untold",
+					"name": "Orb of the Untold",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dala_elder_taggawag",
+					"name": "Elder Taggawag",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_the_candles",
+					"name": "THE... Candles?",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_overpowered",
+					"name": "Overpowered",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 0
+				},
+				{
+					"id": "dala_fly_by",
+					"name": "Fly-By",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "dala_case_study",
+					"name": "Case Study",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "dala_elistra_the_immortal",
+					"name": "Elistra the Immortal",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_soulreapers_scythe",
+					"name": "Soulreaper's Scythe",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "dala_swampqueens_call",
+					"name": "Swampqueen's Call",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "dala_duplatransmogrifier",
+					"name": "Duplatransmogrifier",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "dala_annoy_o_horn",
+					"name": "Annoy-o Horn",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "dala_hyperblaster",
+					"name": "Hyperblaster",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_big_boomba",
+					"name": "Big Boomba",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "dala_banana_split",
+					"name": "Banana Split",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "dala_master_scheme",
+					"name": "Master Scheme",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_sow_the_seeds",
+					"name": "Sow the Seeds",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "dala_dagwik_stickytoe",
+					"name": "Dagwik Stickytoe",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "dala_murgatha",
+					"name": "Murgatha",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
 		},
 		{
 			"sha": "a021dbd",
