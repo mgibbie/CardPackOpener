@@ -45,6 +45,7 @@ Draw, dig, counter, bounce, freeze, and "spells care."
 | Counter target spell | the counterspell |
 | Elusive | evasion (hard to block/target) |
 | Freeze / Paralyzed | tempo — deny attacks/untaps |
+| Frigid `(+U)` | 50% Freeze-on-combat rider (the U member of the Static/Smoldering/Frigid trio) |
 | Spell Damage | spell payoff |
 | Spellburst / Prowess `(+R)` / Echo `(+R)` | cast‑a‑spell triggers |
 | Miracle | reward for top‑decking |
