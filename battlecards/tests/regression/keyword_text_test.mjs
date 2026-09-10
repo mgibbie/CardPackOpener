@@ -29,7 +29,10 @@ const kwOnly = c => {
 	return p.length >= 2 && p.every(x => PHRASES.has(x));
 };
 const all = cards.filter(kwOnly);
-ok('there is a real population of keyword-only cards', all.length > 300, String(all.length));
+// (the advanced-pool power batches deliberately enriched many keyword-only
+// vanillas with trigger lines, shrinking this population — the canary only
+// needs to prove the segmenter still matches a real cohort)
+ok('there is a real population of keyword-only cards', all.length > 200, String(all.length));
 
 // every one of them must be in the house form
 const wrong = all.filter(c => {

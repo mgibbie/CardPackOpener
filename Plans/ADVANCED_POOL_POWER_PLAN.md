@@ -1,5 +1,12 @@
 # Advanced-Land Pool Power & Differentiation Plan
 
+> **STATUS (2026-09-10): COMPLETE.** All five batches shipped (PRs #376, #377, #381, #382 + Batch E).
+> The ladder now holds everywhere: basics ~+0.5 · all 10 mono temples ≥1.5 · all 41 two-color pools
+> 2.0–2.9 · all 20 three-color pools 3.0–3.6. Every advanced pool (71) is on the audit tool's
+> ENFORCED list — `pool_power_bands_test` fails the suite if any pool drops below its band, and no
+> advanced-pool card carries a rarity. Remaining tuning is taste, not structure: file card notes
+> through the wiki inbox as usual.
+
 Goal: make every advanced-land Discover pool **worth the upgrade** — strictly stronger than the
 basic pools, with 3-color pools stronger still — and make the pools **meaningfully different**, so
 choosing which land to upgrade into is a real strategic decision.
