@@ -78,7 +78,7 @@ const K = [
 	{ p: ['Forgetful'], t: 'When it attacks, there is a 50% chance it hits the wrong target instead.' },
 	{ p: ['Time Travel'], t: 'Transform this location into its next era (Past → Present → Future).' },
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
-	{ p: ['Counter target spell', 'Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
+	{ p: ['Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
 	{ p: ['Connect'], t: 'Triggers when this deals combat damage to a player.' },
 	{ p: ['Swing'], t: 'Triggers when this attacks.' },
