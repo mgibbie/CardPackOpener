@@ -2198,6 +2198,7 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.notHonorablyKilled) ok = !(source && source.honorablyKilled); // Korrak the Bloodrager
 			else if (e.if.armorGainedGame != null) ok = (p.armorGainedGame || 0) >= e.if.armorGainedGame; // Captain Galvangar
 			else if (e.if.spellsCastWhileHeld != null) ok = (source && source.spellsCastWhileHeld || 0) >= e.if.spellsCastWhileHeld; // Spellcoiler / Ancient Krakenbane
+			else if (e.if.stealthAttackedWhileHeld != null) ok = (source && source.stealthAttackedWhileHeld || 0) >= e.if.stealthAttackedWhileHeld; // Tricks of the Trade
 			else if (e.if.schoolWhileHeld) ok = !!(source && source.schoolsWhileHeld && source.schoolsWhileHeld[e.if.schoolWhileHeld]); // Heralds
 			else if (e.if.dealtHeroDamage != null) ok = (p.damageToEnemyHeroThisTurn || 0) >= e.if.dealtHeroDamage; // Crooked Cook
 			else if (e.if.hpDamageGame != null) ok = (p.hpDamageGame || 0) >= e.if.hpDamageGame; // Jan'alai, the Dragonhawk
@@ -3113,4 +3114,70 @@ register('mind-control-uid', ({ state, pi }, e) => {
 	state.players[pi].board.push(t);
 	emit(state, { type: 'mindControl', uid: t.uid, player: pi, name: t.name });
 	recomputeAuras(state);
+});
+
+// --- Escape from the Violet Hold: the "Follow" chain -------------------------
+// The four Follow spells hand their own effect to a card already in your hand.
+// Playing that card re-runs the effect and passes it along again, so the chain
+// keeps going for as long as you keep playing the marked cards this turn.
+// followEcho rides on the hand card; core.playCard consumes it (see followEcho
+// there) and turn-end clears it.
+register('follow-echo', ({ state, pi, source }, e) => {
+	const p = state.players[pi];
+	const pool = p.hand.filter(c => c !== source && !c.followEcho
+		&& (!e.tribe || (c.tribe || '').includes(e.tribe)));
+	if (!pool.length) return;
+	markFollowEcho(state, pi, pool[Math.floor(state.rng() * pool.length)], e.echoId);
+});
+
+// echoId names the spell whose effects get replayed. Storing the id (not a copy
+// of the effects) is what makes the chain self-perpetuating: that spell's effect
+// list contains this very follow-echo, so replaying it marks the next card too.
+function markFollowEcho(state, pi, card, echoId) {
+	if (!card || card.followEcho || !state.cardsById[echoId]) return;
+	card.followEcho = echoId;
+	card.followEchoTurn = state.turnNumber;
+	emit(state, { type: 'buff', uid: card.uid, player: pi });
+}
+
+// Silent Strike: +3 Attack, and a Stealthed target immediately shoots a random
+// enemy creature for its (already buffed) Attack.
+register('silent-strike', ({ state, pi, enemies, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t) return;
+	t.attack += e.attack || 3;
+	emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+	if (!(t.keywords || []).includes('stealth')) return;
+	const foes = [];
+	for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type === 'creature') foes.push(c);
+	if (!foes.length) return;
+	damageCreature(state, foes[Math.floor(state.rng() * foes.length)], t.attack, t);
+});
+
+// Slime 'em!: wipe the board, then hand each player a spell that brings their
+// own half back. Each player's resummon spell remembers only their own dead.
+register('slime-board', ({ state, pi }, e) => {
+	const fallen = state.players.map(p => p.board.filter(c => !isDead(c) && c.type === 'creature').map(c => c.id));
+	execEffects(state, pi, [{ type: 'destroy-all' }], null, null);
+	for (let idx = 0; idx < state.players.length; idx++) {
+		const ids = fallen[idx].filter(id => state.cardsById[id]);
+		if (!ids.length) continue;
+		state._slimeSeq = (state._slimeSeq || 0) + 1;
+		const tokenId = `slime_resummon_${idx}_${state._slimeSeq}`;
+		state.cardsById[tokenId] = {
+			id: tokenId, name: 'Slimed', type: 'sorcery', cost: e.cost || 3, rarity: 'common',
+			token: true, collectible: false,
+			description: `Resummon the creatures ${idx === pi ? 'you' : 'that player'} lost to Slime 'em!.`,
+			effects: ids.map(id => ({ type: 'summon', summonId: id })),
+		};
+		addCardToHand(state, idx, tokenId);
+	}
+});
+
+// Tricks of the Trade: 1 damage normally, 3 if a Stealthed creature swung while
+// this sat in hand. It owns the damage (rather than a conditional wrapping a
+// damage effect) so targeting.js can still see a chosen target on the card.
+register('tricks-of-the-trade', ({ state, pi, target, source }, e) => {
+	const armed = (source && source.stealthAttackedWhileHeld || 0) >= (e.need || 1);
+	execEffects(state, pi, [{ type: 'damage', value: armed ? (e.high || 3) : (e.value || 1), target: e.target || 'any' }], target, source);
 });

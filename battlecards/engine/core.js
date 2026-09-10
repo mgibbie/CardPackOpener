@@ -1181,6 +1181,7 @@ export function summon(state, pi, tokenDef) {
 	}
 	if (p.nextTribeSummonBuff && (c.tribe || '').includes(p.nextTribeSummonBuff.tribe)) { c.attack += p.nextTribeSummonBuff.attack || 0; c.maxHealth += p.nextTribeSummonBuff.health || 0; p.nextTribeSummonBuff = null; } // Thornmantle Musician
 	if (p.tribeSummonBuff && state.turnNumber < p.tribeSummonBuff.untilTurn && (c.tribe || '').includes(p.tribeSummonBuff.tribe)) { for (const k of p.tribeSummonBuff.keywords) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; } } // Timewarden: Dragons gain Taunt + Divine Shield
+	if (p.collapsingStar && (c.tribe || '').includes('Demon')) for (const hpw of p.heroPowers) if (hpw.id === 'collapsing_star') hpw.usedThisTurn = false; // Collapsing Star: summoning a Demon refreshes it
 	if (p.legionInvasion && (c.tribe || '').includes('Demon')) { c.maxHealth += 2; if (!c.keywords.includes(KW.TAUNT)) c.keywords.push(KW.TAUNT); } // Sargeras (Legion Invasion): future Demons have +2 Health and Taunt
 	if (c.scaleOnEntry) { const n = p.enteredCountById?.[c.id] || 0; if (n > 0) { c.attack += (c.scaleOnEntry.attack || 0) * n; c.maxHealth += (c.scaleOnEntry.health || 0) * n; } } // Astral Automaton: +1/+1 per other summoned this game
 	(p.enteredCountById = p.enteredCountById || {})[c.id] = (p.enteredCountById[c.id] || 0) + 1;
@@ -2542,6 +2543,11 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		for (let vi = p.deck.length - 1; vi > 0; vi--) { const vj = Math.floor(state.rng() * (vi + 1)); [p.deck[vi], p.deck[vj]] = [p.deck[vj], p.deck[vi]]; }
 	}
 	if (card.hauntSummon && state.cardsById[card.hauntSummon]) summon(state, pi, state.cardsById[card.hauntSummon]); // Haunting Nightmare: playing a haunted card summons a Soldier
+	if (card.followEcho && state.cardsById[card.followEcho] && card.followEchoTurn === state.turnNumber) { // Violet Hold "Follow" chain: replay the marked spell, which marks the next card too
+		const echo = state.cardsById[card.followEcho];
+		card.followEcho = null;
+		execEffects(state, pi, JSON.parse(JSON.stringify(echo.effects || [])), null, card);
+	}
 	if (p.nextClassFree && card.type === 'creature' && (card.cardClass || '').split('__').includes(p.nextClassFree) && !p._classFreeGrantedThisPlay) p.nextClassFree = null; // Blood Crusader: one-shot free minion consumed (not by the granting card)
 	p._classFreeGrantedThisPlay = false;
 	if (p.freeMinionsCount > 0 && card.type === 'creature' && !p._freeMinionGrantedThisPlay) p.freeMinionsCount--; // Anub'Rekhan: consume a free-minion charge
@@ -3135,6 +3141,7 @@ export function attack(state, pi, attackerUid, target) {
 	}
 
 	attacker.attacksUsed++;
+	if (attacker.stealthed) for (const hc of state.players[pi].hand) hc.stealthAttackedWhileHeld = (hc.stealthAttackedWhileHeld || 0) + 1; // Tricks of the Trade: a Stealthed attacker arms cards in hand
 	attacker.stealthed = false;
 	emit(state, { type: 'attack', attackerUid, target });
 	// The Ring, tier 2: whenever your Ring-bearer attacks, draw a card, then discard one
@@ -4040,6 +4047,13 @@ export function resolvePick(state, id) {
 	const chosen = pend.ids.includes(id) ? id : pend.ids[0];
 	const p = state.players[pend.player];
 	const def = state.cardsById[chosen];
+	// Frame Job: the pick is moved to the top of the opponent's deck, not taken
+	if (pend.toEnemyDeckTop != null) {
+		const fp = state.players[pend.toEnemyDeckTop];
+		const di = fp.deck.indexOf(chosen);
+		if (di >= 0) { fp.deck.splice(di, 1); fp.deck.push(chosen); } // deck.pop() draws, so push = top
+		return true;
+	}
 	// Souleater's Scythe: each consumed minion can be discovered only once
 	if (pend.soulPick && p.soulPool) { const si = p.soulPool.indexOf(chosen); if (si >= 0) p.soulPool.splice(si, 1); }
 	// Faceless Enigma: the unpicked Secret casts for your opponent
@@ -4353,6 +4367,8 @@ export function resolvePick(state, id) {
 		if (pend.darkGift) appliedGift = applyGift(state, card); // Emerald Dream: the discovered card carries a Dark Gift
 		p.hand.push(card);
 		emit(state, { type: 'conjure', player: pend.player, card, color: null });
+		// Follow the Footsteps: the card you just discovered carries the Follow mark
+		if (pend.followEchoId && state.cardsById[pend.followEchoId]) { card.followEcho = pend.followEchoId; card.followEchoTurn = state.turnNumber; }
 		// Trust Fall: the two discovered minions gain each other's Attack/Health
 		if (pend.pairFirst) p._trustPairFirst = { card, atk: card.attack, hp: card.maxHealth };
 		else if (pend.pairSecond && p._trustPairFirst) {
@@ -4678,6 +4694,7 @@ export function endTurn(state) {
 	p.nextChooseOneDiscount = 0; // Pride Seeker only lasts until used
 	p.nextChooseOneBoth = false; // Cenarion Hold only lasts this turn
 	p.nextRelicDoubleCast = false; // Relic Vault only lasts this turn
+	for (const c of p.hand) if (c.followEcho) { c.followEcho = null; c.followEchoTurn = null; } // the Follow mark lasts only the turn it was given
 	for (const c of p.hand) c.drawnThisTurn = false; // Keli'dan: "drawn this turn" resets at end of your turn
 	if (p.illuciaSwap) { p.hand = p.savedHand || []; p.savedHand = null; p.illuciaSwap = false; emit(state, { type: 'handSwap', player: pi }); } // Mindrender Illucia: hand reverts at end of turn
 	p.heroPowerTaxNext = 0; // Saboteur's Hero Power tax only lasts this turn

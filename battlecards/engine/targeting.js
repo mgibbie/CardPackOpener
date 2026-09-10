@@ -16,6 +16,8 @@ import {
 } from '../engine.js';
 
 const CHOSEN = {
+	'silent-strike': { creature: 'creature' }, // Silent Strike
+	'tricks-of-the-trade': { any: 'any' }, // Tricks of the Trade
 	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
 	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },

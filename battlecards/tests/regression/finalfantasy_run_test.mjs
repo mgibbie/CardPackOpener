@@ -89,6 +89,14 @@ function bootWith(seatChar, oppChar = 'Cloud') {
   ok('player 0 power name matches HERO_POWERS[Cloud]', st.players[0].heroPowers.some(hp => hp.name === 'Cross-Slash'));
   ok('player 1 power name matches Sephiroth', st.players[1].heroPowers.some(hp => hp.name === 'Supernova')); }
 
+// A hero power goes on the stack whenever an opponent holds a possible response,
+// which depends on the shuffle (and so on the size of the card pool). Drain the
+// stack before asserting so these checks measure the power, not the deal.
+const settle = (st) => {
+  for (let i = 0; i < 8 && st.stack && st.stack.length; i++) {
+    for (let pi = 0; pi < st.players.length; pi++) if (st.priority === pi) E.resolveResponse(st, pi, null);
+  }
+};
 const put = (st, pi, id) => { const c = E.instantiate(cardsById[id], pi); c.zone = 'board'; c.sick = false; st.players[pi].board.push(c); E.recomputeAuras(st); return c; };
 function powerTarget(power, friendlyUid, foeUid) {
   const toks = (power.effects || []).map(e => e.target).filter(Boolean);
@@ -103,7 +111,7 @@ for (const ch of ALL_CHARS) {
   const hp = st.players[0].heroPowers.find(h => h.name === power.name);
   ok(`${ch}: power '${power.name}' installed on hero (cost ${power.cost})`, !!hp && hp.power && hp.power.cost === power.cost, hp && hp.power && hp.power.cost);
   let threw = null;
-  try { E.useHeroPower(st, 0, hp.uid, powerTarget(power, fr.uid, foe.uid), null); if (st.scryQueue && st.scryQueue.length) E.resolveScry(st, []); E.sweepDeaths(st); } catch (e) { threw = e; }
+  try { E.useHeroPower(st, 0, hp.uid, powerTarget(power, fr.uid, foe.uid), null); settle(st); if (st.scryQueue && st.scryQueue.length) E.resolveScry(st, []); E.sweepDeaths(st); } catch (e) { threw = e; }
   ok(`${ch}: hero power '${power.name}' fires without throwing`, !threw, threw && threw.message);
   const v = validateGameState(st); ok(`${ch}: state valid after firing '${power.name}'`, !v || v.length === 0, v);
 }
@@ -111,15 +119,15 @@ for (const ch of ALL_CHARS) {
 // spot-check a few power EFFECTS actually happened
 { const st = bootWith('Yuna'); const b0 = st.players[0].board.length;
   const hp = st.players[0].heroPowers.find(h => h.name === 'Grand Summon');
-  E.useHeroPower(st, 0, hp.uid, null, null);
+  E.useHeroPower(st, 0, hp.uid, null, null); settle(st);
   ok('Yuna Spiritsummon adds a Spirit token', st.players[0].board.length === b0 + 1 && st.players[0].board.some(c => c.tribe === 'Spirit'), st.players[0].board.map(c => c.tribe)); }
 { const st = bootWith('Cecil'); st.players[0].life -= 5; const l0 = st.players[0].life;
   const hp = st.players[0].heroPowers.find(h => h.name === 'Cover');
-  E.useHeroPower(st, 0, hp.uid, null, null);
+  E.useHeroPower(st, 0, hp.uid, null, null); settle(st);
   ok('Cecil Cover gains 3 life', st.players[0].life === l0 + 3, [l0, st.players[0].life]); }
 { const st = bootWith('Fandaniel, Telophoroi Ascian'); const f1 = put(st, 1, '_v'); const f2 = put(st, 1, '_v');
   const hp = st.players[0].heroPowers.find(h => h.name === 'Spread Despair');
-  E.useHeroPower(st, 0, hp.uid, null, null); E.sweepDeaths(st);
+  E.useHeroPower(st, 0, hp.uid, null, null); settle(st); E.sweepDeaths(st);
   ok('Fandaniel damages all enemy creatures', st.players[1].board.length === 2 && st.players[1].board.every(c => (c.damage || 0) >= 1), st.players[1].board.map(c => c.damage)); }
 
 console.log(`${pass} passed, ${fail} failed`);

@@ -150,8 +150,10 @@ register('summon-random-armor-cost', ({ state, pi, target, source, enemies, scal
 
 
 register('summon-for-player', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
-			// helper: summon a token for a specific player (used by Blightfang's granted deathrattle)
-			const owner = e.player != null ? e.player : pi;
+			// helper: summon a token for a specific player (used by Blightfang's granted
+			// deathrattle). forOpponent flips it to the other side, which is how an
+			// Imp-formant drawn out of the enemy deck summons for its Warlock instead.
+			const owner = e.forOpponent ? (opponentsOf(state, pi)[0] ?? pi) : e.player != null ? e.player : pi;
 			if (state.cardsById[e.summonId]) summon(state, owner, state.cardsById[e.summonId]);
 });
 
@@ -1818,4 +1820,36 @@ register('draw-minions-swap-health', ({ state, pi }, e) => {
 		const h0 = drawn[0].maxHealth, h1 = drawn[1].maxHealth;
 		drawn[0].maxHealth = h1; drawn[1].maxHealth = h0;
 	}
+});
+
+// Desperate Bribe: both players get two random 2-Cost minions, then YOUR half
+// is upgraded a rung — each of your minions becomes a random one costing (1) more.
+register('desperate-bribe', ({ state, pi }, e) => {
+	const cost = e.cost ?? 2;
+	const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === cost
+		&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+	if (pool.length) for (let idx = 0; idx < state.players.length; idx++) {
+		if (state.players[idx].eliminated) continue;
+		for (let n = 0; n < (e.count || 2); n++) summon(state, idx, pool[Math.floor(state.rng() * pool.length)]);
+	}
+	execEffects(state, pi, [{ type: 'transform-all-friendly-costplus', costDelta: e.costDelta || 1 }], null, null);
+});
+
+// The friendly-side mirror of transform-all-enemies-costplus (Devolve).
+register('transform-all-friendly-costplus', ({ state, pi }, e) => {
+	const delta = e.costDelta || 1;
+	const board = state.players[pi].board;
+	for (let i = 0; i < board.length; i++) {
+		const c = board[i];
+		if (isDead(c) || c.type !== 'creature') continue;
+		const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.cost || 0) === (c.cost || 0) + delta
+			&& !d.token && d.collectible !== false && !d.companion && !d.commander && !(d.colors && d.colors.length));
+		if (!pool.length) continue;
+		const def = pool[Math.floor(state.rng() * pool.length)];
+		const rep = instantiate(def, pi);
+		rep.zone = 'board'; rep.sick = c.sick;
+		board[i] = rep; c.zone = 'gone';
+		emit(state, { type: 'transformed', uid: c.uid, player: pi, from: c.name, card: rep });
+	}
+	recomputeAuras(state);
 });
