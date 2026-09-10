@@ -1,89 +1,82 @@
-# Battlecards — HS Spell Import Plan (scoping)
+# Battlecards — HS Spell Import Plan (status)
 
-_Scoped from `tools/data/hs_cards_full.json` (the HearthstoneJSON dump that fed the
-4,502-minion import) vs. `battlecards/cards.json`._
+_Re-scoped against the HearthstoneJSON dump (`tools/data/hs_cards_full.json`,
+regenerated from HearthSim `CardDefs.xml` build 251951) vs. `battlecards/cards.json`._
 
-## The gap
+## Status: the HS constructed-spell import is COMPLETE
+
+The original version of this plan (written against a much older dump) reported
+1,351 missing spells, a blocked Relic mechanic and a missing Relic Vault. All
+three are stale — that work landed in the intervening waves. Measured fresh:
 
 | Card type | HS collectible (unique) | In cards.json | Missing |
 |-----------|------------------------:|--------------:|--------:|
-| Minions   | ~4,500                  | 4,502         | ~0 (complete) |
-| Weapons   | 200                     | 200           | 0 (complete) |
-| Locations | 52                      | 51            | 1 (Relic Vault — blocked on Relic mechanic) |
-| **Spells**| **1,820**               | **~469 by name*** | **1,351** |
+| Minions   | 4,745                   | 4,502+        | ~0 |
+| Weapons   | 245                     | 200+          | ~0 |
+| Locations | 62                      | 62            | **0** |
+| **Spells**| **2,150**               | **2,150**     | **0** |
 
-\* Most "matches" are name collisions with homebrew/WUBRG/paper cards — only ~34
-spells have real HS expansion set codes. **HS spells were essentially never
-imported.** The 787 spell-type cards in the game are overwhelmingly non-HS:
-`hsx` 151, `wubrg` 108, `hs` 98, `paper` 82, `(none)` 174, plus run-mode pools
-(Tombs 56 / Duels 43 / Heist 41).
+Of the 2,150 HS collectible constructed spells, 2,099 match a `cards.json` card
+of the same class outright; the remaining 51 were checked by hand and are either
+dual-class cards (HS class `INVALID` → `druid__demon_hunter` and friends) or
+genuine name collisions (below).
 
-## Why this is authoring, not a data copy
+### The Relic package (was "blocked")
+Fully built and covered by `tests/regression/relics_test.mjs`:
+`relic_of_extinction`, `relic_of_phantasms`, `relic_of_dimensions` (all
+`relic: true`, scaling via `improveScaled` off `player.relicImprove`) plus the
+`relic_vault` location and its `next-relic-double-cast` tap. HS locations are
+62/62.
 
-The minions bulk-imported because HearthstoneJSON structures their stats/tribe/
-keywords. **Spells are pure effect text, which the DB does NOT translate into engine
-effects.** There is no text→effect importer in `tools/`. So each spell needs its
-`effects` JSON authored — exactly like the weapon/location waves (waves 19–39).
+### The last 14 (imported in the Violet Hold wave)
+`ESCAPEFROM_VIOLET_HOLD` spells were the only real remainder — the set's weapons
+and locations had landed but its spells never did. All 14 are now in under set
+code `VIOLET_HOLD`, covered by `tests/regression/violethold_spells_test.mjs`:
 
-The upside: the engine already has **~1,008 effect types** and supports nearly every
-HS keyword (Discover, Secret, Combo, Choose One, Corrupt, Forge, Dredge, Overload,
-Outcast, Quickdraw, Lifesteal…), so most spells map to **existing** effects.
+- **Warrior** — `land_ho`, `hook_n_heave`, `follow_the_fuse`
+- **Priest** — `haunt`, `follow_the_ghosts`, `slime_em`
+- **Rogue** — `follow_the_footsteps`, `silent_strike`, `tricks_of_the_trade`
+- **Warlock** — `follow_the_evidence`, `frame_job`, `harsh_sentence`
+- **Demon Hunter** — `soul_immolation`
+- **Shaman** — `desperate_bribe`
 
-## Buildability of the 1,351 missing spells
+Supporting tokens: `cap_cannoneer`, `cap_spooky_ghost`, `cap_impformant`, and the
+`collapsing_star` Hero Power.
 
-Bucketed by leading text pattern:
+## Known, deliberate non-imports
 
-| Bucket | Count | Maps to |
-|--------|------:|---------|
-| deal-damage | 195 | `damage` |
-| discover | 142 | `discover` |
-| buff-stats | 120 | `buff` / `grant` |
-| summon | 117 | `summon` / `summon-random` |
-| draw | 54 | `draw` |
-| secret | 50 | secret infra |
-| destroy | 49 | `destroy` |
-| transform | 26 | transform effects |
-| restore-heal | 20 | `heal` |
-| armor | 16 | `armor` |
-| freeze | 12 | `freeze` |
-| silence | 9 | `silence` |
-| gain-mana | 6 | mana effects |
-| **template-simple subtotal** | **~816 (60%)** | existing effects, data-only |
-| **bespoke / multi-clause tail** | **~535 (40%)** | some need new effects |
+Eight HS spells share a name with an existing non-HS card and were left alone by
+owner decision — importing them would put two cards with one display name in the
+pool. Revisit only if disambiguated ids are wanted:
 
-Missing by class (even spread): Priest 151, Warlock 146, Mage 144, Hunter 131,
-Rogue 129, Paladin 129, Druid 121, Shaman 115, Warrior 110, Demon Hunter 93,
-Death Knight 54, Neutral 18.
+| HS card | class | collides with |
+|---|---|---|
+| Bear Trap | Hunter | `bounty_hunter` trap of the same name |
+| Counterspell | Mage | WUBRG neutral instant |
+| Lightning Bolt | Shaman | WUBRG neutral instant |
+| Naturalize | Druid | WUBRG neutral instant |
+| Divination | Mage | WUBRG neutral sorcery |
+| Flame Geyser | Mage | neutral `UNGORO` import |
+| Mirror Image | Mage | neutral `ICECROWN` import |
+| Wanted Poster | Neutral | `bounty_hunter` hero power |
 
-Missing by school: (none) 677, Shadow 191, Nature 127, Holy 103, Arcane 80,
-Fire 76, **Fel 57**, Frost 40. _(The Fel 57 includes the DH Relic spells — importing
-them unblocks Relic Vault, the last location.)_
+## Regenerating the source dump
 
-## Recommended execution
+`tools/data/hs_cards_full.json` is gitignored (large third-party data). Rebuild it
+from the HearthSim definitions when a fresh session needs it:
 
-Two viable modes; recommend **B**, falling back to A for the hard tail.
+```
+curl -sS -o CardDefs.xml https://raw.githubusercontent.com/HearthSim/hsdata/master/CardDefs.xml
+curl -sS -o enums.py    https://raw.githubusercontent.com/HearthSim/python-hearthstone/master/hearthstone/enums.py
+# parse Entity/Tag pairs into HearthstoneJSON shape (id/name/text/cost/set/cardClass/type/rarity/collectible)
+```
 
-**A. Manual waves** (proven, waves 19–39): highest quality, but 1,351 spells at a
-careful pace is impractical alone.
+`api.hearthstonejson.com` and the community card-DB sites are blocked by the
+sandbox egress policy; `raw.githubusercontent.com` is reachable, so the HearthSim
+XML is the practical source of truth.
 
-**B. Multi-agent workflow** (opted into earlier): fan out per-class/per-batch agents
-that author each spell's `effects` JSON constrained to the engine's real effect
-vocabulary, then a strict validator (every effect/event/condition checked against the
-registry) + smoke test before append — the exact harness used for the weapon-wiring +
-adversarial-verify workflow earlier in the project. Ideal for the ~816 template-simple
-spells. Reserve manual waves for the ~535 bespoke tail (new mechanics/effects).
+## What is actually left
 
-### Suggested order
-1. **Fel/DH batch first** — clears the Relic spells → unblocks Relic Vault → HS
-   location set 52/52 complete.
-2. Template-simple by class (workflow), class at a time, ~100–150 each.
-3. Bespoke tail by mechanic family (manual waves): quests, twinspell, side-quests,
-   the multi-clause 535.
-
-### Guardrails (unchanged from weapon/location waves)
-- Web-verify or source-DB-verify each card's exact text before authoring.
-- Surgical append to `cards.json` (2-space, CRLF); dedupe by id.
-- Per-batch regression test; full `tests/run-all.mjs` + fuzz green before commit.
-- Bump the registry-count assertion whenever new effects are added.
-- `gen_battlecards_design.py` already emits an "unimported HS cards" backlog — it can
-  seed the worklist.
+Nothing in the HS constructed-spell backlog. Remaining HS-adjacent work is the
+non-constructed pools (Battlegrounds, Mercenaries, the adventure/boss decks) and
+the eight name collisions above — all of which are design calls, not imports.
