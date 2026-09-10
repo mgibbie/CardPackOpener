@@ -69,9 +69,10 @@ async function load() {
 	$('daily').innerHTML = '';
 	let data;
 	try {
-		const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'stats', days }) });
+		const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (localStorage.getItem('magepunk_mp_token_v1') || '') }, body: JSON.stringify({ action: 'stats', days }) });
 		data = await r.json();
 	} catch (e) { $('msg').textContent = 'Could not load stats (' + (e.message || 'error') + ').'; return; }
+	if (data && data.error) { $('msg').innerHTML = 'Owner only — <a href="/login/?next=' + encodeURIComponent(location.pathname) + '" style="color:#9d8fd4">log in</a> as the owner to view usage stats.'; return; }
 	const list = (data && data.days) || [];
 	if (!list.length) { $('msg').textContent = 'No data yet — open a few pages, then refresh.'; return; }
 	$('msg').textContent = '';

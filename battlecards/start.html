@@ -395,6 +395,9 @@
 	.mm-cancel:hover { border-color: var(--violet); }
 	.mm-deck { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
 	.mm-deck:hover { border-color: var(--blue); }
+	.mm-deck:disabled { opacity: .45; cursor: not-allowed; }
+	.mm-deck:disabled:hover { border-color: var(--border); }
+	.mm-illegal { display: block; color: #ff8f7a; font-size: .78rem; font-weight: 400; margin-top: 2px; }
 	.mm-deck .cls { color: var(--muted); font-size: .82rem; text-transform: capitalize; }
 	.mm-size-block { margin-bottom: 16px; }
 	.mm-size-label { color: var(--muted); font-size: .82rem; margin-bottom: 8px; }
@@ -421,19 +424,30 @@
 		}
 	})();
 
-	// shared deck chooser: matchmaking shows the table-size row, async hides it
-	async function openDeckPick(onPick, showSizes) {
+	// correspondence bans countering cards: fetch the server's (tiny) ban list once
+	// so illegal decks are flagged right here in the picker instead of bouncing off
+	// the server or the game-boot pre-flight after the player already committed
+	let corrBansP = null;
+	const corrBans = () => corrBansP || (corrBansP = fetch('/server/correspondence-bans.json')
+		.then(r => r.json()).then(a => new Set(a)).catch(() => null));
+
+	// shared deck chooser: matchmaking shows the table-size row, async hides it;
+	// corrCheck greys out decks that aren't correspondence-legal
+	async function openDeckPick(onPick, showSizes, corrCheck) {
 		if (!MP.hasToken()) { location.href = '../login/?next=' + encodeURIComponent('/battlecards/start.html'); return; }
 		let st; try { st = await MP.freshState(); } catch { st = MP.cachedState(); }
 		const decks = (st && st.decks) || [];
 		if (!decks.length) { location.href = 'deck.html'; return; }
+		const bans = corrCheck ? await corrBans() : null; // null = list unavailable; the server still validates
 		const sz = document.querySelector('.mm-size-block');
 		if (sz) sz.style.display = showSizes ? '' : 'none';
 		const list = $('mm-decks'); list.innerHTML = '';
 		for (const d of decks) {
 			const b = document.createElement('button'); b.className = 'mm-deck';
-			b.innerHTML = `<span>${esc(d.name || 'Deck')}</span><span class="cls">${esc(d.classId || '')}</span>`;
-			b.addEventListener('click', () => { $('mm-deckpick').hidden = true; onPick(d); });
+			const bad = bans ? [d.commander, d.companion, ...(d.cards || [])].filter(id => id && bans.has(id)).length : 0;
+			b.innerHTML = `<span>${esc(d.name || 'Deck')}${bad ? `<span class="mm-illegal">⛔ ${bad} countering card${bad === 1 ? '' : 's'} — banned in correspondence</span>` : ''}</span><span class="cls">${esc(d.classId || '')}</span>`;
+			if (bad) { b.disabled = true; b.title = 'Correspondence is its own format: countering cards are banned. Edit this deck to play it by mail.'; }
+			else b.addEventListener('click', () => { $('mm-deckpick').hidden = true; onPick(d); });
 			list.appendChild(b);
 		}
 		$('mm-deckpick').hidden = false;
@@ -681,7 +695,7 @@
 				};
 				if (m.yourInvite) {
 					btn('Accept', 'cr-play', () => window.__openDeckPick(d =>
-						{ location.href = `index.html?async=${encodeURIComponent(m.id)}&adeck=${encodeURIComponent(d.id)}`; }, false));
+						{ location.href = `index.html?async=${encodeURIComponent(m.id)}&adeck=${encodeURIComponent(d.id)}`; }, false, true));
 					btn('Decline', '', async () => { await MP.call('async-resign', { id: m.id }).catch(() => {}); refresh(); });
 				} else if (m.status === 'invited') {
 					btn('Cancel', '', async () => { await MP.call('async-resign', { id: m.id }).catch(() => {}); refresh(); });
@@ -701,7 +715,7 @@
 				const party = { deck: d.cards, classId: d.classId, commander: d.commander || null, companion: d.companion || null };
 				const r = await MP.call('async-create', { to, party }).catch(e => ({ error: e.message }));
 				if (r.error) alert(r.error); else refresh();
-			}, false);
+			}, false, true);
 		});
 		refresh();
 	}

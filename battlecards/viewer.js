@@ -4,9 +4,10 @@
 import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260831j';
 import { keywordsFor, richHtml } from './keywords.js?v=20260831j';
 
-// cache-busting: this module's own ?v=… (from viewer.html) is reused for the
-// cards.json fetch so a version bump refreshes code and data together
-const CB = new URL(import.meta.url).search;
+// cards.json is fetched PLAIN (no ?v=): game.js/deck.js/packs.js and index.html's
+// preload all use the bare URL, so the gallery shares their cache entry instead of
+// double-downloading 4MB under a second key. _headers caps JSON at max-age=300,
+// so a deploy still reaches gallery clients within minutes.
 
 // small keyword-explanation lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -288,7 +289,7 @@ async function renderPage() {
 	for (const card of pageCards) grid.appendChild(tileFor(card));
 }
 
-fetch('cards.json' + CB)
+fetch('cards.json')
 	.then(r => r.json())
 	.then(async data => {
 		let mpOwned = null;
