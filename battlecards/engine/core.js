@@ -26,6 +26,7 @@ export const KW = {
 	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
 	EPHEMERAL: 'ephemeral', // destroyed at the end of your turn
 	SMOLDERING: 'smoldering', // 50% chance to Burn any creature that survives combat with it
+	FRIGID: 'frigid',     // 50% chance to Freeze any creature that survives combat with it
 	CASCADE: 'cascade',   // on cast: cast the first cheaper card off your deck free (random targets)
 };
 
@@ -43,6 +44,12 @@ function maybeBurn(state, c) {
 	c.burned = true;
 	c.attack = Math.floor((c.attack || 0) / 2);
 	emit(state, { type: 'burned', uid: c.uid, name: c.name, attack: c.attack });
+}
+// Frigid: 50% chance to Freeze a surviving combatant (a Frozen character skips
+// its next attack — same condition Freeze effects apply).
+function maybeFreeze(state, c) {
+	if (!c || c.frozen || isDead(c) || state.rng() >= 0.5) return;
+	freezeCreature(state, c);
 }
 
 // Firebreathing grants a repeatable activated ability (spend 1 mana → +1 Attack
@@ -3264,6 +3271,9 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// Smoldering: 50% chance to Burn whichever combatant survives against it
 		if (has(attacker, KW.SMOLDERING)) maybeBurn(state, defender);
 		if (has(defender, KW.SMOLDERING)) maybeBurn(state, attacker);
+		// Frigid: 50% chance to Freeze whichever combatant survives against it
+		if (has(attacker, KW.FRIGID)) maybeFreeze(state, defender);
+		if (has(defender, KW.FRIGID)) maybeFreeze(state, attacker);
 		// cleave: the hit splashes onto the defender's board neighbors
 		if (has(attacker, KW.CLEAVE)) {
 			const db = state.players[target.player].board;
