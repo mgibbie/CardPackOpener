@@ -693,17 +693,6 @@ export default async function handler(req, env) {
 		}
 		return json({ ok: true });
 	}
-	if (action === 'stats') {
-		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
-		const now = Date.now(), days = [];
-		for (let i = 0; i < n; i++) {
-			const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
-			const doc = await store.get('stat:' + day);
-			if (doc) days.push({ date: day, counts: doc });
-		}
-		return json({ days });
-	}
-
 	// ---------- client error beacon (uncaught crashes → a daily rollup) ----------
 	// So a crash for a real player surfaces (view at /errors.html) instead of dying
 	// silently in their console. Unauthenticated + no PII (message/location/browser
@@ -725,17 +714,6 @@ export default async function handler(req, env) {
 		}
 		return json({ ok: true });
 	}
-	if (action === 'errors') {
-		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
-		const now = Date.now(), days = [];
-		for (let i = 0; i < n; i++) {
-			const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
-			const doc = await store.get('err:' + day);
-			if (doc) days.push({ date: day, errors: doc });
-		}
-		return json({ days });
-	}
-
 	// ---------- shared game replays ----------
 	// A shared replay is a packed tape (client codec: gzipped snapshots). Uploading
 	// one (replay-put) requires a token; VIEWING one (replay-get) is public so a
@@ -794,6 +772,22 @@ export default async function handler(req, env) {
 	if (accruePacks(user, Date.now())) await store.setJSON(username, user); // drip the 12h free packs into the inbox
 
 	if (action === 'state') return json({ state: publicState(user, username) });
+
+	// ---------- owner dashboards (stats.html / errors.html) ----------
+	// Reads of the daily rollups the two anonymous beacons above feed. Owner-only:
+	// crash text, page paths, and user agents are nobody else's business.
+	if (action === 'stats' || action === 'errors') {
+		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		const kind = action === 'stats' ? 'stat:' : 'err:';
+		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
+		const now = Date.now(), days = [];
+		for (let i = 0; i < n; i++) {
+			const day = new Date(now - i * 86400000).toISOString().slice(0, 10);
+			const doc = await store.get(kind + day);
+			if (doc) days.push(action === 'stats' ? { date: day, counts: doc } : { date: day, errors: doc });
+		}
+		return json({ days });
+	}
 
 	// ---------- owner to-do inbox (Design Wiki "New Version" notes) ----------
 	// Every card page on the wiki shows the owner a note box; submissions land

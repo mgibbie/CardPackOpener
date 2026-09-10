@@ -28,7 +28,10 @@ export const ENFORCED = new Set(['Bant', 'Esper', 'Grixis', 'Jund', 'Naya', 'Jes
 const cards = JSON.parse(fs.readFileSync(CARDS, 'utf8')).cards;
 const pools = new Map();
 for (const c of cards) {
-  if (c.landSet && !c.token) {
+  // corrOnly alternates exist only in the correspondence format — counting them
+  // here would pad n and skew eff (Island once read n=83), so the audit sees
+  // each pool exactly as a normal game does
+  if (c.landSet && !c.token && !c.corrOnly) {
     if (!pools.has(c.landSet)) pools.set(c.landSet, []);
     pools.get(c.landSet).push(c);
   }
