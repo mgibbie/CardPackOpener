@@ -80,6 +80,7 @@ const K = [
 	{ p: ['Secret'], t: "Stays hidden until its trigger fires on the opponent's turn." },
 	{ p: ['Counter'], t: 'When an opponent casts a spell, you may play this in response from your hand to counter it — it goes on the stack and is stopped before it resolves.' },
 	{ p: ['Tradeable'], t: 'Drag it onto your deck to pay 1 and draw a card.' },
+	{ p: ['Bounce', 'Bounced'], t: "Return it from the battlefield to its owner's hand." },
 	{ p: ['Connect'], t: 'Triggers when this deals combat damage to a player.' },
 	{ p: ['Swing'], t: 'Triggers when this attacks.' },
 	{ p: ['Ponder'], t: 'Triggers whenever you draw an extra card (past your first draw of the turn), Scry, Dredge or Gaze.' },
