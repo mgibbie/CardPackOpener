@@ -84,6 +84,36 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(!!(await api(alice.token, 'trade-offer', { to: 'alice', mon: sparky })).error, 'offering to yourself refuses');
 		A(!!(await api(alice.token, 'trade-offer', { to: 'nobody_here', mon: sparky })).error, 'offering to a ghost refuses');
 
+		// ---- LIVE trade window (RuneScape-style session) ----
+		// The session actions were named trade-offer/trade-accept and COLLIDED with
+		// the mailbox handlers above (first match wins), so the live window could
+		// never open. Renamed trade-open/trade-update; this pins the whole session.
+		const chal = await api(alice.token, 'challenge', { to: 'bob', battleType: 'trade' });
+		A(chal.ok === true, 'alice sends a live-trade request', JSON.stringify(chal));
+		const open = await api(bob.token, 'trade-open', { from: 'alice' });
+		A(!!open.tradeId && open.trade?.a === 'alice' && open.trade?.b === 'bob', 'bob opens the live trade window', JSON.stringify(open));
+		const mine = await api(alice.token, 'trade-mine');
+		A(mine.tradeId === open.tradeId, 'alice discovers the session via trade-mine');
+		// card offers are server-validated + swapped server-side; packs too
+		const aBefore = (await api(alice.token, 'state')).state;
+		const bBefore = (await api(bob.token, 'state')).state;
+		const ownedId = Object.keys(aBefore.collection).find(id => aBefore.collection[id] >= 2);
+		A(!!ownedId && bBefore.packs >= 1, 'seed sanity: alice owns a playset card, bob has a pack');
+		const upd = await api(alice.token, 'trade-update', { id: open.tradeId, offer: { cards: { [ownedId]: 2 }, packs: 0, pokemon: [], items: [] } });
+		A(upd.trade?.offerA?.cards?.[ownedId] === 2, 'alice posts her offer (trade-update)', JSON.stringify(upd.trade?.offerA));
+		await api(bob.token, 'trade-update', { id: open.tradeId, offer: { cards: {}, packs: 1, pokemon: [], items: [] } });
+		const lockA = await api(alice.token, 'trade-lock', { id: open.tradeId, accepted: true });
+		A(lockA.trade?.acceptA === true && lockA.trade?.done === false, 'one lock arms but does not complete');
+		const lockB = await api(bob.token, 'trade-lock', { id: open.tradeId, accepted: true });
+		A(lockB.trade?.done === true, 'both locks complete the trade', JSON.stringify(lockB.trade));
+		const aAfter = (await api(alice.token, 'state')).state;
+		const bAfter = (await api(bob.token, 'state')).state;
+		A((aAfter.collection[ownedId] || 0) === aBefore.collection[ownedId] - 2 && (bAfter.collection[ownedId] || 0) === (bBefore.collection[ownedId] || 0) + 2,
+			'the cards actually moved from alice to bob', `${aBefore.collection[ownedId]} -> ${aAfter.collection[ownedId] || 0}`);
+		A(aAfter.packs === aBefore.packs + 1 && bAfter.packs === bBefore.packs - 1,
+			'and the pack moved from bob to alice', `${bBefore.packs} -> ${bAfter.packs}`);
+		A((await api(alice.token, 'trade-mine')).tradeId === null, 'a finished trade clears the session pointer');
+
 		// secret bases: save / read / directory across friends
 		const bs = await api(alice.token, 'base-save', { spot: 'Route111:27,27', deco: [{ id: 'plant', x: 3, y: 4 }, { id: 'lamp', x: 5, y: 5 }] });
 		A(bs.ok === true, "alice saves her base");

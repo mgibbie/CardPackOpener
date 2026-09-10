@@ -9035,7 +9035,7 @@ function offerRemove(r) {
 function afterOfferChange() {
 	trade.myAccept = false; trade.theirAccept = false; // any change unlocks both
 	rebuildTradeRows();
-	MP.call('trade-offer', { id: trade.id, offer: trade.mine }).then(r => r.trade && ingestTrade(r.trade)).catch(() => {});
+	MP.call('trade-update', { id: trade.id, offer: trade.mine }).then(r => r.trade && ingestTrade(r.trade)).catch(() => {});
 }
 async function tradePoll() {
 	if (!trade.open || !trade.id) return;
@@ -9148,7 +9148,7 @@ async function acceptChallengeFrom(from) {
 		type = cur.type;
 	} catch (e) { dialog.open('Could not reach the server.'); return; }
 	if (type === 'trade') {
-		try { const r = await MP.call('trade-accept', { from }); if (r && r.tradeId) openTradeWindow(r.tradeId, 'b', from); else dialog.open((r && r.error) || 'Trade could not start.'); }
+		try { const r = await MP.call('trade-open', { from }); if (r && r.tradeId) openTradeWindow(r.tradeId, 'b', from); else dialog.open((r && r.error) || 'Trade could not start.'); }
 		catch (e) { dialog.open('Trade could not start.'); }
 		return;
 	}
