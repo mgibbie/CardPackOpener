@@ -111,6 +111,9 @@ A(!/g\.includes\('ROCK'\)/.test(itemsSrc), '...anchored, so it cannot swallow OB
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'JOHTO');
+			// party without intro_done fires the boot intro-heal cutscene, which would
+			// hold the dialog box this test reads — seed the intro as complete
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		}, STATE, PARTY);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
 		const t0 = Date.now();

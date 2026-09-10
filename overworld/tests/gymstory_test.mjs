@@ -55,6 +55,9 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 				localStorage.setItem('magepunk_region', 'KANTO');
 				localStorage.setItem('magepunk_name', 'RED');
 				localStorage.removeItem('magepunk_badges_v1');
+				// party without intro_done fires the boot intro-heal cutscene, which
+				// would swallow the gym-script interactions below — seed the intro done
+				localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 				localStorage.setItem('magepunk_party_v1', JSON.stringify([{
 					speciesId: 'squirtle', name: 'SQUIRTLE', nickname: null, level: 14, gender: 'M',
 					ability: 'Torrent', types: ['Water'], ivs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
