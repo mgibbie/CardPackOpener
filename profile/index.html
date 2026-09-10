@@ -50,6 +50,20 @@
 	.ach.done .bar > span { background: var(--green); }
 	.ach .pr { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
 	.ach-summary { color: var(--muted); margin: 4px 0 0; }
+
+	/* account panel (recovery email) */
+	.acct-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+	.acct-panel label { font-weight: 600; }
+	.acct-opt { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+	.acct-line { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+	.acct-line input { flex: 1 1 220px; min-width: 0; background: var(--bg-1); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
+	.acct-line input:focus { border-color: var(--violet); outline: none; }
+	.acct-line button { background: #3a4a74; color: var(--text); border: none; border-radius: 8px; padding: 9px 16px; font: inherit; font-size: 13.5px; cursor: pointer; }
+	.acct-line button:hover { background: #4a5c8c; }
+	.acct-line button.acct-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+	.acct-line button.acct-ghost:hover { color: var(--text); border-color: var(--muted); }
+	.acct-note { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; line-height: 1.5; }
+	.acct-msg { color: var(--green); font-size: 13px; min-height: 18px; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -126,9 +140,41 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 		<h2>Achievements <span class="num">${unlocked} / ${achievements.length}</span></h2>
 		<p class="ach-summary">Earned by playing — runs, wins, packs, collecting, deckbuilding, friends, and your Pokémon journey.</p>
 		<div class="ach-grid">${achievements.map(achTile).join('')}</div>
+		<h2>Account</h2>
+		<div class="acct-panel">
+			<div class="acct-row">
+				<label for="acct-email">Recovery email <span class="acct-opt">(optional)</span></label>
+				<div class="acct-line">
+					<input id="acct-email" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email" value="${esc(s.email || '')}">
+					<button id="acct-email-save">Save</button>
+					<button id="acct-email-remove" class="acct-ghost" ${s.email ? '' : 'hidden'}>Remove</button>
+				</div>
+				<p class="acct-note">Never required. If you ever forget your password, an email on file is how we verify it's really you and restore the account — without one, a lost password loses the account. It's never shown to other players or used for anything else.</p>
+				<div class="acct-msg" id="acct-email-msg" role="status"></div>
+			</div>
+		</div>
 		<h2>Collection</h2>
 		<p>Browse every card you own in the <a href="/collection/">Collection gallery</a>.</p>
 	`;
+
+	// ---- optional recovery email (set-email; empty = remove) ----
+	const emailIn = document.getElementById('acct-email');
+	const emailMsg = document.getElementById('acct-email-msg');
+	const removeBtn = document.getElementById('acct-email-remove');
+	async function saveEmail(value) {
+		emailMsg.textContent = 'Saving…';
+		let r; try { r = await MP.call('set-email', { email: value }); } catch { r = null; }
+		if (r && r.ok) {
+			emailIn.value = r.email || '';
+			removeBtn.hidden = !r.email;
+			emailMsg.textContent = r.email ? 'Saved. This email can now vouch for your account.' : 'Removed — no email on file.';
+		} else {
+			emailMsg.textContent = (r && r.error) || 'Could not save — try again.';
+		}
+	}
+	document.getElementById('acct-email-save').addEventListener('click', () => saveEmail(emailIn.value.trim()));
+	emailIn.addEventListener('keydown', e => { if (e.key === 'Enter') saveEmail(emailIn.value.trim()); });
+	removeBtn.addEventListener('click', () => saveEmail(''));
 })();
 </script>
 	<script type="module" src="/site/topbar.js"></script>

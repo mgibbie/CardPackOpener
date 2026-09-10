@@ -81,6 +81,7 @@ const RATE_LIMITS = {
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
+	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
@@ -591,6 +592,7 @@ const publicState = (u, username) => ({
 	arenaBest: u.arenaBest || null,
 	friendCode: u.friendCode || null,
 	friends: u.friends || [],
+	email: u.email || null, // optional recovery email — SELF state only (never in pubprofile)
 	featuredClaimed: !!(u.featuredClaims && u.featuredClaims[Math.floor(Date.now() / (7 * 86400000))]), // Card of the Week already collected this week?
 });
 
@@ -772,6 +774,26 @@ export default async function handler(req, env) {
 	if (accruePacks(user, Date.now())) await store.setJSON(username, user); // drip the 12h free packs into the inbox
 
 	if (action === 'state') return json({ state: publicState(user, username) });
+
+	// ---------- optional recovery email ----------
+	// Entirely opt-in — accounts never require one. If a player forgets their
+	// password, an email on file lets the owner verify it's really them before
+	// resetting the account. Stored on the user doc; surfaced ONLY in the
+	// account's own authenticated state (publicState) — pubprofile never has it.
+	// An empty email removes it.
+	if (action === 'set-email') {
+		const email = String(body.email || '').trim().toLowerCase();
+		if (!email) {
+			delete user.email; delete user.emailSetAt;
+			await store.setJSON(username, user);
+			return json({ ok: true, email: null, state: publicState(user, username) });
+		}
+		if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: 'that does not look like an email address' }, 400);
+		user.email = email;
+		user.emailSetAt = Date.now();
+		await store.setJSON(username, user);
+		return json({ ok: true, email, state: publicState(user, username) });
+	}
 
 	// ---------- owner dashboards (stats.html / errors.html) ----------
 	// Reads of the daily rollups the two anonymous beacons above feed. Owner-only:
