@@ -39,7 +39,8 @@ const filtered = filterCorrespondence(byId, new Set());
 ok('filtered universe drops exactly the banned ids', Object.keys(byId).length - Object.keys(filtered).length === committed.length,
 	[Object.keys(byId).length, Object.keys(filtered).length, committed.length]);
 const islandPool = Object.values(filtered).filter(c => c.landSet === 'Island' && !c.token);
-ok('the Island conjure pool holds no counters', islandPool.length === 70 - 13 && islandPool.every(c => !isCounterCard(c)), islandPool.length);
+ok('the correspondence Island pool is back to 70 (57 legal + 13 alternates)', islandPool.length === 70 && islandPool.every(c => !isCounterCard(c)), islandPool.length);
+ok('the 13 alternates are corrOnly-tagged', islandPool.filter(c => c.corrOnly).length === 13, islandPool.filter(c => c.corrOnly).length);
 ok('grandfathered ids survive the filter', 'counterspell' in filterCorrespondence(byId, new Set(['counterspell'])));
 
 console.log(`${pass} passed, ${fail} failed`);

@@ -1577,6 +1577,41 @@ async function landPoolDetail(id) {
       : h('p', { class: 'muted' }, 'This land has no pool cards yet.'));
 }
 
+// ---- Correspondence (play-by-mail) format: countering is banned; the Island
+// pool swaps its 13 counterspells for 13 correspondence-only alternates.
+// Banned list derives live from battlecards/format.js (same predicate the
+// server list is generated from), alternates from the corrOnly tag.
+async function correspondenceView() {
+  content.replaceChildren(h('h1', null, 'Correspondence Format'), h('p', { class: 'muted' }, 'Loading cards…'));
+  let cards, fmt;
+  try {
+    [cards, fmt] = await Promise.all([loadCards(), import('../battlecards/format.js'), loadCardart().then(() => null)]);
+  } catch (e) { return content.replaceChildren(h('h1', null, 'Correspondence Format'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
+  if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'correspondence') return;
+  const banned = cards.filter(c => !c.token && fmt.isCounterCard(c))
+    .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  const alts = cards.filter(c => c.corrOnly)
+    .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  await CardArt.preloadArt([...banned, ...alts].map(c => c.id));
+  content.replaceChildren(
+    h('div', { class: 'gallery-heading' },
+      h('div', null, h('h1', null, 'Correspondence Format'),
+        h('p', { class: 'muted' },
+          'Play-by-mail is its own format: there are no mid-turn response windows, so every card that counters spells is banned — ',
+          'decks containing them cannot enter a correspondence match, and in-game generation never produces them. ',
+          'Secrets, traps and other pre-committed reactions still work. ',
+          'The Island basic-land pool replaces its 13 banned counterspells with 13 correspondence-only alternates (below), keeping every basic pool at 70 cards.')),
+      h('div', { class: 'result-count' }, banned.length + alts.length, h('span', null, ' cards'))),
+    h('section', null,
+      h('h2', null, 'Banned cards ', h('span', { class: 'num' }, '(' + banned.length + ')')),
+      h('p', { class: 'muted' }, 'Everything that counters spells, in any mode or trigger. (+1/+1 “counter” cards are unaffected.)'),
+      h('div', { class: 'card-grid size-medium' }, ...banned.map(cardTile))),
+    h('section', null,
+      h('h2', null, 'Island pool alternates ', h('span', { class: 'num' }, '(' + alts.length + ')')),
+      h('p', { class: 'muted' }, 'Blue tempo without countering — freezes, bounces, pre-committed secrets and card flow. These cards appear ONLY in correspondence matches (the Island land conjures them there instead of the banned counterspells).'),
+      h('div', { class: 'card-grid size-medium' }, ...alts.map(cardTile))));
+}
+
 // ---- Lorequest character decks: 37 base decks (16 planeswalkers + 21 bosses),
 // each 15 uncollectible cards run as 2 copies (a 30-card deck). Data mirrors the
 // loreDeck tag in cards.json + the rosters/class map in battlecards/lorequest.js.
@@ -2144,6 +2179,7 @@ function route() {
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();
+  if (section === 'correspondence') return correspondenceView();
   if (section === 'lore-decks') return id ? lorequestDeckDetail(id) : lorequestView();
   if (section === 'middle-earth') return id ? middleEarthDeckDetail(id) : middleEarthView();
   if (section === 'sword-coast') return id ? swordCoastDeckDetail(id) : swordCoastView();

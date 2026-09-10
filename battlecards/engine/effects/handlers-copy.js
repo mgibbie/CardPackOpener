@@ -952,6 +952,9 @@ register('discover', ({ state, pi, target, source, enemies, scaled, hm, pickEnem
 			const diedDefs = () => [...new Set(state.players[pi].deathLogIds)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature'); // Body Wrapper
 			const discoverCost = e.costFromMana ? availableMana(state.players[pi]) : e.cost; // Scrappy Scavenger: Cost = your remaining Mana
 			const discoverPool = () => (e.fromEnemyDeck ? enemyDeckDefs() : e.fromEnemyHand ? enemyHandDefs() : e.fromDied ? diedDefs() : e.fromOwnDeck ? ownDeckDefs() : Object.values(state.cardsById)).filter(d => {
+				// correspondence-only alternates exist solely in play-by-mail games
+				// (the format that bans countering); normal pools never offer them
+				if (d.corrOnly && !state.noInstantResponses) return false;
 				// an advanced land's fixed set (e.g. Abzan): draw ONLY its members, which are
 				// uncollectible + colored on purpose, so bypass the usual exclusions below
 				if (e.landSet) return d.landSet === e.landSet && !d.token;
@@ -1201,8 +1204,9 @@ register('swap-with-hand', ({ state, pi, target, source, enemies, scaled, hm, pi
 const _h_conjure = ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
 			// create a random card from outside the game: by color, or by a
-			// named theme pool (falling back to any colored card, then anything)
-			const defs = Object.values(state.cardsById).filter(d => d.type !== 'land');
+			// named theme pool (falling back to any colored card, then anything).
+			// Correspondence-only alternates join pools ONLY in play-by-mail games.
+			const defs = Object.values(state.cardsById).filter(d => d.type !== 'land' && (!d.corrOnly || state.noInstantResponses));
 			let pool;
 			if (e.landSet) {
 				// a land's fixed set (Plains/Island/…/Abzan) — its members are uncollectible on

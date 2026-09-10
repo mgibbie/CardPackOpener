@@ -13,9 +13,16 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Island');
+const pool = raw.cards.filter(c => c.landSet === 'Island' && !c.corrOnly);
 // ---- rubric ----
 ok('Island pool has 70 cards', pool.length === 70, pool.length);
+
+// ---- correspondence alternates: 13 corrOnly stand-ins for the banned counters ----
+{ const alts = raw.cards.filter(c => c.landSet === 'Island' && c.corrOnly);
+  ok('13 correspondence-only Island alternates exist', alts.length === 13, alts.length);
+  ok('alternates are mono-U, uncollectible, no rarity', alts.every(c => JSON.stringify(c.colors) === '["U"]' && c.collectible === false && !('rarity' in c)));
+  ok('alternates never counter (format-legal)', alts.every(c => !c.counterSpell && !c.counter), alts.filter(c => c.counterSpell).map(c => c.id));
+  ok('together they restore a 70-card correspondence pool', pool.length - 13 + alts.length === 70); }
 const types = new Set(pool.map(c => c.type));
 ok('spans >=6 card types incl artifact/location', types.size >= 6 && ['artifact', 'location', 'enchantment', 'instant'].every(t => types.has(t)), [...types]);
 const kws = new Set(pool.flatMap(c => c.keywords || []));
