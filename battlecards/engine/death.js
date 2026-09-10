@@ -57,6 +57,7 @@ export function sweepDeaths(state) {
 			if (state.cardsById[c.id] && !c.token) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
+				(p.deathLogMeta = p.deathLogMeta || []).push({ id: c.id, turn: state.turnNumber }); // Devout Blessings: deaths are turn-stamped
 					(p.diedCountById = p.diedCountById || {})[c.id] = (p.diedCountById[c.id] || 0) + 1; // Elwynn Boar
 					if ((c.keywords || []).includes('deathrattle')) p.lastDeathrattleDied = c.id; // Monstrous Parrot
 			}

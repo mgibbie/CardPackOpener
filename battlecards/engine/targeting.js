@@ -18,6 +18,12 @@ import {
 const CHOSEN = {
 	'silent-strike': { creature: 'creature' }, // Silent Strike
 	'tricks-of-the-trade': { any: 'any' }, // Tricks of the Trade
+	// Duels active treasures (2026-09 wave)
+	'steal-stats-random-friendly': { 'enemy-creature': 'enemy-creature' }, // Slate's Syringe
+	'destroy-target-hero-gains': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Soulstone Trap
+	'mask-of-mimicry': { creature: 'creature' }, // Mask of Mimicry
+	'contagion-infect': { creature: 'creature' }, // Contagion Concoction
+	'acquired-allies': { creature: 'creature' }, // Acquired Allies
 	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
 	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },

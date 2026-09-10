@@ -64,6 +64,7 @@ export function damageCreature(state, target, amount, source) {
 		return 0;
 	}
 	if (target.frozen && amount > 0) { for (let fsi = 0; fsi < state.players.length; fsi++) if (fsi !== target.controller && state.players[fsi].freezeSolid) { amount += 2; break; } } // Freeze Solid (Duels): +2 damage to Frozen enemies
+	if (amount > 0 && state.players[target.controller].takesDoubleMinions) amount *= 2; // Uber Apocalypse (Duels): enemy characters take double damage
 	if (amount > 2 && state.players[target.controller].board.some(c => c.damageCapAura && !isDead(c))) amount = 2; // Amitus, the Peacekeeper: your minions can't take more than 2 damage at a time
 	if (target.damageCapSelf != null && amount > target.damageCapSelf) amount = target.damageCapSelf; // Draconic Delicacy: can only take N damage at a time
 	const _hpBefore = hp(target);
@@ -79,6 +80,13 @@ export function damageCreature(state, target, amount, source) {
 		execEffects(state, source.controller, JSON.parse(JSON.stringify(fx)), null, source);
 	}
 	if (source && source.type === 'creature') target._lastDamagerUid = source.uid; // Faceless Replicator (uid, not ref — refs duplicate on snapshot round-trip)
+	// Remembrance of Ice (Duels): the CASTER remembers creatures its Frost spells
+	// kill — via runSpell's resolving-spell flag, since the damage branches don't
+	// thread `source` (the Urchin Spines scoping trick)
+	if (state._frostSpellCaster != null && amount > 0 && target.damage >= target.maxHealth && !target.token) {
+		const _sp = state.players[state._frostSpellCaster];
+		if (_sp) (_sp.frostKillIds = _sp.frostKillIds || []).push(target.id);
+	}
 	warptoothCheck(state, target.controller);
 	if (target.damage === target.maxHealth) state.exactKills = (state.exactKills || 0) + 1;
 	if (source) {
@@ -131,6 +139,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	const p = state.players[pi];
 	if (staticValue(p, 'life-locked') > 0) return 0; // Platinum Emperion: you can't lose Life
 	if (p.weapon?.doubleHeroDamage) amount *= 2; // Cursed Blade: double all damage dealt to your hero
+	if (p.takesDoubleHero) amount *= 2; // Apocalypse / Uber Apocalypse (Duels): this hero takes double damage for the rest of the game
 	if (p.heroDamageCapUntilTurn != null && state.turnNumber < p.heroDamageCapUntilTurn && amount > (p.heroDamageCap || 1)) amount = p.heroDamageCap || 1; // Solid Alibi: only 1 damage at a time until your next turn
 	if (p.weapon?.absorbHeroDamageToWeapon && amount > 0) { // Bulwark of Azzinoth: the weapon loses 1 Durability instead
 		p.weapon.durability -= 1;

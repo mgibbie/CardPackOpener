@@ -155,7 +155,7 @@ export function generateEnemy(cardsById, character, wins, rng) {
 // the treasure pool for YOUR milestone rewards — the 20 Marvel-specific treasures (mvTreasure)
 // plus the shared DUELS treasures. The enemy draws from the SAME pool at parity.
 export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => d.mvTreasure || (d.treasure && d.set === 'DUELS'));
+	return Object.values(cardsById).filter(d => d.mvTreasure || (d.treasure && d.set === 'DUELS') || d.duelsTreasure);
 }
 
 // ---------- character progression ----------

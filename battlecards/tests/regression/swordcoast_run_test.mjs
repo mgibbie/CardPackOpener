@@ -65,7 +65,7 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
 { const rng = seededRng(9); const sp = SC.spoilsChoices(cardsById, 'Bhaal, Lord of Murder', rng, 3);
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].scDeck === 'Bhaal, Lord of Murder'), sp); }
 ok('treasurePool returns DUELS treasures', SC.treasurePool(cardsById).length > 0
-  && SC.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.scTreasure));
+  && SC.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.scTreasure));
 // 20 Sword Coast treasures: neutral, NO rarity, uncollectible, scTreasure:true, in the pool, but
 // treasure:false so they don't leak into the shared heist/tombs/duels pools.
 { const pool = SC.treasurePool(cardsById);

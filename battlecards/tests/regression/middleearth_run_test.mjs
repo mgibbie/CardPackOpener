@@ -66,7 +66,7 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
 { const rng = seededRng(9); const sp = ME.spoilsChoices(cardsById, 'The Balrog', rng, 3);
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].meDeck === 'The Balrog'), sp); }
 ok('treasurePool returns DUELS treasures + The One Ring', ME.treasurePool(cardsById).length > 0
-  && ME.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.meTreasure)
+  && ME.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.meTreasure)
   && ME.treasurePool(cardsById).some(d => d.id === 'me_the_one_ring'));
 // Hobbit-set treasures: 13 new, neutral, NO rarity, uncollectible, all in the ME treasure pool but NOT
 // leaking into the shared (heist/tombs/duels) treasure pool (treasure:false).

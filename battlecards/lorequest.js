@@ -127,7 +127,7 @@ export function generateEnemy(cardsById, character, wins, rng) {
 		const bk = Duels.offerBuckets(cardsById, [cls], rng, 1)[0];
 		if (bk) deck.push(...Duels.rollBucket(cardsById, [cls], bk, rng, 3));
 	}
-	const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
+	const treasurePool = Object.values(cardsById).filter(Duels.isActiveTreasure);
 	for (let t = 0; t < loot.treasures && treasurePool.length; t++) deck.push(treasurePool[Math.floor(rng() * treasurePool.length)].id);
 	return { id: character, name: character, cls, deck, loot };
 }

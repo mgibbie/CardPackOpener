@@ -171,7 +171,7 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 
 // the treasure pool for the alternating treasure reward — the DUELS treasures.
 export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.scTreasure);
+	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.scTreasure);
 }
 
 // ---------- character progression ----------

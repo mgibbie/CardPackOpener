@@ -74,7 +74,7 @@ ok('enemyLoot budget = 1 bucket/win + treasure per milestone', (() => {
   const sizes = [0, 1, 2, 5, 8, 11].map(w => MV.generateEnemy(cardsById, 'Thanos', w, seededRng(7)).deck.length);
   ok('enemy deck size grows with wins (parity)', sizes.every((s, i) => i === 0 || s > sizes[i - 1]), sizes); }
 ok('treasurePool = mvTreasure + shared DUELS treasures', MV.treasurePool(cardsById).length > 0
-  && MV.treasurePool(cardsById).every(d => d.mvTreasure || (d.treasure && d.set === 'DUELS')));
+  && MV.treasurePool(cardsById).every(d => d.mvTreasure || (d.treasure && d.set === 'DUELS') || d.duelsTreasure));
 // 20 Multiverse-specific treasures: neutral, NO rarity, uncollectible, mvTreasure:true, in the pool,
 // but treasure:false so they never leak into the shared heist/tombs/duels pools.
 { const pool = MV.treasurePool(cardsById);

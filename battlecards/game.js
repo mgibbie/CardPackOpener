@@ -7289,7 +7289,7 @@ function afterDuelsLootBucket(run) {
 		el.appendChild(row);
 	} else if (Duels.TREASURE_GAMES.includes(games)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'DUELS' && !run.deck.includes(d.id));
+		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
@@ -7538,7 +7538,7 @@ function lorequestLoot(run) {
 function afterLorequestBucket(run) {
 	if (Lorequest.TREASURE_WINS.includes(run.wins)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => d.treasure && d.set === 'DUELS' && !run.deck.includes(d.id));
+		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {

@@ -63,8 +63,11 @@ register('remove-cheap-deck', ({ state, pi, target, source, enemies, scaled, hm,
 register('add-mana-crystal', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 	// Academic Research / Tea Time: gain permanent Mana Crystals.
 	// target:'all' — every hero gains them (Mindpocalypse).
-	if (e.target === 'all') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) addManaCrystal(state, s, e.value || 1); }
-	else addManaCrystal(state, pi, e.value || 1);
+	// plusFriendlyDeaths — the Duels Academic Research upgrade: +1 crystal per
+	// friendly creature that has died this game (addManaCrystal caps at max).
+	const n = (e.value || 1) + (e.plusFriendlyDeaths ? (state.players[pi].friendlyDeaths || 0) : 0);
+	if (e.target === 'all') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) addManaCrystal(state, s, n); }
+	else addManaCrystal(state, pi, n);
 } });
 
 register('replace-deck-bobs', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
