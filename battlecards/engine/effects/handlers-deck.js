@@ -1851,3 +1851,19 @@ register('look-enemy-hand-shuffle', ({ state, pi, enemies }, e) => {
 	state.pickQueue.push({ player: pi, ids: chosen.map(c => c.id), discover: true, lookEnemyShuffle: { foe, uids: chosen.map(c => c.uid) } });
 	emit(state, { type: 'pickStart', player: pi, count: chosen.length });
 });
+
+// Frame Job: look at three minions in the opponent's deck and put your pick on
+// top, so their next draw is the one you chose. resolvePick honors toEnemyDeckTop.
+register('discover-enemy-deck-to-top', ({ state, pi, enemies }, e) => {
+	const foe = enemies[0];
+	if (foe == null || state.players[pi].eliminated) return;
+	const pool = [...new Set(state.players[foe].deck)].filter(id => {
+		const d = state.cardsById[id];
+		return d && d.type === 'creature' && !d.token;
+	});
+	const ids = [];
+	for (let i = 0; i < 3 && pool.length; i++) ids.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0]);
+	if (!ids.length) return;
+	state.pickQueue.push({ player: pi, ids, discover: true, toEnemyDeckTop: foe });
+	emit(state, { type: 'pickStart', player: pi, count: ids.length });
+});

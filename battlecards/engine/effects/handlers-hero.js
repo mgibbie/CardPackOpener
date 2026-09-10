@@ -566,3 +566,17 @@ register('unidentified-shield', ({ state, pi }, e) => {
 	];
 	execEffects(state, pi, JSON.parse(JSON.stringify(bonuses[Math.floor(state.rng() * bonuses.length)])), null, null);
 });
+
+// Soul Immolation: the Collapsing Star power is ADDED the first time (house rule
+// — powers stack rather than replace); casting it again sharpens the one you have.
+register('soul-immolation', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const existing = p.heroPowers.find(h => h.id === e.powerId);
+	if (!existing) { addHeroPower(state, pi, e.powerId); p.collapsingStar = true; return; }
+	// instantiate() shares def.power by reference, so sharpen a PRIVATE copy —
+	// mutating in place would raise Collapsing Star for every later game in the process.
+	if (!existing.power) return;
+	existing.power = { ...existing.power, effects: JSON.parse(JSON.stringify(existing.power.effects || [])) };
+	const dmg = existing.power.effects.find(x => x.type === 'random-damage');
+	if (dmg) { dmg.value = (dmg.value || 1) + 1; emit(state, { type: 'buff', uid: existing.uid, player: pi }); }
+});
