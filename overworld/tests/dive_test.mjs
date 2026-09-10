@@ -4,7 +4,7 @@
 // and DIVE again dives back down onto a walkable seabed tile — so Hoenn's 8th gym
 // (Wallace) can be reached and the region completed.
 //
-// Standalone (needs headless Chrome + puppeteer-core + local data); NOT in run-all.
+// Standalone (needs headless Chrome + puppeteer-core + local data); collected by run-all.
 //   node overworld/tests/dive_test.mjs
 import http from 'http';
 import fs from 'fs';

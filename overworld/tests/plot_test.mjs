@@ -8,7 +8,7 @@
 //     so once the beat plays it never replays.
 //
 // Standalone (needs headless Chrome + puppeteer-core + local overworld/ data);
-// NOT in run-all.mjs.   node overworld/tests/plot_test.mjs
+// Collected by run-all.mjs; alone:   node overworld/tests/plot_test.mjs
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

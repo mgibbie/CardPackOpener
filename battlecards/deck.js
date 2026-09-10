@@ -7,6 +7,7 @@ import * as Col from './collection.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as MPX from './mpmode.js';
 import { encodeDeck, decodeDeck } from './codec.js';
+import { correspondenceOffenders } from './format.js';
 
 const MP_ON = MPX.mpMode();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
@@ -431,6 +432,22 @@ function renderDeckStats() {
 	const rparts = [];
 	for (const [k, label] of [['legendary', 'Leg'], ['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Unc'], ['common', 'Com']]) if (rar[k]) rparts.push(`${rar[k]} ${label}`);
 	$('ds-rarity').textContent = rparts.join(' · ');
+	// correspondence legality: countering cards are banned in play-by-mail —
+	// flag them while BUILDING, not at match entry (format.js is the authority)
+	const corr = $('ds-corr');
+	if (corr) {
+		const bad = correspondenceOffenders([...deck, curCommander, curCompanion].filter(Boolean), cardsById);
+		if (bad.length) {
+			const names = bad.slice(0, 3).map(id => cardsById[id]?.name || id).join(', ');
+			corr.textContent = `⛔ not correspondence-legal: ${bad.length} countering card${bad.length === 1 ? '' : 's'} (${names}${bad.length > 3 ? ', …' : ''})`;
+			corr.style.color = '#ff8f7a';
+			corr.title = 'Correspondence (play-by-mail) is its own format: countering cards are banned there. This deck still works everywhere else.';
+		} else {
+			corr.textContent = '✉️ correspondence-legal';
+			corr.style.color = '#6bd6a0';
+			corr.title = 'No countering cards — this deck can be used in play-by-mail matches too.';
+		}
+	}
 }
 
 function updateCounts() {

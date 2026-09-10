@@ -9,7 +9,7 @@
 | `engine.js` | **13,814 lines / 850 KB** | The entire rules engine. Zero imports — a pure, self-contained ES module. |
 | `game.js` | 4,095 lines | UI renderer (Three.js) **plus** dungeon mode, PvP duels, spectator mode, animation queue, and all modals. |
 | `ai.js` | 393 lines | Opponent AI. Calls the public engine API for all actions. |
-| `cards.json` | 3.1 MB | ~5,600 card definitions (data-driven effects). |
+| `cards.json` | 4.2 MB (2026-09; grows with imports) | ~11,700 card definitions (data-driven effects). |
 | `dungeon.js` | 316 lines | Pure data: starter decks, bosses, treasures, reward buckets. |
 | `viewer.js` | 257 lines | Collection browser. Does **not** touch the engine. |
 | `mpmode.js` | 60 lines | Server RPC wrapper (`MPX.call`) + auth/localStorage token. |

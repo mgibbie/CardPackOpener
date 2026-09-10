@@ -10,11 +10,16 @@
 // plain text (the wiki would show "Unknown keyword" for them).
 
 import { readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 // keywords.js keeps its K array module-private; import a shimmed copy
+// (os.tmpdir + a file URL — a bare '/tmp' path breaks on Windows)
 const src = readFileSync('battlecards/keywords.js', 'utf8');
-writeFileSync('/tmp/kwexport.mjs', src.replace('if (typeof document', 'export { K };\nif (typeof document'));
-const { K, keywordsFor } = await import('/tmp/kwexport.mjs');
+const shim = join(tmpdir(), 'kwexport.mjs');
+writeFileSync(shim, src.replace('if (typeof document', 'export { K };\nif (typeof document'));
+const { K, keywordsFor } = await import(pathToFileURL(shim));
 
 const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

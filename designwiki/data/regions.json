@@ -26373,7 +26373,7 @@
      {
       "script": "Red",
       "name": "RED",
-      "class": "Pkmn Trainer",
+      "class": "Champion",
       "party": [
        {
         "species": "pikachu",
@@ -46340,24 +46340,28 @@
       "class": "Gym Leader",
       "party": [
        {
-        "species": "crobat",
-        "level": 36
-       },
-       {
-        "species": "weezing",
-        "level": 36
-       },
-       {
-        "species": "weezing",
-        "level": 36
-       },
-       {
         "species": "ariados",
-        "level": 33
+        "level": 67
        },
        {
         "species": "venomoth",
-        "level": 39
+        "level": 68
+       },
+       {
+        "species": "weezing",
+        "level": 69
+       },
+       {
+        "species": "weezing",
+        "level": 69
+       },
+       {
+        "species": "muk",
+        "level": 70
+       },
+       {
+        "species": "crobat",
+        "level": 71
        }
       ]
      },
@@ -46435,27 +46439,27 @@
       "party": [
        {
         "species": "pidgeot",
-        "level": 56
-       },
-       {
-        "species": "alakazam",
-        "level": 54
+        "level": 76
        },
        {
         "species": "rhydon",
-        "level": 56
+        "level": 77
        },
        {
-        "species": "gyarados",
-        "level": 58
+        "species": "alakazam",
+        "level": 78
        },
        {
         "species": "exeggutor",
-        "level": 58
+        "level": 78
+       },
+       {
+        "species": "gyarados",
+        "level": 79
        },
        {
         "species": "arcanine",
-        "level": 58
+        "level": 80
        }
       ]
      }
@@ -46472,24 +46476,28 @@
       "class": "Gym Leader",
       "party": [
        {
-        "species": "raichu",
-        "level": 44
-       },
-       {
-        "species": "electrode",
-        "level": 40
-       },
-       {
         "species": "magneton",
-        "level": 40
+        "level": 61
+       },
+       {
+        "species": "raichu",
+        "level": 62
        },
        {
         "species": "electrode",
-        "level": 40
+        "level": 63
+       },
+       {
+        "species": "electrode",
+        "level": 63
        },
        {
         "species": "electabuzz",
-        "level": 46
+        "level": 64
+       },
+       {
+        "species": "jolteon",
+        "level": 65
        }
       ]
      },
@@ -46567,20 +46575,28 @@
       "class": "Gym Leader",
       "party": [
        {
-        "species": "golduck",
-        "level": 42
-       },
-       {
         "species": "quagsire",
-        "level": 42
+        "level": 58
        },
        {
-        "species": "lapras",
-        "level": 44
+        "species": "dewgong",
+        "level": 59
+       },
+       {
+        "species": "golduck",
+        "level": 60
        },
        {
         "species": "starmie",
-        "level": 47
+        "level": 60
+       },
+       {
+        "species": "cloyster",
+        "level": 61
+       },
+       {
+        "species": "lapras",
+        "level": 62
        }
       ]
      },
@@ -46894,15 +46910,27 @@
       "party": [
        {
         "species": "magcargo",
-        "level": 45
+        "level": 73
        },
        {
         "species": "magmar",
-        "level": 45
+        "level": 74
        },
        {
         "species": "rapidash",
-        "level": 50
+        "level": 75
+       },
+       {
+        "species": "ninetales",
+        "level": 75
+       },
+       {
+        "species": "arcanine",
+        "level": 76
+       },
+       {
+        "species": "dragonite",
+        "level": 77
        }
       ]
      }
@@ -46949,19 +46977,27 @@
       "party": [
        {
         "species": "tangela",
-        "level": 42
+        "level": 64
        },
        {
         "species": "jumpluff",
-        "level": 41
+        "level": 65
        },
        {
         "species": "victreebel",
-        "level": 46
+        "level": 66
        },
        {
         "species": "bellossom",
-        "level": 46
+        "level": 66
+       },
+       {
+        "species": "vileplume",
+        "level": 67
+       },
+       {
+        "species": "scyther",
+        "level": 68
        }
       ]
      },
@@ -47057,16 +47093,28 @@
       "class": "Gym Leader",
       "party": [
        {
-        "species": "espeon",
-        "level": 46
+        "species": "wigglytuff",
+        "level": 70
        },
        {
         "species": "mrmime",
-        "level": 46
+        "level": 71
+       },
+       {
+        "species": "hypno",
+        "level": 72
+       },
+       {
+        "species": "slowbro",
+        "level": 72
        },
        {
         "species": "alakazam",
-        "level": 48
+        "level": 73
+       },
+       {
+        "species": "espeon",
+        "level": 74
        }
       ]
      },
@@ -47143,24 +47191,28 @@
       "class": "Gym Leader",
       "party": [
        {
-        "species": "graveler",
-        "level": 41
-       },
-       {
         "species": "rhyhorn",
-        "level": 41
-       },
-       {
-        "species": "omastar",
-        "level": 42
+        "level": 55
        },
        {
         "species": "onix",
-        "level": 44
+        "level": 56
+       },
+       {
+        "species": "graveler",
+        "level": 57
+       },
+       {
+        "species": "omastar",
+        "level": 57
        },
        {
         "species": "kabutops",
-        "level": 42
+        "level": 58
+       },
+       {
+        "species": "steelix",
+        "level": 59
        }
       ]
      },

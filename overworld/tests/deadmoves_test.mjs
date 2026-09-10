@@ -8,7 +8,7 @@
 // estimated-power pick for dynamic moves.
 //
 // Standalone (needs headless Chrome/Edge + local overworld/data assets);
-// NOT in run-all.mjs:  node overworld/tests/deadmoves_test.mjs
+// Collected by run-all.mjs; alone:  node overworld/tests/deadmoves_test.mjs
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

@@ -5489,7 +5489,7 @@ function actPlaneswalk() {
 	const ok = E.planeswalk(state, HUMAN); if (ok) { pump(); if (duel.on) publishDuel(); } return ok;
 }
 
-// cards.json is ~6.6MB raw / ~670KB gzipped — fetch and parse it ONCE per page
+// cards.json is ~4.2MB raw / ~580KB gzipped — fetch and parse it ONCE per page
 // and reuse across restarts ("Play again" used to refetch and reparse the whole
 // thing). The old {cache:'no-cache'} also forced a revalidation round-trip on
 // every game, defeating the 5-minute JSON cache _headers sets up.

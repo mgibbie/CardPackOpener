@@ -54,13 +54,27 @@ jobs:
           c=$(code "https://www.michaelgibalerio.com/battlecards/"); [ "$c" = 200 ] && echo "ok   battlecards page ($c)" || { echo "FAIL battlecards page: $c"; fail=1; }
           c=$(code "https://www.michaelgibalerio.com/overworld/");   [ "$c" = 200 ] && echo "ok   overworld page ($c)"   || { echo "FAIL overworld page: $c"; fail=1; }
 
-          # API up AND its D1 read path works: `stats` is unauthenticated, no write
+          # API up AND its D1 read path works: `err-summary` is unauthenticated,
+          # counts-only, no write ('stats' itself is owner-gated now). It doubles
+          # as the CRASH-SPIKE alert: if today's client-error count blows past the
+          # threshold, fail the run so the owner gets paged instead of finding out
+          # by opening /errors.html days later.
+          ERR_MAX_TODAY=50
           resp=$(curl -sS -A "$UA" --max-time 20 --retry 3 --retry-delay 5 --retry-all-errors \
-            -w $'\n%{http_code}' -X POST "https://www.michaelgibalerio.com/api/mp" -H 'content-type: application/json' -d '{"action":"stats","days":1}')
+            -w $'\n%{http_code}' -X POST "https://www.michaelgibalerio.com/api/mp" -H 'content-type: application/json' -d '{"action":"err-summary"}')
           apicode=$(printf '%s' "$resp" | tail -n1)
           apibody=$(printf '%s' "$resp" | sed '$d')
-          if [ "$apicode" = 200 ] && printf '%s' "$apibody" | grep -q '"days"'; then echo "ok   /api/mp stats (200, D1 read ok)";
-          else echo "FAIL /api/mp stats: status=$apicode body=$(printf '%s' "$apibody" | head -c 120)"; fail=1; fi
+          if [ "$apicode" = 200 ] && printf '%s' "$apibody" | grep -q '"total"'; then
+            echo "ok   /api/mp err-summary (200, D1 read ok)"
+            errs=$(printf '%s' "$apibody" | sed -n 's/.*"total":\([0-9]*\).*/\1/p')
+            if [ -n "$errs" ] && [ "$errs" -gt "$ERR_MAX_TODAY" ]; then
+              echo "FAIL client-error spike: $errs errors today (> $ERR_MAX_TODAY) — see /errors.html"; fail=1
+            else echo "ok   client errors today: ${errs:-0} (<= $ERR_MAX_TODAY)"; fi
+          else echo "FAIL /api/mp err-summary: status=$apicode body=$(printf '%s' "$apibody" | head -c 120)"; fail=1; fi
+
+          # the owner gate on the full dashboards is live: no-token stats must be 401
+          c=$(code -X POST "https://www.michaelgibalerio.com/api/mp" -H 'content-type: application/json' -d '{"action":"stats","days":1}')
+          [ "$c" = 401 ] && echo "ok   stats dashboard is owner-gated ($c)" || { echo "FAIL stats gate (expected 401): $c"; fail=1; }
 
           # the auth gate is live: a protected action with no token must be 401
           c=$(code -X POST "https://www.michaelgibalerio.com/api/mp" -H 'content-type: application/json' -d '{"action":"state"}')

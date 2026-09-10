@@ -5,7 +5,7 @@
 // drawing KYOGRE/GROUDON (then RAYQUAZA) over Sootopolis on their real decomp tiles.
 // The catch stays a real tile-encounter (LEGENDARY_ENCOUNTERS), untouched.
 //
-// Standalone (headless Chrome + puppeteer-core + local data); NOT in run-all.
+// Standalone (headless Chrome + puppeteer-core + local data); collected by run-all.
 //   node overworld/tests/awakening_test.mjs
 import http from 'http';
 import fs from 'fs';
