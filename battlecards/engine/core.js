@@ -2779,6 +2779,10 @@ function hasInstantResponse(state, pi) {
 
 // pi may respond to the current top of the stack (someone else's action)
 function canRespond(state, pi) {
+	// correspondence format: no response windows at all — the absent player can't
+	// hold priority, and nobody ghost-plays for them. Spells and attacks resolve
+	// immediately (secrets/traps still fire: they're pre-committed, not responses).
+	if (state.noInstantResponses) return false;
 	const top = state.stack[state.stack.length - 1];
 	if (!top || top.caster === pi || state.players[pi].eliminated) return false;
 	return hasInstantResponse(state, pi);
