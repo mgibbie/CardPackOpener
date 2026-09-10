@@ -17,6 +17,7 @@ import { STARTER_DECKS_LIST } from '../battlecards/starter-decks.js';
 import { createMatch, submitAction, replaceFainted, sideOf } from '../battlecards/pvpbattle.js';
 import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
+import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -1485,6 +1486,15 @@ export default async function handler(req, env) {
 			yourInvite: m.status === 'invited' && m.players[1] === me,
 		});
 
+		// correspondence format: countering is banned — reject a cards deck that
+		// carries any banned id (server/correspondence-bans.json, generated)
+		const CORR_BAN_SET = new Set(CORR_BANS);
+		const corrBanned = party => {
+			const deck = party && Array.isArray(party.deck) ? party.deck : [];
+			const bad = [...new Set(deck.filter(cid => CORR_BAN_SET.has(cid)))];
+			return bad.length ? `deck is not correspondence-legal — countering cards are banned in play-by-mail (${bad.slice(0, 3).join(', ')}${bad.length > 3 ? '…' : ''})` : null;
+		};
+
 		if (action === 'async-create') {
 			const to = String(body.to || '').trim().toLowerCase();
 			if (!user.friends.includes(to)) return json({ error: 'not your friend' }, 403);
@@ -1493,6 +1503,10 @@ export default async function handler(req, env) {
 			if (mine.length >= AM_MAX_PER_USER) return json({ error: 'too many async matches — finish or resign some first' }, 400);
 			const id = randCode() + randCode();
 			const game = body.game === 'pokemon' ? 'pokemon' : 'cards';
+			if (game === 'cards') {
+				const bad = corrBanned(body.party);
+				if (bad) return json({ error: bad }, 400);
+			}
 			// a pokemon challenge carries the challenger's PARTY (mons), a card
 			// challenge their deck; both ride the same `party` field from the lobby
 			const m = {
@@ -1531,6 +1545,10 @@ export default async function handler(req, env) {
 			if (m.players[1] !== username) return json({ error: 'not your invite' }, 403);
 			if (m.status !== 'invited') return json({ error: 'already started' }, 400);
 			if (m.game === 'pokemon' && !Array.isArray(body.party)) return json({ error: 'send a party' }, 400);
+			if (m.game === 'cards') {
+				const bad = corrBanned(body.party);
+				if (bad) return json({ error: bad }, 400);
+			}
 			m.decks[1] = body.party || null;
 			m.status = 'active';
 			// pokemon: the server builds the authoritative battle right here — no

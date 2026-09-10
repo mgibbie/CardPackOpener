@@ -46,6 +46,12 @@ const waitUp = async () => {
 		await api('add-friend', { username: 'quill' }, ta);
 
 		const party = d => ({ deck: ['wisp'], classId: 'mage', commander: null, companion: null, tag: d });
+
+		// correspondence format: countering cards are banned at the door
+		const dirty = { deck: ['wisp', 'counterspell'], classId: 'mage', commander: null, companion: null };
+		const rej = await api('async-create', { to: 'quill', party: dirty }, ta);
+		A(/countering cards are banned/.test(rej.error || ''), 'a deck with a counter card cannot create a match', JSON.stringify(rej));
+
 		const c1 = await api('async-create', { to: 'quill', party: party('a') }, ta);
 		A(c1.ok && c1.match?.status === 'invited', 'challenge created', JSON.stringify(c1));
 		const id = c1.match.id;
@@ -57,6 +63,8 @@ const waitUp = async () => {
 
 		// only the invitee may accept; only they may deal the opening state
 		A((await api('async-accept', { id, party: party('x') }, ta)).error === 'not your invite', 'challenger cannot accept their own invite');
+		const rej2 = await api('async-accept', { id, party: { deck: ['mana_bind'], classId: 'mage' } }, tb);
+		A(/countering cards are banned/.test(rej2.error || ''), 'a counter deck cannot accept either', JSON.stringify(rej2));
 		A((await api('async-move', { id, snap: { t: 0 }, turnTo: 'quill' }, ta)).error?.includes('not active'), 'no moves before acceptance');
 		const acc = await api('async-accept', { id, party: party('b') }, tb);
 		A(acc.ok && acc.match.status === 'active' && acc.you === 1, 'invitee accepted with their deck');
