@@ -1,4 +1,4 @@
-// pool_grixis_test.mjs — Grixis shard pool (BRU, 30, T3 SPELL-DRAIN + graveyard
+﻿// pool_grixis_test.mjs â€” Grixis shard pool (BRU, 30, T3 SPELL-DRAIN + graveyard
 // recursion). Rubric + fired signatures.
 import fs from 'fs';
 import * as E from '../../engine.js';
@@ -12,7 +12,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Grixis');
+const pool = raw.cards.filter(c => c.landSet === 'Grixis' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 ok('Grixis pool has 30 cards', pool.length === 30, pool.length);
 const types = new Set(pool.map(c => c.type));
 ok('spans >=6 card types incl artifact/location/weapon', types.size >= 6 && ['artifact', 'location', 'weapon', 'instant'].every(t => types.has(t)), [...types]);

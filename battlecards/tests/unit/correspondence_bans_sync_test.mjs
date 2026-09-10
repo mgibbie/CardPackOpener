@@ -41,6 +41,18 @@ ok('filtered universe drops exactly the banned ids', Object.keys(byId).length - 
 const islandPool = Object.values(filtered).filter(c => c.landSet === 'Island' && !c.token);
 ok('the correspondence Island pool is back to 70 (57 legal + 13 alternates)', islandPool.length === 70 && islandPool.every(c => !isCounterCard(c)), islandPool.length);
 ok('the 13 alternates are corrOnly-tagged', islandPool.filter(c => c.corrOnly).length === 13, islandPool.filter(c => c.corrOnly).length);
+
+// ---- every land pool that lost cards to the ban is restored to full size ----
+{
+  const bannedPools = new Map();
+  for (const c of cards) if (c.landSet && !c.token && isCounterCard(c)) bannedPools.set(c.landSet, (bannedPools.get(c.landSet) || 0) + 1);
+  ok('pools with banned members exist', bannedPools.size >= 10, [...bannedPools.keys()]);
+  for (const [set, lost] of bannedPools) {
+    const altsFor = cards.filter(c => c.landSet === set && c.corrOnly && !isCounterCard(c));
+    ok(`${set}: ${lost} banned, ${altsFor.length} alternate(s) restore the pool`, altsFor.length === lost, [set, lost, altsFor.length]);
+  }
+  ok('no alternate exists for a pool that lost nothing', cards.every(c => !c.corrOnly || bannedPools.has(c.landSet)));
+}
 ok('grandfathered ids survive the filter', 'counterspell' in filterCorrespondence(byId, new Set(['counterspell'])));
 
 console.log(`${pass} passed, ${fail} failed`);
