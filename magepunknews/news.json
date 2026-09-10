@@ -2,6 +2,79 @@
 	"generated": "2026-09-10",
 	"entries": [
 		{
+			"sha": "7220ece",
+			"date": "2026-09-10",
+			"kind": "cards",
+			"title": "Import the 8 name-collision HS spells under variant names (#405)",
+			"body": "Owner ruling: each collides by display name with an existing non-HS card,\nso each carries a fresh name with its faithful HS mechanics; the\nincumbents are untouched. This closes the HS constructed-card import with\nzero exceptions.\n\n  Baited Bear Trap     hunter secret: hero attacked -> 3/3 Taunt Bear\n  Arcane Counterspell  mage secret: counter the opponent's spell\n                       (correspondence-banned; bans regenerated, 31 ids)\n  Stormcaller's Bolt   shaman: 3 damage to anything, Overload (1)\n  Renaturalize         druid: destroy a creature, an opponent draws two\n  Wisp Divination      mage: destroy a friendly Wisp to draw three\n  Molten Geyser        mage: 2 damage + a 1/2 Elemental in hand\n  Mirror Images        mage: two 0/2 Taunt Mirrored Images\n  Arrest Warrant       the real HS Wanted Poster (CAP_407): Discover a\n                       (5)+ creature, the pick gains Prepare\n\nSmall engine additions, each reusable: 'draw' gains forOpponent (mirrors\nshuffle-ids' forEnemy), sacrifice-friendly gains a name filter + a draw\nrider that only pays when a victim exists (no Wisp = the whole spell\nfizzles), and discover picks can carry grantPrepare (the pick lands in\nhand with prepare:true).\n\ncollision_spells_test: 41 assertions, every card FIRED, incumbents\nasserted intact, every variant name asserted unique. weapons_wave22 got\nthe settle() stack-drain (same shuffle-dependence class as the FF fix —\nthe 8 new cards changed the seeded deal). pool-rarity regenerated.\nSuite: 521/521.",
+			"cards": [
+				{
+					"id": "baited_bear_trap",
+					"name": "Baited Bear Trap",
+					"type": "secret",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "arcane_counterspell",
+					"name": "Arcane Counterspell",
+					"type": "secret",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "stormcallers_bolt",
+					"name": "Stormcaller's Bolt",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "renaturalize",
+					"name": "Renaturalize",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "wisp_divination",
+					"name": "Wisp Divination",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "molten_geyser",
+					"name": "Molten Geyser",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "mirror_images",
+					"name": "Mirror Images",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "arrest_warrant",
+					"name": "Arrest Warrant",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 2
+				}
+			]
+		},
+		{
 			"sha": "fb36fd5",
 			"date": "2026-09-10",
 			"kind": "cards",
