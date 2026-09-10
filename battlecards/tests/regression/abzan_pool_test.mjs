@@ -41,7 +41,7 @@ ok('Abzan pool cards are uncollectible + no rarity + landSet Abzan', abzan.every
 
 // ---------- Basic Land Sets: each basic land generates its 70-card monocolor set ----------
 for (const [id, ls, col] of [['plains', 'Plains', 'W'], ['island', 'Island', 'U'], ['swamp', 'Swamp', 'B'], ['mountain', 'Mountain', 'R'], ['forest', 'Forest', 'G']]) {
-	const set = raw.cards.filter(c => c.landSet === ls);
+	const set = raw.cards.filter(c => c.landSet === ls && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the 70
 	ok(`${ls} set = 70 mono-${col}, uncollectible, no rarity`, set.length === 70 && set.every(c => c.collectible === false && !c.rarity && c.colors?.length === 1 && c.colors[0] === col), set.length);
 	ok(`${id} conjures from the ${ls} landSet`, byId[id].taps.some(t => t.effects.some(e => e.type === 'conjure' && e.landSet === ls)));
 }

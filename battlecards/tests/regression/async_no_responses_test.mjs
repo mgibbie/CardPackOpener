@@ -48,5 +48,32 @@ const play = (st, pi, id, target) => { const c = give(st, pi, id); return { c, o
   ok('async: the absent player’s secret still fires', st.players[1].secrets.length === 0, st.players[1].secrets.length);
   ok('...redirecting the attack (hero untouched)', st.players[1].life === life0, [life0, st.players[1].life]); }
 
-console.log(`${pass} passed, ${fail} failed`);
-if (fail) process.exit(1);
+// ---- correspondence-only Island alternates: pool gating ----
+// Normal games: the Island conjure never offers a corrOnly card. Correspondence
+// games (banned cards filtered from the map): the pool is the 57 legal originals
+// + 13 alternates and never a counter.
+import('../../format.js').then(({ filterCorrespondence, isCounterCard }) => {
+  const conjureMany = (st, n) => {
+    const seen = new Set();
+    for (let i = 0; i < n; i++) {
+      const h0 = st.players[0].hand.length;
+      E.execEffects(st, 0, [{ type: 'conjure', count: 1, landSet: 'Island' }], null, null);
+      const got = st.players[0].hand[st.players[0].hand.length - 1];
+      if (st.players[0].hand.length > h0 && got) seen.add(got.id);
+      st.players[0].hand = [];
+    }
+    return seen;
+  };
+
+  { const st = game(false); const seen = conjureMany(st, 300);
+    ok('normal play: Island conjure never offers a correspondence alternate', [...seen].every(id => !byId[id].corrOnly), [...seen].filter(id => byId[id].corrOnly));
+    ok('normal play: counters still conjureable (baseline)', [...seen].some(id => byId[id].counterSpell), seen.size); }
+
+  { const st = game(true); st.cardsById = filterCorrespondence(byId, new Set());
+    const seen = conjureMany(st, 400);
+    ok('correspondence: conjure never offers a counter', [...seen].every(id => !isCounterCard(byId[id])), [...seen].filter(id => isCounterCard(byId[id])));
+    ok('correspondence: the alternates DO appear', [...seen].some(id => byId[id].corrOnly), seen.size); }
+
+  console.log(`${pass} passed, ${fail} failed`);
+  if (fail) process.exit(1);
+});
