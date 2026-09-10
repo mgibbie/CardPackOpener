@@ -48,5 +48,16 @@ ok('Frigid is in the keyword glossary', /Frigid/.test(fs.readFileSync(new URL('.
   ok('a dead defender cannot be Frozen', E.isDead ? true : true, null);
   ok('...it died instead of freezing', st.players[1].board.every(c => c.uid !== d.uid || c.damage >= c.maxHealth), d.frozen); }
 
+// ---- the freeze-on-hit creatures all converted to Frigid ----
+{ const conv = ['water_elemental', 'tundra_matriarch', 'snowchugger', 'voodoo_hexxer', 'icehoof_protector', 'chill_o_matic', 'token_sindragosas_wing'];
+  ok('all 7 freeze-on-hit creatures carry Frigid', conv.every(id => (byId[id].keywords || []).includes('frigid')), conv.filter(id => !(byId[id].keywords || []).includes('frigid')));
+  ok('no creature carries the old freezer tag', raw.cards.every(c => c.type !== 'creature' || !(c.keywords || []).includes('freezer')), raw.cards.filter(c => c.type === 'creature' && (c.keywords || []).includes('freezer')).map(c => c.id));
+  ok('Quartzite Crusher (hero weapon) keeps freezer', (byId.quartzite_crusher.keywords || []).includes('freezer')); }
+
+// Water Elemental itself, fired: chills a survivor on the coin
+{ const st = game(0.1); const w = put(st, 0, 'water_elemental'); const d = put(st, 1, '_v');
+  E.attack(st, 0, w.uid, { type: 'creature', uid: d.uid, player: 1 });
+  ok('Water Elemental (Frigid) freezes a surviving defender', !!d.frozen, d.frozen); }
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
