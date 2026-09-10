@@ -56,12 +56,15 @@ register('draw-minions-set-stats', ({ state, pi }, e) => {
 	}
 });
 
-register('draw', ({ state, pi, scaled }, e) => {
+register('draw', ({ state, pi, scaled, enemies }, e) => {
 	// count-vs-value tolerance (docs/06 pinned it; king_llane regression): a
 	// handful of imported cards write `count` instead of `value` — the old
 	// chain read only e.value, so {type:'draw', count:1} silently drew NOTHING
 	const n = e.value != null || e.valuePer ? scaled(e) : (e.count || 0);
 	if (e.target === 'all') { for (let s2 = 0; s2 < state.players.length; s2++) if (!state.players[s2].eliminated) drawCards(state, s2, n); }
+	// forOpponent: the cards go to an opponent instead — "Your opponent draws
+	// 2 cards" riders (Renaturalize), mirroring shuffle-ids' forEnemy
+	else if (e.forOpponent && enemies.length) drawCards(state, enemies[0], n);
 	else drawCards(state, pi, n);
 });
 

@@ -4348,6 +4348,8 @@ export function resolvePick(state, id) {
 			if (pend.costMod) card.cost = Math.max(0, (card.cost || 0) + pend.costMod); // Museum Curator: costs (1) less
 		if (pend.hataaru) card._hataaruTurn = state.turnNumber; // Exarch Hataaru: playing it this turn repeats the Discover
 		if (pend.grantCastTwice) card.castTwice = true; // Breakout Architect
+		// Arrest Warrant: the pick gains Prepare (canPrepare reads card.prepare)
+		if (pend.grantPrepare) { card.prepare = true; card.description = (card.description ? card.description + '\n' : '') + 'Prepare.'; }
 		if (pend.damageAllByCost) { // Murozond, Thief of Time: the pick nukes all other minions
 			const dmg = card.cost || 0;
 			if (dmg > 0) {
