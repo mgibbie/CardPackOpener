@@ -11,6 +11,8 @@
     "deploy-art": "npx wrangler pages deploy battlecards/art --project-name magepunk-cardart --branch main --commit-dirty=true",
     "test": "node battlecards/tests/run-all.mjs",
     "test-overworld": "node overworld/tests/run-all.mjs",
+    "dev": "node mp-dev-server.mjs",
+    "backup": "bash tools/backup-d1.sh",
     "normalize-cards": "node tools/normalize-cards.mjs",
     "prepare": "git config core.hooksPath tools/githooks || true"
   }

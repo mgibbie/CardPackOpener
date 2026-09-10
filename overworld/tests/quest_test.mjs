@@ -6,7 +6,7 @@
 //
 // The reachability / no-strand guarantee for the gates lives in quest_reach.mjs.
 // Standalone (Part 2 needs headless Chrome + puppeteer-core + local data);
-// NOT in run-all.mjs.   node overworld/tests/quest_test.mjs
+// Collected by run-all.mjs; alone:   node overworld/tests/quest_test.mjs
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

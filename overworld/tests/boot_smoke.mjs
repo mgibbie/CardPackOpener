@@ -14,7 +14,7 @@
 //
 // Standalone (needs headless Chrome + puppeteer-core, and the LOCAL overworld/
 // data assets — that dir is .gitignored + offloaded, so this is a dev-machine
-// check, like battlecards' relay_harness); NOT in run-all.mjs.
+// check, like battlecards' relay_harness); run-all.mjs lists it explicitly.
 //   node overworld/tests/boot_smoke.mjs
 import http from 'http';
 import fs from 'fs';

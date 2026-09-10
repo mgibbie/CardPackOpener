@@ -1,7 +1,7 @@
 // arcade.js — arcade-box objects placed programmatically per map id (ported
 // from Magepunk66 MapObjects.lua). Mirrors services.js: per-map sprite + a
 // solid, interactable footprint. Route 1's box launches PokéChess; Pallet
-// Town's box is a placeholder for now.
+// Town's launches Pair of Pears (/pairofpears/).
 import { getImage, META } from './engine.js';
 
 // each box: base tile (bx,by) is the tile the player faces from below; the

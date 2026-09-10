@@ -1,6 +1,10 @@
 name: Refresh Magepunk News
 
+# Weekly refresh (Mondays 09:00 UTC) so the news page tracks card history
+# without anyone remembering to dispatch it; manual dispatch still works.
 on:
+  schedule:
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:

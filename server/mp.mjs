@@ -82,6 +82,10 @@ const RATE_LIMITS = {
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
+	// the large-blob writes (ow-save is a 1MB snapshot, run-save ~700KB): legit
+	// clients debounce to well under one per second — these brake write floods
+	'ow-save': [60, 60_000], 'run-save': [60, 60_000], 'base-save': [20, 60_000],
+	'save-deck': [30, 60_000], 'open-pack': [60, 60_000],
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
@@ -407,6 +411,14 @@ function verifyToken(token) {
 	return m[1];
 }
 
+// the ONE owner/admin check for every owner-only action (tuning, art, todos,
+// gifts, grant-all, the stats/errors dashboards). MP_ADMINS (comma-separated
+// usernames) in wrangler.jsonc / the Cloudflare Pages env overrides the default
+// — the hardcoded-'mgibbie' copies this replaces silently ignored it.
+function isAdmin(username) {
+	return (process.env.MP_ADMINS || 'mgibbie').split(',').map(s => s.trim().toLowerCase()).filter(Boolean).includes(username);
+}
+
 // ---------- game data ----------
 // A fresh account owns a full playset of the starter-deck pool: 2 copies of every
 // card any class's starter deck uses (1 for Legendaries, the most a deck may run).
@@ -723,6 +735,19 @@ export default async function handler(req, env) {
 		}
 		return json({ ok: true });
 	}
+	// unauthenticated, COUNTS-ONLY view of today's error rollup. The health
+	// canary reads this every 15 minutes as its D1-read probe and to alert on a
+	// crash spike; counts disclose nothing sensitive. The full error CONTENT
+	// (messages, pages, user agents) stays owner-only behind 'errors'.
+	if (action === 'err-summary') {
+		if (!(await rateLimit(store, 'esum:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const day = new Date().toISOString().slice(0, 10);
+		const doc = (await store.get('err:' + day)) || {};
+		let total = 0, distinct = 0;
+		for (const v of Object.values(doc)) { total += (v && v.count) || 0; distinct++; }
+		return json({ date: day, total, distinct });
+	}
+
 	// ---------- shared game replays ----------
 	// A shared replay is a packed tape (client codec: gzipped snapshots). Uploading
 	// one (replay-put) requires a token; VIEWING one (replay-get) is public so a
@@ -806,7 +831,7 @@ export default async function handler(req, env) {
 	// Reads of the daily rollups the two anonymous beacons above feed. Owner-only:
 	// crash text, page paths, and user agents are nobody else's business.
 	if (action === 'stats' || action === 'errors') {
-		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const kind = action === 'stats' ? 'stat:' : 'err:';
 		const n = Math.max(1, Math.min(31, parseInt(body.days, 10) || 7));
 		const now = Date.now(), days = [];
@@ -827,7 +852,7 @@ export default async function handler(req, env) {
 	// owner save from the live tuners: stores the full tuning map as a server
 	// override (public via tuning-get above). kind: 'art' | 'sprite'.
 	if (action === 'tuning-save') {
-		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const kind = body.kind === 'sprite' ? 'sprite' : body.kind === 'art' ? 'art' : null;
 		if (!kind) return json({ error: 'bad kind' }, 400);
 		const content = body.content;
@@ -842,7 +867,7 @@ export default async function handler(req, env) {
 	// a dev session folds these into battlecards/art/ (pull-live-tuning) and
 	// clears the keys. Bounded: a handful of pending images, each one 768px jpeg.
 	if (action === 'art-save') {
-		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const id = String(body.id || '');
 		if (!/^[a-z0-9_]+$/.test(id)) return json({ error: 'bad card id' }, 400);
 		const dataUrl = String(body.dataUrl || '');
@@ -856,7 +881,7 @@ export default async function handler(req, env) {
 	}
 
 	if (action === 'todo-add' || action === 'todo-list' || action === 'todo-done') {
-		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const list = (await store.get('owner_todo')) || [];
 		if (action === 'todo-add') {
 			const text = String(body.text || '').trim().slice(0, 2000);
@@ -889,7 +914,7 @@ export default async function handler(req, env) {
 	// server only ever holds the promise of the items, never the inventory.
 	// Owner-only to send; anyone may list/claim their own.
 	if (action === 'gift-send') {
-		if (username !== 'mgibbie') return json({ error: 'owner only' }, 403);
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const to = String(body.to || '').trim().toLowerCase();
 		if (!to) return json({ error: 'no recipient' }, 400);
 		if (!(await store.get(to))) return json({ error: 'no player with that username' }, 404);
@@ -2107,12 +2132,9 @@ export default async function handler(req, env) {
 	}
 
 	// grant the caller a full playset of every collectible card (2 of each, 1 of
-	// each Legendary). Restricted to the realm owner — override the allowlist with
-	// MP_ADMINS (comma-separated usernames) in wrangler.jsonc / the Cloudflare
-	// Pages env if it ever changes.
+	// each Legendary). Restricted to the realm owner (isAdmin — MP_ADMINS env).
 	if (action === 'grant-all') {
-		const admins = (process.env.MP_ADMINS || 'mgibbie').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-		if (!admins.includes(username)) return json({ error: 'not allowed' }, 403);
+		if (!isAdmin(username)) return json({ error: 'not allowed' }, 403);
 		for (const [id, [rarity]] of Object.entries(POOL)) {
 			const cap = rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES;
 			user.collection[id] = Math.max(user.collection[id] || 0, cap);

@@ -9,7 +9,7 @@
 //   • the trainer card renders with badges without throwing
 //
 // Standalone (needs headless Chrome + puppeteer-core + local overworld/ data);
-// NOT in run-all.mjs.   node overworld/tests/progression_test.mjs
+// Collected by run-all.mjs; alone:   node overworld/tests/progression_test.mjs
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

@@ -963,7 +963,7 @@ function interact() {
 		} else openHub();
 		return;
 	}
-	// arcade boxes: Route 1 launches PokéChess; Pallet Town's is a placeholder
+	// arcade boxes: Route 1 launches PokéChess; Pallet Town's launches Pair of Pears
 	const arc = arcade.kindAt(fx, fy);
 	if (arc === 'pokechess') {
 		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
