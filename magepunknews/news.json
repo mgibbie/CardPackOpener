@@ -2,6 +2,14 @@
 	"generated": "2026-09-10",
 	"entries": [
 		{
+			"sha": "c356600",
+			"date": "2026-09-10",
+			"kind": "patch",
+			"title": "Duels active treasures: the close-out wave (38 new + 16 shared, pool now ~97) (#408)",
+			"body": "The remaining real actives in the PVPDR extract, all FIRED in the new\n87-assertion duels_actives_test:\n\n- 38 new treasures + 2 tokens: Slate's Syringe, Forge in Light, Magister\n  Unchained, For the Horde!/Alliance! (Start of Game + 15 Tradeable\n  discover tokens), Spymaster's Gambit, Stalker's Supplies, Rending\n  Ambush, Devout Blessings, Valorous Display (discover-and-EQUIP),\n  Pact of the Lich, Stalking Pride, Men at Arms, Acquired Allies, Gift\n  of the Old Gods (arrives Corrupted), Mask of Mimicry, the Curio/Coins/\n  Horn/Mob upgrade chains, Chaos Theory, the Diablo package (Fire Stomp,\n  Apocalypse, Uber Apocalypse, Soulstone Trap, Black Soulstone, Stone of\n  Jordan), Fractured Spirits, Ace in the Hole, Demonology 101, Binding\n  Chains, Vision of the Warden, Warden's Insight, Remembrance of Ice,\n  Unholy Embrace, Contagion Concoction, Smarty Pants, Elemental Chaos,\n  Yogg-tastic Tasties.\n- 16 existing Tombs/Heist treasures HS Duels reused are TAGGED\n  duelsTreasure (no duplicate cards, per the collision rule) and join\n  the shared pool via the new Duels.isActiveTreasure predicate — which\n  lorequest and all four spinoff modes now read, so the whole wave\n  reaches six run modes at once.\n- 21 new handlers + option riders (steal-stats, hand-copies, class\n  secrets, edge-ambush, turn-stamped death log, dormant randomEnemies,\n  corpse spend-to-conjure, frost-kill memory via the runSpell scoping\n  trick, takes-double-damage flags, discover equip/corrupt picks,\n  Start-of-Game tutor-id, and more). Registry 1146 -> 1167.\n- Two latent bugs fixed on shipped cards: ulda_canopic_jars' \"random\n  Legendary\" had NO rarity filter (summoned any creature) and\n  ulda_book_of_the_dead advertised a per-death discount it never had.\n- Deliberate skips (documented): Draconic Munition (Cannon system),\n  Infinite Arcane, Journey to the East/Uber Diablo hero transform,\n  Marvelous Mycelium, AV Tactics, hero-power sub-spells (the powers\n  pass owns those).\n\nArt for all 42 fetched, indexed (12,229) and deployed. designwiki\nbattlecards design data regenerated. Suite 522/522.",
+			"cards": []
+		},
+		{
 			"sha": "7220ece",
 			"date": "2026-09-10",
 			"kind": "cards",
