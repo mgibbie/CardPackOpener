@@ -59,5 +59,16 @@ ok('Frigid is in the keyword glossary', /Frigid/.test(fs.readFileSync(new URL('.
   E.attack(st, 0, w.uid, { type: 'creature', uid: d.uid, player: 1 });
   ok('Water Elemental (Frigid) freezes a surviving defender', !!d.frozen, d.frozen); }
 
+// Rime Sculptor's tokens arrive Frigid
+{ const st = game(0.1);
+  const c = E.instantiate(byId.rime_sculptor, 0); c.zone = 'hand'; st.players[0].hand.push(c);
+  E.playCard(st, 0, c.uid, null);
+  const rimes = st.players[0].board.filter(x => x.name === 'Rime Elemental');
+  ok('Rime Sculptor creates two Rime Elementals', rimes.length === 2, rimes.length);
+  ok('...and both carry Frigid', rimes.every(t => (t.keywords || []).includes('frigid')), rimes.map(t => t.keywords));
+  const d = put(st, 1, '_v'); rimes[0].sick = false;
+  E.attack(st, 0, rimes[0].uid, { type: 'creature', uid: d.uid, player: 1 });
+  ok('...a token chills its surviving defender', !!d.frozen, d.frozen); }
+
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
