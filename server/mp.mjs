@@ -85,6 +85,8 @@ const RATE_LIMITS = {
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
 const ERR_LIMIT = [120, 60_000];    // per-IP error beacon
+const LOGIN_LIMIT = [30, 60_000];   // per-IP login attempts — humans retry a handful; this stops scrypt-grinding brute force
+const REG_LIMIT = [20, 3600_000];   // per-IP account creation — a LAN party fits; a squatting flood does not
 const RGET_LIMIT = [120, 60_000];   // per-IP public replay fetch
 const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game boot)
 const AFETCH_LIMIT = [40, 60_000];  // per-IP public override-image fetch (1 per overridden card per boot)
@@ -635,6 +637,8 @@ export default async function handler(req, env) {
 	const action = body.action;
 
 	if (action === 'register') {
+		// per-IP brake BEFORE any work (each register runs a full scrypt)
+		if (!(await rateLimit(store, 'reg:' + clientIp(req), REG_LIMIT[0], REG_LIMIT[1]))) return json({ error: 'too many new accounts from here — try again later' }, 429);
 		const username = String(body.username || '').trim().toLowerCase();
 		const password = String(body.password || '');
 		if (!/^[a-z0-9_]{3,20}$/.test(username)) return json({ error: 'username: 3–20 letters, numbers, _' }, 400);
@@ -671,6 +675,9 @@ export default async function handler(req, env) {
 	}
 
 	if (action === 'login') {
+		// per-IP brake BEFORE the lookup + scrypt: unlimited attempts were both a
+		// password brute-force lane and a CPU amplifier (one scrypt per attempt)
+		if (!(await rateLimit(store, 'login:' + clientIp(req), LOGIN_LIMIT[0], LOGIN_LIMIT[1]))) return json({ error: 'too many attempts — wait a minute' }, 429);
 		const username = String(body.username || '').trim().toLowerCase();
 		const user = await store.get(username);
 		if (!user) return json({ error: 'no such account' }, 401);
@@ -1721,6 +1728,10 @@ export default async function handler(req, env) {
 	// packs are server-authoritative (validated + swapped here); Pokemon and bag items are
 	// client-side localStorage, so the final offers are echoed in the blob and each client
 	// applies its own half of that swap when it sees done:true.
+	// NAMING: the session actions are trade-open (accept the request -> session) and
+	// trade-update (post your offer). They were trade-accept/trade-offer, which COLLIDED
+	// with the Pokemon mailbox-trade actions dispatched earlier in this file — first
+	// match wins, so these handlers were unreachable and the live window always 400'd.
 	const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
 	const tradeSide = (t, u) => t.a === u ? 'A' : t.b === u ? 'B' : null;
 	const sanitizeOffer = (o) => ({
@@ -1743,7 +1754,7 @@ export default async function handler(req, env) {
 		}
 	};
 
-	if (action === 'trade-accept') {
+	if (action === 'trade-open') {
 		const from = String(body.from || '');
 		const list = (await store.get('challenge:' + username)) || [];
 		const ch = list.find(c => c.from === from && c.type === 'trade' && Date.now() - c.ts < CHALLENGE_MS);
@@ -1775,7 +1786,7 @@ export default async function handler(req, env) {
 		return json({ trade: t });
 	}
 
-	if (action === 'trade-offer') {
+	if (action === 'trade-update') {
 		const t = await store.get('trade:' + String(body.id || ''));
 		if (!t || t.done || t.cancelled) return json({ error: 'trade closed', closed: true }, 409);
 		const side = tradeSide(t, username);
