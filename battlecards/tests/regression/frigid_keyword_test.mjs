@@ -59,6 +59,10 @@ ok('Frigid is in the keyword glossary', /Frigid/.test(fs.readFileSync(new URL('.
   E.attack(st, 0, w.uid, { type: 'creature', uid: d.uid, player: 1 });
   ok('Water Elemental (Frigid) freezes a surviving defender', !!d.frozen, d.frozen); }
 
+// pool seeding: Island + Surtland frost cards carry Frigid
+{ const seeds = ['frost_lynx', 'armored_whirl_turtle', 'fog_bank', 'surtland_frost_giant', 'surtland_volcanic_cryomancer', 'surtland_mammoth'];
+  ok('Island + Surtland frost cards carry Frigid', seeds.every(id => (byId[id].keywords || []).includes('frigid')), seeds.filter(id => !(byId[id].keywords || []).includes('frigid'))); }
+
 // Rime Sculptor's tokens arrive Frigid
 { const st = game(0.1);
   const c = E.instantiate(byId.rime_sculptor, 0); c.zone = 'hand'; st.players[0].hand.push(c);
