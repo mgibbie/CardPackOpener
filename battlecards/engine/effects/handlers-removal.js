@@ -649,7 +649,10 @@ register('destroy-target-and-adjacent', ({ state, pi, target, source, enemies, s
 register('sacrifice-friendly', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Sacrifice another friendly creature. With tempBuffTeam, your other creatures gain
 			// +MV/+MV (the sacrificed creature's Mana Value) until end of turn (The Meep).
-			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type === 'creature');
+			// `name` restricts the pool to that creature name; `draw` rides ONLY when a
+			// victim exists ("Destroy a friendly Wisp to draw 3 cards" — Wisp Divination:
+			// with no Wisp the whole spell fizzles, draw included).
+			const pool = state.players[pi].board.filter(c => c !== source && !isDead(c) && c.type === 'creature' && (!e.name || c.name === e.name));
 			if (!pool.length) return;
 			const victim = pool[Math.floor(state.rng() * pool.length)];
 			const mv = victim.cost || 0;
@@ -663,6 +666,7 @@ register('sacrifice-friendly', ({ state, pi, target, source, enemies, scaled, hm
 			victim.damage = victim.maxHealth; victim.shield = false;
 			emit(state, { type: 'sacrificed', uid: victim.uid });
 			sweepDeaths(state);
+			if (e.draw) drawCards(state, pi, e.draw);
 } });
 
 
