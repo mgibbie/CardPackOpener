@@ -173,7 +173,7 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 }
 
 export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.ffTreasure);
+	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.ffTreasure);
 }
 
 // ---------- character progression ----------

@@ -16,6 +16,12 @@ const emblem = (state, pi, id, name, text, extra) => {
 // player flag the engine already reads (shared with Tombs/Heist) or boot an
 // emblem aura. Batch 1 is the reuse-only set; school-specific and new-hook
 // passives arrive in later batches.
+// the shared active-treasure pool: native Duels treasures PLUS existing
+// Heist/Tombs treasures HS Duels reused, tagged `duelsTreasure` so one card
+// serves every pool that reads this (duels, lorequest, and the four lorequest
+// spinoffs union this with their own themed treasures)
+export const isActiveTreasure = d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure;
+
 export const PASSIVES = {
 	robe_of_the_apprentice: {
 		name: 'Robe of the Apprentice', text: 'Spell Damage +1.',
@@ -756,7 +762,7 @@ export function generateEnemy(cardsById, classes, games, rng) {
 		const bk = offerBuckets(cardsById, classes, rng, 1)[0];
 		if (bk) deck.push(...rollBucket(cardsById, classes, bk, rng, 3));
 	}
-	const treasurePool = Object.values(cardsById).filter(d => d.treasure && d.set === 'DUELS');
+	const treasurePool = Object.values(cardsById).filter(isActiveTreasure);
 	for (let t = 0; t < loot.treasures && treasurePool.length; t++) deck.push(treasurePool[Math.floor(rng() * treasurePool.length)].id);
 	const passiveKeys = Object.keys(PASSIVES);
 	const passives = [];

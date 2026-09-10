@@ -65,7 +65,7 @@ ok('rewardForWin alternates treasure(odd)/bucket(even)', [1, 2, 3, 4, 5, 6].map(
 { const rng = seededRng(9); const sp = FF.spoilsChoices(cardsById, 'Kefka, Dancing Mad', rng, 3);
   ok('spoilsChoices: 3 distinct ids from the fallen foe’s pool', sp.length === 3 && new Set(sp).size === 3 && sp.every(id => cardsById[id] && cardsById[id].ffDeck === 'Kefka, Dancing Mad'), sp); }
 ok('treasurePool returns DUELS treasures', FF.treasurePool(cardsById).length > 0
-  && FF.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.ffTreasure));
+  && FF.treasurePool(cardsById).every(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.ffTreasure));
 // 15 FF-specific treasures: neutral, NO rarity, uncollectible, ffTreasure:true, in the pool, but
 // treasure:false so they don't leak into the shared heist/tombs/duels pools.
 { const pool = FF.treasurePool(cardsById);

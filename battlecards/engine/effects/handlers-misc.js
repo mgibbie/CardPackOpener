@@ -448,7 +448,18 @@ register('set-next-spell-double', ({ state, pi, target, source, enemies, scaled,
 register('make-dormant', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Maiev Shadowsong: send a chosen minion Dormant. Sunstruck Henchman:
 			// target 'self' with a `chance` (50% to fall asleep each turn).
+			// Binding Chains (Duels): `randomEnemies: N` sends N random enemy minions Dormant.
 			if (e.chance != null && state.rng() >= e.chance) return;
+			if (e.randomEnemies) {
+				const pool = [];
+				for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type === 'creature' && !(c.dormantLeft > 0)) pool.push(c);
+				for (let n = 0; n < e.randomEnemies && pool.length; n++) {
+					const [t2] = pool.splice(Math.floor(state.rng() * pool.length), 1);
+					t2.dormantLeft = e.value || 2;
+					emit(state, { type: 'dormant', player: t2.controller, uid: t2.uid, turns: t2.dormantLeft });
+				}
+				return;
+			}
 			const t = e.target === 'self' ? source : chosenCreature();
 			if (t && !isDead(t)) { t.dormantLeft = e.value || 2; emit(state, { type: 'dormant', player: t.controller, uid: t.uid, turns: t.dormantLeft }); }
 });
@@ -2484,12 +2495,18 @@ register('grunty', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 
 register('replay-last-turn', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 	do {
-			// Sasquawk: repeat each card you played last turn (spells re-cast untargeted, minions re-summoned)
+			// Sasquawk: repeat each card you played last turn (spells re-cast untargeted, minions
+			// re-summoned). Ace in the Hole (Duels): `toHand` adds COPIES to hand instead.
 			const p = state.players[pi];
 			for (const id of [...(p.cardsPlayedLastTurnIds || [])]) {
 				const def = state.cardsById[id];
 				if (!def || def.token) continue;
-				if (def.type === 'creature') summon(state, pi, def);
+				if (e.toHand) {
+					if (p.hand.length >= MAX_HAND) continue;
+					const hc = instantiate(def, pi); hc.zone = 'hand'; p.hand.push(hc);
+					emit(state, { type: 'conjure', player: pi, card: hc, color: null });
+				}
+				else if (def.type === 'creature') summon(state, pi, def);
 				else if (isSpellType(def) && def.effects) execEffects(state, pi, JSON.parse(JSON.stringify(def.effects)), null, null);
 			}
 	} while (false); // top-level `continue` = skip this effect (chain semantics)
@@ -3180,4 +3197,262 @@ register('slime-board', ({ state, pi }, e) => {
 register('tricks-of-the-trade', ({ state, pi, target, source }, e) => {
 	const armed = (source && source.stealthAttackedWhileHeld || 0) >= (e.need || 1);
 	execEffects(state, pi, [{ type: 'damage', value: armed ? (e.high || 3) : (e.value || 1), target: e.target || 'any' }], target, source);
+});
+
+// ---------- Duels active treasures (the 2026-09 wave) ----------
+// Slate's Syringe: drain up to N Attack and Health from an enemy minion into a random friendly
+register('steal-stats-random-friendly', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	const n = e.value || 4;
+	const atk = Math.min(n, t.attack || 0);
+	const hlt = Math.min(n, Math.max(0, hp(t) - 1)); // never reduce below 1 Health
+	t.attack -= atk; t.maxHealth -= hlt;
+	emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+	const pool = state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature');
+	if (pool.length && (atk || hlt)) {
+		const f = pool[Math.floor(state.rng() * pool.length)];
+		f.attack += atk; f.maxHealth += hlt;
+		emit(state, { type: 'buff', uid: f.uid, attack: f.attack, hp: hp(f) });
+	}
+});
+
+// Spymaster's Gambit: summon a copy of each creature in your hand (grant = extra keywords, e.g. Stealth)
+register('summon-hand-copies', ({ state, pi }, e) => {
+	for (const hc of [...state.players[pi].hand]) {
+		if (hc.type !== 'creature' || !state.cardsById[hc.id]) continue;
+		const c = summon(state, pi, state.cardsById[hc.id]);
+		if (!c) break;
+		for (const k of e.grant || []) if (!c.keywords.includes(k)) { c.keywords.push(k); if (k === KW.DIVINE_SHIELD) c.shield = true; }
+	}
+});
+
+// Stalker's Supplies: shuffle N random secrets of a class into your deck
+register('shuffle-random-class-secrets', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const pool = Object.values(state.cardsById).filter(d => d.type === 'secret' && (d.cardClass || 'neutral') === (e.cardClass || 'hunter') && d.collectible !== false && !d.token && !(d.colors && d.colors.length));
+	for (let n = 0; n < (e.count || 3) && pool.length; n++) p.deck.push(pool.splice(Math.floor(state.rng() * pool.length), 1)[0].id);
+	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+});
+
+// Rending Ambush: summon the left- and right-most creatures FROM your hand; each attacks a random enemy minion
+register('rending-ambush', ({ state, pi, enemies }, e) => {
+	const p = state.players[pi];
+	const picks = [];
+	const creatures = p.hand.filter(c => c.type === 'creature');
+	if (creatures.length) picks.push(creatures[0]);
+	if (creatures.length > 1) picks.push(creatures[creatures.length - 1]);
+	for (const hc of picks) {
+		p.hand = p.hand.filter(c => c !== hc);
+		const c = summon(state, pi, state.cardsById[hc.id] || hc);
+		if (!c) break;
+		const foes = [];
+		for (const o of enemies) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type === 'creature') foes.push(fc);
+		if (foes.length) {
+			const foe = foes[Math.floor(state.rng() * foes.length)];
+			c.sick = false;
+			resolveCombat(state, pi, c.uid, { type: 'creature', uid: foe.uid, player: foe.controller });
+			sweepDeaths(state);
+		}
+	}
+});
+
+// Devout Blessings: hand copies of each friendly Deathrattle minion that died since your last turn
+register('devout-blessings', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const since = state.turnNumber - state.players.length; // "after your last turn"
+	for (const m of p.deathLogMeta || []) {
+		if (m.turn < since) continue;
+		const def = state.cardsById[m.id];
+		if (!def || def.type !== 'creature' || !(def.keywords || []).includes('deathrattle')) continue;
+		if (p.hand.length >= MAX_HAND) break;
+		const hc = instantiate(def, pi); hc.zone = 'hand'; p.hand.push(hc);
+		emit(state, { type: 'conjure', player: pi, card: hc, color: null });
+	}
+});
+
+// Chaos Theory: both players cast every spell in their hand (targets chosen randomly)
+register('chaos-theory', ({ state }, e) => {
+	if (state._chaosLock) return;
+	state._chaosLock = true;
+	try {
+		for (let s = 0; s < state.players.length; s++) {
+			const pl = state.players[s];
+			if (pl.eliminated) continue;
+			for (const hc of [...pl.hand]) {
+				if (!isSpellType(hc) || !hc.effects || state.over) continue;
+				pl.hand = pl.hand.filter(c => c !== hc);
+				execEffects(state, s, JSON.parse(JSON.stringify(hc.effects)), null, null);
+				sweepDeaths(state);
+			}
+		}
+	} finally { state._chaosLock = false; }
+});
+
+// Fire Stomp: damage every enemy character; heal 1 per character hit, +1 more per kill
+register('fire-stomp', ({ state, pi, enemies }, e) => {
+	let healed = 0;
+	for (const o of enemies) {
+		const op = state.players[o];
+		for (const c of [...op.board]) {
+			if (isDead(c) || c.type !== 'creature') continue;
+			damageCreature(state, c, e.value || 3, null);
+			healed += 1 + (c.damage >= c.maxHealth ? 1 : 0);
+		}
+		damageHero(state, o, e.value || 3, pi);
+		healed += 1;
+	}
+	sweepDeaths(state);
+	if (healed) healHero(state, pi, healed * (e.healPer || 1));
+});
+
+// Apocalypse / Uber Apocalypse: destroy all minions; enemies take double damage
+// for the rest of the game (hero always; `minions` too on the Uber version)
+register('apocalypse-doom', ({ state, pi, enemies }, e) => {
+	for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type === 'creature') { c.damage = c.maxHealth; c.shield = false; }
+	sweepDeaths(state);
+	for (const o of enemies) {
+		state.players[o].takesDoubleHero = true;
+		if (e.minions) state.players[o].takesDoubleMinions = true;
+	}
+});
+
+// Soulstone Trap: destroy a minion; your hero gains its Attack (this turn) and its Health as Armor
+register('destroy-target-hero-gains', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	const atk = t.attack || 0, hlt = hp(t);
+	t.damage = t.maxHealth; t.shield = false;
+	sweepDeaths(state);
+	state.players[pi].heroTempAttack += atk;
+	emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, state.players[pi]) });
+	gainArmor(state, pi, hlt);
+});
+
+// Black Soulstone: add a random card from a fixed id list to your hand
+register('conjure-from-ids', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const pool = (e.ids || []).filter(id => state.cardsById[id]);
+	for (let n = 0; n < (e.count || 1) && pool.length && p.hand.length < MAX_HAND; n++) {
+		const id = pool[Math.floor(state.rng() * pool.length)];
+		const hc = instantiate(state.cardsById[id], pi); hc.zone = 'hand'; p.hand.push(hc);
+		emit(state, { type: 'conjure', player: pi, card: hc, color: null });
+	}
+});
+
+// Demonology 101: destroy ALL minions; a Soul Fragment joins your deck per enemy minion destroyed
+register('demonology-101', ({ state, pi, enemies }, e) => {
+	let fragments = 0;
+	for (const pl of state.players) for (const c of pl.board) if (!isDead(c) && c.type === 'creature') {
+		if (pl !== state.players[pi]) fragments++;
+		c.damage = c.maxHealth; c.shield = false;
+	}
+	sweepDeaths(state);
+	const p = state.players[pi];
+	for (let n = 0; n < fragments; n++) p.deck.push(e.id || 'sch_soul_fragment');
+	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+});
+
+// Remembrance of Ice: resurrect the minions your Frost spells have killed this game
+register('remembrance-frost', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	for (const id of [...new Set(p.frostKillIds || [])]) {
+		const def = state.cardsById[id];
+		if (!def || def.type !== 'creature') continue;
+		if (!summon(state, pi, def)) break;
+	}
+});
+
+// Unholy Embrace: spend up to N Corpses; a random Unholy-rune Death Knight card per Corpse
+register('unholy-embrace', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const n = Math.min(e.max || 10, p.corpses || 0);
+	if (!n) return;
+	spendCorpses(state, pi, n);
+	let pool = Object.values(state.cardsById).filter(d => (d.cardClass || '') === 'death_knight' && d.collectible !== false && !d.token && d.runes && (d.runes.unholy || 0) >= 1);
+	if (!pool.length) pool = Object.values(state.cardsById).filter(d => (d.cardClass || '') === 'death_knight' && d.collectible !== false && !d.token);
+	for (let k = 0; k < n && pool.length && p.hand.length < MAX_HAND; k++) {
+		const d = pool[Math.floor(state.rng() * pool.length)];
+		const hc = instantiate(d, pi); hc.zone = 'hand'; p.hand.push(hc);
+		emit(state, { type: 'conjure', player: pi, card: hc, color: null });
+	}
+});
+
+// Mask of Mimicry: creatures in your hand become copies of the chosen minion
+register('mask-of-mimicry', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || !state.cardsById[t.id]) return;
+	const p = state.players[pi];
+	for (const hc of [...p.hand]) {
+		if (hc.type !== 'creature') continue;
+		const morph = instantiate(state.cardsById[t.id], pi);
+		morph.uid = hc.uid; morph.zone = 'hand';
+		p.hand[p.hand.indexOf(hc)] = morph;
+		emit(state, { type: 'conjure', player: pi, card: morph, color: null });
+	}
+});
+
+// Contagion Concoction: the infection Deathrattle — 3 damage to the owner's hero,
+// then a random living creature on the same side catches it
+register('contagion-infect', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	t.deathrattle = [...(t.deathrattle || []), { type: 'contagion-spread', value: e.value || 3 }];
+	if (!t.keywords.includes('deathrattle')) t.keywords.push('deathrattle');
+	emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+});
+register('contagion-spread', ({ state, pi, source }, e) => {
+	damageHero(state, pi, e.value || 3, pi);
+	const pool = state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature' && !(c.deathrattle || []).some(d => d.type === 'contagion-spread'));
+	if (pool.length) {
+		const next = pool[Math.floor(state.rng() * pool.length)];
+		next.deathrattle = [...(next.deathrattle || []), { type: 'contagion-spread', value: e.value || 3 }];
+		if (!next.keywords.includes('deathrattle')) next.keywords.push('deathrattle');
+		emit(state, { type: 'buff', uid: next.uid, attack: next.attack, hp: hp(next) });
+	}
+});
+
+// Magister Unchained: arm a this-turn player flag read by playCard's spell branch
+register('set-turn-flag', ({ state, pi }, e) => {
+	if (e.flag === 'magisterTurn') state.players[pi][e.flag] = state.turnNumber;
+});
+
+// For the Horde / For the Alliance: "Start of Game: Draw this" — pull a specific id from your deck
+register('tutor-id', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const i = p.deck.indexOf(e.id);
+	if (i < 0 || p.hand.length >= MAX_HAND) return;
+	p.deck.splice(i, 1);
+	const hc = instantiate(state.cardsById[e.id], pi); hc.zone = 'hand'; p.hand.push(hc);
+	emit(state, { type: 'draw', player: pi, card: hc });
+});
+
+// Stalking Pride: a random Beast, plus one more per Secret you've played this game
+register('stalking-pride', ({ state, pi }, e) => {
+	const n = 1 + (state.players[pi].secretsPlayedGame || 0);
+	const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Beast') && d.collectible !== false && !d.token && !(d.colors && d.colors.length));
+	for (let k = 0; k < n && pool.length; k++) {
+		if (!summon(state, pi, pool[Math.floor(state.rng() * pool.length)])) break;
+	}
+});
+
+// Acquired Allies: bounce a chosen minion to its owner's hand, then shuffle two copies of it into YOUR deck
+register('acquired-allies', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t) || !state.cardsById[t.id]) return;
+	const id = t.id;
+	bouncePermanent(state, t.controller, t);
+	const p = state.players[pi];
+	for (let n = 0; n < (e.count || 2); n++) p.deck.push(id);
+	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+});
+
+// Men at Arms: for the rest of the game your <name>s have +A/+H (existing ones too)
+register('set-named-summon-buff', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	p.namedSummonBuff = { name: e.name, attack: e.attack || 0, health: e.health || 0 };
+	for (const c of p.board) if (!isDead(c) && c.name === e.name) {
+		c.attack += e.attack || 0; c.maxHealth += e.health || 0;
+		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+	}
 });

@@ -1338,7 +1338,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 			// options: pick a random companion (Animal Companion);
 			// forEnemy: tokens go to a random opponent (Leeroy's Whelps);
 			// eachPlayer: every player summons the token(s) (Sokenzan's Arrival)
-			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : (e.count || 1); // Rat Pack
+			let n = e.count === 'X' ? (source?.xValue || 0) : e.count === 'source-attack' ? (source?.attack || 0) : e.count === 'mana-max' ? (state.players[pi].mana?.max || 0) : (e.count || 1); // Rat Pack / Vision of the Warden (a Treant per Mana Crystal)
 			if (e.perEnemy) {
 				n = 0;
 				for (const o of enemies) n += state.players[o].board.filter(c => !isDead(c)).length;
@@ -1400,6 +1400,7 @@ register('summon-random', ({ state, pi, target, source, enemies, scaled, hm, pic
 				d.type === 'creature' && (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.minCost == null || (d.cost || 0) >= e.minCost)
 				&& (exactCost == null || (d.cost || 0) === exactCost)
+				&& (e.rarity == null || (d.rarity || 'common') === e.rarity) // Canopic Jars: a random Legendary
 				&& (e.tribe == null || (d.tribe || '').includes(e.tribe))
 				&& (e.rarity == null || d.rarity === e.rarity)
 				&& (e.requireKeyword == null || (d.keywords || []).includes(e.requireKeyword)) // Obsidian Revenant: Deathrattle minions

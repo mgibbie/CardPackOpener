@@ -1173,6 +1173,8 @@ export function summon(state, pi, tokenDef) {
 	if (p.nextSummonStats) { c.attack = p.nextSummonStats.attack; c.maxHealth = p.nextSummonStats.health; c.damage = 0; p.nextSummonStats = null; } // The Crystal Cove: next summoned minion's stats set
 	if (p.nextRecruitBuff && c.name === 'Silver Hand Recruit') { c.attack += p.nextRecruitBuff.attack || 0; c.maxHealth += p.nextRecruitBuff.health || 0; if (p.nextRecruitBuff.deathrattle) { c.deathrattle = (c.deathrattle || []).concat(JSON.parse(JSON.stringify(p.nextRecruitBuff.deathrattle))); if (!c.keywords.includes('deathrattle')) c.keywords.push('deathrattle'); } p.nextRecruitBuff = null; } // Stewart the Steward
 	if (p.recruitAttackBonus && c.name === 'Silver Hand Recruit') c.attack += p.recruitAttackBonus; // Brash Battlemaster
+	// Men at Arms (Duels): "for the rest of the game, your <name>s have +A/+H"
+	if (p.namedSummonBuff && c.name === p.namedSummonBuff.name) { c.attack += p.namedSummonBuff.attack || 0; c.maxHealth += p.namedSummonBuff.health || 0; }
 	if (p.recruitHealthBonus && c.name === 'Silver Hand Recruit') c.maxHealth += p.recruitHealthBonus; // Resilient Savior
 	if (p.leechBoost && c.name === 'Leech') c.attack += p.leechBoost; // Hideous Husk: Leeches steal more
 	// Ash Worm: a full board wakes the sleepers
@@ -1917,6 +1919,11 @@ export function runSpell(state, pi, card, target, choice) {
 	// deals inflicts Poisoned (state-scoped — many damage branches pass no source)
 	const _spines = state.players[pi].spellsPoisonousTurn === state.turnNumber;
 	if (_spines) state._spellPoisonActive = true;
+	// Remembrance of Ice (Duels): while a FROST spell resolves, lethal creature
+	// damage is credited to its caster (the damage branches don't thread source
+	// — same scoping trick as Urchin Spines above)
+	const _frostSpell = card.tribe === 'Frost';
+	if (_frostSpell) state._frostSpellCaster = pi;
 	// Farseer Nobundo's Galaxy Lens: the next spell is absorbed — a copy returns to hand
 	if (state.players[pi].galaxyLens && state.cardsById[card.id] && !card.token) {
 		state.players[pi].galaxyLens = false;
@@ -1992,6 +1999,7 @@ export function runSpell(state, pi, card, target, choice) {
 		state._inCascade = false;
 	}
 	if (_spines) state._spellPoisonActive = false;
+	if (_frostSpell) state._frostSpellCaster = null;
 }
 
 // ---------- spell schools ----------
@@ -2405,7 +2413,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else if (card.type === 'secret') {
 		card.zone = 'secret';
 		p.secrets.push(card);
-		emit(state, { type: 'secretPlayed', player: pi, card });
+		emit(state, { type: 'secretPlayed', player: pi, card }); // secretsPlayedGame counts at the top of playCard (Kabal Crystal Runner)
 	} else if (card.type === 'trap') {
 		card.zone = 'trap';
 		p.traps.push(card);
@@ -2458,6 +2466,16 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	} else {
 		questTick(state, 'spell', pi);
 		p.spellsPlayedThisTurn++;
+		// Magister Unchained (Duels): until end of turn, casting a spell draws a spell
+		if (p.magisterTurn === state.turnNumber && !card._magisterDrawn) {
+			const si = p.deck.findIndex(id => { const d = state.cardsById[id]; return d && isSpellType(d); });
+			if (si >= 0 && p.hand.length < MAX_HAND) {
+				const [sid] = p.deck.splice(si, 1);
+				const sc3 = instantiate(state.cardsById[sid], pi); sc3.zone = 'hand'; sc3._magisterDrawn = true;
+				p.hand.push(sc3);
+				emit(state, { type: 'draw', player: pi, card: sc3 });
+			}
+		}
 		if (state.anomaly === 'dragon_soul' && p.spellsPlayedThisTurn === 3) summon(state, pi, { id: 'token_soul_dragon', name: 'Dragon', type: 'creature', cost: 0, rarity: 'common', token: true, attack: 5, health: 5, tribe: 'Dragon', description: 'A 5/5 Dragon.' }); // Anomaly - Dragon Soul
 		if (p.crookAndFlail) execEffects(state, pi, [{ type: 'summon-random-from-deck' }], null, null); // Crook and Flail: a spell pulls a creature from your deck
 		if (p.vistahAt != null && state.cardsById[card.id] && !card.token) (p.vistahSpells = p.vistahSpells || []).push(card.id); // Mistah Vistah logs the window
@@ -4350,6 +4368,24 @@ export function resolvePick(state, id) {
 		if (pend.grantCastTwice) card.castTwice = true; // Breakout Architect
 		// Arrest Warrant: the pick gains Prepare (canPrepare reads card.prepare)
 		if (pend.grantPrepare) { card.prepare = true; card.description = (card.description ? card.description + '\n' : '') + 'Prepare.'; }
+		// Valorous Display (Duels): the discovered weapon is equipped, not held
+		if (pend.equipPick && card.type === 'weapon') {
+			card.zone = 'weapon';
+			if (p.weapon) toGraveyard(state, pend.player, p.weapon);
+			p.weapon = card;
+			emit(state, { type: 'weaponEquip', player: pend.player, card });
+			recomputeAuras(state);
+			return true;
+		}
+		// Gift of the Old Gods (Duels): the pick arrives already Corrupted
+		if (pend.corruptPick && def.corrupt && state.cardsById[def.corrupt]) {
+			const cdef = state.cardsById[def.corrupt];
+			const corrupted = instantiate(cdef, pend.player);
+			corrupted.zone = 'hand';
+			p.hand.push(corrupted);
+			emit(state, { type: 'conjure', player: pend.player, card: corrupted, color: null });
+			return true;
+		}
 		if (pend.damageAllByCost) { // Murozond, Thief of Time: the pick nukes all other minions
 			const dmg = card.cost || 0;
 			if (dmg > 0) {

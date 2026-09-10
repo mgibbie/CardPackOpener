@@ -181,7 +181,7 @@ export function spoilsChoices(cardsById, defeatedEnemyName, rng, count = 3) {
 // the treasure pool for the alternating treasure reward — the DUELS treasures plus any
 // Middle-earth-specific treasures (The One Ring, tagged meTreasure).
 export function treasurePool(cardsById) {
-	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.meTreasure);
+	return Object.values(cardsById).filter(d => (d.treasure && d.set === 'DUELS') || d.duelsTreasure || d.meTreasure);
 }
 
 // ---------- character progression ----------
