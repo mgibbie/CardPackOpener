@@ -23,7 +23,7 @@ const BASIC = new Set(['Forest', 'Island', 'Mountain', 'Plains', 'Swamp', 'Waste
 // tier bands (avgEffPower minimums) — Plan §3
 export const BANDS = { basic: null /* owner-tuned, informational */, mono: 1.5, two: 2.0, three: 3.0 };
 // pools brought to band so far (append per batch PR)
-export const ENFORCED = new Set(['Bant', 'Esper', 'Grixis', 'Jund', 'Naya', 'Jeskai', 'Mardu', 'Sultai', 'Temur', 'Abzan', 'Brokers', 'Obscura', 'Maestros', 'Riveteers', 'Cabaretti', 'Indatha', 'Ketria', 'Raugrin', 'Savai', 'Zagoth']);
+export const ENFORCED = new Set(['Bant', 'Esper', 'Grixis', 'Jund', 'Naya', 'Jeskai', 'Mardu', 'Sultai', 'Temur', 'Abzan', 'Brokers', 'Obscura', 'Maestros', 'Riveteers', 'Cabaretti', 'Indatha', 'Ketria', 'Raugrin', 'Savai', 'Zagoth', 'Axgard', 'Bretagard', 'Gnottvold', 'Immersturm', 'Istfell', 'Karfell', 'Littjara', 'Skemfar', 'Starnheim', 'Surtland', 'Azorius', 'Boros', 'Dimir', 'Golgari', 'Gruul', 'Izzet', 'Orzhov', 'Rakdos', 'Selesnya', 'Simic', 'Lorehold', 'Prismari', 'Quandrix', 'Silverquill', 'Witherbloom', 'Atarka', 'Dromoka', 'Kolaghan', 'Ojutai', 'Silumgar']);
 
 const cards = JSON.parse(fs.readFileSync(CARDS, 'utf8')).cards;
 const pools = new Map();
