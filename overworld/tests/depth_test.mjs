@@ -70,6 +70,8 @@ async function waitFor(fn, ms) {
 				localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
 				localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 				localStorage.setItem('magepunk_party_v1', JSON.stringify([mon]));
+				// party without intro_done fires the boot intro-heal cutscene — seed done
+				localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 			} catch {}
 		}, STATE, seedMon);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PalletTown`, { waitUntil: 'domcontentloaded' });
@@ -142,10 +144,13 @@ async function waitFor(fn, ms) {
 			b.useMove(me, a().meBoosts, foe, a().foeBoosts, { id: 'tackle', name: 'Tackle', pp: 30, maxPp: 30 }, false);
 			drain();
 			out.moxie = a().meBoosts.atk === 1;
-			// EV accrual: pidgey's best base stat is speed
+			// EV accrual: the REAL per-species yield when the table knows the species
+			// (pidgey = 1 Speed); the old +2-to-best-stat rule is only the fallback
+			// for species missing from the table
 			const evBefore = { ...me.evs };
 			b.awardEvs(me, foe);
-			out.evAward = me.evs.spe === (evBefore.spe || 0) + 2;
+			const ySpe = b.data.evYields?.pidgey ? (b.data.evYields.pidgey.spe || 0) : 2;
+			out.evAward = ySpe > 0 && me.evs.spe === (evBefore.spe || 0) + ySpe;
 			return out;
 		});
 

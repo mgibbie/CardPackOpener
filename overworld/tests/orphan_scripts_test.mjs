@@ -41,9 +41,11 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) if (f.endsWith('_map.json'
 }
 
 // ---------- nothing unreachable is left ----------
+// _common.json is not a map's file: it holds the cross-map shared labels main.js
+// loads at boot (commonStrings) as the fallback for msg ops
 for (const dir of ['scripts', 'strings']) {
 	const orphans = fs.readdirSync(path.join(D, dir))
-		.filter(f => f.endsWith('.json') && f !== '_index.json')
+		.filter(f => f.endsWith('.json') && f !== '_index.json' && f !== '_common.json')
 		.map(f => f.replace('.json', ''))
 		.filter(s => !mapStems.has(s));
 	A(orphans.length === 0, `every file in data/${dir}/ belongs to a real map`, `${orphans.length}: ${orphans.slice(0, 6).join(', ')}`);

@@ -57,14 +57,30 @@ try {
 			localStorage.setItem('magepunk_region', 'kanto');
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			for (const k of ['magepunk_badges_v1', 'magepunk_flypoints']) localStorage.removeItem(k);
+			// party without intro_done fires the boot intro-heal cutscene — seed done
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		} catch { }
 	}, STATE, PARTY);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PewterCity`, { waitUntil: 'domcontentloaded' });
 	await waitFor(() => page.evaluate(() => !!(window.__ow && window.__ow.portals && window.__ow.moveToMap)), 30000);
 
-	// 1 + 2: PLACEMENT + DESTS across all 24 gym towns
+	// ANTI-TRAP CLAMP first, while the save has NO badges: a pad targets
+	// min(town tier, globalTier), so a fresh player standing in a late town is
+	// offered the other regions' tier-1 towns instead of being flung endgame
+	const clamped = await page.evaluate(async () => {
+		const ow = window.__ow;
+		await ow.moveToMap('MossdeepCity');
+		await new Promise(r => setTimeout(r, 30));
+		return ow.portals.list[0] ? ow.portals.list[0].dests.map(d => d.mapId) : [];
+	});
+	A(clamped.includes('MAP_PEWTER_CITY') && clamped.includes('MAP_VIOLET_CITY'),
+		'with no badges, even Mossdeep (gym 7) clamps its pads to the tier-1 towns (anti-trap)', JSON.stringify(clamped));
+
+	// 1 + 2: PLACEMENT + DESTS across all 24 gym towns — with ALL badges earned,
+	// so destTier is the town's real tier (the clamp is covered above)
 	const report = await page.evaluate(async (TOWNS) => {
 		const ow = window.__ow, out = [];
+		for (const r of ['KANTO', 'JOHTO', 'HOENN']) for (const b of ow.Badges.list(r)) ow.Badges.earn(r, b.id);
 		for (const region of Object.keys(TOWNS)) {
 			for (let tier = 0; tier < TOWNS[region].length; tier++) {
 				const file = TOWNS[region][tier];
@@ -72,8 +88,8 @@ try {
 				await new Promise(r => setTimeout(r, 30));
 				const list = ow.portals.list;
 				const p = list[0];
-				const passable = p ? ow.world.isPassable(p.tx, p.ty) : false;
-				const onWarp = p ? (ow.world.current.map.warp_events || []).some(w => +w.x === p.tx && +w.y === p.ty) : false;
+				const passable = list.length > 0 && list.every(q => ow.world.isPassable(q.tx, q.ty));
+				const onWarp = list.some(q => (ow.world.current.map.warp_events || []).some(w => +w.x === q.tx && +w.y === q.ty));
 				out.push({
 					file, region, tier, count: list.length,
 					id: ow.world.current.map.id,
@@ -86,8 +102,10 @@ try {
 		return out;
 	}, TOWNS);
 
-	const placed = report.filter(r => r.count === 1);
-	A(placed.length === 24, `all 24 gym towns get exactly one portal pad`, `placed ${placed.length}/24: ${report.filter(r => r.count !== 1).map(r => r.file + '=' + r.count).join(',')}`);
+	// pads come as a PAIR flanking the PC door (one left, one right); a side with
+	// no open tile is deliberately skipped rather than walling anything
+	const placed = report.filter(r => r.count >= 1 && r.count <= 2);
+	A(placed.length === 24, `all 24 gym towns get their portal pad pair (1-2 pads)`, `placed ${placed.length}/24: ${report.filter(r => r.count < 1 || r.count > 2).map(r => r.file + '=' + r.count).join(',')}`);
 	A(report.every(r => r.passable && !r.onWarp), 'every pad sits on a walkable, warp-free tile', report.filter(r => !(r.passable && !r.onWarp)).map(r => r.file).join(','));
 	A(report.every(r => r.dests.length === 2), 'every pad offers two destinations', report.filter(r => r.dests.length !== 2).map(r => r.file).join(','));
 	A(report.every(r => !r.destRegions.includes(r.region) && new Set(r.destRegions).size === 2), 'the two destinations are the OTHER two regions', report.filter(r => r.destRegions.includes(r.region)).map(r => r.file).join(','));

@@ -44,7 +44,10 @@ try {
 			localStorage.setItem('magepunk_rival', 'GARY');
 			localStorage.setItem('magepunk_name', 'ASH');
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
-			for (const k of ['magepunk_badges_v1', 'magepunk_story', 'magepunk_flypoints']) localStorage.removeItem(k);
+			for (const k of ['magepunk_badges_v1', 'magepunk_flypoints']) localStorage.removeItem(k);
+			// keep the story SEEDED (not removed): a party without intro_done fires the
+			// boot intro-heal cutscene, which would collide with the rival taunt cutscene
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		} catch { }
 	}, STATE, PARTY);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PewterCity`, { waitUntil: 'domcontentloaded' });

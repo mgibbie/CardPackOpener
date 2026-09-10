@@ -124,7 +124,9 @@ const { SCRIPT_CONSTANTS: C } = await import('../script_constants.js');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'JOHTO');
-			localStorage.removeItem('magepunk_story');
+			// a party without intro_done fires the boot intro-heal cutscene, which owns
+			// the keyboard (the VAR_FACING probes below turn the player with arrow keys)
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		}, STATE, PARTY);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=NewBarkTown`, { waitUntil: 'domcontentloaded' });
 		const t0 = Date.now();

@@ -85,6 +85,8 @@ async function waitFor(fn, ms) {
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'KANTO');
+			// party without intro_done fires the boot intro-heal cutscene — seed done
+			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 		}, STATE, PARTY);
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PalletTown`, { waitUntil: 'domcontentloaded' });
 		const ready = await waitFor(() => page.evaluate(() => !!(window.__ow?.battle?.data)), 30000);
@@ -207,7 +209,9 @@ async function waitFor(fn, ms) {
 				Math.random = () => 0.1;
 				try {
 					b.useMove(a.me, a.meBoosts, a.foe, a.foeBoosts, { id, name: id, pp: 99, maxPp: 99 }, false);
-					window.__pump(40);
+					// the battle-start flash + attack-anim beats run before the strike
+					// lands — pump until it resolves, stopping before the foe replies
+					for (let i = 0; i < 400 && b.lastWasCrit == null; i++) window.__pump(1);
 				} finally { Math.random = real; }
 				const out = b.lastWasCrit;
 				window.__end();
@@ -368,7 +372,8 @@ async function waitFor(fn, ms) {
 				const real = Math.random; Math.random = () => 0.5;
 				try {
 					b.useMove(s.me, s.meBoosts, s.foe, s.foeBoosts, { id, name: id, pp: 99, maxPp: 99 }, false);
-					window.__pump(40);
+					// pump until the strike actually lands (start-flash + anim beats first)
+					for (let i = 0; i < 400 && s.foe.curHP === s.foe.maxHP; i++) window.__pump(1);
 				} finally { Math.random = real; }
 				const d = s.foe.maxHP - s.foe.curHP;
 				window.__end();

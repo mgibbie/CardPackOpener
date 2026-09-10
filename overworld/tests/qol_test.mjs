@@ -68,6 +68,9 @@ async function waitFor(fn, ms) {
 				localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 				localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 				localStorage.setItem('magepunk_box_v1', JSON.stringify(box));
+				// a party without intro_done triggers the boot intro-heal (afterRival's
+				// cutscene), which owns the keyboard — seed the intro as complete
+				localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 			} catch {}
 		}, STATE, [mkMon(99)], Array.from({ length: 35 }, (_, i) => mkMon(i)));
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=PalletTown`, { waitUntil: 'domcontentloaded' });
@@ -98,10 +101,12 @@ async function waitFor(fn, ms) {
 			key('z');
 			out.withdrewRight = ow.party.length === 2 && ow.party[1].name === expect && box().length === 34;
 
-			// release with confirm: r arms, x keeps, r + z lets go
+			// release with confirm: r arms, x keeps, r + z lets go.
+			// confirm holds the REAL storage index (page 2 slot 0 = 30), so the
+			// splice cuts the right mon no matter which box page is showing
 			pc.idx = 0;
 			key('r');
-			out.confirmArmed = pc.confirm === 0;
+			out.confirmArmed = pc.confirm === 30;
 			key('x');
 			out.confirmKept = pc.confirm === null && box().length === 34;
 			key('r'); key('z');

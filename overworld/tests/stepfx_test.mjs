@@ -71,9 +71,9 @@ async function stepOntoAndPeak(page, predName, kind) {
 	await sleep(300);
 	const KEY = { up: 'w', down: 's', left: 'a', right: 'd' }[setup.f];
 	await page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })), KEY);
-	await sleep(400);
+	await sleep(650); // hold long enough for the full tile step even under suite load (400ms raced it)
 	await page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })), KEY);
-	await sleep(150);
+	await sleep(250);
 	const peak = await page.evaluate(() => window.__pk);
 	return { setup, peak };
 }
