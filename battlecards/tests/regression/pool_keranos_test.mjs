@@ -1,4 +1,4 @@
-// pool_keranos_test.mjs — Keranos land pool (UR devotion: storm burn + card advantage).
+﻿// pool_keranos_test.mjs â€” Keranos land pool (UR devotion: storm burn + card advantage).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -13,7 +13,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Keranos');
+const pool = raw.cards.filter(c => c.landSet === 'Keranos' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Keranos pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));

@@ -1,4 +1,4 @@
-// pool_phenax_test.mjs — Phenax land pool (UB devotion: defensive mill + discard + control).
+﻿// pool_phenax_test.mjs â€” Phenax land pool (UB devotion: defensive mill + discard + control).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -12,7 +12,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Phenax');
+const pool = raw.cards.filter(c => c.landSet === 'Phenax' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Phenax pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));

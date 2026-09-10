@@ -1,4 +1,4 @@
-// pool_dimir_test.mjs — Dimir land pool (UB mill + surveillance + theft + Elusive/Deathtouch assassins).
+﻿// pool_dimir_test.mjs â€” Dimir land pool (UB mill + surveillance + theft + Elusive/Deathtouch assassins).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -12,7 +12,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Dimir');
+const pool = raw.cards.filter(c => c.landSet === 'Dimir' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Dimir pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));

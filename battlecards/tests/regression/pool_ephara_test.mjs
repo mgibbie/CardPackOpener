@@ -1,4 +1,4 @@
-// pool_ephara_test.mjs — Ephara land pool (WU devotion: card advantage on creatures + control + Soldier tokens + defense).
+﻿// pool_ephara_test.mjs â€” Ephara land pool (WU devotion: card advantage on creatures + control + Soldier tokens + defense).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -14,7 +14,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 const soldiers = (st, pi) => st.players[pi].board.filter(c => c.name === 'Soldier').length;
 
-const pool = raw.cards.filter(c => c.landSet === 'Ephara');
+const pool = raw.cards.filter(c => c.landSet === 'Ephara' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Ephara pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));

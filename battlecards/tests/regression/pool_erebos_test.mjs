@@ -1,4 +1,4 @@
-// pool_erebos_test.mjs — Erebos land pool (B devotion: death + drain + aristocrats + Undead recursion).
+﻿// pool_erebos_test.mjs â€” Erebos land pool (B devotion: death + drain + aristocrats + Undead recursion).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -14,7 +14,7 @@ const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, 
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 const undead = (st, pi) => st.players[pi].board.filter(c => c.name === 'Undead').length;
 
-const pool = raw.cards.filter(c => c.landSet === 'Erebos');
+const pool = raw.cards.filter(c => c.landSet === 'Erebos' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Erebos pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));

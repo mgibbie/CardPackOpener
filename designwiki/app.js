@@ -1593,6 +1593,17 @@ async function correspondenceView() {
   const alts = cards.filter(c => c.corrOnly)
     .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
   await CardArt.preloadArt([...banned, ...alts].map(c => c.id));
+  // alternates grouped by the land pool they patch back to full size
+  const byPool = new Map();
+  for (const c of alts) {
+    const key = c.landSet || 'Other';
+    if (!byPool.has(key)) byPool.set(key, []);
+    byPool.get(key).push(c);
+  }
+  const poolSections = [...byPool.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+    .map(([pool, group]) => h('div', { class: 'lp-tier' },
+      h('h3', null, pool + ' pool ', h('span', { class: 'num' }, '(' + group.length + ')')),
+      h('div', { class: 'card-grid size-medium' }, ...group.map(cardTile))));
   content.replaceChildren(
     h('div', { class: 'gallery-heading' },
       h('div', null, h('h1', null, 'Correspondence Format'),
@@ -1600,16 +1611,16 @@ async function correspondenceView() {
           'Play-by-mail is its own format: there are no mid-turn response windows, so every card that counters spells is banned — ',
           'decks containing them cannot enter a correspondence match, and in-game generation never produces them. ',
           'Secrets, traps and other pre-committed reactions still work. ',
-          'The Island basic-land pool replaces its 13 banned counterspells with 13 correspondence-only alternates (below), keeping every basic pool at 70 cards.')),
+          'Every land pool that lost cards to the ban gets correspondence-only alternates (below), so each pool keeps its full size in this format.')),
       h('div', { class: 'result-count' }, banned.length + alts.length, h('span', null, ' cards'))),
     h('section', null,
       h('h2', null, 'Banned cards ', h('span', { class: 'num' }, '(' + banned.length + ')')),
       h('p', { class: 'muted' }, 'Everything that counters spells, in any mode or trigger. (+1/+1 “counter” cards are unaffected.)'),
       h('div', { class: 'card-grid size-medium' }, ...banned.map(cardTile))),
     h('section', null,
-      h('h2', null, 'Island pool alternates ', h('span', { class: 'num' }, '(' + alts.length + ')')),
-      h('p', { class: 'muted' }, 'Blue tempo without countering — freezes, bounces, pre-committed secrets and card flow. These cards appear ONLY in correspondence matches (the Island land conjures them there instead of the banned counterspells).'),
-      h('div', { class: 'card-grid size-medium' }, ...alts.map(cardTile))));
+      h('h2', null, 'Correspondence-only alternates ', h('span', { class: 'num' }, '(' + alts.length + ')')),
+      h('p', { class: 'muted' }, 'These cards exist ONLY in correspondence matches, where their pool conjures/discovers them instead of its banned cards. The Island basics swap 13 counterspells; each advanced pool that lost a counter-secret gets an in-identity stand-in — same cost slot, same payoff, on a pre-committed trigger.'),
+      ...poolSections));
 }
 
 // ---- Lorequest character decks: 37 base decks (16 planeswalkers + 21 bosses),

@@ -1,4 +1,4 @@
-// pool_izzet_test.mjs — Izzet land pool (UR spells-matter/prowess + burn + card draw + Niv draw->ping).
+﻿// pool_izzet_test.mjs â€” Izzet land pool (UR spells-matter/prowess + burn + card draw + Niv draw->ping).
 import fs from 'fs';
 import * as E from '../../engine.js';
 import { seededRng } from '../../engine/rng.js';
@@ -12,7 +12,7 @@ let pass = 0, fail = 0;
 const ok = (l, c, x) => { if (c) pass++; else { fail++; console.log('FAIL:', l, x ?? ''); } };
 const has = (c, k) => (E.has ? E.has(c, k) : (c.keywords || []).includes(k));
 
-const pool = raw.cards.filter(c => c.landSet === 'Izzet');
+const pool = raw.cards.filter(c => c.landSet === 'Izzet' && !c.corrOnly); // corrOnly = correspondence-format alternates, on top of the base pool
 // ---- rubric ----
 ok('Izzet pool has 15 cards', pool.length === 15);
 const types = new Set(pool.map(c => c.type));
