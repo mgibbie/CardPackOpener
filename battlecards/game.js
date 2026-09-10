@@ -5507,9 +5507,11 @@ function loadCardsData() {
 // ---------- correspondence (async) duels ----------
 // The server holds the match; each player takes WHOLE turns whenever they
 // like. State of record = the engine snapshot published at the end of every
-// turn. The absent player's forced decisions (discards, scries, priority
-// windows) resolve locally with the same sensible defaults AI seats use —
-// their secrets and traps still fire on their own.
+// turn. Correspondence is its own format: countering cards are banned and
+// there are NO response windows (state.noInstantResponses) — nothing ever
+// ghost-plays the absent player's instants. Their secrets and traps still
+// fire on their own, and their forced decisions (discards, scries, sac
+// picks) resolve locally with the same sensible defaults AI seats use.
 async function startAsync(cardsById) {
 	let d;
 	try { d = await MPX.call('async-get', { id: asyncGame.id }); } catch (e) { d = { error: e.message }; }
@@ -5619,6 +5621,11 @@ async function startAsync(cardsById) {
 		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 		return;
 	}
+
+	// correspondence has NO response windows: nothing ever ghost-plays the absent
+	// player's instants — casts and attacks resolve immediately. (Their secrets,
+	// traps and forced decisions still resolve as before.)
+	state.noInstantResponses = true;
 
 	asyncGame.live = true;
 	asyncGame.myTurnStarted = state.current === HUMAN && !state.over;
