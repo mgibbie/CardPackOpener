@@ -24,6 +24,10 @@ const CHOSEN = {
 	'mask-of-mimicry': { creature: 'creature' }, // Mask of Mimicry
 	'contagion-infect': { creature: 'creature' }, // Contagion Concoction
 	'acquired-allies': { creature: 'creature' }, // Acquired Allies
+	// Duels hero powers (2026-09 wave)
+	'grant-random-keyword': { creature: 'creature', 'friendly-creature': 'friendly-creature' }, // Promote!
+	'wyrm-bolt': { creature: 'creature', 'enemy-creature': 'enemy-creature' }, // Wyrm Bolt
+	'no-guts-no-glory': { creature: 'creature' }, // No Guts, No Glory
 	damage: { any: 'any', creature: 'creature', 'enemy-creature': 'enemy-creature', 'undamaged-creature': 'creature', 'enemy-any': 'enemy-any' },
 	heal: { any: 'any', creature: 'creature' },
 	buff: { creature: 'creature', 'friendly-creature': 'friendly-creature' },

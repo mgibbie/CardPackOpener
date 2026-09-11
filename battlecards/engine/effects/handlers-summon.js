@@ -1359,12 +1359,13 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					const sc = summon(state, ownerIdx, state.cardsById[opt.summonId]);
 					if (sc && e.grant) for (const k of e.grant) { if (!sc.keywords.includes(k)) sc.keywords.push(k); if (k === KW.DIVINE_SHIELD) sc.shield = true; } // Super Simian Sphere: Mukla with Immune+Elusive
 					if (sc && e.buff) { sc.attack += e.buff.attack || 0; sc.maxHealth += e.buff.health || 0; } // Disciple of Sargeras (Forged): the Imps get +2 Health
+					if (sc && e.doom) sc.doomTurn = state.turnNumber; // Ghoul Blitz (Duels): dies at end of turn
 					return;
 				}
 				// randomKeywords: each token rolls its own bonus (Bucket of Soldiers)
 				const kws = [...(opt.keywords || [])];
 				if (e.randomKeywords?.length) kws.push(e.randomKeywords[Math.floor(state.rng() * e.randomKeywords.length)]);
-				summon(state, ownerIdx, {
+				const inlineTok = summon(state, ownerIdx, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
 					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
@@ -1375,6 +1376,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					static: opt.static || e.static || null,
 					deathrattle: opt.deathrattle || null, // Underbelly Network's Rat
 				});
+				if (inlineTok && e.doom) inlineTok.doomTurn = state.turnNumber; // Ghoul Blitz (Duels): dies at end of turn
 			};
 			// forController: the token goes to the effect TARGET's controller — the
 			// owner of the destroyed creature (Beast Within). Falls back to pi.

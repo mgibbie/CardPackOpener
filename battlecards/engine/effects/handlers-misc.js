@@ -3447,6 +3447,107 @@ register('acquired-allies', ({ state, pi, chosenCreature }, e) => {
 	for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 });
 
+// ---------- Duels hero powers (the 2026-09 wave) ----------
+// Promote!: +1/+1 and ONE random keyword from the pool
+register('grant-random-keyword', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	t.attack += e.attack || 0; t.maxHealth += e.health || 0;
+	const pool = (e.pool || []).filter(k => !t.keywords.includes(k));
+	if (pool.length) {
+		const k = pool[Math.floor(state.rng() * pool.length)];
+		t.keywords.push(k);
+		if (k === KW.DIVINE_SHIELD) t.shield = true;
+	}
+	emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) });
+});
+
+// Warmaster's Frenzy: 1 damage to ALL minions; an Honorable Kill (exact lethal) pays +1 hero Attack
+register('warmasters-frenzy', ({ state, pi }, e) => {
+	const before = state.exactKills || 0;
+	for (const pl of state.players) for (const c of [...pl.board]) if (!isDead(c) && c.type === 'creature') damageCreature(state, c, e.value || 1, null);
+	sweepDeaths(state);
+	if ((state.exactKills || 0) > before) {
+		state.players[pi].heroTempAttack += 1;
+		emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, state.players[pi]) });
+	}
+});
+
+// Outlander: an Outcast card played this turn unlocks a Fel-spell Discover
+register('outlander-discover', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const playedOutcast = (p.cardsPlayedThisTurnIds || []).some(id => (state.cardsById[id]?.keywords || []).includes('outcast'));
+	if (playedOutcast) execEffects(state, pi, [{ type: 'discover', cardType: 'spell', tribe: 'Fel' }], null, null); // a spell's school lives in its tribe field
+});
+
+// Demonic Transformation: discard a random card; a random Demon of the same Cost arrives at (2) less
+register('demonic-transformation', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	if (!p.hand.length) return;
+	const [gone] = p.hand.splice(Math.floor(state.rng() * p.hand.length), 1);
+	toGraveyard(state, pi, gone);
+	emit(state, { type: 'discard', player: pi, card: gone });
+	const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && (d.tribe || '').includes('Demon') && (d.cost || 0) === (gone.cost || 0) && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+	if (pool.length && p.hand.length < MAX_HAND) {
+		const hc = instantiate(pool[Math.floor(state.rng() * pool.length)], pi);
+		hc.zone = 'hand';
+		hc.cost = Math.max(0, (hc.cost || 0) - (e.discount || 2));
+		p.hand.push(hc);
+		emit(state, { type: 'conjure', player: pi, card: hc, color: null });
+	}
+});
+
+// Hematology: spend up to N Corpses; each shaves (1) off a random held card
+register('hematology', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const n = Math.min(e.max || 3, p.corpses || 0);
+	if (!n) return;
+	spendCorpses(state, pi, n);
+	execEffects(state, pi, [{ type: 'reduce-random-hand-cost', anyCard: true, count: n, value: 1, withReplacement: true }], null, null);
+});
+
+// Wyrm Bolt: 1 damage; a kill hatches a 1/3 Mana Wyrm
+register('wyrm-bolt', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	damageCreature(state, t, e.value || 1, null);
+	const killed = t.damage >= t.maxHealth;
+	sweepDeaths(state);
+	if (killed) summon(state, pi, { id: 'token_mana_wyrm', name: 'Mana Wyrm', type: 'creature', cost: 1, rarity: 'common', token: true, attack: 1, health: 3, description: 'A 1/3 Mana Wyrm.' });
+});
+
+// No Guts, No Glory: 1 damage to a minion — a survivor grows +2 Attack, a death pays 2 Armor
+register('no-guts-no-glory', ({ state, pi, chosenCreature }, e) => {
+	const t = chosenCreature();
+	if (!t || isDead(t)) return;
+	damageCreature(state, t, e.value || 1, null);
+	const died = t.damage >= t.maxHealth;
+	sweepDeaths(state);
+	if (died) gainArmor(state, pi, 2);
+	else { t.attack += 2; emit(state, { type: 'buff', uid: t.uid, attack: t.attack, hp: hp(t) }); }
+});
+
+// Ferocious Flurry: +1 hero Attack AND Windfury, this turn only
+register('ferocious-flurry', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	p.heroTempAttack += e.value || 1;
+	p.heroWindfuryTurn = state.turnNumber;
+	emit(state, { type: 'heroAttack', player: pi, attack: heroAttackValue(state, p) });
+});
+
+// Bruising: force a friendly minion to attack a random enemy minion
+register('friendly-attacks-random', ({ state, pi, enemies }, e) => {
+	const mine = state.players[pi].board.filter(c => !isDead(c) && c.type === 'creature' && (c.attack || 0) > 0 && c.dormantLeft <= 0);
+	const foes = [];
+	for (const o of enemies) for (const c of state.players[o].board) if (!isDead(c) && c.type === 'creature') foes.push(c);
+	if (!mine.length || !foes.length) return;
+	const a = mine[Math.floor(state.rng() * mine.length)];
+	const d = foes[Math.floor(state.rng() * foes.length)];
+	a.sick = false;
+	resolveCombat(state, pi, a.uid, { type: 'creature', uid: d.uid, player: d.controller });
+	sweepDeaths(state);
+});
+
 // Men at Arms: for the rest of the game your <name>s have +A/+H (existing ones too)
 register('set-named-summon-buff', ({ state, pi }, e) => {
 	const p = state.players[pi];
