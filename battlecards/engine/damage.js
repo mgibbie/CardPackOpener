@@ -197,6 +197,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
 		if (state.current === pi) questTick(state, 'own-turn-hero-damage', pi, amount); // Journey to the East (Duels)
+		soulbladeRetaliate(state, pi); // Runed Soulblade (Duels)
 		if (state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 		// Lumia: any hero that takes damage becomes Immune for the rest of the turn
 		if (state.players.some(pl => pl.board.some(c => c.heroImmuneOnDamage && !isDead(c)))) p.heroImmuneTurn = state.turnNumber;
@@ -223,6 +224,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
 	if (state.current === pi) questTick(state, 'own-turn-hero-damage', pi, amount); // Journey to the East (Duels): armor-soaked hits still count
+	soulbladeRetaliate(state, pi); // Runed Soulblade (Duels): armor hits still sting back
 	if (toLife > 0 && state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 	// Lumia: any hero that takes damage becomes Immune for the rest of the turn
 	if (toLife > 0 && state.players.some(pl => pl.board.some(c => c.heroImmuneOnDamage && !isDead(c)))) p.heroImmuneTurn = state.turnNumber;
@@ -259,6 +261,24 @@ function warptoothCheck(state, pi) {
 	}
 }
 
+// Runed Soulblade (Duels): the wielder taking hero damage lashes 1 at every
+// enemy and costs the blade 1 Durability. Locked so two Soulblades can't
+// volley each other forever.
+function soulbladeRetaliate(state, pi) {
+	const p = state.players[pi];
+	if (!p.weapon || !p.weapon.soulbladeRetaliate || state._soulbladeLock) return;
+	state._soulbladeLock = true;
+	for (const o of opponentsOf(state, pi)) {
+		for (const c of [...state.players[o].board]) if (!isDead(c) && c.type === 'creature') damageCreature(state, c, 1, null);
+		damageHero(state, o, 1, pi);
+	}
+	delete state._soulbladeLock;
+	if (!p.weapon) return; // the retaliation may have broken it via other effects
+	p.weapon.durability -= 1;
+	emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability });
+	if (p.weapon.durability <= 0) breakWeapon(state, pi, false);
+}
+
 export function healHero(state, pi, amount) {
 	const p = state.players[pi];
 	if (staticValue(p, 'life-locked') > 0) return; // Platinum Emperion: you can't gain Life
@@ -268,6 +288,7 @@ export function healHero(state, pi, amount) {
 	// MTG-style: starting life is not a ceiling — a hero can be healed above it.
 	p.life += amount;
 	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount, life: p.life });
+	if (amount > 0 && state.current === pi) fireOngoing(state, pi, 'own-hero-healed', { amount }); // Crimson / Joras Thuldoom (Duels)
 	// Alexstrasza, Guardian of Life: reaching full Health unleashes 15 damage
 	if (p.alexPayoff && p.life >= (p.maxLife ?? STARTING_LIFE)) {
 		p.alexPayoff = false;

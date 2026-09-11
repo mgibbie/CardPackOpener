@@ -3414,7 +3414,7 @@ register('contagion-spread', ({ state, pi, source }, e) => {
 
 // Magister Unchained: arm a this-turn player flag read by playCard's spell branch
 register('set-turn-flag', ({ state, pi }, e) => {
-	if (e.flag === 'magisterTurn') state.players[pi][e.flag] = state.turnNumber;
+	if (e.flag === 'magisterTurn' || e.flag === 'chaosStormTurn') state.players[pi][e.flag] = state.turnNumber;
 });
 
 // For the Horde / For the Alliance: "Start of Game: Draw this" — pull a specific id from your deck
@@ -3623,4 +3623,222 @@ register('choose-tactic', ({ state, pi }, e) => {
 	if (!family.length) return;
 	state.pickQueue.push({ player: pi, ids: family, discover: true, mode: 'choose-tactic' });
 	emit(state, { type: 'pickStart', player: pi, count: family.length });
+});
+
+// ---- Duels arsenal wave: the treasure weapons + minions ----
+
+// Glaciaxe: the dying weapon equips its successor by id (flags intact)
+register('equip-weapon-id', ({ state, pi }, e) => {
+	const def = state.cardsById[e.id];
+	if (!def || def.type !== 'weapon') return;
+	const p = state.players[pi];
+	if (p.weapon) { const old = p.weapon; p.weapon = null; emit(state, { type: 'weaponBreak', player: pi, name: old.name, destroyed: false }); }
+	const w = instantiate(def, pi);
+	w.zone = 'weapon';
+	p.weapon = w;
+	emit(state, { type: 'weaponEquip', player: pi, card: w });
+	recomputeAuras(state);
+});
+
+// Ironweave Bloodletter: every Corpse spend heals for the rest of the game
+register('corpse-spend-heal', ({ state, pi }, e) => {
+	state.players[pi].corpseSpendHeal = (state.players[pi].corpseSpendHeal || 0) + (e.value || 2);
+});
+
+// Party Portal / Britz Blazebucket: the just-cast spell's Cost summons matches
+registerTrigger('summon-random-spell-cost', (state, pi, e, ctx, triggering) => {
+	const cost = ctx.played ? (ctx.played.cost || 0) : 0;
+	const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (d.cost || 0) === cost);
+	if (!pool.length) return;
+	for (let n = 0; n < (e.count || 1); n++) {
+		const sc = summon(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+		if (sc && e.diesOnDamage) sc.diesToAnyDamage = true; // Britz: they pop at a touch
+	}
+});
+
+// Loyal Sidekick: +1/+1 per opponent defeated this run (game.js stamps state.runWins)
+register('buff-self-per-run-win', ({ state, pi, source }, e) => {
+	const n = state.runWins || 0;
+	if (source && n > 0) { source.attack += n; source.maxHealth += n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+// Beastly Beauty: becomes an 8/8 after it attacks and survives
+registerTrigger('transform-self-stats', (state, pi, e, ctx, triggering) => {
+	const c = ctx.self;
+	if (!c || isDead(c)) return;
+	c.attack = e.attack; c.maxHealth = e.health; c.damage = 0;
+	emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+});
+
+// Detective Murloc Holmes: copy the card the opponent just drew
+registerTrigger('copy-drawn-card', (state, pi, e, ctx, triggering) => {
+	const drawn = ctx.card;
+	const p = state.players[pi];
+	if (!drawn || !state.cardsById[drawn.id] || p.hand.length >= MAX_HAND) return;
+	const cp = instantiate(state.cardsById[drawn.id], pi);
+	cp.zone = 'hand';
+	p.hand.push(cp);
+	emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+});
+
+// Butch: +1/+1 per friendly creature of the tribe that died this game
+register('buff-self-per-graveyard-tribe', ({ state, pi, source }, e) => {
+	const p = state.players[pi];
+	const n = (p.deathLogMeta || []).filter(m => ((state.cardsById[m.id] || {}).tribe || '').includes(e.tribe)).length;
+	if (source && n > 0) { source.attack += n; source.maxHealth += n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+// Princess: absorb the Deathrattles of random creatures still in your deck
+register('gain-deck-deathrattles', ({ state, pi, source }, e) => {
+	if (!source) return;
+	const pool = [...new Set(state.players[pi].deck)].map(id => state.cardsById[id]).filter(d => d && d.type === 'creature' && d.deathrattle && d.deathrattle.length);
+	for (let n = 0; n < (e.count || 3) && pool.length; n++) {
+		const [d] = pool.splice(Math.floor(state.rng() * pool.length), 1);
+		source.deathrattle = [...(source.deathrattle || []), ...JSON.parse(JSON.stringify(d.deathrattle))];
+	}
+	if (source.deathrattle && source.deathrattle.length && !source.keywords.includes('deathrattle')) source.keywords.push('deathrattle');
+});
+
+// Bubba: six 1/1 Bloodhounds pile onto the chosen enemy creature
+register('bubba-hounds', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
+	const victim = chosenCreature();
+	for (let n = 0; n < (e.count || 6); n++) {
+		const hound = summon(state, pi, { id: 'token_bloodhound', name: 'Bloodhound', type: 'creature', cost: 1, rarity: 'common', token: true, attack: 1, health: 1, tribe: 'Beast', description: 'A 1/1 Bloodhound.' });
+		if (!hound) break;
+		if (victim && !isDead(victim) && !isDead(hound)) {
+			hound.sick = false;
+			resolveCombat(state, pi, hound.uid, { type: 'creature', uid: victim.uid, player: victim.controller });
+		}
+	}
+	sweepDeaths(state);
+});
+
+// Clockwork Assistant: arrives grown by every spell you've already cast
+register('buff-self-per-spells-cast', ({ state, pi, source }, e) => {
+	const n = state.players[pi].spellsPlayedTotal || 0;
+	if (source && n > 0) { source.attack += n; source.maxHealth += n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+// Bonecrusher: raise other Deathrattle creatures that died this game
+register('summon-died-deathrattles', ({ state, pi, source }, e) => {
+	const p = state.players[pi];
+	const pool = (p.deathLogMeta || []).map(m => m.id).filter(id => id !== (source && source.id) && state.cardsById[id] && (state.cardsById[id].keywords || []).includes('deathrattle'));
+	for (let n = 0; n < (e.count || 2) && pool.length; n++) {
+		const [id] = pool.splice(Math.floor(state.rng() * pool.length), 1);
+		summon(state, pi, state.cardsById[id]);
+	}
+});
+
+// Fluctuating Totem: stealthed until your next turn (Conceal's tempStealth)
+register('self-temp-stealth', ({ state, pi, source }, e) => {
+	if (!source) return;
+	if (!source.keywords.includes(KW.STEALTH)) source.keywords.push(KW.STEALTH);
+	source.stealthed = true;
+	source.tempStealth = true;
+});
+
+// Fluctuating Totem: evolve the creatures beside it (a fresh random creature costing 1 more)
+register('evolve-adjacent', ({ state, pi, source }, e) => {
+	if (!source) return;
+	const b = state.players[pi].board;
+	const i = b.indexOf(source);
+	for (const t of [b[i - 1], b[i + 1]]) {
+		if (!t || isDead(t) || t.type !== 'creature') continue;
+		const pool = Object.values(state.cardsById).filter(d => d.type === 'creature' && !d.token && d.collectible !== false && !(d.colors && d.colors.length) && (d.cost || 0) === (t.cost || 0) + 1);
+		if (!pool.length) continue;
+		const d = pool[Math.floor(state.rng() * pool.length)];
+		t.id = d.id; t.name = d.name; t.cost = d.cost || 0;
+		t.attack = d.attack || 0; t.maxHealth = d.health || 0; t.damage = 0;
+		t.tribe = d.tribe || null; t.keywords = [...(d.keywords || [])];
+		t.effects = d.effects ? JSON.parse(JSON.stringify(d.effects)) : null;
+		t.deathrattle = d.deathrattle ? JSON.parse(JSON.stringify(d.deathrattle)) : null;
+		t.ongoing = d.ongoing ? JSON.parse(JSON.stringify(d.ongoing)) : null;
+		t.shield = (d.keywords || []).includes('divine_shield');
+		emit(state, { type: 'transform', player: pi, uid: t.uid, name: t.name });
+	}
+	recomputeAuras(state);
+});
+
+// Killmox: grown by every card you've discarded this game (p.discardLogIds)
+register('buff-self-per-discard', ({ state, pi, source }, e) => {
+	const n = (state.players[pi].discardLogIds || []).length;
+	if (source && n > 0) { source.attack += n; source.maxHealth += n; emit(state, { type: 'buff', uid: source.uid, attack: source.attack, hp: hp(source) }); }
+});
+
+// Impetuous Companion: the hands trade owners for good
+register('swap-hands-permanent', ({ state, pi, enemies }, e) => {
+	const o = enemies[0];
+	if (o == null) return;
+	const p = state.players[pi], op = state.players[o];
+	const mine = p.hand, theirs = op.hand;
+	for (const c of mine) c.controller = o;
+	for (const c of theirs) c.controller = pi;
+	p.hand = theirs; op.hand = mine;
+	emit(state, { type: 'handSwap', player: pi });
+	emit(state, { type: 'handSwap', player: o });
+});
+
+// Traktamer Aelessa: a random Demon Companion joins the fray, ready to fight
+register('demon-companion', ({ state, pi }, e) => {
+	const ids = ['duels_reffuh', 'duels_shima', 'duels_kolek'].filter(id => state.cardsById[id]);
+	if (!ids.length) return;
+	const sc = summon(state, pi, state.cardsById[ids[Math.floor(state.rng() * ids.length)]]);
+	if (sc) sc.sick = false;
+});
+
+// Droplet of Insanity: conjure cards that arrive already Corrupted
+register('conjure-random-corrupted', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const pool = Object.values(state.cardsById).filter(d => d.corrupt && state.cardsById[d.corrupt] && !d.token && d.collectible !== false && !(d.colors && d.colors.length));
+	for (let n = 0; n < (e.count || 2) && pool.length && p.hand.length < MAX_HAND; n++) {
+		const d = pool[Math.floor(state.rng() * pool.length)];
+		const cp = instantiate(state.cardsById[d.corrupt], pi);
+		cp.zone = 'hand';
+		p.hand.push(cp);
+		emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+	}
+});
+
+// Crimson: hero heals feed it, point for point
+registerTrigger('crimson-heal-gain', (state, pi, e, ctx, triggering) => {
+	const c = ctx.self, amt = ctx.amount || 0;
+	if (!c || isDead(c) || amt <= 0) return;
+	c.attack += amt; c.maxHealth += amt;
+	emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
+});
+
+// Embercaster: hand copies of the spell that lit it up
+registerTrigger('copy-played-spell-to-hand', (state, pi, e, ctx, triggering) => {
+	const played = ctx.played;
+	const p = state.players[pi];
+	if (!played || !state.cardsById[played.id]) return;
+	for (let n = 0; n < (e.count || 3) && p.hand.length < MAX_HAND; n++) {
+		const cp = instantiate(state.cardsById[played.id], pi);
+		cp.zone = 'hand';
+		p.hand.push(cp);
+		emit(state, { type: 'conjure', player: pi, card: cp, color: null });
+	}
+});
+
+// Favored Racer: a random Blessing resolves on this creature
+register('cast-random-blessing-self', ({ state, pi, source }, e) => {
+	if (!source || isDead(source)) return;
+	const pool = Object.values(state.cardsById).filter(d => /^Blessing/i.test(d.name || '') && isSpellType(d) && d.effects && d.effects.length);
+	if (!pool.length) return;
+	const d = pool[Math.floor(state.rng() * pool.length)];
+	execEffects(state, pi, JSON.parse(JSON.stringify(d.effects)), { type: 'creature', uid: source.uid, player: pi }, null);
+});
+
+// Deathstrider: fire a random friendly Deathrattle without anyone dying
+register('trigger-random-friendly-deathrattle', ({ state, pi, source }, e) => {
+	const pool = state.players[pi].board.filter(c => !isDead(c) && c.deathrattle && c.deathrattle.length && c !== source);
+	if (!pool.length) return;
+	runDeathrattle(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+});
+
+// Nerubian Peddler: the freshest card in hand gets cheaper each turn
+register('discount-rightmost-hand', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	const c = p.hand[p.hand.length - 1];
+	if (c && (c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - (e.value || 2)); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); }
 });

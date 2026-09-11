@@ -1666,11 +1666,11 @@ register('summon-from-deck', ({ state, pi, target, source, enemies, scaled, hm, 
 	const p = state.players[pi];
 	const wanted = e.tribes ? [...e.tribes] : Array(e.count || 1).fill(e.tribe || null);
 	for (const tribe of wanted) {
-		const idx = p.deck.findIndex(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && (!tribe || (d.tribe || '').includes(tribe)) && (e.maxCost == null || (d.cost || 0) <= e.maxCost); }); // Reinforcement Aura: costs (2) or less
+		const idx = p.deck.findIndex(id => { const d = state.cardsById[id]; return d && d.type === 'creature' && (!tribe || (d.tribe || '').includes(tribe)) && (e.maxCost == null || (d.cost || 0) <= e.maxCost) && (!e.rarity || d.rarity === e.rarity) && (!e.requireKeyword || (d.keywords || []).includes(e.requireKeyword)); }); // Reinforcement Aura: costs (2) or less; Royal Greatsword: a Legendary; Brewster: a Rush creature
 		if (idx < 0) continue;
 		const [cid] = p.deck.splice(idx, 1);
 		const def = state.cardsById[cid];
-		if (def) summon(state, pi, def);
+		if (def) { const sc = summon(state, pi, def); if (sc && e.freeze) freezeCreature(state, sc); } // Gluth-sicle (Duels): the summons arrive Frozen
 	}
 } });
 

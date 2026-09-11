@@ -483,6 +483,7 @@ export const HEROES = [
 	// Cannon hero — battles open with two Cannons on his board, and his hero-power
 	// picks come from his own Fire! kit (powerIds) instead of the class pools
 	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius', powerIds: ['duelshp_fire', 'duelshp_fire_away', 'duelshp_fire_at_thee'], startSummon: ['duels_cannon', 'duels_cannon'], flavor: 'Every problem looks like a target when you brought this many Cannons.' },
+	{ id: 'scarlet', name: 'Scarlet Leafdancer', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Scarlet', flavor: 'The blood keeps the garden growing — hers, yours, anyone’s.' },
 	// Dual-class heroes \u2014 each drafts and buckets from both of its classes (+ Neutral)
 	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann', flavor: 'The League\u2019s finest \u2014 a Hunter\u2019s traps married to a Warrior\u2019s grit.' },
 	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise', flavor: 'Every map wanders somewhere \u2014 between Druid groves and Priest shrines.' },
@@ -778,6 +779,7 @@ export const RIVALS = [
 	{ id: 'cafeteria_bob', name: 'Cafeteria Bob', heroClass: 'paladin', hsId: 'PVPDR_Hero_Bob' },
 	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann' },
 	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius', powerIds: ['duelshp_fire', 'duelshp_fire_away', 'duelshp_fire_at_thee'], startSummon: ['duels_cannon', 'duels_cannon'] },
+	{ id: 'scarlet', name: 'Scarlet Leafdancer', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Scarlet' },
 	{ id: 'drekthar', name: "Drek'Thar", heroClass: 'shaman', hsId: 'PVPDR_Hero_DrekTharv3' },
 	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise' },
 	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', classes: ['paladin', 'shaman'], hsId: 'PVPDR_Hero_Finley' },

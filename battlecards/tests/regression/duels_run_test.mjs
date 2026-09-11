@@ -119,7 +119,7 @@ ok('all 4 batch-2 hero-power cards present + well-formed', HP_IDS2.every(id => {
 ok('PASSIVES has the 104 entries (complete)', Object.keys(D.PASSIVES).length === 104 && ['brittle_bones', 'eerie_stone', 'mantle_of_ignition', 'edge_of_dredge', 'dragonbone_ritual'].every(k => D.PASSIVES[k]));
 // authored token cards exist
 ok('authored token cards present', ['fel_rift', 'legendary_invitation', 'dream_portal', 'dream', 'nightmare', 'laughing_sister', 'emerald_drake', 'lk_frost_strike', 'lk_doom_pact', 'lk_soul_reaper'].every(id => byId[id] && byId[id].token && byId[id].collectible === false), null);
-ok('HEROES lists 19 playable heroes (12 signature + 5 dual-class + 2 choose-class) with class', D.HEROES.length === 19 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
+ok('HEROES lists 20 playable heroes (13 signature + 5 dual-class + 2 choose-class) with class', D.HEROES.length === 20 && D.HEROES.every(h => h.id && h.name && h.heroClass), D.HEROES.length);
 ok('applyPassive returns false for an unknown id', D.applyPassive({ players: [{}] }, 0, 'nope') === false);
 
 // Robe of the Apprentice: Spell Damage +1 emblem

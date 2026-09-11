@@ -1019,6 +1019,8 @@ register('conjure-random', ({ state, pi, target, source, enemies, scaled, hm, pi
 			if (e.school) pool = pool.filter(d => schoolOf(d) === e.school); // Galactic Crusader: Holy spells
 			if (e.multiTribe) pool = pool.filter(d => d.type === 'creature' && (d.tribe || '').split(/[/\s]+/).filter(Boolean).length >= 2); // Tortotem: a creature with multiple creature types
 			if (e.tribe) pool = pool.filter(d => (d.tribe || '').includes(e.tribe));
+			if (e.tribes) pool = pool.filter(d => e.tribes.includes(d.tribe)); // Horns of Flame (Duels): a Shadow OR Fire spell
+			if (e.requireOverload) pool = pool.filter(d => (d.overload || 0) > 0); // Chaos Storm (Duels): an Overload card
 			if (e.rarity) pool = pool.filter(d => d.rarity === e.rarity); // Golden Monkey: Legendaries
 			if (e.requireRewind) pool = pool.filter(d => d.rewind > 0); // Time Machine: a random Rewind card
 			if (e.requireStarshipPiece) pool = pool.filter(d => d.starshipPiece); // Scrounging Shipwright

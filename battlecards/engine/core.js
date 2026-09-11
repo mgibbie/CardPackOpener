@@ -468,6 +468,23 @@ export function instantiate(def, controller) {
 		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
 		cannon: !!def.cannon,         // Cannon (Duels — Darius): fires at the enemy opposite on "fire your Cannons"
 		costLessPerCannonFire: def.costLessPerCannonFire || 0, // Seabreaker Goliath (Duels)
+		afterHeroAttack: def.afterHeroAttack ? JSON.parse(JSON.stringify(def.afterHeroAttack)) : null, // weapons: effect-lists fired after your hero attacks
+		startTurnEffects: def.startTurnEffects ? JSON.parse(JSON.stringify(def.startTurnEffects)) : null, // Horns of Flame / Archmage Staff: weapon fires at your turn start
+		onHeroAttack: def.onHeroAttack ? JSON.parse(JSON.stringify(def.onHeroAttack)) : null, // Traktamer Aelessa: a BOARD creature reacting to your hero attacking
+		silenceOnAttack: !!def.silenceOnAttack, // The Exorcisor
+		jawsGrow: def.jawsGrow || 0,  // Jaws: +Attack when a Deathrattle creature dies
+		degradePerHeroPower: !!def.degradePerHeroPower, // Wand of Dueling
+		herdingHorn: !!def.herdingHorn, // Herding Horn: playing a Beast summons a copy
+		ebonBladeReborn: !!def.ebonBladeReborn, // Greatsword of the Ebon Blade
+		soulbladeRetaliate: !!def.soulbladeRetaliate, // Runed Soulblade
+		spikedArms: !!def.spikedArms, // Spiked Arms: your summons take 1 and gain +2 Attack
+		suLeadfoot: !!def.suLeadfoot, // Su Leadfoot: your summons gain Divine Shield & Rush
+		impishAid: !!def.impishAid,   // Impish Aid: your Demon summons get +2/+2
+		eclipseFree: !!def.eclipseFree, // Moonbeast: your Eclipse spells cost (0)
+		scionThird: !!def.scionThird, // Scion of the Deep: every third spell costs Health
+		moargOutcast: !!def.moargOutcast, // Mo'arg Outcast: edge-of-hand cards replay
+		zukaraRecast: !!def.zukaraRecast, // Zukara the Wild: 4+-Cost spells cast twice
+		thimbleGrow: !!def.thimbleGrow, // Regular-Size Thimble: +2/+2 on a combat kill
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
 		infuse: def.infuse ? { ...def.infuse } : null, // Castle Nathria Infuse: {count, id} -> transform after N friendly deaths in hand
@@ -1205,6 +1222,12 @@ export function summon(state, pi, tokenDef) {
 		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
 	}
+	// Duels treasure creatures/weapons that react to the controller's summons
+	if (c.type === 'creature') {
+		if (p.board.some(x => x.suLeadfoot && x !== c && !isDead(x))) { for (const k of [KW.DIVINE_SHIELD, KW.RUSH]) if (!c.keywords.includes(k)) c.keywords.push(k); c.shield = true; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Su Leadfoot
+		if ((c.tribe || '').includes('Demon') && p.board.some(x => x.impishAid && x !== c && !isDead(x))) { c.attack += 2; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // Impish Aid
+		if (p.weapon && p.weapon.spikedArms) { c.attack += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); damageCreature(state, c, 1, null); } // Spiked Arms (buff first so 1-Health summons keep the Attack for their death log)
+	}
 	// Runaway-summon guard: "when you summon a creature, summon…" triggers can
 	// recurse without bound — e.g. Spiritsinger Umbra fires a summoned minion's
 	// summon-deathrattle, or a self-copying Pirate (Shoplifter Goldbeard). Past
@@ -1663,6 +1686,7 @@ export function spendCorpses(state, pi, n) {
 	const p = state.players[pi];
 	p.corpsesSpentGame = (p.corpsesSpentGame || 0) + Math.min(n, p.corpses || 0); // Stitched Giant: Corpses spent this game
 	p.corpses = Math.max(0, (p.corpses || 0) - n);
+	if (p.corpseSpendHeal) healHero(state, pi, p.corpseSpendHeal); // Ironweave Bloodletter (Duels): spends restore Health
 	// Duels: "the first time you spend a Corpse in a turn"
 	if (p._corpseSpentTurn !== state.turnNumber) {
 		p._corpseSpentTurn = state.turnNumber;
@@ -2641,6 +2665,18 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	}
 	if (p.darklightTorch && (card.cost || 0) % 2 === 0) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; p.heroPowerDiscountNext = (p.heroPowerDiscountNext || 0) + 10; } // Darklight Torch: even-Cost refreshes the power at (0)
 	if (p.alchemistStone && (card.cost || 0) % 2 === 1) for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Alchemist's Stone: odd-Cost discounts your hand
+	// Duels arsenal reactions to the played card
+	if (p.weapon && p.weapon.herdingHorn && card.type === 'creature' && (card.tribe || '').includes('Beast') && state.cardsById[card.id]) { summon(state, pi, state.cardsById[card.id]); p.weapon.durability -= 1; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); if (p.weapon.durability <= 0) breakWeapon(state, pi, false); } // Herding Horn
+	if (p.weapon && p.weapon.ebonBladeReborn && card.type === 'creature' && card.zone === 'board' && !isDead(card)) { if (!card.keywords.includes(KW.REBORN)) card.keywords.push(KW.REBORN); emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); p.weapon.durability -= 1; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); if (p.weapon.durability <= 0) breakWeapon(state, pi, false); } // Greatsword of the Ebon Blade
+	if (card._handEdge && !state._moargLock && p.board.some(x => x.moargOutcast && !isDead(x))) { // Mo'arg Outcast: replay the edge card
+		state._moargLock = true;
+		if (isSpellType(card)) execEffects(state, pi, [{ type: 'cast-random-spell', ids: [card.id] }], null, null);
+		else if (card.type === 'creature' && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]);
+		delete state._moargLock; // transient — must not linger into snapshots
+	}
+	if (isSpellType(card) && (card.cost || 0) >= 4 && !state._zukaraLock && p.board.some(x => x.zukaraRecast && !isDead(x))) { state._zukaraLock = true; execEffects(state, pi, [{ type: 'cast-random-spell', ids: [card.id] }], null, null); delete state._zukaraLock; } // Zukara the Wild
+	if ((card.overload || 0) > 0 && p.chaosStormTurn === state.turnNumber) execEffects(state, pi, [{ type: 'conjure-random', requireOverload: true, count: 1 }], null, null); // Chaos Storm
+	if (isSpellType(card) && p.board.some(x => x.scionThird && !isDead(x)) && (p.spellsPlayedThisTurn || 0) % 3 === 0) damageHero(state, pi, card.cost || 0, pi, true); // Scion of the Deep: the third spell is paid in Health (counter already includes this spell; cost.js zeroes its mana pre-increment)
 	// Duels passives that react to the first creature you play each turn
 	if (p.rocketBackpacks && card.type === 'creature' && p._rocketTurn !== state.turnNumber && !isDead(card) && card.zone === 'board') {
 		p._rocketTurn = state.turnNumber; // Rocket Backpacks: your first creature each turn gains Rush
@@ -3398,6 +3434,8 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore, victim: attacker });
 		// Potion of Sparking (Duels): a friendly Rush creature attacking a creature zaps an adjacent enemy
 		if (state.players[pi].potionSparking && (attacker.keywords || []).includes('rush') && target.type === 'creature') { const dp = state.players[defender.controller]; const di = dp.board.indexOf(defender); const nbrs = [dp.board[di - 1], dp.board[di + 1]].filter(x => x && !isDead(x) && x.type === 'creature'); if (nbrs.length) damageCreature(state, nbrs[Math.floor(state.rng() * nbrs.length)], 1, null); }
+		// Regular-Size Thimble (Duels): a combat kill grows it
+		if (target.type === 'creature' && isDead(defender) && attacker.thimbleGrow && !isDead(attacker)) { attacker.attack += 2; attacker.maxHealth += 2; emit(state, { type: 'buff', uid: attacker.uid, attack: attacker.attack, hp: hp(attacker) }); }
 		// AV tactic passives (Duels): an exact-lethal ("Honorable") combat kill by a friendly Neutral creature
 		if (target.type === 'creature' && isDead(defender) && defender.damage === defender.maxHealth && attacker.controller === pi && (attacker.cardClass || 'neutral') === 'neutral') {
 			const hkP = state.players[pi];
@@ -3501,6 +3539,7 @@ export function heroAttack(state, pi, target) {
 			hitCreature = true;
 			if (has(defender, KW.SANGUINE)) gainBloodToken(state, defender.controller);
 			const hpBefore = hp(defender); // for Overkill (excess-damage) weapons
+			if (w && w.silenceOnAttack) silenceCreature(state, defender); // The Exorcisor (Duels): silence, then strike
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
@@ -3543,6 +3582,8 @@ export function heroAttack(state, pi, target) {
 	// Aggramar: weapon abilities that ride "After your hero attacks" (an array so
 	// Maintain Order / Commanding Presence can stack across turns).
 	if (w && w.afterHeroAttack && w.afterHeroAttack.length && !state.over) for (const eff of w.afterHeroAttack) execEffects(state, pi, JSON.parse(JSON.stringify(eff)), null, w);
+	// Traktamer Aelessa (Duels): BOARD creatures riding "after your hero attacks"
+	if (!state.over) for (const bc of [...state.players[pi].board]) if (bc.onHeroAttack && !isDead(bc)) execEffects(state, pi, JSON.parse(JSON.stringify(bc.onHeroAttack)), null, bc);
 	fireOngoing(state, pi, 'hero-attacks', {}); // Hench-Clan Thug: minion reacts to your hero attacking
 	if (hitCreature) fireOngoing(state, pi, 'hero-attacks-creature', { target: findCreature(state, target.uid), damaged: findCreature(state, target.uid) }); // Keeneye Spotter
 	// a single fire (fireOngoing-only, so weapon ongoings don't double-fire) for
@@ -4772,6 +4813,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	for (const c of p.board) if (c.wakeOnHeroPower && c.dormantLeft > 0) { c.dormantLeft = 0; emit(state, { type: 'dormant', player: pi, uid: c.uid, turns: 0 }); } // Slumbering Sprite
 	card.usedThisTurn = true;
 	card._uses = (card._uses || 0) + 1;
+	if (p.weapon && p.weapon.degradePerHeroPower) { p.weapon.durability -= 1; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); if (p.weapon.durability <= 0) breakWeapon(state, pi, false); } // Wand of Dueling (Duels)
 	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
 	stackAction(state, pi, { kind: 'heropower', card, effects: heroPowerEffects(state, pi, card, choice), target });
 	// limited-use powers (Metamorphosis / Story of Sulfuras): vanish once spent.
@@ -5377,6 +5419,7 @@ export function endTurn(state) {
 	if (np.crystalGem) { np._cgUsed = np._cgUsed || 0; if (np._cgUsed < 2) { np._cgUsed++; np.mana.max = Math.min(MAX_BASE_MANA, np.mana.max + 1); np.mana.cur = Math.min(np.mana.max, np.mana.cur + 1); } } // Crystal Gem: +1 Mana Crystal on your first two turns
 	if (np.partyReplacement) { const PKW = ['taunt', 'rush', 'divine_shield', 'lifesteal']; execEffects(state, state.current, [{ type: 'summon', count: 1, attack: 2, health: 2, name: 'Adventurer', keywords: [PKW[Math.floor(state.rng() * PKW.length)]] }], null, null); } // Party Replacement: a 2/2 Adventurer with a random bonus
 	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
+	if (np.weapon && np.weapon.startTurnEffects) execEffects(state, state.current, JSON.parse(JSON.stringify(np.weapon.startTurnEffects)), null, np.weapon); // Horns of Flame / Archmage Staff (Duels)
 	for (const c of np.board) if (c.reviveTimer > 0) { c.reviveTimer--; if (c.reviveTimer <= 0) { c.reviveTimer = 0; c.dormantLeft = 0; c.sick = false; emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name }); } } // Dragonbone Ritual: dormant Dragons revive on schedule
 	if (np.legendaryLoot && !np._legLootUsed) { np._legLootUsed = true; execEffects(state, state.current, [{ type: 'discover', cardType: 'weapon', rarity: 'legendary' }], null, null); } // Legendary Loot: on your first turn, Discover a Legendary weapon
 	// AV tactics (Duels): a tactic-family power transforms into another family member each turn
