@@ -19,6 +19,69 @@ const KEY = 'magepunk_replays_v1';
 const MAX_REPLAYS = 10;   // ring buffer of recent games
 const MAX_FRAMES = 600;   // per-game safety cap (a long game is ~100-150 frames)
 
+// ---- slim tapes (v2) ----
+// A raw frame stores every card as a FULL instance (~100 fields), though almost
+// all of them equal the card's printed/instantiate defaults — a finished game
+// measured 38.6MB of JSON (~2.4MB packed), 3× the server's share cap, so every
+// "Copy replay link" fell back to a gigantic paste-able code. v2 tapes keep only
+// each card's {id, uid} plus the fields that DIFFER from a fresh instance of its
+// def; inflate() rebuilds the full instance at load. Needs the card db — game.js
+// hands it over at boot; without it tapes simply stay v1.
+let cardsDb = null;
+export function setCards(byId) { cardsDb = byId; }
+
+const CARD_ZONES = ['hand', 'board', 'graveyard', 'secrets', 'traps', 'enchantments', 'artifacts',
+	'planeswalkers', 'heroPowers', 'emblems', 'lands', 'quests', 'command', 'sprocket'];
+const _baselines = new Map();
+function baselineFor(def) {
+	let b = _baselines.get(def.id);
+	if (!b) { b = E.instantiate(def, 0); _baselines.set(def.id, b); }
+	return b;
+}
+const isCardish = c => c && typeof c === 'object' && typeof c.id === 'string' && c.uid != null;
+function slimCard(c) {
+	const def = cardsDb[c.id];
+	if (!def) return c; // unknown def (mode-generated?) — keep it whole
+	const b = baselineFor(def);
+	const out = { _s: 1, id: c.id, uid: c.uid };
+	for (const k of Object.keys(c)) {
+		if (k === 'id' || k === 'uid' || k === '_s') continue;
+		const v = c[k];
+		const vs = v === undefined ? undefined : JSON.stringify(v);
+		const bs = b[k] === undefined ? undefined : JSON.stringify(b[k]);
+		if (vs === bs) continue;
+		out[k] = v === undefined ? null : v; // explicit-undefined packs as null (closest survivable value)
+	}
+	return out;
+}
+function inflateCard(c) {
+	if (!c || !c._s) return c;
+	const def = cardsDb && cardsDb[c.id];
+	if (!def) return c;
+	const full = JSON.parse(JSON.stringify(baselineFor(def)));
+	for (const k of Object.keys(c)) if (k !== '_s') full[k] = c[k];
+	return full;
+}
+function eachCardSlot(snap, fn) {
+	for (const p of snap.players || []) {
+		for (const z of CARD_ZONES) if (Array.isArray(p[z])) p[z] = p[z].map(c => (isCardish(c) ? fn(c) : c));
+		if (isCardish(p.weapon)) p.weapon = fn(p.weapon);
+		if (isCardish(p.companion)) p.companion = fn(p.companion);
+	}
+}
+function slimTape(t) {
+	if (!cardsDb || !t || !Array.isArray(t.frames)) return t;
+	for (const f of t.frames) if (f && f.snap) eachCardSlot(f.snap, slimCard);
+	t.v = 2;
+	return t;
+}
+export function inflateTape(t) {
+	if (!t || t.v !== 2 || !cardsDb) return t;
+	for (const f of t.frames || []) if (f && f.snap) eachCardSlot(f.snap, inflateCard);
+	t.v = 1; // fully hydrated — the renderer sees a classic tape
+	return t;
+}
+
 let tape = null, lastDigest = null;
 
 // toSnapshot returns LIVE references (it clones only on JSON.stringify), so we
@@ -54,7 +117,7 @@ function loadIndex() { const a = safeLoad(KEY, null); return Array.isArray(a) ? 
 
 async function save(t) {
 	let code;
-	try { code = await packString(JSON.stringify(t)); } catch { return null; }
+	try { code = await packString(JSON.stringify(slimTape(t))); } catch { return null; }
 	const id = 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 	const list = loadIndex();
 	list.unshift({ id, meta: t.meta, code });   // plaintext meta for fast listing; code is the packed tape
@@ -74,7 +137,7 @@ export async function getReplay(id) {
 	const rec = loadIndex().find(r => r.id === id);
 	if (!rec) return null;
 	const json = await unpackString(rec.code);
-	try { return json ? JSON.parse(json) : null; } catch { return null; }
+	try { return json ? inflateTape(JSON.parse(json)) : null; } catch { return null; }
 }
 
 // ---- sharing: the packed tape string is the portable "replay code" ----
@@ -104,6 +167,6 @@ export async function fetchSharedReplay(shareId) {
 		const r = await MPX.call('replay-get', { id: shareId });
 		if (!r || !r.code) return null;
 		const json = await unpackString(r.code);
-		return json ? JSON.parse(json) : null;
+		return json ? inflateTape(JSON.parse(json)) : null;
 	} catch { return null; }
 }
