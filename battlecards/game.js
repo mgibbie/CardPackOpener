@@ -49,7 +49,11 @@ function modifierLinesHtml(card) {
 // the battlecards 3D game requires a login — bounce to the account door
 // without one. In account mode dungeon runs use the account's edited starter
 // decks, and finishing a run — win or lose — earns a pack.
-MPX.requireLogin();
+// EXCEPTION: replay viewing is read-only. A shared /r/<id> link (?rshare=) must
+// open for logged-out recipients — replay-get is a public endpoint by design —
+// and a local ?replay= view reads only this device's tapes. Everything
+// account-shaped (runs, packs, PvP) stays behind the login.
+if (!/[?&](rshare|replay)=/.test(location.search)) MPX.requireLogin();
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
 import * as Rec from './replayrec.js';

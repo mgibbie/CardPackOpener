@@ -328,6 +328,29 @@ await page.close();
 	await page2.close();
 }
 
+// ================= shared replay links open LOGGED OUT =================
+// replay-get is a public endpoint by design, but game.js's top-level
+// requireLogin() bounced every tokenless visitor to /login/ before the
+// ?rshare= path could run — recipients of a share link hit a login wall.
+{
+	const page3 = await browser.newPage();
+	await page3.setViewport({ width: 1400, height: 800 });
+	const errs3 = [];
+	page3.on('pageerror', e => errs3.push(e.message));
+	// deliberately NO token / NO mp state — a fresh logged-out recipient
+	await page3.goto(`http://localhost:${PORT}/battlecards/index.html?rshare=abc12345`, { waitUntil: 'domcontentloaded' });
+	await sleep(5000);
+	const pub = await page3.evaluate(() => ({
+		stayedOnGame: /battlecards/.test(location.pathname) && !/login/.test(location.pathname),
+		overlay: (document.getElementById('dungeon-overlay')?.textContent || '').slice(0, 80),
+	}));
+	console.log('[logged-out rshare]', JSON.stringify(pub));
+	A(pub.stayedOnGame, '[logged-out] a share link does NOT bounce to the login page', JSON.stringify(pub));
+	A(/replay not found/i.test(pub.overlay), '[logged-out] the replay path runs (graceful not-found for the stub id)', pub.overlay);
+	A(errs3.length === 0, '[logged-out] no page errors', errs3.join(' | '));
+	await page3.close();
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 await browser.close(); server.close();
 process.exit(fail ? 1 : 0);
