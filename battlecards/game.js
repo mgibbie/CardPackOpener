@@ -8576,8 +8576,7 @@ function addReplayButtons(el) {
 		banner('Preparing share link…', 1500);
 		const shareId = await Rec.uploadReplay(id);
 		if (shareId) {
-			const base = location.origin + location.pathname.replace(/[^/]*$/, '');
-			copyText(base + 'index.html?rshare=' + shareId, 'Replay link copied — anyone can watch it.');
+			copyText(location.origin + '/r/' + shareId, 'Replay link copied — anyone can watch it.');
 		} else {
 			const code = Rec.exportCode(id);
 			if (code && code.length > 1_400_000) copyText(code, 'This replay is too large for a short link — copied the full replay code instead (import it via Replays → Import).');

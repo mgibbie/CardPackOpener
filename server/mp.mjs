@@ -1222,7 +1222,7 @@ export default async function handler(req, env) {
 		const code = String(body.code || '');
 		if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
 		let id;
-		for (let i = 0; i < 8; i++) { id = randomBytes(6).toString('hex'); if (!(await store.get('replay:' + id))) break; }
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('replay:' + id))) break; } // 8 hex chars — short enough for a /r/<id> link; collisions retried, tapes GC in 30 days
 		await store.setJSON('replay:' + id, { code, by: username, when: Date.now() });
 		return json({ id });
 	}
