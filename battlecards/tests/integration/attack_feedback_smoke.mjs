@@ -227,6 +227,37 @@ A(!/attack target/i.test(ztAfter.hint || ''), 'and nothing is left armed');
 	await sleep(400);
 }
 
+// ---- targeted enemy SPELLS telegraph too (all-targeting coverage) ----
+{
+	const sp = await page.evaluate(() => {
+		const g = window.__game, s = g.state, E = g.E;
+		const p = s.players[g.HUMAN], o = s.players[1 - g.HUMAN];
+		p.board.length = 0; o.board.length = 0; p.hand.length = 0; o.hand.length = 0;
+		E.summon(s, g.HUMAN, s.cardsById.me_gm_patrol); // our creature — their spell's victim
+		const mine = p.board[0];
+		const bolt = E.instantiate(s.cardsById.me_gm_bitter, 1 - g.HUMAN); // "Destroy an enemy creature"
+		bolt.zone = 'hand'; bolt.cost = 0;
+		o.hand.push(bolt);
+		o.mana = { cur: 5, max: 5, bonus: 0 };
+		s.current = 1 - g.HUMAN; s.priority = null; s.stack.length = 0;
+		const ok2 = E.playCard(s, 1 - g.HUMAN, bolt.uid, { type: 'creature', uid: mine.uid, player: g.HUMAN }, null);
+		g.pump();
+		return { played: ok2 !== false, mine: mine.uid, bolt: bolt.uid };
+	});
+	let spellTele = null;
+	for (let i = 0; i < 40 && !spellTele; i++) {
+		spellTele = await page.evaluate(({ mine }) => (window.__game.telegraphs || []).find(t => t.to.uid === mine) || null, sp);
+		if (!spellTele) await sleep(150);
+	}
+	A(!!spellTele, 'a targeted enemy spell raises a telegraph', JSON.stringify({ sp, spellTele }));
+	if (spellTele) {
+		A(spellTele.to.uid === sp.mine, "…aimed at the spell's victim", JSON.stringify(spellTele));
+		A(spellTele.friendly === false, '…and hostile spells stay red');
+	}
+	await page.evaluate(() => { const g = window.__game, s = g.state; s.current = g.HUMAN; g.pump(); });
+	await sleep(400);
+}
+
 console.log('page errors:', errors.length ? errors.join(' | ') : 'none');
 A(errors.length === 0, 'no page errors');
 await page.close();

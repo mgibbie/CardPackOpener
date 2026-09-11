@@ -1998,12 +1998,26 @@ function targetSourcePos() {
 // Telegraphs: brief forecast arrows (attacker → target) shown BEFORE an enemy
 // attack resolves visually, and between replay frames — so watchers can follow
 // what is about to happen instead of reconstructing it from the aftermath.
-let telegraphs = []; // { from: {uid}|{hero:pi}, to: {uid}|{hero:pi}, until }
+let telegraphs = []; // { from: {uid?, hero?}, to: {uid?, hero?}, until, friendly }
 function telegraphPos(ref) {
-	const w = ref.hero != null ? heroPos(ref.hero) : (entities.has(ref.uid) ? creaturePos(ref.uid) : null);
+	// a ref can carry BOTH uid and hero: the uid wins while its entity lives
+	// (e.g. the played card in the enemy hand), the hero is the fallback anchor
+	const w = (ref.uid != null && entities.has(ref.uid)) ? creaturePos(ref.uid)
+		: ref.hero != null ? heroPos(ref.hero) : null;
 	if (!w) return null;
 	const v = w.project(camera);
 	return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+}
+// hostile telegraphs stay attack-red; ones aimed at the actor's OWN side (buffs,
+// heals, self-enchants) go green so they don't read as incoming damage
+const TG_RED = { chev: '#d83a2e', head: '#e8483a', sock: 'rgba(216,58,46,0.85)', glow: 'rgba(255,60,40,0.55)', line: 'rgba(60,0,0,0.9)' };
+const TG_GREEN = { chev: '#2f9e4f', head: '#3bcf63', sock: 'rgba(46,158,79,0.85)', glow: 'rgba(70,230,120,0.5)', line: 'rgba(0,50,10,0.9)' };
+function pushTelegraph(fromRef, target, actorPi, ms = 520) {
+	if (!target) return 0;
+	const to = target.type === 'hero' ? { hero: target.player } : { uid: target.uid };
+	telegraphs.push({ from: fromRef, to, until: performance.now() + ms, friendly: target.player === actorPi });
+	wake();
+	return ms;
 }
 
 function drawTargetArrow() {
@@ -2039,25 +2053,25 @@ function drawTargetArrow() {
 	}
 	for (const t of telegraphs) {
 		const a = telegraphPos(t.from), b = telegraphPos(t.to);
-		if (a && b) paintArrow(ctx, a.x, a.y, b.x, b.y);
+		if (a && b) paintArrow(ctx, a.x, a.y, b.x, b.y, t.friendly ? TG_GREEN : TG_RED);
 	}
 }
 
 // one chevron arrow from (sx,sy) to (tx,ty) — used by the interactive targeting
 // arrow (target = the cursor) and by telegraphs (target = the victim)
-function paintArrow(ctx, sx, sy, tx, ty) {
+function paintArrow(ctx, sx, sy, tx, ty, pal = TG_RED) {
 	const dist = Math.hypot(tx - sx, ty - sy);
 	if (dist < 30) {
 		// armed but the cursor hasn't left the source yet (click-then-click):
 		// pulse the socket so the armed state reads before any drag starts
 		const pr = 9 + Math.sin(performance.now() / 260) * 2.5;
-		ctx.shadowColor = 'rgba(255,60,40,0.55)';
+		ctx.shadowColor = pal.glow;
 		ctx.shadowBlur = 12;
 		ctx.beginPath();
 		ctx.arc(sx, sy, pr, 0, Math.PI * 2);
-		ctx.fillStyle = 'rgba(216,58,46,0.85)';
+		ctx.fillStyle = pal.sock;
 		ctx.fill();
-		ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+		ctx.strokeStyle = pal.line;
 		ctx.lineWidth = 2;
 		ctx.stroke();
 		ctx.shadowBlur = 0;
@@ -2092,7 +2106,7 @@ function paintArrow(ctx, sx, sy, tx, ty) {
 		const a = pts[pts.length - 2], b = pts[pts.length - 1];
 		return { x: b.x, y: b.y, ang: Math.atan2(b.y - a.y, b.x - a.x) };
 	};
-	ctx.shadowColor = 'rgba(255,60,40,0.55)';
+	ctx.shadowColor = pal.glow;
 	ctx.shadowBlur = 12;
 	// marching chevron chain (the pulse makes them crawl toward the target)
 	const headLen = 30, step = 34;
@@ -2108,9 +2122,9 @@ function paintArrow(ctx, sx, sy, tx, ty) {
 		ctx.lineTo(-9, 11);
 		ctx.lineTo(-3, 0);
 		ctx.closePath();
-		ctx.fillStyle = '#d83a2e';
+		ctx.fillStyle = pal.chev;
 		ctx.fill();
-		ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+		ctx.strokeStyle = pal.line;
 		ctx.lineWidth = 2;
 		ctx.stroke();
 		ctx.restore();
@@ -2126,18 +2140,18 @@ function paintArrow(ctx, sx, sy, tx, ty) {
 	ctx.lineTo(-headLen * 0.55, 0);
 	ctx.lineTo(-headLen, 19);
 	ctx.closePath();
-	ctx.fillStyle = '#e8483a';
+	ctx.fillStyle = pal.head;
 	ctx.fill();
-	ctx.strokeStyle = 'rgba(60,0,0,0.95)';
+	ctx.strokeStyle = pal.line;
 	ctx.lineWidth = 2.5;
 	ctx.stroke();
 	ctx.restore();
 	// socket over the source
 	ctx.beginPath();
 	ctx.arc(sx, sy, 9, 0, Math.PI * 2);
-	ctx.fillStyle = 'rgba(216,58,46,0.85)';
+	ctx.fillStyle = pal.sock;
 	ctx.fill();
-	ctx.strokeStyle = 'rgba(60,0,0,0.9)';
+	ctx.strokeStyle = pal.line;
 	ctx.lineWidth = 2;
 	ctx.stroke();
 	ctx.shadowBlur = 0;
@@ -2974,6 +2988,10 @@ function nextEvent() {
 			SFX.play('cardPlay');
 			log(`${nameOf(ev.player)} played ${ev.card.name}`);
 			delay = 420;
+			if (ev.target) {
+				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
+				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+			}
 			break;
 		case 'summon':
 			if (matchStats) statInc(matchStats.summons, ev.player);
@@ -2990,7 +3008,7 @@ function nextEvent() {
 			if (ent) {
 				const to = ev.target.type === 'hero' ? heroPos(ev.target.player) : creaturePos(ev.target.uid);
 				ent.lunge = { from: ent.mesh.position.clone(), to, start: performance.now() + tele };
-				if (tele) { telegraphs.push({ from: { uid: ev.attackerUid }, to: toRef, until: performance.now() + tele }); wake(); }
+				if (tele) { telegraphs.push({ from: { uid: ev.attackerUid }, to: toRef, until: performance.now() + tele, friendly: false }); wake(); }
 			}
 			pendingFx.push({ a: ev.attackerUid, t: ev.target }); // replays telegraph BOTH sides' attacks
 			SFX.play('attack');
@@ -3069,7 +3087,7 @@ function nextEvent() {
 			if (ev.target) {
 				const toRef = ev.target.type === 'hero' ? { hero: ev.target.player } : { uid: ev.target.uid };
 				pendingFx.push({ h: ev.player, t: ev.target });
-				if (ev.player !== HUMAN) { telegraphs.push({ from: { hero: ev.player }, to: toRef, until: performance.now() + 520 }); wake(); delay = 420 + 520; break; }
+				if (ev.player !== HUMAN) { telegraphs.push({ from: { hero: ev.player }, to: toRef, until: performance.now() + 520, friendly: false }); wake(); delay = 420 + 520; break; }
 			}
 			const panel = panelEl(ev.player);
 			if (panel) {
@@ -3124,6 +3142,18 @@ function nextEvent() {
 		case 'landTapped':
 			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
 			delay = 300;
+			if (ev.target) {
+				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
+				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+			}
+			break;
+		case 'artifactTapped':
+			log(`${nameOf(ev.player)} tapped ${ev.card.name}: ${ev.text}`);
+			delay = 300;
+			if (ev.target) {
+				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
+				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+			}
 			break;
 		case 'locationPlayed':
 			log(`${nameOf(ev.player)} opened ${ev.card.name}`);
@@ -3287,6 +3317,10 @@ function nextEvent() {
 			// class powers live in the panel, not on the table
 			floatText('✦', '#ffd25f', entities.has(ev.card.uid) ? creaturePos(ev.card.uid) : heroPos(ev.player));
 			delay = 420;
+			if (ev.target) {
+				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
+				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+			}
 			break;
 		case 'questProgress': {
 			const ent = entities.get(ev.card.uid);
@@ -3309,6 +3343,10 @@ function nextEvent() {
 			const ent = entities.get(ev.card.uid);
 			if (ent) { ent.card.loyalty = ev.loyalty; refreshFace(ent); floatText('✧', '#c9b8ff', ent.mesh.position); }
 			delay = 480;
+			if (ev.target) {
+				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
+				if (ev.player !== HUMAN) delay += pushTelegraph({ uid: ev.card.uid, hero: ev.player }, ev.target, ev.player);
+			}
 			break;
 		}
 		case 'walkerDamage': {
@@ -8679,9 +8717,11 @@ function replayPlay() {
 			replayTeleShown = true;
 			const until = performance.now() + Math.max(400, Math.round(900 / replaySpeed));
 			for (const f of nxt.fx) {
-				const from = f.h != null ? { hero: f.h } : { uid: f.a };
+				// a = attacking creature · h = hero swing · c(+p) = a targeted card
+				// play / power / tap / walker ability (hero fallback if the card left)
+				const from = f.a != null ? { uid: f.a } : f.h != null ? { hero: f.h } : { uid: f.c, hero: f.p };
 				const to = f.t.type === 'hero' ? { hero: f.t.player } : { uid: f.t.uid };
-				telegraphs.push({ from, to, until });
+				telegraphs.push({ from, to, until, friendly: !!f.fr });
 			}
 			SFX.play('attack');
 			wake();
