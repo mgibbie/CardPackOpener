@@ -159,6 +159,74 @@ A(!/attack target/i.test(ztAfter.hint || ''), 'and nothing is left armed');
 
 console.log('page errors:', errors.length ? errors.join(' | ') : 'none');
 A(errors.length === 0, 'no page errors');
+await page.close();
+
+// ================= the arrow on a devicePixelRatio 1.5 display =================
+// The 2026-09-11 root cause: the arrow overlay canvas is a REPLACED element, so
+// `inset:0` never stretched it — it displayed at its intrinsic backing size
+// (innerWidth × DPR), painting the whole arrow at DPR× its intended position on
+// 125%/150% Windows display scaling. Every earlier harness sampled BACKING
+// pixels (self-consistent), so only a DISPLAYED-geometry assertion catches it.
+{
+	const page2 = await browser.newPage();
+	await page2.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1.5 });
+	const errs2 = [];
+	page2.on('pageerror', e => errs2.push(e.message));
+	await page2.evaluateOnNewDocument(st => { localStorage.setItem('magepunk_mp_token_v1', 'tgt'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }, STATE);
+	await page2.goto(`http://localhost:${PORT}/battlecards/index.html?players=2`, { waitUntil: 'domcontentloaded' });
+	const b2 = await waitFor(() => page2.evaluate(() => !!(window.__game && window.__game.state && window.__game.state.players?.length)), 45000);
+	A(b2, '[dpr1.5] booted');
+	if (b2) {
+		await sleep(2500);
+		await page2.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /keep hand/i.test(x.textContent)); if (b) { b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); b.click(); } });
+		await sleep(900);
+		const ids2 = await page2.evaluate(() => {
+			const g = window.__game, s = g.state, E = g.E;
+			const p = s.players[g.HUMAN];
+			p.board.length = 0;
+			E.summon(s, g.HUMAN, s.cardsById.me_aragorn_ithilien);
+			E.summon(s, 1 - g.HUMAN, s.cardsById.me_gm_patrol);
+			const mine = p.board[0];
+			mine.sick = false; mine.attacksUsed = 0;
+			s.current = g.HUMAN; s.priority = null; s.stack.length = 0;
+			g.pump();
+			return { mine: mine.uid };
+		});
+		await sleep(1200);
+		const pos = await page2.evaluate(u => window.__game.screenPosOf(u), ids2.mine);
+		await page2.mouse.click(pos.x, pos.y);
+		await sleep(300);
+		await page2.mouse.move(pos.x + 260, pos.y - 200); // pull the arrow out
+		await sleep(400);
+		const geo = await page2.evaluate((uid) => {
+			const expected = window.__game.screenPosOf(uid); // fresh — the token may drift a few px while settling
+			const cv = [...document.body.children].find(el => el.tagName === 'CANVAS' && el.style.zIndex === '45');
+			if (!cv) return { canvas: false };
+			const r = cv.getBoundingClientRect();
+			// backing-space tail: the solid red socket disc at the source
+			const ctx = cv.getContext('2d');
+			const img = ctx.getImageData(0, 0, cv.width, cv.height).data;
+			const dpr = cv.width / innerWidth;
+			let best = null, bestD = 1e9;
+			for (let y = 0; y < cv.height; y += 2) for (let x = 0; x < cv.width; x += 2) {
+				const i = (y * cv.width + x) * 4;
+				if (img[i] > 170 && img[i + 1] < 95 && img[i + 2] < 80 && img[i + 3] > 150) {
+					const d = Math.hypot(x / dpr - expected.x, y / dpr - expected.y);
+					if (d < bestD) { bestD = d; best = { x: x / dpr, y: y / dpr }; }
+				}
+			}
+			return { canvas: true, rectW: r.width, rectH: r.height, vw: innerWidth, vh: innerHeight, backingW: cv.width, dpr, nearestRedToTail: bestD, tailPx: best, expected };
+		}, ids2.mine);
+		console.log('[dpr1.5] arrow geometry:', JSON.stringify(geo));
+		A(geo.canvas, '[dpr1.5] arrow canvas found');
+		A(Math.abs(geo.rectW - geo.vw) <= 1 && Math.abs(geo.rectH - geo.vh) <= 1,
+			'[dpr1.5] the overlay DISPLAYS at viewport size (the replaced-element inset:0 trap)', JSON.stringify(geo));
+		A(geo.nearestRedToTail <= 30, '[dpr1.5] the arrow tail sits ON the attacking creature', geo.nearestRedToTail);
+		A(errs2.length === 0, '[dpr1.5] no page errors', errs2.join(' | '));
+	}
+	await page2.close();
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 await browser.close(); server.close();
 process.exit(fail ? 1 : 0);

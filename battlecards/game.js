@@ -1983,10 +1983,18 @@ function drawTargetArrow() {
 		return;
 	}
 	// back the overlay at device resolution (capped like the renderer) so the
-	// arrow — the game's core combat affordance — isn't blurry on retina phones
+	// arrow — the game's core combat affordance — isn't blurry on retina phones.
+	// The CSS size MUST be pinned to the viewport explicitly: a canvas is a
+	// replaced element, so `inset:0` alone does NOT stretch it — it displays at
+	// its intrinsic (backing) size, and on any devicePixelRatio ≠ 1 display the
+	// whole arrow rendered at DPR× its intended position from the top-left
+	// (the long-standing "red line starts in the wrong place" on 125%/150%
+	// Windows display scaling — invisible to backing-pixel harnesses).
 	if (arrowCanvas.width !== Math.round(innerWidth * DPR) || arrowCanvas.height !== Math.round(innerHeight * DPR)) {
 		arrowCanvas.width = Math.round(innerWidth * DPR);
 		arrowCanvas.height = Math.round(innerHeight * DPR);
+		arrowCanvas.style.width = innerWidth + 'px';
+		arrowCanvas.style.height = innerHeight + 'px';
 	}
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 	ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
