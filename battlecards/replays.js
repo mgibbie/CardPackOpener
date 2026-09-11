@@ -10,6 +10,20 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 
 function status(msg) { $('status').textContent = msg || ''; clearTimeout(status._t); if (msg) status._t = setTimeout(() => { if ($('status').textContent === msg) $('status').textContent = ''; }, 3000); }
 
+// The slim/repack machinery diffs cards against their defs — it needs the card
+// db, which this page doesn't otherwise load. Without it, sharing an old fat
+// replay from HERE silently skipped the repack, blew the upload cap, and fell
+// back to the gigantic code (the user's 413). Lazy-load it on first use.
+let _cardsP = null;
+function ensureCards() {
+	if (!_cardsP) _cardsP = fetch('cards.json').then(r => r.json()).then(d => {
+		const byId = {};
+		for (const c of d.cards) byId[c.id] = c;
+		Rec.setCards(byId);
+	}).catch(() => { _cardsP = null; });
+	return _cardsP;
+}
+
 function ago(ts) {
 	if (!ts) return '';
 	const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -55,10 +69,11 @@ function render() {
 		row.querySelector('.rp-share').onclick = async (e) => {
 			const btn = e.currentTarget; btn.disabled = true; btn.textContent = '…';
 			// prefer a one-click share LINK (upload); fall back to the paste-able code when logged out
+			await ensureCards(); // old fat tapes re-slim in place before the upload
 			const shareId = await Rec.uploadReplay(id);
 			btn.disabled = false; btn.textContent = '🔗 Share';
 			if (shareId) {
-				const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'index.html?rshare=' + shareId;
+				const url = location.origin + '/r/' + shareId;
 				try { await navigator.clipboard.writeText(url); status('Share link copied — anyone can open it.'); }
 				catch { prompt('Copy this replay link:', url); }
 				return;
@@ -78,6 +93,7 @@ function render() {
 $('import-btn').onclick = async () => {
 	const raw = prompt('Paste a replay code to add it to your list:');
 	if (!raw) return;
+	await ensureCards(); // a pasted fat code re-saves slim
 	const id = await Rec.importCode(raw.trim());
 	if (id) { render(); status('Replay imported — hit Watch to view it.'); }
 	else status("That doesn't look like a valid replay code.");

@@ -3,6 +3,9 @@
 # with CORS (Access-Control-Allow-Origin: *) so canvas draws stay untainted.
 # 301 (not 302): browsers cache permanent redirects, so every repeat asset
 # load skips the redirect round-trip instead of paying it forever.
+# Short replay-share links: /r/<id> opens the replay viewer. 302 (not 301) —
+# shared replays GC after 30 days, so browsers must not cache these forever.
+/r/* /battlecards/index.html?rshare=:splat 302
 /battlecards/art/* https://magepunk-cardart.pages.dev/:splat 301
 /overworld/data/* https://magepunk-owdata.pages.dev/:splat 301
 /designwiki/sprites/* https://magepunk-sprites.pages.dev/:splat 301
