@@ -2,6 +2,14 @@
 	"generated": "2026-09-10",
 	"entries": [
 		{
+			"sha": "b7379c0",
+			"date": "2026-09-10",
+			"kind": "patch",
+			"title": "Import 30 Duels hero powers (powers frontier) (#411)",
+			"body": "- 30 new heropower cards across all 10 classes + an expanded neutral\n  list (neutral powers were never actually offered — the three game.js\n  picker sites only flatMapped hero classes; fixed).\n- New passive-power mechanism: power.passiveFlag + heroPassive() in\n  core.js, derived live from the installed power card so enemy heroes\n  and run boots need zero wiring. Six passives: Mind Tether,\n  Connections, Soulcial Studies, Savage Secrets, Stormcatcher,\n  Magnetic Mines.\n- 9 new effect handlers (grant-random-keyword, warmasters-frenzy,\n  outlander-discover, demonic-transformation, hematology, wyrm-bolt,\n  no-guts-no-glory, ferocious-flurry, friendly-attacks-random) +\n  riders: tutor cardClass/costZeroTurn, summon doom,\n  reduce-random-hand-cost minCost/withReplacement, discard-draw and\n  doomCharge pend resolution, hero windfury.\n- Relicologist skipped: ulda_relicologist already ships the identical\n  power and is wired for mage.\n- 46-assertion duels_powers_test fires every power; registry pin\n  1167 -> 1176.",
+			"cards": []
+		},
+		{
 			"sha": "c356600",
 			"date": "2026-09-10",
 			"kind": "cards",
