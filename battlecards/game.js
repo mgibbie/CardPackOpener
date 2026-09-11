@@ -1995,10 +1995,23 @@ function targetSourcePos() {
 	return null;
 }
 
+// Telegraphs: brief forecast arrows (attacker → target) shown BEFORE an enemy
+// attack resolves visually, and between replay frames — so watchers can follow
+// what is about to happen instead of reconstructing it from the aftermath.
+let telegraphs = []; // { from: {uid}|{hero:pi}, to: {uid}|{hero:pi}, until }
+function telegraphPos(ref) {
+	const w = ref.hero != null ? heroPos(ref.hero) : (entities.has(ref.uid) ? creaturePos(ref.uid) : null);
+	if (!w) return null;
+	const v = w.project(camera);
+	return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+}
+
 function drawTargetArrow() {
+	const nowT = performance.now();
+	if (telegraphs.length) telegraphs = telegraphs.filter(t => t.until > nowT);
 	const src = targetSourcePos();
 	const ctx = arrowCanvas.getContext('2d');
-	if (!src) {
+	if (!src && !telegraphs.length) {
 		if (arrowDrawn) { ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height); arrowDrawn = false; }
 		return;
 	}
@@ -2020,9 +2033,20 @@ function drawTargetArrow() {
 	ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
 	ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 	arrowDrawn = true;
-	const v = src.project(camera);
-	const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
-	const dist = Math.hypot(mouseX - sx, mouseY - sy);
+	if (src) {
+		const v = src.project(camera);
+		paintArrow(ctx, (v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight, mouseX, mouseY);
+	}
+	for (const t of telegraphs) {
+		const a = telegraphPos(t.from), b = telegraphPos(t.to);
+		if (a && b) paintArrow(ctx, a.x, a.y, b.x, b.y);
+	}
+}
+
+// one chevron arrow from (sx,sy) to (tx,ty) — used by the interactive targeting
+// arrow (target = the cursor) and by telegraphs (target = the victim)
+function paintArrow(ctx, sx, sy, tx, ty) {
+	const dist = Math.hypot(tx - sx, ty - sy);
 	if (dist < 30) {
 		// armed but the cursor hasn't left the source yet (click-then-click):
 		// pulse the socket so the armed state reads before any drag starts
@@ -2040,10 +2064,10 @@ function drawTargetArrow() {
 		return;
 	}
 	// quadratic bezier arced toward the top of the screen
-	const mx = (sx + mouseX) / 2, my = (sy + mouseY) / 2 - Math.min(160, dist * 0.35);
+	const mx = (sx + tx) / 2, my = (sy + ty) / 2 - Math.min(160, dist * 0.35);
 	const P = t => ({
-		x: (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * mx + t * t * mouseX,
-		y: (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * my + t * t * mouseY,
+		x: (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * mx + t * t * tx,
+		y: (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * my + t * t * ty,
 	});
 	// resample to arc length so the chevrons stay evenly spaced
 	const pts = [];
@@ -2916,6 +2940,10 @@ function openSacModal() {
 	modal.style.display = 'block';
 }
 
+// attacks seen while draining the event queue, attached to the next recorded
+// frame so REPLAYS can telegraph them (frames alone can't say who hit whom)
+let pendingFx = [];
+
 function nextEvent() {
 	const ev = queue.shift();
 	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
@@ -2955,12 +2983,18 @@ function nextEvent() {
 			break;
 		case 'attack': {
 			const ent = entities.get(ev.attackerUid);
+			const toRef = ev.target.type === 'hero' ? { hero: ev.target.player } : { uid: ev.target.uid };
+			// an ENEMY attack telegraphs first: half a beat of the red line from
+			// attacker to target, so the watcher sees what's coming before it lands
+			const tele = ent && ent.card && ent.card.controller !== HUMAN ? 520 : 0;
 			if (ent) {
 				const to = ev.target.type === 'hero' ? heroPos(ev.target.player) : creaturePos(ev.target.uid);
-				ent.lunge = { from: ent.mesh.position.clone(), to, start: performance.now() };
+				ent.lunge = { from: ent.mesh.position.clone(), to, start: performance.now() + tele };
+				if (tele) { telegraphs.push({ from: { uid: ev.attackerUid }, to: toRef, until: performance.now() + tele }); wake(); }
 			}
+			pendingFx.push({ a: ev.attackerUid, t: ev.target }); // replays telegraph BOTH sides' attacks
 			SFX.play('attack');
-			delay = 460;
+			delay = 460 + tele;
 			break;
 		}
 		case 'damage': {
@@ -3030,6 +3064,13 @@ function nextEvent() {
 		}
 		case 'heroAttack': {
 			log(ev.player === HUMAN ? 'Your hero attacks' : `${nameOf(ev.player)}'s hero attacks`);
+			// a swing (carries a target) telegraphs like a creature attack; the same
+			// event type also fires for plain attack-VALUE changes — those don't
+			if (ev.target) {
+				const toRef = ev.target.type === 'hero' ? { hero: ev.target.player } : { uid: ev.target.uid };
+				pendingFx.push({ h: ev.player, t: ev.target });
+				if (ev.player !== HUMAN) { telegraphs.push({ from: { hero: ev.player }, to: toRef, until: performance.now() + 520 }); wake(); delay = 420 + 520; break; }
+			}
 			const panel = panelEl(ev.player);
 			if (panel) {
 				panel.classList.add('hit');
@@ -4588,7 +4629,7 @@ function animate() {
 	// interactive is live (drag, targeting arrow, floaters), stop re-rendering —
 	// a waiting turn is mostly a still image, and redrawing it at 60fps just
 	// burns phone battery. Pointer input, pumps, resizes and art all wake() us.
-	let busy = !!(placing || pending || selectedAttacker || floaters.length);
+	let busy = !!(placing || pending || selectedAttacker || floaters.length || telegraphs.length);
 	if (!busy) {
 		for (const ent of entities.values()) {
 			if (ent.dying || ent.lunge || ent.hitT
@@ -4609,10 +4650,11 @@ function animate() {
 			ent.mesh.position.y += dt * 1.5;
 			continue;
 		}
-		// attack lunge
+		// attack lunge (a future start = the telegraph beat — hold in place)
 		if (ent.lunge) {
 			const t = (now - ent.lunge.start) / 420;
 			if (t >= 1) { ent.lunge = null; }
+			else if (t < 0) { continue; }
 			else {
 				const k = t < 0.5 ? t * 2 : (1 - t) * 2;
 				ent.mesh.position.lerpVectors(ent.lunge.from, ent.lunge.to, k * 0.85);
@@ -4703,6 +4745,7 @@ window.__game = {
 	},
 	// test hooks for the targeting arrow
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
+	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
 	orbScreenPos() {
 		if (!heroPanelMesh.visible || !heroOrbUV) return null;
@@ -8536,7 +8579,7 @@ function deriveReplayMeta() {
 function maybeRecordFrame() {
 	if (replayMode || spectateMode || !state || !Array.isArray(state.players)) return;
 	if (!Rec.isRecording()) Rec.startRecording(deriveReplayMeta());
-	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim());
+	Rec.capture(state, (logHistory[logHistory.length - 1] || '').replace(/^[—\-\s]+|[—\-\s]+$/g, '').trim(), pendingFx.splice(0));
 	saveRunSnapshot(); // persist the live fight into the active run so resume restores this exact board
 	saveAsyncSnapshot(); // and the async mid-turn so a correspondence match resumes exactly too
 }
@@ -8603,6 +8646,8 @@ async function startReplay(cardsById) {
 }
 function renderReplayFrame(i) {
 	if (!replayTape) return;
+	telegraphs.length = 0; // a rendered frame consumes its telegraph beat (and scrubbing clears strays)
+	replayTeleShown = false;
 	const frames = replayTape.frames;
 	replayIdx = Math.max(0, Math.min(frames.length - 1, i));
 	const f = frames[replayIdx];
@@ -8620,11 +8665,29 @@ function renderReplayFrame(i) {
 function replayGoto(i) { replayPause(); renderReplayFrame(i); }
 function replayStep(d) { replayPause(); renderReplayFrame(replayIdx + d); }
 function replayPause() { if (replayTimer) { clearInterval(replayTimer); replayTimer = null; } updateReplayBar(); }
+let replayTeleShown = false;
 function replayPlay() {
 	if (replayTimer || !replayTape) return;
 	if (replayIdx >= replayTape.frames.length - 1) renderReplayFrame(0); // restart from the top if at the end
 	replayTimer = setInterval(() => {
 		if (replayIdx >= replayTape.frames.length - 1) { replayPause(); return; }
+		// a frame that resolves attacks gets a telegraph beat first: hold on the
+		// CURRENT board one tick and draw the red line(s) attacker → target, so
+		// the watcher sees what's about to happen instead of decoding aftermath
+		const nxt = replayTape.frames[replayIdx + 1];
+		if (nxt.fx && nxt.fx.length && !replayTeleShown) {
+			replayTeleShown = true;
+			const until = performance.now() + Math.max(400, Math.round(900 / replaySpeed));
+			for (const f of nxt.fx) {
+				const from = f.h != null ? { hero: f.h } : { uid: f.a };
+				const to = f.t.type === 'hero' ? { hero: f.t.player } : { uid: f.t.uid };
+				telegraphs.push({ from, to, until });
+			}
+			SFX.play('attack');
+			wake();
+			return;
+		}
+		replayTeleShown = false;
 		renderReplayFrame(replayIdx + 1);
 	}, Math.max(160, Math.round(900 / replaySpeed)));
 	updateReplayBar();

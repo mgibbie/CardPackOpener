@@ -194,6 +194,39 @@ A(!/attack target/i.test(ztAfter.hint || ''), 'and nothing is left armed');
 	A(/elusive|stealth/i.test(dragHint || ''), 'it points at the untargetable enemy board', dragHint);
 }
 
+// ---- enemy attacks TELEGRAPH: the red line shows attacker → target for a
+// beat before the lunge, so the opponent's turn (and replays) can be followed ----
+{
+	const tg = await page.evaluate(() => {
+		const g = window.__game, s = g.state, E = g.E;
+		const p = s.players[g.HUMAN], o = s.players[1 - g.HUMAN];
+		p.board.length = 0; o.board.length = 0; p.hand.length = 0; o.hand.length = 0;
+		E.summon(s, g.HUMAN, s.cardsById.me_gm_patrol);           // a juicy 4/5 target on OUR side
+		E.summon(s, 1 - g.HUMAN, s.cardsById.me_aragorn_dunedain); // their ready attacker
+		const atk = o.board[0];
+		atk.sick = false; atk.attacksUsed = 0;
+		o.mana = { cur: 0, max: 3, bonus: 0 }; // no plays — attacking is the AI's only move
+		s.current = 1 - g.HUMAN; s.priority = null; s.stack.length = 0;
+		g.pump();
+		return { mine: p.board[0].uid, theirs: atk.uid };
+	});
+	let sawTelegraph = null;
+	for (let i = 0; i < 40 && !sawTelegraph; i++) {
+		sawTelegraph = await page.evaluate(() => { const t = window.__game.telegraphs; return t.length ? t[0] : null; });
+		if (!sawTelegraph) await sleep(150);
+	}
+	A(!!sawTelegraph, 'an enemy attack raises a telegraph arrow', JSON.stringify(sawTelegraph));
+	if (sawTelegraph) A(sawTelegraph.from.uid === tg.theirs, 'the telegraph starts at the enemy attacker', JSON.stringify(sawTelegraph));
+	const landed = await waitFor(() => page.evaluate(({ mine }) => {
+		const g = window.__game, s = g.state;
+		const c = s.players[g.HUMAN].board.find(x => x.uid === mine);
+		return (!c || c.damage > 0) ? true : false;
+	}, tg), 15000);
+	A(landed, 'and the attack still resolves after the telegraph beat');
+	await page.evaluate(() => { const g = window.__game, s = g.state; s.current = g.HUMAN; g.pump(); }); // hand the turn back for any later sections
+	await sleep(400);
+}
+
 console.log('page errors:', errors.length ? errors.join(' | ') : 'none');
 A(errors.length === 0, 'no page errors');
 await page.close();

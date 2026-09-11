@@ -94,12 +94,16 @@ export function cancel() { tape = null; lastDigest = null; }
 
 // Capture the current state as a frame, if it changed since the last one.
 // `caption` is a short human line for the scrubber (e.g. "Turn 4 — Player").
-export function capture(state, caption) {
+export function capture(state, caption, fx) {
 	if (!tape || !state || !Array.isArray(state.players) || tape.frames.length >= MAX_FRAMES) return;
 	let dg = null; try { dg = E.stateDigest(state); } catch { /* unrenderable — skip digest */ }
 	if (dg && dg === lastDigest) return; // nothing changed since last frame
 	lastDigest = dg;
-	try { tape.frames.push({ snap: freeze(E.toSnapshot(state)), cap: caption || '', turn: state.turnNumber | 0, cur: state.current | 0 }); } catch { /* skip a bad frame */ }
+	try {
+		const f = { snap: freeze(E.toSnapshot(state)), cap: caption || '', turn: state.turnNumber | 0, cur: state.current | 0 };
+		if (Array.isArray(fx) && fx.length) f.fx = freeze(fx); // the attacks this frame resolves — playback telegraphs them
+		tape.frames.push(f);
+	} catch { /* skip a bad frame */ }
 }
 
 // Finalize + persist the tape. `extra` merges into meta (winner, result, etc.).
