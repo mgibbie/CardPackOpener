@@ -2,6 +2,30 @@
 	"generated": "2026-09-11",
 	"entries": [
 		{
+			"sha": "a596d0a",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Twinspell is a real keyword: bolded + on the Learn page (#422)",
+			"body": "- keywords.js gains a Twinspell entry (beside Echo, its sibling), so\n  card faces bold it and hovers explain it: \"Casting it adds a\n  one-shot copy (without Twinspell) to your hand.\"\n- The 8 Twinspell cards' text normalized to the \"Twinspell. ...\"\n  keyword-line convention (7 were missing the period).\n- Learn page glossary regenerated (111 keywords) — Twinspell appears\n  with its designwiki link.\n- Gallery cache-bust 20260911a -> 20260911b (viewer.html + viewer.js\n  imports) so clients pick up the new glossary + card text.\n\nSuite 529/529.",
+			"cards": []
+		},
+		{
+			"sha": "3e2d14f",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Twinspell copies are non-token cards that cycle through the graveyard (#421)",
+			"body": "Owner ruling: a Twinspell's generated copy must not be a token — both the\noriginal and the conjured copy go to the graveyard and reshuffle back into\nthe deck. Applies to all twinspell cards.\n\n- Removed `token: true` from the 4 existing copies (rapid_fire_ii,\n  fresh_scent_ii, lightforged_blessing_ii, me_aragorn_rally_ii). Tokens are\n  exiled on death and filtered out of the graveyard reshuffle (zones.js);\n  dropping the flag lets each copy hit the graveyard and cycle.\n- Made 4 cards that said \"Twinspell\" but never twinned actually functional:\n  Conjurer's Calling, Air Raid, Desperate Measures, and Rising Winds now\n  conjure a non-token single-cast copy (Rising Winds conjures from inside\n  both Choose One branches, since effectsOf returns choice effects OR\n  top-level effects, not both).\n- Every copy stays uncollectible and does not re-conjure (no loop).\n\nRegression: twinspell_cycle_test.mjs proves each copy reshuffles back and a\ngenuine token is filtered out (negative control). Suite 529/529.",
+			"cards": []
+		},
+		{
+			"sha": "819936e",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "owner_todo batch 44: Aragorn lorequest card tweaks + live art tuning (#420)",
+			"body": "Four Middle-earth \"Aragorn\" cards from the wiki owner inbox:\n- Rally at the Hornburg: add Twinspell (conjures a single-cast\n  me_aragorn_rally_ii twin, uncollectible/not draftable).\n- Andúril, Flame of the West: reword to \"Swift. / Swing: Creatures you\n  control gain +1 Attack.\" (mechanic unchanged — still fires on the hero swing).\n- Rangers of Ithilien: Battlecry now grants BOTH Swift AND Taunt.\n- Flowering of the White Tree: reword to \"At the start of your turn,\n  creatures you control gain +1 Attack.\" (mechanic unchanged).\n\nAlso folds one live crop-tuning override (goblin_arsonist) via\npull-live-tuning into art_tuning.json.\n\nRegression: owner_todo_cards44_test.mjs (fires each card). Suite 528/528.",
+			"cards": []
+		},
+		{
 			"sha": "5f9f922",
 			"date": "2026-09-11",
 			"kind": "patch",
