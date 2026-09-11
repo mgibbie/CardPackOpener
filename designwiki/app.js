@@ -1357,8 +1357,12 @@ async function duelsHeroView(heroId) {
   const seen = new Set();
   const altCards = heroClasses.flatMap(cl => (Du.HERO_POWERS[cl] || [])).map(id => byId[id])
     .filter(c => c && c.power && !seen.has(c.id) && seen.add(c.id));
-  const powers = [primaryCls?.power ? { name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text } : null,
-    ...altCards.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
+  // a signature-kit hero (Darius Crowley) picks among its own powers only
+  const kitCards = (hero.powerIds || []).map(id => byId[id]).filter(c => c && c.power);
+  const powers = kitCards.length
+    ? kitCards.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))
+    : [primaryCls?.power ? { name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text } : null,
+      ...altCards.map(c => ({ name: c.name, cost: c.power.cost, text: (c.description || '').replace(/^Hero Power \(\d+\): /, '') }))].filter(Boolean);
   const poolSize = (typeof Du.draftPool === 'function') ? Du.draftPool(byId, heroClasses).length : 0;
   const isDual = heroClasses.length > 1;
   const sigCount = (typeof Du.bucketsFor === 'function') ? Du.bucketsFor(heroClasses).length - (Du.DUELS_BUCKETS || []).length : 0;

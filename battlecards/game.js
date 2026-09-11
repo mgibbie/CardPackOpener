@@ -7144,11 +7144,19 @@ function pickDuelsPowerOverlay(hero) {
 		const heroClasses = Duels.classesOf(hero);
 		const options = [];
 		const powSeen = new Set();
-		const primaryCls = classRegistry.find(c => c.id === heroClasses[0]);
-		if (primaryCls?.power) options.push({ id: null, name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text });
-		for (const cl of [...heroClasses, 'neutral']) for (const id of Duels.HERO_POWERS[cl] || []) {
-			const d = duelsCardsById[id];
-			if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
+		if (hero.powerIds) {
+			// signature-kit heroes (Darius Crowley) pick among their own powers only
+			for (const id of hero.powerIds) {
+				const d = duelsCardsById[id];
+				if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
+			}
+		} else {
+			const primaryCls = classRegistry.find(c => c.id === heroClasses[0]);
+			if (primaryCls?.power) options.push({ id: null, name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text });
+			for (const cl of [...heroClasses, 'neutral']) for (const id of Duels.HERO_POWERS[cl] || []) {
+				const d = duelsCardsById[id];
+				if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
+			}
 		}
 		for (const o of options) {
 			const box = document.createElement('div');
@@ -7197,9 +7205,9 @@ function genDuelsEnemy(cardsById, games, avoidId) {
 	const gen = Duels.generateEnemy(cardsById, classes, games, Math.random);
 	// parity: the enemy also carries a hero power - its class default (null) or a random alt from its Duels pool
 	const altPowers = [...classes, 'neutral'].flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
-	const powerChoices = [null, ...altPowers];
+	const powerChoices = rival.powerIds ? rival.powerIds.filter(id => cardsById[id] && cardsById[id].power) : [null, ...altPowers];
 	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
-	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives, powerId };
+	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives, powerId, startSummon: rival.startSummon || null };
 }
 
 function bootDuelsEncounter(cardsById, run) {
@@ -7228,6 +7236,9 @@ function bootDuelsEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	// Darius Crowley: whichever side he is, the battle opens with his Cannons in place
+	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
+	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
 	for (const id of run.passives) Duels.applyPassive(state, HUMAN, id);
 	for (const id of enemy.passives || []) Duels.applyPassive(state, 1, id);
 	// optional run modifier: a symmetric anomaly warps every game (shared with Heist)
@@ -8306,8 +8317,8 @@ function genArenaEnemy(cardsById, avoidId) {
 	const deck = Duels.autoDraftDeck(cardsById, classes, Math.random, 30);
 	const altPowers = [...classes, 'neutral'].flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
 	const powerChoices = [null, ...altPowers];
-	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
-	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck, powerId };
+	const powerId2 = rival.powerIds ? rival.powerIds.filter(id => cardsById[id] && cardsById[id].power)[Math.floor(Math.random() * rival.powerIds.length)] || null : powerChoices[Math.floor(Math.random() * powerChoices.length)];
+	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck, powerId: powerId2, startSummon: rival.startSummon || null };
 }
 
 function bootArenaEncounter(cardsById, run) {
@@ -8325,6 +8336,8 @@ function bootArenaEncounter(cardsById, run) {
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
+	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
+	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
 	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);

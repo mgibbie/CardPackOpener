@@ -76,7 +76,7 @@ import {
 	opponentsOf, freezeCreature, STARTING_LIFE, KW, MAX_BASE_MANA, CTHUN_BASE, MAX_HERO_POWERS, BOOST_TABLES,
 	applyGift, schoolOf, recomputeAuras, sweepDeaths, counterStackEntry,
 	findCreature, silenceCreature, isSpellType, heroAttackValue, fireOngoing,
-	checkGameOver, questTick, disguiseCreature,
+	checkGameOver, questTick, disguiseCreature, fireCannons,
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
 	applyRollEntry, targetSpec, legalTargets, runSpell,
@@ -3556,4 +3556,71 @@ register('set-named-summon-buff', ({ state, pi }, e) => {
 		c.attack += e.attack || 0; c.maxHealth += e.health || 0;
 		emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 	}
+});
+
+// ---- Duels: the Darius Crowley cannon package + the last skipped treasures ----
+
+// Fire your Cannons (Fire! / Fire Away! / Fire at Thee! / Tuskarr Raider / Deck Swabbie)
+register('fire-cannons', ({ state, pi, source }, e) => {
+	let kills = 0;
+	for (let i = 0; i < (e.times || 1); i++) kills += fireCannons(state, pi);
+	// Fire!: a volley that kills any creature refreshes the power
+	if (e.refreshOnKill && kills > 0 && source && source.power) source.usedThisTurn = false;
+});
+
+// Draconic Munition: your Cannons hit harder for the rest of the game
+register('cannon-bonus', ({ state, pi }, e) => {
+	state.players[pi].cannonBonus = (state.players[pi].cannonBonus || 0) + (e.value || 1);
+});
+
+// Thunderclap (AV tactic): only-Neutral boards sweep 1 damage & -1 Attack
+register('thunderclap', ({ state, pi, enemies }, e) => {
+	const p = state.players[pi];
+	if (!p.board.every(c => isDead(c) || c.type !== 'creature' || (c.cardClass || 'neutral') === 'neutral')) return;
+	for (const o of enemies) for (const c of [...state.players[o].board]) if (!isDead(c) && c.type === 'creature') {
+		damageCreature(state, c, 1, null);
+		if (!isDead(c)) { c.attack = Math.max(0, c.attack - 1); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+	}
+	sweepDeaths(state);
+});
+
+// Journey to the East's reward: become Uber Diablo — reborn at full strength,
+// 6 damage to ALL enemies, an Uber Apocalypse in hand, draw 3
+register('uber-diablo-transform', ({ state, pi, enemies }, e) => {
+	const p = state.players[pi];
+	p.uberDiablo = true;
+	p.life = p.maxLife ?? STARTING_LIFE;
+	emit(state, { type: 'heal', targetType: 'hero', player: pi, amount: 0, life: p.life });
+	emit(state, { type: 'heroTransform', player: pi, name: 'Uber Diablo' });
+	for (const o of enemies) {
+		damageHero(state, o, 6, pi);
+		for (const c of [...state.players[o].board]) if (!isDead(c) && c.type === 'creature') damageCreature(state, c, 6, null);
+	}
+	sweepDeaths(state);
+	if (state.cardsById.duels_uber_apocalypse && p.hand.length < MAX_HAND) {
+		const ua = instantiate(state.cardsById.duels_uber_apocalypse, pi);
+		ua.zone = 'hand'; p.hand.push(ua);
+		emit(state, { type: 'conjure', player: pi, card: ua, color: null });
+	}
+	drawCards(state, pi, 3);
+});
+
+// Infinite Arcane: the deck moves to a "destroyed" pile; the start-of-turn draw
+// becomes a Discover from it (core.js turn-start + resolvePick 'infinite-arcane')
+register('infinite-arcane', ({ state, pi }, e) => {
+	const p = state.players[pi];
+	p.destroyedDeck = (p.destroyedDeck || []).concat(p.deck.splice(0, p.deck.length));
+	p.infiniteArcane = true;
+	emit(state, { type: 'shuffle', player: pi });
+});
+
+// Choose a New Tactic / Command: pick which member of the tactic family becomes
+// (or replaces) your cycling tactic power
+register('choose-tactic', ({ state, pi }, e) => {
+	const BT = ['duelshp_battle_tactics', 'duelshp_bolster_defenses', 'duelshp_gather_resources', 'duelshp_thunderclap'];
+	const WC = ['duelshp_war_commands', 'duelshp_take_the_bridge', 'duelshp_summon_the_pack', 'duelshp_rush_the_keep'];
+	const family = (e.family === 'command' ? WC : BT).filter(id => state.cardsById[id] && state.cardsById[id].power);
+	if (!family.length) return;
+	state.pickQueue.push({ player: pi, ids: family, discover: true, mode: 'choose-tactic' });
+	emit(state, { type: 'pickStart', player: pi, count: family.length });
 });

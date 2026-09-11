@@ -196,6 +196,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 		emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 		fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount, src });
 		questTick(state, 'damage-taken', pi, amount);
+		if (state.current === pi) questTick(state, 'own-turn-hero-damage', pi, amount); // Journey to the East (Duels)
 		if (state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 		// Lumia: any hero that takes damage becomes Immune for the rest of the turn
 		if (state.players.some(pl => pl.board.some(c => c.heroImmuneOnDamage && !isDead(c)))) p.heroImmuneTurn = state.turnNumber;
@@ -221,6 +222,7 @@ export function damageHero(state, pi, amount, src = null, pierce = false) {
 	emit(state, { type: 'damage', targetType: 'hero', player: pi, amount, life: p.life });
 	if (toLife > 0) fireSecrets(state, pi, 'hero-takes-damage', { fatal: false, amount: toLife, src });
 	if (toLife > 0) questTick(state, 'damage-taken', pi, toLife);
+	if (state.current === pi) questTick(state, 'own-turn-hero-damage', pi, amount); // Journey to the East (Duels): armor-soaked hits still count
 	if (toLife > 0 && state.current === pi) fireOngoing(state, pi, 'own-hero-damaged', {});
 	// Lumia: any hero that takes damage becomes Immune for the rest of the turn
 	if (toLife > 0 && state.players.some(pl => pl.board.some(c => c.heroImmuneOnDamage && !isDead(c)))) p.heroImmuneTurn = state.turnNumber;

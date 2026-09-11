@@ -480,6 +480,9 @@ export const HEROES = [
 	{ id: 'rattlegore', name: 'Rattlegore', heroClass: 'warrior', hsId: 'PVPDR_Hero_Rattlegore', flavor: 'Bone by bone, he simply reassembles.' },
 	{ id: 'stelina', name: 'Star Student Stelina', heroClass: 'demon_hunter', hsId: 'PVPDR_Hero_Stelina', flavor: 'Top of her class in disappearing acts.' },
 	{ id: 'sai', name: 'Sai Shadestorm', heroClass: 'death_knight', hsId: 'PVPDR_Hero_Sai', flavor: 'The corpses keep the ledger; she keeps the corpses.' },
+	// Cannon hero — battles open with two Cannons on his board, and his hero-power
+	// picks come from his own Fire! kit (powerIds) instead of the class pools
+	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius', powerIds: ['duelshp_fire', 'duelshp_fire_away', 'duelshp_fire_at_thee'], startSummon: ['duels_cannon', 'duels_cannon'], flavor: 'Every problem looks like a target when you brought this many Cannons.' },
 	// Dual-class heroes \u2014 each drafts and buckets from both of its classes (+ Neutral)
 	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann', flavor: 'The League\u2019s finest \u2014 a Hunter\u2019s traps married to a Warrior\u2019s grit.' },
 	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise', flavor: 'Every map wanders somewhere \u2014 between Druid groves and Priest shrines.' },
@@ -511,7 +514,7 @@ export const HERO_POWERS = {
 	death_knight: ['duelshp_blood_parasite', 'duelshp_ghoul_blitz', 'duelshp_gathering_storm', 'duelshp_lichborne_might', 'duelshp_hematology', 'duelshp_scourging'],
 	rogue: ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers', 'duelshp_connections'],
 	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike', 'duelshp_outlander'],
-	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage', 'duelshp_secret_studies', 'duelshp_wyrm_bolt', 'duelshp_frost_shards'],
+	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage', 'duelshp_secret_studies', 'duelshp_wyrm_bolt', 'duelshp_frost_shards', 'duelshp_temporal_loop'],
 	shaman: ['duelshp_totemic_power', 'duelshp_ferocious_flurry', 'duelshp_stormcatcher'],
 	warlock: ['duelshp_demon_blood', 'duelshp_demonic_transformation', 'duelshp_dark_arts', 'duelshp_soulcial_studies'],
 };
@@ -774,7 +777,7 @@ export function generateEnemy(cardsById, classes, games, rng) {
 export const RIVALS = [
 	{ id: 'cafeteria_bob', name: 'Cafeteria Bob', heroClass: 'paladin', hsId: 'PVPDR_Hero_Bob' },
 	{ id: 'brann', name: 'Brann Bronzebeard', heroClass: 'hunter', classes: ['hunter', 'warrior'], hsId: 'PVPDR_Hero_Brann' },
-	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius' },
+	{ id: 'darius', name: 'Darius Crowley', heroClass: 'warrior', hsId: 'PVPDR_Hero_Darius', powerIds: ['duelshp_fire', 'duelshp_fire_away', 'duelshp_fire_at_thee'], startSummon: ['duels_cannon', 'duels_cannon'] },
 	{ id: 'drekthar', name: "Drek'Thar", heroClass: 'shaman', hsId: 'PVPDR_Hero_DrekTharv3' },
 	{ id: 'elise', name: 'Elise Starseeker', heroClass: 'druid', classes: ['druid', 'priest'], hsId: 'PVPDR_Hero_Elise' },
 	{ id: 'finley', name: 'Sir Finley', heroClass: 'paladin', classes: ['paladin', 'shaman'], hsId: 'PVPDR_Hero_Finley' },

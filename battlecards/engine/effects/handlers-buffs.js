@@ -1158,6 +1158,7 @@ register('buff', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, e
 			if (e.target === 'friendly-creatures') {
 				for (const c of state.players[pi].board) {
 					if (e.tribe && !(c.tribe || '').includes(e.tribe)) continue;
+					if (e.cardClass && (c.cardClass || 'neutral') !== e.cardClass) continue; // Rush the Keep (Duels): only Neutral creatures
 					if (e.excludeSelf && c === source) continue; // Felfin Navigator: your OTHER Murlocs
 						if (e.name && c.name !== e.name) continue; // Quartermaster's Recruits
 					if (e.requireKeyword && !c.keywords.includes(e.requireKeyword)) continue;
