@@ -291,7 +291,7 @@ function regionView(rk) {
 // Card Gallery — every card in Battlecards, drawn with its real in-game face via
 // the sibling battlecards/cardart.js. Card data, art, and the renderer are all
 // lazy-loaded the first time a card view opens.
-let cardsPromise = null, cardartPromise = null, artAuditPromise = null, CardArt = null, CardKw = null, kwIndex = null;
+let cardsPromise = null, cardartPromise = null, artAuditPromise = null, artPlaceholdersPromise = null, CardArt = null, CardKw = null, kwIndex = null;
 let cardClassFilter = 'all';
 function loadCards() {
   if (!cardsPromise) cardsPromise = fetch('../battlecards/cards.json' + CB).then(r => r.json()).then(d => d.cards || d || []);
@@ -303,6 +303,16 @@ function loadArtAudit() {
     return r.json();
   });
   return artAuditPromise;
+}
+// Cards that render a reused stand-in image but still want their own authentic art.
+// They live in art/index.json (so the game shows a real picture) yet must still
+// surface on /missing-art. Sibling of cards.json — served by the site, not the art CDN.
+function loadArtPlaceholders() {
+  if (!artPlaceholdersPromise) artPlaceholdersPromise = fetch('../battlecards/art-placeholders.json' + CB)
+    .then(r => r.ok ? r.json() : { cards: [] })
+    .then(d => Array.isArray(d) ? d : (d.cards || []))
+    .catch(() => []);
+  return artPlaceholdersPromise;
 }
 function loadCardart() {
   // the renderer (cardart) and the keyword glossary (keywords) both live in battlecards/
@@ -710,16 +720,24 @@ function renderCards(cards, report = {}) {
 // Audit-backed queue of cards whose full artwork still needs to be sourced.
 async function missingArtView() {
   content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Loading the latest artwork audit…'));
-  let cards, report;
+  let cards, report, placeholders;
   try {
-    [cards, report] = await Promise.all([loadCards(), loadArtAudit(), loadCardart().then(() => null)]);
+    // The audit report is best-effort — when every card is in index.json it can be
+    // absent/empty, so a failed load must not blank the whole view. The placeholder
+    // list (stand-in art that still wants its own) is the other half of the queue.
+    [cards, report, placeholders] = await Promise.all([
+      loadCards(),
+      loadArtAudit().catch(() => ({})),
+      loadCardart().then(() => loadArtPlaceholders()),
+    ]);
   } catch (e) {
-    return content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Could not load the artwork audit.'));
+    return content.replaceChildren(h('h1', null, 'Cards Missing Art'), h('p', { class: 'muted' }, 'Could not load the card data.'));
   }
   if ((location.hash.slice(1).split('/').filter(Boolean))[0] !== 'missing-art') return;
 
   const unresolved = [...(report.wikiNotFound || []), ...(report.errors || [])];
-  const ids = new Set(unresolved.map(x => x.id).filter(Boolean));
+  const placeholderIds = new Set((placeholders || []).map(p => (typeof p === 'string' ? p : p.id)).filter(Boolean));
+  const ids = new Set([...unresolved.map(x => x.id).filter(Boolean), ...placeholderIds]);
   const cardsById = new Map(cards.map(c => [c.id, c]));
   const q = norm(searchEl.value);
   const list = [...ids].map(id => cardsById.get(id)).filter(Boolean)
@@ -728,9 +746,11 @@ async function missingArtView() {
 
   await CardArt.preloadArt(list.map(c => c.id));
   const temporary = new Set((report.errors || []).map(x => x.id)).size;
+  const placeholderShown = list.filter(c => placeholderIds.has(c.id)).length;
   content.replaceChildren(
     h('h1', null, 'Cards Missing Art ', h('span', { class: 'num' }, '(' + list.length + ')')),
-    h('p', { class: 'muted' }, 'Cards without a sourced full-art image in the latest audit of ' + (report.cardCount || cards.length) + ' cards. Click a card to inspect its wiki page.'),
+    h('p', { class: 'muted' }, 'Cards without their own sourced full-art image in the latest audit of ' + (report.cardCount || cards.length) + ' cards. Click a card to inspect its wiki page.'),
+    ...(placeholderShown ? [h('p', { class: 'muted' }, placeholderShown + ' of these use a reused stand-in image and still want their own authentic artwork.')] : []),
     ...(temporary ? [h('p', { class: 'muted' }, temporary + ' card' + (temporary === 1 ? '' : 's') + ' could not be checked during the last audit and will be retried automatically.')] : []),
     list.length
       ? h('div', { class: 'card-grid' }, list.map(cardTile))

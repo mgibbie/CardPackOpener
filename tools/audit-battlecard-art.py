@@ -126,6 +126,20 @@ def main():
                             "originalWidth": source.width, "newWidth": cropped.width})
             except Exception as exc:
                 report["errors"].append({"id": card_id, "error": str(exc)})
+    # Cards with a reused stand-in image belong on the wiki's /missing-art queue even
+    # though they now sit in index.json — fold them in so a regenerated report keeps them.
+    placeholders_path = root / "battlecards/art-placeholders.json"
+    if placeholders_path.exists():
+        placeholders = json.loads(placeholders_path.read_text(encoding="utf-8"))
+        placeholder_cards = placeholders if isinstance(placeholders, list) else placeholders.get("cards", [])
+        already = {entry["id"] for entry in report["wikiNotFound"] + report["errors"] if entry.get("id")}
+        by_id = {card["id"]: card for card in cards}
+        for entry in placeholder_cards:
+            pid = entry if isinstance(entry, str) else entry.get("id")
+            if not pid or pid in already:
+                continue
+            report["wikiNotFound"].append({"id": pid, "name": by_id.get(pid, {}).get("name", pid),
+                "reason": "placeholder-art"})
     (art_dir / "index.json").write_text(json.dumps(sorted(indexed)) + "\n", encoding="utf-8")
     report["indexedArtCountAfter"] = len(indexed)
     report["missingAfter"] = len(cards) - len(indexed)

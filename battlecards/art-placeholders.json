@@ -1,0 +1,10 @@
+{
+  "note": "Cards that render a reused / stand-in image and still want their own authentic artwork. They ARE present in art/index.json (so the game shows a real picture, not procedural fallback), but the wiki's /missing-art queue surfaces them anyway so the stand-in is tracked and can be replaced later. `source` is the id of the art being borrowed.",
+  "cards": [
+    { "id": "duelshp_summon_the_pack", "source": "pack_wolf", "reason": "text-only Duels passive; Hearthstone has no distinct art for it" },
+    { "id": "duelshp_rush_the_keep", "source": "rally_the_ranks", "reason": "text-only Duels passive; Hearthstone has no distinct art for it" },
+    { "id": "duels_choose_a_new_tactic", "source": "tumbleweed_tactician", "reason": "text-only Duels token; Hearthstone has no distinct art for it" },
+    { "id": "duels_choose_a_new_command", "source": "legion_commander", "reason": "text-only Duels token; Hearthstone has no distinct art for it" },
+    { "id": "duelshp_gather_resources", "source": "arcane_intellect", "reason": "text-only Duels passive; Hearthstone has no distinct art for it" }
+  ]
+}
