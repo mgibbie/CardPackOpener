@@ -157,6 +157,43 @@ const ztAfter = await page.evaluate(() => ({ banner: document.getElementById('ba
 A(/no legal attack targets/i.test(ztAfter.banner || ''), 'zero-target arming is refused with an explanation', JSON.stringify(ztAfter));
 A(!/attack target/i.test(ztAfter.hint || ''), 'and nothing is left armed');
 
+// ---- the "not enough mana" lie: Arrest at exactly 3 mana vs a lone Elusive
+// Crebain (2026-09-11 report) — the refusal is target legality, not mana ----
+{
+	const az = await page.evaluate(() => {
+		const g = window.__game, s = g.state, E = g.E;
+		const p = s.players[g.HUMAN], o = s.players[1 - g.HUMAN];
+		p.board.length = 0; o.board.length = 0; p.hand.length = 0;
+		E.summon(s, 1 - g.HUMAN, s.cardsById.me_mo_crebain); // 2/1 Elusive — untargetable by spells
+		const arrest = E.instantiate(s.cardsById.arrest, g.HUMAN);
+		arrest.zone = 'hand';
+		p.hand.push(arrest);
+		p.mana = { cur: 3, max: 9, bonus: 0 }; // exactly the printed cost
+		s.current = g.HUMAN; s.priority = null; s.stack.length = 0;
+		g.pump();
+		return { arrest: arrest.uid, canPlay: E.canPlay(s, g.HUMAN, arrest), mana: p.mana.cur, cost: E.effectiveCost(s, g.HUMAN, arrest) };
+	});
+	console.log('arrest scenario:', JSON.stringify(az));
+	A(!az.canPlay && az.mana >= az.cost, 'setup: Arrest is refused with mana to spare (target legality)', JSON.stringify(az));
+	await sleep(1100);
+	// earlier field clicks tucked the hand behind the hero panel — reach down to
+	// pop it back up (like a player would) before grabbing the card
+	await page.mouse.move(950, 840); await sleep(700);
+	const hp2 = await page.evaluate(u => window.__game.screenPosOf(u), az.arrest);
+	await page.mouse.move(hp2.x, hp2.y); await sleep(80);
+	await page.mouse.down(); await sleep(100);
+	for (let i = 1; i <= 8; i++) { await page.mouse.move(hp2.x, hp2.y - 32 * i); await sleep(40); } // deliberate drag up onto the field
+	await sleep(400);
+	const dragHint = await page.evaluate(() => document.getElementById('hint')?.textContent);
+	console.log('mid-drag probe:', JSON.stringify(await page.evaluate(() => ({ cursor: document.querySelector('canvas')?.style.cursor, banner: document.getElementById('banner')?.textContent, armed: window.__game.targeting && window.__game.targeting.attacker, pending: window.__game.targeting && window.__game.targeting.pending }))));
+	await page.mouse.move(hp2.x, hp2.y, { steps: 4 }); await page.mouse.up(); // back to hand: cancel
+	await sleep(300);
+	console.log('drag hint:', JSON.stringify(dragHint));
+	A(/no legal target/i.test(dragHint || ''), 'the hint names the real reason (no legal target)', dragHint);
+	A(!/not enough mana/i.test(dragHint || ''), 'and no longer lies about mana');
+	A(/elusive|stealth/i.test(dragHint || ''), 'it points at the untargetable enemy board', dragHint);
+}
+
 console.log('page errors:', errors.length ? errors.join(' | ') : 'none');
 A(errors.length === 0, 'no page errors');
 await page.close();
