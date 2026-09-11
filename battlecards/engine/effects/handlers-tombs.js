@@ -66,7 +66,8 @@ register('add-mana-crystal', ({ state, pi, target, source, enemies, scaled, hm, 
 	// plusFriendlyDeaths — the Duels Academic Research upgrade: +1 crystal per
 	// friendly creature that has died this game (addManaCrystal caps at max).
 	const n = (e.value || 1) + (e.plusFriendlyDeaths ? (state.players[pi].friendlyDeaths || 0) : 0);
-	if (e.target === 'all') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) addManaCrystal(state, s, n); }
+	if (e.empty) { const mp = state.players[pi]; mp.mana.max = Math.min(10, mp.mana.max + n); } // Greedy Pickaxe (Duels): the crystal arrives unfilled
+	else if (e.target === 'all') { for (let s = 0; s < state.players.length; s++) if (!state.players[s].eliminated) addManaCrystal(state, s, n); }
 	else addManaCrystal(state, pi, n);
 } });
 

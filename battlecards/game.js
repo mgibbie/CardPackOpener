@@ -7220,6 +7220,7 @@ function bootDuelsEncounter(cardsById, run) {
 	const picks = [playerCls, enemyCls];
 	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
+	state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
 	// chosen alternate hero power replaces the class slot
 	if (run.powerId && cardsById[run.powerId]) {
 		const pw = E.instantiate(cardsById[run.powerId], HUMAN);
@@ -8331,6 +8332,7 @@ function bootArenaEncounter(cardsById, run) {
 	const picks = [playerCls, enemyCls];
 	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
 	state.classPicks = picks;
+	state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
 	if (run.powerId && cardsById[run.powerId]) { const pw = E.instantiate(cardsById[run.powerId], HUMAN); pw.zone = 'heropower'; pw.usedThisTurn = false; state.players[HUMAN].heroPowers = [pw]; }
 	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);

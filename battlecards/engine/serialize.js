@@ -40,6 +40,7 @@ const FIELD_DEFAULTS = {
 	over: false,
 	winner: null,
 	classPicks: null,
+	runWins: 0,             // Loyal Sidekick (Duels): opponents defeated this run, stamped by the run boots
 	scryQueue: () => [], discardQueue: () => [], pickQueue: () => [],
 	askQueue: () => [], sacQueue: () => [], dredgeQueue: () => [],
 	stack: () => [], priority: null, passers: () => [], priorityNext: 0,

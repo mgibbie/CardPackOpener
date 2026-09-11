@@ -58,6 +58,7 @@ export function sweepDeaths(state) {
 				p.diedThisTurnIds.push(c.id);
 				if (!p.deathLogIds.includes(c.id)) p.deathLogIds.push(c.id);
 				(p.deathLogMeta = p.deathLogMeta || []).push({ id: c.id, turn: state.turnNumber }); // Devout Blessings: deaths are turn-stamped
+				if ((c.keywords || []).includes('deathrattle')) for (let jw = 0; jw < state.players.length; jw++) { const jp = state.players[jw]; if (jp.weapon && jp.weapon.jawsGrow) { jp.weapon.attack += jp.weapon.jawsGrow; emit(state, { type: 'weaponDurability', player: jw, attack: jp.weapon.attack, durability: jp.weapon.durability }); } } // Jaws (Duels): grows on any Deathrattle death
 					(p.diedCountById = p.diedCountById || {})[c.id] = (p.diedCountById[c.id] || 0) + 1; // Elwynn Boar
 					if ((c.keywords || []).includes('deathrattle')) p.lastDeathrattleDied = c.id; // Monstrous Parrot
 			}
