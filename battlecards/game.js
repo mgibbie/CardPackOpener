@@ -7218,7 +7218,7 @@ function bootDuelsEncounter(cardsById, run) {
 	const playerCls = classRegistry.find(c => c.id === hero.heroClass) || { id: hero.heroClass, name: hero.name, power: null };
 	const enemyCls = classRegistry.find(c => c.id === enemy.heroClass) || { id: enemy.heroClass, name: enemy.name, power: null };
 	const picks = [playerCls, enemyCls];
-	state = E.createGame(cardsById, seededGame(), [...run.deck], 2, picks); // seeded -> snapshot-able for resume
+	state = E.createGame(cardsById, seededGame(), Duels.applyImproves(cardsById, [...run.deck], run.wins || 0), 2, picks); // seeded -> snapshot-able for resume; treasures arrive at their earned tier
 	state.classPicks = picks;
 	state.runWins = run.wins || 0; // Loyal Sidekick reads opponents defeated this run
 	// chosen alternate hero power replaces the class slot
@@ -7234,7 +7234,7 @@ function bootDuelsEncounter(cardsById, run) {
 		state.players[1].heroPowers = [epw];
 	}
 	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
-	E.resetDeckAndHand(state, 1, [...enemy.deck]);
+	E.resetDeckAndHand(state, 1, Duels.applyImproves(cardsById, [...enemy.deck], run.wins || 0));
 	E.drawCards(state, 1, 4);
 	E.stripLoadouts(state);
 	// Darius Crowley: whichever side he is, the battle opens with his Cannons in place
