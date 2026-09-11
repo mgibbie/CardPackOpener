@@ -105,5 +105,39 @@ ok('deleteReplay removes it from the index', !R.listReplays().some(r => r.id ===
 	R.deleteReplay(id2);
 }
 
+// ---- repackSlim: pre-slim (fat v1) replays shrink in place at share time ----
+// Replays saved before v2 still carried their fat code, so sharing them kept
+// blowing the upload cap (the user's Google-400 "link"). repackSlim converts a
+// stored record on demand and must keep playback byte-exact.
+{
+	R.setCards(null); // simulate the pre-slim era: tapes save as fat v1
+	const st3 = E.createGame(cardsById, E.seededRng(4242), null, 2, null);
+	const expected3 = [];
+	let last3 = null;
+	const step3 = () => { const dg = E.stateDigest(st3); if (dg === last3) return; last3 = dg; expected3.push(dg); R.capture(st3, 'x'); };
+	R.startRecording({ mode: 'fat' });
+	step3();
+	for (let i = 0; i < 10 && !st3.over; i++) { E.endTurn(st3); step3(); }
+	const id3 = await R.finish({ result: 'fat' });
+	const fatCode = R.exportCode(id3);
+	ok('fat era: the tape saved as v1 (no card db)', typeof fatCode === 'string' && fatCode.length > 0);
+
+	R.setCards(cardsById);
+	const slimmed = await R.repackSlim(id3);
+	ok('repackSlim shrinks the stored record hard', slimmed.length < fatCode.length / 3, `slim ${slimmed.length} vs fat ${fatCode.length}`);
+	ok('the record itself was rewritten (exportCode now returns the slim code)', R.exportCode(id3) === slimmed);
+	ok('repackSlim is idempotent', (await R.repackSlim(id3)) === slimmed);
+	const tape3 = await R.getReplay(id3);
+	let faithful3 = true, worst3 = '';
+	for (let i = 0; i < tape3.frames.length; i++) {
+		const st = E.fromSnapshot(tape3.frames[i].snap, cardsById);
+		E.ensureUidsAbove(E.maxSnapshotUid(tape3.frames[i].snap));
+		const got = E.stateDigest(st);
+		if (got !== expected3[i]) { faithful3 = false; worst3 = `frame ${i}`; break; }
+	}
+	ok('the repacked replay still restores every frame exactly', faithful3, worst3);
+	R.deleteReplay(id3);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
