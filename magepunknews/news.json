@@ -2,6 +2,14 @@
 	"generated": "2026-09-11",
 	"entries": [
 		{
+			"sha": "5f9f922",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Duels: the upgrade-tier system (\"Improves during run\") (#417)",
+			"body": "The final deferred Duels mechanic. Two halves:\n\n- WIN-SCALED TIERS: the 10 \"(Improves during run.)\" treasures\n  (Demonizer, Awakened Ancient, Deathstrider, Favored Racer, Herald of\n  the Scaled Ones, Payload Totem Specialist, Scrapmetal Demolitionist,\n  Blade of Quickening, Green Tortollan Shell, Scourge Strike) each get\n  3 authored tiers (_s1.._s3, hidden tokens sharing the base name/art)\n  with counts scaling 1 -> 2 -> 3 -> 4. The base carries\n  `improves: [ids]`; Duels.applyImproves maps deck ids by WINS at boot\n  (upgrades at 3/6/9 — a 12-win run sees the final form), for the\n  player AND the parity enemy. run.deck always stores the base id, so\n  every boot re-maps cleanly and other run modes see base forms.\n- UPGRADE-SHUFFLE CHAINS: Creepy Curio -> Haunted -> Cursed,\n  Coin Pouch -> Sack -> Hefty, Old Militia Horn -> Militia ->\n  Veteran's, Surly Mob -> Angry -> Crazed now climb link by link —\n  the shipped bases gained their \"Upgrade this & shuffle it into your\n  deck\" rider (the middle tiers already had theirs).\n\nFixes two latent gaps: Sack of Coins reshuffled ITSELF instead of\nupgrading (actives-wave stand-in, test updated), and base Scourge\nStrike now banks its advertised Corpse. trigger-random-friendly-\ndeathrattle + cast-random-blessing-self gained count loops (no new\nregistry types). Scourge Strike also finally got card art (a batch-6\ngap).\n\nduels_improves_test: 33 assertions. Suite 526/526.",
+			"cards": []
+		},
+		{
 			"sha": "b9d208e",
 			"date": "2026-09-11",
 			"kind": "cards",
