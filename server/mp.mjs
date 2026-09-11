@@ -60,7 +60,7 @@ const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 pa
 // ---------- input-hardening limits ----------
 const MAX_BODY_BYTES = 2_000_000;   // reject an absurd request body outright (413) — a big FFA snapshot is well under this
 const INTENT_MAX_BYTES = 4096;      // a relayed guest intent is a tiny action descriptor, not a payload
-const REPLAY_MAX_BYTES = 800_000;   // a shared replay tape (gzipped + base64url) — generous but bounded, well under MAX_BODY_BYTES
+const REPLAY_MAX_BYTES = 1_500_000; // a shared replay tape (gzipped + base64url) — slim (v2) tapes run ~100-600KB; this leaves headroom for marathon FFA games while staying under MAX_BODY_BYTES
 const SPEC_WINDOW_MS = 12_000;      // a spectator seen (polled) within this long is counted as actively watching
 const SPEC_CAP = 10;                // max concurrent spectators per GAME (aggregated across a duel's participants)
 // Approximate per-identity fixed-window rate limits [maxHits, windowMs]. These are

@@ -65,7 +65,9 @@ function render() {
 			}
 			const code = Rec.exportCode(id);
 			if (!code) { status('Could not read that replay.'); return; }
-			try { await navigator.clipboard.writeText(code); status('Copied a replay CODE — others paste it via Import. (Log in for a short link.)'); }
+			const why = code.length > 1_400_000 ? 'This replay is too large for a short link — copied the full code instead (others paste it via Import).'
+				: 'Copied a replay CODE — others paste it via Import. (Log in for a short link.)';
+			try { await navigator.clipboard.writeText(code); status(why); }
 			catch { prompt('Copy this replay code:', code); }
 		};
 		row.querySelector('.rp-del').onclick = () => { Rec.deleteReplay(id); render(); status('Replay deleted.'); };

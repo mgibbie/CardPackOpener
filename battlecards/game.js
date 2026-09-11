@@ -5817,6 +5817,7 @@ async function start() {
 	const data = await loadCardsData();
 	const cardsById = {};
 	for (const d of data.cards) cardsById[d.id] = d;
+	Rec.setCards(cardsById); // slim tapes diff cards against their defs (and inflate them back)
 	Rec.cancel(); // a new game (or restart) discards any half-recorded tape
 	if (replayMode) { await startReplay(cardsById); return; }
 	if (spectateMode) { startSpectate(cardsById); return; }
@@ -8579,7 +8580,8 @@ function addReplayButtons(el) {
 			copyText(base + 'index.html?rshare=' + shareId, 'Replay link copied — anyone can watch it.');
 		} else {
 			const code = Rec.exportCode(id);
-			if (code) copyText(code, 'Copied a replay CODE — share it via Replays → Import. (Log in for a short link.)');
+			if (code && code.length > 1_400_000) copyText(code, 'This replay is too large for a short link — copied the full replay code instead (import it via Replays → Import).');
+			else if (code) copyText(code, 'Copied a replay CODE — share it via Replays → Import. (Log in for a short link.)');
 			else banner('Could not prepare a share link.');
 		}
 	}));
