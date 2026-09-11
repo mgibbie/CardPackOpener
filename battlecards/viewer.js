@@ -1,8 +1,8 @@
 // viewer.js — the collection browser: a paginated, filterable card book.
 // Card faces come from the shared procedural renderer; rules text appears in
 // a hover tooltip, and rules-cards carry a CSS-animated iridescent gem.
-import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260911a';
-import { keywordsFor, richHtml } from './keywords.js?v=20260911a';
+import { drawCardFace, classNameOf, canonClass, artListeners, preloadArt, showsRarity } from './cardart.js?v=20260911b';
+import { keywordsFor, richHtml } from './keywords.js?v=20260911b';
 
 // cards.json is fetched PLAIN (no ?v=): game.js/deck.js/packs.js and index.html's
 // preload all use the bare URL, so the gallery shares their cache entry instead of

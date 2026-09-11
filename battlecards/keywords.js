@@ -103,6 +103,7 @@ const K = [
 	{ p: ['Corrupt'], t: 'While in your hand, upgrades once you play a card that costs more than it.' },
 	{ p: ['Colossal'], t: 'Colossal +N — enters play alongside its Appendage tokens.' },
 	{ p: ['Echo'], t: 'Leaves a temporary copy in your hand when played, so you can keep replaying it while you have mana.' },
+	{ p: ['Twinspell'], t: 'Casting it adds a one-shot copy (without Twinspell) to your hand.' },
 	{ p: ['Spellburst'], t: 'A one-time effect that triggers after you cast your next spell.' },
 	{ p: ['Constellation'], t: 'Triggers each time you play an Enchantment.' },
 	{ p: ['Alliance'], t: 'Triggers each time you play another creature.' },
