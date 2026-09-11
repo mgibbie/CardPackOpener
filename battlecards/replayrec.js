@@ -156,9 +156,32 @@ export async function importCode(code) {
 // uploadReplay pushes a local tape to the backend (login required — a logged-out
 // caller gets null so the UI falls back to copying the code) and returns a short
 // share id for the ?rshare= link. fetchSharedReplay pulls one back (public).
+// Re-pack an already-saved record as a slim (v2) tape IN PLACE, returning its
+// (possibly unchanged) code. Replays saved before slim tapes existed still
+// carry their fat v1 code — without this, sharing one keeps blowing the upload
+// size cap and falls back to the gigantic paste-able code (which, pasted into
+// an address bar, reads as a Google search and dies with Google's 400 page).
+export async function repackSlim(id) {
+	const list = loadIndex();
+	const rec = list.find(r => r.id === id);
+	if (!rec) return null;
+	if (!cardsDb) return rec.code;
+	try {
+		const json = await unpackString(rec.code);
+		const tape = json ? JSON.parse(json) : null;
+		if (!tape || tape.v === 2 || !Array.isArray(tape.frames)) return rec.code;
+		const code = await packString(JSON.stringify(slimTape(tape)));
+		if (code && code.length < rec.code.length) {
+			rec.code = code;
+			while (list.length && !safeSave(KEY, list)) list.pop(); // same quota-safe retry as save()
+		}
+		return rec.code;
+	} catch { return rec.code; }
+}
+
 export async function uploadReplay(id) {
 	if (!MPX.mpMode()) return null; // not logged in → caller copies the code instead (no 401/logout)
-	const code = exportCode(id);
+	const code = await repackSlim(id); // old fat tapes shrink before they hit the size cap
 	if (!code) return null;
 	try { const r = await MPX.call('replay-put', { code }); return (r && r.id) || null; } catch { return null; }
 }
