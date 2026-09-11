@@ -1940,6 +1940,26 @@ checkBuild();
 setInterval(checkBuild, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkBuild(); });
 
+// the drag hint used to blame "not enough mana" for EVERY canPlay refusal —
+// including a targeted spell with no legal target (an all-Elusive enemy board
+// made a 3-cost Arrest at 3 mana read as a mana bug). Diagnose the real reason.
+function whyCantPlay(c) {
+	const p = state.players[HUMAN];
+	const cost = E.effectiveCost(state, HUMAN, c);
+	if (E.availableMana(p) < cost) {
+		return cost > (c.cost || 0)
+			? `not enough mana — ${c.name} costs (${cost}) right now`
+			: `not enough mana for ${c.name}`;
+	}
+	const spec = E.targetSpec(state, HUMAN, c);
+	if (spec && spec.required && E.legalTargets(state, HUMAN, spec).length === 0) {
+		const enemyHasCreatures = state.players.some((pl, i) => i !== HUMAN && !pl.eliminated && pl.board.some(x => x.type === 'creature' && !E.isDead(x)));
+		return `no legal target for ${c.name}` + (enemyHasCreatures ? ' (Elusive/Stealth creatures can’t be targeted)' : '');
+	}
+	if (state.priority != null || state.stack.length) return `${c.name} must wait for the stack to clear`;
+	return `${c.name} can’t be played right now`;
+}
+
 // arm a creature attack ONLY when it actually has somewhere to go — arming
 // with zero legal targets was a silent trap (armed ring + arrow, nothing
 // clickable, no explanation)
@@ -4193,7 +4213,7 @@ function updatePlaceMarker() {
 			: magTarget ? `release to Magnetize ${c.name} onto ${magTarget.name}`
 			: E.canPlay(state, HUMAN, c) ? `release to play ${c.name}`
 			: (c.tradeable && E.canTrade(state, HUMAN, c)) ? `release to trade ${c.name}`
-			: `not enough mana for ${c.name}`;
+			: whyCantPlay(c);
 		const hintEl = $('hint');
 		if (hintEl.textContent !== hint) hintEl.textContent = hint; // unguarded writes force a style recalc every frame
 	}
