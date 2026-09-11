@@ -1531,7 +1531,7 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 	card.tapped = true;
 	card.tapStone = true;
 	const t = landTaps(card)[tapIndex];
-	emit(state, { type: 'landTapped', player: pi, card, text: t.text });
+	emit(state, { type: 'landTapped', player: pi, card, text: t.text, target: target || null });
 	// locations wear out: durability counts their remaining taps
 	if (card.type === 'location') {
 		state.players[pi].locationsUsedGame = (state.players[pi].locationsUsedGame || 0) + 1; // Seaside Giant
@@ -1576,7 +1576,7 @@ export function tapArtifact(state, pi, cardUid, target = null) {
 	card.tapped = true;
 	// double/triple-tap: stay tapped for (tapTurns - 1) extra turn-starts before untapping
 	card.tapCooldown = Math.max(0, (card.tapTurns || 1) - 1);
-	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text });
+	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text, target: target || null });
 	execEffects(state, pi, JSON.parse(JSON.stringify(card.tapAbility.effects)), target, card);
 	sweepDeaths(state);
 	return true;
@@ -2273,7 +2273,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		emit(state, { type: 'overload', player: pi, amount: card.overload });
 		fireOngoing(state, pi, 'overloaded-self', { amount: card.overload }); // Tunnel Trogg
 	}
-	emit(state, { type: 'play', player: pi, card, mana: availableMana(p) });
+	emit(state, { type: 'play', player: pi, card, mana: availableMana(p), target: target || null }); // target rides along so the client can telegraph it
 	state.expanseEvents = (state.expanseEvents || 0) + 1; // The Ceaseless Expanse: a card was played
 	// Inspector Murloc Holmes: opponents' investigations pay out on a name match
 	for (const o of opponentsOf(state, pi)) {
@@ -3663,7 +3663,7 @@ export function useWalker(state, pi, cardUid, abilityIndex, target) {
 	const ability = card.abilities[abilityIndex];
 	card.loyalty += ability.cost;
 	card.usedThisTurn = true;
-	emit(state, { type: 'walkerAbility', player: pi, card, text: ability.text, loyalty: card.loyalty });
+	emit(state, { type: 'walkerAbility', player: pi, card, text: ability.text, loyalty: card.loyalty, target: target || null });
 	execEffects(state, pi, ability.effects, target, card);
 	if (card.loyalty <= 0) destroyWalker(state, card); // burned out all loyalty
 	sweepDeaths(state);
@@ -4818,7 +4818,7 @@ export function useHeroPower(state, pi, cardUid, target, choice) {
 	card.usedThisTurn = true;
 	card._uses = (card._uses || 0) + 1;
 	if (p.weapon && p.weapon.degradePerHeroPower) { p.weapon.durability -= 1; emit(state, { type: 'weaponDurability', player: pi, attack: p.weapon.attack, durability: p.weapon.durability }); if (p.weapon.durability <= 0) breakWeapon(state, pi, false); } // Wand of Dueling (Duels)
-	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p) });
+	emit(state, { type: 'heroPowerUsed', player: pi, card, mana: availableMana(p), target: target || null });
 	stackAction(state, pi, { kind: 'heropower', card, effects: heroPowerEffects(state, pi, card, choice), target });
 	// limited-use powers (Metamorphosis / Story of Sulfuras): vanish once spent.
 	// _uses is a per-TURN counter (reset at turn start) — track lifetime uses here.
