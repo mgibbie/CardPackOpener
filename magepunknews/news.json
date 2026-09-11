@@ -2,6 +2,487 @@
 	"generated": "2026-09-11",
 	"entries": [
 		{
+			"sha": "b9d208e",
+			"date": "2026-09-11",
+			"kind": "cards",
+			"title": "Duels arsenal: 20 treasure weapons + 40 treasure minions + Scarlet (#415)",
+			"body": "The last two untouched Duels buckets, imported whole:\n\n- WEAPONS (20): Quel'Delar & Claws of Terror (Start of Game draw-this,\n  cleave), Tempest's Fury / Royal Greatsword / Greedy Pickaxe / Carrot\n  on a Stick (afterHeroAttack effect-lists, now an instantiate\n  passthrough), Horns of Flame / Archmage Staff (new weapon\n  startTurnEffects), The Exorcisor (silence-before-strike), Jaws\n  (grows on Deathrattle deaths), Herding Horn / Greatsword of the Ebon\n  Blade (play-reaction + durability cost), Wand of Dueling (static\n  hero-power-damage + degrade per use), Spiked Arms, Runed Soulblade\n  (retaliation with a two-blade lock), Ironweave Bloodletter (heals on\n  every spendCorpses), Glaciaxe -> Wings of Glaciaxe (weapon\n  deathrattle equip chain), Blade of Quickening, Green Tortollan Shell.\n- MINIONS (40): Detective Murloc Holmes (enemy-draws copy), Princess /\n  Bonecrusher / Deathstrider (deathrattle theft/raising), Bubba's\n  hound pile (targeted), Beastly Beauty, Party Portal & Britz\n  Blazebucket (spell-cost summons; Britz's toys reuse diesToAnyDamage),\n  Moonbeast (free Eclipses), Scion of the Deep (third spell paid in\n  Health), Mo'arg Outcast & Zukara (replay via cast-random-spell with\n  re-entry locks), Impetuous Companion (permanent hand swap),\n  Fluctuating Totem (temp stealth + evolve-adjacent), Killmox\n  (discardLogIds), Loyal Sidekick (state.runWins, stamped by the run\n  boots + FIELD_DEFAULTS), Crimson & Joras (new own-hero-healed\n  ongoing), the Gluth pair, Inexorable Ghoul (dragonbone-revive),\n  Traktamer Aelessa (board onHeroAttack + Demon Companion tokens),\n  Su Leadfoot / Impish Aid / Spiked Arms summon riders, and more.\n- Scarlet Leafdancer joins HEROES (20th, death knight) + RIVALS; her\n  T1-T6 kit is fully in the pool. Chaos Storm closes the actives.\n- SI:7 Scout is now a real token (deathrattle intact) and Send in the\n  Scout summons it.\n- 22 new handlers (registry 1182 -> 1199); riders: conjure-random\n  tribes/requireOverload, summon-from-deck rarity/requireKeyword/\n  freeze, add-mana-crystal empty.\n- Two near-misses caught by the wave test: the tutor already HAD a\n  buff rider (Akali) — a duplicate double-buffed draws; and\n  'equip-id' was an existing handler name.\n\nduels_arsenal_test: 75 assertions. Suite 525/525.",
+			"cards": [
+				{
+					"id": "duels_tempests_fury",
+					"name": "Tempest's Fury",
+					"type": "weapon",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_claws_of_terror",
+					"name": "Claws of Terror",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_horns_of_flame",
+					"name": "Horns of Flame",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_archmage_staff",
+					"name": "Archmage Staff",
+					"type": "weapon",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_queldelar",
+					"name": "Quel'Delar",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_greedy_pickaxe",
+					"name": "Greedy Pickaxe",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_the_exorcisor",
+					"name": "The Exorcisor",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_jaws",
+					"name": "Jaws",
+					"type": "weapon",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_herding_horn",
+					"name": "Herding Horn",
+					"type": "weapon",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_wand_of_dueling",
+					"name": "Wand of Dueling",
+					"type": "weapon",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_royal_greatsword",
+					"name": "Royal Greatsword",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_spiked_arms",
+					"name": "Spiked Arms",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_glaciaxe",
+					"name": "Glaciaxe",
+					"type": "weapon",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_runed_soulblade",
+					"name": "Runed Soulblade",
+					"type": "weapon",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_ironweave_bloodletter",
+					"name": "Ironweave Bloodletter",
+					"type": "weapon",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_greatsword_ebon_blade",
+					"name": "Greatsword of the Ebon Blade",
+					"type": "weapon",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_blade_of_quickening",
+					"name": "Blade of Quickening",
+					"type": "weapon",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_carrot_on_a_stick",
+					"name": "Carrot on a Stick",
+					"type": "weapon",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_green_tortollan_shell",
+					"name": "Green Tortollan Shell",
+					"type": "weapon",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_impish_aid",
+					"name": "Impish Aid",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_moarg_outcast",
+					"name": "Mo'arg Outcast",
+					"type": "creature",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_moonbeast",
+					"name": "Moonbeast",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_drocomurchanicas",
+					"name": "Drocomurchanicas",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_scion_of_the_deep",
+					"name": "Scion of the Deep",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_droplet_of_insanity",
+					"name": "Droplet of Insanity",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_nerubian_peddler",
+					"name": "Nerubian Peddler",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_brewster_the_brutal",
+					"name": "Brewster, the Brutal",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_tiny_thimble",
+					"name": "Tiny Thimble",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_party_portal",
+					"name": "Party Portal",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_loyal_sidekick",
+					"name": "Loyal Sidekick",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_beastly_beauty",
+					"name": "Beastly Beauty",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_detective_murloc_holmes",
+					"name": "Detective Murloc Holmes",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_butch",
+					"name": "Butch",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_princess",
+					"name": "Princess",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_bubba",
+					"name": "Bubba",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_clockwork_assistant",
+					"name": "Clockwork Assistant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_bonecrusher",
+					"name": "Bonecrusher",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_fluctuating_totem",
+					"name": "Fluctuating Totem",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "duels_killmox",
+					"name": "Killmox, the Banished One",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_demonizer",
+					"name": "Demonizer",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_auto_armaments",
+					"name": "Auto-Armaments",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_gluth",
+					"name": "Gluth",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_gluth_sicle",
+					"name": "Gluth-sicle",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "duels_inexorable_ghoul",
+					"name": "Inexorable Ghoul",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_crimson",
+					"name": "Crimson",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "duels_impetuous_companion",
+					"name": "Impetuous Companion",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_traktamer_aelessa",
+					"name": "Traktamer Aelessa",
+					"type": "creature",
+					"class": "demon_hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_zukara_the_wild",
+					"name": "Zukara the Wild",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_awakened_ancient",
+					"name": "Awakened Ancient",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 8
+				},
+				{
+					"id": "duels_deathstrider",
+					"name": "Deathstrider",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_joras_thuldoom",
+					"name": "Joras Thuldoom",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_embercaster",
+					"name": "Embercaster",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "duels_favored_racer",
+					"name": "Favored Racer",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_herald_scaled_ones",
+					"name": "Herald of the Scaled Ones",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_britz_blazebucket",
+					"name": "Britz Blazebucket",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_payload_totem_specialist",
+					"name": "Payload Totem Specialist",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "duels_su_leadfoot",
+					"name": "Su Leadfoot",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 3
+				},
+				{
+					"id": "duels_scrapmetal_demolitionist",
+					"name": "Scrapmetal Demolitionist",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "legendary",
+					"cost": 6
+				},
+				{
+					"id": "duels_chaos_storm",
+					"name": "Chaos Storm",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "legendary",
+					"cost": 2
+				}
+			]
+		},
+		{
 			"sha": "2bf16fd",
 			"date": "2026-09-11",
 			"kind": "cards",
