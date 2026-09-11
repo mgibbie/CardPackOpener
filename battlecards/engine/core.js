@@ -354,6 +354,8 @@ export function instantiate(def, controller) {
 		shieldMultiHit: def.shieldMultiHit || 0, // Toreth: your Divine Shields take this many hits to break
 		healDoubleAura: def.healDoubleAura || false, // Crystalsmith Kangor: your healing is doubled
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
+		tapTurns: def.tapTurns || 1,  // artifact {T} recharge: 1 = untaps next turn; 2/3 = double/triple-tap
+		tapCooldown: 0,               // turn-starts remaining before a multi-turn-tap artifact untaps
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
 		xSpell: !!def.xSpell,         // spends all remaining mana; X = the excess
 		attachments: [],              // names of auras enchanting this creature
@@ -1572,6 +1574,8 @@ export function tapArtifact(state, pi, cardUid, target = null) {
 	if (!canTapArtifact(state, pi, cardUid)) return false;
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
 	card.tapped = true;
+	// double/triple-tap: stay tapped for (tapTurns - 1) extra turn-starts before untapping
+	card.tapCooldown = Math.max(0, (card.tapTurns || 1) - 1);
 	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text });
 	execEffects(state, pi, JSON.parse(JSON.stringify(card.tapAbility.effects)), target, card);
 	sweepDeaths(state);
@@ -5455,7 +5459,11 @@ export function endTurn(state) {
 			if (l.tapStone) l.tapStone = false;
 			else l.tapped = false;
 		}
-		for (const a of np.artifacts) if (a.tapAbility) a.tapped = false; // {T}-ability artifacts untap each turn
+		// {T}-ability artifacts untap at the owner's next turn start — but double/triple-tap
+		// ones (tapTurns > 1) stay tapped for tapCooldown more turn-starts first
+		for (const a of np.artifacts) if (a.tapAbility && a.tapped) {
+			if (a.tapCooldown > 0) a.tapCooldown -= 1; else a.tapped = false;
+		}
 	}
 	np.sacrificedThisTurn = {}; // reset "sacrificed a Clue this turn"
 	for (const c of np.board) if (c.immuneTurnsLeft > 0 && --c.immuneTurnsLeft <= 0) { c.keywords = c.keywords.filter(k => k !== KW.IMMUNE); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } // multi-turn Immune (Blacksmith's Skill) wears off

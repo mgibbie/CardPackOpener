@@ -679,10 +679,19 @@ register('put-spell-on-enemy-deck-top', ({ state, pi, target, source, enemies, s
 });
 
 register('enemy-discard', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
-			// each opponent discards at random
 			const dn = e.count === 'X' ? (source?.xValue || 0) : (e.count || 1);
 			for (const o of (e.player != null ? [e.player] : enemies)) { // e.player = a chosen target (target-player)
 				const op = state.players[o];
+				if (e.choose) {
+					// MTG-style "discards a card" (no "at random"): the DISCARDING player picks.
+					// Queue it for that opponent — the AI auto-resolves its own; a human opponent
+					// gets the discard modal (same infra as Loot). resolveDiscard sends it to the grave.
+					const pool = e.spellOnly ? op.hand.filter(c => isSpellType(c)) : op.hand;
+					const count = Math.min(dn, pool.length);
+					if (count > 0) { state.discardQueue.push({ player: o, count }); emit(state, { type: 'lootStart', player: o, count }); }
+					continue;
+				}
+				// otherwise: each opponent discards at random
 				for (let i = 0; i < dn; i++) {
 					const pool = e.spellOnly ? op.hand.filter(c => isSpellType(c)) : op.hand; // Disruptive Spellbreaker: discard a spell
 					if (!pool.length) break;
