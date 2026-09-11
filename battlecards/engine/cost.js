@@ -245,6 +245,7 @@ export function effectiveCost(state, pi, card) {
 	if (p.libramDiscount > 0 && /Libram/.test(card.name || '')) c = Math.max(0, c - p.libramDiscount); // Aldor Attendant/Truthseeker
 	if (card.id === 'the_ceaseless_expanse') c = Math.max(0, c - (state.expanseEvents || 0)); // costs (1) less per card drawn/played/destroyed this game
 	if (card.costLessPerDeathGame) c = Math.max(0, c - (state.minionsDiedGame || 0)); // Book of the Dead (Duels): (1) less per minion that died this game
+	if (card.costLessPerCannonFire) c = Math.max(0, c - (p.cannonsFiredGame || 0)); // Seabreaker Goliath (Duels): (1) less per time you've fired your Cannons
 	if (p.nextWeaponDiscount > 0 && card.type === 'weapon') c = Math.max(0, c - p.nextWeaponDiscount); // Space Pirate
 	if (card.kindredCostReduce > 0 && kindredActive(state, pi, card)) c = Math.max(0, c - card.kindredCostReduce); // Pterrorwing / Windpeak: cheaper while a type-mate is in play
 	if (card.id === 'gdb_launch_starship' && p.nextLaunchDiscount > 0) c = Math.max(0, c - p.nextLaunchDiscount); // SCV: your next launch costs less

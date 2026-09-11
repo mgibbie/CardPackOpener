@@ -83,6 +83,7 @@ export { DUNGEONS };
 import { fireOngoing, fireCreatureTrigger, ongoingCondOk, fireSecrets, fireSecretsAll } from './triggers.js';
 export { fireOngoing, fireSecrets, fireSecretsAll };
 import { recomputeAuras, staticValue } from './auras.js';
+import { toSnapshot, fromSnapshot } from './serialize.js'; // Temporal Loop (Duels): restart the turn from its snapshot
 export { recomputeAuras, staticValue };
 
 
@@ -465,6 +466,8 @@ export function instantiate(def, controller) {
 		raincaller: !!def.raincaller, // Raincaller: +2 Attack at the first spell damage each turn
 		blightsInstead: !!def.blightsInstead, // The Living Plague
 		kindredCostReduce: def.kindredCostReduce || 0, // Pterrorwing Ravager / Windpeak Wyrm: costs less while Kindred is active
+		cannon: !!def.cannon,         // Cannon (Duels — Darius): fires at the enemy opposite on "fire your Cannons"
+		costLessPerCannonFire: def.costLessPerCannonFire || 0, // Seabreaker Goliath (Duels)
 		handDeathGrowth: !!def.handDeathGrowth, // Blood Herald: +1/+1 whenever a friendly minion dies while in hand
 		scaleOnEntry: def.scaleOnEntry ? { ...def.scaleOnEntry } : null, // Astral Automaton: +stats per prior copy entered this game
 		infuse: def.infuse ? { ...def.infuse } : null, // Castle Nathria Infuse: {count, id} -> transform after N friendly deaths in hand
@@ -1197,6 +1200,11 @@ export function summon(state, pi, tokenDef) {
 	p.board.push(c);
 	emit(state, { type: 'summon', player: pi, card: c });
 	questTick(state, 'summon', pi, 1, c);
+	// AV tactic passives (Duels): Neutral creatures the tactic-holder summons on their turn
+	if (state.current === pi && c.type === 'creature' && (c.cardClass || 'neutral') === 'neutral') {
+		if (heroPassive(p, 'bolsterDefenses')) { c.attack += 1; c.maxHealth += 2; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+		if (heroPassive(p, 'takeTheBridge')) { c.attack += 2; if (!c.keywords.includes(KW.RUSH)) c.keywords.push(KW.RUSH); emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); }
+	}
 	// Runaway-summon guard: "when you summon a creature, summon…" triggers can
 	// recurse without bound — e.g. Spiritsinger Umbra fires a summoned minion's
 	// summon-deathrattle, or a self-copying Pirate (Shoplifter Goldbeard). Past
@@ -2013,6 +2021,36 @@ export function schoolOf(card) {
 
 // ---------- cost modifiers ----------
 export const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
+
+// ---------- Cannons (Duels — Darius Crowley) ----------
+// "Fire your Cannons": every friendly creature flagged `cannon` shoots the
+// enemy creature OPPOSITE it (same board index on the first living opponent),
+// or that opponent's hero if the slot is empty. Damage is 1 + the owner's
+// cannonBonus (Draconic Munition). Counts one "fire" per command (Seabreaker
+// Goliath reads p.cannonsFiredGame); returns how many creatures the volley killed.
+export function fireCannons(state, pi) {
+	const p = state.players[pi];
+	const cannons = p.board.filter(c => c.cannon && !isDead(c));
+	if (!cannons.length) return 0;
+	const foes = opponentsOf(state, pi).filter(o => !state.players[o].eliminated);
+	if (!foes.length) return 0;
+	p.cannonsFiredGame = (p.cannonsFiredGame || 0) + 1;
+	const fo = foes[0], fp = state.players[fo];
+	let kills = 0;
+	for (const c of cannons) {
+		const dmg = 1 + (p.cannonBonus || 0);
+		const t = fp.board[p.board.indexOf(c)];
+		emit(state, { type: 'cannonFire', player: pi, uid: c.uid });
+		if (t && !isDead(t) && t.type === 'creature') {
+			damageCreature(state, t, dmg, null);
+			if (isDead(t)) kills++;
+		} else {
+			damageHero(state, fo, dmg, pi);
+		}
+	}
+	sweepDeaths(state);
+	return kills;
+}
 
 // Duels PASSIVE hero powers: the flag is DERIVED from the installed power card
 // (power.passiveFlag), so every install path — playCard, run boot, generated
@@ -3360,6 +3398,12 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		if (defBefore > 0 && !isDead(defender)) fireCreatureTrigger(state, defender, 'self-deals-damage', { amount: defBefore, victim: attacker });
 		// Potion of Sparking (Duels): a friendly Rush creature attacking a creature zaps an adjacent enemy
 		if (state.players[pi].potionSparking && (attacker.keywords || []).includes('rush') && target.type === 'creature') { const dp = state.players[defender.controller]; const di = dp.board.indexOf(defender); const nbrs = [dp.board[di - 1], dp.board[di + 1]].filter(x => x && !isDead(x) && x.type === 'creature'); if (nbrs.length) damageCreature(state, nbrs[Math.floor(state.rng() * nbrs.length)], 1, null); }
+		// AV tactic passives (Duels): an exact-lethal ("Honorable") combat kill by a friendly Neutral creature
+		if (target.type === 'creature' && isDead(defender) && defender.damage === defender.maxHealth && attacker.controller === pi && (attacker.cardClass || 'neutral') === 'neutral') {
+			const hkP = state.players[pi];
+			if (heroPassive(hkP, 'gatherResources')) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'spell', count: 1 }], null, null);
+			if (heroPassive(hkP, 'summonThePack') && state.cardsById.duels_frostwolf_cub) summon(state, pi, state.cardsById.duels_frostwolf_cub);
+		}
 	}
 	if (attacker && attacker._attackingImmune) attacker._attackingImmune = false; // Stalwart Avenger: immunity lapses once the swing resolves
 	sweepDeaths(state);
@@ -3938,6 +3982,33 @@ export function resolvePick(state, id) {
 		placeContraption(state, pend.player, slot, pend.contraptionId);
 		return true;
 	}
+	if (pend.mode === 'infinite-arcane') {
+		// Infinite Arcane (Duels): the pick leaves the destroyed deck and is "drawn" at (2) less
+		const pi2 = pend.player, p2 = state.players[pi2];
+		const chosen = pend.ids.includes(id) ? id : pend.ids[0];
+		const ix = (p2.destroyedDeck || []).indexOf(chosen);
+		if (ix >= 0) p2.destroyedDeck.splice(ix, 1);
+		const def = state.cardsById[chosen];
+		if (def && p2.hand.length < MAX_HAND) {
+			const c = instantiate(def, pi2); c.zone = 'hand';
+			c.cost = Math.max(0, (c.cost || 0) - 2);
+			p2.hand.push(c);
+			emit(state, { type: 'conjure', player: pi2, card: c, color: null });
+		}
+		return true;
+	}
+	if (pend.mode === 'choose-tactic') {
+		// Choose a New Tactic / Command (Duels): re-aim (or install) the tactic power
+		const pi2 = pend.player, p2 = state.players[pi2];
+		const chosen = pend.ids.includes(id) ? id : pend.ids[0];
+		const def = state.cardsById[chosen];
+		if (def && def.power) {
+			const existing = p2.heroPowers.find(c => c.power && Array.isArray(c.power.tacticFamily));
+			if (existing) morphHeroPower(state, pi2, existing, def);
+			else { const c = instantiate(def, pi2); c.zone = 'heropower'; c.usedThisTurn = false; p2.heroPowers.push(c); emit(state, { type: 'heroPowerInstalled', player: pi2, card: c }); }
+		}
+		return true;
+	}
 	if (pend.mode === 'grant-target') {
 		const c = state.players[pend.player].board.find(x => x.uid === id && !isDead(x));
 		if (c && !c.keywords.includes(pend.keyword)) { c.keywords.push(pend.keyword); emit(state, { type: 'keywordGranted', player: pend.player, uid: c.uid, keyword: pend.keyword }); recomputeAuras(state); }
@@ -4389,6 +4460,16 @@ export function resolvePick(state, id) {
 		if (pend.grantCastTwice) card.castTwice = true; // Breakout Architect
 		// Arrest Warrant: the pick gains Prepare (canPrepare reads card.prepare)
 		if (pend.grantPrepare) { card.prepare = true; card.description = (card.description ? card.description + '\n' : '') + 'Prepare.'; }
+		// Marvelous Mycelium (Duels): the pick is shuffled into your DECK, and when
+		// drawn it resolves with BOTH of its Choose One effects combined
+		if (pend.mycelium) {
+			p.deck.push(def.id);
+			for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
+			p.deckChooseBoth = p.deckChooseBoth || {};
+			p.deckChooseBoth[def.id] = (p.deckChooseBoth[def.id] || 0) + 1;
+			emit(state, { type: 'shuffle', player: pend.player });
+			return true;
+		}
 		// Valorous Display (Duels): the discovered weapon is equipped, not held
 		if (pend.equipPick && card.type === 'weapon') {
 			card.zone = 'weapon';
@@ -4648,10 +4729,37 @@ export function canUseHeroPower(state, pi, card, choice) {
 	return true;
 }
 
+// AV tactics (Duels): re-shape an installed hero-power card into another member
+// of its family IN PLACE — the uid survives so the UI keeps tracking the orb.
+export function morphHeroPower(state, pi, card, def) {
+	const uid = card.uid;
+	const fresh = instantiate(def, pi);
+	for (const k of Object.keys(card)) delete card[k];
+	Object.assign(card, fresh, { uid, zone: 'heropower', usedThisTurn: false });
+	emit(state, { type: 'heroPowerInstalled', player: pi, card });
+}
+
 export function useHeroPower(state, pi, cardUid, target, choice) {
 	const p = state.players[pi];
 	const card = p.heroPowers.find(c => c.uid === cardUid);
 	if (!card || !canUseHeroPower(state, pi, card, choice)) return false;
+	// Temporal Loop (Duels — Toki): restore the snapshot taken when this turn
+	// began; everything rewinds except the power itself, which is marked spent.
+	if (card.power && card.power.temporalLoop) {
+		const snap = state._loopSnap;
+		if (!snap) return false;
+		const fresh = fromSnapshot(JSON.parse(JSON.stringify(snap)), state.cardsById);
+		const liveEvents = state.events; // events are EXCLUDED from snapshots; keep the live stream
+		for (const k of Object.keys(state)) delete state[k];
+		Object.assign(state, fresh);
+		if (liveEvents) state.events = liveEvents;
+		const p2 = state.players[pi];
+		const tl = p2 && p2.heroPowers.find(c => c.power && c.power.temporalLoop);
+		if (tl) { tl.usedThisTurn = true; tl._uses = (tl._uses || 0) + 1; tl._usesGame = (tl._usesGame || 0) + 1; }
+		emit(state, { type: 'heroPowerUsed', player: pi, card: tl || card, mana: availableMana(p2) });
+		emit(state, { type: 'turnStart', player: state.current, turnNumber: state.turnNumber });
+		return true;
+	}
 	const cost = card.power && card.power.corpseCost != null ? 0 : heroPowerCost(state, pi, card);
 	const ward = wardOf(state, pi, target);
 	if (ward?.mana && availableMana(p) < cost + ward.mana) return false;
@@ -5271,6 +5379,11 @@ export function endTurn(state) {
 	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
 	for (const c of np.board) if (c.reviveTimer > 0) { c.reviveTimer--; if (c.reviveTimer <= 0) { c.reviveTimer = 0; c.dormantLeft = 0; c.sick = false; emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name }); } } // Dragonbone Ritual: dormant Dragons revive on schedule
 	if (np.legendaryLoot && !np._legLootUsed) { np._legLootUsed = true; execEffects(state, state.current, [{ type: 'discover', cardType: 'weapon', rarity: 'legendary' }], null, null); } // Legendary Loot: on your first turn, Discover a Legendary weapon
+	// AV tactics (Duels): a tactic-family power transforms into another family member each turn
+	for (const hpc of np.heroPowers || []) if (hpc.power && Array.isArray(hpc.power.tacticFamily) && hpc.power.tacticFamily.length > 1) {
+		const others = hpc.power.tacticFamily.filter(tid => tid !== hpc.id && state.cardsById[tid] && state.cardsById[tid].power);
+		if (others.length) morphHeroPower(state, state.current, hpc, state.cardsById[others[Math.floor(state.rng() * others.length)]]);
+	}
 	if (heroPassive(np, 'connections')) execEffects(state, state.current, [{ type: 'conjure-random', cardType: 'creature', minCost: 1, maxCost: 1 }], null, null); // Connections (Duels passive power): a random 1-Cost creature each turn
 	if (np.duelsHagatha) { for (let _hg = 0; _hg < 2; _hg++) { const hgp = np.hand.filter(c => c.type === 'creature'); if (hgp.length) { const hgc = hgp[Math.floor(state.rng() * hgp.length)]; hgc.attack += 1; hgc.maxHealth += 1; emit(state, { type: 'buff', uid: hgc.uid, attack: hgc.attack, hp: hp(hgc) }); } } } // Hagatha's Embrace (Duels): two random hand creatures +1/+1
 	// Conceal's stealth wears off at the owner's next turn
@@ -5373,12 +5486,28 @@ export function endTurn(state) {
 	// Commander Geddon: the draw becomes a discounted Discover from your deck
 	{
 		const cp = state.players[state.current];
-		if (cp.geddonDraw && cp.deck.length) {
+		if (cp.infiniteArcane && (cp.destroyedDeck || []).length) {
+			// Infinite Arcane (Duels): the turn draw becomes a Discover from the destroyed deck
+			const bag = [...cp.destroyedDeck], ids = [];
+			for (let i = 0; i < 3 && bag.length; i++) { const pick = bag.splice(Math.floor(state.rng() * bag.length), 1)[0]; if (!ids.includes(pick)) ids.push(pick); }
+			state.pickQueue.push({ player: state.current, ids, discover: true, mode: 'infinite-arcane' });
+			emit(state, { type: 'pickStart', player: state.current, count: ids.length });
+		} else if (cp.geddonDraw && cp.deck.length) {
 			execEffects(state, state.current, [{ type: 'discover', fromOwnDeck: true, cardType: 'any', drawPick: true, costMod: -3 }], null, null);
 		} else if (!cp.board.some(c => c.skipStartDraw && !isDead(c))) {
 			drawCards(state, state.current, 1);
 		}
 		if (cp.extraTurnDraw) drawCards(state, state.current, cp.extraTurnDraw); // Elixir of Vim
+	}
+	// Temporal Loop (Duels): remember how this turn began, so the power can
+	// restart it. Stashed non-enumerably — snapshots must not nest themselves.
+	{
+		const cp = state.players[state.current];
+		if ((cp.heroPowers || []).some(c => c.power && c.power.temporalLoop && !c.usedThisTurn)) {
+			// toSnapshot is shallow — freeze the moment with a deep copy, or later
+			// mutations would bleed into the "snapshot"
+			Object.defineProperty(state, '_loopSnap', { value: JSON.parse(JSON.stringify(toSnapshot(state))), writable: true, configurable: true, enumerable: false });
+		}
 	}
 }
 
