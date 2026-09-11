@@ -1036,8 +1036,7 @@ function openUnmaskMenu(card, ev) {
 		atk.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			selectedAttacker = card.uid;
-			updateHud();
+			tryArmAttack(card);
 		});
 		menu.appendChild(atk);
 	}
@@ -1915,6 +1914,52 @@ arrowCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:
 document.body.appendChild(arrowCanvas);
 let mouseX = innerWidth / 2, mouseY = innerHeight / 2;
 let arrowDrawn = false;
+
+// ---------- stale-build watchdog ----------
+// Twice now a long-lived tab has kept running a game.js from BEFORE a deploy
+// (module graphs never revalidate inside a living tab), which resurrects
+// already-fixed bugs — most visibly the old "red targeting line from the
+// bottom-right corner". Capture this build's ETag at boot and re-check the
+// live one on refocus / every few minutes: a mismatch means a deploy landed
+// under this tab. Reload outright when no fight is in progress (runs resume),
+// otherwise keep a persistent banner up so the player knows to refresh.
+let _buildTag = null, _staleWarned = false;
+async function checkBuild() {
+	try {
+		const r = await fetch('game.js', { method: 'HEAD', cache: 'no-store' });
+		const tag = r.headers.get('etag');
+		if (!tag) return;
+		if (_buildTag == null) { _buildTag = tag; return; }
+		if (tag === _buildTag || _staleWarned) return;
+		_staleWarned = true;
+		if (!state || state.over) { location.reload(); return; }
+		banner('A new Battlecards build is live — finish this fight, then hard-refresh (Ctrl+Shift+R)', 0, 'warn');
+	} catch { /* offline blips are fine — try again next check */ }
+}
+checkBuild();
+setInterval(checkBuild, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkBuild(); });
+
+// arm a creature attack ONLY when it actually has somewhere to go — arming
+// with zero legal targets was a silent trap (armed ring + arrow, nothing
+// clickable, no explanation)
+function tryArmAttack(card) {
+	const targets = E.attackTargets(state, HUMAN, card);
+	if (!targets.length) { banner(`${card.name} has no legal attack targets right now`); return false; }
+	selectedAttacker = card.uid;
+	updateHud();
+	return true;
+}
+
+// "why can't I hit their hero?" — the answer is almost always a Taunt wall,
+// and until now the click just silently cancelled the attack
+function explainHeroMiss(attacker, defenderPi) {
+	const targets = attacker === 'HERO' ? E.heroAttackTargets(state, HUMAN) : E.attackTargets(state, HUMAN, attacker);
+	if (targets.some(t => t.type === 'hero' && t.player === defenderPi)) return false; // hero IS legal; not a miss
+	const taunts = state.players[defenderPi].board.filter(c => E.has(c, 'taunt') && !E.isDead(c) && !c.stealthed);
+	banner(taunts.length ? `${taunts[0].name} has Taunt — deal with it first` : 'Their hero can’t be attacked right now');
+	return true;
+}
 
 function targetSourcePos() {
 	if (selectedAttacker === 'HERO') return heroPos(HUMAN);
@@ -3586,8 +3631,7 @@ addEventListener('pointermove', ev => {
 		menuDragCandidate = null;
 		if (c && state && E.canAttackWith(state, HUMAN, c)) {
 			hideWalkerMenu();
-			selectedAttacker = c.uid;
-			updateHud();
+			tryArmAttack(c);
 		}
 	}
 	// hover raycasts + tooltip layout at ~40Hz is plenty; 120Hz pointers
@@ -3789,8 +3833,7 @@ function openAbilityMenu(card, ev) {
 		atk.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			hideWalkerMenu();
-			selectedAttacker = card.uid;
-			updateHud();
+			tryArmAttack(card);
 		});
 		menu.appendChild(atk);
 	}
@@ -3917,8 +3960,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			? pickAttackReadyCreatureNear(ev, TOUCH ? 44 : 14) : null;
 		if (near) {
 			showInspect(near);
-			selectedAttacker = near.uid;
-			updateHud();
+			tryArmAttack(near);
 		} else {
 			panelClick(HUMAN);
 		}
@@ -3986,7 +4028,7 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		// A Titan whose abilities are all spent (or all locked this turn) skips the
 		// pick and falls through to attacking; other activated minions always show the menu.
 		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { menuDragCandidate = dragArm; openAbilityMenu(card, ev); return; }
-		if (E.canAttackWith(state, HUMAN, card)) { selectedAttacker = card.uid; updateHud(); }
+		if (E.canAttackWith(state, HUMAN, card)) tryArmAttack(card);
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
 		activateHeroPower(card, ev);
@@ -4232,6 +4274,7 @@ function tryCommitTargetAt(ev) {
 		}
 		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
 		if (near) { actHeroAttack(near); return true; }
+		if (heroPi != null && heroPi !== HUMAN) explainHeroMiss('HERO', heroPi); // dropped on their hero: say WHY it didn't land
 		return false;
 	}
 	if (selectedAttacker) {
@@ -4249,6 +4292,7 @@ function tryCommitTargetAt(ev) {
 		}
 		const near = nearestTargetAt(ev, targets.filter(t => !(t.type === 'hero' && t.player === HUMAN)), slop);
 		if (near) { actAttack(selectedAttacker, near); return true; }
+		if (heroPi != null && heroPi !== HUMAN) explainHeroMiss(attacker, heroPi); // dropped on their hero: say WHY it didn't land
 		return false;
 	}
 	return false;
@@ -4316,6 +4360,7 @@ function panelClick(pi) {
 		if (pi !== HUMAN) {
 			const t = E.heroAttackTargets(state, HUMAN).find(t => t.type === 'hero' && t.player === pi);
 			if (t) { actHeroAttack(t); } // relays in a duel (guest)
+			else explainHeroMiss('HERO', pi);
 		} else {
 			clearModes();
 		}
@@ -4326,6 +4371,7 @@ function panelClick(pi) {
 		if (!attacker) { clearModes(); return; }
 		const t = E.attackTargets(state, HUMAN, attacker).find(t => t.type === 'hero' && t.player === pi);
 		if (t) { actAttack(selectedAttacker, t); }
+		else explainHeroMiss(attacker, pi);
 		return;
 	}
 	// clicking your own panel arms a hero attack when you hold a weapon
