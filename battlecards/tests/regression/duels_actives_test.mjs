@@ -215,7 +215,7 @@ const play = (st, pi, id, target, choice) => { const c = give(st, pi, id); E.pla
 	const st = fresh();
 	play(st, 0, 'duels_sack_of_coins');
 	ok('Sack: a 6-Cost creature appears', st.players[0].board.length === 1 && (byId[st.players[0].board[0].id].cost || 0) === 6, st.players[0].board.map(c => c.id));
-	ok('Sack: it reshuffles itself', st.players[0].deck.includes('duels_sack_of_coins'));
+	ok('Sack: it upgrades into a Hefty Sack (the run-tier chain)', st.players[0].deck.includes('duels_hefty_sack_of_coins'));
 }
 {
 	const st = fresh();

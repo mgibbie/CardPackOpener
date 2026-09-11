@@ -3820,20 +3820,25 @@ registerTrigger('copy-played-spell-to-hand', (state, pi, e, ctx, triggering) => 
 	}
 });
 
-// Favored Racer: a random Blessing resolves on this creature
+// Favored Racer: random Blessings resolve on this creature (count = run tiers)
 register('cast-random-blessing-self', ({ state, pi, source }, e) => {
 	if (!source || isDead(source)) return;
 	const pool = Object.values(state.cardsById).filter(d => /^Blessing/i.test(d.name || '') && isSpellType(d) && d.effects && d.effects.length);
 	if (!pool.length) return;
-	const d = pool[Math.floor(state.rng() * pool.length)];
-	execEffects(state, pi, JSON.parse(JSON.stringify(d.effects)), { type: 'creature', uid: source.uid, player: pi }, null);
+	for (let n = 0; n < (e.count || 1) && !isDead(source); n++) {
+		const d = pool[Math.floor(state.rng() * pool.length)];
+		execEffects(state, pi, JSON.parse(JSON.stringify(d.effects)), { type: 'creature', uid: source.uid, player: pi }, null);
+	}
 });
 
-// Deathstrider: fire a random friendly Deathrattle without anyone dying
+// Deathstrider: fire random friendly Deathrattles without anyone dying
+// (count > 1 = the upgraded run tiers; the same creature may fire again)
 register('trigger-random-friendly-deathrattle', ({ state, pi, source }, e) => {
-	const pool = state.players[pi].board.filter(c => !isDead(c) && c.deathrattle && c.deathrattle.length && c !== source);
-	if (!pool.length) return;
-	runDeathrattle(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+	for (let n = 0; n < (e.count || 1); n++) {
+		const pool = state.players[pi].board.filter(c => !isDead(c) && c.deathrattle && c.deathrattle.length && c !== source);
+		if (!pool.length) return;
+		runDeathrattle(state, pi, pool[Math.floor(state.rng() * pool.length)]);
+	}
 });
 
 // Nerubian Peddler: the freshest card in hand gets cheaper each turn

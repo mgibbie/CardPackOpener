@@ -496,6 +496,22 @@ export const HEROES = [
 	{ id: 'vanndar', name: 'Vanndar Stormpike', heroClass: 'paladin', classChoices: ['demon_hunter', 'hunter', 'paladin', 'priest', 'rogue'], hsId: 'PVPDR_Hero_Vanndar', flavor: 'The Stormpike general rallies the Alliance \u2014 command any of five classes.' },
 ];
 
+// ---------- "(Improves during run.)" treasure tiers ----------
+// A base card carries `improves: [s1, s2, s3]`; the run boot maps deck ids to
+// the tier earned by WINS (3/6/9 — a 12-win run sees the final form). run.deck
+// always stores the BASE id, so upgrades apply cleanly on every boot.
+export function tierFor(wins) { return Math.min(3, Math.floor((wins || 0) / 3)); }
+export function applyImproves(cardsById, deckIds, wins) {
+	const t = tierFor(wins);
+	if (!t) return deckIds;
+	return deckIds.map(id => {
+		const d = cardsById[id];
+		if (!d || !Array.isArray(d.improves)) return id;
+		const tid = d.improves[t - 1];
+		return (tid && cardsById[tid]) ? tid : id;
+	});
+}
+
 // choose-your-class heroes (Drek'Thar / Vanndar) expose a set of single classes to
 // pick from; a normal hero returns null. `classesOf` still yields the default class.
 export const classChoicesOf = hero => (hero && Array.isArray(hero.classChoices) && hero.classChoices.length) ? hero.classChoices : null;
