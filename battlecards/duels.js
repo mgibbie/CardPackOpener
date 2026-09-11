@@ -501,18 +501,19 @@ export const classChoicesOf = hero => (hero && Array.isArray(hero.classChoices) 
 // Duels shares its League-of-Explorers powers with Tombs, so several class
 // lists reference the existing ulda_* hero-power cards rather than re-importing.
 export const HERO_POWERS = {
-	neutral: ['duelshp_send_in_the_scout', 'ulda_uldum_treasure_cache'],
-	warrior: ['duelshp_primal_power', 'duelshp_uber_primal_power'],
-	hunter: ['duelshp_survival_training', 'ulda_spread_shot', 'ulda_dino_tracking', 'ulda_well_equipped'],
-	paladin: ['duelshp_modest_aspirations', 'duelshp_from_golden_light', 'ulda_new_recruits', 'ulda_bubble_blower', 'ulda_power_up'],
-	druid: ['duelshp_harvest_time', 'ulda_elises_might', 'ulda_druidic_teaching', 'ulda_starseeker'],
-	priest: ['duelshp_shadow_mend', 'duelshp_call_of_madness'],
-	death_knight: ['duelshp_blood_parasite'],
-	rogue: ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers'],
-	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike'],
-	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage'],
-	shaman: ['duelshp_totemic_power'],
-	warlock: ['duelshp_demon_blood'],
+	// the 'neutral' list is offered to EVERY hero (the pickers append it to the class lists)
+	neutral: ['duelshp_send_in_the_scout', 'ulda_uldum_treasure_cache', 'duelshp_promote', 'duelshp_battle_tactics', 'duelshp_warmasters_frenzy', 'duelshp_harness_the_elements', 'duelshp_war_commands'],
+	warrior: ['duelshp_primal_power', 'duelshp_uber_primal_power', 'duelshp_bruising', 'duelshp_no_guts_no_glory', 'duelshp_magnetic_mines', 'duelshp_doom_charge'],
+	hunter: ['duelshp_survival_training', 'ulda_spread_shot', 'ulda_dino_tracking', 'ulda_well_equipped', 'duelshp_death_games', 'duelshp_savage_secrets'],
+	paladin: ['duelshp_modest_aspirations', 'duelshp_from_golden_light', 'ulda_new_recruits', 'ulda_bubble_blower', 'ulda_power_up', 'duelshp_bring_on_recruits'],
+	druid: ['duelshp_harvest_time', 'ulda_elises_might', 'ulda_druidic_teaching', 'ulda_starseeker', 'duelshp_invigorating_bloom', 'duelshp_natures_gifts'],
+	priest: ['duelshp_shadow_mend', 'duelshp_call_of_madness', 'duelshp_mind_tether'],
+	death_knight: ['duelshp_blood_parasite', 'duelshp_ghoul_blitz', 'duelshp_gathering_storm', 'duelshp_lichborne_might', 'duelshp_hematology', 'duelshp_scourging'],
+	rogue: ['duelshp_vile_concoction', 'duelshp_roguish_maneuvers', 'duelshp_connections'],
+	demon_hunter: ['duelshp_illidari_strike', 'duelshp_infernal_strike', 'duelshp_outlander'],
+	mage: ['ulda_relicologist', 'ulda_arcane_craftiness', 'ulda_amateur_mage', 'duelshp_secret_studies', 'duelshp_wyrm_bolt', 'duelshp_frost_shards'],
+	shaman: ['duelshp_totemic_power', 'duelshp_ferocious_flurry', 'duelshp_stormcatcher'],
+	warlock: ['duelshp_demon_blood', 'duelshp_demonic_transformation', 'duelshp_dark_arts', 'duelshp_soulcial_studies'],
 };
 
 // ---------- color-locked basics (the Lorequest-family runs) ----------

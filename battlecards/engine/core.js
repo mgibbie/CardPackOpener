@@ -2014,6 +2014,13 @@ export function schoolOf(card) {
 // ---------- cost modifiers ----------
 export const isSpellType = card => card.type === 'sorcery' || card.type === 'instant' || card.type === 'secret' || card.type === 'trap';
 
+// Duels PASSIVE hero powers: the flag is DERIVED from the installed power card
+// (power.passiveFlag), so every install path — playCard, run boot, generated
+// enemies — works with zero wiring; uninstalling the power ends the passive.
+export function heroPassive(p, flag) {
+	return !!(p && p.heroPowers && p.heroPowers.some(h => h.power && h.power.passiveFlag === flag));
+}
+
 
 
 
@@ -2587,6 +2594,13 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 		if (!card.keywords.includes('reborn')) { card.keywords.push('reborn'); emit(state, { type: 'buff', uid: card.uid, attack: card.attack, hp: hp(card) }); }
 	}
 	if (p.disksOfLegend && card.type === 'creature' && card.rarity === 'legendary' && state.cardsById[card.id]) summon(state, pi, state.cardsById[card.id]); // Disks of Legend
+	// Soulcial Studies (Duels passive power): a card that creates Soul Fragments summons a
+	// 3/2 Flame Imp (detected by the fragment id in the def — demonology-101 hides its
+	// fragment id inside the handler, so it's matched by effect type)
+	if (heroPassive(p, 'soulcialStudies') && state.cardsById[card.id]
+		&& (JSON.stringify(state.cardsById[card.id]).includes('soul_fragment') || (state.cardsById[card.id].effects || []).some(fx => fx.type === 'demonology-101'))) {
+		summon(state, pi, { id: 'token_flame_imp', name: 'Flame Imp', type: 'creature', cost: 1, rarity: 'common', token: true, attack: 3, health: 2, tribe: 'Demon', description: 'A 3/2 Flame Imp.' });
+	}
 	if (p.darklightTorch && (card.cost || 0) % 2 === 0) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; p.heroPowerDiscountNext = (p.heroPowerDiscountNext || 0) + 10; } // Darklight Torch: even-Cost refreshes the power at (0)
 	if (p.alchemistStone && (card.cost || 0) % 2 === 1) for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Alchemist's Stone: odd-Cost discounts your hand
 	// Duels passives that react to the first creature you play each turn
@@ -2634,6 +2648,7 @@ export function playCard(state, pi, cardUid, target, choice, position, useAlt, k
 	if (p.ringOfRefreshment && isSpellType(card)) { for (const hpw of p.heroPowers) hpw.usedThisTurn = false; } // Ring of Refreshment: a spell refreshes your Hero Power
 	if (p.idolsOfElune && isSpellType(card)) { if (p._idolsTurn !== state.turnNumber) { p._idolsTurn = state.turnNumber; p._idolsSpells = []; } p._idolsSpells.push(card.id); } // Idols of Elune: remember spells cast this turn
 	if (p.staffOfPain && isSpellType(card) && schoolOf(card) === 'Shadow') execEffects(state, pi, [{ type: 'damage', value: 2, target: 'all-heroes' }], null, null); // Staff of Pain: a Shadow spell hurts every hero
+	if (heroPassive(p, 'mindTether') && isSpellType(card)) execEffects(state, pi, [{ type: 'damage', value: 1, target: 'enemy-hero' }], null, null); // Mind Tether (Duels passive power): every spell stings the enemy hero
 	if (p.mendingPools && isSpellType(card) && schoolOf(card) === 'Nature' && p._mendingTurn !== state.turnNumber) { p._mendingTurn = state.turnNumber; execEffects(state, pi, [{ type: 'heal', value: 2, target: 'friendly-characters' }], null, null); } // Mending Pools: your first Nature spell each turn heals your side
 	if (p.ironRoots && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'buff-random-friendly', attack: 1, health: 1, grant: 'taunt' }], null, null); // Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
 	if (p.spreadingSaplings && isSpellType(card) && schoolOf(card) === 'Nature') execEffects(state, pi, [{ type: 'summon', count: 1, attack: 1, health: 1, name: 'Sapling' }], null, null); // Spreading Saplings: a Nature spell summons a 1/1 Sapling
@@ -3386,7 +3401,7 @@ export function canHeroAttack(state, pi) {
 	const p = state.players[pi];
 	if (heroAttackValue(state, p) <= 0) return false; // temp attack lets weaponless heroes swing
 	if (p.weapon?.unlimitedAttacks) return true; // Fool's Bane: no per-turn attack cap
-	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)); // Azshara
+	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)) || p.heroWindfuryTurn === state.turnNumber; // Azshara / Ferocious Flurry (this turn only)
 	return p.heroAttacksUsed < (windfury ? 2 : 1);
 }
 
@@ -4149,6 +4164,12 @@ export function resolvePick(state, id) {
 				for (let i = p.deck.length - 1; i > 0; i--) { const j = Math.floor(state.rng() * (i + 1)); [p.deck[i], p.deck[j]] = [p.deck[j], p.deck[i]]; }
 				drawCards(state, pend.player, 1);
 				break;
+			case 'discard-draw': // Dark Arts (Duels): discard the pick, draw a card
+				p.hand = p.hand.filter(x => x !== c);
+				toGraveyard(state, pend.player, c);
+				emit(state, { type: 'discard', player: pend.player, card: c });
+				drawCards(state, pend.player, 1);
+				break;
 			case 'transform-spell-plus5': { // Bootleg Alchemist
 				const pool = Object.values(state.cardsById).filter(d2 => isSpellType(d2) && (d2.cost || 0) === (c.cost || 0) + 5 && !d2.token && d2.collectible !== false && !(d2.colors && d2.colors.length));
 				if (pool.length) {
@@ -4375,6 +4396,23 @@ export function resolvePick(state, id) {
 			p.weapon = card;
 			emit(state, { type: 'weaponEquip', player: pend.player, card });
 			recomputeAuras(state);
+			return true;
+		}
+		// Doom Charge (Duels): the deck pick is SUMMONED as a copy that attacks a
+		// random enemy minion, then dies (the deck itself is untouched)
+		if (pend.doomCharge) {
+			const dc = summon(state, pend.player, def);
+			if (dc) {
+				const foes = [];
+				for (const o of opponentsOf(state, pend.player)) for (const fc of state.players[o].board) if (!isDead(fc) && fc.type === 'creature') foes.push(fc);
+				if (foes.length) {
+					const foe = foes[Math.floor(state.rng() * foes.length)];
+					dc.sick = false;
+					resolveCombat(state, pend.player, dc.uid, { type: 'creature', uid: foe.uid, player: foe.controller });
+				}
+				if (!isDead(dc)) { dc.damage = dc.maxHealth; dc.shield = false; }
+				sweepDeaths(state);
+			}
 			return true;
 		}
 		// Gift of the Old Gods (Duels): the pick arrives already Corrupted
@@ -4770,6 +4808,7 @@ export function endTurn(state) {
 	if (state.anomaly === 'growing') for (const c of p.board) { if (!isDead(c) && c.type !== 'location') { c.attack += 1; c.maxHealth += 1; emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) }); } } // Anomaly - Growing
 	if (state.anomaly === 'reductive') for (const c of p.hand) { if ((c.cost || 0) > 0) { c.cost = Math.max(0, c.cost - 1); emit(state, { type: 'costChange', player: pi, uid: c.uid, cost: c.cost }); } } // Anomaly - Reductive
 	if (p.everChangingElixir && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 1 }], null, null); // Ever-Changing Elixir
+	if (heroPassive(p, 'magneticMines') && (p.armor || 0) > 0) execEffects(state, pi, [{ type: 'shuffle-ids-into-deck', ids: ['bomb'], forEnemy: true }], null, null); // Magnetic Mines (Duels passive power): armored turns plant a Bomb
 	if (p.duelsEverChanging && p.board.some(c => !isDead(c) && c.type !== 'location')) execEffects(state, pi, [{ type: 'transform', random: true, randomCost: true, costDelta: 2 }], null, null); // Ever-Changing Elixir (Duels): transform into one costing (2) more
 	if (p.glacialDownpour && p._frostCastTurn === state.turnNumber) execEffects(state, pi, [{ type: 'summon', count: 1, attack: 2, health: 3, name: 'Water Elemental', tribe: 'Elemental' }], null, null); // Glacial Downpour: cast Frost this turn -> a 2/3 Water Elemental
 	if (p.flameWaves && p._fireCastTurn === state.turnNumber && p._fireCastCount > 0) execEffects(state, pi, [{ type: 'damage', value: 2 * p._fireCastCount, target: 'enemy-creatures' }], null, null); // Flame Waves: 2 to all enemy creatures per Fire spell cast this turn
@@ -5220,6 +5259,7 @@ export function endTurn(state) {
 	if (np.overloadPending) {
 		np.mana.cur = Math.max(0, np.mana.cur - np.overloadPending);
 		emit(state, { type: 'overloaded', player: state.current, amount: np.overloadPending });
+		if (heroPassive(np, 'stormcatcher')) np.overloadPending = 0; // Stormcatcher (Duels passive power): you can't be Overloaded
 		np.overloadLockedThisTurn = np.overloadPending; // Eternal Sentinel can give these back
 		np.overloadedGame = (np.overloadedGame || 0) + np.overloadPending; // Snowfury Giant / Haywire Hornswog: crystals Overloaded this game
 		np.overloadPending = 0;
@@ -5231,6 +5271,7 @@ export function endTurn(state) {
 	if (np.battleStance) { np.heroTempAttack += 2; emit(state, { type: 'heroAttack', player: state.current, attack: (np.heroAttack || 0) + np.heroTempAttack }); } // Battle Stance (Duels): +2 hero Attack on your turn
 	for (const c of np.board) if (c.reviveTimer > 0) { c.reviveTimer--; if (c.reviveTimer <= 0) { c.reviveTimer = 0; c.dormantLeft = 0; c.sick = false; emit(state, { type: 'awaken', player: state.current, uid: c.uid, name: c.name }); } } // Dragonbone Ritual: dormant Dragons revive on schedule
 	if (np.legendaryLoot && !np._legLootUsed) { np._legLootUsed = true; execEffects(state, state.current, [{ type: 'discover', cardType: 'weapon', rarity: 'legendary' }], null, null); } // Legendary Loot: on your first turn, Discover a Legendary weapon
+	if (heroPassive(np, 'connections')) execEffects(state, state.current, [{ type: 'conjure-random', cardType: 'creature', minCost: 1, maxCost: 1 }], null, null); // Connections (Duels passive power): a random 1-Cost creature each turn
 	if (np.duelsHagatha) { for (let _hg = 0; _hg < 2; _hg++) { const hgp = np.hand.filter(c => c.type === 'creature'); if (hgp.length) { const hgc = hgp[Math.floor(state.rng() * hgp.length)]; hgc.attack += 1; hgc.maxHealth += 1; emit(state, { type: 'buff', uid: hgc.uid, attack: hgc.attack, hp: hp(hgc) }); } } } // Hagatha's Embrace (Duels): two random hand creatures +1/+1
 	// Conceal's stealth wears off at the owner's next turn
 	for (const c of np.board) {

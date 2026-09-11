@@ -10,7 +10,7 @@
 // runSecretEffects (the 141-case trigger-side switch) deliberately STAYS in
 // engine.js: its cases retire into engine/effects/registry.js batch by batch
 // (PR 17+), which shrinks it in place without a 40-import bulk move.
-import { isDead, emit, hp, schoolOf, runSecretEffects } from '../engine.js';
+import { isDead, emit, hp, schoolOf, runSecretEffects, heroPassive, execEffects } from '../engine.js';
 import { toGraveyard } from './zones.js';
 
 // fire a single creature's own ongoing triggers by name (combat reactions:
@@ -160,6 +160,8 @@ export function fireSecrets(state, pi, trigger, ctx) {
 				emit(state, { type: 'secretRevealed', player: pi, card });
 			// Eaglehorn Bow-style triggers watch every reveal
 			for (let s2 = 0; s2 < state.players.length; s2++) fireOngoing(state, s2, 'secret-revealed', { secretOwner: pi });
+			// Savage Secrets (Duels passive power): the revealed secret's OWNER pockets a random 2-Cost Beast
+			if (heroPassive(p, 'savageSecrets')) execEffects(state, pi, [{ type: 'conjure-random', cardType: 'creature', tribe: 'Beast', minCost: 2, maxCost: 2 }], null, null);
 		}
 		runSecretEffects(state, pi, sec.effects, ctx);
 	}

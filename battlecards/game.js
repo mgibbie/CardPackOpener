@@ -7146,7 +7146,7 @@ function pickDuelsPowerOverlay(hero) {
 		const powSeen = new Set();
 		const primaryCls = classRegistry.find(c => c.id === heroClasses[0]);
 		if (primaryCls?.power) options.push({ id: null, name: primaryCls.power.name, cost: primaryCls.power.cost, text: primaryCls.power.text });
-		for (const cl of heroClasses) for (const id of Duels.HERO_POWERS[cl] || []) {
+		for (const cl of [...heroClasses, 'neutral']) for (const id of Duels.HERO_POWERS[cl] || []) {
 			const d = duelsCardsById[id];
 			if (d && d.power && !powSeen.has(id)) { powSeen.add(id); options.push({ id, name: d.name, cost: d.power.cost, text: (d.description || '').replace(/^Hero Power \(\d+\): /, '') }); }
 		}
@@ -7196,7 +7196,7 @@ function genDuelsEnemy(cardsById, games, avoidId) {
 	const classes = Duels.classesOf(rival);
 	const gen = Duels.generateEnemy(cardsById, classes, games, Math.random);
 	// parity: the enemy also carries a hero power - its class default (null) or a random alt from its Duels pool
-	const altPowers = classes.flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
+	const altPowers = [...classes, 'neutral'].flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
 	const powerChoices = [null, ...altPowers];
 	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
 	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck: gen.deck, passives: gen.passives, powerId };
@@ -8304,7 +8304,7 @@ function genArenaEnemy(cardsById, avoidId) {
 	const rival = roster[Math.floor(Math.random() * roster.length)];
 	const classes = Duels.classesOf(rival);
 	const deck = Duels.autoDraftDeck(cardsById, classes, Math.random, 30);
-	const altPowers = classes.flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
+	const altPowers = [...classes, 'neutral'].flatMap(cl => Duels.HERO_POWERS[cl] || []).filter(id => cardsById[id] && cardsById[id].power);
 	const powerChoices = [null, ...altPowers];
 	const powerId = powerChoices[Math.floor(Math.random() * powerChoices.length)];
 	return { id: rival.id, name: rival.name, heroClass: rival.heroClass, hsId: rival.hsId, deck, powerId };

@@ -1594,6 +1594,7 @@ register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 					if (e.maxCost != null && (def.cost || 0) > e.maxCost) continue;
 					if (e.minCost != null && (def.cost || 0) < e.minCost) continue; if (e.cardType === 'secret' && !def.secret) continue; if (e.distinct && drawnIds.has(p.deck[j])) continue; if (e.health != null && (def.health || 0) !== e.health) continue; if (e.attack != null && (def.attack || 0) !== e.attack) continue; if (e.cost != null && (def.cost || 0) !== e.cost) continue; // Tol'vir Warden/Storm Chaser/Subject 9/Salhet's Pride/Holy Eggbearer
 					if (e.requireKeyword && !(def.keywords || []).includes(e.requireKeyword)) continue;
+					if (e.cardClass && (def.cardClass || 'neutral') !== e.cardClass) continue; // War Commands (Duels): a Neutral minion
 					if (e.equipOrWeapon && !(def.type === 'weapon' || (def.type === 'artifact' && def.equip))) continue; // Outfitted Jouster
 					if (e.overload && !((def.overload || 0) > 0)) continue; // Pebbly Page: an Overload card
 					if (e.nameIncludes && !(def.name || '').includes(e.nameIncludes)) continue; // Tiny Rafaam: draw a Rafaam
@@ -1613,6 +1614,7 @@ register('tutor', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, 
 				if (e.spellDamage) card.bonusSpellDamage = (card.bonusSpellDamage || 0) + e.spellDamage; // Volcanic Thrasher (Kindred): the drawn spell gets Spell Damage +2
 				if (e.setAttack != null) card.attack = e.setAttack; // Jepetto Joybuzz: set to 1/1, cost 1
 				if (e.setHealth != null) card.maxHealth = e.setHealth;
+				if (e.costZeroTurn && (card.cost || 0) > 0) { card._costRestoreEnd = card.cost; card.cost = 0; } // War Commands (Duels): free THIS turn only
 				if (e.summonCopy) { // Searing Reflection: also summon an X/Y copy of the draw
 					const cd = JSON.parse(JSON.stringify(state.cardsById[id]));
 					if (e.summonCopy.attack != null) cd.attack = e.summonCopy.attack;

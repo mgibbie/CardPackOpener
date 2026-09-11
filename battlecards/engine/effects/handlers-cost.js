@@ -147,7 +147,8 @@ register('next-name-discount', ({ state, pi, target, source, enemies, scaled, hm
 
 register('discount-hand', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => {
 			// Hunter's Call: cards in hand permanently cost (N) less
-			for (const c of state.players[pi].hand) { if (e.spellsOnly && !isSpellType(c)) continue; if (e.minionsOnly && c.type !== 'creature') continue; c.cost = Math.max(0, c.cost - (e.value || 1)); }
+			// (minCost -> Invigorating Bloom, Duels: only cards costing (5)+)
+			for (const c of state.players[pi].hand) { if (e.spellsOnly && !isSpellType(c)) continue; if (e.minionsOnly && c.type !== 'creature') continue; if (e.minCost != null && (c.cost || 0) < e.minCost) continue; c.cost = Math.max(0, c.cost - (e.value || 1)); }
 });
 
 
@@ -636,15 +637,23 @@ register('conjure-cost', ({ state, pi, target, source, enemies, scaled, hm, pick
 
 register('reduce-random-hand-cost', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// Imprisoned Satyr: reduce the Cost of a random minion in your hand
-			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a Nature spell)
-			const pool = e.school
+			// (tribe filter -> Fangbound Druid reduces a Beast; school -> Florist reduces a
+			// Nature spell; cardClass/minCost/count -> Battle Tactics/Hematology, Duels)
+			const pool = (e.school
 				? state.players[pi].hand.filter(c => schoolOf(c) === e.school)
 				: e.overload
 				? state.players[pi].hand.filter(c => (c.overload || 0) > 0) // Disciple of Golganneth: an Overload card
 				: e.anyCard
 				? state.players[pi].hand.filter(c => c !== source) // Two-Faced Investor
-				: state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe)));
-			if (pool.length) { const c = pool[Math.floor(state.rng() * pool.length)]; c.cost = Math.max(0, (c.cost || 0) - (e.value || 1)); }
+				: state.players[pi].hand.filter(c => c.type === 'creature' && (!e.tribe || (c.tribe || '').includes(e.tribe))))
+				.filter(c => (!e.cardClass || (c.cardClass || 'neutral') === e.cardClass) && (e.minCost == null || (c.cost || 0) >= e.minCost));
+			for (let n = 0; n < (e.count || 1) && pool.length; n++) {
+				// withReplacement (Hematology): the same card may be shaved repeatedly
+				const c = e.withReplacement
+					? pool[Math.floor(state.rng() * pool.length)]
+					: pool.splice(Math.floor(state.rng() * pool.length), 1)[0];
+				c.cost = Math.max(0, (c.cost || 0) - (e.value || 1));
+			}
 } });
 
 
