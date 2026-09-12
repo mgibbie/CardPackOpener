@@ -217,6 +217,10 @@ img.sprite {
 }
 
 /* ---- Land Pools index + pool detail ---- */
+.lp-pool-section { margin-top: 22px; }
+.lp-pool-section:first-child { margin-top: 0; }
+.lp-pool-section h2 { margin-bottom: 4px; }
+.lp-pool-section > p.muted { margin: 0 0 10px; }
 .lp-tier { margin-top: 4px; }
 .lp-tier-head h2 { margin-bottom: 2px; }
 .lp-tier-head p { margin: 0 0 10px; }

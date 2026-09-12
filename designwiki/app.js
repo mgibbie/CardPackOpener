@@ -1583,22 +1583,41 @@ async function landPoolDetail(id) {
   if (!land) return content.replaceChildren(h('h1', null, 'Land not found'),
     h('p', null, h('a', { href: '#/land-pools' }, '← Back to Land Pools')));
   const info = landInfo(land, cards);
-  const pool = cards.filter(c => c.landSet === info.landSet && !c.token)
-    .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
+  const byCost = (a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name));
+  const pool = cards.filter(c => c.landSet === info.landSet && !c.token).sort(byCost);
+  // A pool can carry correspondence-only alternates (corrOnly): cards that exist
+  // ONLY in the play-by-mail format, where the pool conjures/discovers them
+  // instead of its banned counter-cards. Show them in their own section so the
+  // regular pool size reads true.
+  const regular = pool.filter(c => !c.corrOnly);
+  const corr = pool.filter(c => c.corrOnly);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'land-pools') return;
   await CardArt.preloadArt([land.id, ...pool.map(c => c.id)]);
   const face = CardArt.drawCardFace(land); face.className = 'wiki-face-big';
   const tapLines = (land.description || '').split('\n').filter(Boolean);
+  const countText = corr.length
+    ? regular.length + ' regular + ' + corr.length + ' correspondence-only'
+    : pool.length + ' cards in pool';
+  const gridSection = (title, note, group) => h('section', { class: 'lp-pool-section' },
+    h('h2', null, title, ' ', h('span', { class: 'num' }, '(' + group.length + ')')),
+    note ? h('p', { class: 'muted' }, note) : null,
+    h('div', { class: 'card-grid size-medium' }, ...group.map(cardTile)));
   content.replaceChildren(
     h('p', { class: 'lp-back' }, h('a', { href: '#/land-pools' }, '← All Land Pools')),
     h('div', { class: 'lp-detail-head' },
       h('div', { class: 'lp-detail-face' }, face),
       h('div', { class: 'lp-detail-info' },
         h('h1', null, land.name),
-        h('div', { class: 'lp-detail-meta' }, colorPips(info.colors), h('span', { class: 'lp-count' }, pool.length + ' cards in pool')),
+        h('div', { class: 'lp-detail-meta' }, colorPips(info.colors), h('span', { class: 'lp-count' }, countText)),
         h('ul', { class: 'lp-taps' }, ...tapLines.map(t => h('li', null, t))))),
-    pool.length ? h('div', { class: 'card-grid size-medium' }, ...pool.map(cardTile))
-      : h('p', { class: 'muted' }, 'This land has no pool cards yet.'));
+    !pool.length ? h('p', { class: 'muted' }, 'This land has no pool cards yet.')
+      : corr.length
+        // split: regular pool first, then the correspondence-only alternates
+        ? h('div', null,
+            gridSection('Pool cards', null, regular),
+            gridSection('Correspondence-only', 'These exist ONLY in the play-by-mail format, where this pool conjures/discovers them instead of its banned counter-cards.', corr))
+        // no alternates: a single flat grid, as before
+        : h('div', { class: 'card-grid size-medium' }, ...regular.map(cardTile)));
 }
 
 // ---- Correspondence (play-by-mail) format: countering is banned; the Island
