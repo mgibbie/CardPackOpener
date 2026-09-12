@@ -7,6 +7,7 @@ import * as MPX from './mpmode.js';
 import { keywordsFor, richHtml } from './keywords.js';
 import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
+import { createRenderer } from './webgl-guard.js';
 
 // test-realm mode: packs are earned from dungeon runs and rolled server-side
 const MP_ON = MPX.mpMode();
@@ -16,7 +17,10 @@ let mpState = null; // the post-open account state (collection drives the NEW!/d
 
 const container = document.getElementById('scene');
 const DPR = Math.min(window.devicePixelRatio || 1, 2); // DPR-3 phones: 2x is visually identical at ~half the fill cost
-const renderer = new THREE.WebGLRenderer({ antialias: DPR < 2, powerPreference: 'high-performance' });
+// createRenderer (webgl-guard.js): when the browser can't give us a WebGL 2
+// context this used to throw silently at module top level — the page showed
+// the static HUD and nothing else. Now it explains + beacons, then rethrows.
+const renderer = createRenderer(THREE, { antialias: DPR < 2, powerPreference: 'high-performance' });
 renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
 container.appendChild(renderer.domElement);

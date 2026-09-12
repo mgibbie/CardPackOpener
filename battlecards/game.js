@@ -21,6 +21,7 @@ import { safeLoad, safeSave } from './safestore.js';
 import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
+import { createRenderer } from './webgl-guard.js';
 
 // small "what does this keyword do" lines shown beneath a card's rules text
 function keywordLinesHtml(card) {
@@ -322,7 +323,10 @@ const container = document.getElementById('scene');
 // cap the drawbuffer at 2x: DPR-3 phones would otherwise rasterize ~3.5x the
 // pixels for no visible gain, and MSAA on top of >=2x supersampling is waste
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
-const renderer = new THREE.WebGLRenderer({ antialias: DPR < 2, powerPreference: 'high-performance' });
+// createRenderer (webgl-guard.js): when the browser can't give us a WebGL 2
+// context this used to throw silently at module top level — the page showed
+// the static HUD and nothing else. Now it explains + beacons, then rethrows.
+const renderer = createRenderer(THREE, { antialias: DPR < 2, powerPreference: 'high-performance' });
 renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
 // the render loop idles when the table is still (see animate()); anything that
