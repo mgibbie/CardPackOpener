@@ -3547,6 +3547,7 @@ export function heroAttack(state, pi, target) {
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
+			if (w && has(w, KW.FRIGID) && !isDead(defender)) maybeFreeze(state, defender); // Frigid weapon: 50% to Freeze a survivor
 			// cleaving weapons splash the defender's board neighbors
 			if (w && (has(w, KW.CLEAVE) || w.cleaveThisTurn)) { // Reaper's Scythe: Cleave until end of turn
 				const db = state.players[target.player].board;
