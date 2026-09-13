@@ -44,10 +44,10 @@ for (const c of pool) {
 }
 
 // ---- lifegain engines ----
-// welcome: gain 1 life whenever you summon a creature
+// welcome: Alliance — gain 2 Life whenever you play another creature
 { const st = game(); st.players[0].life = 20; play(st, 0, 'ajani_welcome', null);
   play(st, 0, '_v', null);
-  ok('Ajani’s Welcome gains 1 life on a summon', st.players[0].life === 21, st.players[0].life); }
+  ok('Ajani’s Welcome (Alliance) gains 2 Life when you play a creature', st.players[0].life === 22, st.players[0].life); }
 // mantra: Cat anthem +1/+1
 { const st = game(); play(st, 0, 'ajani_mantra', null); const cat = put(st, 0, '_cat'); E.recomputeAuras(st);
   ok('Ajani’s Mantra gives your Cats +1/+1', cat.attack === 3 && E.hp(cat) === 3, [cat.attack, E.hp(cat)]); }
