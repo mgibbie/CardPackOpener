@@ -23,8 +23,12 @@ ok('a passive treasure still says "Passive" (even if it somehow has equip)', pla
 ok('a weapon says "Hero Weapon"', plateLabelFor({ type: 'weapon' }) === 'Hero Weapon');
 ok('a location says "Location"', plateLabelFor({ type: 'location' }) === 'Location');
 ok('a creature shows its tribe', plateLabelFor({ type: 'creature', tribe: 'Mech' }) === 'Mech');
-ok('a school spell says "<School> Spell"', plateLabelFor({ type: 'sorcery', tribe: 'Frost' }) === 'Frost Spell');
-ok('a school-less spell names its type', plateLabelFor({ type: 'instant' }) === 'Instant');
+// a spell with a school shows a "<Type> - <School>" type line
+ok('a Frost sorcery reads "Sorcery - Frost"', plateLabelFor({ type: 'sorcery', tribe: 'Frost' }) === 'Sorcery - Frost');
+ok('a Frost instant reads "Instant - Frost"', plateLabelFor({ type: 'instant', tribe: 'Frost' }) === 'Instant - Frost');
+ok('a Fire sorcery reads "Sorcery - Fire"', plateLabelFor({ type: 'sorcery', tribe: 'Fire' }) === 'Sorcery - Fire');
+ok('a school secret reads "Secret - Shadow"', plateLabelFor({ type: 'secret', tribe: 'Shadow' }) === 'Secret - Shadow');
+ok('a school-less instant names its type', plateLabelFor({ type: 'instant' }) === 'Instant');
 ok('a school-less sorcery names its type', plateLabelFor({ type: 'sorcery' }) === 'Sorcery');
 ok('null card -> no plate', plateLabelFor(null) === null);
 
@@ -38,6 +42,23 @@ for (const c of equipment) {
 // the two just-converted ones are covered by the loop, but assert explicitly
 ok('Lightning Greaves reads the Equipment line', plateLabelFor(raw.cards.find(c => c.id === 'wastes_lightning_greaves')) === 'Artifact - Equipment');
 ok('Swiftfoot Boots reads the Equipment line', plateLabelFor(raw.cards.find(c => c.id === 'wastes_swiftfoot_boots')) === 'Artifact - Equipment');
+
+// ---- every real school spell reads "<Type> - <School>" ----
+const SCHOOLS = ['Arcane', 'Fel', 'Fire', 'Frost', 'Holy', 'Nature', 'Shadow', 'Song'];
+const SPELL = new Set(['sorcery', 'instant', 'secret', 'trap']);
+const schoolSpells = raw.cards.filter(c => SPELL.has(c.type) && SCHOOLS.includes(c.tribe));
+ok('there are school spells to check', schoolSpells.length > 0, schoolSpells.length);
+let badSpell = null;
+for (const c of schoolSpells) {
+	const want = `${c.type.charAt(0).toUpperCase() + c.type.slice(1)} - ${c.tribe}`;
+	if (plateLabelFor(c) !== want) { badSpell = { id: c.id, got: plateLabelFor(c), want }; break; }
+}
+ok('every school spell reads "<Type> - <School>"', badSpell === null, badSpell);
+// no school spell shows the old "<School> Spell" form anymore
+ok('no school spell still reads "<School> Spell"', !schoolSpells.some(c => / Spell$/.test(plateLabelFor(c) || '')));
+// spot-check a real Frost sorcery and a real Fire spell
+ok('Fireball reads "Instant - Fire"', plateLabelFor(raw.cards.find(c => c.id === 'fireball')) === 'Instant - Fire');
+ok('Flamestrike reads "Sorcery - Fire"', plateLabelFor(raw.cards.find(c => c.id === 'flamestrike')) === 'Sorcery - Fire');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
