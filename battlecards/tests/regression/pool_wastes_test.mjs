@@ -21,7 +21,7 @@ ok('spans >=6 card types incl weapon/artifact/location/enchantment', types.size 
 const kws = new Set(pool.flatMap(c => c.keywords || []));
 ok('uses >=6 distinct keywords', kws.size >= 6, [...kws]);
 ok('stays colorless + neutral + no rarity key', pool.every(c => Array.isArray(c.colors) && c.colors.length === 0 && c.cardClass === 'neutral' && !('rarity' in c)));
-const MECH = ['effects', 'ongoing', 'ongoings', 'aura', 'taps', 'tapAbility', 'deathrattle', 'static', 'statics', 'secret', 'quest', 'choices', 'counterSpell', 'counter', 'selfScale', 'costMod', 'altCost', 'xSpell'];
+const MECH = ['effects', 'ongoing', 'ongoings', 'aura', 'taps', 'tapAbility', 'deathrattle', 'static', 'statics', 'secret', 'quest', 'choices', 'counterSpell', 'counter', 'selfScale', 'costMod', 'altCost', 'xSpell', 'equip'];
 const hasFx = c => MECH.some(f => c[f] != null && !(Array.isArray(c[f]) && c[f].length === 0));
 ok('no blank/vanilla cards remain', pool.every(c => hasFx(c) || (c.keywords || []).length > 0), pool.filter(c => !hasFx(c) && !(c.keywords || []).length).map(c => c.id));
 
@@ -135,7 +135,7 @@ const scions = (st, pi) => st.players[pi].board.filter(c => c.name === 'Eldrazi 
   ok('Juggernaut is Impulsive + Rush', (byId.wastes_juggernaut.keywords || []).includes('impulsive'), byId.wastes_juggernaut.keywords);
   ok('Steel Hellkite breathes fire', (byId.wastes_steel_hellkite.keywords || []).includes('firebreathing'), byId.wastes_steel_hellkite.keywords);
   ok('Walking Ballista has its repeatable ping', Array.isArray(byId.wastes_walking_ballista.activated) && byId.wastes_walking_ballista.activated[0].repeatable === true, byId.wastes_walking_ballista.activated);
-  ok('Ornithopter is a Thopter lord', byId.wastes_ornithopter.aura && byId.wastes_ornithopter.aura.tribe === 'Thopter', byId.wastes_ornithopter.aura);
+  ok('Ornithopter is a Mech lord (+1 Attack)', byId.wastes_ornithopter.aura && byId.wastes_ornithopter.aura.tribe === 'Mech' && byId.wastes_ornithopter.aura.attack === 1, byId.wastes_ornithopter.aura);
   ok('Scour from Existence exiles', byId.wastes_scour_from_existence.effects[0].type === 'exile');
   ok('Duplicant exiles', byId.wastes_duplicant.effects[0].type === 'exile'); }
 

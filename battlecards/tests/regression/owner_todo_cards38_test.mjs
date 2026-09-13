@@ -52,15 +52,13 @@ ok('Armored Wolf-Rider reads "Taunt.\\nYour Beasts cost (1) less."', cardsById.a
 	ok('Battlecry dealt 1 to the enemy hero', st.players[1].life === life0 - 1, [life0, st.players[1].life]);
 }
 
-// ---------- Lightning Greaves: "Target creature gains Rush" ----------
+// ---------- Lightning Greaves ----------
+// NOTE: batch 38 first reworded this to the Rush-granting SPELL below. It was later
+// (batch 49, 2026-09-13) converted into an Equipment; the deep behavior test now lives
+// in owner_todo_cards49_test.mjs. This just confirms it still grants Rush in its new form.
 {
 	const c = cardsById.wastes_lightning_greaves;
-	ok('reads "Target creature gains Rush."', c.description === 'Target creature gains Rush.', JSON.stringify(c.description));
-	const st = game();
-	const tgt = put(st, 0, E.instantiate({ id: 'v', name: 'V', type: 'creature', cost: 2, attack: 2, health: 2 }, 0));
-	const sp = E.instantiate(c, 0); sp.zone = 'hand'; st.players[0].hand.push(sp); st.players[0].mana.cur = 10;
-	E.playCard(st, 0, sp.uid, { type: 'creature', uid: tgt.uid, player: 0 }, null, 0);
-	ok('the target creature gained Rush', (tgt.keywords || []).includes('rush'), JSON.stringify(tgt.keywords));
+	ok('Lightning Greaves grants Rush (now via Equipment)', c.type === 'artifact' && (c.equip?.keywords || []).includes('rush'), JSON.stringify({ type: c.type, equip: c.equip }));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
