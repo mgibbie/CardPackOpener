@@ -49,7 +49,8 @@ const vanillaFoe = (st, n, hp = 5) => { const c = E.instantiate({ id: 'van' + n,
 	ok('Swing froze the second enemy creature', !!e2.frozen, e2.frozen);
 }
 
-// ---------- Frigid on a weapon: ~50% to Freeze a creature that SURVIVES the swing ----------
+// ---------- Frigid on a weapon: ALWAYS Freeze a creature that SURVIVES the swing ----------
+// (owner ruling 2026-09-14: Frigid is now 100%; deep coverage in frigid_keyword_test.)
 {
 	// isolate Frigid from the Swing effect using a plain frigid weapon vs a fat survivor
 	cardsById.t_frigid_w = { id: 't_frigid_w', name: 'T Frigid', type: 'weapon', cost: 1, attack: 1, durability: 99, keywords: ['frigid'] };
@@ -62,10 +63,7 @@ const vanillaFoe = (st, n, hp = 5) => { const c = E.instantiate({ id: 'van' + n,
 		E.heroAttack(st, 0, { type: 'creature', uid: foe.uid, player: 1 });
 		if (foe.frozen) froze++;
 	}
-	// deterministic across fixed seeds: proves the wiring fires (froze>0) and is a
-	// coin-flip, not a guaranteed freeze (froze<trials). Wide band survives RNG drift.
-	ok('Frigid weapon sometimes freezes a survivor (wiring connected)', froze > 5, froze + '/' + trials);
-	ok('Frigid weapon does NOT always freeze (it is 50%, not Freezer)', froze < trials - 5, froze + '/' + trials);
+	ok('Frigid weapon freezes a survivor 100% of the time (40/40)', froze === trials, froze + '/' + trials);
 	delete cardsById.t_frigid_w;
 }
 
