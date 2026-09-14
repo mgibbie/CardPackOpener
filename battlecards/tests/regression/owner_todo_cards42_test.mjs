@@ -15,17 +15,14 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 
 ok('Bellows Lizard is a Beast', cardsById.bellows_lizard.tribe === 'Beast', cardsById.bellows_lizard.tribe);
 
-// ---------- Bontu's Cartouche: +1/+1 & Lifesteal ----------
+// ---------- Bontu's Cartouche ----------
+// NOTE: batch 42 first set this to +1/+1 & Lifesteal. It was later (batch 53,
+// 2026-09-14) bumped to +3/+3 and broadened to any creature; the deep behavior
+// test now lives in owner_todo_cards53_test.mjs. This just confirms it still
+// buffs & grants Lifesteal in its current form.
 {
 	const c = cardsById.bontus_cartouche;
-	ok('reads "Target creature gains +1/+1 & Lifesteal."', c.description === 'Target creature gains +1/+1 & Lifesteal.', JSON.stringify(c.description));
-	ok('buffs +1/+1 and grants Lifesteal', c.effects?.[0]?.type === 'buff' && c.effects[0].attack === 1 && c.effects[0].health === 1 && c.effects[0].grant === 'lifesteal', JSON.stringify(c.effects));
-	const st = game();
-	const tgt = put(st, 0, E.instantiate({ id: 'v', name: 'V', type: 'creature', cost: 2, attack: 2, health: 2 }, 0));
-	const sp = E.instantiate(c, 0); sp.zone = 'hand'; st.players[0].hand.push(sp); st.players[0].mana.cur = 10;
-	E.playCard(st, 0, sp.uid, { type: 'creature', uid: tgt.uid, player: 0 }, null, 0);
-	ok('the target got +1/+1 (2/2 -> 3/3)', tgt.attack === 3 && tgt.maxHealth === 3, [tgt.attack, tgt.maxHealth]);
-	ok('the target gained Lifesteal', (tgt.keywords || []).includes('lifesteal'), JSON.stringify(tgt.keywords));
+	ok('Cartouche buffs & grants Lifesteal', c.effects?.[0]?.type === 'buff' && c.effects[0].attack === 3 && c.effects[0].health === 3 && c.effects[0].grant === 'lifesteal', JSON.stringify(c.effects));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

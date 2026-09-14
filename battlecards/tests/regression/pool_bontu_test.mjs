@@ -63,10 +63,10 @@ for (const c of pool) {
   play(st, 0, 'ambition_of_bontu', null);
   ok('Ambition draws 2 cards', st.players[0].hand.length === h0 + 2, [h0, st.players[0].hand.length]); }
 
-// ---- cartouche: +1/+1 and Lifesteal ----
+// ---- cartouche: +3/+3 and Lifesteal ----
 { const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack;
   play(st, 0, 'bontus_cartouche', { type: 'creature', uid: v.uid, player: 0 });
-  ok('Cartouche gives +1/+1 and Lifesteal', v.attack === a0 + 1 && has(v, 'lifesteal'), [a0, v.attack]); }
+  ok('Cartouche gives +3/+3 and Lifesteal', v.attack === a0 + 3 && has(v, 'lifesteal'), [a0, v.attack]); }
 
 // ---- scarab swarm location: tap for an Insect ----
 { const st = game(); play(st, 0, 'bontus_scarab_swarm', null); const loc = st.players[0].board.find(c => c.id === 'bontus_scarab_swarm'); const i0 = st.players[0].board.filter(c => c.name === 'Insect').length;
