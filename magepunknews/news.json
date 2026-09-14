@@ -1,6 +1,166 @@
 {
-	"generated": "2026-09-11",
+	"generated": "2026-09-14",
 	"entries": [
+		{
+			"sha": "411c8dd",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "Frigid: freeze 100% of the time; freeze creatures, planeswalkers & players (#446)",
+			"body": "Owner ruling: Frigid always freezes (was a 50% coin flip) and now freezes any\ncharacter that survives combat with it — creature, planeswalker, or player.\n\nEngine (core.js):\n- Removed the 50% maybeFreeze gate; the creature-combat and weapon Frigid sites\n  now freeze the survivor 100% of the time (freezeCreature directly).\n- Added hero freeze support: player.frozen (a turn number). A Frigid creature\n  or weapon that strikes a player freezes them; canHeroAttack now returns false\n  for a Frozen hero (Hero Power still works). freezeHero() helper.\n- Added planeswalker freeze support: walker.frozen. A Frigid strike on a walker\n  (that survives) freezes it; canUseWalker gates on .frozen. freezeWalker().\n- Wired Frigid into the creature-vs-hero, creature-vs-walker, weapon-vs-hero and\n  weapon-vs-walker combat branches (creature-vs-creature and weapon-vs-creature\n  already existed).\n- Thaw: heroes and walkers thaw at the end of their controller's next turn, same\n  timing as creatures. player.frozen round-trips in snapshots (whole-object).\n\nkeywords.js glossary updated + learn page regenerated.\n\nTests: frigid_keyword_test rewritten for 100% + hero/walker/player freeze (and\nthaw); owner_todo_cards47's weapon band updated to assert 100%. Suite 541/541.",
+			"cards": []
+		},
+		{
+			"sha": "8df1984",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 54: Duress target-opponent discard + Bitterblossom buff (#445)",
+			"body": "Two cards from the wiki owner inbox:\n- Duress: reworded to \"Target opponent discards a card at random.\" Uses the\n  target-player discard (auto-targets the single opponent in 1v1, prompts a\n  pick in a free-for-all) instead of the old all-opponents enemy-discard.\n- Bitterblossom: now loses 2 Life (was 1) each turn start and the 1/1 Faerie\n  Rogue it makes has Lifesteal.\n\nRegression: owner_todo_cards54_test.mjs fires both — Duress discards one card\nfrom the lone opponent in 1v1 (no lingering pick) and queues a target-player\npick in a 3-player game; Bitterblossom loses 2 Life and spawns a Lifesteal\nFaerie. Suite 541/541.",
+			"cards": []
+		},
+		{
+			"sha": "8ea021f",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 53: Sword of Fire and Ice Swing + Bontu's Cartouche +3/+3 (#444)",
+			"body": "Two cards from the wiki owner inbox:\n- Sword of Fire and Ice: reworded to \"Swing: Draw a card & deal 2 damage to\n  each opponent.\" (mechanic unchanged; effects reordered to match \"draw then\n  damage\").\n- Bontu's Cartouche: +1/+1 -> +3/+3, and its target broadened from\n  friendly-creature to ANY creature to match its \"Target creature gains\"\n  wording (the data previously contradicted the printed text; same convention\n  as blessing_of_might / fortify / ajani_grace).\n\nUpdated two pre-existing tests for the Cartouche bump: owner_todo_cards42's\nblock is superseded by batch 53 (light check + note); pool_bontu asserts +3/+3.\n\nRegression: owner_todo_cards53_test.mjs fires both — the Sword's Swing draws\nand deals 2 to each opponent; the Cartouche gives +3/+3 & Lifesteal and now\nlists enemy creatures as legal targets. Suite 540/540.",
+			"cards": []
+		},
+		{
+			"sha": "08dbdf7",
+			"date": "2026-09-13",
+			"kind": "patch",
+			"title": "owner_todo batch 52: give Warping Wail the Fel spell school (#443)",
+			"body": "Warping Wail (wastes_warping_wail) gains the Fel spell school (tribe \"Fel\").\nThe damage is unchanged; with the school its plate now reads \"Sorcery - Fel\"\nand it counts as a Fel spell for school-matters effects.\n\nRegression: owner_todo_cards52_test.mjs fires it — the plate reads\n\"Sorcery - Fel\" and it still deals 3 damage to a creature. Suite 539/539.",
+			"cards": []
+		},
+		{
+			"sha": "47700ce",
+			"date": "2026-09-13",
+			"kind": "patch",
+			"title": "owner_todo batch 51: Bottle Gnomes compound tribe + Pilgrim's Eye Mech (#441)",
+			"body": "Two Wastes-pool cards from the wiki owner inbox:\n- Bottle Gnomes: tribe -> \"Mech Construct Gnome\" (compound; mechanic unchanged).\n- Pilgrim's Eye: retribe Thopter -> Mech; reword \"a Mana Crystal\" -> \"1 Mana\n  Crystal\" (the effect was already gain-mana value:1, so pure wording).\n\nRegression: owner_todo_cards51_test.mjs fires both — Bottle Gnomes reports the\n3-word tribe and still heals 3 Life on Battlecry; Pilgrim's Eye is a Mech, keeps\nElusive, and its Battlecry still grants a temporary mana crystal. Suite 538/538.",
+			"cards": []
+		},
+		{
+			"sha": "d253537",
+			"date": "2026-09-13",
+			"kind": "patch",
+			"title": "owner_todo batch 50: Skullclamp Avenge + Swiftfoot Boots Equipment + Grafted Wargear Swing (#439)",
+			"body": "Three more Wastes-pool cards (filed while batch 49 was in flight):\n- Skullclamp: \"Avenge 1: Draw a card.\" (weapon; ongoings friendly-creature-died\n  every:1 -> draw). Formalizes its every-death draw as Avenge 1.\n- Swiftfoot Boots: Sorcery -> Equipment (artifact + equip payload) granting\n  Elusive; Equip (1).\n- Grafted Wargear: reworded to \"Swing: Creatures you control gain +1 Attack.\"\n  (mechanic unchanged: hero-attacks +1/+0 to friendly creatures).\n\nRegression: owner_todo_cards50_test.mjs fires all three — Skullclamp draws on\na friendly death, Swiftfoot Boots equips and grants Elusive, Grafted Wargear's\nSwing buffs your creatures +1 Attack. Suite 536/536.",
+			"cards": []
+		},
+		{
+			"sha": "dc7651c",
+			"date": "2026-09-13",
+			"kind": "patch",
+			"title": "owner_todo batch 49: Ornithopter -> Mech lord + Lightning Greaves -> Equipment (#438)",
+			"body": "Two Wastes-pool cards from the wiki owner inbox:\n- Ornithopter: retribe Thopter -> Mech; lord aura now grants \"+1 Attack\" to\n  your other Mechs (keeps Elusive).\n- Lightning Greaves: converted from a Rush-granting Sorcery into an Equipment\n  (artifact + equip payload) that grants Rush; Equip (0), matching the game's\n  existing Equipment shape (bonesplitter / basilisk_collar / loxodon_warhammer).\n\nUpdated two pre-existing tests for the redesign:\n- owner_todo_cards38: its Lightning Greaves block tested the old Rush spell;\n  now points at the new Equipment (deep test lives in batch 49).\n- pool_wastes: added `equip` to the non-vanilla mechanic list; Ornithopter is\n  now asserted as a Mech lord.\n\nRegression: owner_todo_cards49_test.mjs fires both — Ornithopter buffs other\nMechs (+1 Atk) but not itself/non-Mechs; Lightning Greaves plays to the\nartifact zone, equips for 0, grants Rush. Suite 535/535.",
+			"cards": []
+		},
+		{
+			"sha": "1813c49",
+			"date": "2026-09-13",
+			"kind": "patch",
+			"title": "owner_todo batch 48: Doomed Traveler trim + Ajani's Welcome/Grace (#437)",
+			"body": "Three cards from the wiki owner inbox:\n- Doomed Traveler: trim text to \"Deathrattle: Create a 1/1 Spirit.\"\n  (mechanic unchanged).\n- Ajani's Welcome: \"Alliance: Gain 2 Life.\" Switched the trigger from\n  `summoned` (+1) to `creature-played` (+2) — Alliance is defined as \"each\n  time you play another creature,\" matching the 42 existing Alliance cards.\n- Ajani's Grace: \"Target creature gains +0/+3 & Divine Shield.\" Reworded AND\n  broadened the target from friendly-creature to ANY creature, matching the\n  \"Target creature gains\" convention (blessing_of_might / fortify).\n\npool_ajani_test updated for the new Alliance +2 behavior.\n\nRegression: owner_todo_cards48_test.mjs fires all three (Spirit token on\ndeath, +2 Life per creature played, +0/+3 & Divine Shield targetable on any\ncreature). Suite 534/534.",
+			"cards": []
+		},
+		{
+			"sha": "f96ae4b",
+			"date": "2026-09-12",
+			"kind": "patch",
+			"title": "owner_todo batch 47: Sage Scry caps + Gandalf's Glamdring Frigid (#436)",
+			"body": "Two cards from the wiki owner inbox:\n- Sage's Row Savant: capitalize Scry (\"Battlecry: Scry 2.\").\n- Gandalf's Glamdring: \"Frigid & Swift.\\nSwing: Freeze each creature you\n  don't control.\" Adds the Frigid keyword; the Swing freeze is the existing\n  hero-attacks ongoing (unchanged, just reworded to Swing wording).\n\nEngine: Frigid on a WEAPON was inert (only creature combat checked it). Wired\nit into the hero-attack path next to the Freezer check — a Frigid weapon now\nhas a 50% chance to Freeze a creature that survives the swing (maybeFreeze),\nmatching the glossary. Keeps the card honest (\"Frigid\" now does something).\n\nRegression: owner_todo_cards47_test.mjs fires all three — Sage queues Scry 2,\nGlamdring's Swing freezes every enemy creature, and a plain Frigid weapon\nfreezes a survivor ~50% of the time (banded across fixed seeds). Suite 533/533.",
+			"cards": []
+		},
+		{
+			"sha": "088adc8",
+			"date": "2026-09-12",
+			"kind": "patch",
+			"title": "owner_todo batch 46: Riftwing bounce reword + Rootwalla Firebreathing (#434)",
+			"body": "Two wubrg creatures from the wiki owner inbox:\n- Riftwing Cloudskate: reword to \"Bounce target creature you don't control\"\n  (the MTG wording). Mechanic unchanged — enemy-creature already means a\n  creature you don't control.\n- Blazing Rootwalla: \"Firebreathing & Rush.\" The Firebreathing keyword\n  auto-grants the repeatable (1):+1 Attack, so the custom (1):+2/+0 activated\n  ability is dropped (Firebreathing is the faithful MTG pump).\n\nRegression: owner_todo_cards46_test.mjs fires both (Riftwing bounces an\nenemy creature back to hand; Rootwalla pumps +1 per activation, repeatable).\nSuite 532/532.",
+			"cards": []
+		},
+		{
+			"sha": "6c0fd86",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Shared replay links open without logging in (#433)",
+			"body": "replay-get has always been a PUBLIC endpoint (verified live: a\ntokenless request gets a clean 404, not a 401) — but game.js's\ntop-level requireLogin() bounced every logged-out visitor to /login/\nbefore the ?rshare= path could run, so share-link recipients hit a\nlogin wall.\n\nFix: exempt the read-only viewer modes from the login gate — ?rshare=\n(a shared replay) and ?replay= (this device's own local tapes).\nEverything account-shaped (runs, packs, PvP, spectate) stays gated.\n\nHeadless-verified: a fresh tokenless visitor on ?rshare= stays on the\ngame page, replay-get fires, the tape loads and the replay controls\nrender with zero errors. attack_feedback_smoke gains a logged-out\nsection (no login bounce + the replay path runs). Smoke 32/32; suite\n531/531.",
+			"cards": []
+		},
+		{
+			"sha": "b75ca1e",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Telegraph every kind of targeting, color-coded (#432)",
+			"body": "Extends the attack telegraphs to ALL targeted actions, per request:\n\n- Engine: the 'play', 'heroPowerUsed', 'landTapped', 'artifactTapped'\n  and 'walkerAbility' emits now carry their target (events are\n  client-only — never serialized), so the client can forecast them.\n- Live enemy turns: a targeted spell/battlecry play, hero power, land\n  or artifact tap, and planeswalker ability each telegraph for ~520ms\n  before resolving — the line runs from the acting CARD (falling back\n  to the actor's hero if its entity is gone) to the victim.\n- COLOR-CODED: hostile telegraphs stay attack-red; ones aimed at the\n  actor's OWN side (buffs, heals, self-enchants) draw GREEN so they\n  don't read as incoming damage. paintArrow takes a palette; the\n  interactive targeting arrow keeps its red.\n- Replays: all these actions record into the frame fx (c/p entries\n  beside the attack a/h ones) with the friendly flag baked in, and\n  play back with the same telegraph beat + colors. Old tapes and the\n  new-entry-unaware... (there are none — playback maps every shape).\n\nattack_feedback_smoke: +3 asserts (a targeted enemy spell telegraphs,\naimed at its victim, hostile stays red; polls filter by victim so a\nprior section's expiring telegraph can't false-match). Smokes 29/29 +\n10/10; suite 531/531.",
+			"cards": []
+		},
+		{
+			"sha": "37315c1",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Attack telegraphs: the red line forecasts attacks (enemy turns + replays)",
+			"body": "User request: replays (and the opponent's turn) are hard to follow —\nattacks just materialize as aftermath. Now the red targeting line\nbriefly telegraphs each attack BEFORE it lands:\n\n- ENEMY TURNS: an opponent's creature attack (and hero-weapon swing)\n  first shows the chevron arrow attacker -> target for ~520ms, holds\n  the attacker in place (lunge start deferred; negative-t hold in the\n  animate loop), then plays the usual lunge + damage. The player's own\n  attacks skip it — they just aimed that line themselves.\n- REPLAYS: frames now carry the attacks they resolve (a tiny fx list\n  captured from the event queue via pendingFx -> Rec.capture). During\n  auto-play, a frame with attacks gets a one-tick HOLD on the current\n  board with telegraph arrows (both sides' attacks — watchers want\n  them all) + the attack sting, then the outcome frame renders.\n  Scrubbing skips telegraphs; rendering a frame consumes them.\n\nPlumbing: paintArrow(ctx,sx,sy,tx,ty) extracted from drawTargetArrow\nso the interactive arrow (target = cursor) and telegraphs (target =\nvictim) share one renderer; telegraphs keep the idle-gate awake and\nexpire by timestamp. Old tapes without fx simply play as before.\n\nattack_feedback_smoke: +3 asserts (enemy attack raises a telegraph\nanchored at the attacker; the attack still resolves). Suite 531/531.",
+			"cards": []
+		},
+		{
+			"sha": "2b0db69",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Short replay links: /r/<id>, 8-hex ids, and the Replays-page repack gap (#431)",
+			"body": "The user's 413: sharing an old replay from the REPLAYS PAGE still\nuploaded the fat v1 code — repackSlim needs the card db and only the\ngame page loaded it, so the repack silently no-opped, the ~2.4MB body\nhit MAX_BODY_BYTES (413), and the fallback copied the giant code again.\n\n- replays.js lazily loads cards.json (first Share/Import click) and\n  hands it to the recorder, so old tapes re-slim there too.\n- Share links are now genuinely short: a /r/* Pages redirect (302 —\n  tapes GC in 30 days) to the ?rshare= viewer, and replay-put mints\n  8-hex ids (regex already accepted 8-20; old 12-hex links keep\n  working). Copied link: michaelgibalerio.com/r/xxxxxxxx (~39 chars\n  with the scheme, 31 without).\n\nSuite 531/531 (server_replay_test + replayrec_test green).",
+			"cards": []
+		},
+		{
+			"sha": "28958af",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Slim replay tapes (v2): share links fit again (#429)",
+			"body": "\"Why are the replay URLs gigantic?\" — because they weren't URLs at\nall. A finished game's tape measured 38.6MB of JSON (~2.4MB packed):\nevery frame stores every card as a FULL ~100-field instance, though\nalmost all fields equal the card's defaults. That blew the 800KB\nreplay-put cap, so the short ?rshare= link upload was silently\nrejected and \"Copy replay link\" fell back to copying the entire\nmulti-megabyte replay CODE.\n\nv2 slim tapes: at save, each card shrinks to {id, uid} + only the\nfields that differ from a fresh instance of its def (baseline cached\nper def); getReplay/fetchSharedReplay inflate frames back to full\nsnapshots before the renderer sees them. The measured 154-frame game\ndrops 2429KB -> 603KB packed (the unit fixture: 141KB -> 7KB), safely\nunder the cap. Old v1 tapes (local and already-shared) read unchanged;\ntapes recorded without the card db just stay v1.\n\nAlso: REPLAY_MAX_BYTES 800KB -> 1.5MB for marathon-FFA headroom, and\nthe code-copy fallback now says WHEN a replay was genuinely too large\nfor a link instead of implying you're logged out.\n\nreplayrec_test grows a v2 section: exact per-frame digest fidelity\nthrough slim -> pack -> unpack -> inflate -> fromSnapshot, plus the\nsize-win assertion. Suite 531/531.",
+			"cards": []
+		},
+		{
+			"sha": "829501c",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Honest play-refusal hints: stop blaming mana for everything (#428)",
+			"body": "User report: \"not enough mana for Arrest\" at 3 mana with a printed\ncost of (3). The mana was fine — Arrest requires an enemy-creature\ntarget and the only enemy creature was a 2/1 ELUSIVE Crebain (spells\ncan't target it), so canPlay refused on target legality. The drag\nhint's catch-all blamed mana for every canPlay refusal.\n\nNew whyCantPlay(card) diagnoses the real reason, in order:\n- true mana shortfall — and when the LIVE cost exceeds the printed\n  cost (taxes/auras), it says \"costs (N) right now\"\n- a required target with no legal candidates — \"no legal target for\n  X\", plus \"(Elusive/Stealth creatures can't be targeted)\" when enemy\n  creatures exist but none are targetable\n- a non-empty stack/priority window\n- a generic \"can't be played right now\" for the tail (parity locks,\n  duplicate secrets, full trap row, ...)\n\nattack_feedback_smoke drives the exact report: Arrest at exactly 3\nmana vs a lone Elusive Crebain, real hand-drag, and asserts the hint\nnames target legality and never mentions mana (23/23; the harness now\nraises a tucked hand before grabbing, like a player). Gesture smoke\n10/10.",
+			"cards": []
+		},
+		{
+			"sha": "a52978a",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Fix the displaced targeting arrow on high-DPI displays (#427)",
+			"body": "THE actual root cause of every \"red line starts at the wrong place\"\nreport: the arrow overlay canvas is a REPLACED element, so its\n`position:fixed; inset:0` style never stretched it — it displayed at\nits intrinsic backing size (innerWidth x DPR), anchored top-left. On\nany devicePixelRatio != 1 display (125%/150% Windows scaling — the\nuser's machine) the ENTIRE arrow rendered at DPR x its intended\ncoordinates: tail off in empty space, head not even under the cursor.\nPlayers aim by the arrow, so clicks chased the displaced arrowhead\ninto empty field and the armed attack cancelled — \"can't attack\".\n\nMeasured proof: in both user screenshots, tail and head sit at exactly\n(true position x 1.25) and (true position x 1.5) respectively —\nmatching their display scaling. Every prior harness sampled the\ncanvas BACKING pixels (self-consistent at any DPR), which is why the\nbug survived #232/#236/#244 and yesterday's investigation; the Sep-3\n\"stale cache\" resolution was really Ctrl+0 landing the effective DPR\non 1.\n\nFix: pin the canvas's CSS size to the viewport whenever the backing\nresizes (2 lines). Regression: attack_feedback_smoke gains a\ndeviceScaleFactor-1.5 scenario asserting the overlay's DISPLAYED rect\nequals the viewport and the drawn tail sits within 30px of the\nattacker (proven to FAIL on the unfixed code: rect 1920x1200 over a\n1280x800 viewport). Smokes 19/19 + 10/10.",
+			"cards": []
+		},
+		{
+			"sha": "ea7d1be",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Triple-tap artifacts + opponent-chosen discards (Relic of Sauron) (#426)",
+			"body": "Gríma Wormtongue's Relic of Sauron (me_gm_art) now triple-taps and lets the\ndiscarding opponent pick which card to discard.\n\nEngine support:\n- tapTurns (default 1): artifacts with a {T} ability can now stay tapped for\n  multiple of the owner's turns before untapping — 2 = double-tap, 3 = triple,\n  mirroring how lands/locations double-tap. Implemented with a per-artifact\n  tapCooldown counter set on tap and decremented at each of the owner's\n  turn-starts. Single-tap artifacts are unchanged (untap next turn).\n- enemy-discard gains `choose`: instead of a random discard, each opponent gets\n  a discard choice queued (state.discardQueue) — MTG-style \"discards a card\".\n  The AI auto-resolves its own; a human opponent gets the discard modal (same\n  infra as Loot). Without `choose`, discard stays random (existing cards\n  untouched).\n\nCard: me_gm_art -> tapTurns 3, \"{T}{T}{T}: ...\", enemy-discard choose:true.\n\nRegression: me_gm_art_triple_tap_test.mjs (18 assertions) covers the 3-turn\nrecharge, opponent-chosen discard + tapper draw, and guards that single-tap\nartifacts and random enemy-discard are unchanged. Suite 531/531.",
+			"cards": []
+		},
+		{
+			"sha": "2628914",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "owner_todo batch 45: reword Gríma's Night's Whisper to \"Lose 2 Life\" (#425)",
+			"body": "Gríma Wormtongue's Night's Whisper (me_gm_whisper) reworded to\n\"Draw two cards & Lose 2 Life.\" (the Sign in Blood idiom). Mechanic is\nunchanged — in this engine \"lose N Life\" is self-damage to own-hero (there\nis no distinct lose-life effect; see noxious_cadaver / obliterate), which is\nexactly what the card already did.\n\nRegression: owner_todo_cards45_test.mjs fires it (draws 2, loses exactly\n2 Life). Suite 530/530.",
+			"cards": []
+		},
+		{
+			"sha": "f07ba14",
+			"date": "2026-09-11",
+			"kind": "patch",
+			"title": "Attack UX: stale-build watchdog + speak up on every silent dead-end (#424)",
+			"body": "Investigation of the 2026-09-11 report (Middle-earth, Aragorn vs Gríma:\n\"red line starts at the wrong place, can't attack anything\"). The\nengine and gestures at HEAD are PROVABLY correct on the user's exact\nboard — a headless harness rebuilt it (buffed Rangers + Andúril vs the\n4/5 Taunt Cirith Ungol Patrol, rejuvenating anomaly) and every gesture\ncommits, with the arrow tail on the attacker. The live deploy carries\nall current markers and the error beacon logged zero exceptions. The\nscreenshot matches the 2026-09-03 incident byte for byte: a long-lived\ntab running a PRE-#232/#244 game.js from cache (drop-point arrow tail +\nhesitation-drag commits eaten). Second recurrence = the client must\ndefend itself:\n\n- STALE-BUILD WATCHDOG: capture game.js's ETag at boot; re-check on\n  refocus + every 5 minutes (HEAD, no-store). A mismatch means a deploy\n  landed under this tab — auto-reload when no fight is live (runs\n  resume), else a persistent banner asking for a hard refresh.\n- TAUNT FEEDBACK: attacking their hero behind a Taunt wall now banners\n  \"<name> has Taunt — deal with it first\" (click AND drag-release\n  paths, creature and hero-weapon attacks) instead of silently\n  cancelling; the attack stays armed on the click path.\n- ZERO-TARGET ARMING: arming a creature with no legal targets (e.g. a\n  summoning-sick Rush creature facing an empty board) is refused with\n  a banner instead of arming an unusable arrow (all arm sites route\n  through one tryArmAttack helper).\n\nattack_feedback_smoke.mjs drives the user's board headlessly: 14\nassertions (exact-board gestures, taunt explanation, armed-state\nretention, zero-target refusal). targeting_commit_smoke stays 10/10\n(an intermittent phone-touch flake in one run was re-verified 3x clean\non identical code). Suite 529/529.",
+			"cards": []
+		},
 		{
 			"sha": "a596d0a",
 			"date": "2026-09-11",
