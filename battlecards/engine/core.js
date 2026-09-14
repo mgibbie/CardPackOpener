@@ -26,7 +26,7 @@ export const KW = {
 	BASH: 'bash',         // can attack enemy artifacts as if they were 1/1 creatures
 	EPHEMERAL: 'ephemeral', // destroyed at the end of your turn
 	SMOLDERING: 'smoldering', // 50% chance to Burn any creature that survives combat with it
-	FRIGID: 'frigid',     // 50% chance to Freeze any creature that survives combat with it
+	FRIGID: 'frigid',     // Freeze any character that survives combat with it (creature / planeswalker / hero)
 	CASCADE: 'cascade',   // on cast: cast the first cheaper card off your deck free (random targets)
 };
 
@@ -44,12 +44,6 @@ function maybeBurn(state, c) {
 	c.burned = true;
 	c.attack = Math.floor((c.attack || 0) / 2);
 	emit(state, { type: 'burned', uid: c.uid, name: c.name, attack: c.attack });
-}
-// Frigid: 50% chance to Freeze a surviving combatant (a Frozen character skips
-// its next attack — same condition Freeze effects apply).
-function maybeFreeze(state, c) {
-	if (!c || c.frozen || isDead(c) || state.rng() >= 0.5) return;
-	freezeCreature(state, c);
 }
 
 // Firebreathing grants a repeatable activated ability (spend 1 mana → +1 Attack
@@ -608,6 +602,7 @@ export function createGame(cardsById, rng = Math.random, playerDeckIds = null, p
 		graveyard: [],
 		weapon: null,
 		secrets: [],
+		frozen: null,       // Frozen hero: can't attack on its owner's next turn (Frigid)
 		heroAttacksUsed: 0,
 		landsPlayedThisTurn: 0,
 		fatigue: 0, // escalates each time a draw finds deck AND graveyard empty
@@ -1041,6 +1036,24 @@ export function freezeCreature(state, c) {
 			sp.hand.push(cp); emit(state, { type: 'conjure', player: s, card: cp, color: null });
 		}
 	}
+}
+
+// Freeze a hero (player): its owner's hero can't attack on their next turn.
+// Mirrors creature freeze — `.frozen` holds the turn number, thawed at the end
+// of the owner's next turn (see the thaw loop in endTurn). Hero Power still works.
+export function freezeHero(state, pi) {
+	const p = state.players[pi];
+	if (!p || p.eliminated || p.frozen) return;
+	p.frozen = state.turnNumber;
+	emit(state, { type: 'freezeHero', player: pi });
+}
+
+// Freeze a planeswalker: it can't use a loyalty ability on its controller's next
+// turn (canUseWalker gates on `.frozen`). Same thaw timing as creatures.
+export function freezeWalker(state, w) {
+	if (!w || w.frozen) return;
+	w.frozen = state.turnNumber;
+	emit(state, { type: 'freeze', uid: w.uid });
 }
 
 // silence: strips keywords, granted states, and death effects (stat buffs stay)
@@ -3326,6 +3339,7 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		const slash = has(attacker, KW.SLASHING) ? 2 : 1; // Rampaging Ceratops: double to players
 		const dealt = damageHero(state, target.player, attacker.attack * cmult * slash, pi, has(attacker, KW.PIERCING));
 		if (has(attacker, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
+		if (has(attacker, KW.FRIGID)) freezeHero(state, target.player); // Frigid: freeze the struck player
 		// The Ring, tier 4: whenever your Ring-bearer deals combat damage to a player, each opponent loses 3
 		if (dealt > 0 && (state.players[pi].ring || 0) >= 4 && attacker.uid === state.players[pi].ringBearer) {
 			for (const o of opponentsOf(state, pi)) damageHero(state, o, 3, pi, false);
@@ -3342,6 +3356,7 @@ export function resolveCombat(state, pi, attackerUid, target) {
 			const slash = has(attacker, KW.SLASHING) ? 2 : 1; // Rampaging Ceratops: double to planeswalkers
 			damageWalker(state, w, attacker.attack * cmult * slash);
 			if (has(attacker, KW.LIFESTEAL)) healHero(state, pi, attacker.attack * cmult * slash);
+			if (has(attacker, KW.FRIGID) && w.loyalty > 0) freezeWalker(state, w); // Frigid: freeze the struck planeswalker
 		}
 	} else if (target.type === 'enchantment' || target.type === 'artifact') {
 		// Meteoric (enchantments) / Bash (artifacts): strike an enemy permanent as
@@ -3389,9 +3404,9 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		// Smoldering: 50% chance to Burn whichever combatant survives against it
 		if (has(attacker, KW.SMOLDERING)) maybeBurn(state, defender);
 		if (has(defender, KW.SMOLDERING)) maybeBurn(state, attacker);
-		// Frigid: 50% chance to Freeze whichever combatant survives against it
-		if (has(attacker, KW.FRIGID)) maybeFreeze(state, defender);
-		if (has(defender, KW.FRIGID)) maybeFreeze(state, attacker);
+		// Frigid: Freeze whichever combatant survives against it
+		if (has(attacker, KW.FRIGID) && !isDead(defender)) freezeCreature(state, defender);
+		if (has(defender, KW.FRIGID) && !isDead(attacker)) freezeCreature(state, attacker);
 		// cleave: the hit splashes onto the defender's board neighbors
 		if (has(attacker, KW.CLEAVE)) {
 			const db = state.players[target.player].board;
@@ -3485,6 +3500,7 @@ export function heroAttackValue(state, p) {
 export function canHeroAttack(state, pi) {
 	if (state.over || state.current !== pi) return false;
 	const p = state.players[pi];
+	if (p.frozen) return false; // a Frozen hero can't attack (Hero Power still works)
 	if (heroAttackValue(state, p) <= 0) return false; // temp attack lets weaponless heroes swing
 	if (p.weapon?.unlimitedAttacks) return true; // Fool's Bane: no per-turn attack cap
 	const windfury = p.weapon?.keywords.includes(KW.WINDFURY) || p.board.some(c => c.heroWindfury && !isDead(c)) || p.heroWindfuryTurn === state.turnNumber; // Azshara / Ferocious Flurry (this turn only)
@@ -3534,9 +3550,11 @@ export function heroAttack(state, pi, target) {
 	if (target.type === 'hero') {
 		damageHero(state, target.player, atk, pi);
 		if (w && has(w, KW.LIFESTEAL) && atk > 0) healHero(state, pi, atk); // Lifesteal weapons heal on face attacks too
+		if (w && has(w, KW.FRIGID)) freezeHero(state, target.player); // Frigid weapon: freeze the struck player
 	} else if (target.type === 'walker') {
 		const pw = findWalker(state, target.uid);
 		if (pw) damageWalker(state, pw, atk);
+		if (pw && w && has(w, KW.FRIGID) && pw.loyalty > 0) freezeWalker(state, pw); // Frigid weapon: freeze the struck planeswalker
 	} else {
 		const defender = findCreature(state, target.uid);
 		if (defender && !isDead(defender)) {
@@ -3547,7 +3565,7 @@ export function heroAttack(state, pi, target) {
 			const dealt = damageCreature(state, defender, atk, w);
 			if (w && has(w, KW.LIFESTEAL) && dealt > 0) healHero(state, pi, dealt);
 			if (w && has(w, KW.FREEZER) && !isDead(defender)) freezeCreature(state, defender);
-			if (w && has(w, KW.FRIGID) && !isDead(defender)) maybeFreeze(state, defender); // Frigid weapon: 50% to Freeze a survivor
+			if (w && has(w, KW.FRIGID) && !isDead(defender)) freezeCreature(state, defender); // Frigid weapon: Freeze a survivor
 			// cleaving weapons splash the defender's board neighbors
 			if (w && (has(w, KW.CLEAVE) || w.cleaveThisTurn)) { // Reaper's Scythe: Cleave until end of turn
 				const db = state.players[target.player].board;
@@ -3644,7 +3662,7 @@ export function walkerSpec(state, pi, card, abilityIndex) {
 export function canUseWalker(state, pi, card, abilityIndex) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length) return false;
 	const p = state.players[pi];
-	if (!p.planeswalkers.includes(card) || card.usedThisTurn) return false;
+	if (!p.planeswalkers.includes(card) || card.usedThisTurn || card.frozen) return false; // Frozen planeswalkers can't activate
 	const check = i => {
 		const a = card.abilities?.[i];
 		if (!a) return false;
@@ -5150,13 +5168,17 @@ export function endTurn(state) {
 	sweepDeaths(state);
 	if (state.over) return;
 
-	// thaw: this player's creatures frozen before this turn have now missed it
+	// thaw: this player's characters frozen before this turn have now missed it
 	for (const c of p.board) {
 		if (c.frozen && c.frozen < state.turnNumber) {
 			c.frozen = null;
 			emit(state, { type: 'thaw', uid: c.uid });
 		}
 	}
+	for (const w of p.planeswalkers) {
+		if (w.frozen && w.frozen < state.turnNumber) { w.frozen = null; emit(state, { type: 'thaw', uid: w.uid }); }
+	}
+	if (p.frozen && p.frozen < state.turnNumber) { p.frozen = null; emit(state, { type: 'thawHero', player: pi }); }
 
 	// switch: next alive player clockwise — unless Temporus queued forced turns
 	let next = state.current;
