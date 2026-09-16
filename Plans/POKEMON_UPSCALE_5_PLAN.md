@@ -137,9 +137,11 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
   `dexAll` + live filter. 12-assertion `dexfilter_test.mjs`. (Living-dex PC view
   deferred with the follow-up.)
 - **Trainer Card** — DONE. Trainer ID already on it (Batch 4); added SHINIES
-  (party + boxes, `shinyOwnedCount`) and FRONTIER (BP + symbols). Real per-badge
-  art deferred (needs 24 sourced sprites — pips stay). 5-assertion
-  `trainercard_test.mjs`.
+  (party + boxes, `shinyOwnedCount`) and FRONTIER (BP + symbols). 5-assertion
+  `trainercard_test.mjs`. Real per-badge art SHIPPED later (see the closing
+  note): 24 sprites in `overworld/fx/badges/` from the decomp trainer-card
+  sheets via `tools/gen_badge_art.py`, drawn by `badgeart.js` on the tier
+  tracker + JohKanto rows (earned = color, unearned = dark silhouette).
 - **Follow-up PR (#253)** shipped the deferred items:
   - **Round-2 rosters** — a re-armed BOSS rematch modernises movesets (skips the
     fixed low-level roster moves when `bump>0` → higher-level learnset) and pads
@@ -150,8 +152,12 @@ Arceus/Silvally type-change, and Zoroark's Illusion (standalone).
     `livingdex_test.mjs` (9).
   - **Share the Trainer Card** — `S` snapshots the frame → PNG → Web Share, else a
     named download. `cardshare_test.mjs` (5).
-  - Still deferred: **real per-badge art** (needs 24 sourced badge sprites — the
-    tier tracker stays as pips).
+  - ~~Still deferred: real per-badge art~~ — DONE (the last Round-5 leftover):
+    `tools/gen_badge_art.py` colorizes the authentic decomp badge sheets
+    (FireRed / Emerald / Crystal store card badges as ONE-palette grayscale
+    ramps; we keep the pixels, apply per-badge palettes) into 24 tracked
+    sprites at `overworld/fx/badges/`; `badgeart.js` (`badgeSprite`/`badgeGhost`)
+    replaces the tier-tracker + JohKanto pips. `badgeart_test.mjs` (11).
 
 ## Batch 7 — Rider sprites **[2/5 · S-M]** — DONE (PR #254)
 
@@ -163,8 +169,8 @@ bike / walk sheet in `draw()` (surf outranks bike); the blue ellipse survives
 only as a fallback when the surf sheet is missing. Running keeps the walk sheet
 (faster) — Crystal has no separate run body sheet. Code-only (the sheets already
 ship in owdata). 9-assertion `ridersprites_test.mjs`; boot/stepfx/dive/warpfade
-green. **ROUND 5 COMPLETE** (batches 1-7 + the Batch-6 follow-up; only real
-per-badge art remains deferred as an art-sourcing task).
+green. **ROUND 5 COMPLETE** (batches 1-7 + the Batch-6 follow-up; the last
+leftover — real per-badge art — shipped after the round, see Batch 6).
 
 ## Parked (needs design or the standing call)
 

@@ -38,6 +38,7 @@ import { loadItemIcons, itemIconFile, drawCategoryIcon } from './itemicon.js';
 import * as BUI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import { Journal } from './journal.js';
+import { badgeSprite, badgeGhost } from './badgeart.js';
 import { Contest, CATS, RANKS } from './contest.js';
 import * as Slide from './slidepuzzle.js';
 import * as Slots from './slots.js';
@@ -8180,12 +8181,19 @@ function drawTrainerCard(W, H) {
 		sctx.fillText(rowLbl[r] + (champ ? '*' : ''), rX, ry + 4 * u);
 		for (let i = 0; i < 8; i++) {
 			const px = pipAreaX + pgap * i + pgap / 2;
-			sctx.beginPath();
-			sctx.arc(px, ry, pipR, 0, Math.PI * 2);
-			sctx.fillStyle = list[i].earned ? BUI.C.accent : 'rgba(255,255,255,0.12)';
-			sctx.fill();
-			if (i === gTier && owes && gTier < 8) { sctx.strokeStyle = '#ffd27a'; sctx.lineWidth = 2; sctx.stroke(); } // the tier they owe
-			else if (list[i].earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1; sctx.stroke(); }
+			// real badge art (fx/badges/): full color when earned, dark silhouette
+			// when not; the old pip covers the first frames while the art loads
+			const art = list[i].earned ? badgeSprite(r, list[i].id) : badgeGhost(r, list[i].id);
+			if (art) {
+				const bs = 18 * u;
+				sctx.drawImage(art, px - bs / 2, ry - bs / 2, bs, bs);
+			} else {
+				sctx.beginPath();
+				sctx.arc(px, ry, pipR, 0, Math.PI * 2);
+				sctx.fillStyle = list[i].earned ? BUI.C.accent : 'rgba(255,255,255,0.12)';
+				sctx.fill();
+			}
+			if (i === gTier && owes && gTier < 8) { sctx.beginPath(); sctx.arc(px, ry, 11 * u, 0, Math.PI * 2); sctx.strokeStyle = '#ffd27a'; sctx.lineWidth = 2; sctx.stroke(); } // the tier they owe
 		}
 	});
 	// THE POSTGAME ROW — JohKanto's own eight, plus RED and the legend count.
@@ -8199,11 +8207,17 @@ function drawTrainerCard(W, H) {
 		sctx.fillText('OLD' + (Story.getFlag('beat_red') ? '*' : ''), rX, ry + 4 * u);
 		for (let i = 0; i < 8; i++) {
 			const px = pipAreaX + pgap * i + pgap / 2;
-			sctx.beginPath();
-			sctx.arc(px, ry, pipR, 0, Math.PI * 2);
-			sctx.fillStyle = jkList[i].earned ? '#c9a24a' : 'rgba(255,255,255,0.12)';
-			sctx.fill();
-			if (jkList[i].earned) { sctx.strokeStyle = '#fff'; sctx.lineWidth = 1; sctx.stroke(); }
+			// same badges as KANTO's row — the art module maps JOHKANTO to kanto_*
+			const art = jkList[i].earned ? badgeSprite('JOHKANTO', jkList[i].id) : badgeGhost('JOHKANTO', jkList[i].id);
+			if (art) {
+				const bs = 18 * u;
+				sctx.drawImage(art, px - bs / 2, ry - bs / 2, bs, bs);
+			} else {
+				sctx.beginPath();
+				sctx.arc(px, ry, pipR, 0, Math.PI * 2);
+				sctx.fillStyle = jkList[i].earned ? '#c9a24a' : 'rgba(255,255,255,0.12)';
+				sctx.fill();
+			}
 		}
 		const { caught, total } = legendStats();
 		sctx.fillStyle = BUI.C.dim;
@@ -9547,6 +9561,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
+		badgeSprite, badgeGhost,
 		touchHud, startItems, get heldKeys() { return heldKeys; }, FERRY_DESTS, LEGENDARY_ENCOUNTERS,
 		BAG_POCKETS, bagEntries, offerNickname, Settings, formsOf, cycleForm,
 		inJohKanto, wildEncounterLevel, routeTrainerLevel, scaleLegendaryLevel, levelCapNow, gymLevelFor, badgeSliceFor, mapIsUnlit, useFieldMove,
