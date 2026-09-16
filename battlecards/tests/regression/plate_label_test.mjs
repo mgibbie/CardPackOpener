@@ -18,7 +18,7 @@ ok('an Equipment artifact reads "Artifact - Equipment"', plateLabelFor({ type: '
 ok('equip label wins over a bare artifact type', plateLabelFor({ type: 'artifact', equip: { cost: 1 } }) === 'Artifact - Equipment');
 
 // ---- other plate cases unchanged ----
-ok('a plain artifact (no equip/tribe) shows no plate', plateLabelFor({ type: 'artifact' }) === null);
+ok('a plain artifact reads "Artifact" (owner request 2026-09-11)', plateLabelFor({ type: 'artifact' }) === 'Artifact');
 ok('a passive treasure still says "Passive" (even if it somehow has equip)', plateLabelFor({ type: 'artifact', passive: true, equip: {} }) === 'Passive');
 ok('a weapon says "Hero Weapon"', plateLabelFor({ type: 'weapon' }) === 'Hero Weapon');
 ok('a location says "Location"', plateLabelFor({ type: 'location' }) === 'Location');
@@ -68,6 +68,14 @@ ok('there are enchantments to check', enchants.length > 100, enchants.length);
 let badEnch = null;
 for (const c of enchants) if (plateLabelFor(c) !== 'Enchantment') { badEnch = { id: c.id, got: plateLabelFor(c) }; break; }
 ok('every real enchantment reads "Enchantment"', badEnch === null, badEnch);
+
+// ---- owner request 2026-09-11: plain artifacts say "Artifact" ----
+ok('a field token keeps its Token tribe on the plate', plateLabelFor({ type: 'artifact', tribe: 'Token', sac: {} }) === 'Token');
+const plainArts = raw.cards.filter(c => c.type === 'artifact' && !c.equip && !c.tribe && !c.passive);
+ok('there are plain artifacts to check', plainArts.length > 100, plainArts.length);
+let badArt = null;
+for (const c of plainArts) if (plateLabelFor(c) !== 'Artifact') { badArt = { id: c.id, got: plateLabelFor(c) }; break; }
+ok('every real plain artifact reads "Artifact"', badArt === null, badArt);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
