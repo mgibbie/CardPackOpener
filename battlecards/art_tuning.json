@@ -68,5 +68,10 @@
 		"z": 1,
 		"fx": 0.385,
 		"fy": 0.676
+	},
+	"wastes_vulshok_morningstar": {
+		"z": 1,
+		"fx": 0.5,
+		"fy": 0.3
 	}
 }
