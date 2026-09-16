@@ -2,6 +2,14 @@
 	"generated": "2026-09-16",
 	"entries": [
 		{
+			"sha": "57dc0ad",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 59: rename Vulshok Morningstar -> \"Void Gear Morningstar\" (#457)",
+			"body": "One filing from the wiki's owner inbox: rename the Wastes weapon\nwastes_vulshok_morningstar to \"Void Gear Morningstar\" (mechanics\nunchanged — still a 2/3 Swing weapon). Also resolves a display-name\nduplicate with the other vulshok_morningstar. Art is keyed by card id,\nso the rename is display-only. No live tuning to pull this round.\n\nowner_todo_cards59_test fires it (5 asserts). Suite 546/546.",
+			"cards": []
+		},
+		{
 			"sha": "c49f916",
 			"date": "2026-09-16",
 			"kind": "patch",
