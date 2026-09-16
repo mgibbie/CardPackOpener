@@ -2,6 +2,14 @@
 	"generated": "2026-09-16",
 	"entries": [
 		{
+			"sha": "492d88e",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 60: Whispersilk Equipment, Burnished Hart tribe, Metamorph Adapt (#460)",
+			"body": "Three filings from the wiki's owner inbox (two supersede batch 57):\n- Whispersilk Cloak: sorcery -> Equipment. Now an artifact whose\n  equipped creature gains +1 Attack & Elusive (Equip 0), the\n  Lightning Greaves shape.\n- Burnished Hart: tribe Construct -> \"Beast Construct Mech\" (all three\n  tribal buffs now hit it).\n- Phyrexian Metamorph: the {T} +1/+1 counter becomes \"{T}: Adapt\n  target creature\" (adapt effect, friendly-creature target).\n\nSupersede fallout fixed: owner_todo_cards57's Whispersilk block (it\nasserted the batch-57 sorcery reword) trimmed to an Equipment canary,\nand pool_wastes' Metamorph tap assertion updated from +1/+1 to the\nAdapt pick. No live tuning to pull. owner_todo_cards60_test fires all\nthree (15 asserts). Suite 547/547.",
+			"cards": []
+		},
+		{
 			"sha": "57dc0ad",
 			"date": "2026-09-16",
 			"kind": "patch",
