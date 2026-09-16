@@ -1,6 +1,46 @@
 {
-	"generated": "2026-09-14",
+	"generated": "2026-09-16",
 	"entries": [
+		{
+			"sha": "c49f916",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 45: Abbey Griffin, Soul Warden, Vulshok Morningstar (#451)",
+			"body": "Three filings from the wiki's owner inbox:\n- Abbey Griffin: tribe Griffin -> Beast (Beast-tribal now hits it).\n- Soul Warden: the any-summon 'summoned' heal becomes a real Alliance\n  trigger — \"Alliance: Gain 1 Life.\" (creature-played ongoing, the\n  Ajani's Welcome shape).\n- Vulshok Morningstar: reworded to the Swing convention (\"Swing:\n  Creatures you control gain +1 Attack.\") — mechanics unchanged, now\n  reads identically to Andúril.\n\nNo live art/sprite tuning to pull this round. owner_todo_cards45_test\nfires all three (9 asserts). Suite 545/545.",
+			"cards": []
+		},
+		{
+			"sha": "597b9a7",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 58: Spectral Procession (6 Spirits) + Cathars' Crusade Alliance (#450)",
+			"body": "Two cards from the wiki owner inbox:\n- Spectral Procession: now creates SIX 1/1 Spirits (was three) with Lifesteal &\n  Taunt (added Taunt).\n- Cathars' Crusade: reworded to \"Alliance: Creatures you control gain +1/+1.\"\n  Switched the trigger from the broad `summoned` to `creature-played` (Alliance =\n  each time you play another creature), matching the keyword convention.\n\nRegression: owner_todo_cards58_test.mjs fires both - Spectral spawns 6 1/1\nSpirits each with Lifesteal + Taunt; Cathars buffs your board +1/+1 (incl. the\nfreshly-played creature) when you play a creature. Suite 545/545.",
+			"cards": []
+		},
+		{
+			"sha": "cf5f6f1",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 57: Whispersilk Cloak reword + Lava Spike target-player (#449)",
+			"body": "Two cards from the wiki owner inbox:\n- Whispersilk Cloak: reworded to \"Target creature gains +1 Attack & Elusive.\"\n  (mechanic unchanged: buff +1/+0 & grant Elusive to any creature).\n- Lava Spike: \"Target player loses 3 Life.\" Now targets ONE player (auto in\n  1v1, a pick in a free-for-all) for 3 via the target-player mechanism, instead\n  of the old all-opponents \"Deal 3 damage to a player\". In this engine \"lose\n  Life\" to a hero is modeled as damage (matches Sinister Strike / Mind Blast).\n\nRegression: owner_todo_cards57_test.mjs fires both - Whispersilk buffs a\nfriendly creature +1 Attack & Elusive (any creature targetable); Lava Spike\nhits the lone opponent for 3 in 1v1 (no lingering pick) and queues a\ntarget-player damage pick in a 3-player game. Suite 544/544.",
+			"cards": []
+		},
+		{
+			"sha": "ce76792",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 56: Radagast reword + Star Compass Luck:Advance + Steel Overseer reword (#448)",
+			"body": "Three cards from the wiki owner inbox:\n- Radagast, Wizard of Wilds: reworded to \"Whenever you cast a spell, gain +1\n  Attack.\" (mechanic unchanged: buff-self +1/+0 on spell-played).\n- Star Compass: tap now \"Gain 1 Mana this turn & Luck: Advance.\" — added a\n  Luck-wrapped Advance (coin flip) alongside the existing mana gain.\n- Steel Overseer: reworded to \"Battlecry: Creatures you control gain +1/+1.\"\n  (mechanic unchanged: buff +1/+1 to friendly creatures).\n\nRegression: owner_todo_cards56_test.mjs fires all three - Radagast +1 Attack on\na spell (health unchanged), Star Compass always gains a mana crystal and flips\nAdvance ~half the time, Steel Overseer buffs your board +1/+1. Suite 543/543.",
+			"cards": []
+		},
+		{
+			"sha": "a9026a1",
+			"date": "2026-09-14",
+			"kind": "patch",
+			"title": "owner_todo batch 55: Chupacabra reword + Flame of Anor & join + Shadowfax Beast (#447)",
+			"body": "Three cards from the wiki owner inbox:\n- Ravenous Chupacabra: reworded to \"Battlecry: Destroy target creature you don't\n  control.\" (mechanic unchanged; enemy-creature = a creature you don't control).\n- Flame of Anor: \"Deal 2 damage to any target & Scry 1.\" (& join instead of a\n  period; effects unchanged).\n- Shadowfax, Lord of Horses: tribe Horse -> Beast (keeps Rush & Elusive).\n\nRegression: owner_todo_cards55_test.mjs fires all three - Chupacabra destroys a\ntargeted enemy creature (friendlies not targetable), Flame of Anor deals 2 and\nqueues Scry 1, Shadowfax reports the Beast tribe. Suite 542/542.",
+			"cards": []
+		},
 		{
 			"sha": "411c8dd",
 			"date": "2026-09-14",
