@@ -77,5 +77,16 @@ let badArt = null;
 for (const c of plainArts) if (plateLabelFor(c) !== 'Artifact') { badArt = { id: c.id, got: plateLabelFor(c) }; break; }
 ok('every real plain artifact reads "Artifact"', badArt === null, badArt);
 
+// ---- owner request 2026-09-11: a quest's static plate reads "Quest" ----
+// (in play the face shows live "N / M" goal progress from opts.goal, which
+// pre-empts this label in cardart.js — the gallery/hand static plate says Quest)
+ok('a quest reads "Quest"', plateLabelFor({ type: 'quest' }) === 'Quest');
+ok('a quest with goal data still reads "Quest" on the static plate', plateLabelFor({ type: 'quest', quest: { goal: { type: 'summon', count: 5 } } }) === 'Quest');
+const questCards = raw.cards.filter(c => c.type === 'quest');
+ok('there are quests to check', questCards.length > 20, questCards.length);
+let badQuest = null;
+for (const c of questCards) if (plateLabelFor(c) !== 'Quest') { badQuest = { id: c.id, got: plateLabelFor(c) }; break; }
+ok('every real quest reads "Quest"', badQuest === null, badQuest);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
