@@ -1117,7 +1117,7 @@ const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVEND
 	'MAP_SLATEPORT_CITY_NAME_RATERS_HOUSE']);
 const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
 
-const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null };
+const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null, moveSwap: null };
 const startMenu = { open: false, idx: 0 };
 const questMenu = { open: false, idx: 0, page: 0 }; // page 0 = quest log, 1 = THINGS TO DO
 // THINGS TO DO — the discovery checklist (Batch 6). Whole subsystems shipped as
@@ -2830,7 +2830,7 @@ function pressKey(k) {
 			if (k === 'z' || k === 'Enter') {
 				const opt = a.options[a.idx];
 				if (opt.kind === 'field') useFieldMove(opt.hm, a.mon);
-				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; }
+				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; partyMenu.moveSwap = null; }
 				else if (opt.kind === 'switch') {
 					// SWITCH used to only ever promote to lead — there was no way to move
 					// slot 5 to slot 3, or to demote the lead. Now it arms a swap and the
@@ -2842,10 +2842,14 @@ function pressKey(k) {
 			return;
 		}
 		if (partyMenu.summary) {
-			// summary view: up/down cycles party members, X closes
-			if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
-			if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
-			if (k === 'x' || k === 'Escape') partyMenu.summary = false;
+			// summary view: up/down cycles party members (dropping any armed move
+			// swap — it belongs to the mon that armed it), X cancels the swap first
+			if (k === 'ArrowUp') { partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length; partyMenu.moveSwap = null; }
+			if (k === 'ArrowDown') { partyMenu.idx = (partyMenu.idx + 1) % party.length; partyMenu.moveSwap = null; }
+			if (k === 'x' || k === 'Escape') {
+				if (partyMenu.moveSwap != null) partyMenu.moveSwap = null;
+				else partyMenu.summary = false;
+			}
 			return;
 		}
 		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
@@ -7800,14 +7804,20 @@ function drawSummary(W, H, u) {
 		const frac = Math.max(0.05, Math.min(1, v / 200));
 		BUI.bar(sctx, sx + 108 * u, y - 11 * u, sw - 108 * u, 12 * u, frac, BUI.C.accent, 4 * u);
 	});
-	// moves along the bottom
+	// moves along the bottom — tappable: tap one slot, then another, to reorder.
+	// This is the out-of-battle home of the same swap battle's S/SWAP button does
+	// (the battle flow was the ONLY way to reorder, which touch players out of
+	// battle couldn't reach at all).
 	const my = 320 * u;
 	sctx.fillStyle = BUI.C.dim;
 	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	sctx.fillText('MOVES', sx, my - 8 * u);
+	if (m.moves.length > 1) {
+		sctx.fillText(partyMenu.moveSwap != null ? '— tap the other slot (same slot cancels)' : '— tap a move to swap its slot',
+			sx + 58 * u, my - 8 * u);
+	}
 	m.moves.forEach((mv, i) => {
 		const info = battle.data.moves[mv.id] || {};
-		const y = my + i * 30 * u;
 		const bw = (sw) / 2 - 8 * u;
 		const bx = sx + (i % 2) * (bw + 12 * u);
 		const yy = my + Math.floor(i / 2) * 34 * u;
@@ -7818,12 +7828,20 @@ function drawSummary(W, H, u) {
 		sctx.fillRect(bx, yy, 4 * u, 28 * u);
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		sctx.fillText(mv.name, bx + 12 * u, yy + 13 * u);
+		sctx.fillText((partyMenu.moveSwap === i ? '⇄ ' : '') + mv.name, bx + 12 * u, yy + 13 * u);
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
 		const pw = info.power ? `${info.power}` : '—';
 		const ac = (info.acc == null || info.acc === true) ? '—' : `${info.acc}`;
 		sctx.fillText(`${(info.type || '').toUpperCase()}  PW ${pw}  AC ${ac}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
+		const zid = 'summary-move:' + i;
+		if (partyMenu.moveSwap === i || menuHover === zid) {
+			sctx.strokeStyle = partyMenu.moveSwap === i ? '#ffd27a' : BUI.C.accent;
+			sctx.lineWidth = 2;
+			BUI.rr(sctx, bx + 1, yy + 1, bw - 2, 28 * u - 2, 6 * u); sctx.stroke();
+		}
+		// hit zone slightly taller than the drawn row for thumb forgiveness
+		menuUi.push({ id: zid, x: bx, y: yy - 2 * u, w: bw, h: 32 * u });
 	});
 	// nav hint / lead button
 	const lead = { id: 'summary-lead', x: 40 * u, y: H - 52 * u, w: 200 * u, h: 40 * u,
@@ -8770,6 +8788,23 @@ function menuTap(id) {
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'summary-lead') {
 		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = party.splice(partyMenu.idx, 1); party.unshift(m); partyMenu.idx = 0; saveParty(party); }
+		return;
+	}
+	if (kind === 'summary-move') {
+		// reorder the summary's move slots: first tap arms, second tap swaps
+		// (same slot cancels) — PP rides along, the order persists on the mon
+		const m = party[partyMenu.idx];
+		const i = +a;
+		if (!partyMenu.summary || !m || !(m.moves?.length > 1) || i >= m.moves.length) return;
+		if (partyMenu.moveSwap == null) { partyMenu.moveSwap = i; sfx('ui_select'); }
+		else if (partyMenu.moveSwap === i) { partyMenu.moveSwap = null; sfx('ui_cancel'); }
+		else {
+			const j = partyMenu.moveSwap;
+			[m.moves[i], m.moves[j]] = [m.moves[j], m.moves[i]];
+			partyMenu.moveSwap = null;
+			saveParty(party);
+			sfx('ui_select');
+		}
 		return;
 	}
 	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
