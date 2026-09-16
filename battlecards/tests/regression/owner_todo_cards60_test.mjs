@@ -57,6 +57,7 @@ const put = (st, pi, id, atk = 2, hp = 3) => { const c = E.instantiate(id.starts
 // ---- 3) Phyrexian Metamorph: {T}: Adapt target creature ----
 {
 	const m = cardsById.wastes_phyrexian_metamorph;
+	ok('renamed "Mutamancy Diode" (id unchanged)', m.name === 'Mutamancy Diode', m.name); // direct owner request 2026-09-11 (art + rename)
 	ok('Metamorph text reads "{T}: Adapt target creature."', m.description === '{T}: Adapt target creature.', m.description);
 	ok('its tap ability is an adapt effect', m.tapAbility && m.tapAbility.effects[0].type === 'adapt', JSON.stringify(m.tapAbility));
 	const st = fresh();

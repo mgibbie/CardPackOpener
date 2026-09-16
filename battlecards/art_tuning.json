@@ -73,5 +73,10 @@
 		"z": 1,
 		"fx": 0.5,
 		"fy": 0.3
+	},
+	"wastes_phyrexian_metamorph": {
+		"z": 1,
+		"fx": 0.5,
+		"fy": 0.42
 	}
 }
