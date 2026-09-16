@@ -974,7 +974,7 @@ export function drawCardFace(card, opts = {}) {
 		ctx.fillStyle = '#fff';
 		ctx.fillText(`${opts.progress ?? 0} / ${opts.goal}`, W / 2, H - 54);
 		ctx.textAlign = 'left';
-	} else if (card.passive || card.equip || card.tribe || card.type === 'weapon' || card.type === 'location' || SPELL_TYPES_SET.has(card.type)) {
+	} else if (card.passive || card.equip || card.tribe || card.type === 'weapon' || card.type === 'location' || card.type === 'enchantment' || SPELL_TYPES_SET.has(card.type)) {
 		roundRect(ctx, W / 2 - 90, H - 78, 180, 40, 18);
 		ctx.fillStyle = 'rgba(0,0,0,0.65)';
 		ctx.fill();

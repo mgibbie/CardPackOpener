@@ -60,5 +60,14 @@ ok('no school spell still reads "<School> Spell"', !schoolSpells.some(c => / Spe
 ok('Fireball reads "Instant - Fire"', plateLabelFor(raw.cards.find(c => c.id === 'fireball')) === 'Instant - Fire');
 ok('Flamestrike reads "Sorcery - Fire"', plateLabelFor(raw.cards.find(c => c.id === 'flamestrike')) === 'Sorcery - Fire');
 
+// ---- owner request 2026-09-11: enchantments say "Enchantment" in the tribe slot ----
+ok('an enchantment reads "Enchantment"', plateLabelFor({ type: 'enchantment' }) === 'Enchantment');
+ok('the type wins even if an enchantment somehow carries a tribe', plateLabelFor({ type: 'enchantment', tribe: 'Aura' }) === 'Enchantment');
+const enchants = raw.cards.filter(c => c.type === 'enchantment');
+ok('there are enchantments to check', enchants.length > 100, enchants.length);
+let badEnch = null;
+for (const c of enchants) if (plateLabelFor(c) !== 'Enchantment') { badEnch = { id: c.id, got: plateLabelFor(c) }; break; }
+ok('every real enchantment reads "Enchantment"', badEnch === null, badEnch);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
