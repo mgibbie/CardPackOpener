@@ -52,10 +52,10 @@ const scions = (st, pi) => st.players[pi].board.filter(c => c.name === 'Eldrazi 
   E.fireOngoing(st, 0, 'hero-attacks');
   ok('Batterskull gains 4 life after hero attacks', st.players[0].life === life0 + 4, [life0, st.players[0].life]); }
 
-// ---- phyrexian_metamorph ARTIFACT: tap +1/+1 counter ----
-{ const st = game(); const v = put(st, 0, '_v'); const a0 = v.attack; play(st, 0, 'wastes_phyrexian_metamorph', null);
+// ---- phyrexian_metamorph ARTIFACT: tap to Adapt (batch 60 supersede) ----
+{ const st = game(); const v = put(st, 0, '_v'); play(st, 0, 'wastes_phyrexian_metamorph', null);
   E.tapArtifact(st, 0, st.players[0].artifacts.find(a => a.id === 'wastes_phyrexian_metamorph').uid, { type: 'creature', uid: v.uid, player: 0 });
-  ok('Phyrexian Metamorph (artifact) taps to put a +1/+1 counter', v.attack === a0 + 1, [a0, v.attack]); }
+  ok('Phyrexian Metamorph (artifact) taps to Adapt the target', st.pickQueue.some(p => p.mode === 'adapt' && p.adaptUids.includes(v.uid)), JSON.stringify(st.pickQueue.map(p => p.mode))); }
 
 // ---- conduit_of_ruin LOCATION: tap for an Eldrazi Scion ----
 { const st = game(); play(st, 0, 'wastes_conduit_of_ruin', null); const loc = st.players[0].board.find(c => c.id === 'wastes_conduit_of_ruin'); const s0 = scions(st, 0);

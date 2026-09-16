@@ -17,25 +17,12 @@ const gameN = (seed, n) => {
 	return st;
 };
 
-// ---------- Whispersilk Cloak ----------
+// ---------- Whispersilk Cloak (SUPERSEDED by batch 60: now Equipment) ----------
+// batch 57 made it a "+1 Attack & Elusive" sorcery; batch 60 turned it into an
+// Equipment (see owner_todo_cards60_test). Kept as a supersede canary.
 {
 	const def = cardsById.wastes_whispersilk_cloak;
-	ok('Whispersilk text is "Target creature gains +1 Attack & Elusive."', def.description === 'Target creature gains +1 Attack & Elusive.', JSON.stringify(def.description));
-	const e = (def.effects || [])[0];
-	ok('it buffs +1/+0 and grants Elusive to any creature', e && e.type === 'buff' && e.attack === 1 && (e.health || 0) === 0 && e.grant === 'elusive' && e.target === 'creature', JSON.stringify(def.effects));
-	// FIRE on a friendly creature
-	const st = gameN(1, 2);
-	const own = E.instantiate({ id: 'o', name: 'O', type: 'creature', cost: 2, attack: 2, health: 2 }, 0); own.zone = 'board'; own.sick = false; st.players[0].board.push(own);
-	const a0 = own.attack, h0 = E.hp(own);
-	const c = E.instantiate(def, 0); c.zone = 'hand'; st.players[0].hand.push(c);
-	E.playCard(st, 0, c.uid, { type: 'creature', uid: own.uid, player: 0 }, null, 0);
-	ok('friendly target got +1 Attack, health unchanged', own.attack === a0 + 1 && E.hp(own) === h0, [own.attack, E.hp(own)]);
-	ok('friendly target gained Elusive', (own.keywords || []).includes('elusive'), JSON.stringify(own.keywords));
-	// an enemy creature is a legal target (target: creature = any)
-	const st2 = gameN(1, 2);
-	const foe = E.instantiate({ id: 'f', name: 'F', type: 'creature', cost: 2, attack: 2, health: 2 }, 1); foe.zone = 'board'; foe.sick = false; st2.players[1].board.push(foe);
-	const legal = E.legalTargets(st2, 0, E.targetSpec(st2, 0, E.instantiate(def, 0)));
-	ok('an enemy creature is a legal target', legal.some(t => t.uid === foe.uid), legal.map(t => t.uid));
+	ok('Whispersilk Cloak is now an Equipment artifact', def.type === 'artifact' && def.equip && def.equip.attack === 1 && (def.equip.keywords || []).includes('elusive'), JSON.stringify(def.equip));
 }
 
 // ---------- Lava Spike ----------
