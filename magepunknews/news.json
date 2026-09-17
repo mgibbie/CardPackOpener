@@ -2,6 +2,38 @@
 	"generated": "2026-09-16",
 	"entries": [
 		{
+			"sha": "0a0aaf2",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 61: Loxodon Warhammer + Dusk Legion Zealot rewords (#465)",
+			"body": "Two filings from the wiki's owner inbox, both pure text rewords\n(mechanics unchanged):\n- Loxodon Warhammer: \"After your hero attacks, gain 3 Life\" -> the\n  Swing convention \"Swing: Gain 3 Life.\" (same hero-attacks heal).\n- Dusk Legion Zealot: \"you draw a card & you lose 1 Life\" -> the\n  cleaner \"Battlecry: Draw a card & lose 1 Life.\" (same draw +\n  own-hero damage).\n\nAlso folds a live art-tuning override pull-live-tuning found: the\nowner re-tuned Void Gear Morningstar's framing on the live arttune\nsite (wastes_vulshok_morningstar -> {z:1.06, fx:1, fy:0}); merged into\nart_tuning.json and the server override cleared.\n\nowner_todo_cards61_test fires both rewords (7 asserts). Suite 548/548.",
+			"cards": []
+		},
+		{
+			"sha": "a340551",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "Party summary: tap two move slots to reorder them (mobile-reachable) (#464)",
+			"body": "Reordering a mon's moves only existed inside battle (the S key / SWAP\nbutton in the moves menu), so out of battle - where touch players spend\nmost of their time - there was no way to do it at all.\n\nThe summary's four move rows are now tap targets (menuUi zones with a\nlittle thumb forgiveness): tap a slot to arm it (gold ring + swap\nglyph), tap another to swap - PP rides along and the order persists via\nsaveParty - tap the same slot to cancel. A hint line by the MOVES header\nwalks the player through it. Cycling party members drops an armed swap\n(it belongs to the mon that armed it) and X cancels the swap before\nclosing the summary, mirroring the in-battle flow. Works for desktop\nmouse users too - the summary previously had no pointer path either.\n\nsummarymoveswap_test.mjs (13): source asserts pin the keyboard-path\nrules; live asserts drive the real menuTap - zones registered, arm /\nsame-slot cancel, swap + PP + persistence, inert while the summary is\nclosed, inert for a single-move mon. qolsweep (19) + trainercard (5)\nstay green; desktop + phone-portrait screenshots eyeballed.",
+			"cards": []
+		},
+		{
+			"sha": "243a3ac",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "Real per-badge art on the Trainer Card (the last Round-5 leftover) (#463)",
+			"body": "The tier tracker and JohKanto rows drew abstract pips; now they draw the\nactual badges. tools/gen_badge_art.py harvests the authentic trainer-card\nbadge sheets from the vendored decomps (pokefirered / pokeemerald /\npokecrystal). All three games store card badges as a grayscale ramp\ncolorized by ONE runtime palette shared by every badge, so the generator\nkeeps the authentic pixels and applies a per-badge palette through the\nsame White/Col../Black ramp mechanism - each badge reads with its iconic\ncolor on the dark card. 24 sprites, git-tracked at overworld/fx/badges/\n(fx/ convention - no owdata deploy needed).\n\noverworld/badgeart.js: badgeSprite(region,id) with lazy load + cache\n(JOHKANTO maps to kanto_* - same badges) and badgeGhost() - a darkened\nsame-silhouette canvas for unearned slots, so the shape shows and the\ncolor is withheld. drawTrainerCard swaps both pip loops for the art,\nkeeps the gold owed-tier ring, and falls back to the old pip while a\nsprite loads.\n\nbadgeart_test.mjs (11): the badge tables drive the file set (24 exactly,\nall 16x16 on disk and served as PNG), sprites decode, JOHKANTO shares\nKANTO's element, the ghost keeps the exact opaque footprint at under\nhalf the brightness, and the card renders the mixed case (full / partial\n/ all-ghost / JohKanto rows) without error. trainercard + legibility\nsuites stay green; card screenshot eyeballed.",
+			"cards": []
+		},
+		{
+			"sha": "f20663e",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "Mutamancy Diode: rename + custom art (#462)",
+			"body": "Direct owner request on wastes_phyrexian_metamorph (the batch-60\n\"{T}: Adapt\" artifact): rename its display name to \"Mutamancy Diode\"\n(id unchanged, so art/tuning stay keyed correctly) and set owner-\nsupplied art — an ornate clockwork abacus wreathed in purple void-\nflame, resized to a 512x739 JPEG and deployed to the magepunk-cardart\nCDN. Portrait source in a landscape window, so art_tuning gets\n{z:1, fx:0.5, fy:0.42} to center the abacus beads (verified with a\n3-focal headless render of the exact window math). ART_REVS bump (->2)\nto drop the old placeholder art. batch-60 test +1 name assert. Suite\n547/547.",
+			"cards": []
+		},
+		{
 			"sha": "492d88e",
 			"date": "2026-09-16",
 			"kind": "patch",
