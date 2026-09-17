@@ -100,7 +100,7 @@ const CHOSEN = {
 	'mark-summon-copy': { 'enemy-creature': 'enemy-creature' },
 	'destroy-all-copies': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	'copy-to-all-zones': { 'friendly-creature': 'friendly-creature' },
-	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
+	destroy: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', 'creature-or-walker': 'creature-or-walker' },
 	// Naturalize and friends: a CHOSEN artifact/enchantment. Rides the existing
 	// 'permanent' target kind (legalTargets already enumerates artifacts,
 	// enchantments and walkers, and the board UI already lights permanents up
@@ -248,6 +248,11 @@ export function legalTargets(state, pi, spec) {
 		for (const o of opps) pushHero(o);
 	}
 	if (spec.targets === 'creature') { pushCreatures(pi); for (const o of opps) pushCreatures(o); }
+	if (spec.targets === 'creature-or-walker') { // Titan's Presence: a creature OR planeswalker, either side
+		const pushWalkers = (side) => { for (const w of state.players[side].planeswalkers) if (!spec.filter || spec.filter(w)) out.push({ type: 'walker', uid: w.uid, player: side }); };
+		pushCreatures(pi); pushWalkers(pi);
+		for (const o of opps) { pushCreatures(o); pushWalkers(o); }
+	}
 	if (spec.targets === 'enemy-creature') { for (const o of opps) pushCreatures(o); }
 	if (spec.targets === 'friendly-creature') { pushCreatures(pi); }
 	if (spec.targets === 'friendly-any') { pushCreatures(pi); out.push({ type: 'hero', player: pi }); }
