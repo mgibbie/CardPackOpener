@@ -619,6 +619,12 @@ register('destroy-deck-max-cost', ({ state, pi, target, source, enemies, scaled,
 
 register('exile', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// removed from the game: no death, no deathrattle, never reshuffled
+			// Scour from Existence: "creature or artifact" — exile a targeted artifact
+			if (target && target.type === 'artifact') {
+				const a = findPermanent(state, target.uid);
+				if (a && a.type === 'artifact') { const own = state.players[a.controller]; own.artifacts = own.artifacts.filter(x => x !== a); a.zone = 'exile'; own.exile.push(a); emit(state, { type: 'exiled', uid: a.uid, player: a.controller, name: a.name }); recomputeAuras(state); }
+				return;
+			}
 			const t = chosenCreature();
 			const doExile = c => { const owner = state.players[c.controller]; owner.board = owner.board.filter(x => x !== c); c.zone = 'exile'; owner.exile.push(c); emit(state, { type: 'exiled', uid: c.uid, player: c.controller, name: c.name }); };
 			if (t && (e.minAttack == null || t.attack >= e.minAttack)) {
