@@ -2,6 +2,14 @@
 	"generated": "2026-09-17",
 	"entries": [
 		{
+			"sha": "8fcc0a0",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 66: Juggernaut Taunt/tribe + Duplicant exile-and-become (#475)",
+			"body": "Two filings from the wiki's owner inbox:\n- Juggernaut: add Taunt (\"Impulsive, Rush & Taunt.\"), tribe\n  Construct -> \"Construct Mech\".\n- Duplicant: \"Battlecry: Exile a creature an opponent controls\" ->\n  \"Battlecry: Exile target creature you don't control & then transform\n  into it.\" Effects = transform-copy(enemy-creature) then\n  exile(enemy-creature): Duplicant becomes a copy of the target\n  (Faceless-style), and the original is exiled. Copy-then-exile order\n  so transform-copy still sees the target on board.\n\nEnabler: added 'enemy-creature' to the transform-copy target spec.\nSupersede fixup: pool_wastes' \"Duplicant exiles\" pin (checked\neffects[0]) now checks the card has both transform-copy and exile.\nNo live tuning to pull. owner_todo_cards66_test fires both incl. the\nfull clone + exile (10 asserts). Suite 553/553.",
+			"cards": []
+		},
+		{
 			"sha": "774a532",
 			"date": "2026-09-17",
 			"kind": "patch",
