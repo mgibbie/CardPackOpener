@@ -137,7 +137,7 @@ const scions = (st, pi) => st.players[pi].board.filter(c => c.name === 'Eldrazi 
   ok('Walking Ballista has its repeatable ping', Array.isArray(byId.wastes_walking_ballista.activated) && byId.wastes_walking_ballista.activated[0].repeatable === true, byId.wastes_walking_ballista.activated);
   ok('Ornithopter is a Mech lord (+1 Attack)', byId.wastes_ornithopter.aura && byId.wastes_ornithopter.aura.tribe === 'Mech' && byId.wastes_ornithopter.aura.attack === 1, byId.wastes_ornithopter.aura);
   ok('Scour from Existence exiles', byId.wastes_scour_from_existence.effects[0].type === 'exile');
-  ok('Duplicant exiles', byId.wastes_duplicant.effects[0].type === 'exile'); }
+  ok('Duplicant clones then exiles the target (batch 66)', byId.wastes_duplicant.effects.some(e => e.type === 'transform-copy') && byId.wastes_duplicant.effects.some(e => e.type === 'exile')); }
 
 // ---- redesigned cards leave state valid ----
 for (const id of ['wastes_emrakul', 'wastes_ulamog', 'wastes_eldrazi_mimic', 'wastes_vile_aggregate', 'wastes_bane_of_bala_ged', 'wastes_breaker_of_armies', 'wastes_matter_reshaper', 'wastes_reality_smasher', 'wastes_world_breaker', 'wastes_ornithopter', 'wastes_juggernaut', 'wastes_lodestone_golem', 'wastes_metalwork_colossus', 'wastes_triskelion', 'wastes_duplicant', 'wastes_filigree_familiar', 'wastes_steel_hellkite', 'wastes_walking_ballista', 'wastes_scour_from_existence']) {
