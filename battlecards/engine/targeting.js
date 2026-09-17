@@ -130,7 +130,7 @@ const CHOSEN = {
 	bounce: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature', permanent: 'permanent' },
 	'mind-control': { 'enemy-creature': 'enemy-creature' },
 	transform: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'friendly-creature': 'friendly-creature' },
-	'transform-copy': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
+	'transform-copy': { creature: 'creature', 'friendly-creature': 'friendly-creature', 'enemy-creature': 'enemy-creature' },
 	'swap-health-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'swap-stats-with': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'copy-stats': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
