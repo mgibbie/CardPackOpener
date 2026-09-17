@@ -47,7 +47,7 @@ const play = (st, pi, id) => { const c = E.instantiate(cardsById[id], pi); c.zon
 // ---- Vulshok Morningstar: Swing wording, same swing ----
 {
 	const v = cardsById.wastes_vulshok_morningstar;
-	ok('the text uses the Swing convention', v.description === 'Swing: Creatures you control gain +1 Attack.', v.description);
+	ok('the text uses the Swing convention (batch 67 appended a Deathrattle)', v.description.startsWith('Swing: Creatures you control gain +1 Attack.'), v.description);
 	ok('still a 2/3 weapon', v.attack === 2 && v.durability === 3);
 	const st = fresh();
 	const c = put(st, 0, 'abbey_griffin');
