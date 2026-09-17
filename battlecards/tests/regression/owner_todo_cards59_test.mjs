@@ -13,7 +13,7 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', 
 const c = cardsById.wastes_vulshok_morningstar;
 ok('renamed to "Void Gear Morningstar"', c.name === 'Void Gear Morningstar', c.name);
 ok('still a 2/3 weapon', c.type === 'weapon' && c.attack === 2 && c.durability === 3);
-ok('keeps the Swing text + hero-attacks trigger', c.description === 'Swing: Creatures you control gain +1 Attack.' && c.ongoing?.on === 'hero-attacks', JSON.stringify(c.ongoing));
+ok('keeps the Swing text + hero-attacks trigger (batch 67 appended a Deathrattle)', c.description.startsWith('Swing: Creatures you control gain +1 Attack.') && c.ongoing?.on === 'hero-attacks', JSON.stringify(c.ongoing));
 ok('no longer collides with the other Vulshok Morningstar', cardsById.vulshok_morningstar && cardsById.vulshok_morningstar.name === 'Vulshok Morningstar' && cardsById.vulshok_morningstar.name !== c.name);
 
 // FIRE it: equip, swing, friendly creatures gain +1 Attack (mechanic intact)

@@ -69,6 +69,16 @@ register('draw', ({ state, pi, scaled, enemies }, e) => {
 });
 
 
+register('draw-heal-if-type', ({ state, pi }, e) => {
+	// Mind's Eye: draw a card; if it's an artifact or enchantment, gain N Life
+	const p = state.players[pi];
+	const before = p.hand.length;
+	drawCards(state, pi, 1);
+	const card = p.hand.length > before ? p.hand[p.hand.length - 1] : null; // null on a fatigue/burn draw
+	if (card && (e.types || []).includes(card.type)) healHero(state, pi, e.value || 0);
+});
+
+
 register('shuffle-ids-into-deck', ({ state, pi, enemies }, e) => {
 	// forEnemy: they hide in an opponent's deck instead (King Llane fleeing Garona)
 	const tp = e.forEnemy && enemies.length ? enemies[0] : pi;
