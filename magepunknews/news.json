@@ -2,6 +2,14 @@
 	"generated": "2026-09-16",
 	"entries": [
 		{
+			"sha": "febeae8",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 62: Erebos/Hazoret/Sword tweaks (5 cards) (#467)",
+			"body": "Five filings from the wiki's owner inbox:\n- Sword of Fire and Ice: reworded \"deal 2 damage to each opponent\" ->\n  \"each opponent loses 2 Life\" (same damage/enemy-heroes effect;\n  supersedes batch 53's wording).\n- Boon of Erebos: reworded to \"Target creature gains +2/+2 &\n  Lifesteal.\" (mechanic unchanged).\n- Scourgemark of Erebos: +1/+2 -> +1/+3, draw-first wording\n  (\"Draw a card & Target creature gains +1/+3.\").\n- Erebos's Titan: 5/5 for 5 -> 6/8 for 6, gains the Undead tribe\n  (keeps Reborn & Trample).\n- Hazoret's Zeal: reworded to \"Target creature gains +2/+1 & Charge.\"\n\nSupersede fixup: batch-53's Sword text assertion updated to the new\n\"loses 2 Life\" wording. No live tuning to pull. owner_todo_cards62_test\nfires all five (13 asserts). Suite 549/549.",
+			"cards": []
+		},
+		{
 			"sha": "0a0aaf2",
 			"date": "2026-09-16",
 			"kind": "patch",
