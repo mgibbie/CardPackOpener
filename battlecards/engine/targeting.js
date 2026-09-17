@@ -111,7 +111,7 @@ const CHOSEN = {
 	'deck-minions-become-copies': { 'friendly-creature': 'friendly-creature' },
 	'copy-summon': { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	'summon-with-stats': { 'friendly-creature': 'friendly-creature' },
-	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature' },
+	exile: { creature: 'creature', 'enemy-creature': 'enemy-creature', 'creature-or-artifact': 'creature-or-artifact' },
 	'exile-until-return': { creature: 'creature', 'enemy-creature': 'enemy-creature' },
 	blink: { creature: 'creature', 'friendly-creature': 'friendly-creature' },
 	fight: { 'friendly-creature': 'friendly-creature', creature: 'creature', 'enemy-creature': 'enemy-creature' },
@@ -252,6 +252,11 @@ export function legalTargets(state, pi, spec) {
 		const pushWalkers = (side) => { for (const w of state.players[side].planeswalkers) if (!spec.filter || spec.filter(w)) out.push({ type: 'walker', uid: w.uid, player: side }); };
 		pushCreatures(pi); pushWalkers(pi);
 		for (const o of opps) { pushCreatures(o); pushWalkers(o); }
+	}
+	if (spec.targets === 'creature-or-artifact') { // Scour from Existence: a creature OR artifact, either side
+		const pushArtifacts = (side) => { for (const a of state.players[side].artifacts) if (!spec.filter || spec.filter(a)) out.push({ type: 'artifact', uid: a.uid, player: side }); };
+		pushCreatures(pi); pushArtifacts(pi);
+		for (const o of opps) { pushCreatures(o); pushArtifacts(o); }
 	}
 	if (spec.targets === 'enemy-creature') { for (const o of opps) pushCreatures(o); }
 	if (spec.targets === 'friendly-creature') { pushCreatures(pi); }
