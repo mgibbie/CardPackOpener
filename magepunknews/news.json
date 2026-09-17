@@ -2,6 +2,22 @@
 	"generated": "2026-09-17",
 	"entries": [
 		{
+			"sha": "03c22f9",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 68: Avenge Diregraf, Alliance/Vapor rewords, Spell Snare MV≤2 (#481)",
+			"body": "Four filings from the wiki owner inbox:\n  - Diregraf Ghoul  -> \"Rush.\\nAvenge 1: Gain +1 Attack.\" Converted its\n    every-death buff to the canonical Avenge form (ongoings + every:1),\n    identical to Flag Runner. Same mechanic, now labeled Avenge.\n  - Faerie Miscreant -> reworded the Alliance to \"Gain +1 Attack\" (its\n    +1/+0 buff is a pure attack pump; text only).\n  - Spell Snare -> \"Counter target spell with mana value 2 or less.\"\n    Added a `manaValueMax` counter mode to counterMatches (core.js); the\n    existing exact `manaValue` semantics are untouched.\n  - Vapor Snag -> \"That player\" -> \"Its controller loses 1 Life.\" (text only).\n\nAdds owner_todo_cards68_test.mjs (22 assertions) firing each: Avenge grows\n+1 per friendly death and re-triggers; Alliance pumps on a creature play;\nSpell Snare counters MV1/MV2 but not MV3; Vapor Snag bounces + drains 1.\nFull suite 556/556.",
+			"cards": []
+		},
+		{
+			"sha": "e75d2ae",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "Normalize mana-grant language across all cards (#480)",
+			"body": "Unify how every mana-granting card reads, into a three-tier vocabulary.\nCard mechanics are untouched — only description/tap-label text changed\n(verified: a before/after hash of every non-text field is byte-identical).\n\n  - temporary / spendable  -> \"Gain N Mana\"   (drops \"Mana Crystal\" and\n    \"this turn\"; lands' \"Gain N\" -> \"Gain N Mana\"; \"next turn\" kept where\n    the timing matters). ~190 cards + all 77 lands.\n  - permanent ramp         -> ONE phrasing: \"Gain an empty Mana Crystal\" /\n    \"Gain N empty Mana Crystals\" (filled ramp collapses in too). ~29 cards.\n  - refill spent mana      -> \"Refresh N Mana\" / \"Refresh all your Mana\"\n    (drops \"Crystals\"). ~31 cards.\n\n\"Mana\" (bare) now consistently means spendable resource; \"Mana Crystal\"\nmeans a permanent slot. A loss (\"Lose a Mana Crystal\") is never rewritten\nas ramp; \"for each of your Mana Crystals\" (counting slots) is preserved;\nthe deliberately-special conditional/duration crystals (Felwood Treant,\nAcceleration Aura) and mana denial (Mana Burn) are left alone.\n\nAdds mana_language_normalization_test.mjs (44 assertions across all three\ntiers + edge cases), updates 3 batch tests that pinned the old strings,\nand regenerates featured.json for the reworded Amirdrassil.",
+			"cards": []
+		},
+		{
 			"sha": "e7a4fbc",
 			"date": "2026-09-17",
 			"kind": "patch",
