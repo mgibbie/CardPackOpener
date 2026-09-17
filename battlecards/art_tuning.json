@@ -70,9 +70,9 @@
 		"fy": 0.676
 	},
 	"wastes_vulshok_morningstar": {
-		"z": 1,
-		"fx": 0.5,
-		"fy": 0.3
+		"z": 1.06,
+		"fx": 1,
+		"fy": 0
 	},
 	"wastes_phyrexian_metamorph": {
 		"z": 1,
