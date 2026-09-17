@@ -1,6 +1,14 @@
 {
-	"generated": "2026-09-16",
+	"generated": "2026-09-17",
 	"entries": [
+		{
+			"sha": "28170af",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 64: Vile Aggregate + Endbringer + Titan's Presence (#471)",
+			"body": "Three filings from the wiki's owner inbox:\n- Vile Aggregate: the any-summon +1/+0 becomes real Alliance\n  (\"Trample. Alliance: Gain +1 Attack.\" — creature-played trigger).\n- Endbringer: \"1 to a creature + draw\" -> \"Battlecry: Draw a card &\n  Deal 2 damage to any target.\" (1->2, creature->any, draw-first).\n- Titan's Presence: \"Destroy a creature\" -> \"Destroy target creature\n  or planeswalker. Planeshift & Discover an Eldrazi.\"\n\nNew engine bits for the last one:\n- a 'creature-or-walker' target kind (legalTargets) + on the destroy\n  spec map; the destroy handler destroys a targeted walker\n  (destroyWalker, now exported).\n- FIX: the destroy handler now sets `doomed`, not just lethal damage —\n  a same-card health buff (here the Planeshift landing on a plane that\n  buffs Health) was un-killing the just-destroyed creature before the\n  end-of-play sweep. isDead already honors doomed; this makes \"destroy\"\n  irrevocable everywhere.\n\nNo live tuning to pull. owner_todo_cards64_test fires all three incl.\ndestroying an actual planeswalker (14 asserts). Suite 551/551.",
+			"cards": []
+		},
 		{
 			"sha": "b0a813b",
 			"date": "2026-09-16",
