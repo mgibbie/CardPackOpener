@@ -35,7 +35,7 @@ const game = (seed) => {
 {
 	const def = cardsById.wastes_pilgrims_eye;
 	ok("Pilgrim's Eye tribe is Mech", def.tribe === 'Mech', def.tribe);
-	ok("Pilgrim's Eye text says \"1 Mana Crystal\" (not \"a Mana Crystal\")", def.description === 'Elusive. Battlecry: Gain 1 Mana Crystal this turn.', JSON.stringify(def.description));
+	ok("Pilgrim's Eye text normalized to \"Gain 1 Mana\"", def.description === 'Elusive. Battlecry: Gain 1 Mana.', JSON.stringify(def.description));
 	ok("Pilgrim's Eye keeps Elusive", (def.keywords || []).includes('elusive'), JSON.stringify(def.keywords));
 	ok("Pilgrim's Eye still gains 1 mana", (def.effects || []).some(e => e.type === 'gain-mana' && e.value === 1), JSON.stringify(def.effects));
 	// FIRE: Battlecry adds a mana crystal this turn

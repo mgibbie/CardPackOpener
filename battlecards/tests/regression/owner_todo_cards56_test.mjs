@@ -33,7 +33,7 @@ const game = (seed) => {
 {
 	const def = cardsById.wastes_star_compass;
 	ok('Star Compass is still an artifact with a tap ability', def.type === 'artifact' && !!def.tapAbility, def.type);
-	ok('Star Compass tap text is the new wording', def.description === '{T}: Gain 1 Mana this turn & Luck: Advance.', JSON.stringify(def.description));
+	ok('Star Compass tap text is the new wording', def.description === '{T}: Gain 1 Mana & Luck: Advance.', JSON.stringify(def.description));
 	const fx = def.tapAbility.effects || [];
 	ok('tap gains 1 mana', fx.some(e => e.type === 'gain-mana' && e.value === 1), JSON.stringify(fx));
 	ok('tap has a Luck-wrapped Advance', fx.some(e => e.type === 'luck' && (e.effects || []).some(x => x.type === 'advance')), JSON.stringify(fx));
