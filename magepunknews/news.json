@@ -2,6 +2,14 @@
 	"generated": "2026-09-16",
 	"entries": [
 		{
+			"sha": "b0a813b",
+			"date": "2026-09-16",
+			"kind": "patch",
+			"title": "owner_todo batch 63: Truesteel rename + Spatial Contortion + Endless Atlas (#469)",
+			"body": "Three filings from the wiki's owner inbox:\n- Grafted Wargear: renamed \"Truesteel Scimitar\" (display-only; id and\n  art unchanged, still a 3/2 Swing weapon).\n- Spatial Contortion: \"2 damage to a creature\" -> \"Deal 2 damage to\n  any target & Planeshift.\" (target creature -> any; adds a planeshift\n  effect).\n- Endless Atlas: \"Draw 2 cards\" -> \"Draw 2 cards, Gaze 1 & Advance.\"\n  (adds gaze 1 + advance; the Gaze defers Advance until it resolves,\n  the normal scry-then continuation).\n\nNo live tuning to pull. owner_todo_cards63_test fires all three (14\nasserts, incl. Gaze->resolveScry->Advance). Suite 550/550.",
+			"cards": []
+		},
+		{
 			"sha": "febeae8",
 			"date": "2026-09-16",
 			"kind": "patch",
