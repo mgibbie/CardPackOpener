@@ -2,6 +2,14 @@
 	"generated": "2026-09-17",
 	"entries": [
 		{
+			"sha": "e7a4fbc",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 67: Transform bold + Void Gear Deathrattle + Mind's Eye (#478)",
+			"body": "Three filings from the wiki's owner inbox:\n- Duplicant: \"Transform should be bolded\" -> added a \"Transform\"\n  keyword to keywords.js so the word bolds on the face (case-\n  insensitive matcher catches Duplicant's \"transform into it\"). Learn\n  page glossary regenerated (112 keywords); gallery cache-bust d -> e.\n- Void Gear Morningstar: added \"Deathrattle: Give a random creature\n  you control Deathtouch.\" (weapon deathrattle; the grant handler\n  blesses a random friendly when given no target).\n- Mind's Eye: \"{T}: Draw a card.\" -> \"{T}: Draw a card, if it is an\n  artifact or enchantment gain 4 Life.\" New draw-heal-if-type handler\n  (registry 1199 -> 1200) that heals when the drawn card's type\n  matches.\n\nSupersede fixups: batches 45 & 59 pinned Void Gear's exact\ndescription; both now check it starts with the Swing line (the\nDeathrattle is appended). No live tuning to pull. owner_todo_cards67\nfires all three (9 asserts). Suite 554/554.",
+			"cards": []
+		},
+		{
 			"sha": "8fcc0a0",
 			"date": "2026-09-17",
 			"kind": "patch",
