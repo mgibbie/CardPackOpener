@@ -46,8 +46,8 @@ const game = (seed = 7) => {
 {
 	const c = cardsById.lotus_cobra;
 	ok('Lotus Cobra is a Beast', c.tribe === 'Beast', c.tribe);
-	ok('Lotus Cobra reads "Landfall: Gain 1 mana this turn."',
-		c.description === 'Landfall: Gain 1 mana this turn.', c.description);
+	ok('Lotus Cobra reads "Landfall: Gain 1 Mana."',
+		c.description === 'Landfall: Gain 1 Mana.', c.description);
 	// the text got shorter; the behaviour must not have
 	ok('its Landfall trigger is intact',
 		c.ongoing?.on === 'landfall' && c.ongoing.effects?.[0]?.type === 'gain-mana' && c.ongoing.effects[0].value === 1,
