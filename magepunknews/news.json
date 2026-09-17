@@ -2,6 +2,14 @@
 	"generated": "2026-09-17",
 	"entries": [
 		{
+			"sha": "7f2d879",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 69: Preordain draws a spell, Coral Merfolk reword, Sage Owl Investigate (#483)",
+			"body": "Three filings from the wiki owner inbox:\n  - Preordain -> \"Scry 2, then draw a spell.\" The draw is now a spell-only\n    tutor ({type:'tutor', cardType:'spell'}), the engine's convention for\n    \"draw a spell\".\n  - Coral Merfolk -> aura reworded \"+1/+0\" -> \"+1 Attack\" (mechanic intact).\n  - Sage Owl -> added \"Deathrattle: Investigate.\" (creates a Clue token),\n    keeping its Battlecry: Scry 3.\n\nAdds owner_todo_cards69_test.mjs (15 assertions), firing each: Preordain\npulls a spell (not a creature) from the deck; Coral Merfolk buffs other\nMerfolk but not itself/non-Merfolk; Sage Owl's death drops a Clue token.\nFull suite 557/557.",
+			"cards": []
+		},
+		{
 			"sha": "03c22f9",
 			"date": "2026-09-17",
 			"kind": "patch",
