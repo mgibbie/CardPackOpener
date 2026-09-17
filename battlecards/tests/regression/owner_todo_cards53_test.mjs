@@ -20,7 +20,7 @@ const game = (seed) => {
 // ---------- Sword of Fire and Ice: Swing wording ----------
 {
 	const def = cardsById.wastes_sword_of_fire_and_ice;
-	ok('Sword text is the Swing wording', def.description === 'Swing: Draw a card & deal 2 damage to each opponent.', JSON.stringify(def.description));
+	ok('Sword text is the Swing wording (batch 62 reworded to "loses 2 Life")', def.description === 'Swing: Draw a card & each opponent loses 2 Life.', JSON.stringify(def.description));
 	ok('Sword still fires on the hero swing (hero-attacks)', def.ongoing && def.ongoing.on === 'hero-attacks', JSON.stringify(def.ongoing));
 	ok('Swing draws a card', def.ongoing.effects.some(e => e.type === 'draw' && e.value === 1), JSON.stringify(def.ongoing));
 	ok('Swing deals 2 to each opponent', def.ongoing.effects.some(e => e.type === 'damage' && e.value === 2 && e.target === 'enemy-heroes'), JSON.stringify(def.ongoing));
