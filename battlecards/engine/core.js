@@ -2972,7 +2972,8 @@ function counterMatches(card, entry) {
 	const sc = entry.card;
 	if (cfg.type && sc.type !== cfg.type) return false;         // Dispel: instant only
 	if (cfg.notType && sc.type === cfg.notType) return false;   // Negate: noncreature
-	if (cfg.manaValue != null && (sc.cost || 0) !== cfg.manaValue) return false; // Spell Snare: MV 2
+	if (cfg.manaValue != null && (sc.cost || 0) !== cfg.manaValue) return false; // exact MV match
+	if (cfg.manaValueMax != null && (sc.cost || 0) > cfg.manaValueMax) return false; // Spell Snare: MV 2 or less
 	return true;
 }
 
