@@ -2,6 +2,14 @@
 	"generated": "2026-09-17",
 	"entries": [
 		{
+			"sha": "774a532",
+			"date": "2026-09-17",
+			"kind": "patch",
+			"title": "owner_todo batch 65: Batterskull Deathrattle + Scour exile creature/artifact (#473)",
+			"body": "Two filings from the wiki's owner inbox:\n- Batterskull: Swing wording for its heal + a new Deathrattle,\n  \"Destroy a random creature you don't control.\" (weapon deathrattle,\n  destroy-random scopes to enemy creatures; fires on weapon break).\n- Scour from Existence: \"Exile a creature\" -> \"Exile target creature\n  or artifact.\"\n\nNew engine bit for Scour (mirrors the batch-64 creature-or-walker):\na 'creature-or-artifact' target kind (legalTargets) + on the exile\nspec map; the exile handler now exiles a targeted artifact (moves it\nfrom the artifact zone to exile + recomputeAuras).\n\nNo live tuning to pull. owner_todo_cards65_test fires both incl. a\nweapon-break Deathrattle kill and exiling an actual artifact (11\nasserts). Suite 552/552.",
+			"cards": []
+		},
+		{
 			"sha": "28170af",
 			"date": "2026-09-17",
 			"kind": "patch",
