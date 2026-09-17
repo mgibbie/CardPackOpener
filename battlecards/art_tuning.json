@@ -78,5 +78,10 @@
 		"z": 1,
 		"fx": 0.5,
 		"fy": 0.42
+	},
+	"wastes_grafted_wargear": {
+		"z": 1,
+		"fx": 0.5,
+		"fy": 0.5
 	}
 }
