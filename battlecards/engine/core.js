@@ -3645,7 +3645,7 @@ function damageWalker(state, walker, amount) {
 	if (walker.loyalty <= 0) destroyWalker(state, walker);
 }
 
-function destroyWalker(state, walker) {
+export function destroyWalker(state, walker) {
 	const p = state.players[walker.controller];
 	p.planeswalkers = p.planeswalkers.filter(c => c !== walker);
 	toGraveyard(state, walker.controller, walker);

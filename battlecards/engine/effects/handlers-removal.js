@@ -30,7 +30,7 @@ import {
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
 	applyRollEntry, targetSpec, legalTargets, runSpell,
-	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent,
+	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent, destroyWalker,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
@@ -1430,6 +1430,12 @@ register('corpse-gain-deathrattle', ({ state, pi, target, source, enemies, scale
 
 
 register('destroy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
+			// Titan's Presence: "creature or planeswalker" — destroy a targeted walker
+			if (target && target.type === 'walker') {
+				const w = findPermanent(state, target.uid);
+				if (w && w.type === 'planeswalker') { destroyWalker(state, w); if (e.then) execEffects(state, pi, e.then, target, source); }
+				return;
+			}
 			const t = chosenCreature();
 			if (t && (e.requireHeroHealthChanged == null || state.players[pi].heroHealthChangedThisTurn)
 					&& (e.maxAttack == null || t.attack <= e.maxAttack)
@@ -1440,6 +1446,7 @@ register('destroy', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy
 				&& (e.tribe == null || (t.tribe || '').includes(e.tribe))
 				&& !(e.requireDamaged && t.damage === 0)) {
 				t.damage = t.maxHealth;
+				t.doomed = true; // "destroy" is irrevocable — a later health buff (e.g. a same-card Planeshift) must not un-kill it before the sweep
 				t.shield = false;
 				emit(state, { type: 'destroy', uid: t.uid });
 				// riders that only apply when something was actually destroyed
