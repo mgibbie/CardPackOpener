@@ -24,7 +24,12 @@ const game = (seed = 3) => {
 	st.players[0].mana = { cur: 10, max: 10, bonus: 0 };
 	return st;
 };
-const cycle = st => { E.endTurn(st); E.endTurn(st); }; // one full round-trip = one of player 0's turn-starts
+// resolve any pending forced decision before ending a turn — endTurn now no-ops
+// while the active player owes a choice (the client does this via the modal /
+// resolveAI* every turn), so a queued discard (e.g. me_gm_art's tap) must be
+// settled before the turn can pass
+const drain = st => { let g = 0; while (st.discardQueue.length && g++ < 20) { const d = st.discardQueue[0]; E.resolveDiscard(st, st.players[d.player].hand.slice(0, d.count || 1).map(c => c.uid)); } };
+const cycle = st => { drain(st); E.endTurn(st); drain(st); E.endTurn(st); }; // one full round-trip = one of player 0's turn-starts
 
 // ---------- card data ----------
 {
