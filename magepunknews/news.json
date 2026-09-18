@@ -2,6 +2,14 @@
 	"generated": "2026-09-18",
 	"entries": [
 		{
+			"sha": "2ff446f",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Fix fabricated \"Modifiers +N/+N\" on summoned tokens (Tezzeret Construct/Thopter) (#496)",
+			"body": "Reported (Lorequest/Tezzeret): a token's tooltip read \"Modifiers — +5/+5\" on a\n5/5 Construct that had gained nothing.\n\nCause: tokens summoned with INLINE stats (Thopter, Construct, Servo…) are built at\nsummon time and have no entry in state.cardsById. The UI recovered a card's printed\nbody via cardsById[card.id] and fell back to {} — so 0/0 became the baseline and the\ntoken's entire printed body was reported as a gained modifier. The same missing def\nleft paintFaceTex without baseAttack/baseHealth, so a board token had no baseline for\ncolouring buffed stats.\n\nFix: instantiate() now freezes printedAttack/printedHealth on every instance, and the\ntwo UI lookups (modifierLinesHtml, paintFaceTex) fall back to it. Being an instance\nfield, it also survives a snapshot restore — unlike a def registered into cardsById,\nwhich would be rebuilt from cards.json on resume.\n\nAdds token_printed_stats_test.mjs (17 assertions): the 5/5 Construct and 1/1 Thopter\nnow report 0/0 modifiers (was +5/+5 / +1/+1); a real buff still reports the true\ndelta; the baseline survives a snapshot round-trip; printed cards are unaffected.\nSuite 564/564.\n\nNOT reproduced: the report also said the tooltip named a 1/1 Thopter \"Construct\".\nThe tooltip renders card.name/card.description straight from the hovered instance,\nso it cannot mislabel a Thopter — the hovered card was a Construct token. The\nfabricated +5/+5 above is the genuine defect in that screenshot.",
+			"cards": []
+		},
+		{
 			"sha": "68e0184",
 			"date": "2026-09-18",
 			"kind": "patch",
