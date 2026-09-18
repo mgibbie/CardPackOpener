@@ -2,6 +2,54 @@
 	"generated": "2026-09-18",
 	"entries": [
 		{
+			"sha": "68e0184",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "owner_todo batch 70: Eldrazi Monument -> Artifact, Alpine Tyrant grants Frigid (#494)",
+			"body": "Two filings from the wiki owner inbox:\n  - Eldrazi Monument (wastes_eldrazi_monument) -> type sorcery => artifact. It now\n    STAYS on the board as a permanent instead of going to the graveyard; its\n    +1/+1 & Elusive buff still fires on entry (the engine runs an artifact's\n    `effects` as a permanent battlecry), so the existing mechanic is preserved.\n  - Alpine Tyrant (alpine_tyrant) -> the granted keyword goes freezer => frigid.\n    These are genuinely different: Freeze/freezer makes a character skip its next\n    attack; Frigid freezes any character that survives combat with it. Text now\n    reads \"Battlecry: Discover a Beast & give it Frigid.\"\n\nAdds owner_todo_cards70_test.mjs (16 assertions) firing both: the Monument lands\nin the artifact zone (and NOT the graveyard), buffs your creatures +1/+1 + Elusive\nand leaves the enemy alone; the Tyrant queues a Beast-only Discover carrying\ngrant:frigid, and the resolved pick reaches hand with Frigid. Suite 563/563.",
+			"cards": []
+		},
+		{
+			"sha": "ef92c8f",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Persist half-made discard selections so a reopen restores the exact ticks (#493)",
+			"body": "Completes frame-exact resume. The snapshot already restores THAT a discard is\npending (discardQueue is serialized) and resumePendingChoices reopens its modal —\nbut the cards you had already ticked lived only in a DOM-local Set, so walking\naway mid-discard put you back at zero ticks.\n\nNow every tick is persisted, and reopening the modal restores the exact selection\n(button labels and highlight included).\n\nScoping is deliberately strict so a stale selection can NEVER leak into a\ndifferent choice: a saved blob is only reused when the player, the count, the\ncleanup-vs-loot flag AND the hand fingerprint (ordered uids) all match. Drawing a\ncard, discarding, or starting a new fight changes the fingerprint and discards the\nstale ticks. Restored picks are additionally filtered to cards still in hand,\nde-duplicated, and capped at the choice's count. Cleared on resolve.\n\nNew partialchoice.js holds the pure rules (makePartial/matchPartial/handSig) so\nthey are testable without a DOM; game.js does the storage read/write via safestore.\n\nAdds partialchoice_test.mjs (13 assertions): same choice + same hand restores the\nticks; different player/count/cleanup-flag/hand (added card or reorder) all\nrefuse; duplicates, uids no longer in hand, and over-long selections are shaped\naway. Suite 562/562.",
+			"cards": []
+		},
+		{
+			"sha": "f728513",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Never lose a mid-fight snapshot: evict expendable data instead of skipping the save (#492)",
+			"body": "Owner: resume must be frame-exact — walk away mid-Discover or mid-discard and you\ncome back exactly there, not a turn earlier.\n\nRoot cause of the rewind: saveRunSnapshot had TWO silent failure paths.\n  1. `if (json.length > RUN_SNAP_MAX) return;` — an oversize board simply wasn't\n     persisted, forever, with no signal.\n  2. It ignored safeSave's return value, so a quota-exceeded write was swallowed.\nEither one freezes the local snapshot at an older turn while play continues — and\nthe next resume restores that older turn. Meanwhile the REPLAY recorder (cosmetic,\nregenerable, up to 10 games x 600 frames in the same localStorage) already popped\nits own entries on quota failure, so replay data could win the space over the\nfight the player is actually in.\n\nFix: new safeSaveRetry(key, value, freeSpace) in safestore.js — on a failed write\nit evicts something expendable and retries until the value lands or nothing is\nleft to free. saveRunSnapshot (and the async mid-turn snapshot) now use it, with\nan eviction ladder of oldest replay -> all replays. The oversize case warns and\nsaves anyway instead of silently skipping.\n\nCadence was already correct: the snapshot is written on every settled frame (the\nevent-queue drain tail) and on visibilitychange/pagehide, and the pending\npick/discard/scry queues are serialized by toSnapshot — so a mid-choice board was\nalways captured; it just wasn't always STORED.\n\nAdds snapshot_save_guarantee_test.mjs (11 assertions, fake quota-limited store):\nproves a plain safeSave loses the snapshot when the store is full (the rewind),\nthat safeSaveRetry evicts replays and lands turn 18 intact, that it gives up\ncleanly when nothing can be freed, and that a normal save never evicts. 561/561.",
+			"cards": []
+		},
+		{
+			"sha": "ac80a9b",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Fix AI-turn deadlock from any orphaned forced decision (not just cleanup discard) (#490)",
+			"body": "A follow-up to the Lukka cleanup-discard fix: the same AI-turn deadlock recurred\nagainst Ajani (turn 12), triggered by an unresolved Discover (Jace's Triumph\nlogged \"discovers (3 options)\" but its panel never surfaced, and the turn passed\nwith the pick still pending). So the problem is the whole CLASS — any forced\nhuman decision left pending as the turn flips to the AI hangs maybeRunAI, which\n(correctly) won't advance while a human decision is pending.\n\nTwo defenses:\n- engine (core.js): endTurn now no-ops while the active player owes a forced\n  decision (pick/discard/scry/sac/dredge/ask) — it can no longer orphan a choice\n  into the next player's turn. New hasPendingDecision(state, pi) helper.\n- client (game.js): surfacePendingChoice() — a live-play twin of\n  resumePendingChoices — runs when the event queue goes idle and, if no choice\n  modal is open, opens the pending HUMAN decision. Catches any reactive\n  modal-open that was missed (the Discover-with-no-panel case).\n\nTests: endturn_pending_decision_test.mjs (14 assertions: each queue type blocks\nendTurn; clean turns still end; snapshot round-trip keeps the guard). Updated\nme_gm_art_triple_tap_test's cycle helper to settle a queued discard before\nending the turn (as real play does). Suite 560/560.",
+			"cards": []
+		},
+		{
+			"sha": "04a2297",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Fix AI-turn deadlock when a human ends their turn overloaded (Lorequest Lukka hang) (#489)",
+			"body": "Root cause: of the five discardQueue.push sites in the engine, four emit a\n`lootStart` event; the MTG end-of-turn cleanup (core.js) was the lone exception.\n`lootStart` is the only thing that opens the discard modal during live play, so\nwhen a human ENDS their turn holding >HAND_LIMIT cards, the cleanup discard is\npushed the instant the turn flips to the AI — with no modal. maybeRunAI()\ncorrectly refuses to advance the AI while a human decision is pending, so the\nAI turn hangs forever (\"Lukka's Turn…\", empty stack, current = AI).\n\nFix:\n- core.js: the cleanup discard now emits lootStart(player, count, cleanup:true),\n  exactly like every other loot — so the client opens the discard modal reactively.\n- game.js: the lootStart log reads \"discards down to hand size (N)\" for a cleanup\n  (vs \"loots\"); resumePendingChoices() also drops a stale \"Shuffling the card\n  library…\" banner if it lingers behind a restored choice.\n\nAdds cleanup_discard_deadlock_test.mjs (12 assertions): human overloaded end-turn\nemits the lootStart + queues the cleanup discard + flips to the AI; a snapshot\nround-trip preserves AI turn ownership and the pending human discard (events are\nexcluded, which is why resumePendingChoices exists); resolving it unblocks play;\nan AI ending overloaded emits the event too (auto-resolved, no modal). Suite 559/559.",
+			"cards": []
+		},
+		{
+			"sha": "5939704",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Fix two PokéChess playtest bugs (heading typo + battle nameplate clip) (#487)",
+			"body": "From the 2026-09-18 playtest report.\n\nBug 1 — the PokéChess H1 read \"POKéCHESS\" (a literal lowercase é in an\notherwise all-caps, non-transformed heading). Fixed to \"POKÉCHESS\".\n\nBug 2 — in a capture battle the mon name/gender in the status boxes were\nclipped off the box's left edge (\"…ACHBUN ♀\"). Root cause: UI.monPanel draws\nthe name/gender before its first explicit textAlign, so it inherited the\ncaller's alignment. The overworld battle path leaves it 'left', but the\nPokéChess scene (game.js) leaves ctx.textAlign='center' from its own panel\ndrawing, centring the name on x+pad and spilling it past the border. Fixed by\nmaking monPanel self-contained: it now locks textAlign='left' and\ntextBaseline='alphabetic' up front (a no-op for the normal battle path, which\nalready used those defaults).\n\nAdds a battleui_helpers guard: with a caller that left textAlign='center', the\nmon name still renders left-aligned on the alphabetic baseline (16/16).",
+			"cards": []
+		},
+		{
 			"sha": "769f014",
 			"date": "2026-09-18",
 			"kind": "patch",
