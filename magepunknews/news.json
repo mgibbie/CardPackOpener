@@ -1,6 +1,14 @@
 {
-	"generated": "2026-09-17",
+	"generated": "2026-09-18",
 	"entries": [
+		{
+			"sha": "769f014",
+			"date": "2026-09-18",
+			"kind": "patch",
+			"title": "Differentiate losing Life from taking damage (armor-piercing life loss) (#485)",
+			"body": "\"Losing Life\" is now a special flavor of damage that carries Piercing: it\nskips hero ARMOR and hits Health directly, but is otherwise fully normal\ndamage — it still counts as the hero taking damage, so secrets and every\n\"took damage\" trigger still fire (analogous to Lifesteal being a damage flavor).\n\nEngine:\n  - `damage` effect gains a `pierce` flag, threaded to every hero damageHero\n    call (handlers-removal.js); creatures have no armor so it is a no-op there.\n  - target-player path (Lava Spike / Division Table) threads pierce through\n    targetOpponent/applyPlayerAction + the FFA target pick (core.js).\n  - damageHero's pierce branch now also feeds Warptooth Snapper and Crooked\n    Cook, so piercing/life-loss counts as damage everywhere, not just armor.\n\nData: flagged pierce:true on 120 effects across 115 cards — every \"loses N\nLife\" card (each opponent / your hero / each player / target player). \"Deal N\ndamage to the enemy hero\" cards are untouched and still hit armor (zero overlap).\n\nAdds life_loss_pierces_armor_test.mjs (12 assertions): life loss ignores armor,\nplain damage is still soaked, life loss still registers as hero damage, and the\nAoE case pierces the hero half while creatures take normal damage. Suite 558/558.",
+			"cards": []
+		},
 		{
 			"sha": "7f2d879",
 			"date": "2026-09-17",
