@@ -5098,7 +5098,14 @@ export function endTurn(state) {
 	// why overdraw never burns: the cap is enforced here at end of turn, not on
 	// draw. The queue resolves before the next player meaningfully acts.
 	if (p.hand.length > HAND_LIMIT) {
-		state.discardQueue.push({ player: pi, count: p.hand.length - HAND_LIMIT, cleanup: true });
+		const n = p.hand.length - HAND_LIMIT;
+		state.discardQueue.push({ player: pi, count: n, cleanup: true });
+		// Emit lootStart like every OTHER discardQueue.push so the client opens the
+		// discard modal reactively. Without it, a human who ends their turn holding
+		// >HAND_LIMIT cards leaves a pending discard the moment the turn flips to the
+		// AI — and maybeRunAI (correctly) refuses to advance while a human decision is
+		// pending, hanging the AI turn forever (Lorequest Lukka turn-18 deadlock).
+		emit(state, { type: 'lootStart', player: pi, count: n, cleanup: true });
 	}
 	// Doommaiden: the stolen card goes back to the enemy deck if unplayed
 	{

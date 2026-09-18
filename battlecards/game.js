@@ -2207,6 +2207,9 @@ function pump() {
 // A no-op when nothing is pending (e.g. a fresh boot — the queues are empty).
 function resumePendingChoices() {
 	if (!state) return;
+	// the resumed board is up now — drop the "Shuffling the card library…" load
+	// banner if it's still showing, so it never lingers behind a restored choice
+	{ const b = $('banner'); if (b && /Shuffling the card library/.test(b.textContent)) b.style.opacity = 0; }
 	resolveAIScries(); resolveAIDiscards(); resolveAIPicks(); resolveAIAsks(); resolveAISacs(); resolveAIDredges(); resolveAIResponds();
 	const s = state;
 	if (s.scryQueue.length && s.scryQueue[0].chooser === HUMAN) return openScryModal();
@@ -3257,7 +3260,9 @@ function nextEvent() {
 			delay = 300;
 			break;
 		case 'lootStart':
-			log(`${nameOf(ev.player)} loots (${ev.count})`);
+			log(ev.cleanup
+				? `${nameOf(ev.player)} discards down to hand size (${ev.count})`
+				: `${nameOf(ev.player)} loots (${ev.count})`);
 			if (ev.player === HUMAN) openDiscardModal();
 			delay = 300;
 			break;
