@@ -4014,16 +4014,16 @@ export function grantKeywordToChoice(state, pi, keyword) {
 
 // "target player" for a harmful contraption (Hypnotic Swirly Disc / Insufferable Syphon):
 // choose which opponent — auto in 1v1, a pick in a free-for-all
-function applyPlayerAction(state, pi, idx, action, value) {
+function applyPlayerAction(state, pi, idx, action, value, pierce = false) {
 	if (action === 'mill') execEffects(state, pi, [{ type: 'mill', value, player: idx }], null, null);
 	else if (action === 'discard') execEffects(state, pi, [{ type: 'enemy-discard', count: value, player: idx }], null, null);
-	else if (action === 'damage') damageHero(state, idx, value, pi);
+	else if (action === 'damage') damageHero(state, idx, value, pi, pierce); // pierce: "loses N Life" skips armor
 }
-export function targetOpponent(state, pi, action, value) {
+export function targetOpponent(state, pi, action, value, pierce = false) {
 	const opps = opponentsOf(state, pi).filter(o => !state.players[o].eliminated);
 	if (!opps.length) return;
-	if (opps.length === 1) { applyPlayerAction(state, pi, opps[0], action, value); return; }
-	state.pickQueue.push({ player: pi, mode: 'target-player', action, value, ids: opps.map(String) });
+	if (opps.length === 1) { applyPlayerAction(state, pi, opps[0], action, value, pierce); return; }
+	state.pickQueue.push({ player: pi, mode: 'target-player', action, value, pierce, ids: opps.map(String) });
 	emit(state, { type: 'pickStart', player: pi, count: opps.length });
 }
 
@@ -4080,7 +4080,7 @@ export function resolvePick(state, id) {
 		return true;
 	}
 	if (pend.mode === 'target-player') {
-		applyPlayerAction(state, pend.player, Number(id), pend.action, pend.value);
+		applyPlayerAction(state, pend.player, Number(id), pend.action, pend.value, pend.pierce);
 		return true;
 	}
 	if (pend.mode === 'buff-target') {

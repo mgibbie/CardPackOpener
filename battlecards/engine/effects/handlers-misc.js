@@ -51,7 +51,7 @@ register('roll-scry', ({ state, pi, target, source }, e) => {
 });
 register('assemble', ({ state, pi }) => { assemble(state, pi); });
 register('grant-target', ({ state, pi }, e) => { grantKeywordToChoice(state, pi, e.keyword); });
-register('target-player', ({ state, pi }, e) => { targetOpponent(state, pi, e.action, e.value); });
+register('target-player', ({ state, pi }, e) => { targetOpponent(state, pi, e.action, e.value, !!e.pierce); });
 register('buff-target', ({ state, pi }, e) => { buffCreatureChoice(state, pi, e.attack || 0, e.health || 0); });
 // engine/effects/registry.js — the effect-handler registry (docs/06, PR 13).
 //

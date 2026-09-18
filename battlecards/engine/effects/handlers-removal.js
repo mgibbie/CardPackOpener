@@ -1615,9 +1615,13 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				}
 				return false;
 			};
+			// `pierce` = life-loss flavor: skip hero armor, otherwise fully normal
+			// damage (still fires "hero takes damage" secrets/triggers). Creatures
+			// have no armor, so it is a no-op on damageCreature.
+			const pierce = !!e.pierce;
 			switch (e.target) {
-				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi); break; }
-				case 'own-hero': damageHero(state, pi, v, pi); break;
+				case 'enemy-hero': { const t = enemyHero(); if (t != null) damageHero(state, t, v, pi, pierce); break; }
+				case 'own-hero': damageHero(state, pi, v, pi, pierce); break;
 				case 'friendly-others': for (const c of [...state.players[pi].board]) { if (c === source || c.type === 'location') continue; damageCreature(state, c, v, null); } break; // Afflicted Devastator
 				case 'enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) continue; if (schoolImmune(c)) continue; damageCreature(state, c, rollv(), e.threadSource ? source : null); } break;
 				case 'frozen-enemy-creatures': for (const o of enemies) for (const c of [...state.players[o].board]) { if (c.frozen) damageCreature(state, c, v, null); } break;
@@ -1625,15 +1629,15 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				case 'enemies':
 					for (const o of enemies) {
 						for (const c of [...state.players[o].board]) { if (schoolImmune(c)) continue; damageCreature(state, c, v, null); }
-						damageHero(state, o, v, pi);
+						damageHero(state, o, v, pi, pierce);
 					}
 					break;
 				case 'enemy-heroes': // every opponent's face, creatures untouched
-					for (const o of enemies) damageHero(state, o, v, pi);
+					for (const o of enemies) damageHero(state, o, v, pi, pierce);
 					break;
 				case 'all-heroes': // each hero including your own
 					for (let s2 = 0; s2 < state.players.length; s2++) {
-						if (!state.players[s2].eliminated) damageHero(state, s2, v, pi);
+						if (!state.players[s2].eliminated) damageHero(state, s2, v, pi, pierce);
 					}
 					break;
 				case 'undamaged-enemy-creatures': // Dark Iron Skulker
@@ -1647,14 +1651,14 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 					for (let s = 0; s < state.players.length; s++) {
 						if (state.players[s].eliminated) continue;
 						for (const c of [...state.players[s].board]) damageCreature(state, c, v, null);
-						damageHero(state, s, v, pi);
+						damageHero(state, s, v, pi, pierce);
 					}
 					break;
 				case 'other-characters': // everything except the source creature
 					for (let s = 0; s < state.players.length; s++) {
 						if (state.players[s].eliminated) continue;
 						for (const c of [...state.players[s].board]) if (c !== source) damageCreature(state, c, v, null);
-						damageHero(state, s, v, pi);
+						damageHero(state, s, v, pi, pierce);
 					}
 					break;
 				case 'other-creatures': // every creature except the source
@@ -1691,8 +1695,8 @@ register('damage', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 							for (const nb of [b[i - 1], b[i + 1]]) if (nb && !isDead(nb) && nb.type !== 'location') damageCreature(state, nb, ex, null);
 						}
 					}
-					else if (target?.type === 'hero') damageHero(state, target.player, v, pi);
-					else if (e.target === 'any') { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi); } // fallback: face
+					else if (target?.type === 'hero') damageHero(state, target.player, v, pi, pierce);
+					else if (e.target === 'any') { const f = enemyHero(); if (f != null) damageHero(state, f, v, pi, pierce); } // fallback: face
 				}
 			}
 			if (lsBefore != null) healHero(state, pi, Math.max(0, totalHurt() - lsBefore));
