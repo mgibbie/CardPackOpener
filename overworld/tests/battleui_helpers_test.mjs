@@ -2,7 +2,7 @@
 // (battleui.js had NO tests at all). Node-only: layout math, HP color
 // thresholds, text wrap, and the type-color table the whole scene keys off.
 //   node overworld/tests/battleui_helpers_test.mjs
-import { layout, hpColor, wrap, C, TYPE_COLORS, STATUS_BADGE } from '../battleui.js';
+import { layout, hpColor, wrap, monPanel, C, TYPE_COLORS, STATUS_BADGE } from '../battleui.js';
 
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) pass++; else { fail++; console.log('FAIL: ' + m + (extra ? '  ' + extra : '')); } };
@@ -42,6 +42,28 @@ A(hpColor(0.2) === C.hpRed && hpColor(0.01) === C.hpRed, '20% and below draws re
 		TYPES.filter(t => !TYPE_COLORS[t]).join(','));
 	A(['psn', 'brn', 'par', 'slp', 'frz'].every(s => STATUS_BADGE[s]), 'the five classic statuses have badges',
 		['psn', 'brn', 'par', 'slp', 'frz'].filter(s => !STATUS_BADGE[s]).join(','));
+}
+
+// monPanel is self-contained: even if the caller left textAlign='center' /
+// textBaseline='middle' (the PokéChess capture battle did), the mon name must
+// still render left-aligned so it isn't clipped off the box's left edge.
+{
+	const rec = [];
+	const target = {
+		textAlign: 'center', textBaseline: 'middle', fillStyle: '', strokeStyle: '', font: '', lineWidth: 1, globalAlpha: 1,
+		measureText: t => ({ width: String(t).length * 7 }),
+		fillText: t => rec.push({ text: String(t), align: target.textAlign, baseline: target.textBaseline }),
+		createLinearGradient: () => ({ addColorStop() { } }),
+		createRadialGradient: () => ({ addColorStop() { } }),
+	};
+	const ctx = new Proxy(target, { get: (t, k) => (k in t ? t[k] : () => { }), set: (t, k, v) => { t[k] = v; return true; } });
+	const mon = { name: 'SCRATCHBUN', gender: 'F', level: 5, types: ['Fire'], curHP: 20, maxHP: 20 };
+	ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; // simulate the leaked caller state
+	monPanel(ctx, mon, 14, 14, 272, 1, {});
+	const nameDraw = rec.find(r => r.text.includes('SCRATCHBUN'));
+	A(!!nameDraw, 'monPanel drew the mon name');
+	A(nameDraw && nameDraw.align === 'left', 'the name is left-aligned regardless of the caller (no left-edge clip)', nameDraw && nameDraw.align);
+	A(nameDraw && nameDraw.baseline === 'alphabetic', 'the name uses the alphabetic baseline the offsets assume', nameDraw && nameDraw.baseline);
 }
 
 console.log(`${pass} passed, ${fail} failed`);

@@ -105,6 +105,12 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	const h = (opts.showXP ? 96 : 78) * u;
 	panel(ctx, x, y, w, h, 8 * u);
 	const pad = 10 * u;
+	// self-contained text alignment: the name/gender are drawn before the first
+	// explicit textAlign below, so a caller that leaves ctx.textAlign as 'center'
+	// (e.g. the PokéChess capture battle) would otherwise centre the name on x+pad
+	// and clip it off the box's left edge. Lock both to the panel's assumptions.
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'alphabetic';
 	ctx.fillStyle = C.text;
 	ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 	ctx.fillText((mon.shiny ? '★' : '') + mon.name, x + pad, y + pad + 13 * u);
