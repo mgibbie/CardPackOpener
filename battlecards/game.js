@@ -19,7 +19,8 @@ import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
-import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
+import { pickCanonicalRun, useLocalAsyncTurn } from './runsync.js';
+import { winLossLabel } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
 
@@ -144,38 +145,57 @@ let matchStats = null;
 function resetMatchStats() { matchStats = { start: performance.now(), turns: 0, cards: [], summons: [], heroDmgTaken: [], elim: [] }; }
 function statInc(arr, i, n = 1) { if (i == null || i < 0) return; arr[i] = (arr[i] || 0) + n; }
 
+// Every run write is STAMPED: a stable runId (identity), a monotonic rev, and a wall
+// clock. Boot reconciliation (runsync.pickCanonicalRun) orders copies by these, so a
+// stale cache can never outrank a newer run — the old reconciler had no way to tell
+// "same run, older checkpoint" from "a different, newer run". Stamped on write, so
+// existing saves keep working and gain the fields the first time they are saved.
+function stampRun(run) {
+	if (!run || typeof run !== 'object') return run;
+	if (!run.runId) run.runId = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+	run.rev = (run.rev || 0) + 1;
+	run.updatedAt = Date.now();
+	return run;
+}
+const saverFor = key => run => safeSave(key, stampRun(run));
+// A run that loses reconciliation but still holds progress is never dropped — it is
+// stashed under a sibling key so it stays recoverable.
+function preserveRunConflict(key, run, reason) {
+	if (!run) return;
+	try { safeSave(key + '__conflict_v1', { run, reason, at: Date.now() }); } catch (e) { /* best effort */ }
+}
 const loadRun = () => safeLoad(RUN_KEY, null);
-const saveRun = run => safeSave(RUN_KEY, run);
+const saveRun = saverFor(RUN_KEY);
 const clearRun = () => { localStorage.removeItem(RUN_KEY); serverClearRun(RUN_KEY); };
 const loadHeist = () => safeLoad(HEIST_KEY, null);
-const saveHeist = run => safeSave(HEIST_KEY, run);
+const saveHeist = saverFor(HEIST_KEY);
 const clearHeist = () => { localStorage.removeItem(HEIST_KEY); serverClearRun(HEIST_KEY); };
 const loadTombs = () => safeLoad(TOMBS_KEY, null);
-const saveTombs = run => safeSave(TOMBS_KEY, run);
+const saveTombs = saverFor(TOMBS_KEY);
 const clearTombs = () => { localStorage.removeItem(TOMBS_KEY); serverClearRun(TOMBS_KEY); };
 const loadDuels = () => safeLoad(DUELS_KEY, null);
-const saveDuels = run => safeSave(DUELS_KEY, run);
+const saveDuels = saverFor(DUELS_KEY);
 const clearDuels = () => { localStorage.removeItem(DUELS_KEY); serverClearRun(DUELS_KEY); };
 const loadArena = () => safeLoad(ARENA_KEY, null);
-const saveArena = run => safeSave(ARENA_KEY, run);
+const saveArena = saverFor(ARENA_KEY);
 const clearArena = () => { localStorage.removeItem(ARENA_KEY); serverClearRun(ARENA_KEY); };
 const loadLorequest = () => safeLoad(LOREQUEST_KEY, null);
-const saveLorequest = run => safeSave(LOREQUEST_KEY, run);
+const saveLorequest = saverFor(LOREQUEST_KEY);
 const clearLorequest = () => { localStorage.removeItem(LOREQUEST_KEY); serverClearRun(LOREQUEST_KEY); };
 const loadMiddleearth = () => safeLoad(MIDDLEEARTH_KEY, null);
-const saveMiddleearth = run => safeSave(MIDDLEEARTH_KEY, run);
+const saveMiddleearth = saverFor(MIDDLEEARTH_KEY);
 const clearMiddleearth = () => { localStorage.removeItem(MIDDLEEARTH_KEY); serverClearRun(MIDDLEEARTH_KEY); };
 const middleearthTomUnlocked = () => { try { return localStorage.getItem(MIDDLEEARTH_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadSwordcoast = () => safeLoad(SWORDCOAST_KEY, null);
-const saveSwordcoast = run => safeSave(SWORDCOAST_KEY, run);
+const saveSwordcoast = saverFor(SWORDCOAST_KEY);
 const clearSwordcoast = () => { localStorage.removeItem(SWORDCOAST_KEY); serverClearRun(SWORDCOAST_KEY); };
 const swordcoastGaleUnlocked = () => { try { return localStorage.getItem(SWORDCOAST_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadFinalfantasy = () => safeLoad(FINALFANTASY_KEY, null);
-const saveFinalfantasy = run => safeSave(FINALFANTASY_KEY, run);
+const saveFinalfantasy = saverFor(FINALFANTASY_KEY);
 const clearFinalfantasy = () => { localStorage.removeItem(FINALFANTASY_KEY); serverClearRun(FINALFANTASY_KEY); };
 const finalfantasyGilgameshUnlocked = () => { try { return localStorage.getItem(FINALFANTASY_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 const loadMultiverse = () => safeLoad(MULTIVERSE_KEY, null);
-const saveMultiverse = run => safeSave(MULTIVERSE_KEY, run);
+const saveMultiverse = saverFor(MULTIVERSE_KEY);
 const clearMultiverse = () => { localStorage.removeItem(MULTIVERSE_KEY); serverClearRun(MULTIVERSE_KEY); };
 const multiverseSurferUnlocked = () => { try { return localStorage.getItem(MULTIVERSE_UNLOCK_KEY) === '1'; } catch (e) { return false; } };
 
@@ -232,6 +252,7 @@ function saveRunSnapshot() {
 		if (json.length > RUN_SNAP_MAX) console.warn('run snapshot is very large (' + json.length + 'B) — saving anyway');
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
 		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
+		stampRun(run); // identity + monotonic rev, so reconciliation can order this write
 		safeSaveRetry(io.key, run, freeSpaceForSnapshot); // local only; never silently skipped
 	} catch (e) { /* never let a save break play */ }
 }
@@ -306,10 +327,15 @@ async function hydrateRunsFromServer() {
 		const runs = r && r.runs;
 		if (runs && typeof runs === 'object') for (const [key, entry] of Object.entries(runs)) {
 			if (!entry || !entry.run || typeof entry.run !== 'object') continue;
-			// Don't let the server's copy clobber a fresher local in-fight snapshot — after a
-			// hard tab-close the server is behind (its async final push never landed) while
-			// localStorage is exact. This is what made resume drop you to turn 1.
-			if (keepLocalRun(safeLoad(key, null), entry.run)) continue;
+			// Pick ONE canonical copy. entry.updated_at is the server's own write stamp —
+			// authoritative recency, immune to client clocks — and was previously thrown
+			// away here, leaving the decision to "does the server copy have a snapshot?".
+			// It usually does NOT (the 5s heartbeat strips it), so a stale local run used
+			// to win unconditionally. Whichever copy loses is stashed, never dropped.
+			const local = safeLoad(key, null);
+			const verdict = pickCanonicalRun(local, entry.run, entry.updated_at);
+			if (verdict.preserve) preserveRunConflict(key, verdict.preserve === 'local' ? local : entry.run, verdict.reason);
+			if (verdict.pick === 'local') continue;
 			safeSave(key, entry.run);
 		}
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
@@ -7301,7 +7327,7 @@ function resumeDuelsOverlay(run) {
 		const clsLabel = run.classChoice ? ` (${(classRegistry.find(x => x.id === run.classChoice) || {}).name || run.classChoice})` : '';
 		const anom = run.anomaly && Heist.ANOMALIES[run.anomaly] ? ` · Anomaly: ${Heist.ANOMALIES[run.anomaly].name}` : '';
 		const el = dungeonOverlay('DUEL IN PROGRESS',
-			`${hero?.name || run.heroId}${clsLabel} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
+			`${hero?.name || run.heroId}${clsLabel} - ${winLossLabel(run)}, ${run.deck.length} cards${anom}. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -7463,7 +7489,7 @@ function bootDuelsEncounter(cardsById, run) {
 	// optional run modifier: a symmetric anomaly warps every game (shared with Heist)
 	if (run.anomaly && Heist.ANOMALIES[run.anomaly]) { Heist.applyAnomaly(state, run.anomaly); log(`Anomaly - ${Heist.ANOMALIES[run.anomaly].name}: ${Heist.ANOMALIES[run.anomaly].text}`); }
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	log(`Duels - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
+	log(`Duels - ${winLossLabel(run)}. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with a ${run.deck.length}-card deck; ${enemy.name} drafted ${enemy.deck.length}.`);
 	for (const id of run.passives) log(`Your passive - ${Duels.PASSIVES[id].name}: ${Duels.PASSIVES[id].text}`);
 }
@@ -7539,7 +7565,7 @@ function advanceDuels(run) {
 	const games = (run.wins || 0) + (run.losses || 0);
 	run.enemy = genDuelsEnemy(state.cardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveDuels(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards.`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -7570,7 +7596,7 @@ let lorequestCardsById = null;
 function resumeLorequestOverlay(run) {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('LOREQUEST IN PROGRESS',
-			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -7728,7 +7754,7 @@ function bootLorequestEncounter(cardsById, run) {
 	state.players[0].allowedBasics = Lorequest.allowedBasics(cardsById, run.characterId);
 	state.players[1].allowedBasics = Lorequest.allowedBasics(cardsById, enemy.name);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
-	log(`Lorequest - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${tier}).`);
+	log(`Lorequest - ${winLossLabel(run)}. Facing ${enemy.name} (${tier}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
@@ -7789,7 +7815,7 @@ function advanceLorequest(run) {
 	run.enemy = genLorequestEnemy(state.cardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
 	saveLorequest(run);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${tier})`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${tier})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -7818,7 +7844,7 @@ let middleearthCardsById = null;
 function resumeMiddleEarthOverlay(run) {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('MIDDLE-EARTH RUN IN PROGRESS',
-			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -7894,7 +7920,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'meDeck', enemy.name);
-	log(`Lorequest: Middle-earth - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Middleearth.rungLabel(run.wins || 0)}).`);
+	log(`Lorequest: Middle-earth - ${winLossLabel(run)}. Facing ${enemy.name} (${Middleearth.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
@@ -7969,7 +7995,7 @@ function afterMiddleEarthReward(run) {
 function advanceMiddleEarth(run) {
 	run.enemy = genMiddleEarthEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveMiddleearth(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -7999,7 +8025,7 @@ let swordcoastCardsById = null;
 function resumeSwordCoastOverlay(run) {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('SWORD COAST RUN IN PROGRESS',
-			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -8075,7 +8101,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'scDeck', enemy.name);
-	log(`Lorequest: Sword Coast - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Swordcoast.rungLabel(run.wins || 0)}).`);
+	log(`Lorequest: Sword Coast - ${winLossLabel(run)}. Facing ${enemy.name} (${Swordcoast.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
@@ -8150,7 +8176,7 @@ function afterSwordCoastReward(run) {
 function advanceSwordCoast(run) {
 	run.enemy = genSwordCoastEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveSwordcoast(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -8180,7 +8206,7 @@ let finalfantasyCardsById = null;
 function resumeFinalFantasyOverlay(run) {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('FINAL FANTASY RUN IN PROGRESS',
-			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -8254,7 +8280,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'ffDeck', enemy.name);
-	log(`Lorequest: Final Fantasy - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
+	log(`Lorequest: Final Fantasy - ${winLossLabel(run)}. Facing ${enemy.name} (${Finalfantasy.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
@@ -8327,7 +8353,7 @@ function afterFinalFantasyReward(run) {
 function advanceFinalFantasy(run) {
 	run.enemy = genFinalFantasyEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveFinalfantasy(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -8358,7 +8384,7 @@ let multiverseCardsById = null;
 function resumeMultiverseOverlay(run) {
 	return new Promise(resolve => {
 		const el = dungeonOverlay('MULTIVERSE RUN IN PROGRESS',
-			`${run.characterId} - ${run.wins || 0} wins / ${run.losses || 0} losses, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
+			`${run.characterId} - ${winLossLabel(run)}, ${run.deck.length} cards. Reach 12 wins before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - start a new run', () => { hideDungeonOverlay(); resolve(false); }));
 	});
@@ -8434,7 +8460,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	// basics are color-locked to each character's identity (see PR #85)
 	state.players[0].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', run.characterId);
 	state.players[1].allowedBasics = Duels.allowedBasicsFor(cardsById, 'mvDeck', enemy.name);
-	log(`Lorequest: Multiverse - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${Multiverse.rungLabel(run.wins || 0)}).`);
+	log(`Lorequest: Multiverse - ${winLossLabel(run)}. Facing ${enemy.name} (${Multiverse.rungLabel(run.wins || 0)}).`);
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length} at win-parity.`);
 }
 
@@ -8492,7 +8518,7 @@ function afterMultiverseBucket(run) {
 function advanceMultiverse(run) {
 	run.enemy = genMultiverseEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveMultiverse(run);
-	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${run.wins || 0} wins / ${run.losses || 0} losses - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
+	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
@@ -8520,7 +8546,7 @@ function multiverseRunOver(run) {
 function resumeArenaOverlay(run) {
 	return new Promise(resolve => {
 		const hero = duelsEffectiveHero(run);
-		const el = dungeonOverlay('ARENA RUN IN PROGRESS', `${hero?.name || run.heroId} - ${run.wins || 0} wins / ${run.losses || 0} losses with a ${run.deck.length}-card deck. Win as many as you can before 3 losses.`);
+		const el = dungeonOverlay('ARENA RUN IN PROGRESS', `${hero?.name || run.heroId} - ${winLossLabel(run)} with a ${run.deck.length}-card deck. Win as many as you can before 3 losses.`);
 		el.appendChild(overlayButton('Continue the run', () => { hideDungeonOverlay(); resolve(true); }));
 		el.appendChild(overlayButton('Abandon - draft a new deck', () => { hideDungeonOverlay(); resolve(false); }));
 		el.appendChild(overlayButton('🏆 Leaderboard', () => showArenaLeaderboard()));
@@ -8560,7 +8586,7 @@ function bootArenaEncounter(cardsById, run) {
 	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
-	log(`Arena - ${run.wins || 0} wins / ${run.losses || 0} losses. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
+	log(`Arena - ${winLossLabel(run)}. Facing ${enemy.name} (${enemyCls.name || enemy.heroClass}).`);
 	log(`You are ${hero.name} with your drafted ${run.deck.length}-card deck.`);
 }
 
@@ -8579,7 +8605,7 @@ function afterArenaGame(run, won) {
 function advanceArena(run, won) {
 	run.enemy = genArenaEnemy(state.cardsById, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveArena(run);
-	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${run.wins || 0} wins / ${run.losses || 0} losses - your drafted deck stands pat.`);
+	const el = dungeonOverlay(won ? `WIN - ${run.wins} win${run.wins === 1 ? '' : 's'}` : `LOSS - ${run.losses}/3`, `Next up: ${run.enemy.name}. ${winLossLabel(run)} - your drafted deck stands pat.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
 }
 
