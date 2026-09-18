@@ -6913,6 +6913,7 @@ function heistVictory(run) {
 		const el = dungeonOverlay('HEIST COMPLETE!', `${Heist.BOSSES[run.bossId].name} falls — ${wing.name} is cleaned out. Cleared as ${hero.name} with ${run.deck.length} cards.`);
 		Col.earnGold(750);
 		mpRunReward(el, 'win');
+		addRunReplayButtons(el, run, 'heist'); // before the clear — the ids live on the run
 		el.appendChild(overlayButton('New Heist (+750 gold banked)', () => { clearHeist(); location.reload(); }));
 		clearHeist();
 		return;
@@ -7212,6 +7213,7 @@ function tombsVictory(run) {
 		const el = dungeonOverlay('CHAPTER CLEARED!', `${Tombs.BOSSES[run.bossId].name} falls — ${chapter.name} is purged of the plague. Cleared as ${explorer.name} with ${run.deck.length} cards.`);
 		Col.earnGold(750);
 		mpRunReward(el, 'win');
+		addRunReplayButtons(el, run, 'tombs'); // before the clear — the ids live on the run
 		el.appendChild(overlayButton('New Expedition (+750 gold banked)', () => { clearTombs(); location.reload(); }));
 		clearTombs();
 		return;
@@ -7577,6 +7579,7 @@ function duelsRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${hero.name} takes 12 wins with a ${run.deck.length}-card deck.`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.heroId });
+	addRunReplayButtons(el, run, 'duels'); // before the clear — the ids live on the run
 	clearDuels();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8009,6 +8012,7 @@ function middleEarthRunComplete(run) {
 		`${run.characterId} clears Middle-earth with a ${run.deck.length}-card deck. Tom Bombadil is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
+	addRunReplayButtons(el, run, 'middleearth'); // before the clear — the ids live on the run
 	clearMiddleearth();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8190,6 +8194,7 @@ function swordCoastRunComplete(run) {
 		`${run.characterId} clears the Sword Coast with a ${run.deck.length}-card deck. Gale, Waterdeep Prodigy is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
+	addRunReplayButtons(el, run, 'swordcoast'); // before the clear — the ids live on the run
 	clearSwordcoast();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8367,6 +8372,7 @@ function finalFantasyRunComplete(run) {
 		`${run.characterId} clears Final Fantasy with a ${run.deck.length}-card deck. Gilgamesh is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
+	addRunReplayButtons(el, run, 'finalfantasy'); // before the clear — the ids live on the run
 	clearFinalfantasy();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8532,6 +8538,7 @@ function multiverseRunComplete(run) {
 		`${run.characterId} clears the Multiverse with a ${run.deck.length}-card deck. Silver Surfer is now a playable hero!`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
+	addRunReplayButtons(el, run, 'multiverse'); // before the clear — the ids live on the run
 	clearMultiverse();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8632,6 +8639,7 @@ function arenaRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - FLAWLESS ARENA!', `${hero?.name || run.heroId} runs the table 12-${run.losses || 0}. +1600 gold banked.`);
 	const sub = submitArenaScore(run);
 	mpRunReward(el, 'win');
+	addRunReplayButtons(el, run, 'arena'); // before the clear — the ids live on the run
 	clearArena();
 	el.appendChild(overlayButton('🏆 Leaderboard', () => (sub || Promise.resolve()).finally(showArenaLeaderboard)));
 	el.appendChild(overlayButton('New Arena Run (+1600 gold)', () => location.reload()));
