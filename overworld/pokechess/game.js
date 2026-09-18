@@ -158,7 +158,7 @@ function afterMove(keepMsg) {
 let last = 0;
 function loop(ts) {
 	const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
-	if (!board) { requestAnimationFrame(loop); return; } // still booting
+	if (!board) { drawLoading(ts); requestAnimationFrame(loop); return; } // still booting — show a loading screen
 	if (phase === 'battle') { battle.update(dt); draw(); requestAnimationFrame(loop); return; }
 	if (phase === 'ai' && board.turn === BLACK) {
 		aiTimer -= dt;
@@ -172,6 +172,25 @@ function loop(ts) {
 }
 
 // ---------- rendering ----------
+// booting the battle engine (species/moves/abilities) takes a beat; show a
+// spinner + title instead of a blank canvas until the board is ready.
+function drawLoading(ts) {
+	const t = (ts || 0) / 1000;
+	ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, W, H);
+	const cx = W / 2, cy = H / 2;
+	ctx.save();
+	ctx.strokeStyle = '#f8d84a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+	const a0 = (t * 4) % (Math.PI * 2);
+	ctx.beginPath(); ctx.arc(cx, cy - 26, 26, a0, a0 + Math.PI * 1.4); ctx.stroke();
+	ctx.restore();
+	ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+	ctx.fillStyle = '#e8e0d0'; ctx.font = 'bold 26px system-ui, sans-serif';
+	ctx.fillText('POKÉCHESS', cx, cy + 30);
+	ctx.fillStyle = '#b8aee0'; ctx.font = '14px system-ui, sans-serif';
+	ctx.fillText('Loading' + '.'.repeat(1 + (Math.floor(t * 2) % 3)), cx, cy + 58);
+	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; // leave defaults for draw()
+}
+
 function drawSprite(mon, x, y, size, side) {
 	if (!mon || !mon.sprite) return;
 	const im = loadImg('data/pokemon/' + mon.sprite);
