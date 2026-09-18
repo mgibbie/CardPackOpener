@@ -60,10 +60,11 @@ function modifierLinesHtml(card) {
 // open for logged-out recipients — replay-get is a public endpoint by design —
 // and a local ?replay= view reads only this device's tapes. Everything
 // account-shaped (runs, packs, PvP) stays behind the login.
-if (!/[?&](rshare|replay)=/.test(location.search)) MPX.requireLogin();
+if (!/[?&](rshare|replay|rrun)=/.test(location.search)) MPX.requireLogin();
 const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, generatedCardIds } from './cardart.js';
 import * as Rec from './replayrec.js';
+import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
@@ -116,7 +117,8 @@ const spectateMode = !!spectateName;
 // read-only, no AI, no network. Reuses the spectate input-gating below.
 const replayId = new URLSearchParams(location.search).get('replay');
 const rshareId = new URLSearchParams(location.search).get('rshare'); // a server-shared replay link
-const replayMode = !!replayId || !!rshareId;
+const rrunId = new URLSearchParams(location.search).get('rrun');     // a whole run: a playlist of shared tapes
+const replayMode = !!replayId || !!rshareId || !!rrunId;
 
 // ?cardpvp=<matchId> (MP only): a live host-authoritative card duel. The host
 // runs the real engine as player 0; the guest is player 1, renders the host's
@@ -6670,6 +6672,7 @@ function dungeonVictory(run) {
 		const el = dungeonOverlay('RUN COMPLETE!', `${Dungeon.BOSSES[run.bossId].name} falls — the treasure hoard is yours. Cleared as ${run.classId} with ${run.deck.length} cards.`);
 		Col.earnGold(500);
 		mpRunReward(el, 'win');
+		addRunReplayButtons(el, run, 'dungeon'); // before the clear — the ids live on the run
 		el.appendChild(overlayButton('New Run (+500 gold banked)', () => { clearRun(); location.reload(); }));
 		clearRun();
 		return;
@@ -7823,6 +7826,7 @@ function lorequestRunComplete(run) {
 	const el = dungeonOverlay('12 WINS - RUN CLEARED!', `${run.characterId} takes 12 wins with a ${run.deck.length}-card deck.`);
 	Col.earnGold(1000);
 	mpRunReward(el, 'win', { wins: run.wins || 0, losses: run.losses || 0, hero: run.characterId });
+	addRunReplayButtons(el, run, 'lorequest'); // before the clear — the ids live on the run
 	clearLorequest();
 	el.appendChild(overlayButton('New Run (+1000 gold banked)', () => location.reload()));
 }
@@ -8717,6 +8721,53 @@ function finalizeReplay(winner, resultOverride) {
 	// keep the promise so the post-game buttons can await the saved id (the overlay
 	// is built synchronously in the same gameOver tick, before finish() resolves)
 	lastReplayPromise = Rec.finish({ winner: winner == null ? null : winner, result }).then(id => { lastReplayId = id; return id; }).catch(() => null);
+	stashRunFightReplay(result); // fire-and-forget: builds the run's "super replay" playlist as you go
+}
+
+// During a run, park every fight's SHAREABLE tape id on the run itself. It has to
+// happen per fight, not at the end: the local replay store is a 10-deep ring buffer
+// and a 12-win run is ~14 fights, so the opening fights would be evicted long before
+// the run is cleared. Only the 8-char ids live on the run, so this costs it nothing.
+// Best-effort throughout — a failed upload just leaves that fight out of the playlist.
+async function stashRunFightReplay(result) {
+	try {
+		const io = activeRunIO();
+		if (!io || replayMode || spectateMode || !MP_ON) return;
+		const localId = await (lastReplayPromise || Promise.resolve(lastReplayId));
+		if (!localId) return;
+		const shareId = await Rec.uploadReplay(localId);
+		if (!shareId) return;
+		const run = io.load();
+		if (!run || !run.active) return; // the run ended / was cleared while we uploaded
+		const before = RunRep.playlistFights(run).length;
+		run.fightReplays = RunRep.appendFightReplay(run.fightReplays, { id: shareId, result, label: RunRep.fightLabel(run, result) });
+		if (run.fightReplays.length !== before) io.save(run);
+	} catch (e) { /* a replay is a bonus — never let it disturb a run */ }
+}
+
+// A cleared run gets a SUPER REPLAY: every fight chained into one playlist with its
+// own link. Call BEFORE the run is cleared — the ids live on the run object.
+// Silently adds nothing when there is nothing to show (logged out, uploads failed).
+function addRunReplayButtons(el, run, mode) {
+	if (!el || replayMode || spectateMode) return;
+	if (!RunRep.canBuildPlaylist(run)) return; // one fight is just an ordinary replay
+	const fights = RunRep.playlistFights(run);
+	const meta = RunRep.playlistMeta(run, mode || runModeName());
+	let idP = null; // one upload, shared by both buttons
+	const playlistId = () => (idP = idP || Rec.putRunPlaylist(fights.map(f => f.id), meta));
+	el.appendChild(overlayButton(`🎬 Watch the full run (${fights.length} fights)`, () => {
+		const w = window.open('', '_blank'); // keep the click gesture
+		playlistId().then(id => {
+			if (id) { const url = 'index.html?rrun=' + encodeURIComponent(id); if (w) w.location = url; else location.href = url; }
+			else { if (w) w.close(); banner('Could not build the full-run replay.'); }
+		});
+	}));
+	el.appendChild(overlayButton('🔗 Copy full-run replay link', () => {
+		playlistId().then(id => {
+			if (id) copyText(location.origin + '/battlecards/index.html?rrun=' + encodeURIComponent(id), 'Copied the full-run replay link!');
+			else banner('Could not build the full-run replay link.');
+		});
+	}));
 }
 
 // clipboard with a prompt fallback + a banner ack
@@ -8755,8 +8806,72 @@ function addReplayButtons(el) {
 	}));
 }
 
+// a run "super replay": { ids, meta, i } — the fights of one cleared run, chained
+let runPlaylist = null;
+// load fight #i of the playlist and show it from its first frame
+async function playlistLoad(i, autoplay) {
+	if (!runPlaylist || i < 0 || i >= runPlaylist.ids.length) return false;
+	const tape = await Rec.fetchSharedReplay(runPlaylist.ids[i]);
+	if (!tape || !Array.isArray(tape.frames) || !tape.frames.length) return false;
+	runPlaylist.i = i;
+	replayTape = tape;
+	replayView = 0; replayPanelsFor = 0;
+	renderReplayFrame(0);
+	buildReplayBar();
+	// the bar is built once, but each fight is a different length — retune the scrubber
+	const scrub = $('rb-scrub');
+	if (scrub) { scrub.max = String(replayTape.frames.length - 1); scrub.value = '0'; }
+	updateReplayBar();
+	updatePlaylistBar();
+	if (autoplay) replayPlay();
+	return true;
+}
+
+// Chapter bar for a run playlist: which fight of the run you're watching, with
+// manual skip. Auto-advance happens in replayPlay's tail.
+function buildPlaylistBar() {
+	if (!runPlaylist || $('rp-bar')) return;
+	const bar = document.createElement('div');
+	bar.id = 'rp-bar';
+	bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:10px;'
+		+ 'padding:8px 14px;background:rgba(12,17,34,.92);border-bottom:1px solid #2a3350;color:#e8e0d0;'
+		+ 'font:600 13px system-ui,sans-serif;backdrop-filter:blur(6px)';
+	const m = runPlaylist.meta || {};
+	const who = [m.hero, m.mode].filter(Boolean).join(' · ');
+	bar.innerHTML = `<span style="color:#f8d84a;font-weight:800">🎬 FULL RUN</span>`
+		+ `<span style="color:#b8aee0">${who ? who + ' — ' : ''}${(m.wins || 0)}W / ${(m.losses || 0)}L</span>`
+		+ `<span id="rp-chapter" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>`
+		+ `<button id="rp-prev" style="background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:7px;padding:4px 10px;cursor:pointer;font:inherit">◀ Prev</button>`
+		+ `<button id="rp-next" style="background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:7px;padding:4px 10px;cursor:pointer;font:inherit">Next ▶</button>`;
+	document.body.appendChild(bar);
+	$('rp-prev').addEventListener('click', () => { replayPause(); playlistLoad(runPlaylist.i - 1, false); });
+	$('rp-next').addEventListener('click', () => { replayPause(); playlistLoad(runPlaylist.i + 1, false); });
+	updatePlaylistBar();
+}
+function updatePlaylistBar() {
+	if (!runPlaylist || !$('rp-bar')) return;
+	const n = runPlaylist.ids.length, i = runPlaylist.i;
+	const label = (runPlaylist.meta && runPlaylist.meta.labels && runPlaylist.meta.labels[i]) || '';
+	const chap = $('rp-chapter');
+	if (chap) chap.textContent = `Fight ${i + 1} / ${n}${label ? ' — ' + label : ''}`;
+	const prev = $('rp-prev'), next = $('rp-next');
+	if (prev) prev.disabled = i <= 0;
+	if (next) next.disabled = i >= n - 1;
+}
+
 async function startReplay(cardsById) {
 	replayCards = cardsById;
+	if (rrunId) {
+		runPlaylist = await Rec.fetchRunPlaylist(rrunId);
+		if (runPlaylist) {
+			runPlaylist.i = 0;
+			injectReplayStyles();
+			if (await playlistLoad(0, false)) { buildPlaylistBar(); return; }
+		}
+		const el = dungeonOverlay('RUN REPLAY NOT FOUND', 'That full-run replay has expired or the link is wrong.');
+		el.appendChild(overlayButton('Back to replays', () => { location.href = 'replays.html'; }));
+		return;
+	}
 	replayTape = rshareId ? await Rec.fetchSharedReplay(rshareId) : await Rec.getReplay(replayId);
 	if (!replayTape || !Array.isArray(replayTape.frames) || !replayTape.frames.length) {
 		const el = dungeonOverlay('REPLAY NOT FOUND', rshareId
@@ -8796,7 +8911,15 @@ function replayPlay() {
 	if (replayTimer || !replayTape) return;
 	if (replayIdx >= replayTape.frames.length - 1) renderReplayFrame(0); // restart from the top if at the end
 	replayTimer = setInterval(() => {
-		if (replayIdx >= replayTape.frames.length - 1) { replayPause(); return; }
+		if (replayIdx >= replayTape.frames.length - 1) {
+			// end of this fight — in a run playlist, roll straight into the next one
+			if (runPlaylist && runPlaylist.i < runPlaylist.ids.length - 1) {
+				replayPause();
+				playlistLoad(runPlaylist.i + 1, true);
+				return;
+			}
+			replayPause(); return;
+		}
 		// a frame that resolves attacks gets a telegraph beat first: hold on the
 		// CURRENT board one tick and draw the red line(s) attacker → target, so
 		// the watcher sees what's about to happen instead of decoding aftermath

@@ -85,6 +85,7 @@ const RATE_LIMITS = {
 	// the large-blob writes (ow-save is a 1MB snapshot, run-save ~700KB): legit
 	// clients debounce to well under one per second — these brake write floods
 	'ow-save': [60, 60_000], 'run-save': [60, 60_000], 'base-save': [20, 60_000],
+	'replay-playlist-put': [10, 60_000], // one per finished run — deliberate, never hot
 	'save-deck': [30, 60_000], 'open-pack': [60, 60_000],
 };
 const HIT_LIMIT = [240, 60_000];    // per-IP analytics beacon
@@ -114,6 +115,7 @@ const GC_TABLE = [
 	['cardstate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
+	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
@@ -761,6 +763,15 @@ export default async function handler(req, env) {
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code });
 	}
+	// public read of a run playlist (the /?rrun= link) — same shape of guard as replay-get
+	if (action === 'replay-playlist-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!/^[a-f0-9]{8,20}$/.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('rplaylist:' + id);
+		if (!rec || !Array.isArray(rec.ids) || !rec.ids.length) return json({ error: 'not found' }, 404);
+		return json({ ids: rec.ids, meta: rec.meta || {} });
+	}
 
 	// live art/sprite tuning overrides — PUBLIC read: every game client fetches
 	// these at boot and merges them over the committed tuning files, so an
@@ -1224,6 +1235,28 @@ export default async function handler(req, env) {
 		let id;
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('replay:' + id))) break; } // 8 hex chars — short enough for a /r/<id> link; collisions retried, tapes GC in 30 days
 		await store.setJSON('replay:' + id, { code, by: username, when: Date.now() });
+		return json({ id });
+	}
+
+	// a run's "super replay": an ORDERED playlist of tape ids already uploaded by
+	// replay-put, so a whole cleared run watches as one chained sitting. Stores only
+	// the ids + a little display meta — the tapes themselves are untouched, and both
+	// expire on the same 30-day sweep.
+	if (action === 'replay-playlist-put') {
+		const raw = Array.isArray(body.ids) ? body.ids : [];
+		const ids = raw.map(String).filter(x => /^[a-f0-9]{8,20}$/.test(x)).slice(0, 40); // a 12-win run is ~14 fights
+		if (!ids.length) return json({ error: 'bad playlist' }, 400);
+		const m = (body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta)) ? body.meta : {};
+		const meta = { // allow-list: this is rendered in a public viewer
+			mode: String(m.mode || '').slice(0, 24),
+			hero: String(m.hero || '').slice(0, 48),
+			wins: Number(m.wins) || 0,
+			losses: Number(m.losses) || 0,
+			labels: Array.isArray(m.labels) ? m.labels.slice(0, 40).map(x => String(x).slice(0, 48)) : [],
+		};
+		let id;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('rplaylist:' + id))) break; }
+		await store.setJSON('rplaylist:' + id, { ids, meta, by: username, when: Date.now() });
 		return json({ id });
 	}
 
