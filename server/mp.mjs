@@ -309,6 +309,29 @@ function userStore(db) {
 		delete: async (k) => {
 			await db.prepare('DELETE FROM mp_store WHERE key = ?').bind(k).run();
 		},
+		// Atomic read-modify-write: re-read the row, let `fn` mutate the parsed doc
+		// (return null to skip the write), and write ONLY if the stored text is still
+		// what was read — otherwise a concurrent writer landed in between, so re-read
+		// and re-apply. Every handler does get -> mutate -> setJSON on the account doc,
+		// and two requests from one client in flight at once (a finished run's
+		// run-score + run-reward) each wrote their own copy back: the later write
+		// silently dropped the earlier one's fields. Progress that must never be lost
+		// goes through here. Resolves to the doc as written (or as read, if skipped).
+		mutate: async (k, fn, tries = 6) => {
+			for (let i = 0; i < tries; i++) {
+				const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first();
+				const before = row ? row.value : null;
+				const doc = before == null ? null : JSON.parse(before);
+				const out = fn(doc);
+				if (out == null) return doc;
+				const after = JSON.stringify(out);
+				const r = before == null
+					? await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO NOTHING').bind(k, after).run()
+					: await db.prepare('UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND value = ?').bind(after, k, before).run();
+				if ((r && r.meta ? r.meta.changes : r && r.changes) > 0) return out; // D1 reports changes under meta; the dev shim (node:sqlite) at top level
+			}
+			throw new Error('mutate: too much contention on ' + k);
+		},
 		// prefix scan, ordered by key — for per-item queues (each row a separate key)
 		// that must survive concurrent writers. Callers use controlled prefixes with
 		// no LIKE metacharacters (no _ or %), so no escaping is needed.
@@ -1169,8 +1192,17 @@ export default async function handler(req, env) {
 			const losses = Math.max(0, Math.min(3, parseInt(body.losses, 10) || 0));
 			const hero = String(body.hero || '').replace(/[\u0000-\u001f]/g, '').slice(0, 32).trim();
 			const run = { wins, losses, hero };
-			const better = arenaBetter(run, user.runBest[mode]);
-			if (better) { user.runBest[mode] = { wins, losses, hero, when: Date.now() }; await store.setJSON(username, user); }
+			// atomic: this call used to race the run-reward the client fired alongside
+			// it, and whichever whole-doc write landed second erased the other's field
+			let better = false;
+			Object.assign(user, await store.mutate(username, u => {
+				if (!u) return null;
+				u.runBest = u.runBest || {};
+				better = arenaBetter(run, u.runBest[mode]);
+				if (!better) return null;
+				u.runBest[mode] = { wins, losses, hero, when: Date.now() };
+				return u;
+			}) || user);
 			const best = user.runBest[mode] || null;
 			const board = ((await store.get(key)) || []).filter(e => e.name !== username);
 			if (best) board.push({ name: username, wins: best.wins, losses: best.losses, hero: best.hero, when: best.when });
@@ -2331,34 +2363,42 @@ export default async function handler(req, env) {
 			return json({ error: 'too soon — the last run just paid out', state: publicState(user, username) }, 429);
 		}
 		const won = body.result === 'win';
-		if (won) user.packs += 1;
 		// per-mode counters (for achievements); 'pvp' = live duels, which don't
 		// count toward the run totals the profile's run achievements read
 		const mode = String(body.mode || '').replace(/[^a-z]/g, '').slice(0, 12);
-		if (mode !== 'pvp') {
-			user.stats.runs += 1;
-			if (won) user.stats.wins += 1;
-		}
-		if (['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'pvp'].includes(mode)) {
-			user.stats.modes = user.stats.modes || {};
-			const ms = user.stats.modes[mode] = user.stats.modes[mode] || { runs: 0, wins: 0 };
-			ms.runs += 1;
-			if (won) ms.wins += 1;
-			// per-character run record — drives the character-unlock feats
-			// ("win 2 runs in a row as X"). streak = consecutive WINS with that
-			// character; best = the high-water mark the unlock checks read.
-			const ch = [...String(body.character || '')].filter(c => c.charCodeAt(0) >= 32).join('').slice(0, 40).trim();
-			if (ch && mode !== 'pvp') {
-				user.stats.chars = user.stats.chars || {};
-				const key = mode + '|' + ch;
-				const cs = user.stats.chars[key] = user.stats.chars[key] || { runs: 0, wins: 0, streak: 0, best: 0 };
-				cs.runs += 1;
-				if (won) { cs.wins += 1; cs.streak += 1; cs.best = Math.max(cs.best, cs.streak); }
-				else cs.streak = 0;
+		const ch = [...String(body.character || '')].filter(c => c.charCodeAt(0) >= 32).join('').slice(0, 40).trim();
+		// Atomic: the run record is the completed-run counter the hero unlocks
+		// read ("unlocks after N completed runs"). Written as a whole-doc save it
+		// raced the run-score call the client fired at the same moment, and a
+		// 3-loss run could show "Run recorded" while the counter stayed at 0.
+		Object.assign(user, await store.mutate(username, u => {
+			if (!u) return null;
+			u.stats = u.stats || { runs: 0, wins: 0, packsOpened: 0, lastReward: 0 };
+			if (won) u.packs = (u.packs || 0) + 1;
+			if (mode !== 'pvp') {
+				u.stats.runs = (u.stats.runs || 0) + 1;
+				if (won) u.stats.wins = (u.stats.wins || 0) + 1;
 			}
-		}
-		user.stats.lastReward = Date.now();
-		await store.setJSON(username, user);
+			if (['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse', 'pvp'].includes(mode)) {
+				u.stats.modes = u.stats.modes || {};
+				const ms = u.stats.modes[mode] = u.stats.modes[mode] || { runs: 0, wins: 0 };
+				ms.runs += 1;
+				if (won) ms.wins += 1;
+				// per-character run record — drives the character-unlock feats
+				// ("win 2 runs in a row as X"). streak = consecutive WINS with that
+				// character; best = the high-water mark the unlock checks read.
+				if (ch && mode !== 'pvp') {
+					u.stats.chars = u.stats.chars || {};
+					const key = mode + '|' + ch;
+					const cs = u.stats.chars[key] = u.stats.chars[key] || { runs: 0, wins: 0, streak: 0, best: 0 };
+					cs.runs += 1;
+					if (won) { cs.wins += 1; cs.streak += 1; cs.best = Math.max(cs.best, cs.streak); }
+					else cs.streak = 0;
+				}
+			}
+			u.stats.lastReward = Date.now();
+			return u;
+		}) || user);
 		return json({ won, state: publicState(user, username) });
 	}
 

@@ -2218,6 +2218,17 @@ function resumePendingChoices() {
 	if (s.priority === HUMAN) return openRespondModal();
 }
 
+// A resume restores the engine with an EMPTY event queue, so the 'turnStart'
+// event that normally sweeps in the "Your Turn" banner never fires — the banner
+// element sat there still reading "Shuffling the card library…" (the boot's
+// loading notice) until the next turn change replaced it. Announce the turn
+// the snapshot froze on, exactly as a fresh boot would.
+function announceResumedTurn() {
+	if (!state || state.over) return;
+	const mine = state.current === HUMAN;
+	banner(mine ? 'Your Turn' : `${nameOf(state.current)}'s Turn`, 1400, mine ? 'turn' : 'turn foe');
+}
+
 // AI discards: end-of-turn cleanup keeps the bombs and sheds chaff (AI.cleanupDiscardUids);
 // loot/other discards dump the most expensive (least castable) card.
 function resolveAIDiscards() {
@@ -5794,7 +5805,7 @@ async function startAsync(cardsById) {
 	pump();
 	updateHud();
 	// resumed a mid-turn snapshot? re-open the scry/Discover/etc. it was frozen on
-	if (_resumedFight) resumePendingChoices();
+	if (_resumedFight) { resumePendingChoices(); announceResumedTurn(); }
 	log(`Correspondence duel: you vs ${asyncGame.opp}.`);
 
 	if (asyncGame.myTurnStarted && Array.isArray(m.lines) && m.lines.length) {
@@ -6128,7 +6139,7 @@ async function start() {
 	updateHud();
 	// resumed mid-decision? re-open the scry/Discover/etc. choice the snapshot froze on
 	// (the event that would normally open it was consumed before the close)
-	if (_resumedFight) resumePendingChoices();
+	if (_resumedFight) { resumePendingChoices(); announceResumedTurn(); }
 	// once in MP mode, broadcast the board so friends can spectate the run/battle
 	if (MP_ON && !spectateMode && !publishStarted) { publishStarted = true; startPublishLoop(); }
 }
@@ -6542,8 +6553,23 @@ function applyRunAnomaly(id) {
 
 async function mpRunReward(el, result, score) {
 	if (!MP_ON) return;
-	// the Duels-family climbs post their score to the mode's leaderboard
 	const mode = runModeName();
+	// The reward call is what records the run (stats.modes[mode].runs — the
+	// counter the hero unlocks read). It goes FIRST and alone: this used to fire
+	// run-score alongside it, and the two server handlers each read the account
+	// doc, mutated their own field and wrote the whole doc back — whichever
+	// landed second clobbered the other, and a 3-loss run could end "recorded"
+	// yet leave the completed-run counter at 0 (the next hero never unlocked).
+	const data = await MPX.call('run-reward', { result, mode, character: score?.hero ? String(score.hero) : undefined });
+	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
+	const note = document.createElement('div');
+	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
+	note.textContent = data.error ? data.error
+		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`
+		: 'Run recorded — win a run to earn a pack.';
+	el.appendChild(note);
+	// the Duels-family climbs post their score to the mode's leaderboard — after
+	// the record is safely written, never racing it
 	if (score && ['duels', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse'].includes(mode)) {
 		MPX.call('run-score', { mode, wins: score.wins, losses: score.losses, hero: String(score.hero || '') })
 			.then(r => {
@@ -6554,14 +6580,6 @@ async function mpRunReward(el, result, score) {
 				el.appendChild(lb);
 			}).catch(() => {});
 	}
-	const data = await MPX.call('run-reward', { result, mode, character: score?.hero ? String(score.hero) : undefined });
-	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
-	const note = document.createElement('div');
-	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
-	note.textContent = data.error ? data.error
-		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.`
-		: 'Run recorded — win a run to earn a pack.';
-	el.appendChild(note);
 }
 
 function pickClassOverlay() {
