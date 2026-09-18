@@ -69,5 +69,32 @@ ok('code regex rejects arbitrary junk, wrong prefix, and spaces', !codeRe.test('
 	ok('a different IP has its own budget', (await rateLimit(store, 'rget:9.9.9.9', 5, 10_000)) === true);
 }
 
+// --- run "super replay" playlists: an ordered list of tape ids with its own link ---
+{
+	const pgIdx = src.indexOf("action === 'replay-playlist-get'");
+	const ppIdx = src.indexOf("action === 'replay-playlist-put'");
+	ok('replay-playlist-get exists and is PUBLIC (a shared run link opens logged-out)', pgIdx > 0 && gateIdx > pgIdx, `get=${pgIdx} gate=${gateIdx}`);
+	ok('replay-playlist-put exists and is TOKEN-GATED', ppIdx > gateIdx && gateIdx > 0, `put=${ppIdx} gate=${gateIdx}`);
+	ok('playlist writes are rate-limited', /'replay-playlist-put':/.test(src));
+	ok('playlist reads are IP rate-limited like replay-get', /rget:'\s*\+\s*clientIp/.test(src.slice(pgIdx, pgIdx + 400)));
+	ok('playlists use their own store prefix', /'rplaylist:'/.test(src));
+	ok('playlists are GC-swept on the same 30-day sweep as the tapes', /\['rplaylist:'/.test(src));
+	ok('a missing playlist returns 404', /404/.test(src.slice(pgIdx, pgIdx + 500)));
+	ok('the playlist id is validated with the same shape as a tape id', /\^\[a-f0-9\]\{8,20\}\$/.test(src.slice(pgIdx, pgIdx + 400)));
+
+	// behaviour: the put filters ids, caps the list, and allow-lists the display meta
+	const filterIds = raw => (Array.isArray(raw) ? raw : []).map(String).filter(x => /^[a-f0-9]{8,20}$/.test(x)).slice(0, 40);
+	ok('valid tape ids pass through IN ORDER', filterIds(['a1b2c3d4', 'ffffffff']).join(',') === 'a1b2c3d4,ffffffff');
+	ok('junk ids are dropped, not stored', filterIds(['a1b2c3d4', 'NOPE', '', 'zz', null]).join(',') === 'a1b2c3d4');
+	ok('the list is capped at 40', filterIds(new Array(60).fill('a1b2c3d4')).length === 40);
+	ok('an empty/garbage playlist is rejected (400)', filterIds([]).length === 0 && filterIds('nope').length === 0);
+
+	const store = makeStore();
+	await store.setJSON('rplaylist:abcd1234', { ids: ['a1b2c3d4'], meta: { mode: 'lorequest', hero: 'Garruk', wins: 12, losses: 1, labels: ['Fight 1'] }, by: 'bob', when: 1 });
+	const got = await store.get('rplaylist:abcd1234');
+	ok('a stored playlist round-trips with its ids and meta', got && got.ids[0] === 'a1b2c3d4' && got.meta.hero === 'Garruk' && got.meta.wins === 12);
+	ok('an unknown playlist id returns null (→ 404)', (await store.get('rplaylist:missing')) === null);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

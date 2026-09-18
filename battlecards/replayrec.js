@@ -189,6 +189,22 @@ export async function uploadReplay(id) {
 	if (!code) return null;
 	try { const r = await MPX.call('replay-put', { code }); return (r && r.id) || null; } catch { return null; }
 }
+// ---- run "super replays" ----
+// A cleared run is watched as ONE sitting: every fight's tape is uploaded as it
+// finishes (the local ring buffer only holds 10, and a 12-win run is ~14 fights, so
+// the early fights would otherwise be evicted before the run ends), and the run keeps
+// just the short share ids. On the win those ids become a playlist with its own link.
+export async function putRunPlaylist(ids, meta) {
+	if (!MPX.mpMode() || !Array.isArray(ids) || !ids.length) return null;
+	try { const r = await MPX.call('replay-playlist-put', { ids, meta: meta || {} }); return (r && r.id) || null; } catch { return null; }
+}
+// { ids, meta } for a playlist link, or null. Public — works logged out.
+export async function fetchRunPlaylist(id) {
+	try {
+		const r = await MPX.call('replay-playlist-get', { id });
+		return (r && Array.isArray(r.ids) && r.ids.length) ? { ids: r.ids, meta: r.meta || {} } : null;
+	} catch { return null; }
+}
 export async function fetchSharedReplay(shareId) {
 	try {
 		const r = await MPX.call('replay-get', { id: shareId });
