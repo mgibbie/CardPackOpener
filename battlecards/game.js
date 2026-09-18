@@ -17,7 +17,7 @@ import * as MPX from './mpmode.js';
 import * as Chat from './chat.js';
 import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
-import { safeLoad, safeSave } from './safestore.js';
+import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
@@ -199,6 +199,18 @@ function activeRunIO() {
 }
 // persist the live board into the active run so a resume restores the exact fight (localStorage only —
 // per-frame writes are cheap locally; the server gets it via the coarse heartbeat / on-hidden push below)
+// Evict something expendable to make room for a run snapshot. Replays are
+// cosmetic and regenerable; the fight you are IN is not. Oldest replay first,
+// then the whole replay store. Returns true while there was something to free.
+let _replaysCleared = false;
+function freeSpaceForSnapshot() {
+	try {
+		const list = Rec.listReplays();
+		if (list && list.length) { Rec.deleteReplay(list[list.length - 1].id); return true; }
+		if (!_replaysCleared) { _replaysCleared = true; Rec.clearReplays(); return true; }
+	} catch (e) { /* eviction is best-effort */ }
+	return false;
+}
 function saveRunSnapshot() {
 	const io = activeRunIO();
 	if (!io || !state || state.over || (typeof isGuest === 'function' && isGuest())) return;
@@ -206,10 +218,15 @@ function saveRunSnapshot() {
 	if (!run || !run.active) return;
 	try {
 		const json = JSON.stringify(E.toSnapshot(state));
-		if (json.length > RUN_SNAP_MAX) return; // don't persist absurd sizes
+		// A snapshot must ALWAYS land — losing it rewinds the player's fight to an
+		// older turn. The old code silently `return`ed on an oversize board and
+		// ignored a failed (quota) write, which is exactly how a resume ended up
+		// behind the saved position. Now: warn on an absurd size, and on a failed
+		// write evict expendable replay data and retry instead of giving up.
+		if (json.length > RUN_SNAP_MAX) console.warn('run snapshot is very large (' + json.length + 'B) — saving anyway');
 		run.snapshot = JSON.parse(json); // deep copy — toSnapshot shares `players` by reference
 		run.snapshotAt = Date.now(); // freshness stamp so boot never discards this for a stale server copy
-		safeSave(io.key, run); // local only
+		safeSaveRetry(io.key, run, freeSpaceForSnapshot); // local only; never silently skipped
 	} catch (e) { /* never let a save break play */ }
 }
 // drop the in-fight snapshot when a fight ends (so the next fight boots fresh, not resumes the finished one)
@@ -232,8 +249,10 @@ function saveAsyncSnapshot() {
 	if (state.current !== HUMAN || !asyncGame.myTurnStarted) return; // only during MY live turn
 	try {
 		const json = JSON.stringify(E.toSnapshot(state));
-		if (json.length > RUN_SNAP_MAX) return;
-		safeSave(asyncSnapKey(asyncGame.id), { id: asyncGame.id, turnNumber: state.turnNumber, at: Date.now(), snap: JSON.parse(json) });
+		// same contract as saveRunSnapshot: this must land or the player's live turn
+		// rewinds on reopen — evict expendable replays rather than skip the write
+		if (json.length > RUN_SNAP_MAX) console.warn('async snapshot is very large (' + json.length + 'B) — saving anyway');
+		safeSaveRetry(asyncSnapKey(asyncGame.id), { id: asyncGame.id, turnNumber: state.turnNumber, at: Date.now(), snap: JSON.parse(json) }, freeSpaceForSnapshot);
 	} catch (e) { /* never let a save break play */ }
 }
 function clearAsyncSnapshot() { if (asyncGame.id) { try { safeSave(asyncSnapKey(asyncGame.id), null); } catch (e) { /* ignore */ } } }

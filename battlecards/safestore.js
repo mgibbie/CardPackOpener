@@ -45,6 +45,27 @@ export function safeSave(key, value) {
 	catch (e) { report('save failed (' + ((e && e.name) || 'error') + '): ' + key, 'safestore.safeSave'); return false; }
 }
 
+// Write a value that MUST land (a run's mid-fight snapshot: losing it rewinds the
+// player's fight). On a failed write, call freeSpace() to evict something
+// expendable and retry, until it frees nothing more. freeSpace returns true when
+// it actually freed something. Returns true if the value was stored.
+//
+// Why this exists: the replay recorder keeps up to 10 games of frames in the same
+// store and already pops its own oldest entries on quota failure — but the run
+// snapshot silently swallowed its failure, so cosmetic replay data could win the
+// space while the fight the player is actually in froze at an older turn.
+export function safeSaveRetry(key, value, freeSpace) {
+	if (safeSave(key, value)) return true;
+	for (let i = 0; i < 12; i++) {
+		let freed = false;
+		try { freed = !!(freeSpace && freeSpace()); } catch { freed = false; }
+		if (!freed) break;
+		if (safeSave(key, value)) return true;
+	}
+	report('snapshot save failed after eviction: ' + key, 'safestore.safeSaveRetry');
+	return false;
+}
+
 // Write a raw (already-stringified) value — gold counters, auth tokens — with the
 // same quota safety. Same contract as safeSave.
 export function safeSaveStr(key, str) {
