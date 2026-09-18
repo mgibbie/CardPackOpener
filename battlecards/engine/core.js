@@ -255,6 +255,13 @@ export function instantiate(def, controller) {
 		description: def.description || '',
 		attack: def.attack || 0,
 		maxHealth: def.health || 0,
+		// the PRINTED body, frozen at creation. attack/maxHealth drift with buffs,
+		// and the UI used to recover the baseline via state.cardsById[card.id] —
+		// which does not exist for an inline summoned token (Thopter, Construct,
+		// Servo…), so the whole printed body was reported as a "+N/+N modifier".
+		// Carried on the instance so it also survives a snapshot restore.
+		printedAttack: def.attack || 0,
+		printedHealth: def.health || 0,
 		durability: def.durability || 0,
 		secret: def.secret || null,
 		trap: def.trap || null,

@@ -33,7 +33,12 @@ function keywordLinesHtml(card) {
 // (gained from buffs, auras, grants). Reads against the printed card definition.
 function modifierLinesHtml(card) {
 	if (!state || (card.type !== 'creature' && card.type !== 'weapon')) return '';
-	const def = state.cardsById?.[card.id] || {};
+	// An inline summoned token (Thopter / Construct / Servo …) has NO entry in
+	// cardsById — its def is built at summon time. Falling back to {} made the
+	// token's printed body read as a modifier ("Modifiers — +5/+5" on a freshly
+	// summoned 5/5). Use the printed body the instance carries instead.
+	const def = state.cardsById?.[card.id]
+		|| { attack: card.printedAttack ?? card.attack, health: card.printedHealth ?? card.maxHealth, keywords: card.keywords || [] };
 	const base = new Set(def.keywords || []);
 	const gainedKw = [...new Set((card.keywords || []).filter(k => !base.has(k)))];
 	const bits = gainedKw.map(keywordLabel);
@@ -576,8 +581,9 @@ function paintFaceTex(card) {
 		const def = state?.cardsById?.[card.id];
 		return makeTokenTexture(shown, {
 			attack: card.attack, hp: E.hp(card), maxHealth: card.maxHealth,
-			baseAttack: card.disguised ? card.attack : def?.attack,
-			baseHealth: card.disguised ? card.maxHealth : def?.health,
+			// inline tokens have no cardsById def — fall back to the instance's printed body
+			baseAttack: card.disguised ? card.attack : (def?.attack ?? card.printedAttack),
+			baseHealth: card.disguised ? card.maxHealth : (def?.health ?? card.printedHealth),
 			taunt: card.keywords.includes('taunt'),
 			shield: !!card.shield,
 			stealthed: !!card.stealthed,
