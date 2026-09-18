@@ -5,6 +5,7 @@
 // store is a 10-deep ring buffer and a 12-win Lorequest run is ~14 fights, so the
 // opening fights would already be evicted by the time the run is cleared.
 //   node battlecards/tests/unit/runreplay_test.mjs
+import fs from 'fs';
 import { appendFightReplay, playlistFights, canBuildPlaylist, playlistMeta, fightLabel, MAX_RUN_FIGHTS } from '../../runreplay.js';
 
 let pass = 0, fail = 0;
@@ -66,6 +67,23 @@ const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL:',
 	ok('labels count the fight and name the foe', fightLabel({ wins: 2, losses: 0, enemy: { name: 'Vivien' } }, 'win') === 'Fight 3 — Vivien (win)', fightLabel({ wins: 2, losses: 0, enemy: { name: 'Vivien' } }, 'win'));
 	ok('a first fight with no known foe still labels cleanly', fightLabel({}, 'loss') === 'Fight 1 (loss)', fightLabel({}, 'loss'));
 	ok('losses count toward the fight number', fightLabel({ wins: 1, losses: 1, enemy: { name: 'Bolas' } }, 'win') === 'Fight 3 — Bolas (win)');
+}
+
+// ── coverage: EVERY run mode offers the super replay when its run is cleared ──
+// (a new mode added to activeRunIO must wire addRunReplayButtons into its win
+// screen too, or its cleared runs quietly lose the feature)
+{
+	const src = fs.readFileSync(new URL('../../game.js', import.meta.url), 'utf8');
+	const wired = new Set([...src.matchAll(/addRunReplayButtons\(el, run, '([a-z]+)'/g)].map(m => m[1]));
+	// the run modes the save layer knows about: `if (<mode>RunMode) return { load: ... }`
+	const ioBlock = src.slice(src.indexOf('function activeRunIO'), src.indexOf('function activeRunIO') + 1400);
+	const modes = new Set([...ioBlock.matchAll(/if \((\w+?)RunMode\) return \{/g)].map(m => m[1].toLowerCase()));
+	modes.add('dungeon'); // dungeon's branch reads `dungeonRunMode` via the same table
+	const missing = [...modes].filter(m => !wired.has(m));
+	ok('every run mode in activeRunIO wires the full-run replay', missing.length === 0, 'missing: ' + missing.join(','));
+	ok('all ten run modes are covered', wired.size >= 10, [...wired].sort().join(','));
+	ok('the buttons are added BEFORE the run is cleared (the ids live on the run)',
+		[...src.matchAll(/addRunReplayButtons\(el, run, '(\w+)'\);[\s\S]{0,400}?clear(\w+)\(\)/g)].length >= 8);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
