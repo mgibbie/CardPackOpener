@@ -75,6 +75,9 @@
 	.tile .resume { position: absolute; top: 12px; right: 12px; font-size: .64rem; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 55%, var(--border)); border-radius: 999px; padding: 3px 8px; display: none; }
 	.tile[data-inprogress="1"] .resume { display: inline-block; }
 	.tile[data-inprogress="1"] h3 { padding-right: 78px; }
+	/* the canonical run's record — the same copy Resume will restore. Right padding
+	   keeps it clear of the absolutely-positioned lifetime-stats chip (.prog). */
+	.tile p.run-record { color: var(--green); font-size: .76rem; font-weight: 700; margin-top: 6px; padding-right: 92px; }
 	.tile[data-inprogress="1"] h3 .arrow { display: none; }
 
 	/* correspondence (play-by-mail) rows */
@@ -602,11 +605,52 @@
 
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
+	<script type="module">
+	// Run tiles: show "Resume" and the run's record for the CANONICAL copy — the same
+	// one the game page will resume. localStorage paints first (instant, and the only
+	// source when logged out/offline), then the server's copy is reconciled in with the
+	// exact rule the game boot uses (runsync.pickCanonicalRun), so the tile can't lag
+	// behind Resume. READ-ONLY on purpose: the game page stays the single writer, so a
+	// tile can never clobber an in-flight local snapshot.
+	import * as MPT from './mpmode.js';
+	import { pickCanonicalRun } from './runsync.js';
+	import { runSummary } from './runlabel.js';
+
+	const runTiles = [...document.querySelectorAll('.tile[data-run]')];
+	const localRun = key => { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } };
+	function paint(el, run) {
+		const active = !!(run && run.active);
+		if (active) el.setAttribute('data-inprogress', '1'); else el.removeAttribute('data-inprogress');
+		const text = active ? runSummary(run) : '';
+		let line = el.querySelector('.run-record');
+		if (!text) { if (line) line.remove(); el.removeAttribute('title'); return; }
+		if (!line) {
+			line = document.createElement('p');
+			line.className = 'run-record';
+			(el.querySelector('div:last-of-type') || el).appendChild(line);
+		}
+		line.textContent = text;
+		el.setAttribute('title', text);
+	}
+	for (const el of runTiles) paint(el, localRun(el.getAttribute('data-run')));
+
+	// then reconcile against the server copy — same decision the game boot makes
+	(async () => {
+		if (!MPT.hasToken()) return;
+		let runs = null;
+		try { runs = (await MPT.call('run-load'))?.runs; } catch (e) { return; } // offline: the local paint stands
+		if (!runs || typeof runs !== 'object') return;
+		for (const el of runTiles) {
+			const key = el.getAttribute('data-run');
+			const entry = runs[key];
+			const local = localRun(key);
+			if (!entry || !entry.run) { paint(el, local); continue; }
+			const verdict = pickCanonicalRun(local, entry.run, entry.updated_at);
+			paint(el, verdict.pick === 'local' ? local : entry.run);
+		}
+	})();
+	</script>
 	<script>
-	// flag any run mode that has saved progress in localStorage
-	document.querySelectorAll('.tile[data-run]').forEach(function (el) {
-		try { if (localStorage.getItem(el.getAttribute('data-run'))) el.setAttribute('data-inprogress', '1'); } catch (e) {}
-	});
 	// theme toggle (shared convention with the main hub)
 	(function () {
 		const root = document.documentElement, KEY = 'mp-theme';
