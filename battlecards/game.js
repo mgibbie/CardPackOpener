@@ -2221,6 +2221,27 @@ function resumePendingChoices() {
 	if (s.priority === HUMAN) return openRespondModal();
 }
 
+// Live-play backstop (twin of resumePendingChoices, for the running game): a
+// pending HUMAN decision whose reactive modal-open was missed — a choice created
+// as the turn flips, or one whose event didn't surface a panel — would soft-lock
+// the AI turn, because maybeRunAI won't advance while a human decision is pending
+// but nothing opened its modal (Lorequest AI-turn deadlock; a Jace's Triumph
+// Discover that logged but showed no panel). When the queue is idle and no choice
+// modal is up, surface the pending human decision so it can always be resolved.
+function surfacePendingChoice() {
+	if (!state || state.over) return;
+	if (mulliganModalOpen || pending) return; // mid-mulligan / mid-targeting: leave it
+	const m = $('scry-modal');
+	if (m && getComputedStyle(m).display !== 'none') return; // a choice modal is already open
+	const s = state;
+	if (s.scryQueue.length && s.scryQueue[0].chooser === HUMAN) return openScryModal();
+	if (s.pickQueue.length && s.pickQueue[0].player === HUMAN) return openPickModal();
+	if (s.discardQueue.length && s.discardQueue[0].player === HUMAN) return openDiscardModal();
+	if (s.askQueue.length && s.askQueue[0].player === HUMAN) return openAskModal();
+	if (s.sacQueue.length && s.sacQueue[0].player === HUMAN) return openSacModal();
+	if (s.dredgeQueue.length && s.dredgeQueue[0].player === HUMAN) return openDredgeModal();
+}
+
 // AI discards: end-of-turn cleanup keeps the bombs and sheds chaff (AI.cleanupDiscardUids);
 // loot/other discards dump the most expensive (least castable) card.
 function resolveAIDiscards() {
@@ -2967,7 +2988,7 @@ let pendingFx = [];
 
 function nextEvent() {
 	const ev = queue.shift();
-	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
+	if (!ev) { queueBusy = false; updateHud(); if (!isGuest()) maybeRecordFrame(); if (state && state.priority === HUMAN) openRespondModal(); surfacePendingChoice(); maybeOfferMulligan(); maybeRunAI(); return; } // a duel guest records authoritative snapshots on ingest, not its optimistic pumps
 	queueBusy = true;
 	let delay = 120;
 	switch (ev.type) {

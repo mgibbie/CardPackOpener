@@ -4928,8 +4928,26 @@ export function installSecret(state, pi, id) {
 }
 
 // end-of-turn triggers, discard to max, pass turn, start next
+// true if player `pi` still owes a forced, modal-blocking decision. Used to keep
+// endTurn from orphaning a choice into the next player's turn (an orphaned human
+// choice soft-locks an AI turn: the AI driver won't advance while a human
+// decision is pending, but nothing is left to surface it).
+export function hasPendingDecision(state, pi) {
+	return (state.pickQueue || []).some(q => q.player === pi)
+		|| (state.discardQueue || []).some(q => q.player === pi)
+		|| (state.scryQueue || []).some(q => q.chooser === pi)
+		|| (state.sacQueue || []).some(q => q.player === pi)
+		|| (state.dredgeQueue || []).some(q => q.player === pi)
+		|| (state.askQueue || []).some(q => q.player === pi);
+}
+
 export function endTurn(state) {
 	if (state.over) return;
+	// can't end the turn mid-decision — the active player must resolve any pending
+	// Discover/discard/scry/sac/dredge/ask first, or it would be orphaned into the
+	// next turn and hang the AI driver (Lorequest AI-turn deadlock, e.g. an
+	// unresolved Jace's Triumph discover as the turn passed).
+	if (hasPendingDecision(state, state.current)) return;
 	const pi = state.current;
 	const p = state.players[pi];
 	questTick(state, 'turn', pi); // Enter the Lost City: "Survive 10 turns"
