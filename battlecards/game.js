@@ -18,6 +18,7 @@ import * as Chat from './chat.js';
 import * as SFX from './sfx.js';
 import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
+import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
 import { keepLocalRun, useLocalAsyncTurn } from './runsync.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
@@ -2929,7 +2930,10 @@ function openDiscardModal() {
 	const modal = $('scry-modal'); // reuse the scry chrome
 	modal.innerHTML = `<div class="wm-title">Loot — choose ${need} card${need > 1 ? 's' : ''} to discard</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
-	const chosen = new Set();
+	// restore any ticks made before the player walked away (frame-exact resume)
+	const handUids = me.hand.map(c => c.uid);
+	const chosen = new Set(matchPartial(safeLoad(PARTIAL_DISCARD_KEY, null), pend, handUids).slice(0, need));
+	const persist = () => safeSave(PARTIAL_DISCARD_KEY, makePartial(pend, handUids, chosen));
 	const done = document.createElement('button');
 	const sync = () => {
 		done.disabled = chosen.size !== need;
@@ -2942,13 +2946,15 @@ function openDiscardModal() {
 		face.style.width = '110px';
 		cell.appendChild(face);
 		const btn = document.createElement('button');
-		btn.textContent = 'Keep';
+		btn.textContent = chosen.has(card.uid) ? 'Discard' : 'Keep';
+		btn.classList.toggle('bottom', chosen.has(card.uid));
 		btn.addEventListener('pointerdown', e => {
 			e.stopPropagation();
 			if (chosen.has(card.uid)) chosen.delete(card.uid);
 			else if (chosen.size < need) chosen.add(card.uid);
 			btn.textContent = chosen.has(card.uid) ? 'Discard' : 'Keep';
 			btn.classList.toggle('bottom', chosen.has(card.uid));
+			persist(); // every tick survives a walk-away
 			sync();
 		});
 		cell.appendChild(btn);
@@ -2959,6 +2965,7 @@ function openDiscardModal() {
 		e.stopPropagation();
 		if (chosen.size !== need) return;
 		modal.style.display = 'none';
+		safeSave(PARTIAL_DISCARD_KEY, null); // the choice is made — drop the half-made copy
 		if (isGuest()) { const picks = [...chosen]; guestApply(() => E.resolveDiscard(state, picks), { k: 'discard', picks }); return; }
 		E.resolveDiscard(state, [...chosen]);
 		pump();
