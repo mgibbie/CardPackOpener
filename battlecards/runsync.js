@@ -21,8 +21,14 @@ export function keepLocalRun(local, serverRun) {
 	// server has no in-fight snapshot at an equal/earlier floor — the local hard-close
 	// copy is the real state; keep it
 	if (!serverRun || !serverRun.snapshot) return true;
-	// both sides hold a mid-fight snapshot at the same floor — the more recently saved
-	// one wins (covers legit cross-device: whichever device you touched last)
+	// both sides hold a mid-fight snapshot at the same floor — keep whichever is
+	// FURTHER ALONG. turnNumber is the reliable progress signal; wall-clock
+	// snapshotAt can tie, skew across devices, or (after a coarse server push) be
+	// newer on a snapshot that is actually an EARLIER turn — which is what made
+	// resume drop you to a previous turn. Never resume behind the local snapshot;
+	// snapshotAt only breaks a genuine turn tie (legit cross-device: last touched).
+	const lt = local.snapshot.turnNumber || 0, st = serverRun.snapshot.turnNumber || 0;
+	if (lt !== st) return lt >= st;
 	return (local.snapshotAt || 0) >= (serverRun.snapshotAt || 0);
 }
 

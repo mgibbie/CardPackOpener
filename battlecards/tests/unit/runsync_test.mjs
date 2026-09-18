@@ -44,6 +44,19 @@ ok('legacy local snapshot (no snapshotAt) still kept when server has none',
 ok('server snapshot on a HIGHER floor -> take the server',
 	keepLocalRun({ snapshot: snap, snapshotAt: 999, level: 2 }, { snapshot: snap, snapshotAt: 1, level: 3 }) === false);
 
+// ── the "resume drops you to an earlier turn" regression: on the same floor the
+//    FURTHER-ALONG snapshot (higher turnNumber) wins, even if the other side's
+//    wall-clock snapshotAt is newer (a coarse server push can carry an earlier turn) ──
+const snapT = t => ({ schemaVersion: 1, turnNumber: t, players: [] });
+ok('same floor: local is further along (turn 15) -> keep it even though the server snapshotAt is newer',
+	keepLocalRun({ snapshot: snapT(15), snapshotAt: 100, level: 2 }, { snapshot: snapT(8), snapshotAt: 999, level: 2 }) === true);
+ok('same floor: server is further along (turn 15) -> take the server even though local snapshotAt is newer',
+	keepLocalRun({ snapshot: snapT(8), snapshotAt: 999, level: 2 }, { snapshot: snapT(15), snapshotAt: 100, level: 2 }) === false);
+ok('same floor + same turn: break the tie on snapshotAt (local newer -> keep local)',
+	keepLocalRun({ snapshot: snapT(10), snapshotAt: 200, level: 2 }, { snapshot: snapT(10), snapshotAt: 100, level: 2 }) === true);
+ok('same floor + same turn: break the tie on snapshotAt (server newer -> take server)',
+	keepLocalRun({ snapshot: snapT(10), snapshotAt: 100, level: 2 }, { snapshot: snapT(10), snapshotAt: 200, level: 2 }) === false);
+
 // ── useLocalAsyncTurn: only restore a local mid-turn copy for the SAME unsubmitted turn ──
 const L = (id, turn) => ({ id, turnNumber: turn, snap: { turnNumber: turn, players: [] } });
 const srv = (current, turn) => ({ current, turnNumber: turn, players: [] });
