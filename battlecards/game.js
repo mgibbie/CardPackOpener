@@ -1118,6 +1118,7 @@ function openScryModal() {
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
+		attachTip(face, def); // hover the face for its rules text
 		face.style.width = '130px';
 		cell.appendChild(face);
 		artEntries.push({ def, cell, width: '130px' });
@@ -2510,6 +2511,7 @@ function openDredgeModal() {
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
+		attachTip(face, def); // hover the face for its rules text
 		face.style.width = '130px';
 		cell.appendChild(face);
 		const btn = document.createElement('button');
@@ -2842,6 +2844,7 @@ function openPickModal() {
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(def);
+		attachTip(face, def); // hover the face for its rules text
 		face.style.width = faceW;
 		cell.appendChild(face);
 		artEntries.push({ def, cell, width: faceW });
@@ -2902,6 +2905,7 @@ function openMulliganModal() {
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell' + (swap ? ' mull-swap' : '');
 			const face = drawCardFace(def);
+			attachTip(face, { ...def, health: def.health ?? def.maxHealth }); // hover for rules (def falls back to a live card for tokens)
 			face.style.width = '122px';
 			cell.appendChild(face);
 			const tag = document.createElement('div');
@@ -2977,6 +2981,7 @@ function openDiscardModal() {
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(card);
+		attachTip(face, { ...card, health: card.maxHealth }); // hover for rules (a live card carries maxHealth, not health)
 		face.style.width = '110px';
 		cell.appendChild(face);
 		const btn = document.createElement('button');
@@ -3030,6 +3035,7 @@ function openSacModal() {
 		const cell = document.createElement('div');
 		cell.className = 'scry-cell';
 		const face = drawCardFace(card);
+		attachTip(face, { ...card, health: card.maxHealth }); // hover for rules (a live card carries maxHealth, not health)
 		face.style.width = '110px';
 		cell.appendChild(face);
 		const btn = document.createElement('button');
@@ -5143,6 +5149,7 @@ function renderSpectatorChoice() {
 			const cell = document.createElement('div');
 			cell.className = 'scry-cell';
 			const face = drawCardFace(def);
+			attachTip(face, def); // hover the face for its rules text
 			face.style.width = ids.length > 3 ? '105px' : '130px';
 			cell.appendChild(face);
 			row.appendChild(cell);
