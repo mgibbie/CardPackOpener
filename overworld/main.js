@@ -7007,13 +7007,99 @@ const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1');
 function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
 }
-let _lastOwJson = '';
-function pushOw() {
-	if (!MP_ON) return;
-	const ow = owSnapshot(); const json = JSON.stringify(ow);
-	if (json === _lastOwJson || json === '{}') return; // unchanged / nothing to save
-	_lastOwJson = json;
-	try { MP.call('ow-save', { ow }).catch(() => {}); } catch (e) {}
+// ---------- SAVE-SYNC INSTRUMENTATION (temporary) ----------
+// Every candidate and decision in the local<->server save path, as a structured
+// ring buffer on window.__owSync. `?synclog=1` also mirrors it to the console.
+// No tokens, passwords or headers are ever recorded — only shapes and outcomes.
+const SYNC_TRACE = new URLSearchParams(location.search).has('synclog');
+const SYNC_LOG_KEY = 'magepunk_owsync_log';
+let _syncSeq = 0;
+// seeded from sessionStorage so the trace survives hydrateOw's location.reload()
+// — the decisive decision is logged immediately BEFORE that reload, so an
+// in-memory-only buffer loses exactly the record that matters.
+const owSyncLog = (() => {
+	try { const v = JSON.parse(sessionStorage.getItem(SYNC_LOG_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+})();
+_syncSeq = owSyncLog.length ? (owSyncLog[owSyncLog.length - 1].seq || 0) : 0;
+function syncLog(event, detail) {
+	const rec = { seq: ++_syncSeq, t: Math.round(performance.now()), wall: new Date().toISOString(), event, ...detail };
+	owSyncLog.push(rec);
+	while (owSyncLog.length > 200) owSyncLog.shift();
+	try { sessionStorage.setItem(SYNC_LOG_KEY, JSON.stringify(owSyncLog)); } catch (e) { /* quota: keep the in-memory copy */ }
+	if (SYNC_TRACE) console.log('[owsync]', JSON.stringify(rec));
+	return rec;
+}
+// a human-comparable fingerprint of a snapshot: what the tester actually reads
+function owFingerprint(snap) {
+	try {
+		const pos = snap['magepunk_pos_v1'] ? JSON.parse(snap['magepunk_pos_v1']) : null;
+		const party = snap['magepunk_party_v1'] ? JSON.parse(snap['magepunk_party_v1']) : null;
+		const lead = Array.isArray(party) ? party[0] : null;
+		return {
+			map: pos && pos.map, x: pos && pos.x, y: pos && pos.y,
+			lead: lead && lead.name, lvl: lead && lead.level,
+			hp: lead ? lead.curHP + '/' + lead.maxHP : null,
+			pp: lead && lead.moves && lead.moves[0] ? lead.moves[0].pp + '/' + lead.moves[0].maxPp : null,
+			bytes: JSON.stringify(snap).length, keys: Object.keys(snap).length,
+		};
+	} catch (e) { return { parseError: String(e && e.message) }; }
+}
+// ---------- revision ----------
+// Ordering NEVER comes from position, HP or apparent progress — those are not
+// monotonic (you can walk back, take damage, release a mon). It comes from an
+// explicit counter that only ever increases, carried INSIDE the snapshot so it
+// travels to the server and on to every other device. Absent == 0, which is what
+// every pre-existing save reads as, so the migration is a no-op.
+const OW_REV_KEY = 'magepunk_ow_rev';
+const owRev = () => Math.max(0, parseInt(localStorage.getItem(OW_REV_KEY), 10) || 0);
+function setOwRev(n) { safeSaveStr(OW_REV_KEY, String(Math.max(0, n | 0))); }
+// the snapshot minus its own revision: "has any real game state changed?"
+function owBody(snap) { const o = { ...snap }; delete o[OW_REV_KEY]; return JSON.stringify(o); }
+// The losing side of a discard is never thrown away. Whenever hydration is about
+// to drop a local snapshot, it lands here first so it can be recovered.
+const OW_CONFLICT_KEY = 'magepunk_ow_conflict';
+function stashConflict(reason, losing, localRev, remoteRev) {
+	const rec = { at: new Date().toISOString(), reason, localRev, remoteRev, fp: owFingerprint(losing), ow: losing };
+	const wrote = safeSave(OW_CONFLICT_KEY, rec);
+	syncLog('conflict.stash', { reason, localRev, remoteRev, fp: rec.fp, wrote });
+}
+
+let _lastAckedBody = '';  // body the SERVER has confirmed — advanced only on ack
+let _pendingBody = '';    // body the current in-flight revision represents
+let _owInFlight = 0, _owAcked = 0, _owFailed = 0;
+const owDirty = () => owBody(owSnapshot()) !== _lastAckedBody;
+
+function pushOw(opts) {
+	if (!MP_ON) { syncLog('push.skip', { reason: 'MP_ON=false' }); return Promise.resolve(false); }
+	const keepalive = !!(opts && opts.keepalive === true);
+	const body = owBody(owSnapshot());
+	if (body === '{}') { syncLog('push.skip', { reason: 'empty' }); return Promise.resolve(false); }
+	if (body === _lastAckedBody) { syncLog('push.skip', { reason: 'already-acked' }); return Promise.resolve(true); }
+	// Local state the server has NOT confirmed is, by definition, ahead of it —
+	// so stamp a higher revision before the write leaves. Bumping on change (not
+	// on ack) is what protects unpushed progress: if the write never lands, the
+	// next session still sees localRev > remoteRev and keeps the local game.
+	if (body !== _pendingBody) { setOwRev(owRev() + 1); _pendingBody = body; }
+	const ow = owSnapshot();  // re-read: the revision just changed
+	const rev = owRev();
+	const seq = _syncSeq + 1;
+	syncLog('push.start', { scope: mpAccount && mpAccount.username || '(unknown)', key: 'ow:<user>', rev, keepalive, fp: owFingerprint(ow), inFlight: ++_owInFlight });
+	const done = (ok, extra) => {
+		if (ok) { _owAcked++; _lastAckedBody = body; } else _owFailed++;
+		syncLog('push.response', { forSeq: seq, rev, ok, acked: _owAcked, failed: _owFailed, inFlight: --_owInFlight, ...extra });
+		return ok;
+	};
+	try {
+		return MP.call('ow-save', { ow }, { keepalive })
+			.then(r => {
+				if (r && r.ok && !r.error) return done(true);
+				// the server holds a HIGHER revision: another device is ahead. Keep our
+				// copy safe and let the next hydrate reconcile rather than clobbering.
+				if (r && r.conflict) return done(false, { conflict: true, serverRev: r.rev || null, error: String(r.error || 'stale revision') });
+				return done(false, { error: r && r.error ? String(r.error) : 'no ok in response' });
+			})
+			.catch(e => done(false, { error: String(e && e.message || e) }));
+	} catch (e) { return Promise.resolve(done(false, { error: String(e && e.message || e) })); }
 }
 // ---------- gifts ----------
 // A gift is a server-side PROMISE of items — this is the client half that turns
@@ -7043,18 +7129,71 @@ async function claimGifts() {
 }
 
 async function hydrateOw() {
-	if (!MP_ON) return;
+	if (!MP_ON) { syncLog('hydrate.skip', { reason: 'MP_ON=false' }); return; }
 	try {
+		syncLog('hydrate.start', { localFp: owFingerprint(owSnapshot()), latch: !!sessionStorage.getItem('mp_ow_hydrated') });
 		const r = await MP.call('ow-load');
 		const ow = r && r.ow && r.ow.ow; // ow-load returns { ow: { ow:<snapshot>, updated_at } }
+		syncLog('hydrate.remote', {
+			present: !!(ow && typeof ow === 'object'),
+			serverUpdatedAt: r && r.ow && r.ow.updated_at || null,
+			serverWall: r && r.ow && r.ow.updated_at ? new Date(r.ow.updated_at).toISOString() : null,
+			remoteFp: ow && typeof ow === 'object' ? owFingerprint(ow) : null,
+			error: r && r.error ? String(r.error) : null,
+		});
 		if (ow && typeof ow === 'object') {
+			const localSnap = owSnapshot();
+			const localRev = owRev(), remoteRev = Math.max(0, parseInt(ow[OW_REV_KEY], 10) || 0);
+			const sameBody = owBody(ow) === owBody(localSnap);
+
+			// --- RECONCILIATION. Deterministic and idempotent: the decision is a pure
+			// function of (localRev, remoteRev, bodies-equal), so re-running it on the
+			// reload below reaches 'equal' and stops. Nothing here is ever decided by
+			// position, HP or progress. ---
+			if (sameBody) {
+				syncLog('hydrate.decision', { winner: 'equal', reason: `bodies identical (localRev ${localRev}, remoteRev ${remoteRev})`, rewroteLocal: false, keysOverwritten: [] });
+				_lastAckedBody = owBody(localSnap);
+				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				return;
+			}
+			if (remoteRev < localRev) {
+				// THE FIX for the reported rollback. Local carries work the server never
+				// acknowledged. Adopting the server here is exactly what destroyed
+				// x16/y32. Keep local, and push it up instead.
+				syncLog('hydrate.decision', { winner: 'local', reason: `localRev ${localRev} > remoteRev ${remoteRev} — refusing to rewrite local backward`, rewroteLocal: false, keysOverwritten: [] });
+				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				pushOw();
+				return;
+			}
+			if (remoteRev === localRev) {
+				// Same ancestor, different content: two devices diverged. Neither is
+				// provably newer, so DISCARD NOTHING — keep local (a deterministic
+				// tie-break), preserve remote, and step the revision so the tie resolves.
+				stashConflict('same-revision divergence (remote copy preserved)', ow, localRev, remoteRev);
+				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote`, rewroteLocal: false, keysOverwritten: [], conflict: true });
+				hud.textContent = 'This game moved on somewhere else too — kept this device\'s copy.';
+				setOwRev(localRev + 1);
+				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				pushOw();
+				return;
+			}
+
+			// remoteRev > localRev: the server is genuinely ahead. Adopt it — but if
+			// this device also had unacknowledged work, that copy is preserved first.
+			if (owDirty() && _lastAckedBody !== '') stashConflict('local edits superseded by a newer remote revision', localSnap, localRev, remoteRev);
 			let changed = false;
+			const overwritten = [];
 			for (const k of OW_KEYS) {
 				try {
-					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { localStorage.setItem(k, ow[k]); changed = true; }
+					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { overwritten.push(k); localStorage.setItem(k, ow[k]); changed = true; }
 				} catch (e) {}
 			}
-			_lastOwJson = JSON.stringify(owSnapshot()); // don't immediately re-push what we just pulled
+			syncLog('hydrate.decision', {
+				winner: 'remote', reason: `remoteRev ${remoteRev} > localRev ${localRev}`,
+				rewroteLocal: changed, keysOverwritten: overwritten,
+				afterFp: owFingerprint(owSnapshot()),
+			});
+			_lastAckedBody = owBody(owSnapshot()); // don't immediately re-push what we just pulled
 			// Story/Bag/Badges/Dex read their strings at IMPORT time, so a hydration
 			// that actually changed something must reload once — otherwise a stale
 			// in-memory module would quietly save itself back over the fresh data.
@@ -7102,8 +7241,13 @@ async function doImportSave() {
 	if (!confirm(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\n\nEverything you have now will be overwritten.`)) return;
 	om.busy = true;
 	Savefile.applySave(parsed.keys);
+	// an import deliberately replaces the game: it must outrank whatever the
+	// server holds, so step past the server's revision and force the write
 	if (MP_ON) {
-		try { await MP.call('ow-save', { ow: owSnapshot() }); }
+		try { const r = await MP.call('ow-load'); setOwRev(Math.max(owRev(), parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0) + 1); } catch (e) { setOwRev(owRev() + 1); }
+	}
+	if (MP_ON) {
+		try { await MP.call('ow-save', { ow: owSnapshot(), force: true }); }
 		catch (e) { alert('The save was restored locally, but the SERVER copy could not be updated.\nIf you are online next load, the old game may come back — try importing again then.'); }
 	}
 	location.reload();
@@ -7125,8 +7269,13 @@ async function restoreBackup(b) {
 	try { r = await MP.call('ow-restore', { slot: b.slot }); } catch (e) {}
 	if (!r || !r.ow) { om.busy = false; om.flash = 'Restore failed — the backup may be gone.'; loadBackups(); return; }
 	// same discipline as a file import: clear, then lay the snapshot down
+	const beforeRev = owRev();
 	for (const k of OW_KEYS) { try { localStorage.removeItem(k); } catch (e) {} }
 	for (const [k, v] of Object.entries(r.ow)) { try { if (typeof v === 'string') localStorage.setItem(k, v); } catch (e) {} }
+	// the backup's own revision is older than the game it replaced — step past it
+	// so the restore is not immediately undone by the next hydrate
+	setOwRev(Math.max(beforeRev, owRev()) + 1);
+	try { await MP.call('ow-save', { ow: owSnapshot(), force: true }); } catch (e) {}
 	location.reload();
 }
 
@@ -9665,6 +9814,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else checkRejoin();
 	}
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus,
+		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
+		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
@@ -9795,9 +9946,14 @@ function drawFriendGhosts(ctx, camX, camY) {
 	try { refreshMail(); setInterval(refreshMail, 120000); } catch (e) { /* logged out */ }
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
-		setInterval(pushOw, 10000);
-		document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pushOw(); });
-		window.addEventListener('pagehide', pushOw);
+		setInterval(() => pushOw(), 10000);
+		// keepalive lets the last write outlive the page: a plain fetch started in
+		// pagehide is cancelled when the tab/app is torn down, which on mobile is the
+		// normal way a session ends. Correctness no longer depends on it landing —
+		// the revision keeps local authoritative until it does — but it shrinks the
+		// window where ANOTHER device would see a stale copy.
+		document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pushOw({ keepalive: true }); });
+		window.addEventListener('pagehide', () => pushOw({ keepalive: true }));
 	} catch (e) { /* best-effort */ }
 	// standalone mini-game: warp to the Battle Factory (moveToMap is the safe path)
 	// and drop straight into a run

@@ -62,6 +62,11 @@ export const OW_RESET_KEYS = [
 	// (the battle snapshot used to survive a reset — a fresh save would then try
 	// to resume a fight belonging to the deleted game)
 	'magepunk_journal_v1', 'magepunk_repellast', 'magepunk_battle_v1',
+	// the save-sync revision: which copy of this game is newer. It rides along
+	// with the snapshot (so it reaches the server and every other device) and a
+	// reset must clear it too — a fresh game starting at a high revision would
+	// outrank, and silently replace, the server copy it was meant to leave alone.
+	'magepunk_ow_rev',
 ];
 
 // Deliberately spared, and why. Kept as data so the test can assert it.
