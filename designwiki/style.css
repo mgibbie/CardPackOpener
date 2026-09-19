@@ -134,6 +134,9 @@ img.sprite {
 .card-page-rules { font-size: 15px; line-height: 1.55; background: #fff; border: 1px solid #e1e6f0; border-radius: 10px; padding: 14px 16px; }
 .card-page-rules b { color: #1c2230; }
 /* clickable type / tribe / school tags */
+/* "Generates" / "Created by" on a card page: real faces, capped so a card that
+   makes four tokens doesn't out-scale the card you came to read */
+.card-grid.rel-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); max-width: 520px; margin-bottom: 14px; }
 .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
 .tag-chip { display: inline-block; padding: 3px 11px; border-radius: 12px; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; }
 .tag-chip:hover { text-decoration: none; filter: brightness(0.95); }

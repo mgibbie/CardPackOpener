@@ -772,7 +772,12 @@ async function cardDetail(id) {
   catch (e) { return content.replaceChildren(h('h1', null, 'Card'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
   const c = cards.find(x => x.id === id);
   if (!c) return content.replaceChildren(h('h1', null, 'Card not found'), h('p', null, h('a', { href: '#/cards' + cardQuerySuffix() }, '← Back to filtered gallery')));
-  await CardArt.preloadArt([id]);
+  // generated-card relations: what this card creates, and what creates it.
+  // Resolved BEFORE preloading so the related faces get their real art too.
+  const byId = {}; for (const x of cards) byId[x.id] = x;
+  const generates = CardArt.generatedCardIds(c, byId);
+  const createdBy = CardArt.createdByIds(c.id, byId);
+  await CardArt.preloadArt([id, ...generates, ...createdBy]);
   const face = CardArt.drawCardFace(c); face.className = 'wiki-face-big';
   const stats = ['Cost ' + (c.cost ?? 0)];
   if (c.type === 'creature') stats.push((c.attack ?? '?') + ' / ' + (c.health ?? '?'));
@@ -781,12 +786,9 @@ async function cardDetail(id) {
   else if (c.type === 'planeswalker') stats.push((c.loyalty ?? 0) + ' loyalty');
   const kws = CardKw.keywordsFor(c);
   const artCanvas = CardArt.drawArt(c); artCanvas.className = 'wiki-art-solo';
-  // generated-card relations: what this card creates, and what creates it
-  const byId = {}; for (const x of cards) byId[x.id] = x;
-  const cardLink = gid => h('a', { class: 'tag-chip', href: '#/cards/' + gid + cardQuerySuffix() },
-    (byId[gid].name || gid) + ' (' + (byId[gid].cost ?? 0) + (byId[gid].type === 'creature' ? ' · ' + (byId[gid].attack ?? '?') + '/' + (byId[gid].health ?? '?') : '') + ')');
-  const generates = CardArt.generatedCardIds(c, byId);
-  const createdBy = CardArt.createdByIds(c.id, byId);
+  // related cards are SHOWN, not just named: a generated token is usually
+  // uncollectible, so its face is the only place its rules are readable
+  const relGrid = ids => h('div', { class: 'card-grid size-small rel-grid' }, ids.map(gid => cardTile(byId[gid])));
   const metaBucket = systemBucket(c);
   const metaSystem = SYSTEM_BUCKETS.find(([key]) => key === metaBucket);
   const metaClassValue = metaSystem ? metaSystem[0] : canonClass(c);
@@ -813,11 +815,11 @@ async function cardDetail(id) {
           h('div', { class: 'kw-def' }, kwChip(k.label), h('span', { class: 'kw-text' }, k.text)))) : null,
         // every specific card this one generates (tokens, corrupted forms,
         // appendages, equipped weapons, shuffled cards, ...), each a link
-        generates.length ? h('h2', null, 'Generates') : null,
-        generates.length ? h('div', { class: 'card-tags' }, generates.map(cardLink)) : null,
+        generates.length ? h('h2', null, generates.length === 1 ? 'Generates this card' : 'Generates these cards') : null,
+        generates.length ? relGrid(generates) : null,
         // and the reverse: which cards create THIS one
-        createdBy.length ? h('h2', null, 'Created by') : null,
-        createdBy.length ? h('div', { class: 'card-tags' }, createdBy.map(cardLink)) : null)),
+        createdBy.length ? h('h2', null, createdBy.length === 1 ? 'Created by this card' : 'Created by these cards') : null,
+        createdBy.length ? relGrid(createdBy) : null)),
     // the card's illustration on its own, no frame
     h('div', { class: 'card-art-section' }, h('h2', null, 'Art'), artCanvas),
     ownerTodoBox(c),
