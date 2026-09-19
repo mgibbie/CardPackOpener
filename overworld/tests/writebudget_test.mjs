@@ -33,6 +33,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/BEAT_FLOOR_MS/.test(mn) && /sig === _lastBeat/.test(mn), 'presence is only written when it changed');
 	A(/setInterval\(\(\) => pushOw\(\), 30000\)/.test(mn), 'ow-save runs on the longer post-revision cadence');
 	A(/coLocated\(\) && player\.moving/.test(mn), 'the fast presence cadence needs co-located AND moving');
+	A(/const watched = coLocated\(\)/.test(mn) && /watched \? payload/.test(mn),
+		'position is only part of the presence signature when someone can see it');
 	const gm = fs.readFileSync(path.join(ROOT, 'battlecards/game.js'), 'utf8');
 	A(/_lastDuelSig/.test(gm) && /DUEL_PUB_FLOOR_MS/.test(gm), 'an unchanged duel board is not republished');
 	A(/publishDuel\(state\.over\)/.test(gm), 'a finished duel always publishes, never deduped away');
@@ -113,6 +115,33 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// several of them (pack-timer, quests) only write when something actually
 		// accrued. The old budget was ~3,000/hr/player of REAL writes.
 		A(perHour <= 800, `projected idle write ceiling stays far under the old ~3,000/hr (got <=${perHour})`);
+
+		// TIER 4 — the case tiers 1-3 did NOT help: a solo player actually WALKING.
+		// x/y changed every step, so every beat still wrote. Nobody was reading it.
+		calls.clear();
+		await page.evaluate(() => { window.__ow.player.tx = 12; window.__ow.player.ty = 34; });
+		for (let i = 0; i < 10; i++) {
+			await page.keyboard.down('ArrowUp'); await sleep(700); await page.keyboard.up('ArrowUp');
+			await sleep(200);
+		}
+		const movedBeats = calls.get('heartbeat') || 0;
+		console.log(`   solo walking ~9s: ${movedBeats} presence writes`);
+		A(movedBeats === 0, `a solo player walking writes no presence at all (got ${movedBeats})`);
+
+		// ...but the moment someone shares the map, full fidelity comes back
+		await page.evaluate(() => {
+			const ow = window.__ow;
+			ow.ghosts.set('watcher', { tx: 1, ty: 1, facing: 'down', px: 16, py: 16 });
+		});
+		calls.clear();
+		for (let i = 0; i < 4; i++) {
+			await page.keyboard.down('ArrowDown'); await sleep(600); await page.keyboard.up('ArrowDown');
+			await sleep(200);
+		}
+		const watchedBeats = calls.get('heartbeat') || 0;
+		console.log(`   watched walking ~3s: ${watchedBeats} presence writes`);
+		A(watchedBeats > 0, `once someone shares the map, position is sent again (got ${watchedBeats})`);
+		await page.evaluate(() => window.__ow.ghosts.clear());
 
 		// presence must still refresh often enough to stay "online" (server ONLINE_MS 90s)
 		// presence liveness is a source invariant, not something a 30s window can show:

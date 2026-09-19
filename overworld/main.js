@@ -9608,7 +9608,18 @@ async function heartbeat(force) {
 					: visiting ? 'visiting:' + visiting.username : 'roaming',
 			region: frontier.active ? (frontier.cfg?.name || '') : (world.current.map.name || ''),
 		};
-		const sig = JSON.stringify(payload);
+		// TIER 4 — presence is only worth writing when someone can SEE it. Alone on
+		// a map, x/y/facing are read by nobody, so they are left out of the change
+		// check entirely: walking solo writes nothing. map/status/region stay in it
+		// because the friends list shows those even when nobody shares your map.
+		//
+		// This has no meet-up latency, which is why it beats a blanket slow cadence:
+		// arriving somewhere CHANGES map, so it still beats immediately, and the
+		// moment a ghost appears `watched` flips, the signature widens to include
+		// position, and the next beat sends the exact tile.
+		const watched = coLocated();
+		const sig = JSON.stringify(watched ? payload
+			: { map: payload.map, status: payload.status, region: payload.region });
 		const now = performance.now();
 		if (!force && sig === _lastBeat && now - _lastBeatAt < BEAT_FLOOR_MS) return;
 		await MP.call('heartbeat', payload);
