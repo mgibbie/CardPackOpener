@@ -95,8 +95,18 @@ export function isUncollectible(card) {
 // every id-bearing effect field (summons, conjures, shuffles, equips,
 // transforms, Colossal appendages, Corrupt forms, hero-power grants, ...).
 // Used by the in-game inspect, the gallery, and the wiki card pages.
+// Keys whose string value names ANOTHER card this one brings into existence —
+// summons, tokens, shuffled/conjured cards, and the versions it turns into
+// (alternate forms, Corrupt/upgrade tiers, transform chains, a hero power's
+// tactic cycle). Keys that merely REFERENCE a card without creating it are
+// deliberately absent: `other`/`diedThisGame` (Feugen ↔ Stalagg pair-ups),
+// `costZeroIfBoardId`/`costZeroIfWeaponId`/`sacrificedThisTurn` (cost conditions)
+// and `idIncludes` (a name filter, not an id). Keyword/type fields are excluded
+// too — several keywords ('charge', 'windfury', 'silence') are also card ids, so
+// walking them would invent relationships that don't exist.
 const GENERATES_KEYS = new Set(['id', 'ids', 'summonId', 'intoId', 'into',
-	'tokenId', 'cardId', 'powerId', 'portal', 'launchTransform', 'corrupt', 'colossal']);
+	'tokenId', 'cardId', 'powerId', 'portal', 'launchTransform', 'corrupt', 'colossal',
+	'forms', 'improves', 'tacticFamily', 'transformWhenDrawn', 'to']);
 export function generatedCardIds(card, byId) {
 	const out = new Set();
 	const walk = (v, key) => {
