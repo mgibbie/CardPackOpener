@@ -88,7 +88,9 @@ export async function resetOverworld() {
 	// the SERVER first: hydrateOw() would otherwise restore the old save on boot
 	let server = 'skipped';
 	try {
-		await MP.call('ow-save', { ow: {} });
+		// `force`: the server refuses an empty blob over a populated save (a buggy
+		// client must not be able to blank a real game). This wipe is deliberate.
+		await MP.call('ow-save', { ow: {}, force: true });
 		server = 'cleared';
 	} catch (e) {
 		// no network / logged out. The local wipe is still worth doing, but say so —
