@@ -4,6 +4,7 @@
 // self-contained rateLimit() and assert the handler's shape from source, plus test
 // the actual validation regexes and the store round-trip the endpoints rely on.
 import fs from 'fs';
+import { buildRateLimit } from '../helpers/serversrc.mjs';
 
 const src = fs.readFileSync(new URL('../../../server/mp.mjs', import.meta.url), 'utf8');
 let pass = 0, fail = 0;
@@ -19,7 +20,7 @@ function extractFn(name) {
 	}
 	return src.slice(i, k);
 }
-const rateLimit = new Function(extractFn('rateLimit') + '; return rateLimit;')();
+const rateLimit = buildRateLimit(src); // rateLimit now leans on rateLimitMem + DURABLE_BUCKETS
 const makeStore = () => { const m = new Map(); return {
 	get: async k => (m.has(k) ? JSON.parse(m.get(k)) : null),
 	setJSON: async (k, v) => { m.set(k, JSON.stringify(v)); },

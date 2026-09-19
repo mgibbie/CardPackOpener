@@ -26,7 +26,10 @@ const rc = block('run-clear');
 ok('run-clear deletes one key (or all) from the doc', /delete doc\[key\]/.test(rc) && /'run:' \+ username/.test(rc));
 
 // --- ow-save / ow-load ---
-const os = block('ow-save', 2200); // the daily-backup stash sits between the cap check and the write
+// the revision guard (#505/#506) and the daily-backup stash (#508) sit between the
+// cap check and the write, so the handler now spans ~3.7k chars — the window has to
+// clear it or this reads as a missing guard
+const os = block('ow-save', 5200);
 ok('ow-save is size-capped + durable (ow:<username>) with updated_at', /OW_MAX_BYTES/.test(os) && /'ow:' \+ username/.test(os) && /updated_at: Date\.now\(\)/.test(os));
 ok('ow-load returns the per-user overworld doc', /'ow:' \+ username/.test(block('ow-load', 160)));
 
