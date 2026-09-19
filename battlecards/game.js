@@ -5567,10 +5567,22 @@ function duelStatsPayload() {
 		heroDmgTaken: matchStats.heroDmgTaken, elim: matchStats.elim || [],
 		durS: Math.max(1, Math.round((performance.now() - matchStats.start) / 1000)) };
 }
-function publishDuel() {
+// A duel published at a flat 1Hz whether or not the board had changed — ~7,200
+// D1 row writes an hour per duelist (the write, plus the rate-limit counter that
+// used to cost a row of its own). Nothing downstream wants a republished
+// identical board: the guest polls, and an unchanged snapshot tells it nothing.
+// The floor keeps the watcher badge and staleness detection alive while idle.
+let _lastDuelSig = '', _lastDuelPubAt = 0;
+const DUEL_PUB_FLOOR_MS = 10_000;
+function publishDuel(force) {
 	const cm = duel.config;
+	const snapshot = snapshotForDuel();
+	const sig = JSON.stringify({ snapshot, over: !!state?.over, winner: state?.winner ?? null });
+	const now = performance.now();
+	if (!force && sig === _lastDuelSig && now - _lastDuelPubAt < DUEL_PUB_FLOOR_MS) return;
+	_lastDuelSig = sig; _lastDuelPubAt = now;
 	MPX.call('card-publish', {
-		id: duel.id, snapshot: snapshotForDuel(), seq: ++duelPubSeq,
+		id: duel.id, snapshot, seq: ++duelPubSeq,
 		label: `${cm.host} vs ${cm.guest}`,
 		over: !!state?.over, winner: state?.winner ?? null,
 		stats: duelStatsPayload(),
@@ -5594,7 +5606,7 @@ function startDuelPublish() {
 	if (duelPubStarted) return;
 	duelPubStarted = true;
 	publishDuel();
-	setInterval(() => { if (state) publishDuel(); }, 1000);
+	setInterval(() => { if (state) publishDuel(state.over); }, 1000);   // a finished duel always publishes
 }
 
 // action wrappers. On the guest they apply the action OPTIMISTICALLY to the
