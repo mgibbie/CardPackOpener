@@ -697,7 +697,7 @@ function renderCards(cards, report = {}) {
   const more = h('button', { class: 'showmore' });
   const renderMore = async () => {
     const batch = list.slice(shown, shown + CAP);
-    await CardArt.preloadArt(batch.map(c => c.id));
+    await CardArt.preloadArt(batch.map(CardArt.artIdOf));
     if (token !== cardGalleryToken) return;
     grid.append(...batch.map(cardTile));
     shown += batch.length;
@@ -744,7 +744,7 @@ async function missingArtView() {
     .filter(c => !q || norm(c.name).includes(q) || norm(c.id).includes(q) || norm(c.cardClass).includes(q) || norm(c.type).includes(q))
     .sort((a, b) => canonClass(a).localeCompare(canonClass(b)) || String(a.name).localeCompare(String(b.name)));
 
-  await CardArt.preloadArt(list.map(c => c.id));
+  await CardArt.preloadArt(list.map(CardArt.artIdOf));
   const temporary = new Set((report.errors || []).map(x => x.id)).size;
   const placeholderShown = list.filter(c => placeholderIds.has(c.id)).length;
   content.replaceChildren(
@@ -777,7 +777,10 @@ async function cardDetail(id) {
   const byId = {}; for (const x of cards) byId[x.id] = x;
   const generates = CardArt.generatedCardIds(c, byId);
   const createdBy = CardArt.createdByIds(c.id, byId);
-  await CardArt.preloadArt([id, ...generates, ...createdBy]);
+  // preload the art each face will actually draw — a generated copy wears its
+  // creator's illustration (artFrom), so preloading its own id would warm nothing
+  await CardArt.preloadArt([c, ...generates.map(g => byId[g]), ...createdBy.map(g => byId[g])]
+    .filter(Boolean).map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(c); face.className = 'wiki-face-big';
   const stats = ['Cost ' + (c.cost ?? 0)];
   if (c.type === 'creature') stats.push((c.attack ?? '?') + ' / ' + (c.health ?? '?'));
@@ -892,7 +895,7 @@ async function cardSubsetView(kind, slug) {
   const more = h('button', { class: 'showmore' });
   const renderMore = async () => {
     const batch = list.slice(shown, shown + CAP);
-    await CardArt.preloadArt(batch.map(c => c.id));
+    await CardArt.preloadArt(batch.map(CardArt.artIdOf));
     grid.append(...batch.map(cardTile));
     shown += batch.length;
     if (shown >= list.length) more.remove(); else more.textContent = 'Show more (' + (list.length - shown) + ' hidden)';
@@ -915,7 +918,7 @@ async function contraptionsView() {
   try { [cards] = await Promise.all([loadCards(), loadCardart()]); }
   catch (e) { return content.replaceChildren(h('h1', null, 'Contraptions'), h('p', { class: 'muted' }, 'Could not load the card data.')); }
   const list = cards.filter(c => c.contraption).sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt(list.map(c => c.id));
+  await CardArt.preloadArt(list.map(CardArt.artIdOf));
   const sizeBtn = sz => h('button', {
     style: 'padding:4px 12px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #4a3f6b;'
       + (contraptionSize === sz ? 'background:#6a5f8a;color:#fff;font-weight:700;' : 'background:#241b38;color:#c9b8ff;'),
@@ -989,7 +992,7 @@ async function deckGrid(ids, byId) {
   const counts = new Map();
   for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
   const uniq = [...counts.keys()].map(id => byId[id] || null);
-  await CardArt.preloadArt(uniq.filter(Boolean).map(c => c.id));
+  await CardArt.preloadArt(uniq.filter(Boolean).map(CardArt.artIdOf));
   const grid = h('div', { class: 'card-grid' });
   const entries = [...counts.entries()]
     .sort((a, b) => ((byId[a[0]]?.cost || 0) - (byId[b[0]]?.cost || 0)) || a[0].localeCompare(b[0]));
@@ -1490,7 +1493,7 @@ async function designCardDetail(slug) {
   const implBody = [];
   let face = null;
   if (impl && art) {
-    try { await art.preloadArt([impl.id]); face = art.drawCardFace(impl); face.className = 'wiki-face-big'; } catch (e) {}
+    try { await art.preloadArt([art.artIdOf(impl)]); face = art.drawCardFace(impl); face.className = 'wiki-face-big'; } catch (e) {}
     const stats = ['Cost ' + (impl.cost ?? 0)];
     if (impl.type === 'creature') stats.push((impl.attack ?? '?') + ' / ' + (impl.health ?? '?'));
     else if (impl.type === 'weapon') stats.push(impl.attack + ' attack · ' + impl.durability + ' durability');
@@ -1594,7 +1597,7 @@ async function landPoolDetail(id) {
   const regular = pool.filter(c => !c.corrOnly);
   const corr = pool.filter(c => c.corrOnly);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'land-pools') return;
-  await CardArt.preloadArt([land.id, ...pool.map(c => c.id)]);
+  await CardArt.preloadArt([CardArt.artIdOf(land), ...pool.map(CardArt.artIdOf)]);
   const face = CardArt.drawCardFace(land); face.className = 'wiki-face-big';
   const tapLines = (land.description || '').split('\n').filter(Boolean);
   const countText = corr.length
@@ -1637,7 +1640,7 @@ async function correspondenceView() {
     .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
   const alts = cards.filter(c => c.corrOnly)
     .sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt([...banned, ...alts].map(c => c.id));
+  await CardArt.preloadArt([...banned, ...alts].map(CardArt.artIdOf));
   // alternates grouped by the land pool they patch back to full size
   const byPool = new Map();
   for (const c of alts) {
@@ -1746,7 +1749,7 @@ async function lorequestDeckDetail(slug) {
   const deck = lqDeckCards(cards, ch);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'lore-decks') return;
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  await CardArt.preloadArt(deck.map(c => c.id));
+  await CardArt.preloadArt(deck.map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
   const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === LQ.classOf(ch))?.name) || titleCase(LQ.classOf(ch).replace(/_/g, ' '));
@@ -1803,7 +1806,7 @@ async function middleEarthView() {
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
   // Treasures — neutral rewards drafted on odd wins (The One Ring + the Hobbit-set treasures)
   const treasures = cards.filter(c => c.meTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt(treasures.map(c => c.id));
+  await CardArt.preloadArt(treasures.map(CardArt.artIdOf));
   const treasureSection = h('section', { class: 'lp-tier' },
     h('div', { class: 'lp-tier-head' },
       h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
@@ -1834,7 +1837,7 @@ async function middleEarthDeckDetail(slug) {
   const deck = meDeckCards(cards, ch);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'middle-earth') return;
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  await CardArt.preloadArt(deck.map(c => c.id));
+  await CardArt.preloadArt(deck.map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
   const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === ME.classOf(ch))?.name) || titleCase(ME.classOf(ch).replace(/_/g, ' '));
@@ -1898,7 +1901,7 @@ async function swordCoastView() {
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
   // SC-specific treasures — neutral rewards drafted on odd wins
   const treasures = cards.filter(c => c.scTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt(treasures.map(c => c.id));
+  await CardArt.preloadArt(treasures.map(CardArt.artIdOf));
   const treasureSection = h('section', { class: 'lp-tier' },
     h('div', { class: 'lp-tier-head' },
       h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
@@ -1929,7 +1932,7 @@ async function swordCoastDeckDetail(slug) {
   const deck = scDeckCards(cards, ch);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'sword-coast') return;
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  await CardArt.preloadArt(deck.map(c => c.id));
+  await CardArt.preloadArt(deck.map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
   const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === SC.classOf(ch))?.name) || titleCase(SC.classOf(ch).replace(/_/g, ' '));
@@ -1993,7 +1996,7 @@ async function finalFantasyView() {
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
   // FF-specific treasures — neutral rewards drafted on odd wins
   const treasures = cards.filter(c => c.ffTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt(treasures.map(c => c.id));
+  await CardArt.preloadArt(treasures.map(CardArt.artIdOf));
   const treasureSection = h('section', { class: 'lp-tier' },
     h('div', { class: 'lp-tier-head' },
       h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
@@ -2024,7 +2027,7 @@ async function finalFantasyDeckDetail(slug) {
   const deck = ffDeckCards(cards, ch);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'final-fantasy') return;
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  await CardArt.preloadArt(deck.map(c => c.id));
+  await CardArt.preloadArt(deck.map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
   const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === FF.classOf(ch))?.name) || titleCase(FF.classOf(ch).replace(/_/g, ' '));
@@ -2127,7 +2130,7 @@ async function multiverseView() {
   const totalCards = Object.values(decks).reduce((n, d) => n + d.length, 0);
   // Multiverse-specific treasures — neutral rewards drafted at milestone wins (2/5/8/11)
   const treasures = cards.filter(c => c.mvTreasure).sort((a, b) => Number(a.cost || 0) - Number(b.cost || 0) || String(a.name).localeCompare(String(b.name)));
-  await CardArt.preloadArt(treasures.map(c => c.id));
+  await CardArt.preloadArt(treasures.map(CardArt.artIdOf));
   const treasureSection = h('section', { class: 'lp-tier' },
     h('div', { class: 'lp-tier-head' },
       h('h2', null, 'Treasures', ' ', h('span', { class: 'num' }, '(' + treasures.length + ')')),
@@ -2157,7 +2160,7 @@ async function multiverseDeckDetail(slug) {
   const deck = mvDeckCards(cards, ch);
   if ((location.hash.slice(1).split('?')[0].split('/').filter(Boolean))[0] !== 'multiverse') return;
   const byId = {}; for (const c of cards) byId[c.id] = c;
-  await CardArt.preloadArt(deck.map(c => c.id));
+  await CardArt.preloadArt(deck.map(CardArt.artIdOf));
   const face = CardArt.drawCardFace(lqSig(deck)); face.className = 'wiki-face-big';
   const grid = await deckGrid(deck.map(c => c.id), byId);
   const clsName = (classes.find(c => c.id === MV.classOf(ch))?.name) || titleCase(MV.classOf(ch).replace(/_/g, ' '));

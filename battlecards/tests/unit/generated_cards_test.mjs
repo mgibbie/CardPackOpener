@@ -92,5 +92,60 @@ ok('a cost condition naming a card is not generation', !gen('karazhan_the_sanctu
 	ok('createdByIds is the exact inverse of generatedCardIds', mismatches === 0, mismatches);
 }
 
+// ── a generated copy should LOOK like the card that made it ──
+// A Twinspell's second cast has no art of its own, so it fell back to the
+// procedural illustration next to its fully-illustrated parent; `artFrom` points
+// it at the parent's art. Colour comes from bodyColorOf, which colours lore-deck
+// cards by CLASS (so a hero's pool reads as one colour) and everything else by
+// its WUBRG colors[] — a copy missing its parent's lore tags rendered red beside
+// a gold parent.
+{
+	// brace-match a multi-line `const NAME = {...};`
+	const block = name => {
+		const m = new RegExp('const ' + name + '\\s*=\\s*\\{').exec(src);
+		if (!m) throw new Error('const not found: ' + name);
+		let depth = 0, started = false, k = m.index;
+		for (; k < src.length; k++) {
+			if (src[k] === '{') { depth++; started = true; }
+			else if (src[k] === '}') { depth--; if (started && depth === 0) { k++; break; } }
+		}
+		return src.slice(m.index, k) + ';';
+	};
+	const line = name => new RegExp('const ' + name + '\\s*=[^\\n]+').exec(src)[0];
+	const bodyColorOf = new Function([
+		block('CLASS_COLORS').replace('export const', 'const'), block('CLASS_ALIASES'),
+		extractFn('canonClass'), extractFn('classColorOf'),
+		line('COLOR_BODY'), line('LORE_VARIANT_TAGS'), extractFn('bodyColorOf'),
+		'return bodyColorOf;',
+	].join('\n'))();
+
+	const pairs = raw.cards.filter(c => c.artFrom).map(c => [c, byId[c.artFrom]]);
+	ok('some cards declare an inherited illustration (artFrom)', pairs.length >= 5, pairs.length);
+	ok('every artFrom points at a real card', pairs.every(([, p]) => !!p), raw.cards.filter(c => c.artFrom && !byId[c.artFrom]).map(c => c.id).join(','));
+	ok('no card inherits art from itself', raw.cards.every(c => c.artFrom !== c.id));
+	// integrity: you may only borrow the art of a card that actually creates you
+	{
+		const bad = pairs.filter(([c, p]) => p && !generatedCardIds(p, byId).includes(c.id)).map(([c]) => c.id);
+		ok('a card only inherits art from a card that GENERATES it', bad.length === 0, bad.join(','));
+	}
+	// the reported card, and its four siblings
+	ok('Rally at the Hornburg II inherits its creator\'s art', byId.me_aragorn_rally_ii.artFrom === 'me_aragorn_rally', byId.me_aragorn_rally_ii.artFrom);
+	for (const id of ['conjurers_calling_ii', 'air_raid_ii', 'desperate_measures_ii', 'rising_winds_ii']) {
+		ok(`${id} inherits its creator's art`, byId[id].artFrom === id.replace(/_ii$/, ''), byId[id].artFrom);
+	}
+	// and the colour actually matches, computed through the shipped bodyColorOf
+	{
+		const mismatched = pairs.filter(([c, p]) => p && bodyColorOf(c) !== bodyColorOf(p)).map(([c, p]) => `${c.id}:${bodyColorOf(c)} vs ${p.id}:${bodyColorOf(p)}`);
+		ok('every inheriting copy renders the SAME frame colour as its creator', mismatched.length === 0, mismatched.join(' | '));
+	}
+	ok('the reported pair specifically matches', bodyColorOf(byId.me_aragorn_rally_ii) === bodyColorOf(byId.me_aragorn_rally),
+		bodyColorOf(byId.me_aragorn_rally_ii) + ' vs ' + bodyColorOf(byId.me_aragorn_rally));
+	// artIdOf is what the renderer actually calls
+	const artIdOf = new Function(line('artIdOf').replace('export const', 'const') + '; return artIdOf;')();
+	ok('artIdOf resolves a copy to its creator\'s art id', artIdOf(byId.me_aragorn_rally_ii) === 'me_aragorn_rally');
+	ok('artIdOf leaves an ordinary card on its own id', artIdOf(byId.me_aragorn_rally) === 'me_aragorn_rally');
+	ok('artIdOf is safe on junk', artIdOf(null) === '' && artIdOf({}) === '');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
