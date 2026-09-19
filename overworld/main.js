@@ -2796,9 +2796,15 @@ function pressKey(k) {
 	// so the shop must keep taking input — otherwise the player can neither buy
 	// nor close it and the script never resumes
 	if (shopMenu.open && shopMenu.fromScript) { shopKey(k); return; }
+	// a scripted battle (gym leader / rival / villain / any trainer engaged via
+	// their EventScript) runs UNDER its paused cutscene — the trainerbattle op
+	// holds the cutscene's `cur` (so `blocking` stays true) until the fight
+	// resolves. The battle must take keys BEFORE the cutscene gate, or every
+	// scripted fight is keyboard/A-B-dead (only direct taps on the battle's own
+	// buttons worked — the pointer handlers already check battle first).
+	if (battle.blocking) { battle.key(k); return; }
 	if (cutscene.blocking) return; // a running cutscene swallows all other input
 	if (evolution.blocking) { evolution.key(k); return; }
-	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
 	if (factorySpec.blocking) { factorySpec.key(k); return; }
 	if (trade.open) { tradeKey(k); return; }
