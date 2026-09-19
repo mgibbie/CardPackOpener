@@ -147,5 +147,44 @@ ok('a cost condition naming a card is not generation', !gen('karazhan_the_sanctu
 	ok('artIdOf is safe on junk', artIdOf(null) === '' && artIdOf({}) === '');
 }
 
+// ── every generated card must end up with the RIGHT art ──
+// Inheritance is only ever legitimate between the same card: a Twinspell's second
+// cast, a tier, a form. A summoned Soldier token must NOT wear its summoner's
+// portrait, so artFrom additionally requires a shared name.
+{
+	const inheriting = raw.cards.filter(c => c.artFrom);
+	const wrongIdentity = inheriting.filter(c => {
+		const p = byId[c.artFrom];
+		const a = String(c.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+		const b = String((p && p.name) || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+		return !p || !(a === b || a.startsWith(b) || b.startsWith(a));
+	}).map(c => c.id);
+	ok('art is only inherited between the SAME card (a token never wears its summoner\'s art)', wrongIdentity.length === 0, wrongIdentity.join(','));
+
+	// the stand-in registry must stay honest
+	let placeholders = [];
+	try { placeholders = JSON.parse(fs.readFileSync(new URL('../../art-placeholders.json', import.meta.url))).cards || []; } catch (e) { /* optional */ }
+	ok('every flagged stand-in still names a real card', placeholders.every(p => !!byId[p.id]), placeholders.filter(p => !byId[p.id]).map(p => p.id).join(','));
+	ok('every flagged stand-in still records what it reuses and why', placeholders.every(p => p.source && p.reason));
+
+	// art/index.json is gitignored (built + deployed separately), so the coverage
+	// half only runs where it exists — a dev box — and is skipped loudly in CI.
+	let artIds = null;
+	try { artIds = new Set(JSON.parse(fs.readFileSync(new URL('../../art/index.json', import.meta.url)))); } catch (e) { /* not present */ }
+	if (!artIds) {
+		console.log('note: battlecards/art/index.json absent (gitignored) — art COVERAGE checks skipped, inheritance rules still enforced');
+	} else {
+		const generated = new Set();
+		for (const c of raw.cards) for (const g of generatedCardIds(c, byId)) generated.add(g);
+		const artIdOf = c => (c && c.artFrom) || (c && c.id) || '';
+		const missing = [...generated].filter(id => !artIds.has(artIdOf(byId[id])));
+		ok('EVERY generated card resolves to a real art file', missing.length === 0, missing.slice(0, 12).join(','));
+		ok('the generated set is substantial (the check is not vacuous)', generated.size >= 500, generated.size);
+		// a generated card that borrows art must borrow art that actually exists
+		ok('every inherited art id exists in the index', inheriting.every(c => artIds.has(c.artFrom)),
+			inheriting.filter(c => !artIds.has(c.artFrom)).map(c => c.id).join(','));
+	}
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
