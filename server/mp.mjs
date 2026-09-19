@@ -338,7 +338,33 @@ function userStore(db) {
 // (the current window is stored in the value), so the rl:* keyspace stays bounded
 // by identities × actions rather than growing a row per window. Returns true when
 // the hit is within the limit. Approximate under concurrency, by design.
+// TIER 1 — the brake used to cost as much as the thing it was braking: every
+// guarded call did a D1 setJSON, which DOUBLED every write action and put a row
+// write behind read-only polls (cardstate, card-poll, tuning-get, replay fetches).
+// With three players that was roughly half the daily write budget.
+//
+// These are explicitly approximate ("abuse BRAKES, not precise quotas" — the
+// counter was already non-atomic and could under-count a burst), so an in-isolate
+// counter keeps the same guarantee at zero rows. It resets when an isolate
+// recycles and is per-colo rather than global, which is the trade: a determined
+// attacker spread across colos gets a larger multiple of the ceiling than before.
+// For that reason the SECURITY-sensitive buckets below stay durable.
+const memBuckets = new Map();   // bucket -> { win, n }
+function rateLimitMem(bucket, limit, windowMs) {
+	const win = Math.floor(Date.now() / windowMs);
+	const cur = memBuckets.get(bucket);
+	const n = (cur && cur.win === win) ? cur.n + 1 : 1;
+	memBuckets.set(bucket, { win, n });
+	// bound the map so a long-lived isolate can't grow it without limit
+	if (memBuckets.size > 5000) { for (const k of memBuckets.keys()) { memBuckets.delete(k); if (memBuckets.size <= 2500) break; } }
+	return n <= limit;
+}
+// Brute-force protection must survive an isolate recycle and be global, so these
+// keep paying a row per attempt. All of them are RARE by nature (a human logging
+// in, creating an account, changing a recovery email), so they cost nothing at play time.
+const DURABLE_BUCKETS = /^(login|reg|set-email):/;
 async function rateLimit(store, bucket, limit, windowMs) {
+	if (!DURABLE_BUCKETS.test(bucket)) return rateLimitMem(bucket, limit, windowMs);
 	const key = 'rl:' + bucket;
 	const win = Math.floor(Date.now() / windowMs);
 	const cur = await store.get(key);
@@ -2516,9 +2542,15 @@ export default async function handler(req, env) {
 		// pruned — the UNDO slot written by ow-restore is never aged out. A backup
 		// failure must never block the save itself.
 		try {
+			// This block used to run its reads on EVERY save. The backup itself is
+			// once-a-day, so gate the whole thing on the stored record already being
+			// from an earlier UTC day — the common case (a save later the same day)
+			// now costs one read instead of three plus a list.
 			const prev = await store.get('ow:' + username);
-			if (prev && prev.ow && Object.keys(prev.ow).length) {
-				const day = new Date().toISOString().slice(0, 10);
+			const today = new Date().toISOString().slice(0, 10);
+			const prevDay = prev && prev.updated_at ? new Date(prev.updated_at).toISOString().slice(0, 10) : null;
+			if (prev && prev.ow && Object.keys(prev.ow).length && prevDay !== today) {
+				const day = prevDay || today;
 				const hk = 'owh:' + username + ':' + day;
 				if (!(await store.get(hk))) {
 					await store.setJSON(hk, { ow: prev.ow, updated_at: prev.updated_at || Date.now() });

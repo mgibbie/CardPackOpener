@@ -9541,17 +9541,32 @@ getImage('data/sprites/green_normal.png').then(img => { friendSprite = img; }).c
 const ghosts = new Map(); // username -> { tx, ty, facing, px, py }
 
 // broadcast my position; fast when co-located so neighbours see me move
-async function heartbeat() {
+// TIER 2 — presence used to be written twice a second whether or not anything
+// had changed, which made it the single largest source of D1 row writes: ~2,000
+// an hour roaming, ~8,000 co-located. Most of a session is standing still, in a
+// menu, or reading a dialog. Skip the write when the payload is identical.
+//
+// The floor matters: `friends` decides online-ness from lastSeen against
+// ONLINE_MS (90s server-side), so going quiet indefinitely would make an idle
+// player look offline. Re-send at least every 40s regardless.
+let _lastBeat = '', _lastBeatAt = 0;
+const BEAT_FLOOR_MS = 40_000;
+async function heartbeat(force) {
 	if (!MP_ON || loading) return;
 	try {
-		await MP.call('heartbeat', {
+		const payload = {
 			map: world.current.name, x: player.tx, y: player.ty,
 			facing: player.facing,
 			status: pvp.blocking ? 'battling:' + (pvp.active?.matchId || '')
 				: frontier.active ? 'factory:' + (frontier.cfg?.name || 'BATTLE FRONTIER')
 					: visiting ? 'visiting:' + visiting.username : 'roaming',
 			region: frontier.active ? (frontier.cfg?.name || '') : (world.current.map.name || ''),
-		});
+		};
+		const sig = JSON.stringify(payload);
+		const now = performance.now();
+		if (!force && sig === _lastBeat && now - _lastBeatAt < BEAT_FLOOR_MS) return;
+		await MP.call('heartbeat', payload);
+		_lastBeat = sig; _lastBeatAt = now;
 	} catch (e) {}
 }
 
@@ -9829,7 +9844,10 @@ function drawFriendGhosts(ctx, camX, camY) {
 		hud.textContent = `${world.current.map.name || startMap}  ·  ${mpAccount?.username || ''} (${mpAccount?.friendCode || '……'})`;
 		// adaptive presence: ~450ms when someone shares the map (minimal
 		// latency for side-by-side screens), ~1.8s when roaming alone
-		const beatLoop = () => heartbeat().finally(() => setTimeout(beatLoop, coLocated() ? 450 : 1800));
+		// the 450ms cadence is only worth paying when someone is actually watching
+		// this player move — co-located AND mid-step. Standing still next to a friend
+		// is still just one beat every BEAT_FLOOR_MS.
+		const beatLoop = () => heartbeat().finally(() => setTimeout(beatLoop, (coLocated() && player.moving) ? 450 : 1800));
 		const presLoop = () => pollPresence().finally(() => setTimeout(presLoop, coLocated() ? 400 : 1400));
 		beatLoop();
 		presLoop();
@@ -9988,7 +10006,11 @@ function drawFriendGhosts(ctx, camX, camY) {
 	try { refreshMail(); setInterval(refreshMail, 120000); } catch (e) { /* logged out */ }
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
-		setInterval(() => pushOw(), 10000);
+		// TIER 3 — 10s was chosen when a missed write meant lost progress. The
+		// revision (#505/#506) removed that: local stays authoritative until the
+		// server acknowledges, so a longer cadence costs nothing but staleness on
+		// OTHER devices. The unload write still fires on pagehide/visibilitychange.
+		setInterval(() => pushOw(), 30000);
 		// keepalive lets the last write outlive the page: a plain fetch started in
 		// pagehide is cancelled when the tab/app is torn down, which on mobile is the
 		// normal way a session ends. Correctness no longer depends on it landing —
