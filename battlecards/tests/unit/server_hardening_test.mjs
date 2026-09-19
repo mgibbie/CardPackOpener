@@ -8,6 +8,7 @@
 // guards so they can't be silently deleted. Behavioural limiter coverage lives
 // here so it runs in CI (the harness needs a browser and is standalone).
 import fs from 'fs';
+import { buildRateLimit, extractConst } from '../helpers/serversrc.mjs';
 
 const src = fs.readFileSync(new URL('../../../server/mp.mjs', import.meta.url), 'utf8');
 let pass = 0, fail = 0;
@@ -24,7 +25,7 @@ function extractFn(name) {
 	}
 	return src.slice(i, k);
 }
-const rateLimit = new Function(extractFn('rateLimit') + '; return rateLimit;')();
+const rateLimit = buildRateLimit(src); // rateLimit now leans on rateLimitMem + DURABLE_BUCKETS
 
 const makeStore = () => { const m = new Map(); return {
 	get: async k => (m.has(k) ? JSON.parse(m.get(k)) : null),
@@ -44,13 +45,30 @@ const makeStore = () => { const m = new Map(); return {
 	ok('a different identity has its own budget', (await rateLimit(store, 'card-act:alice', 5, 10_000)) === true);
 	ok('a different action has its own budget', (await rateLimit(store, 'hit:1.2.3.4', 5, 10_000)) === true);
 
+	// #508 split the limiter: PLAY-TIME buckets are counted in-process, so they
+	// cost no D1 rows at all — that saving is the whole point and is asserted here.
+	ok('a play-time bucket writes no rate-limit rows (the D1 saving)',
+		[...store._m.keys()].filter(k => k.startsWith('rl:')).length === 0, [...store._m.keys()].join(','));
+}
+// SECURITY buckets stay durable — brute force must survive an isolate recycle and
+// be global across colos, so these still pay a row per attempt.
+{
+	const store = makeStore();
+	let within = true;
+	for (let i = 0; i < 3; i++) within = within && (await rateLimit(store, 'login:bob', 3, 10_000)) === true;
+	ok('a durable bucket counts the first N attempts', within);
+	ok('and blocks past its limit', (await rateLimit(store, 'login:bob', 3, 10_000)) === false);
+
 	// keyspace is bounded: ONE rl:* key per bucket, overwritten each hit (not one per window)
-	const bobKeys = [...store._m.keys()].filter(k => k.startsWith('rl:card-act:bob'));
-	ok('a bucket keeps a single overwritten counter key (bounded keyspace)', bobKeys.length === 1, bobKeys.join(','));
+	const bobKeys = [...store._m.keys()].filter(k => k.startsWith('rl:login:bob'));
+	ok('a durable bucket keeps a single overwritten counter key (bounded keyspace)', bobKeys.length === 1, bobKeys.join(','));
 
 	// an exhausted OLD window resets on the next hit (a new window ⇒ n back to 1)
-	await store.setJSON('rl:card-act:bob', { win: 0, n: 9999 }); // win 0 is far in the past
-	ok('a new window resets the counter', (await rateLimit(store, 'card-act:bob', 5, 10_000)) === true);
+	await store.setJSON('rl:login:bob', { win: 0, n: 9999 }); // win 0 is far in the past
+	ok('a new window resets the counter', (await rateLimit(store, 'login:bob', 3, 10_000)) === true);
+	const durableSrc = extractConst(src, 'DURABLE_BUCKETS');
+	ok('the durable list still covers every brute-forceable action',
+		['login', 'reg', 'set-email'].every(b => durableSrc.includes(b)), durableSrc);
 }
 
 // --- source guards: the other brakes must stay wired ---
