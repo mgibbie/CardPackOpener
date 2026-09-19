@@ -2477,6 +2477,21 @@ export default async function handler(req, env) {
 		const ow = body.ow;
 		if (!ow || typeof ow !== 'object' || Array.isArray(ow)) return json({ error: 'bad ow' }, 400);
 		if (JSON.stringify(ow).length > OW_MAX_BYTES) return json({ error: 'ow too large' }, 413);
+		// REVISION GUARD: a client that has been offline, or is simply older, must
+		// not be able to write its stale game over a newer one. The revision lives
+		// inside the blob (magepunk_ow_rev) so it travels with the save; absent
+		// reads as 0, which is what every pre-revision save looks like, so this is
+		// a no-op for them. `force` is the explicit user-initiated replace — a file
+		// import or a backup restore, which are meant to outrank what is stored.
+		{
+			const revOf = b => Math.max(0, parseInt(b && b['magepunk_ow_rev'], 10) || 0);
+			const cur = await store.get('ow:' + username);
+			const storedRev = cur && cur.ow ? revOf(cur.ow) : 0;
+			const incomingRev = revOf(ow);
+			if (!body.force && cur && cur.ow && incomingRev < storedRev) {
+				return json({ error: 'stale revision', conflict: true, rev: storedRev }, 409);
+			}
+		}
 		// The daily safety net: the FIRST save of each UTC day stashes the blob the
 		// day started with (the PREVIOUS stored value, not the incoming one), so
 		// "yesterday's game" is always recoverable. Only date-shaped keys are
