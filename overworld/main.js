@@ -218,6 +218,11 @@ const STARTERS = [
 // then 'pick' phase (choose the starter on-screen inside the region's lab).
 const starterMenu = { open: false, row: 0, col: 0, sprites: {}, phase: 'region', region: null };
 const urlPinnedMap = new URLSearchParams(location.search).has('map');
+// May a NEW step begin this instant? Checked by the engine right after onArrive,
+// so an encounter/trainer/dialog that arriving just triggered stops the walk
+// instead of committing one more step into it. Same condition the tick uses to
+// decide whether input moves the player at all, so the two cannot disagree.
+player.canStep = () => !menuBlocking() && !trainers.engaging;
 player.blocked = (tx, ty) => npcs.npcBlocks(tx, ty) || trainers.occupied(tx, ty) || services.blocks(tx, ty) || arcade.blocks(tx, ty) || blockers.blocks(tx, ty) || portals.blocks(tx, ty) || items.occupied(tx, ty);
 
 // Strength: shove a boulder one tile ahead if a party mon can use Strength and

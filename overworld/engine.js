@@ -497,6 +497,7 @@ export class Player {
 		this.jumping = false;
 		this.moveFrom = null; this.moveTo = null; this.moveT = 0; this.moveDist = META;
 		this.moveOutcome = null;   // why the last step attempt did/didn't start
+		this.canStep = null;       // set by main.js: may a NEW step begin right now?
 		this.animT = 0; this.stepParity = 0;
 		this.surfing = false; this.biking = false;
 	}
@@ -599,8 +600,16 @@ export class Player {
 				// position you can never move out of.
 				else if (!this.surfing && this.world.isSurfable(this.tx, this.ty)) this.surfing = true;
 				this.onArrive?.();
-				// keep walking if a key is held
-				if (held) {
+				// keep walking if a key is held — but ONLY if arriving here did not
+				// just start something. onArrive is where the wild-encounter roll, the
+				// trainer sight line, warps and item pickups fire, so by the time it
+				// returns a battle may already be up. Committing another step against
+				// the stale `held` began a move that then froze mid-flight for the whole
+				// battle (the tick stops updating the player while battle.blocking), and
+				// completed the instant the battle ended — the player sliding one square
+				// forward after every encounter. Flushing held keys on battle end cannot
+				// fix that: the step is already begun, not key-driven.
+				if (held && (!this.canStep || this.canStep())) {
 					this.tryMove(held);
 					if (this.moving && spill > 0) {
 						this.moveT = spill * prevDist / this.moveDist;

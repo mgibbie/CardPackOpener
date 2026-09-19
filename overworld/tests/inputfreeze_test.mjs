@@ -288,6 +288,64 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(armed.held === 0, 'and heldKeys really is empty in that state — the blind spot is real', JSON.stringify(armed));
 		await page.evaluate(() => { window.__ow.dialog.pages = null; });
 
+		// --- no stray step OUT of a wild encounter ---
+		// Reported: "after a wild encounter I keep moving 1 square in the direction I
+		// was going." onArrive fires the encounter roll, and update() then committed
+		// ANOTHER step against the stale `held`. That step froze mid-flight for the
+		// whole battle and completed the moment it ended. Flushing heldKeys on battle
+		// end cannot fix it — the step is already begun, not key-driven.
+		// needs a RUN of open tiles: the bug is the step committed AFTER the arrival
+		// tile, so a spot with only one clear square ahead would bump instead and the
+		// test would pass whether or not the bug is present (it did, first try).
+		const runway = await page.evaluate(() => {
+			const ow = window.__ow, p = ow.player;
+			const clear = (x, y) => ow.world.isPassable(x, y) && !ow.world.isSurfable(x, y);
+			for (let ty = 6; ty < 120; ty++) {
+				for (let tx = 2; tx < 60; tx++) {
+					if ([0, 1, 2, 3].every(d => clear(tx, ty - d)) && !(ow.player.blocked && [1, 2, 3].some(d => ow.player.blocked(tx, ty - d)))) {
+						p.tx = tx; p.ty = ty; p.px = tx * 16; p.py = ty * 16; p.moving = false;
+						return [tx, ty];
+					}
+				}
+			}
+			return null;
+		});
+		A(!!runway, 'encounter: found a clear runway to walk down', JSON.stringify(runway));
+		await page.evaluate(() => {
+			const ow = window.__ow, p = ow.player;
+			window.__origArrive = p.onArrive;
+			window.__fired = false;
+			p.onArrive = function () {
+				if (window.__origArrive) window.__origArrive.call(this);
+				if (!window.__fired) {
+					window.__fired = true;
+					// the tile the encounter happened ON. beginMove updates tx/ty the
+					// instant a step is committed, so sampling after the fact would miss
+					// the extra square entirely — this is the only honest reference point.
+					window.__arriveTile = [this.tx, this.ty];
+					ow.startWildBattle({ id: 'rattata', level: 3 });
+				}
+			};
+		});
+		await page.keyboard.down('ArrowUp');
+		await sleep(900);                 // one full step, so onArrive fires mid-hold
+		await page.keyboard.up('ArrowUp');
+		await sleep(250);
+		const enc = await page.evaluate(() => ({
+			inBattle: window.__ow.battle.blocking,
+			moving: window.__ow.player.moving,
+			arriveTile: window.__arriveTile,
+			pos: [window.__ow.player.tx, window.__ow.player.ty],
+		}));
+		A(enc.inBattle, 'encounter: the wild battle started from the step');
+		A(enc.moving === false, 'encounter: no second step was committed into the battle', JSON.stringify(enc));
+		await fightToEnd();
+		const encAfter = await pos();
+		A(encAfter[0] === enc.arriveTile[0] && encAfter[1] === enc.arriveTile[1],
+			'encounter: the player ends on the tile the encounter happened on, not one past it',
+			JSON.stringify({ encounterTile: enc.arriveTile, afterBattle: encAfter }));
+		await page.evaluate(() => { window.__ow.player.onArrive = window.__origArrive; });
+
 		// --- 7: nothing is left blocking while the overworld is interactive ---
 		const fin = await gate();
 		A(fin.blockedBy === null && fin.menuBlocking === false && fin.tickMoveGate === true,
