@@ -496,6 +496,7 @@ export class Player {
 		this.moving = false;
 		this.jumping = false;
 		this.moveFrom = null; this.moveTo = null; this.moveT = 0; this.moveDist = META;
+		this.moveOutcome = null;   // why the last step attempt did/didn't start
 		this.animT = 0; this.stepParity = 0;
 		this.surfing = false; this.biking = false;
 	}
@@ -522,8 +523,12 @@ export class Player {
 		if (this.world?.isSurfable?.(tx, ty)) this.surfing = true;
 	}
 
+	// Why the last attempted step did or did not start. A refusal that reports
+	// nothing is indistinguishable from "no input arrived", which is exactly how a
+	// frozen player can look healthy from outside: `moveOutcome` makes the
+	// distinction observable (see gateReport/WATCHDOG 3 in main.js).
 	tryMove(dir) {
-		if (this.moving) return;
+		if (this.moving) { this.moveOutcome = 'busy'; return; }
 		this.facing = dir;
 		const [dx, dy] = DIRS[dir];
 		const nx = this.tx + dx, ny = this.ty + dy;
@@ -533,6 +538,7 @@ export class Player {
 			const lx = this.tx + dx * 2, ly = this.ty + dy * 2;
 			if (this.world.isPassable(lx, ly) && !(this.blocked && this.blocked(lx, ly))) {
 				this.beginMove(lx, ly, META * 2, true);
+				this.moveOutcome = 'hop';
 				this.onHop?.();
 				return;
 			}
@@ -541,21 +547,24 @@ export class Player {
 		const open = this.surfing
 			? (this.world.isSurfable(nx, ny) || this.world.isPassable(nx, ny))
 			: this.world.isPassable(nx, ny) && !this.world.isSurfable(nx, ny);
-		if (!open) { this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
+		if (!open) { this.moveOutcome = 'bump'; this.onBump?.(nx, ny); return; }   // walls thud too, not just blockers
 		// Sky Pillar's cracked floors give way underfoot — only the bike carries you
 		// across (they read as normal floor otherwise, so gate them explicitly)
-		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.onBlockedCracked?.(); return; }
+		if (this.world.isCrackedFloor(nx, ny) && !this.biking) { this.moveOutcome = 'cracked'; this.onBlockedCracked?.(); return; }
 		if (this.blocked && this.blocked(nx, ny)) {
 			// a Strength boulder in the way may be shoved one tile ahead; if it
 			// moves, the player steps into the vacated tile
 			if (this.pushBoulder && this.pushBoulder(nx, ny, dx, dy)) {
 				this.beginMove(nx, ny, META, false);
+				this.moveOutcome = 'push';
 				return;
 			}
+			this.moveOutcome = 'blocked';
 			this.onBump?.(nx, ny);
 			return;
 		}
 		this.beginMove(nx, ny, META, false);
+		this.moveOutcome = 'moved';
 	}
 
 	beginMove(nx, ny, dist, jump) {
