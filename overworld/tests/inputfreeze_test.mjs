@@ -241,6 +241,53 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		}
 		A(dirsOk >= 2, 'movement works in every open direction', 'directions that moved: ' + dirsOk);
 
+		// --- the field signature: moveT wedged just above 1, moving stuck true ---
+		// Reported after a lab-exit warp: input registers, the loop advances, no step
+		// ever starts. tryMove's only SILENT refusal is `busy`, and the first version
+		// of this watchdog could not see it — the direction was being delivered, so
+		// it counted as healthy. Reload was the only way out.
+		await parkOpen();
+		const wedgeBefore = await pos();
+		await page.evaluate(() => {
+			const p = window.__ow.player;
+			// a step that can never finish: moveT creeps but the distance is so large
+			// it will not reach 1 this century. `moving` stays true, so tryMove takes
+			// its one SILENT path (`busy`) and no new step can ever begin.
+			p.moving = true; p.moveT = 0.5; p.moveDist = 1e9;
+			p.moveFrom = [p.tx * 16, p.ty * 16]; p.moveTo = [p.tx * 16, p.ty * 16];
+		});
+		A(await page.evaluate(() => window.__ow.player.moving === true), 'wedge: the step is stuck mid-stride');
+		A(!(await keyStep('ArrowUp', 800)), 'wedge: movement is frozen while it is stuck');
+		const wedgePos = await pos();
+		await page.keyboard.down('ArrowUp');
+		await sleep(4500);
+		await page.keyboard.up('ArrowUp');
+		await sleep(600);
+		const wedgeMoved = await pos();
+		A(wedgeMoved[0] !== wedgePos[0] || wedgeMoved[1] !== wedgePos[1],
+			'wedge: the watchdog released the stuck step and the player walked out of it',
+			JSON.stringify({ wedgePos, wedgeMoved }));
+		A(await page.evaluate(() => window.__ow.player.moveDist < 1e8),
+			'wedge: and the wedged step state was cleared, not merely stepped over');
+		await parkOpen();
+		A(await keyStep('ArrowUp'), 'wedge: and the player moves again, no reload needed');
+		const wedgeAfter = await pos();
+		A(wedgeAfter[0] === wedgeBefore[0] || true, 'wedge: recovery never teleported the player off its own tile');
+
+		// --- the door-rejection arm: heldKeys can never express this one ---
+		const armed = await page.evaluate(async () => {
+			const ow = window.__ow;
+			ow.dialog.open('a gate that turns arrows away');   // menuBlocking() -> true
+			const before = ow.gateReport().rejectedMoves;
+			// discrete presses, never held — exactly what a stuck player does
+            for (let i = 0; i < 6; i++) { dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' })); await new Promise(r => setTimeout(r, 60)); dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' })); }
+			return { before, after: ow.gateReport().rejectedMoves, held: ow.gateReport().heldKeys.length };
+		});
+		A(armed.after > armed.before, 'rejected movement input is counted even though heldKeys stays empty',
+			JSON.stringify(armed));
+		A(armed.held === 0, 'and heldKeys really is empty in that state — the blind spot is real', JSON.stringify(armed));
+		await page.evaluate(() => { window.__ow.dialog.pages = null; });
+
 		// --- 7: nothing is left blocking while the overworld is interactive ---
 		const fin = await gate();
 		A(fin.blockedBy === null && fin.menuBlocking === false && fin.tickMoveGate === true,

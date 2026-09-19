@@ -768,6 +768,13 @@ let loadWatchStart = null;    // rAF timestamp when `loading` first went true
 let cutsceneWatchStart = null; // rAF timestamp a cutscene first looked stuck
 let moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
 const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
+// Movement input the DOOR turned away. The first version of WATCHDOG 3 armed
+// only on heldKeys, which is circular: the gate that freezes the player is the
+// same gate that stops heldKeys ever filling, so the watchdog could not see the
+// freeze it was written for. Rejections are the evidence that someone is trying.
+let rejectedMoves = 0, lastRejectAt = 0, rejectStarveT = 0, moveStuckT = 0;
+const REJECT_STARVE_LIMIT = 8; // longer: a dialog legitimately turns arrows away
+function noteRejectedMove() { rejectedMoves++; lastRejectAt = performance.now(); }
 
 // ---------- input ----------
 // INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
@@ -795,7 +802,7 @@ addEventListener('keydown', e => {
 	// while a menu/dialog/battle is open, arrows navigate options — don't also
 	// queue overworld movement (that made the player walk while browsing menus)
 	if (menuBlocking()) {
-		if (KEYMAP[e.key]) { e.preventDefault(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
+		if (KEYMAP[e.key]) { e.preventDefault(); noteRejectedMove(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
 		return;
 	}
 	if (e.key === 'Shift') runHeld = true;
@@ -2940,7 +2947,9 @@ function gateReport() {
 			|| evolution.blocking || starterMenu.open || cutscene.blocking),
 		// held-key / movement state
 		heldKeys: heldKeys.slice(), dpadDir, runHeld, wasInBattle,
-		playerMoving: !!player.moving, facing: player.facing,
+		rejectedMoves, moveStarveT: Math.round(moveStarveT * 100) / 100, rejectStarveT: Math.round(rejectStarveT * 100) / 100,
+		playerMoving: !!player.moving, moveT: player.moveT, moveOutcome: player.moveOutcome, moveDist: player.moveDist,
+		surfing: !!player.surfing, biking: !!player.biking, facing: player.facing,
 		tx: player.tx, ty: player.ty, map: world.current ? world.current.name : null,
 		tick: { ...tickStats },
 	};
@@ -2993,6 +3002,7 @@ for (const [id, dir] of Object.entries(DPAD)) {
 	document.getElementById(id).addEventListener('pointerdown', e => {
 		e.preventDefault();
 		if (menuBlocking()) {  // menus want discrete presses
+			noteRejectedMove();
 			if (INPUT_TRACE) owlog('dpad IGNORED', dir, 'reason=' + gateReport().blockedBy);
 			pressKey(ARROW[dir]);
 			return;
@@ -7722,20 +7732,41 @@ function tick(now) {
 		const heldDir = heldKeys[0] || null;
 		const moveDir = (menuBlocking() || editView.on) ? null : heldDir;
 		if (!trainers.engaging) { tickStats.playerUpdates++; player.update(dt, moveDir); }
-		// WATCHDOG 3 — input starvation. A held direction (keyboard OR d-pad: both
-		// feed heldKeys) that the tick refuses to deliver, while menuBlocking() says
-		// there is NOTHING on screen to explain it, means an invisible gate is stuck
-		// — the shape of the frozen-overworld bug. Walking into a wall does not
-		// count: that still reaches player.update and thuds. The other two watchdogs
-		// cover a stuck load and a stuck cutscene; this covers the movement path, so
-		// no lock can strand the player permanently with the screen looking normal.
-		if (heldDir && !(moveDir === heldDir && !trainers.engaging) && !menuBlocking()) {
-			moveStarveT += dt;
-			if (moveStarveT > MOVE_STARVE_LIMIT) {
-				moveStarveT = 0;
-				const why = trainers.engaging ? 'trainers.engaging' : editView.on ? 'editView.on' : 'unknown';
+		// WATCHDOG 3 — input starvation. Two ways the player can be stuck:
+		//
+		// (a) a held direction the tick refuses to DELIVER, with menuBlocking() saying
+		//     there is nothing on screen to explain it. Walking into a wall does not
+		//     count: that reaches player.update and reports `bump`.
+		// (b) the direction IS delivered and player.update still never starts a step.
+		//     tryMove reports every refusal (bump/blocked/cracked/hop/moved); the one
+		//     silent path is `busy` — moving stuck true, so no new step can begin.
+		//     Reported from the field: after a lab-exit warp, moveT wedged just above
+		//     1 and no step ever started. (a) alone could never see that.
+		// A step that never completes is the silent one: while `moving` is true,
+		// update() only interpolates and tryMove is not called AT ALL, so nothing
+		// reports a refusal. A real step lasts ~0.13s, so `moving` held true for
+		// seconds is definitive — and it freezes the player whether or not a key
+		// is down, so this arm does not depend on heldDir.
+		if (player.moving) moveStuckT += dt; else moveStuckT = 0;
+		const wedged = moveStuckT > MOVE_STARVE_LIMIT;
+		const delivered = moveDir === heldDir && !trainers.engaging;
+		// starvation and wedging each carry their OWN dwell — requiring both would
+		// mean waiting 2x MOVE_STARVE_LIMIT for a wedge that is already proven
+		if (heldDir && !delivered && !menuBlocking()) moveStarveT += dt; else moveStarveT = 0;
+		if (wedged || moveStarveT > MOVE_STARVE_LIMIT) {
+			{
+				moveStarveT = 0; moveStuckT = 0;
+				const why = wedged ? 'player.moving stuck true for ' + MOVE_STARVE_LIMIT + 's (moveT ' + (Math.round(player.moveT * 100) / 100) + ')'
+					: trainers.engaging ? 'trainers.engaging' : editView.on ? 'editView.on' : 'unknown';
 				console.warn('[input-watchdog] movement starved for ' + MOVE_STARVE_LIMIT + 's — blocker:', why, gateReport());
-				if (trainers.engaging) {
+				if (wedged) {
+					// land the half-finished step on its own destination tile and let go —
+					// never teleport, never drop the player somewhere they did not walk to
+					if (player.moveTo) { player.px = player.moveTo[0]; player.py = player.moveTo[1]; }
+					player.moving = false; player.jumping = false; player.moveT = 0;
+					player.moveOutcome = 'recovered';
+					hud.textContent = 'Recovered from a stuck step.';
+				} else if (trainers.engaging) {
 					trainers.engagement = null;
 					hud.textContent = 'Recovered from a stuck trainer approach.';
 				} else if (editView.on) {
@@ -7745,7 +7776,22 @@ function tick(now) {
 					hud.textContent = 'Recovered from a stuck input lock.';
 				}
 			}
-		} else moveStarveT = 0;
+		}
+		// ...and the case heldKeys can never express: the door itself is turning the
+		// input away. Armed by rejections rather than held keys, so it stays visible
+		// when menuBlocking() is the thing at fault. A dialog legitimately refuses
+		// arrows, hence the longer fuse and the report-only response for gates that
+		// own real UI — this names the blocker rather than fighting it.
+		if (rejectedMoves > 0 && performance.now() - lastRejectAt < 2000) {
+			rejectStarveT += dt;
+			if (rejectStarveT > REJECT_STARVE_LIMIT) {
+				rejectStarveT = 0;
+				const g = gateReport();
+				console.warn('[input-watchdog] movement input refused at the door for ' + REJECT_STARVE_LIMIT + 's — blocker:', g.blockedBy, g);
+				if (g.blockedBy === 'trainers.engaging') { trainers.engagement = null; hud.textContent = 'Recovered from a stuck trainer approach.'; }
+				else hud.textContent = 'Movement is blocked by: ' + (g.blockedBy || 'something invisible') + '. Reloading recovers it.';
+			}
+		} else rejectStarveT = 0;
 		npcs.update(dt);
 		updateFollower(dt);
 	}
