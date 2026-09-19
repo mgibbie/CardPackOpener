@@ -766,8 +766,21 @@ function fadeTo(target) {
 // block forever with no player-facing UI. Both self-recover after a grace period.
 let loadWatchStart = null;    // rAF timestamp when `loading` first went true
 let cutsceneWatchStart = null; // rAF timestamp a cutscene first looked stuck
+let moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
+const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
 
 // ---------- input ----------
+// INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
+// movement event, listener attach, and lifecycle transition. See gateReport().
+const INPUT_TRACE = new URLSearchParams(location.search).has('owlog');
+let lastBlockedBy = '(boot)';
+function owlog(...a) { if (INPUT_TRACE) console.log('[owinput]', ...a); }
+// The gate flags only explain a freeze the game KNOWS about. A subsystem that
+// throws every frame freezes the player with every flag clear, so count how far
+// down the tick we actually get.
+const tickStats = { frames: 0, playerUpdates: 0, reachedMoveBlock: 0, lastError: null, errors: 0 };
+addEventListener('error', e => { tickStats.errors++; tickStats.lastError = String(e.message || e.error); });
+addEventListener('unhandledrejection', e => { tickStats.errors++; tickStats.lastError = 'unhandled rejection: ' + String(e.reason && e.reason.message || e.reason); });
 const KEYMAP = {
 	ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
 	w: 'up', s: 'down', a: 'left', d: 'right',
@@ -778,15 +791,19 @@ let runHeld = false; // Shift on keyboard, holding B on touch
 // while typing in the chat box, keys belong to the input, not the game
 const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
 addEventListener('keydown', e => {
-	if (typingInChat()) return;
+	if (typingInChat()) { if (KEYMAP[e.key]) owlog('keydown IGNORED', e.key, 'reason=typingInChat'); return; }
 	// while a menu/dialog/battle is open, arrows navigate options — don't also
 	// queue overworld movement (that made the player walk while browsing menus)
-	if (menuBlocking()) { if (KEYMAP[e.key]) e.preventDefault(); return; }
+	if (menuBlocking()) {
+		if (KEYMAP[e.key]) { e.preventDefault(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
+		return;
+	}
 	if (e.key === 'Shift') runHeld = true;
 	const dir = KEYMAP[e.key];
 	if (dir) {
 		e.preventDefault();
 		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
+		owlog('keydown ACCEPTED', e.key, '->', dir, 'held=' + heldKeys.join('|'));
 	}
 });
 addEventListener('keyup', e => {
@@ -795,8 +812,10 @@ addEventListener('keyup', e => {
 	if (dir) {
 		const i = heldKeys.indexOf(dir);
 		if (i >= 0) heldKeys.splice(i, 1);
+		owlog('keyup', e.key, '->', dir, 'held=' + heldKeys.join('|'));
 	}
 });
+owlog('listeners attached: keydown/keyup (movement)');
 
 // where you are, so a return visit resumes there (URL params still win)
 const POS_KEY = 'magepunk_pos_v1';
@@ -2777,9 +2796,15 @@ function pressKey(k) {
 	// so the shop must keep taking input — otherwise the player can neither buy
 	// nor close it and the script never resumes
 	if (shopMenu.open && shopMenu.fromScript) { shopKey(k); return; }
+	// a scripted battle (gym leader / rival / villain / any trainer engaged via
+	// their EventScript) runs UNDER its paused cutscene — the trainerbattle op
+	// holds the cutscene's `cur` (so `blocking` stays true) until the fight
+	// resolves. The battle must take keys BEFORE the cutscene gate, or every
+	// scripted fight is keyboard/A-B-dead (only direct taps on the battle's own
+	// buttons worked — the pointer handlers already check battle first).
+	if (battle.blocking) { battle.key(k); return; }
 	if (cutscene.blocking) return; // a running cutscene swallows all other input
 	if (evolution.blocking) { evolution.key(k); return; }
-	if (battle.blocking) { battle.key(k); return; }
 	if (pvp.blocking) { pvp.key(k); return; }
 	if (factorySpec.blocking) { factorySpec.key(k); return; }
 	if (trade.open) { tradeKey(k); return; }
@@ -2882,6 +2907,52 @@ const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open |
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
 
+// ---------- INPUT DIAGNOSTICS (temporary instrumentation) ----------
+// Movement has two doors — the keydown/d-pad door (menuBlocking) and the tick's
+// own gates — and the headless pumpPlayer hook bypasses BOTH, so "internal
+// movement works but the player is frozen" tells you nothing about WHICH gate is
+// stuck. gateReport() names every one of them at once. `?owlog=1` also traces
+// every movement event, listener attach, and lifecycle transition to the console.
+function openCanvasMenus() {
+	// built lazily: several of these are declared further down the file
+	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
+		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
+		dexMenu, trainerCard, townMap, daycareMenu, nameRater, moveShop, optionsMenu, questMenu, mailMenu,
+		tradeMenu, gcMenu, vfMenu, contestMenu, blendMenu, slideMenu, decoMenu, socialMenu, slotsMenu };
+	return Object.keys(m).filter(k => m[k] && m[k].open);
+}
+// why the last movement input was accepted or ignored, plus every gate's live value
+function gateReport() {
+	const menus = openCanvasMenus();
+	const r = {
+		// keydown/d-pad door
+		typingInChat: typingInChat(),
+		activeEl: document.activeElement ? document.activeElement.tagName + (document.activeElement.id ? '#' + document.activeElement.id : '') : null,
+		dialog: !!dialog.blocking, evolution: !!evolution.blocking, cutscene: !!cutscene.blocking,
+		battle: !!battle.blocking, battleActive: !!battle.active, pvp: !!pvp.blocking,
+		factorySpec: !!factorySpec.blocking, canvasMenus: menus, fading: fading(),
+		fade: { alpha: fade.alpha, target: fade.target },
+		menuBlocking: menuBlocking(),
+		// tick gates
+		loading, hasWorld: !!world.current, editView: !!editView.on,
+		starterMenu: !!starterMenu.open, trainersEngaging: !!trainers.engaging,
+		tickMoveGate: !(battle.blocking || pvp.blocking || factorySpec.blocking || dialog.blocking
+			|| evolution.blocking || starterMenu.open || cutscene.blocking),
+		// held-key / movement state
+		heldKeys: heldKeys.slice(), dpadDir, runHeld, wasInBattle,
+		playerMoving: !!player.moving, facing: player.facing,
+		tx: player.tx, ty: player.ty, map: world.current ? world.current.name : null,
+		tick: { ...tickStats },
+	};
+	r.blockedBy = r.typingInChat ? 'typingInChat'
+		: r.dialog ? 'dialog' : r.evolution ? 'evolution' : r.cutscene ? 'cutscene'
+		: r.battle ? 'battle' : r.pvp ? 'pvp' : r.factorySpec ? 'factorySpec'
+		: menus.length ? 'canvasMenu:' + menus.join(',') : r.fading ? 'fading'
+		: r.loading ? 'loading' : r.editView ? 'editView'
+		: r.trainersEngaging ? 'trainers.engaging' : null;
+	return r;
+}
+
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
 	// the CONTROLS screen capturing a new binding owns the next raw key
@@ -2921,11 +2992,17 @@ function setDpadDir(dir) {
 for (const [id, dir] of Object.entries(DPAD)) {
 	document.getElementById(id).addEventListener('pointerdown', e => {
 		e.preventDefault();
-		if (menuBlocking()) { pressKey(ARROW[dir]); return; }  // menus want discrete presses
+		if (menuBlocking()) {  // menus want discrete presses
+			if (INPUT_TRACE) owlog('dpad IGNORED', dir, 'reason=' + gateReport().blockedBy);
+			pressKey(ARROW[dir]);
+			return;
+		}
 		dpadPointer = e.pointerId;
 		setDpadDir(dir);
+		owlog('dpad ACCEPTED', dir, 'held=' + heldKeys.join('|'));
 	});
 }
+owlog('listeners attached: d-pad x' + Object.keys(DPAD).length);
 addEventListener('pointermove', e => {
 	if (dpadPointer === null || e.pointerId !== dpadPointer) return;
 	if (menuBlocking()) { setDpadDir(null); return; }
@@ -7379,6 +7456,7 @@ let last = performance.now();
 let playAccum = 0;
 function tick(now) {
 	requestAnimationFrame(tick);
+	tickStats.frames++;
 	const dt = Math.min((now - last) / 1000, 0.05);
 	last = now;
 	// advance the warp fade before any `loading` bail so it keeps animating in the
@@ -7433,8 +7511,10 @@ function tick(now) {
 	// the moment combat ends, drop any key still held from before it — otherwise
 	// the player takes one stray step straight out of the battle
 	const inBattleNow = battle.blocking || pvp.blocking;
-	if (wasInBattle && !inBattleNow) heldKeys.length = 0;
+	if (wasInBattle && !inBattleNow) { heldKeys.length = 0; if (INPUT_TRACE) owlog('BATTLE END — held keys flushed', JSON.stringify(gateReport())); }
+	if (!wasInBattle && inBattleNow && INPUT_TRACE) owlog('BATTLE START', JSON.stringify(gateReport()));
 	wasInBattle = inBattleNow;
+	if (INPUT_TRACE) { const b = gateReport().blockedBy; if (b !== lastBlockedBy) { owlog('gate changed:', lastBlockedBy, '->', b); lastBlockedBy = b; } }
 	if (!battle.blocking && !pvp.blocking && !factorySpec.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
 		// The starter hand-over is the one trigger that MUST NOT be missed — without
 		// it you have no POKeMON and no way to get one. Every other trigger fires on
@@ -7444,11 +7524,37 @@ function tick(now) {
 		// four boolean checks and becomes a permanent no-op the moment you have a
 		// party, so it costs nothing for the rest of the game.
 		if (!party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
+		tickStats.reachedMoveBlock++;
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
 		// any open menu freezes the player even if a key was held as it opened
-		const moveDir = (menuBlocking() || editView.on) ? null : (heldKeys[0] || null);
-		if (!trainers.engaging) player.update(dt, moveDir);
+		const heldDir = heldKeys[0] || null;
+		const moveDir = (menuBlocking() || editView.on) ? null : heldDir;
+		if (!trainers.engaging) { tickStats.playerUpdates++; player.update(dt, moveDir); }
+		// WATCHDOG 3 — input starvation. A held direction (keyboard OR d-pad: both
+		// feed heldKeys) that the tick refuses to deliver, while menuBlocking() says
+		// there is NOTHING on screen to explain it, means an invisible gate is stuck
+		// — the shape of the frozen-overworld bug. Walking into a wall does not
+		// count: that still reaches player.update and thuds. The other two watchdogs
+		// cover a stuck load and a stuck cutscene; this covers the movement path, so
+		// no lock can strand the player permanently with the screen looking normal.
+		if (heldDir && !(moveDir === heldDir && !trainers.engaging) && !menuBlocking()) {
+			moveStarveT += dt;
+			if (moveStarveT > MOVE_STARVE_LIMIT) {
+				moveStarveT = 0;
+				const why = trainers.engaging ? 'trainers.engaging' : editView.on ? 'editView.on' : 'unknown';
+				console.warn('[input-watchdog] movement starved for ' + MOVE_STARVE_LIMIT + 's — blocker:', why, gateReport());
+				if (trainers.engaging) {
+					trainers.engagement = null;
+					hud.textContent = 'Recovered from a stuck trainer approach.';
+				} else if (editView.on) {
+					// deliberate (owner tool) — don't fight it, just stop being a mystery
+					hud.textContent = 'MAP EDITOR is open — movement is frozen. Remove ?mapedit=1 from the URL to play.';
+				} else {
+					hud.textContent = 'Recovered from a stuck input lock.';
+				}
+			}
+		} else moveStarveT = 0;
 		npcs.update(dt);
 		updateFollower(dt);
 	}
@@ -9558,7 +9664,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus,
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
