@@ -751,8 +751,22 @@ export class Battle {
 	// start a wild battle vs the party; onEnd(result) with
 	// 'victory'|'defeat'|'escaped'|'caught'; second = {id, level} makes it
 	// a wild DOUBLE battle when the party has two healthy mons
-	async start(party, wildId, wildLevel, onEnd, second, opts) {
-		this._starting = true; // block overworld movement immediately (before sprites load)
+	// `_starting` blocks overworld movement from the first line, before any sprite
+	// loads — but everything between here and `_starting = false` is awaited, and
+	// callers do not await (or catch) start(). A throw in that window used to leave
+	// `blocking` true forever: no battle on screen, no callback, and a permanently
+	// frozen overworld with no watchdog to free it. Release the flag instead.
+	async start(...args) {
+		this._starting = true;
+		try { return await this._start(...args); }
+		catch (err) {
+			console.error('[battle] start() threw — releasing the overworld', err);
+			this._starting = false;
+			if (!this.active) args[3]?.('escaped'); // never strand the player mid-encounter
+		}
+	}
+
+	async _start(party, wildId, wildLevel, onEnd, second, opts) {
 		// leave-and-resume: a restore snapshot supplies the mid-battle foe and
 		// skips every fresh-encounter roll (held item, Synchronize, intro)
 		const restore = opts?.restore || null;
@@ -860,10 +874,20 @@ export class Battle {
 		}
 	}
 
-	// trainer battle: foeParty of mons, no running, no catching
-	async startTrainer(party, foeParty, info, onEnd, opts) {
+	// trainer battle: foeParty of mons, no running, no catching.
+	// Same unguarded-async-window protection as start() — see the note there.
+	async startTrainer(...args) {
+		this._starting = true;
+		try { return await this._startTrainer(...args); }
+		catch (err) {
+			console.error('[battle] startTrainer() threw — releasing the overworld', err);
+			this._starting = false;
+			if (!this.active) args[3]?.('escaped');
+		}
+	}
+
+	async _startTrainer(party, foeParty, info, onEnd, opts) {
 		const restore = opts?.restore || null;
-		this._starting = true; // block overworld movement immediately (before sprites load)
 		const playerMon = (restore && party[restore.meIdx]?.curHP > 0)
 			? party[restore.meIdx] : party.find(m => m.curHP > 0);
 		if (!foeParty.length || !playerMon) { this._starting = false; onEnd?.('escaped'); return; }

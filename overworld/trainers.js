@@ -16,6 +16,10 @@ const FACE_OF = {
 	MOVEMENT_TYPE_FACE_RIGHT_IF_FIELD_MOVES: 'right',
 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+// seconds an approach may run before it is force-completed. The longest honest
+// approach is ~0.9s of "!" plus ~0.16s per tile of sight range, so this is an
+// order of magnitude of headroom — it only ever fires on a genuine hang.
+const ENGAGE_TIMEOUT = 8;
 const DEFEATED_KEY = 'magepunk_defeated_v1';
 const REMATCH_KEY = 'magepunk_rematch_v1'; // trainer key -> rematch tier (badges when the VS Seeker re-armed them)
 
@@ -236,7 +240,32 @@ export class Trainers {
 		const e = this.engagement;
 		if (!e) return;
 		e.t += dt;
+		e.life = (e.life || 0) + dt;
 		const t = e.trainer;
+		// SAFETY NET: main.js gates `player.update` on `engaging`, so an approach
+		// that never reaches its hand-off freezes the player COMPLETELY — every
+		// input method dead, nothing on screen to explain it, and no way out but a
+		// map change. The walk is cosmetic; the battle is the point. If it has not
+		// arrived within a generous budget (a full-range approach costs ~2s), force
+		// the arrival rather than let it strand the overworld.
+		if (e.life > ENGAGE_TIMEOUT) {
+			console.warn('[trainers] approach timed out after', e.life.toFixed(1) + 's — forcing the hand-off', { phase: e.phase, steps: e.steps });
+			// clear FIRST: unfreezing the player is the point, and it must not depend
+			// on the hand-off below succeeding
+			this.engagement = null;
+			try {
+				const d = DIRS[e.dir];
+				if (d && Number.isFinite(e.steps)) {
+					t.tx += d[0] * e.steps; t.ty += d[1] * e.steps;
+					t.px = t.tx * META; t.py = t.ty * META;
+				}
+				this.onEngage?.(t);
+			} catch (err) {
+				// a malformed engagement must not also cost the frame it recovers on
+				console.warn('[trainers] timed-out approach could not hand off; dropped it', err);
+			}
+			return;
+		}
 		if (e.phase === 'exclaim') {
 			if (e.t > 0.9) { e.phase = 'walk'; e.t = 0; }
 			return;
