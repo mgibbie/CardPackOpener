@@ -7055,6 +7055,27 @@ const owRev = () => Math.max(0, parseInt(localStorage.getItem(OW_REV_KEY), 10) |
 function setOwRev(n) { safeSaveStr(OW_REV_KEY, String(Math.max(0, n | 0))); }
 // the snapshot minus its own revision: "has any real game state changed?"
 function owBody(snap) { const o = { ...snap }; delete o[OW_REV_KEY]; return JSON.stringify(o); }
+// Does this snapshot hold an actual GAME, or is it just an empty browser?
+// This is absence-detection, NOT progress-ordering: it only ever distinguishes
+// "there is no record here" from "there is a record here", and is never used to
+// rank two real saves against each other. A fresh device that has never been
+// played has no competing edit to defend — treating its emptiness as a rival
+// edit is what let an empty local save win against a real server one.
+// Counts only what CANNOT exist before someone has actually played: POKeMON in
+// the party or boxes, a chosen region, earned badges. Deliberately excludes
+// magepunk_pos_v1 and magepunk_story — boot writes a default position and seeds
+// story flags before hydration even finishes, so a browser that has merely
+// OPENED the game already carries both. Counting those made a fresh device look
+// like a real save, which is precisely how an empty one won.
+function owGameWeight(snap) {
+	let w = 0;
+	const arr = k => { try { const v = JSON.parse(snap[k] || 'null'); return Array.isArray(v) ? v.length : 0; } catch (e) { return 0; } };
+	if (arr('magepunk_party_v1') > 0) w++;
+	if (arr('magepunk_box_v1') > 0) w++;
+	if (snap['magepunk_region']) w++;
+	try { const b = JSON.parse(snap['magepunk_badges_v1'] || 'null'); if (b && Object.keys(b).length) w++; } catch (e) {}
+	return w;
+}
 // The losing side of a discard is never thrown away. Whenever hydration is about
 // to drop a local snapshot, it lands here first so it can be recovered.
 const OW_CONFLICT_KEY = 'magepunk_ow_conflict';
@@ -7154,6 +7175,27 @@ async function hydrateOw() {
 				syncLog('hydrate.decision', { winner: 'equal', reason: `bodies identical (localRev ${localRev}, remoteRev ${remoteRev})`, rewroteLocal: false, keysOverwritten: [] });
 				_lastAckedBody = owBody(localSnap);
 				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				return;
+			}
+			// ABSENCE BEATS REVISION. Every save written before revisions existed reads
+			// as rev 0 on BOTH sides, so at the migration boundary the comparisons below
+			// are all ties — and a signed-in fresh device is exactly that tie, with an
+			// empty local save. An empty side is not a competing edit, it is the absence
+			// of one, so it can never win and is never treated as a conflict.
+			const localWeight = owGameWeight(localSnap), remoteWeight = owGameWeight(ow);
+			if (localWeight === 0 && remoteWeight > 0) {
+				syncLog('hydrate.decision', { winner: 'remote', reason: `local holds no game (weight 0) — adopting the account's save`, rewroteLocal: true, localWeight, remoteWeight });
+				let took = false;
+				for (const k of OW_KEYS) { try { if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { localStorage.setItem(k, ow[k]); took = true; } } catch (e) {} }
+				_lastAckedBody = owBody(owSnapshot());
+				if (took && !sessionStorage.getItem('mp_ow_hydrated')) { sessionStorage.setItem('mp_ow_hydrated', '1'); location.reload(); return; }
+				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				return;
+			}
+			if (remoteWeight === 0 && localWeight > 0) {
+				syncLog('hydrate.decision', { winner: 'local', reason: `remote holds no game (weight 0) — keeping this device's save`, rewroteLocal: false, localWeight, remoteWeight });
+				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				pushOw();
 				return;
 			}
 			if (remoteRev < localRev) {

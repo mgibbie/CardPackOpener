@@ -2485,11 +2485,29 @@ export default async function handler(req, env) {
 		// import or a backup restore, which are meant to outrank what is stored.
 		{
 			const revOf = b => Math.max(0, parseInt(b && b['magepunk_ow_rev'], 10) || 0);
+			// does this blob hold an actual game? Absence-detection only — never used
+			// to rank two real saves. See owGameWeight in overworld/main.js.
+			const weigh = b => {
+				let w = 0;
+				const arr = k => { try { const v = JSON.parse((b && b[k]) || 'null'); return Array.isArray(v) ? v.length : 0; } catch (e) { return 0; } };
+				if (arr('magepunk_party_v1') > 0) w++;
+				if (arr('magepunk_box_v1') > 0) w++;
+				if (b && b['magepunk_region']) w++;
+				try { const x = JSON.parse((b && b['magepunk_badges_v1']) || 'null'); if (x && Object.keys(x).length) w++; } catch (e) {}
+				return w;
+			};
 			const cur = await store.get('ow:' + username);
 			const storedRev = cur && cur.ow ? revOf(cur.ow) : 0;
 			const incomingRev = revOf(ow);
 			if (!body.force && cur && cur.ow && incomingRev < storedRev) {
 				return json({ error: 'stale revision', conflict: true, rev: storedRev }, 409);
+			}
+			// BACKSTOP: a write carrying no game may never replace one that does,
+			// whatever revision it claims. A buggy or half-initialised client blanking
+			// a real save is the one failure this store must not be able to commit.
+			// `force` still allows the deliberate wipe (owreset) and restore paths.
+			if (!body.force && cur && cur.ow && weigh(cur.ow) > 0 && weigh(ow) === 0) {
+				return json({ error: 'refusing to overwrite a populated save with an empty one', conflict: true, rev: storedRev }, 409);
 			}
 		}
 		// The daily safety net: the FIRST save of each UTC day stashes the blob the

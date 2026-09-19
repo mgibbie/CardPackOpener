@@ -35,6 +35,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/_lastAckedBody = body/.test(mn) && !/_lastOwJson/.test(mn),
 		'the de-dupe marker advances on ACK, not on send');
 	A(/keepalive: true/.test(mn), 'the unload write uses keepalive');
+	A(/function owGameWeight/.test(mn) && /local holds no game/.test(mn),
+		'an empty local save can never beat a populated remote one');
+	const rs0 = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
+	A(/ow: \{\}, force: true/.test(rs0), 'the deliberate owner wipe still passes force');
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	A(/stale revision/.test(sv) && /incomingRev < storedRev/.test(sv), 'the server rejects an older revision');
 	A(/!body\.force/.test(sv), 'an explicit import/restore can still force a replace');
@@ -66,6 +70,15 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const keysTouched = { save: new Set(), load: new Set() };
 	let dropSaves = false, delaySaveMs = 0, rejected409 = 0;
 	const revOf = b => Math.max(0, parseInt(b && b[REV], 10) || 0);
+	const weigh = b => {
+		let w = 0;
+		const arr = k => { try { const v = JSON.parse((b && b[k]) || 'null'); return Array.isArray(v) ? v.length : 0; } catch (e) { return 0; } };
+		if (arr('magepunk_party_v1') > 0) w++;
+		if (arr('magepunk_box_v1') > 0) w++;
+		if (b && b['magepunk_region']) w++;
+		try { const x = JSON.parse((b && b['magepunk_badges_v1']) || 'null'); if (x && Object.keys(x).length) w++; } catch (e) {}
+		return w;
+	};
 	const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ttf': 'font/ttf', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 	const server = http.createServer(async (req, res) => {
 		const u = decodeURIComponent(req.url.split('?')[0]);
@@ -82,6 +95,11 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				if (!body.force && cur && cur.ow && revOf(body.ow) < revOf(cur.ow)) {
 					rejected409++;
 					return send({ error: 'stale revision', conflict: true, rev: revOf(cur.ow) }, 409);
+				}
+				// mirrors the backstop in server/mp.mjs
+				if (!body.force && cur && cur.ow && weigh(cur.ow) > 0 && weigh(body.ow) === 0) {
+					rejected409++;
+					return send({ error: 'refusing to overwrite a populated save with an empty one', conflict: true, rev: revOf(cur.ow) }, 409);
 				}
 				DB.set(key, { ow: body.ow, updated_at: Date.now() });
 				return send({ ok: true });
@@ -113,6 +131,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		await page.evaluateOnNewDocument((st, seedParty) => {
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
+			// ?fresh=1 models a brand-new signed-in device: the login and NOTHING else.
+			// Without this the harness would re-seed a party on every navigation and
+			// could never express the case that actually broke.
+			if (new URLSearchParams(location.search).has('fresh')) return;
 			localStorage.setItem('magepunk_region', 'KANTO');
 			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, story_seeded: true, intro_started: true, intro_greeted: true }, vars: {} }));
 			if (!localStorage.getItem('magepunk_party_v1')) localStorage.setItem('magepunk_party_v1', JSON.stringify(seedParty));
@@ -231,6 +253,58 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_ow_conflict') || 'null'));
 		A(kept && kept.ow && JSON.parse(kept.ow['magepunk_pos_v1']).map === 'Route3',
 			'9: and the losing copy is preserved, not discarded', kept ? kept.reason : 'nothing stashed');
+
+		// ===== THE FRESH-DEVICE CASE (regression from the first revision fix) =====
+		// Both sides at revision 0 is not a rare tie — before revisions existed EVERY
+		// save read as 0, so a signed-in fresh device hits it on its very first load
+		// with an empty local save. Preferring local there handed the account a blank
+		// game and pushed the blank up over the real one.
+		DB.clear();
+		await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+		await boot();                       // re-seeds token/region/story/party
+		await setLocal(19, 32, 10, 29);
+		await flush(); await sleep(400);
+		await page.evaluate(() => { const r = localStorage.getItem('magepunk_ow_rev'); localStorage.removeItem('magepunk_ow_rev'); return r; });
+		// the server now holds a real Route 1 game; strip its revision too, so BOTH
+		// sides read 0 exactly as a pre-revision save pair does
+		const real = DB.get('ow:' + STATE.username);
+		delete real.ow[REV];
+		DB.set('ow:' + STATE.username, real);
+		A(!!real.ow['magepunk_party_v1'], 'fresh-device: the server holds the real save at revision 0');
+
+		// wipe the device the way a brand-new browser looks, keeping only the login
+		await page.evaluate(() => {
+			const tok = localStorage.getItem('magepunk_mp_token_v1'), st = localStorage.getItem('magepunk_mp_state_v1');
+			localStorage.clear(); sessionStorage.clear();
+			localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', st);
+		});
+		await page.goto(`http://localhost:${PORT}/overworld/index.html?synclog=1&fresh=1`, { waitUntil: 'domcontentloaded' });
+		{ const t0 = Date.now(); while (Date.now() - t0 < 60000 && !(await page.evaluate(() => !!window.__ow?.battle?.data).catch(() => false))) await sleep(200); }
+		await sleep(2200);
+		const fresh = await localFp();
+		A(fresh.x === 19 && fresh.y === 32, 'fresh-device: the account\'s real save is adopted, not the empty one', JSON.stringify(fresh));
+		// the decisive decision is followed by a reload, whose second pass correctly
+		// reads "identical" — so look for it across the trace, not just at the end
+		const dFresh = await page.evaluate(() => window.__ow.owSync.filter(r => r.event === 'hydrate.decision').find(r => /holds no game/.test(r.reason || '')) || null);
+		A(dFresh && dFresh.winner === 'remote',
+			'fresh-device: and the decision says the local side held no game', JSON.stringify(dFresh && dFresh.reason));
+		A(srvFp() && srvFp().x === 19, 'fresh-device: the server save was NOT blanked', JSON.stringify(srvFp()));
+		const party = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_party_v1') || 'null'));
+		A(Array.isArray(party) && party.length === 1, 'fresh-device: the party came back too', JSON.stringify(party && party.length));
+
+		// ===== server backstop: an empty blob may not replace a populated save =====
+		const blank = await page.evaluate(() => ({ magepunk_ow_rev: '9999', magepunk_playtime: '12' }));
+		const blankResp = await page.evaluate(async (snap) => {
+			const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'ow-save', ow: snap }) });
+			return { status: r.status, body: await r.json() };
+		}, blank);
+		A(blankResp.status === 409, 'the server refuses an empty save over a populated one, even at a higher revision', JSON.stringify(blankResp));
+		A(srvFp().x === 19, 'and the real save is still there', JSON.stringify(srvFp()));
+		const forced = await page.evaluate(async (snap) => {
+			const r = await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'ow-save', ow: snap, force: true }) });
+			return r.status;
+		}, blank);
+		A(forced === 200, 'but a deliberate forced wipe (owreset) still works', String(forced));
 
 		// ===== 9: a pre-revision save migrates without losing anything =====
 		DB.clear();
