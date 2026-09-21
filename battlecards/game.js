@@ -2291,6 +2291,19 @@ function resumePendingChoices() {
 // but nothing opened its modal (Lorequest AI-turn deadlock; a Jace's Triumph
 // Discover that logged but showed no panel). When the queue is idle and no choice
 // modal is up, surface the pending human decision so it can always be resolved.
+// The decision modal is shown and hidden from a dozen places. Rather than teach
+// each of them about the veil, mirror the modal's own visibility onto it: while a
+// forced choice is up, the veil takes the clicks that used to fall through the
+// (purely decorative) dimming shadow onto a board that would refuse them anyway.
+function wireModalVeil() {
+	const modal = document.getElementById('scry-modal'), veil = document.getElementById('modal-veil');
+	if (!modal || !veil || wireModalVeil._on) return;
+	wireModalVeil._on = true;
+	const sync = () => { veil.style.display = getComputedStyle(modal).display === 'none' ? 'none' : 'block'; };
+	new MutationObserver(sync).observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
+	sync();
+}
+
 function surfacePendingChoice() {
 	if (!state || state.over) return;
 	if (mulliganModalOpen || pending) return; // mid-mulligan / mid-targeting: leave it
@@ -4924,6 +4937,7 @@ animate();
 
 // ---------- boot ----------
 // headless test hook
+try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
@@ -5807,6 +5821,14 @@ function actUnmask(uid) {
 }
 function actEndTurn() {
 	if (isGuest()) return guestApply(() => E.endTurn(state), { k: 'endTurn' });
+	// endTurn is a silent no-op while you owe a forced decision, which reads as
+	// "End Turn is broken". Name it, and put the choice back in front of you in
+	// case its modal was missed or dismissed.
+	if (state && E.hasPendingDecision(state, HUMAN)) {
+		banner('Finish your choice first', 1100);
+		surfacePendingChoice();
+		return;
+	}
 	E.endTurn(state); pump();
 	if (duel.on) publishDuel();
 }
@@ -6538,7 +6560,9 @@ function showMiniTip(def, x, y) {
 	if (!miniTip) {
 		miniTip = document.createElement('div');
 		miniTip.id = 'mini-tip';
-		miniTip.style.cssText = 'position:fixed;z-index:70;max-width:250px;display:none;'
+		// 9600: above the choice modal (9500) and its veil (9499). The tip is drawn
+		// OVER the cards inside that modal, so raising the modal has to raise this too
+		miniTip.style.cssText = 'position:fixed;z-index:9600;max-width:250px;display:none;'
 			+ 'background:rgba(16,12,28,0.96);border:1px solid #6a5a9a;border-radius:8px;'
 			+ 'padding:10px 12px;color:#e8e2f4;font-size:13px;line-height:1.4;text-align:left;'
 			+ 'pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.7);';
