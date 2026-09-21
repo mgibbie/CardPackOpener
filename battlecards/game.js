@@ -20,7 +20,7 @@ import { checkToasts as achCheck } from '../site/achievements.js';
 import { safeLoad, safeSave, safeSaveRetry } from './safestore.js';
 import { PARTIAL_DISCARD_KEY, makePartial, matchPartial } from './partialchoice.js';
 import { pickCanonicalRun, useLocalAsyncTurn } from './runsync.js';
-import { winLossLabel } from './runlabel.js';
+import { winLossLabel, plural } from './runlabel.js';
 import { keywordsFor, keywordLabel, richHtml, runePipsHtml } from './keywords.js';
 import { correspondenceOffenders, filterCorrespondence } from './format.js';
 
@@ -354,6 +354,14 @@ const nameOf = pi => pi === HUMAN ? 'You'
 	: duel.on ? (pi === 0 ? (duel.config?.host || 'Host') : (duel.config?.guest || 'Guest'))
 	: (dungeonBossId && pi === 1 ? Dungeon.BOSSES[dungeonBossId].name
 	: heistBossName && pi === 1 ? heistBossName : `AI ${pi}`);
+// nameOf returns the SECOND person for the local player ("You"), so anything that
+// glues a third-person verb or a possessive onto it reads wrong: "You rolls the
+// planar die", "returned to You's hand". These pick the right form by person.
+//   vbOf(pi, 'rolls', 'roll')  ->  "rolls" for an opponent, "roll" for you
+//   possOf(pi)                 ->  "AI 1's" / "Your"   (capitalised: clause start)
+//   possOf(pi, false)          ->  "AI 1's" / "your"   (mid-sentence)
+const vbOf = (pi, third, second) => (pi === HUMAN ? second : third);
+const possOf = (pi, cap = true) => (pi === HUMAN ? (cap ? 'Your' : 'your') : `${nameOf(pi)}'s`);
 // each player's board is a pizza slice: rotate their zone layout around the
 // table center; the local (HUMAN) slice always faces the camera (angle 0 =
 // bottom). Angles are relative to HUMAN so a duel guest sees themselves up front.
@@ -1108,7 +1116,7 @@ function openScryModal() {
 	const pend = state.scryQueue[0];
 	if (!pend || pend.chooser !== HUMAN) return;
 	const modal = $('scry-modal');
-	const who = pend.deckOwner === HUMAN ? 'your deck' : `${nameOf(pend.deckOwner)}'s deck`;
+	const who = `${possOf(pend.deckOwner, false)} deck`;
 	modal.innerHTML = `<div class="wm-title">${pend.deckOwner === HUMAN ? 'Scry' : 'Gaze'} — top of ${who} (first card is drawn first)</div><div class="scry-row"></div>`;
 	const row = modal.querySelector('.scry-row');
 	const picks = pend.ids.map(id => ({ id, bottom: false }));
@@ -1901,7 +1909,7 @@ function updateHud() {
 	$('end-turn').classList.toggle('done-glow', myTurn && allSpent);
 	$('end-turn').textContent = state.over ? 'Game Over'
 		: myTurn ? 'End Turn'
-		: state.current === HUMAN ? 'Your Turn…' : `${nameOf(state.current)}'s Turn…`;
+		: `${possOf(state.current)} Turn…`;
 	$('hint').textContent = pending
 		? `Choose ${pending.spec.why} for ${pending.card.name} (right-click to cancel)`
 		: (selectedAttacker === 'HERO' ? 'Choose a target for your hero attack (right-click to cancel)'
@@ -3062,7 +3070,7 @@ function nextEvent() {
 			if (ev.turnNumber === 1 || !matchStats) resetMatchStats(); // new match → fresh tally
 			matchStats.turns = Math.max(matchStats.turns, ev.turnNumber || 0);
 			if (ev.player === HUMAN) SFX.play('turn');
-			banner(ev.player === HUMAN ? 'Your Turn' : `${nameOf(ev.player)}'s Turn`,
+			banner(`${possOf(ev.player)} Turn`,
 				1400, ev.player === HUMAN ? 'turn' : 'turn foe');
 			log(`— Turn ${ev.turnNumber}: ${nameOf(ev.player)} —`);
 			delay = 500;
@@ -3175,7 +3183,7 @@ function nextEvent() {
 			break;
 		}
 		case 'heroAttack': {
-			log(ev.player === HUMAN ? 'Your hero attacks' : `${nameOf(ev.player)}'s hero attacks`);
+			log(`${possOf(ev.player)} hero attacks`);
 			// a swing (carries a target) telegraphs like a creature attack; the same
 			// event type also fires for plain attack-VALUE changes — those don't
 			if (ev.target) {
@@ -3208,7 +3216,7 @@ function nextEvent() {
 		}
 		case 'weaponBreak':
 			SFX.play('weaponBreak');
-			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
+			log(`${possOf(ev.player)} ${ev.name} ${ev.destroyed ? 'was destroyed' : 'broke'}`);
 			floatText('⚔', '#9b93b3', heroPos(ev.player));
 			delay = 300;
 			break;
@@ -3225,7 +3233,7 @@ function nextEvent() {
 		case 'trapSprung':
 			SFX.play('trap');
 			banner(`Trap: ${ev.card.name}!`, 1600);
-			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Trap sprung: ${ev.card.name}`);
+			log(`${possOf(ev.player)} Trap sprung: ${ev.card.name}`);
 			delay = 900;
 			break;
 		case 'landPlayed':
@@ -3292,7 +3300,7 @@ function nextEvent() {
 			delay = 220;
 			break;
 		case 'plunder':
-			log(`${nameOf(ev.player)} plundered ${ev.card.name} from ${nameOf(ev.victim)}'s deck`);
+			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'plundered', 'plundered')} ${ev.card.name} from ${possOf(ev.victim, false)} deck`);
 			delay = 320;
 			break;
 		case 'quickdrawReturn':
@@ -3314,7 +3322,7 @@ function nextEvent() {
 			break;
 		}
 		case 'scryStart':
-			log(`${nameOf(ev.chooser)} ${ev.chooser === ev.deckOwner ? 'scries' : `gazes at ${nameOf(ev.deckOwner)}'s deck`} (${ev.count})`);
+			log(`${nameOf(ev.chooser)} ${ev.chooser === ev.deckOwner ? vbOf(ev.chooser, 'scries', 'scry') : `${vbOf(ev.chooser, 'gazes', 'gaze')} at ${possOf(ev.deckOwner, false)} deck`} (${ev.count})`);
 			if (ev.chooser === HUMAN) openScryModal();
 			delay = 400;
 			break;
@@ -3334,7 +3342,7 @@ function nextEvent() {
 			break;
 		case 'planarRoll': {
 			const face = ev.roll === 6 ? 'Planeswalker — new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing';
-			log(`${nameOf(ev.player)} rolls the planar die: ${ev.roll} (${face})`);
+			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'rolls', 'roll')} the planar die: ${ev.roll} (${face})`);
 			delay = 550;
 			break;
 		}
@@ -3348,8 +3356,8 @@ function nextEvent() {
 			break;
 		case 'lootStart':
 			log(ev.cleanup
-				? `${nameOf(ev.player)} discards down to hand size (${ev.count})`
-				: `${nameOf(ev.player)} loots (${ev.count})`);
+				? `${nameOf(ev.player)} ${vbOf(ev.player, 'discards', 'discard')} down to hand size (${ev.count})`
+				: `${nameOf(ev.player)} ${vbOf(ev.player, 'loots', 'loot')} (${ev.count})`);
 			if (ev.player === HUMAN) openDiscardModal();
 			delay = 300;
 			break;
@@ -3358,7 +3366,7 @@ function nextEvent() {
 			delay = 300;
 			break;
 		case 'abilityUsed':
-			log(`${nameOf(ev.player)}'s ${ev.card.name}: ${ev.text}`);
+			log(`${possOf(ev.player)} ${ev.card.name}: ${ev.text}`);
 			delay = 320;
 			break;
 		case 'pickStart':
@@ -3377,7 +3385,7 @@ function nextEvent() {
 			delay = 300;
 			break;
 		case 'gyVoteOffer':
-			log(`${nameOf(ev.player)} votes on a graveyard card (${ev.options.length} options)`);
+			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'votes', 'vote')} on a graveyard card (${ev.options.length} options)`);
 			if (ev.player === HUMAN) openPickModal();
 			delay = 300;
 			break;
@@ -3390,7 +3398,7 @@ function nextEvent() {
 			delay = 200;
 			break;
 		case 'dredgeStart':
-			log(`${nameOf(ev.player)} dredges (${ev.count})`);
+			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'dredges', 'dredge')} (${ev.count})`);
 			if (ev.player === HUMAN) openDredgeModal();
 			delay = 300;
 			break;
@@ -3426,7 +3434,7 @@ function nextEvent() {
 		}
 		case 'questComplete':
 			banner(`Quest complete: ${ev.card.name}!`, 1700);
-			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} quest complete: ${ev.card.name}`);
+			log(`${possOf(ev.player)} quest complete: ${ev.card.name}`);
 			delay = 950;
 			break;
 		case 'ongoingTriggered':
@@ -3435,7 +3443,7 @@ function nextEvent() {
 			break;
 		case 'walkerArrived': delay = 300; break; // the generic play event already logs it
 		case 'walkerAbility': {
-			log(`${nameOf(ev.player)}'s ${ev.card.name}: ${ev.text}`);
+			log(`${possOf(ev.player)} ${ev.card.name}: ${ev.text}`);
 			const ent = entities.get(ev.card.uid);
 			if (ent) { ent.card.loyalty = ev.loyalty; refreshFace(ent); floatText('✧', '#c9b8ff', ent.mesh.position); }
 			delay = 480;
@@ -3483,7 +3491,7 @@ function nextEvent() {
 		case 'bounce': {
 			const ent = entities.get(ev.uid);
 			if (ent) { ent.dying = performance.now(); floatText('↩', '#6cc4ff', ent.mesh.position); }
-			log(`${ev.name} was returned to ${nameOf(ev.player)}'s hand`);
+			log(`${ev.name} was returned to ${possOf(ev.player, false)} hand`);
 			delay = 380;
 			break;
 		}
@@ -3509,15 +3517,15 @@ function nextEvent() {
 			break;
 		case 'secretRevealed':
 			banner(`Secret: ${ev.card.name}!`, 1600);
-			log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} Secret revealed: ${ev.card.name}`);
+			log(`${possOf(ev.player)} Secret revealed: ${ev.card.name}`);
 			delay = 900;
 			break;
 		case 'stackPush':
-			log(ev.kind === 'attack' ? `${nameOf(ev.player)} attacks — respond?`
-				: ev.kind === 'ability' ? `${nameOf(ev.player)} uses ${ev.card ? ev.card.name : 'an ability'} — on the stack`
-				: ev.kind === 'landtap' ? `${nameOf(ev.player)} taps ${ev.card ? ev.card.name : 'a land'} — on the stack`
-				: ev.kind === 'heropower' ? `${nameOf(ev.player)} uses a Hero Power — on the stack`
-				: `${nameOf(ev.player)} casts ${ev.card ? ev.card.name : 'a spell'} — on the stack`);
+			log(ev.kind === 'attack' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'attacks', 'attack')} — respond?`
+				: ev.kind === 'ability' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'uses', 'use')} ${ev.card ? ev.card.name : 'an ability'} — on the stack`
+				: ev.kind === 'landtap' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'taps', 'tap')} ${ev.card ? ev.card.name : 'a land'} — on the stack`
+				: ev.kind === 'heropower' ? `${nameOf(ev.player)} ${vbOf(ev.player, 'uses', 'use')} a Hero Power — on the stack`
+				: `${nameOf(ev.player)} ${vbOf(ev.player, 'casts', 'cast')} ${ev.card ? ev.card.name : 'a spell'} — on the stack`);
 			if (state.priority === HUMAN) openRespondModal();
 			delay = 300;
 			break;
@@ -3527,7 +3535,7 @@ function nextEvent() {
 		case 'armor': floatText(`+${ev.amount}`, '#c9c2da', heroPos(ev.player)); delay = 260; break;
 		case 'bounce': log(`${ev.name} was returned to hand`); delay = 300; break;
 		case 'coin': log(`${nameOf(ev.player)} played The Coin (+1 mana)`); delay = 250; break;
-		case 'reshuffle': log(`${ev.player === HUMAN ? 'Your' : `${nameOf(ev.player)}'s`} graveyard was shuffled back in`); break;
+		case 'reshuffle': log(`${possOf(ev.player)} graveyard was shuffled back in`); break;
 		case 'discard': log(`${nameOf(ev.player)} discarded ${ev.card.name}`); break;
 		case 'concede': log(`${ev.player === HUMAN ? 'You' : nameOf(ev.player)} conceded`); delay = 300; break;
 		case 'mulligan': log(ev.count ? `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} mulliganed ${ev.count} card${ev.count === 1 ? '' : 's'}` : `${ev.player === HUMAN ? 'You' : nameOf(ev.player)} kept the opening hand`); delay = 200; break;
@@ -4030,6 +4038,8 @@ function showInspect(card) {
 		box.appendChild(hint);
 	}
 	box.style.display = 'block';
+	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
+	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
 	// the face is drawn with a procedural fallback until its art image and the mana
 	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
 	if (inspectArtFn) artListeners.delete(inspectArtFn);
@@ -4053,6 +4063,7 @@ function hideInspect() {
 	inspectUid = null;
 	if (inspectArtFn) { artListeners.delete(inspectArtFn); inspectArtFn = null; }
 	$('inspect').style.display = 'none';
+	try { document.getElementById('mp-chat')?.classList.remove('mc-yield'); } catch (e) {}
 }
 function toggleInspect(card) { if (inspectPrev === card.uid) hideInspect(); else showInspect(card); }
 
@@ -7661,7 +7672,7 @@ function duelsRunComplete(run) {
 
 function duelsRunOver(run) {
 	const hero = Duels.HEROES.find(h => h.id === run.heroId);
-	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero.name} bows out at ${run.wins || 0} wins.`);
+	const el = dungeonOverlay('3 LOSSES - RUN OVER', `${hero.name} bows out at ${plural(run.wins || 0, 'win', 'wins')}.`);
 	clearDuels();
 	mpRunReward(el, 'loss', { wins: run.wins || 0, losses: run.losses || 0, hero: run.heroId });
 	el.appendChild(overlayButton('New Run', () => location.reload()));
