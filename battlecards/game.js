@@ -4021,7 +4021,12 @@ function showInspect(card) {
 		// a hand card you can't act on yet: explain why (field cards get no hint)
 		const hint = document.createElement('div');
 		hint.className = 'ins-hint no';
-		hint.textContent = state && state.current !== HUMAN ? 'wait for your turn to play' : 'not enough mana yet';
+		// whyCantPlay() has diagnosed this properly since the Arrest/Elusive fix, but
+		// the INSPECTOR never used it — it hardcoded the mana excuse for every refusal.
+		// Reported as "Gideon's Reproach showed 'not enough mana yet' with enough mana
+		// and an active Arcane discount"; the real reason was no legal target.
+		hint.textContent = state && state.current !== HUMAN ? 'wait for your turn to play'
+			: (() => { try { return whyCantPlay(card); } catch (e) { return 'can’t be played right now'; } })();
 		box.appendChild(hint);
 	}
 	box.style.display = 'block';
