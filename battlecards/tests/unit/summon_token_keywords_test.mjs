@@ -28,7 +28,8 @@ function summons(card) {
 	const out = [];
 	const walk = list => {
 		for (const e of (list || [])) {
-			if (e && e.type === 'summon') out.push(e);
+			// summon-attackers builds tokens the same way ("...that attack it")
+			if (e && (e.type === 'summon' || e.type === 'summon-attackers')) out.push(e);
 			for (const k of ['then', 'else', 'effects']) if (e && Array.isArray(e[k])) walk(e[k]);
 		}
 	};
