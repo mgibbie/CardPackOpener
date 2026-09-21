@@ -1610,7 +1610,12 @@ export function tapArtifact(state, pi, cardUid, target = null) {
 export function canActivate(state, pi, card, i) {
 	if (state.over) return false;
 	const p = state.players[pi];
-	if (!p.board.includes(card) || isDead(card) || !card.activated) return false;
+	// board creatures and ENCHANTMENTS may both carry activated abilities
+	// (Garruk's Uprising: "Pay 3 Life: Create a 2/2 Beast"). The liveness check is
+	// board-only: an enchantment has no Health, and isDead() reads 0 damage >= 0
+	// maxHealth as dead, which would make its ability permanently unusable.
+	const onBoard = p.board.includes(card);
+	if (!(onBoard || p.enchantments.includes(card)) || (onBoard && isDead(card)) || !card.activated) return false;
 	if (card.frozen || card.dormantLeft > 0) return false;
 	const a = card.activated[i];
 	if (!a) return false;
@@ -1635,7 +1640,7 @@ export function abilitySpec(state, pi, card, i) {
 
 export function activateAbility(state, pi, cardUid, i, target) {
 	const p = state.players[pi];
-	const card = p.board.find(c => c.uid === cardUid);
+	const card = p.board.find(c => c.uid === cardUid) || p.enchantments.find(c => c.uid === cardUid);
 	if (!card || !canActivate(state, pi, card, i)) return false;
 	const a = card.activated[i];
 	const ward = wardOf(state, pi, target);

@@ -2412,7 +2412,7 @@ function aiChooseResponse(state, pi) {
 	// gather my instant-speed damage sources (instants + creature abilities), cheapest first
 	const sources = [];
 	for (const c of E.responseOptions(state, pi)) { const d = c.counterSpell ? 0 : dmgOf(c.effects); if (d > 0) sources.push({ act: { kind: 'spell', uid: c.uid }, dmg: d, cost: E.effectiveCost(state, pi, c) }); }
-	for (const c of p.board) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
+	for (const c of [...p.board, ...p.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, pi, c, i)) { const d = dmgOf(a.effects); if (d > 0) sources.push({ act: { kind: 'ability', uid: c.uid, index: i }, dmg: d, cost: a.cost || 0 }); } });
 	sources.sort((a, b) => a.cost - b.cost || a.dmg - b.dmg);
 	const killer = need => sources.find(s => s.dmg >= need);
 
@@ -2475,7 +2475,7 @@ function respondOptions() {
 			out.push({ kind: 'spell', card: c, useAlt: false, label: `${verb} ${c.name} (${E.effectiveCost(state, HUMAN, c)})` });
 		}
 	}
-	for (const c of me.board) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
+	for (const c of [...me.board, ...me.enchantments]) if (c.activated) c.activated.forEach((a, i) => { if (E.canActivate(state, HUMAN, c, i)) out.push({ kind: 'ability', card: c, index: i, label: `${c.name}: ${a.text || 'ability'}` }); });
 	for (const l of [...me.lands, ...me.board.filter(x => x.type === 'location')]) E.landTaps(l).forEach((t, i) => { if (t.effects.some(e => e.type !== 'gain-mana') && E.canTapLand(state, HUMAN, l, i)) out.push({ kind: 'landtap', card: l, index: i, label: `${l.name}: ${t.text}` }); });
 	return out;
 }
@@ -4352,6 +4352,11 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 		// pick and falls through to attacking; other activated minions always show the menu.
 		if (card.activated?.length && !(card.titan && !card.activated.some((a, i) => E.canActivate(state, HUMAN, card, i)))) { menuDragCandidate = dragArm; openAbilityMenu(card, ev); return; }
 		if (E.canAttackWith(state, HUMAN, card)) tryArmAttack(card);
+	} else if (card.zone === 'enchantment' && card.controller === HUMAN) {
+		// enchantments can carry activated abilities too (Garruk's Uprising:
+		// "Pay 3 Life: Create a 2/2 Beast") — same menu the board uses
+		showInspect(card);
+		if (card.activated?.length) { openAbilityMenu(card, ev); return; }
 	} else if (card.zone === 'heropower' && card.controller === HUMAN) {
 		// click an installed hero power to activate it
 		activateHeroPower(card, ev);

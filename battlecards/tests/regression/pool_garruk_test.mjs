@@ -47,9 +47,14 @@ for (const c of pool) {
 { const st = game(); play(st, 0, 'garruk_uprising', null); const b = put(st, 0, '_v'); E.recomputeAuras(st);
   ok('Uprising gives Beasts +1/+1 and Trample', b.attack === 3 && E.hp(b) === 3 && (E.has ? E.has(b, 'trample') : b.keywords.includes('trample')), [b.attack, E.hp(b), b.keywords]); }
 
-// ---- packleader: Beast lord (+1/+0) ----
-{ const st = game(); put(st, 0, 'garruk_packleader'); const b = put(st, 0, '_v'); E.recomputeAuras(st);
-  ok('Packleader buffs other Beasts +1/+0', b.attack === 3 && E.hp(b) === 2, [b.attack, E.hp(b)]); }
+// ---- packleader: no longer a Beast lord — Poisonous + "Inspire: Discover a
+//      Green Card" as of owner batch 73 ----
+{ const st = game(); const pl = put(st, 0, 'garruk_packleader'); const b = put(st, 0, '_v'); E.recomputeAuras(st);
+  ok('Packleader no longer buffs other Beasts', b.attack === 2 && E.hp(b) === 2, [b.attack, E.hp(b)]);
+  ok('Packleader is Poisonous with Trample', (pl.keywords || []).includes('poisonous') && (pl.keywords || []).includes('trample'), pl.keywords);
+  const picks0 = (st.pickQueue || []).length;
+  E.fireOngoing(st, 0, 'hero-power-used', {});
+  ok('Inspire offers a green Discover', (st.pickQueue || []).length === picks0 + 1, (st.pickQueue || []).length); }
 
 // ---- hordebeast: +1 Attack per other Beast ----
 { const st = game(); const h = put(st, 0, 'garruk_hordebeast'); put(st, 0, '_v'); put(st, 0, '_v'); E.recomputeAuras(st);
