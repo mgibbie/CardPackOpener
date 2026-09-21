@@ -31,6 +31,7 @@ const PAIRS = [
 	['lightforged_blessing', 'lightforged_blessing_ii'], ['me_aragorn_rally', 'me_aragorn_rally_ii'],
 	['conjurers_calling', 'conjurers_calling_ii'], ['air_raid', 'air_raid_ii'],
 	['desperate_measures', 'desperate_measures_ii'], ['rising_winds', 'rising_winds_ii'],
+	['chandra_fury', 'chandra_fury_ii'],
 ];
 
 // every card that says "Twinspell" must be one of the pairs above (no silent broken ones)
