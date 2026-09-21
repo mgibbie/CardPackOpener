@@ -2981,6 +2981,12 @@ addEventListener('keydown', e => {
 	if (menuBlocking() || ['z', 'x', 'Enter', 'p', 'b', 'Escape'].includes(k) || KEYMAP[k] || k !== e.key) {
 		if (e.key !== 'F5' && e.key !== 'F12') e.preventDefault();
 	}
+	// Auto-repeat must never stand in for a SECOND press on a confirm/cancel key.
+	// Holding A through battle text fired one keydown to advance the message and the
+	// very next repeat landed on the menu that had just opened — selecting BAG with
+	// no new press (reported repeatedly against Abe and Falkner). Arrows are left
+	// repeating on purpose, so holding a direction still scrolls a long list.
+	if (e.repeat && (k === 'z' || k === 'Enter' || k === 'x')) return;
 	pressKey(k);
 });
 

@@ -134,8 +134,26 @@ export class Trainers {
 		]);
 	}
 
+	// The save key for "this trainer is beaten".
+	//
+	// local_id is a SPRITE constant in the Crystal decomps, not a unique object id,
+	// so two trainers on one map routinely share it — Violet Gym's Abe and Rod are
+	// both VioletGym_SPRITE_YOUNGSTER. They therefore shared ONE defeat key: beating
+	// Abe marked Rod beaten too, and Rod's battle became impossible.
+	//
+	// Disambiguate by coordinates ONLY where a collision actually exists (see
+	// _dupBases, rebuilt per map). Every unique trainer keeps exactly the key its
+	// save already holds, so no existing progress is invalidated; the colliding ones
+	// get a new key, which means a stale shared key stops matching them and both
+	// become fightable again — the right outcome, since it is not knowable which one
+	// the player actually beat.
+	baseKeyOf(t) { return t.ev.local_id || t.ev.script || `${t.ev.x},${t.ev.y}`; }
 	keyOf(t) {
-		return `${this.world.current.map.id}:${t.ev.local_id || t.ev.script || `${t.ev.x},${t.ev.y}`}`;
+		const base = this.baseKeyOf(t);
+		const map = this.world.current.map.id;
+		return this._dupBases && this._dupBases.has(base)
+			? `${map}:${base}@${t.ev.x},${t.ev.y}`
+			: `${map}:${base}`;
 	}
 
 	isDefeated(t) { return this.defeated.has(this.keyOf(t)); }
@@ -154,6 +172,7 @@ export class Trainers {
 
 	async loadForMap() {
 		this.list = [];
+		this._dupBases = null;
 		this.engagement = null;
 		const evs = this.world.current.map.object_events || [];
 		const crystal = !!this.world.current.map._crystal_tileset;
@@ -190,6 +209,16 @@ export class Trainers {
 			if (!img) img = await getImage(spritePath(ev.graphics_id, true)).catch(() => null);
 			if (img) { const t = new Trainer(ev, img); if (claimedByBeat) t.villain = true; this.list.push(t); }
 		}));
+		this.recomputeDupBases();
+	}
+
+	// which base ids appear more than once on THIS map? Only those need the
+	// coordinate suffix, so unique trainers keep the save key they already have.
+	recomputeDupBases() {
+		const seen = new Map();
+		for (const t of this.list) { const b = this.baseKeyOf(t); seen.set(b, (seen.get(b) || 0) + 1); }
+		this._dupBases = new Set([...seen].filter(([, n]) => n > 1).map(([b]) => b));
+		return this._dupBases;
 	}
 
 	occupied(tx, ty) {
