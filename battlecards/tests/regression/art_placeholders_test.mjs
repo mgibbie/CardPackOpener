@@ -7,12 +7,22 @@ import fs from 'fs';
 
 const raw = JSON.parse(fs.readFileSync(new URL('../../cards.json', import.meta.url)));
 const cardIds = new Set(raw.cards.map(c => c.id));
-const index = new Set(JSON.parse(fs.readFileSync(new URL('../../art/index.json', import.meta.url))));
+// art/index.json is an OFFLOADED, gitignored asset (it moved to the magepunk-cardart
+// Pages project for the 20k-file deploy limit) — present on a dev machine, absent in
+// CI. Reading it unguarded made this suite fail on EVERY CI run, which is why the
+// Tests gate sat red: the workflow reads only in-repo data by design. The same guard
+// is already used by totemic_power_test and generated_cards_test.
+let index = null;
+try { index = new Set(JSON.parse(fs.readFileSync(new URL('../../art/index.json', import.meta.url)))); }
+catch { console.log('note: battlecards/art/index.json absent (gitignored) — art-coverage checks skipped, every in-repo check still enforced'); }
 const doc = JSON.parse(fs.readFileSync(new URL('../../art-placeholders.json', import.meta.url)));
 const list = Array.isArray(doc) ? doc : (doc.cards || []);
 
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, skipped = 0;
 const ok = (l, c, x) => { if (c) { pass++; } else { fail++; console.log('FAIL', l, x ?? ''); } };
+// an art check only runs when the offloaded index is actually here; skips are
+// COUNTED and reported so an absent index can never read as a clean pass
+const okArt = (l, c, x) => { if (index) ok(l, c, x); else skipped++; };
 
 ok('placeholder list is non-empty', list.length > 0, list.length);
 
@@ -28,10 +38,10 @@ for (const entry of list) {
   if (!id) continue;
   ok(id + ' is not duplicated', !seen.has(id)); seen.add(id);
   ok(id + ' is a real card', cardIds.has(id));
-  ok(id + ' is in art/index.json (has a real picture)', index.has(id));
+  okArt(id + ' is in art/index.json (has a real picture)', index && index.has(id));
   const source = typeof entry === 'object' ? entry.source : null;
-  if (source) ok(id + ' borrows a real source art (' + source + ')', index.has(source), 'source not in index.json');
+  if (source) okArt(id + ' borrows a real source art (' + source + ')', index && index.has(source), 'source not in index.json');
 }
 
-console.log(`\n${pass} passed, ${fail} failed`);
+console.log(`\n${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (art index offloaded)` : ''}`);
 process.exit(fail ? 1 : 0);
