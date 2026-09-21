@@ -346,6 +346,43 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			JSON.stringify({ encounterTile: enc.arriveTile, afterBattle: encAfter }));
 		await page.evaluate(() => { window.__ow.player.onArrive = window.__origArrive; });
 
+		// --- auto-repeat must not stand in for a second A press ---
+		// Reported: "the A press that advances battle text carries through into the next
+		// prompt and opens BAG without a new press. Repeatedly, against both Abe and
+		// Falkner." Holding A fires repeated keydowns: one advances the message, the
+		// next lands on the menu that just opened — and BAG is remembered as the last
+		// menu index, so it opens itself.
+		await page.evaluate(() => window.__ow.startWildBattle({ id: 'rattata', level: 3 }));
+		await sleep(1500);
+		const rep = await page.evaluate(async () => {
+			const ow = window.__ow, b = ow.battle;
+			const press = (repeat) => dispatchEvent(new KeyboardEvent('keydown', { key: 'z', repeat, bubbles: true }));
+			// park on the battle menu with BAG selected, as it is after using an item
+			for (let i = 0; i < 200 && b.active && b.active.phase !== 'menu'; i++) { press(false); await new Promise(r => setTimeout(r, 40)); }
+			if (!b.active) return { skipped: 'battle ended' };
+			b.active.menuIdx = 1;                       // BAG
+			const before = b.active.phase;
+			press(true);                                // an AUTO-REPEAT, not a new press
+			await new Promise(r => setTimeout(r, 250));
+			return { before, after: b.active ? b.active.phase : 'ended', menuIdx: b.active ? b.active.menuIdx : null };
+		});
+		A(rep.skipped || rep.after === rep.before,
+			'an auto-repeated A does not open BAG on the menu that just appeared', JSON.stringify(rep));
+		const realPress = await page.evaluate(async () => {
+			const b = window.__ow.battle;
+			if (!b.active) return { skipped: true };
+			dispatchEvent(new KeyboardEvent('keydown', { key: 'z', repeat: false, bubbles: true }));
+			await new Promise(r => setTimeout(r, 250));
+			return { phase: b.active ? b.active.phase : 'ended' };
+		});
+		A(realPress.skipped || realPress.phase !== 'menu',
+			'...but a genuine new press still works', JSON.stringify(realPress));
+		// the menu was deliberately parked on BAG; put it back on FIGHT so the
+		// fight-to-end helper can actually close the battle out
+		await page.evaluate(() => { const b = window.__ow.battle; if (b.active) b.active.menuIdx = 0; });
+		await fightToEnd();
+		await sleep(600);
+
 		// --- 7: nothing is left blocking while the overworld is interactive ---
 		const fin = await gate();
 		A(fin.blockedBy === null && fin.menuBlocking === false && fin.tickMoveGate === true,
