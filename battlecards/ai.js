@@ -471,6 +471,38 @@ export function step(state, pi = 1) {
 	// 2. attack with each ready creature (probe-ordered: cheapest first into
 	// face-down secrets/traps so they spring on the small body)
 	const attackers = attackProbeOrder(state, pi, E.attackersFor(state, pi));
+
+	// 2a. LETHAL SWEEP. The per-attacker check below compares ONE creature's attack
+	// to a hero's life, so a wide board never recognised lethal: five 6/6s against a
+	// hero on 14 saw no single lethal attacker, fell through to the value logic, and
+	// — because attackTargets offers enemy planeswalkers alongside the hero — sent
+	// everything at the planeswalker instead. Reported as "the AI passed four
+	// consecutive turns with 28-50+ attack against 14 or less life", which is what
+	// that looks like from the other side of the board.
+	//
+	// Add the damage the READY attackers can actually land on each reachable hero
+	// (an attacker walled off by Taunt has no hero target and contributes nothing)
+	// and, if it kills, take the game. Armor counts: it soaks combat damage.
+	{
+		const reach = new Map();   // opp -> { dmg, swings: [{ a, t }] }
+		for (const a of attackers) {
+			for (const t of E.attackTargets(state, pi, a)) {
+				if (t.type !== 'hero') continue;
+				const e = reach.get(t.player) || { dmg: 0, swings: [] };
+				e.dmg += a.attack; e.swings.push({ a, t });
+				reach.set(t.player, e);
+			}
+		}
+		for (const [opp, e] of reach) {
+			const d = state.players[opp];
+			if (d.eliminated || d.immuneHero) continue;
+			if (e.dmg < (d.life || 0) + (d.armor || 0)) continue;   // not actually lethal
+			// one swing per step() call, exactly like every other branch — the driver
+			// calls back until the board is spent or the game is over
+			for (const { a, t } of e.swings) if (E.attack(state, pi, a.uid, t)) return true;
+		}
+	}
+
 	for (const a of attackers) {
 		const targets = E.attackTargets(state, pi, a);
 		if (!targets.length) continue;
