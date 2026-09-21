@@ -3853,19 +3853,28 @@ addEventListener('pointermove', ev => {
 	mouseX = ev.clientX;
 	mouseY = ev.clientY;
 	wake();
-	// An armed attack / pending target dragged past the click threshold is a
-	// DRAG to a target, never a press-and-hold preview — cancel the long-press
-	// so its 380ms timer can't fire mid-drag, and clear the flag if a hesitation
-	// BEFORE the drag already fired it. Without this, the natural gesture "press
-	// the attacker, glance at your targets, drag to one, release" did nothing:
-	// the pointerup commit path bails on `longPressFired`. Desktop AND touch —
-	// the pause to pick a target is what trips the timer. Gated on an armed
-	// attack/pending target so hand-card press-and-hold PREVIEW is untouched.
-	if ((selectedAttacker || pending) && !placing && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
+	// ANY press that travels past the click threshold is a DRAG, never a
+	// press-and-hold preview — cancel the long-press so its 380ms timer can't fire
+	// mid-drag, and clear the flag if a hesitation BEFORE the drag already fired it.
+	// Without this the pointerup commit path bails on `longPressFired` and the
+	// gesture does nothing (or worse, the hold opens the inspector over it).
+	//
+	// This used to be gated on `(selectedAttacker || pending) && !placing` — armed
+	// attacks only — to keep hand-card press-and-hold PREVIEW working. That gate was
+	// the bug: a hand-card drag still raced the 380ms timer, and the timer tested
+	// distance ONCE at fire time, so a drag that had not yet travelled 12px was
+	// captured as a hold. Reported as "300ms/10-step drags open the inspector or do
+	// nothing, 800-900ms/30-40-step drags work" — duration was never the real
+	// variable, distance-at-the-380ms-mark was.
+	//
+	// Preview is not lost: a hold IS "pressed without moving", so the two gestures
+	// are separated by the same threshold that defines a drag. Moving past it means
+	// you are dragging, by definition.
+	if (Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > DRAG_PX) {
 		clearTimeout(longPressT);
 		longPressFired = false;
 	}
-	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14;
+	if (placing) placing.dragging = Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > DRAG_PX;
 	// a real drag off a menu-opening creature closes its menu and arms the attack
 	if (menuDragCandidate != null && Math.hypot(mouseX - lastDownX, mouseY - lastDownY) > 14) {
 		const c = cardOf(menuDragCandidate);
@@ -4363,6 +4372,10 @@ function commitPending(t) {
 // ---------- drag-to-target (Hearthstone style) ----------
 // press arms as before; releasing after a real drag commits the target under
 // the cursor, releasing in place keeps click-then-click working
+// travel past this and the gesture is a DRAG, not a click or a hold. One shared
+// constant: the long-press bail used 12 while every drag test used 14, so a 13px
+// gesture counted as neither and silently did nothing.
+const DRAG_PX = 14;
 let lastDownX = 0, lastDownY = 0;
 addEventListener('pointerdown', ev => {
 	lastDownX = mouseX = ev.clientX;
@@ -4456,7 +4469,7 @@ function startLongPress(uid, x, y) {
 	longPressFired = false;
 	if (!uid) return;
 	longPressT = setTimeout(() => {
-		if (Math.hypot(mouseX - x, mouseY - y) > 12) return; // moved: it's a drag, not a hold
+		if (Math.hypot(mouseX - x, mouseY - y) > DRAG_PX) return; // moved: it's a drag, not a hold
 		longPressFired = true;
 		// hold the hero-power orb to read it (it has no card uid of its own)
 		const c = cardOf(uid) || (uid === 'heropanel' ? classPowerOf(HUMAN) : null);
