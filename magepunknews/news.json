@@ -2,6 +2,14 @@
 	"generated": "2026-09-21",
 	"entries": [
 		{
+			"sha": "5b91663",
+			"date": "2026-09-21",
+			"kind": "patch",
+			"title": "owner_todo batch 73: a Garruk pass (and enchantments can have abilities now) (#531)",
+			"body": "Three filings from the wiki owner inbox:\n  - Garruk's Packleader -> \"Poisonous & Trample.\\nInspire: Discover a Green\n    Card.\" Drops the Beast anthem. (The filing wrote \"Trample & Poisonous\";\n    normalize-cards alphabetises keyword lists, so it lands as \"Poisonous &\n    Trample\" — the repo convention, enforced by keyword_list_alpha_test.)\n    \"Discover a Green Card\" uses the Forest land-set pool, the shape Elvish\n    Warrior already uses for exactly this sentence.\n  - Garruk's Harbinger -> \"Taunt & Trample.\\nSwing: Draw a card & Advance.\"\n  - Garruk's Uprising -> keeps its Beast anthem and gains\n    \"Pay 3 Life: Create a 2/2 Beast.\"\n\nNEW CAPABILITY the third filing needed: enchantments may now carry activated\nabilities. None of the 256 enchantments could before — canActivate and\nactivateAbility only looked at p.board, and the click handler only opened the\nability menu for zone === 'board'. All three now accept the enchantment zone,\nand the AI's damage-source scan plus the human's available-actions list include\nenchantments so the ability is actually reachable.\n\nOne trap worth recording: the liveness guard had to stay BOARD-ONLY. isDead() is\n`damage >= maxHealth`, and an enchantment has no Health — 0 >= 0 reads as dead,\nwhich silently made the ability permanently unusable. Caught by firing it rather\nthan by inspecting the JSON.\n\npool_garruk pinned the Packleader's +1/+0 lordship; rewritten to assert what the\ncard does now (no anthem, Poisonous, and an Inspire that offers a Discover).\n\nAdds owner_todo_cards73_test.mjs (25 assertions): the Inspire really queues a\nDiscover whose every option is a Forest/green card; the Harbinger's Swing both\ndraws AND advances; and the Uprising's ability activates from the enchantment\nzone, costs 3 Life, summons a printed-2/2 Beast that the anthem instantly grows\nto 3/3 with Trample, is once per turn, and is refused at exactly 3 Life so it can\nnever kill you. Suite 579/579.",
+			"cards": []
+		},
+		{
 			"sha": "e1dbfe4",
 			"date": "2026-09-21",
 			"kind": "patch",
