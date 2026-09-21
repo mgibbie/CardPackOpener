@@ -528,13 +528,15 @@ registerTrigger('bounce-attacked-survivor-to-hand', (state, pi, e, ctx, triggeri
 				// Kodo Hide Whip: after your hero attacks a minion and it survives,
 				// put that minion in your hand (as its base card)
 				const c = ctx.target, pp = state.players[pi];
-				if (c && !isDead(c) && c.type !== 'location' && pp.hand.length < MAX_HAND) {
+				// see the GUARD note in handlers-summon merge-if-two: build the replacement
+				// before touching the board, or a missing def deletes the creature outright
+				const kodoDef = c ? state.cardsById[c.id] : null;
+				if (c && kodoDef && !isDead(c) && c.type !== 'location' && pp.hand.length < MAX_HAND) {
 					const owner = state.players[c.controller];
 					owner.board = owner.board.filter(x => x !== c);
 					c.zone = 'gone';
-					const def = state.cardsById[c.id];
-					if (def) {
-						const cp = instantiate(def, pi); cp.zone = 'hand';
+					{
+						const cp = instantiate(kodoDef, pi); cp.zone = 'hand';
 						pp.hand.push(cp);
 						emit(state, { type: 'conjure', player: pi, card: cp, color: null });
 					}
@@ -1484,12 +1486,13 @@ registerTrigger('copy-minion', (state, pi, e, ctx, triggering) => {
 registerTrigger('bounce-attacker', (state, pi, e, ctx, triggering) => {
 	do { {
 				const m = triggering();
-				if (m) {
+				// same GUARD: no def means no card to bounce back, so do not remove it
+				const bounceDef = m ? state.cardsById[m.id] : null;
+				if (m && bounceDef) {
 					const owner = state.players[m.controller];
 					owner.board = owner.board.filter(c => c !== m);
-					const def = state.cardsById[m.id];
-					if (def) {
-						const nc = instantiate(def, m.controller);
+					{
+						const nc = instantiate(bounceDef, m.controller);
 						nc.cost += e.costMod || 0;
 						nc.zone = 'hand';
 						owner.hand.push(nc);

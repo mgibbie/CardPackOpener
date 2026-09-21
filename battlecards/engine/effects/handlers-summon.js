@@ -264,11 +264,16 @@ register('merge-if-two', ({ state, pi, source }, e) => {
 			if (!source || isDead(source)) return;
 			const p = state.players[pi];
 			const copies = p.board.filter(c => c.id === source.id && !isDead(c));
-			if (copies.length >= 2) {
+			const mergeDef = state.cardsById[e.id];
+			// GUARD: the board removal used to happen unconditionally and the replacement
+			// only `if (def)`. When the def is missing, the creature was deleted outright —
+			// no graveyard, no event, nothing in its place. A creature that vanishes with no
+			// log line is exactly the shape of the reported Mosh'Ogg Enforcer disappearance.
+			// Build the replacement FIRST; if it cannot be built, leave the board alone.
+			if (copies.length >= 2 && mergeDef) {
 				p.board = p.board.filter(c => c !== copies[0] && c !== copies[1]);
 				copies[0].zone = copies[1].zone = 'gone';
-				const def = state.cardsById[e.id];
-				if (def) summon(state, pi, def);
+				summon(state, pi, mergeDef);
 			}
 });
 
