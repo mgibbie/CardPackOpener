@@ -411,6 +411,7 @@ export function instantiate(def, controller) {
 		auraAttack: 0,                // currently applied aura bonuses (recomputed)
 		auraHealth: 0,
 		auraKeywords: [],             // keywords this creature holds via auras
+		auraOngoings: [],             // triggered abilities held via auras ("your other Undead have Swing: …")
 		loyalty: def.loyalty || 0,    // planeswalker loyalty counter
 		abilities: def.abilities || null, // planeswalker: [{ cost, text, effects }]
 		overload: def.overload || 0,  // mana locked next turn when played
@@ -3299,6 +3300,10 @@ export function attack(state, pi, attackerUid, target) {
 	if (attacker.ongoings) for (const o of attacker.ongoings) if (o.on === 'self-attacks' && !o.spent) {
 		runSecretEffects(state, pi, o.effects, { self: attacker });
 		if (o.once) o.spent = true;
+	}
+	// ...including a Swing handed out by an aura ("your other Undead have Swing: …")
+	if (attacker.auraOngoings) for (const o of attacker.auraOngoings) if (o.on === 'self-attacks') {
+		runSecretEffects(state, pi, o.effects, { self: attacker });
 	}
 	fireOngoing(state, pi, 'friendly-attacks', { minion: attacker }); // Gaia-style reactions
 	if (!isDead(attacker)) fireOngoing(state, pi, 'friendly-attacks-survives', { minion: attacker }); // Rokara

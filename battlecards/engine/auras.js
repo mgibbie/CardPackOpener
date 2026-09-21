@@ -24,6 +24,11 @@ export function recomputeAuras(state) {
 			if (c.dormantLeft > 0) return;     // nor dormant sleepers
 			let aBonus = 0, hBonus = 0;
 			const granted = new Set();
+			// triggered abilities handed out by an aura ("your other Undead have
+			// Swing: Advance"). Kept in their own list rather than merged into the
+			// creature's own `ongoings`, so they lapse cleanly when the aura does —
+			// the firing paths read both.
+			const grantedOngoings = [];
 			for (const src of [...sources, ...globalSources]) {
 				const a = src.aura;
 				// Celestial Aura: while its controller has EXACTLY ONE minion, that
@@ -57,6 +62,7 @@ export function recomputeAuras(state) {
 				aBonus += a.heraldScaled ? heraldMult(state.players[src.controller].heraldCount || 0) : (a.attack || 0);
 				hBonus += a.health || 0;
 				for (const k of a.keywords || []) granted.add(k);
+				if (a.ongoing) grantedOngoings.push(a.ongoing); // aura-granted trigger (Liliana's Reaver)
 					// Argus, the Emerald Star: directional aura — minions to the source's
 					// left get one keyword set, ones to its right get another.
 					if (a.leftKeywords || a.rightKeywords) {
@@ -134,6 +140,10 @@ export function recomputeAuras(state) {
 				if (dH < 0 && c.damage >= c.maxHealth) c.damage = Math.max(0, c.maxHealth - 1);
 				emit(state, { type: 'buff', uid: c.uid, attack: c.attack, hp: hp(c) });
 			}
+			// aura-granted triggers are rebuilt from scratch every pass, so one
+			// lapses the moment its source leaves (no retraction bookkeeping needed)
+			if (grantedOngoings.length) c.auraOngoings = grantedOngoings;
+			else if (c.auraOngoings && c.auraOngoings.length) c.auraOngoings = [];
 			// keyword grants: retract tracked grants that lapsed, add new ones
 			// (never touching keywords the creature owns natively)
 			for (const k of [...c.auraKeywords]) {
