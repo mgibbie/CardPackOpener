@@ -1333,6 +1333,24 @@ register('launch-starship', ({ state, pi, target, source, enemies, scaled, hm, p
 } });
 
 
+// A token's description is the text on its face. Built as "A 1/1 token." it named
+// neither the token nor its KEYWORDS — so a Thopter that genuinely has Elusive
+// read as a vanilla 1/1, and a Construct with Taunt looked like it would not
+// block. Reported as the Tezzeret Thopter tooltip not matching its behaviour.
+// Describe what the token actually is, from the same fields the token is built
+// from, so the two cannot disagree.
+//
+// The label is derived locally rather than imported from battlecards/keywords.js:
+// the engine stays UI-free so it can run under plain node in the test suite.
+const kwLabel = t => String(t).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+function tokenText(name, attack, health, kws) {
+	const base = `A ${attack}/${health} ${name || 'token'}`;
+	const labels = (kws || []).filter(Boolean).map(kwLabel);
+	if (!labels.length) return base + '.';
+	const list = labels.length > 1 ? labels.slice(0, -1).join(', ') + ' and ' + labels[labels.length - 1] : labels[0];
+	return `${base} with ${list}.`;
+}
+
 register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
@@ -1368,7 +1386,7 @@ register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy,
 				const inlineTok = summon(state, ownerIdx, {
 					id: 'token_' + opt.name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
 					name: opt.name, type: 'creature', cost: 0, rarity: 'common', token: true,
-					description: opt.description || `A ${opt.attack}/${opt.health} token.`,
+					description: opt.description || tokenText(opt.name, opt.attack, opt.health, kws),
 					attack: opt.attack, health: opt.health,
 					keywords: kws,
 					tribe: opt.tribe || null,
