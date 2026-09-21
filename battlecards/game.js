@@ -3636,6 +3636,29 @@ function isAiSeat(seat) {
 	return !!(duel.aiSeats && duel.aiSeats.has(seat));
 }
 let aiTimer = null;
+// How many no-progress AI ticks before the watchdog forces the pending decision.
+// Deliberately small: every tick is a real 650ms of a player staring at nothing.
+const AI_STALL_LIMIT = 3;
+let aiStall = 0;
+// Answer, with a safe default, whatever forced decision `seat` owes. This is the
+// LAST resort behind AI.step's own resolvers — its job is that a persisted run can
+// always advance, even if a future queue type ships without an AI handler.
+function forceResolveFor(seat) {
+	try {
+		if (state.scryQueue.length && state.scryQueue[0].chooser === seat) { E.resolveScry(state, []); return true; }
+		if (state.discardQueue.length && state.discardQueue[0].player === seat) {
+			const pend = state.discardQueue[0], hand = state.players[seat].hand;
+			E.resolveDiscard(state, hand.slice(0, pend.count).map(c => c.uid));
+			return true;
+		}
+		if (state.pickQueue.length && state.pickQueue[0].player === seat) { E.resolvePick(state, state.pickQueue[0].ids[0]); return true; }
+		if (state.dredgeQueue.length && state.dredgeQueue[0].player === seat) { E.resolveDredge(state, []); return true; }
+		if (state.sacQueue.length && state.sacQueue[0].player === seat) { E.resolveSac(state, (state.sacQueue[0].uids || [])[0]); return true; }
+		if (state.askQueue.length && state.askQueue[0].player === seat) { E.resolveAsk(state, false); return true; }
+	} catch (e) { console.error('[ai-watchdog] forced resolve threw', e); }
+	return false;
+}
+
 function maybeRunAI() {
 	// correspondence: both seats are human — the absent player's TURN is never
 	// AI-played here (pump's resolveAI* still answer their forced decisions)
@@ -3656,8 +3679,23 @@ function maybeRunAI() {
 		const seat = state.current;
 		// mulligan the AI's opening hand on its first turn, then act on the next tick
 		if (mulliganEnabled() && !state.players[seat].mulliganed) { E.mulligan(state, seat, aiMulliganUids(seat)); pump(); if (duel.on) publishDuel(); return; }
+		const before = state.turnNumber + ':' + state.current;
 		const acted = AI.step(state, seat);
 		if (!acted) E.endTurn(state);
+		// AI-TURN WATCHDOG. endTurn refuses while the active seat owes a forced
+		// decision, and AI.step can only answer the queues it knows about — so a
+		// queue with no AI handler means step() does nothing, endTurn does nothing,
+		// and the turn loops forever. Worse, it is SAVED: reloading the run restores
+		// the same pending decision and deadlocks again, stranding the whole run.
+		// (Reported from a 6-2 Lorequest run: Kozilek, turn 22, 16 cards in hand.)
+		// Detect no-progress and force the decision rather than leave a run dead.
+		if (!acted && before === state.turnNumber + ':' + state.current && E.hasPendingDecision(state, seat)) {
+			if (++aiStall >= AI_STALL_LIMIT) {
+				aiStall = 0;
+				console.warn('[ai-watchdog] AI seat', seat, 'stalled on a decision it cannot answer — forcing it');
+				if (forceResolveFor(seat)) { pump(); if (duel.on) publishDuel(); return; }
+			}
+		} else aiStall = 0;
 		pump();
 		if (duel.on) publishDuel(); // host: broadcast the AI seat's move to the guests
 	}, 650);

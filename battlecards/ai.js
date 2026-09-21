@@ -217,6 +217,30 @@ export function step(state, pi = 1) {
 		return true;
 	}
 
+	// -1b. resolve a pending SACRIFICE cost. The AI had no handler for this queue at
+	// all, and hasPendingDecision blocks endTurn on it — so any card with an
+	// additional "sacrifice a creature" cost, or an activated ability paid by
+	// sacrifice, wedged the AI turn forever with nothing left to surface the choice.
+	// Give up the least threatening body that satisfies the cost.
+	if (state.sacQueue.length && state.sacQueue[0].player === pi) {
+		const pend = state.sacQueue[0];
+		const uids = pend.uids || [];
+		const onBoard = (p.board || []).filter(c => uids.includes(c.uid));
+		const worst = onBoard.sort((a, b) => threatScore(a) - threatScore(b))[0];
+		E.resolveSac(state, worst ? worst.uid : uids[0]);   // resolveSac falls back to pool[0]
+		return true;
+	}
+
+	// -1b2. answer a pending yes/no. Same story as the sacrifice queue: no handler
+	// existed, so an optional "you may …" or a soft-counter payment prompt aimed at
+	// an AI seat hung the turn. Yes is the safe default — every branch that cannot
+	// actually be afforded is re-checked inside resolveAsk, which falls back to the
+	// no path rather than letting the AI pay mana it does not have.
+	if (state.askQueue.length && state.askQueue[0].player === pi) {
+		E.resolveAsk(state, true);
+		return true;
+	}
+
 	// -1c. resolve pending Discover/Draft picks: take the biggest card
 	if (state.pickQueue.length && state.pickQueue[0].player === pi) {
 		const pend = state.pickQueue[0];
