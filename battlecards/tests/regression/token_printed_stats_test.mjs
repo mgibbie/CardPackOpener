@@ -46,7 +46,9 @@ function fresh() {
 	ok('it carries its printed body 5/5', tok.printedAttack === 5 && tok.printedHealth === 5, [tok.printedAttack, tok.printedHealth].join('/'));
 	ok('board stats are 5/5', tok.attack === 5 && tok.maxHealth === 5, [tok.attack, tok.maxHealth].join('/'));
 	ok('MODIFIERS ARE 0/0 (was the fabricated +5/+5)', modifierDelta(tok, st.cardsById).join('/') === '0/0', modifierDelta(tok, st.cardsById).join('/'));
-	ok('its description matches the printed body', tok.description === 'A 5/5 token.', tok.description);
+	// the text now names the token and its keywords too (see token_text_test) —
+	// what matters here is that it reports the PRINTED body, not a gained one
+	ok('its description matches the printed body', tok.description.includes('5/5') && /Construct/.test(tok.description), tok.description);
 }
 
 // ---- 2) a 1/1 Thopter likewise reports nothing gained ----
@@ -56,7 +58,8 @@ function fresh() {
 	const tok = st.players[0].board.find(c => c.name === 'Thopter');
 	ok('Thopter printed 1/1', tok.printedAttack === 1 && tok.printedHealth === 1, [tok.printedAttack, tok.printedHealth].join('/'));
 	ok('Thopter shows no stat modifiers (was +1/+1)', modifierDelta(tok, st.cardsById).join('/') === '0/0', modifierDelta(tok, st.cardsById).join('/'));
-	ok('it is named Thopter, not Construct', tok.name === 'Thopter' && tok.description === 'A 1/1 token.', [tok.name, tok.description].join(' | '));
+	ok('it is named Thopter, not Construct', tok.name === 'Thopter' && /Thopter/.test(tok.description) && tok.description.includes('1/1'),
+		[tok.name, tok.description].join(' | '));
 }
 
 // ---- 3) a REAL buff on a token still reports the true delta ----
