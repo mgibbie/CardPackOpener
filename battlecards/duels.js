@@ -616,6 +616,82 @@ const trib = (d, t) => (d.tribe || '').includes(t);
 const school = (d, sc) => isSpell(d) && (d.tribe || '') === sc;
 const descHas = (d, sub) => (d.description || '').toLowerCase().includes(sub);
 
+
+// ---- HS Duels set-nostalgia buckets ----
+// A large share of the authored Duels buckets simply offer cards from ONE
+// expansion ("Boomsday Project", "Blackrock Mountain", …). Our `set` field
+// carries the same expansion identity, so each is a single filter. offerBuckets
+// already drops any bucket with fewer than 3 matches, so a thin set costs nothing.
+const SET_BUCKETS = [
+	['set_black_temple', 'Ashes of Outlands', 'BLACK_TEMPLE'],
+	['set_wild_west', 'Showdown at the Badlands', 'WILD_WEST'],
+	['set_barrens', 'Forged in the Barrens', 'THE_BARRENS'],
+	['set_brm', 'Blackrock Mountain', 'BRM'],
+	['set_boomsday', 'Boomsday Project', 'BOOMSDAY'],
+	['set_dragons', 'Descent of Dragons', 'DRAGONS'],
+	['set_darkmoon', 'Madness at the Faire', 'DARKMOON_FAIRE'],
+	['set_icecrown', 'Knights of the Frozen Throne', 'ICECROWN'],
+	['set_gangs', 'Mean Streets of Gadgetzan', 'GANGS'],
+	['set_tgt', 'The Grand Tournament', 'TGT'],
+	['set_gvg', 'Goblins vs Gnomes', 'GVG'],
+	['set_ungoro', "Journey to Un'Goro", 'UNGORO'],
+	['set_kara', 'One Night in Karazhan', 'KARA'],
+	['set_loot', 'Kobolds and Catacombs', 'LOOTAPALOOZA'],
+	['set_loe', 'League of Explorers', 'LOE'],
+	['set_lich_king', 'March of the Lich King', 'RETURN_OF_THE_LICH_KING'],
+	['set_naxx', 'Curse of Naxxramas', 'NAXX'],
+	['set_troll', "Rastakhan's Rumble", 'TROLL'],
+	['set_dalaran', 'Rise of Shadows', 'DALARAN'],
+	['set_uldum', 'Saviors of Uldum', 'ULDUM'],
+	['set_scholomance', 'Scholomance Academy', 'SCHOLOMANCE'],
+	['set_titans', 'Titans', 'TITANS'],
+	['set_stormwind', 'United in Stormwind', 'STORMWIND'],
+	['set_sunken_city', 'Voyage to the Sunken City', 'THE_SUNKEN_CITY'],
+	['set_og', 'Whispers of the Old Gods', 'OG'],
+	['set_gilneas', 'Witchwood', 'GILNEAS'],
+	['set_alterac', 'Fractured in Alterac Valley', 'ALTERAC_VALLEY'],
+	['set_bands', 'Festival of Legends', 'BATTLE_OF_THE_BANDS'],
+	['set_wonders', 'Caverns of Time', 'WONDERS'],
+	['set_revendreth', 'Murder at Castle Nathria', 'REVENDRETH'],
+	['set_island', 'Perils in Paradise', 'ISLAND_VACATION'],
+	['set_space', 'The Great Dark Beyond', 'SPACE'],
+	['set_whizbang', "Whizbang's Workshop", 'WHIZBANGS_WORKSHOP'],
+	['set_emerald', 'Emerald Dream', 'EMERALD_DREAM'],
+	['set_violet_hold', 'Escape from the Violet Hold', 'ESCAPEFROM_VIOLET_HOLD'],
+	['set_cataclysm', 'Cataclysm', 'CATACLYSM'],
+	['set_lost_city', 'The Lost City', 'THE_LOST_CITY'],
+	['set_time_travel', 'Across the Timeways', 'TIME_TRAVEL'],
+].map(([id, name, set]) => ({ id, name, match: d => d.set === set }));
+
+// ---- HS Duels mechanic buckets ----
+// The rest of the authored names are mechanical themes; these keep their HS
+// bucket names and map onto our keywords/effects.
+const MECH_BUCKETS = [
+	{ id: 'm_battlecry', name: 'Battlecry Buddies', match: d => kw(d, 'battlecry') },
+	{ id: 'm_one_health', name: '1-Health Crusaders', match: d => d.type === 'creature' && (d.health || 0) === 1 },
+	{ id: 'm_poison', name: 'Poisonous Powers', match: d => kw(d, 'poisonous') || kw(d, 'deathtouch') },
+	{ id: 'm_rush', name: 'Feel the Rush', match: d => kw(d, 'rush') || kw(d, 'charge') },
+	{ id: 'm_windfury', name: 'Wild Winds', match: d => kw(d, 'windfury') },
+	{ id: 'm_lifesteal', name: 'Life Problems', match: d => kw(d, 'lifesteal') },
+	{ id: 'm_armor', name: 'Shieldwall', match: d => eff(d, 'armor') || descHas(d, 'armor') },
+	{ id: 'm_weapons', name: 'Weapon Cache', match: d => d.type === 'weapon' },
+	{ id: 'm_spell_dmg', name: 'Spell Damage', match: d => (d.static && d.static.type === 'spell-damage') || descHas(d, 'spell damage') },
+	{ id: 'm_small_spells', name: 'Small Spells', match: d => isSpell(d) && (d.cost || 0) <= 2 },
+	{ id: 'm_draw', name: 'Draw!', match: d => eff(d, 'draw') || descHas(d, 'draw a card') },
+	{ id: 'm_reborn', name: 'Resurrection', match: d => kw(d, 'reborn') || descHas(d, 'resurrect') },
+	{ id: 'm_silence', name: 'SSSHHH!!!', match: d => eff(d, 'silence') || descHas(d, 'silence') },
+	{ id: 'm_transform', name: 'Transform This!', match: d => eff(d, 'transform') || descHas(d, 'transform') },
+	{ id: 'm_sacrifice', name: 'Sacrifice', match: d => descHas(d, 'sacrifice') },
+	{ id: 'm_trample', name: 'Overwhelm', match: d => kw(d, 'trample') },
+	{ id: 'm_freeze', name: 'Frozen Might', match: d => kw(d, 'freezer') || kw(d, 'frigid') || descHas(d, 'freeze') },
+	{ id: 'm_bruisers', name: 'Bruisers', match: d => d.type === 'creature' && (d.health || 0) >= 7 },
+	{ id: 'm_little', name: 'Little Buddies', match: d => (d.cost || 0) <= 1 },
+	{ id: 'm_discover', name: 'New Discoveries', match: d => eff(d, 'discover') || descHas(d, 'discover') },
+	{ id: 'm_summon', name: 'Summoning', match: d => eff(d, 'summon') || descHas(d, 'summon') },
+	{ id: 'm_heal', name: 'Restoration', match: d => eff(d, 'heal') || descHas(d, 'restore') },
+	{ id: 'm_stealth', name: 'Sneaky Tricks', match: d => kw(d, 'stealth') },
+];
+
 // generic Neutral theme buckets, offered to every class
 export const DUELS_BUCKETS = [
 	{ id: 'beasts', name: 'Beasts', match: d => d.type === 'creature' && trib(d, 'Beast') },
@@ -635,6 +711,8 @@ export const DUELS_BUCKETS = [
 	{ id: 'deathrattle', name: 'Deathrattles', match: d => kw(d, 'deathrattle') },
 	{ id: 'taunt', name: 'Taunt Up', match: d => kw(d, 'taunt') },
 	{ id: 'divine_shield', name: 'Shields Up', match: d => kw(d, 'divine_shield') },
+	...SET_BUCKETS,
+	...MECH_BUCKETS,
 ];
 
 // the real HS Duels signature buckets per class. In HS the 3 cards per bucket are
