@@ -2242,6 +2242,41 @@ function resolveAIScries() {
 	}
 }
 
+// ---------- silent board-departure detector ----------
+// Reported: "Mosh'Ogg Enforcer disappeared after being played. Mana was spent and
+// the creature appeared in the engine board list. On the next turn it vanished
+// without combat, removal, death, return-to-hand, or a corresponding log event."
+//
+// A creature leaving the board ALWAYS has a cause, and every legitimate cause
+// emits something. One that leaves with no event is a silent deletion — and with
+// 33 board-removal sites in the engine, guessing which one is worse than making
+// the next occurrence name itself. Snapshot the board each pump, diff it, and
+// shout when a departure had no accompanying event.
+const BOARD_EVENTS = new Set(['death', 'destroy', 'bounce', 'transformed', 'discard',
+	'tokenSacrificed', 'summon', 'steal', 'exile', 'shuffleIn', 'returnToDeck', 'echoFade']);
+let _boardWas = new Map();          // uid -> name
+const boardVanishLog = [];          // readable via __game.boardVanishLog
+function snapshotBoard() {
+	const m = new Map();
+	if (!state) return m;
+	for (const p of state.players) for (const c of (p.board || [])) m.set(c.uid, c.name);
+	return m;
+}
+function checkBoardDepartures(sawEvents) {
+	if (!state) return;
+	const now = snapshotBoard();
+	for (const [uid, name] of _boardWas) {
+		if (now.has(uid)) continue;
+		if (sawEvents.has(uid)) continue;                       // accounted for
+		const rec = { name, uid, turn: state.turnNumber, at: new Date().toISOString() };
+		boardVanishLog.push(rec);
+		if (boardVanishLog.length > 40) boardVanishLog.shift();
+		console.warn('[board-vanish] a creature left the board with no event:', name,
+			'turn', state.turnNumber, '— see __game.boardVanishLog');
+	}
+	_boardWas = now;
+}
+
 function pump() {
 	wake();
 	if (!state) return;
@@ -2256,7 +2291,16 @@ function pump() {
 	// active player eliminated, hand the turn on now (before events flush / the AI
 	// driver re-arms). A no-op in 1v1/solo, where a self-elimination ends the game.
 	E.settleTurn(state);
-	queue.push(...E.takeEvents(state));
+	const fresh = E.takeEvents(state);
+	// which creatures had a REASON to leave this batch?
+	const accounted = new Set();
+	for (const ev of fresh) {
+		if (!ev || !BOARD_EVENTS.has(ev.type)) continue;
+		if (ev.uid != null) accounted.add(ev.uid);
+		if (ev.card && ev.card.uid != null) accounted.add(ev.card.uid);
+	}
+	checkBoardDepartures(accounted);
+	queue.push(...fresh);
 	if (!queueBusy) nextEvent();
 }
 
@@ -4939,6 +4983,7 @@ animate();
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
+	get boardVanishLog() { return boardVanishLog; },
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
 	showArenaLeaderboard, // arena smoke: open the leaderboard overlay
