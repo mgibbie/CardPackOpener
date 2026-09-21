@@ -342,8 +342,7 @@ function startTrainerBattle(t, foeParty, info) {
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			whiteOut();
 		}
 	});
 }
@@ -944,7 +943,7 @@ function interact() {
 	if (baseCtx && baseDecoInteract(fx, fy)) return;
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
-		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(party); });
+		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(party); noteHealPoint(); });
 		return;
 	}
 	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
@@ -1138,6 +1137,7 @@ function momTalk() {
 		sfx('heal');
 		healParty(party);
 		saveParty(party);
+		noteHealPoint();   // MOM's is a resting place too — wake up here if you black out
 	});
 }
 
@@ -1302,8 +1302,7 @@ function resumeEndHandler(end, savedMap) {
 			Story.setFlag(end.flag);
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			whiteOut();
 		} else saveParty(party);
 	};
 	if (kind === 'trainer') return result => {
@@ -1315,8 +1314,7 @@ function resumeEndHandler(end, savedMap) {
 			if (end.script) onTrainerDefeated(end.script);
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			whiteOut();
 		}
 	};
 	if (kind === 'strainer') return result => {
@@ -1329,7 +1327,7 @@ function resumeEndHandler(end, savedMap) {
 			if (end.script) onTrainerDefeated(end.script, { silent: true });
 		} else {
 			Story.setVar('VAR_RESULT', 0);
-			if (result === 'defeat') healParty(party);
+			if (result === 'defeat') whiteOut();
 		}
 	};
 	if (kind === 'villain') return result => {
@@ -4158,8 +4156,7 @@ function startLegendaryBattle(e) {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
 				evolution.check(party, battle.data);
 			} else if (result === 'defeat') {
-				healParty(party);
-				hud.textContent = (world.current.map.name || '') + ' — party healed';
+				whiteOut();
 			} else {
 				saveParty(party); // ran / fled: leave it catchable
 			}
@@ -4240,6 +4237,44 @@ battle.stageOf = battleStageNow; // battle.js reads this at start()/startTrainer
 
 // last position on an outdoor map — DIG's exit point. Updated on every map
 // entry (refreshMapContent), so stepping into a cave remembers the doorstep.
+// ---------- blacking out ----------
+// Where you wake up after losing. Recorded at a POKeMON CENTER nurse (and at
+// MOM's, which heals the same way), persisted so it survives a reload, and
+// falling back to the region's home town for a save that has never healed.
+const HEAL_KEY = 'magepunk_healpoint_v1';
+function noteHealPoint() {
+	safeSave(HEAL_KEY, {
+		map: world.current.name, x: player.tx, y: player.ty,
+		name: world.current.map?.name || world.current.name,
+	});
+}
+function healPoint() {
+	const hp = safeLoad(HEAL_KEY, null);
+	if (hp && hp.map) return hp;
+	const home = Quest.START[playerRegion()];
+	return home ? { map: home, x: null, y: null, name: home } : null;
+}
+// Losing every POKeMON: heal, pay the toll, and wake up at the last centre.
+// ONE shared path — nine battle-end handlers each just called healParty() in
+// place, which is why losing cost nothing and left you standing where you fell.
+// Facility runs (Trainer Hill, the Frontier) deliberately do NOT come here: a
+// facility loss ends the run, it does not black you out.
+const WHITEOUT_MONEY_FRACTION = 2;   // you lose 1/this of your money (the Gen 1-2 rule)
+function whiteOut() {
+	const lost = Math.floor(Bag.getMoney() / WHITEOUT_MONEY_FRACTION);
+	if (lost > 0) Bag.spend(lost);
+	healParty(party);
+	saveParty(party);
+	const hp = healPoint();
+	const where = hp && hp.name ? hp.name : 'the last POKeMON CENTER';
+	const lines = ['You have no POKeMON that can fight!', '', 'You scurried back to ' + where + '...'];
+	if (lost > 0) lines.push('', 'You panicked and dropped $' + lost.toLocaleString() + '.');
+	dialog.open(lines.join('\n'), () => {
+		if (!hp) { hud.textContent = 'Party healed.'; return; }
+		if (hp.x == null) moveToMap(hp.map); else moveToMap(hp.map, hp.x, hp.y);
+	});
+}
+
 let lastOutdoor = null;
 function noteOutdoor() {
 	const t = world.current?.map?.map_type || '';
@@ -4351,8 +4386,7 @@ function startWildBattle(pick, forceDouble) {
 // (a battle abandoned by leaving the page reconstructs this from its endSpec)
 function wildBattleEnd(result, inSafari) {
 	if (result === 'defeat') {
-		healParty(party);
-		hud.textContent = (world.current.map.name || '') + ' — party healed';
+		whiteOut();
 	} else if (result === 'caught' && battle.lastCaught) {
 		// during the Bug-Catching Contest the catch becomes the single kept
 		// entry — it joins the party at the judging, not here
@@ -5171,8 +5205,7 @@ function roamerEnd(key) {
 			hud.textContent = 'The roaming POKeMON fainted... it will not be seen again.';
 			evolution.check(party, battle.data);
 		} else if (result === 'defeat') {
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			whiteOut();
 		} else {
 			// it bolted (or you ran): its wounds travel with it
 			if (st[key] && !st[key].down) {
@@ -6287,8 +6320,7 @@ function startScriptedWildBattle(species, level) {
 			// does, and the second one on Route 16 is the game's own second chance.
 			lastBattleOutcome = B_OUTCOME_LOST;
 			Story.setVar('VAR_RESULT', B_OUTCOME_LOST);
-			healParty(party);
-			hud.textContent = (world.current.map.name || '') + ' — party healed';
+			whiteOut();
 			cutscene.stop();
 		} else {
 			// ran / it fled — the decomp scripts treat RAN the same as WON (the
@@ -6410,7 +6442,7 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 			// blacked out / fled: heal and abandon the rest of the script
 			Story.setVar('VAR_RESULT', 0);
 			lastBattleOutcome = B_OUTCOME_LOST;
-			if (result === 'defeat') { healParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
+			if (result === 'defeat') whiteOut();
 			cutscene.stop();
 		}
 	});
@@ -6926,7 +6958,8 @@ function startVillainBattle(region, beat) {
 	battle.endSpec = { kind: 'villain', region };
 	battle.startTrainer(party, foe, info, result => {
 		if (result === 'victory') { completeVillainBeat(region, beat); }
-		else { healParty(party); saveParty(party); hud.textContent = (world.current.map.name || '') + ' — party healed'; }
+		else if (result === 'defeat') whiteOut();
+		else { healParty(party); saveParty(party); }   // fled/forced out: not a blackout
 	});
 }
 
@@ -9935,7 +9968,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
