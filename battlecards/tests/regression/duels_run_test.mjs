@@ -946,8 +946,12 @@ const kill = (state, pi, uid) => { const c = state.players[pi].board.find(x => x
 	const pool = D.draftPool(byId, 'mage');
 	ok('draftPool: mage or neutral, real draftable cards only', pool.length > 30 && pool.every(d => {
 		const dc = d.cardClass || 'neutral';
-		return (dc === 'mage' || dc === 'neutral') && !d.token && d.collectible !== false && ['creature', 'weapon', 'sorcery', 'instant'].includes(d.type) && !(d.colors && d.colors.length);
+		// secret/trap are draftable on purpose (heist and tombs already count them
+		// as spells); location/quest/artifact/enchantment stay out of the draft.
+		return (dc === 'mage' || dc === 'neutral') && !d.token && d.collectible !== false && ['creature', 'weapon', 'sorcery', 'instant', 'secret', 'trap'].includes(d.type) && !(d.colors && d.colors.length);
 	}), pool.length);
+	ok('draftPool still excludes locations, quests, artifacts and enchantments',
+		pool.every(d => !['location', 'quest', 'artifact', 'enchantment'].includes(d.type)));
 }
 // arena draft: 10 picks, all valid mage/neutral cards
 {

@@ -557,7 +557,11 @@ export function allowedBasicsFor(cardsById, tagKey, character) {
 // weighted), tribe/archetype buckets, and dynamically generated opponents kept
 // at exact power parity with the player.
 
-const DRAFT_TYPES = new Set(['creature', 'weapon', 'sorcery', 'instant']);
+// Secrets and traps count as spells everywhere else a run mode drafts (heist.js,
+// tombs.js); leaving them out here meant Duels could never offer one, which also
+// left three shipped class buckets — Enigmas, Secret Whispers, Traps and
+// Trappers — matching nothing for their own class.
+const DRAFT_TYPES = new Set(['creature', 'weapon', 'sorcery', 'instant', 'secret', 'trap']);
 const RARITY_WEIGHT = { basic: 100, common: 100, rare: 34, epic: 14, legendary: 6 };
 const cardWeight = d => RARITY_WEIGHT[d.rarity] || 40;
 
@@ -692,6 +696,61 @@ const MECH_BUCKETS = [
 	{ id: 'm_stealth', name: 'Sneaky Tricks', match: d => kw(d, 'stealth') },
 ];
 
+// ---- the remaining authored HS bucket names ----
+// The rest of the named buckets in the Duels data carry no card list (HS resolves
+// the 3 cards server-side), so each is a best-effort filter over our pool. Every
+// one below was measured against the real draft pool first: a bucket under 3
+// matches is silently dropped by offerBuckets, i.e. invisible dead content.
+// Names HS reuses for a theme we already cover (its per-expansion buckets, and
+// "Rush"/"Ice Cold"/"Deadly Demise" over SET_BUCKETS/MECH_BUCKETS) are deliberately
+// not duplicated here; ids use an `hs_` prefix because `m_` is already the mage
+// class-bucket prefix.
+const AUTHORED_BUCKETS = [
+	{ id: 'hs_one_cost', name: '1-Cost Warriors', match: d => d.type === 'creature' && (d.cost || 0) === 1 },
+	{ id: 'hs_enrage', name: 'Anger Management', match: d => !!d.enrage },
+	{ id: 'hs_secrets', name: 'Fresh Targets', match: d => d.type === 'secret' || d.type === 'trap' },
+	{ id: 'hs_imps', name: 'IMPS! IMPS! IMPS!', match: d => /\bimp\b/i.test(d.name || '') || descHas(d, ' imp') },
+	{ id: 'hs_choose', name: 'Decisions, Decisions', match: d => !!d.choices || descHas(d, 'choose one') },
+	{ id: 'hs_combo', name: '3-piece Combo', match: d => kw(d, 'combo') || descHas(d, 'combo') },
+	{ id: 'hs_copy', name: 'Copycat News', match: d => eff(d, 'copy') || descHas(d, 'copy ') },
+	{ id: 'hs_expensive', name: 'Spenders Game', match: d => (d.cost || 0) >= 7 },
+	{ id: 'hs_cthun', name: "Cult of C'Thun", match: d => descHas(d, "c'thun") },
+	{ id: 'hs_shuffle', name: "Everything I'm Shuffling", match: d => descHas(d, 'shuffle') },
+	{ id: 'hs_destroy', name: 'Absolute Destruction', match: d => eff(d, 'destroy') || descHas(d, 'destroy') },
+	{ id: 'hs_fatigue', name: 'Fatal Fatigue', match: d => descHas(d, 'fatigue') },
+	{ id: 'hs_libram', name: 'Libram Library', match: d => /libram/i.test(d.name || '') },
+	{ id: 'hs_outcast', name: 'Outcasts', match: d => kw(d, 'outcast') || descHas(d, 'outcast') },
+	{ id: 'hs_overload', name: 'Overloaded Options', match: d => (d.overload || 0) > 0 || eff(d, 'add-overload') || descHas(d, 'overload') },
+	{ id: 'hs_plague', name: 'Plaguebearer', match: d => descHas(d, 'plague') },
+	{ id: 'hs_relic', name: 'Relic Collector', match: d => /relic/i.test(d.name || '') || descHas(d, 'relic') },
+	{ id: 'hs_bounce', name: 'Returns Department', match: d => eff(d, 'bounce') || (descHas(d, 'return') && descHas(d, 'hand')) },
+	{ id: 'hs_silver_hand', name: 'Super Silver Hand', match: d => descHas(d, 'silver hand') },
+	{ id: 'hs_soul', name: 'Soul Power', match: d => descHas(d, 'soul fragment') },
+	{ id: 'hs_steal', name: "THAT'S MINE!", match: d => eff(d, 'steal') || descHas(d, 'take control') || descHas(d, 'steal') },
+	{ id: 'hs_treants', name: 'Treants', match: d => descHas(d, 'treant') },
+	{ id: 'hs_honorable', name: 'Honorable Recruits', match: d => descHas(d, 'honorable kill') },
+	{ id: 'hs_deep_beasts', name: 'Beasts of the Deep', match: d => trib(d, 'Beast') && (d.cost || 0) >= 5 },
+	{ id: 'hs_rats', name: 'AHHHH RATS!!!!', match: d => trib(d, 'Beast') && (d.cost || 0) <= 2 },
+	{ id: 'hs_legends', name: 'Live to Win', match: d => d.rarity === 'legendary' },
+	{ id: 'hs_hero_power', name: 'Heroic Power', match: d => descHas(d, 'hero power') },
+	{ id: 'hs_dormant', name: 'Sleep Time', match: d => descHas(d, 'dormant') || descHas(d, 'sleep') },
+	{ id: 'hs_corpses', name: 'Bloody Potency', match: d => descHas(d, 'corpse') || descHas(d, 'blood rune') },
+	{ id: 'hs_undercover', name: 'Undercover Bosses', match: d => kw(d, 'stealth') && (d.cost || 0) >= 4 },
+	{ id: 'hs_self_damage', name: 'Sweet Agonies', match: d => descHas(d, 'damage to your hero') || descHas(d, 'your hero takes') },
+	{ id: 'hs_shadow', name: 'Shifting Shadow', match: d => descHas(d, 'shadow') },
+	{ id: 'hs_mischief', name: 'Mischief Makers', match: d => descHas(d, 'random') && (d.cost || 0) <= 3 },
+	{ id: 'hs_gvg_naxx', name: 'Goblins. Gnomes. Naxxramas.', match: d => d.set === 'GVG' || d.set === 'NAXX' },
+	{ id: 'hs_galakrond', name: "Galakrond's Awakening", match: d => descHas(d, 'invoke') || descHas(d, 'galakrond') },
+	{ id: 'hs_deck', name: 'Deck Troubles', match: d => descHas(d, 'your deck') },
+	{ id: 'hs_downsize', name: 'Downsizing', match: d => descHas(d, '-1/-1') || descHas(d, 'give a minion -') || descHas(d, 'set a') },
+	{ id: 'hs_iron_stone', name: 'Iron and Stone', match: d => kw(d, 'taunt') && (descHas(d, 'armor') || (d.health || 0) >= 6) },
+	{ id: 'hs_buffs', name: 'Strength Within', match: d => eff(d, 'buff') || descHas(d, 'give a') },
+	{ id: 'hs_damage', name: 'Damage Numbers', match: d => eff(d, 'damage') },
+	{ id: 'hs_underlings', name: 'Underlings', match: d => eff(d, 'summon') && (d.cost || 0) <= 3 },
+	{ id: 'hs_bc_combo', name: 'Battlecries and Combos', match: d => kw(d, 'battlecry') && kw(d, 'combo') },
+	{ id: 'hs_si7', name: 'SI:7', match: d => /si:7/i.test(d.name || '') || descHas(d, 'si:7') },
+];
+
 // generic Neutral theme buckets, offered to every class
 export const DUELS_BUCKETS = [
 	{ id: 'beasts', name: 'Beasts', match: d => d.type === 'creature' && trib(d, 'Beast') },
@@ -713,6 +772,7 @@ export const DUELS_BUCKETS = [
 	{ id: 'divine_shield', name: 'Shields Up', match: d => kw(d, 'divine_shield') },
 	...SET_BUCKETS,
 	...MECH_BUCKETS,
+	...AUTHORED_BUCKETS,
 ];
 
 // the real HS Duels signature buckets per class. In HS the 3 cards per bucket are
@@ -734,6 +794,7 @@ export const CLASS_BUCKETS = {
 		{ id: 'r_shadow_agents', name: 'Shadow Agents', match: d => d.type === 'creature' && kw(d, 'stealth') },
 		{ id: 'r_swift', name: 'Swift Strikes', match: d => kw(d, 'rush') || kw(d, 'charge') },
 		{ id: 'r_thieves', name: "Thieves' Tools", match: d => d.type === 'weapon' || descHas(d, 'discover') },
+		{ id: 'r_mercenaries', name: 'Mercenaries', match: d => kw(d, 'battlecry') && kw(d, 'deathrattle') },
 	],
 	mage: [
 		{ id: 'm_enigmas', name: 'Enigmas', match: d => d.type === 'secret' || !!d.secret },
@@ -760,6 +821,8 @@ export const CLASS_BUCKETS = {
 		{ id: 'pr_visions', name: 'Visions', match: d => eff(d, 'draw') || descHas(d, 'discover') },
 		{ id: 'pr_dragons', name: 'Dragons', match: d => trib(d, 'Dragon') },
 		{ id: 'pr_divine_duty', name: 'Divine Duty', match: d => school(d, 'Holy') || kw(d, 'divine_shield') },
+		{ id: 'pr_mind', name: "What's Mind is Mine", match: d => descHas(d, 'take control') || descHas(d, 'copy a') },
+		{ id: 'pr_mackerel', name: 'Holy Mackerel', match: d => trib(d, 'Murloc') },
 	],
 	shaman: [
 		{ id: 's_overloaded', name: 'Overloaded!', match: d => (d.overload || 0) > 0 || eff(d, 'add-overload') },
@@ -769,6 +832,9 @@ export const CLASS_BUCKETS = {
 		{ id: 's_from_deep', name: 'From the Deep', match: d => trib(d, 'Naga') },
 		{ id: 's_frost', name: 'Fractured Frost', match: d => school(d, 'Frost') },
 		{ id: 's_nature', name: 'Nascent Nature', match: d => school(d, 'Nature') },
+		{ id: 's_hexes', name: 'Hexes and Vexes', match: d => eff(d, 'transform') || descHas(d, 'transform') },
+		{ id: 's_wisdom', name: 'Wisdom', match: d => !!(d.static && d.static.type === 'spell-damage') },
+		{ id: 's_sacred_weapons', name: 'Sacred Weapons', match: d => d.type === 'weapon' },
 	],
 	warlock: [
 		{ id: 'wl_demons', name: 'Demons', match: d => trib(d, 'Demon') },
@@ -793,6 +859,7 @@ export const CLASS_BUCKETS = {
 		{ id: 'd_mana_growth', name: 'Mana Growth', match: d => eff(d, 'add-mana-crystal') || eff(d, 'refresh-mana') || descHas(d, 'mana crystal') },
 		{ id: 'd_natural_defense', name: 'Natural Defense', match: d => kw(d, 'taunt') },
 		{ id: 'd_naga', name: "Down Where It's Wetter", match: d => trib(d, 'Naga') },
+		{ id: 'd_natures_army', name: "Nature's Army", match: d => descHas(d, 'treant') || eff(d, 'summon') },
 	],
 	demon_hunter: [
 		{ id: 'dh_fearless', name: 'Fearless', match: d => kw(d, 'rush') || kw(d, 'charge') },
@@ -802,6 +869,8 @@ export const CLASS_BUCKETS = {
 		{ id: 'dh_taunt', name: 'No Retreat!', match: d => kw(d, 'taunt') },
 		{ id: 'dh_deathrattle', name: 'Razerrattle', match: d => kw(d, 'deathrattle') },
 		{ id: 'dh_demons', name: 'Demon Hunting', match: d => trib(d, 'Demon') },
+		{ id: 'dh_relic', name: 'Relic Hunter', match: d => /relic/i.test(d.name || '') || descHas(d, 'relic') },
+		{ id: 'dh_divide', name: 'Divide and Conquer', match: d => descHas(d, 'attack') },
 	],
 	death_knight: [
 		{ id: 'dk_undead', name: 'Undead', match: d => trib(d, 'Undead') },

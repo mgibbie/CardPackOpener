@@ -23,7 +23,7 @@ const pools = CLASSES.map(c => D.draftPool(byId, [c]));
 const bestMatch = b => Math.max(...pools.map(p => p.filter(d => b.match(d)).length));
 
 // ---- the table grew, and stayed well-formed ----
-ok('the generic bucket table was expanded', D.DUELS_BUCKETS.length >= 70, D.DUELS_BUCKETS.length);
+ok('the generic bucket table was expanded', D.DUELS_BUCKETS.length >= 118, D.DUELS_BUCKETS.length);
 {
 	const ids = D.DUELS_BUCKETS.map(b => b.id), names = D.DUELS_BUCKETS.map(b => b.name);
 	ok('every bucket id is unique (bucketsFor dedupes by id — a clash hides a bucket)',
@@ -40,6 +40,54 @@ ok('the generic bucket table was expanded', D.DUELS_BUCKETS.length >= 70, D.DUEL
 	ok('no bucket matches NOTHING for every class', dead.length === 0, dead.join(','));
 	const thin = D.DUELS_BUCKETS.filter(b => bestMatch(b) < 3).map(b => `${b.name}(${bestMatch(b)})`);
 	ok('every bucket clears the 3-card offer threshold for some class', thin.length === 0, thin.join(','));
+}
+
+// ---- a class bucket must be live for ITS OWN class ----
+// Enigmas / Secret Whispers / Traps and Trappers all filtered on `type ===
+// 'secret'` while DRAFT_TYPES excluded secrets, so all three shipped matching
+// nothing. A class bucket that is dead for its own class is always a bug.
+{
+	const dead = [];
+	for (const [cls, list] of Object.entries(D.CLASS_BUCKETS)) {
+		const pool = D.draftPool(byId, [cls]);
+		for (const b of list) {
+			const n = pool.filter(d => b.match(d)).length;
+			if (n < 3) dead.push(`${cls}/${b.id} "${b.name}" (${n})`);
+		}
+	}
+	ok('no class bucket is dead for its own class', dead.length === 0, dead.join(' | '));
+}
+
+// ---- secrets and traps are draftable (they are in every other run mode) ----
+{
+	const pool = D.draftPool(byId, ['mage']);
+	const secrets = pool.filter(d => d.type === 'secret');
+	ok('a mage can draft secrets', secrets.length >= 10, secrets.length);
+	ok('the hunter trap bucket is live', D.draftPool(byId, ['hunter']).filter(d => d.type === 'secret' || d.type === 'trap').length >= 10);
+	ok('secrets stay class-legal (no paladin secrets in the mage pool)',
+		secrets.every(d => (d.cardClass || 'neutral') === 'mage' || (d.cardClass || 'neutral') === 'neutral'),
+		secrets.filter(d => !['mage', 'neutral'].includes(d.cardClass || 'neutral')).map(d => d.id).join(','));
+	const rolled = D.rollBucket(byId, ['mage'], D.DUELS_BUCKETS.find(b => b.id === 'hs_secrets'), seededRng(3), 3);
+	ok('"Fresh Targets" rolls real secrets', rolled.length === 3 && rolled.every(id => ['secret', 'trap'].includes(byId[id].type)),
+		rolled.map(id => `${id}:${byId[id].type}`).join(','));
+}
+
+// ---- the authored-name buckets offer what their name promises ----
+{
+	const pool = D.draftPool(byId, ['druid']);
+	const check = (id, label, pred) => {
+		const b = D.DUELS_BUCKETS.find(x => x.id === id);
+		if (!b) { ok(`${label} exists`, false, id); return; }
+		const hits = pool.filter(d => b.match(d));
+		ok(`${label} offers only matching cards (${hits.length} in pool)`, hits.length >= 3 && hits.every(pred),
+			hits.filter(d => !pred(d)).slice(0, 3).map(d => d.id).join(','));
+	};
+	check('hs_legends', 'Live to Win', d => d.rarity === 'legendary');
+	check('hs_expensive', 'Spenders Game', d => (d.cost || 0) >= 7);
+	check('hs_one_cost', '1-Cost Warriors', d => d.type === 'creature' && (d.cost || 0) === 1);
+	check('hs_deep_beasts', 'Beasts of the Deep', d => (d.tribe || '').includes('Beast') && (d.cost || 0) >= 5);
+	check('hs_gvg_naxx', 'Goblins. Gnomes. Naxxramas.', d => d.set === 'GVG' || d.set === 'NAXX');
+	check('hs_enrage', 'Anger Management', d => !!d.enrage);
 }
 
 // ---- set buckets really are that set ----
@@ -89,7 +137,7 @@ ok('the generic bucket table was expanded', D.DUELS_BUCKETS.length >= 70, D.DUEL
 	// variety: the whole point of the import
 	const seen = new Set();
 	for (let i = 0; i < 40; i++) for (const b of D.offerBuckets(byId, 'mage', seededRng(100 + i), 3)) seen.add(b.id);
-	ok('40 draws surface a wide spread of buckets (variety, not the same few)', seen.size >= 30, seen.size);
+	ok('40 draws surface a wide spread of buckets (variety, not the same few)', seen.size >= 50, seen.size);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
