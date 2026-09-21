@@ -60,14 +60,14 @@ for (const id of PW) {
 }
 
 // ---- representative ability resolutions ----
-// chandra +1: deal 2 to each opponent (no target); loyalty 4 -> 5
+// chandra +1: deal 3 to each opponent (no target); loyalty 5 -> 6 (owner batch 71)
 { const st = game(); play(st, 0, 'chandra_sig', null); const w = walkerOf(st, 0, 'chandra_sig'); const life0 = st.players[1].life;
   const used = E.useWalker(st, 0, w.uid, 0, null);
-  ok('Chandra +1 burns each opponent for 2 and gains loyalty', used && w.loyalty === 5 && st.players[1].life === life0 - 2, [used, w.loyalty, life0, st.players[1].life]); }
-// chandra -2: deal 4 to any target (an enemy creature)
+  ok('Chandra +1 burns each opponent for 3 and gains loyalty', used && w.loyalty === 6 && st.players[1].life === life0 - 3, [used, w.loyalty, life0, st.players[1].life]); }
+// chandra -2: deal 5 to any target (an enemy creature); loyalty 5 -> 3
 { const st = game(); const foe = put(st, 1, '_v'); play(st, 0, 'chandra_sig', null); const w = walkerOf(st, 0, 'chandra_sig');
   const used = E.useWalker(st, 0, w.uid, 1, { type: 'creature', uid: foe.uid, player: 1 });
-  ok('Chandra −2 deals 4 to a creature and spends loyalty', used && w.loyalty === 2 && foe.damage === 4, [used, w.loyalty, foe.damage]); }
+  ok('Chandra −2 deals 5 to a creature and spends loyalty', used && w.loyalty === 3 && foe.damage === 5, [used, w.loyalty, foe.damage]); }
 // chandra -6 emblem
 { const st = game(); play(st, 0, 'chandra_sig', null); const w = walkerOf(st, 0, 'chandra_sig'); w.loyalty = 6;
   const used = E.useWalker(st, 0, w.uid, 2, null);
