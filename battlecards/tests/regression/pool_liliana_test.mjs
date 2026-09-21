@@ -19,7 +19,7 @@ const types = new Set(pool.map(c => c.type));
 ok('spans >=6 card types incl planeswalker/enchantment/quest/instant', types.size >= 6 && ['planeswalker', 'enchantment', 'quest', 'instant'].every(t => types.has(t)), [...types]);
 const kws = new Set(pool.flatMap(c => c.keywords || []));
 ok('uses >=6 distinct keywords', kws.size >= 6, [...kws]);
-ok('>=3 persistent engines', pool.filter(c => c.ongoing || c.aura).length >= 3, pool.filter(c => c.ongoing || c.aura).map(c => c.id));
+ok('>=3 persistent engines', pool.filter(c => c.ongoing || c.ongoings || c.aura).length >= 3, pool.filter(c => c.ongoing || c.ongoings || c.aura).map(c => c.id));
 ok('NO card in the pool mentions "Zombie"', !pool.some(c => /zombie/i.test(JSON.stringify(c))), pool.filter(c => /zombie/i.test(JSON.stringify(c))).map(c => c.id));
 ok('Liliana makes Undead (sig + mastery use tribe Undead)', /Undead/.test(JSON.stringify(byId.liliana_sig)) && byId.liliana_mastery.effects[0].tribe === 'Undead');
 
@@ -53,14 +53,17 @@ for (const c of pool) {
   kill(st, s);
   ok('Scrounger deathrattle draws a card', st.players[0].hand.length === h0 + 1, [h0, st.players[0].hand.length]); }
 
-// ---- devotee: grows when a friendly dies ----
+// ---- devotee: Avenge 1 -> +2/+2 (owner batch 72) ----
 { const st = game(); const d = put(st, 0, 'liliana_devotee'); const fodder = put(st, 0, '_v');
   kill(st, fodder);
-  ok('Devotee gains +1/+0 when a friendly dies', d.attack === 3, d.attack); }
+  ok('Devotee gains +2/+2 when a friendly dies (Avenge 1)', d.attack === 4 && d.maxHealth === 5, [d.attack, d.maxHealth]); }
 
-// ---- reaver: Undead lord (+1/+0 and Deathtouch to your other Undead) ----
+// ---- reaver: Undead lord — Deathtouch & "Swing: Advance" to your other Undead (owner batch 72) ----
 { const st = game(); put(st, 0, 'liliana_reaver'); const other = put(st, 0, '_u'); E.recomputeAuras(st);
-  ok('Reaver buffs other Undead +1/+0 and grants Deathtouch', other.attack === 3 && (E.has ? E.has(other, 'deathtouch') : (other.keywords || []).includes('deathtouch')), [other.attack, other.keywords]); }
+  ok('Reaver grants other Undead Deathtouch and a Swing trigger, no stats', other.attack === 2
+    && (other.keywords || []).includes('deathtouch')
+    && (other.auraOngoings || []).some(o => o.on === 'self-attacks' && o.effects.some(e => e.type === 'advance')),
+    [other.attack, other.keywords, other.auraOngoings]); }
 
 // ---- scorn: resurrect the best creature that died this game ----
 { const st = game(); const big = put(st, 0, '_u'); big.__die = true; kill(st, big);

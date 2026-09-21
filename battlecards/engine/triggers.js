@@ -87,6 +87,7 @@ export function fireOngoing(state, pi, when, ctx = {}) {
 		const trigs = [];
 		if (card.ongoing) trigs.push(card.ongoing);
 		if (card.ongoings) for (const t of card.ongoings) trigs.push(t);
+		if (card.auraOngoings) for (const t of card.auraOngoings) trigs.push(t); // granted by an aura, lapses with it
 		for (const trig of trigs) {
 			if (!trig || trig.spent || trig.on !== when) continue;
 			// conditional triggers ("Whenever you summon a Beast...") gate before counters
