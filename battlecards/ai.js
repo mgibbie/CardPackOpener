@@ -81,6 +81,29 @@ export function pickTarget(state, pi, card) {
 	const enemyHeroes = legal.filter(t => t.type === 'hero' && t.player !== pi);
 	const byThreat = ts => [...ts].sort((a, b) => threatScore(creatureOf(state, b)) - threatScore(creatureOf(state, a)));
 
+	// Two-target fight ("a friendly creature fights an enemy creature"): the
+	// handler reads BOTH the chosen fighter and target.fightTarget. The human UI
+	// collects the second pick in a follow-up step; the AI has to fuse them here,
+	// or the fight half silently does nothing.
+	if (card.fight) {
+		// the first pick follows the card's own spec — usually your creature, but
+		// "choose two enemy creatures" (Fight Over Me) starts on their side
+		const fighter = byThreat(legal.filter(t => t.type === 'creature'))[0];
+		if (!fighter) return null;
+		const fighterC = creatureOf(state, fighter);
+		const foes = state.players
+			.flatMap((p, idx) => idx === pi ? [] : p.board.map(c => ({ c, idx })))
+			.filter(({ c }) => c.type === 'creature' && !E.isDead(c) && c.uid !== fighter.uid);
+		if (!foes.length) return null;
+		// prefer a kill our fighter survives, then a kill, then the biggest threat
+		const power = fighterC ? fighterC.attack : 0;
+		const kills = foes.filter(({ c }) => E.hp(c) <= power && !c.shield);
+		const safeKills = kills.filter(({ c }) => !fighterC || c.attack < E.hp(fighterC));
+		const pool = safeKills.length ? safeKills : (kills.length ? kills : foes);
+		const foe = pool.sort((a, b) => threatScore(b.c) - threatScore(a.c))[0];
+		return { ...fighter, fightTarget: foe.c.uid, fightTargetPlayer: foe.idx };
+	}
+
 	switch (card.id) {
 		case 'fireball': case 'lightning_bolt': case 'arcane_bolt': {
 			const dmg = card.effects?.[0]?.value ?? 3;

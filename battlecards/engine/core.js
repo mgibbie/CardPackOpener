@@ -368,6 +368,12 @@ export function instantiate(def, controller) {
 		honorableKill: def.honorableKill || null, // effects on an EXACT lethal blow
 		emerge: def.emerge || null,   // fires from hand when drawn/discovered (not opening hand)
 		counterSpell: !!def.counterSpell, // instant that counters a spell on the stack
+		// two-target fight ("a friendly creature fights an enemy creature"): the UI
+		// and the AI both gate the SECOND pick on these, and they read the card in
+		// hand — so they have to survive instantiate or the fight half silently
+		// does nothing once the card is played.
+		fight: !!def.fight,
+		fightTarget: def.fightTarget || null,
 		counter: def.counter ? { ...def.counter } : null, // conditional counter: { type?, notType?, manaValue?, unlessPay?, to? }
 		adventure: def.adventure ? JSON.parse(JSON.stringify(def.adventure)) : null, // {name,cost,type,effects}
 		adventureSpent: false,        // the Adventure half has been cast; only the creature remains
