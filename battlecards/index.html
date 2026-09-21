@@ -95,8 +95,15 @@
 		#inspect .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
 
 		/* scry / gaze decision modal */
+		/* z-index was 11, which put a BLOCKING decision below almost every other
+		   panel (game UI runs 8-70, the chat sits at 9000), so a Scry/Discover/
+		   discard modal could render UNDERNEATH the board furniture and read as
+		   "the game stopped responding". A forced choice outranks everything except
+		   the full-screen overlays (replay 9999, profile 10000, roster 10002).
+		   Keep z-index near the top of the block: modal_card_tips_test reads it
+		   within 200 chars of the brace to prove the card tip still sits above. */
 		#scry-modal {
-			position: fixed; display: none; z-index: 11; left: 50%; top: 42%;
+			position: fixed; display: none; z-index: 9500; left: 50%; top: 42%;
 			transform: translate(-50%, -50%); padding: 14px 16px;
 			background: rgba(24,17,40,0.97); border: 1px solid #8f6fff; border-radius: 12px;
 			/* the huge-spread shadow dims the whole board — decision points get a spotlight.
@@ -105,6 +112,13 @@
 			box-shadow: 0 0 0 100vmax rgba(5,3,10,0.9), 0 10px 40px rgba(0,0,0,0.8);
 			color: #e8e2f4;
 		}
+		/* The modal's huge spread shadow DIMS the board but cannot catch a click, so
+		   every tap went straight through to a board that refuses to act while a
+		   decision is owed — exactly "End Turn, attacks and spells appear broken".
+		   This veil makes the modal actually modal. It is driven by the modal's own
+		   visibility (see the MutationObserver in game.js) rather than by the dozen
+		   places that show or hide it. */
+		#modal-veil { position: fixed; inset: 0; z-index: 9499; display: none; }
 		#scry-modal .wm-title { color: #c9b8ff; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
 		#scry-modal .scry-row { display: flex; gap: 12px; }
 		#scry-modal .scry-cell { text-align: center; }
@@ -467,6 +481,7 @@
 	<div id="inspect"></div>
 	<div id="menu-backdrop"></div>
 	<div id="walker-menu"></div>
+	<div id="modal-veil"></div>
 	<div id="scry-modal"></div>
 	<button id="restart" style="display:none">Play Again</button>
 	<button id="concede" style="display:none">🏳 Concede</button>

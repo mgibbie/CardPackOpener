@@ -63,6 +63,12 @@ const STYLE = `
  border:1px solid rgba(140,120,180,0.5);border-radius:8px;color:#fff;padding:2px 8px;font:inherit;font-size:13px;}
 #mp-chat.min .mc-log{display:none;}
 #mp-chat.min .mc-bar > *:not(.mc-min){display:none;}  /* collapsed: just the pill */
+/* While the card inspector is open it owns this corner: the panel is fixed at
+   left:24px and on a short screen (1280x720) a tall card reaches down into the
+   chat. The chat lives at z-index 9000 while the whole game UI is 8-60, so its
+   emote bar (pointer-events:auto) sat ON TOP of the inspector's Play button and
+   swallowed the click. Yield below the panel instead of re-ordering the app. */
+#mp-chat.mc-yield{z-index:6;}
 @keyframes mcpop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 @media(max-width:640px){#mp-chat{width:210px;}#mp-chat .mc-em{width:32px;height:30px;font-size:17px;}}
 `;
