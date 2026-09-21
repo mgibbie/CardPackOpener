@@ -2,6 +2,14 @@
 	"generated": "2026-09-21",
 	"entries": [
 		{
+			"sha": "e1dbfe4",
+			"date": "2026-09-21",
+			"kind": "patch",
+			"title": "owner_todo batch 72: Liliana's Devotee (Avenge) + Reaver grants Swing: Advance (#529)",
+			"body": "Two filings from the wiki owner inbox:\n  - Liliana's Devotee -> \"Deathtouch.\\nAvenge 1: Gain +2/+2.\" Converted its\n    whenever-a-friendly-dies rider to the canonical Avenge shape (ongoings +\n    every:1, as Diregraf Ghoul and Flag Runner use) and doubled the buff.\n  - Liliana's Reaver -> \"Deathtouch.\\nYour other Undead have Deathtouch & Swing:\n    Advance.\" It no longer hands out +1/+0.\n\nNEW ENGINE CAPABILITY the second filing needed: an aura could grant STATS and\nKEYWORDS but never a triggered ability — zero of them did. An aura may now carry\nan `ongoing`, collected onto each affected creature as `auraOngoings`:\n  - auras.js builds the list fresh on every recompute, so a granted trigger\n    lapses the moment its source leaves (no retraction bookkeeping, unlike\n    auraKeywords which must be diffed because they merge into c.keywords);\n  - core.js fires granted 'self-attacks' triggers on the attack path, so the\n    borrowed Swing actually resolves;\n  - triggers.js folds auraOngoings into the general fireOngoing scan, so a\n    granted trigger of ANY `on` works, not just Swing;\n  - instantiate seeds auraOngoings: [].\n\npool_liliana pinned the old numbers: Devotee's +1/+0 (now +2/+2) and the Reaver's\nstat lordship (now Deathtouch + Swing). Its \">=3 persistent engines\" count also\nread only `ongoing`, so the Devotee dropped out when it moved to `ongoings` —\nwidened to count both.\n\nAdds owner_todo_cards72_test.mjs (23 assertions): the Avenge re-triggers across\nsuccessive deaths; the Reaver grants Deathtouch AND the Swing to other Undead but\nnot to a Beast, not to itself, and with no stat leak; the granted Swing really\nfires on attack (queues an Advance) and LAPSES when the Reaver dies; and the new\naura field stays opt-in (exactly one card uses it). Suite 578/578.",
+			"cards": []
+		},
+		{
 			"sha": "f2755ec",
 			"date": "2026-09-21",
 			"kind": "patch",
