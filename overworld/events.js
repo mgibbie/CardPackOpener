@@ -468,6 +468,17 @@ export class Cutscene {
 				if (st.mode === 'invisible') { actor.hidden = st.v; s.k++; return; }
 				const [dx, dy] = DIRS[st.dir] || [0, 0];
 				actor.facing = st.dir;
+				// A scripted walk has NO collision — the decomp scripts assume the player
+				// is standing exactly where the scene expects. Ours can be anywhere when
+				// a post-battle script fires, so an approach/exit walk could step an NPC
+				// straight ONTO the player and leave them overlapped permanently (reported
+				// after Brock's TM scene: reloading kept the victory and the overlap).
+				// Hold the tile instead: the actor keeps its new facing and the script
+				// moves on, which is what "walk up to the player" meant anyway.
+				{
+					const pl = c.ctx && c.ctx.player;
+					if (pl && actor !== pl && actor.tx + dx === pl.tx && actor.ty + dy === pl.ty) { s.k++; return; }
+				}
 				s.from = [actor.tx, actor.ty];
 				s.to = [actor.tx + dx, actor.ty + dy];
 				s.t = 0; s.dur = STEP_TIME[st.mode] || STEP_TIME.walk;
@@ -475,6 +486,7 @@ export class Cutscene {
 				return;
 			}
 			if (s.from === 'delay') { s.t += dt; if (s.t >= s.dur) { s.k++; s.from = null; } return; }
+			if (!Array.isArray(s.from) || !Array.isArray(s.to)) { s.k++; s.from = null; return; } // malformed step: skip, never throw mid-scene
 			s.t += dt / (s.dur || STEP_TIME.walk);
 			const p = Math.min(1, s.t);
 			actor.px = s.from[0] * META + (s.to[0] - s.from[0]) * META * p;
