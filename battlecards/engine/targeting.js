@@ -16,6 +16,7 @@ import {
 } from '../engine.js';
 
 const CHOSEN = {
+	'summon-attackers': { 'enemy-creature': 'enemy-creature', creature: 'creature' }, // Emergency Surgery: the tokens' quarry
 	'silent-strike': { creature: 'creature' }, // Silent Strike
 	'tricks-of-the-trade': { any: 'any' }, // Tricks of the Trade
 	// Duels active treasures (2026-09 wave)

@@ -1351,6 +1351,40 @@ function tokenText(name, attack, health, kws) {
 	return `${base} with ${list}.`;
 }
 
+// "Create N X/Y tokens ... that attack it" — the tokens arrive already swinging at
+// the creature you chose. Generalised from bubba-hounds (Bubba's Bloodhounds),
+// which hard-codes its own token and target.
+//
+// Emergency Surgery shipped as a plain `summon` with the whole clause stuffed into
+// the token's NAME ("Undead with Lifesteal that attack it"), so it had no targeting
+// and no attack. Reported as "its 3/1 tokens could attack only the creature
+// designated by the spell, and after that creature died they could not attack face
+// or another creature" — the tokens are ordinary creatures once they arrive; they
+// swing at the chosen victim while it lives and are never locked to it.
+register('summon-attackers', ({ state, pi, chosenCreature }, e) => {
+	const victim = typeof chosenCreature === 'function' ? chosenCreature() : null;
+	const kws = [...(e.keywords || [])];
+	for (let n = 0; n < (e.count || 1); n++) {
+		const tok = summon(state, pi, {
+			id: 'token_' + String(e.name || 'token').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+			name: e.name || 'Token', type: 'creature', cost: 0, rarity: 'common', token: true,
+			description: e.description || tokenText(e.name, e.attack, e.health, kws),
+			attack: e.attack || 1, health: e.health || 1,
+			// tokenTribe, NOT tribe: targetSpec derives this spell's victim filter from
+			// the effect's own fields, and reads `tribe` as a constraint on the CHOSEN
+			// target — with tribe:'Undead' it asked for "a friendly Undead" and found
+			// no legal target at all.
+			keywords: kws, tribe: e.tokenTribe || null,
+		});
+		if (!tok) break;                                   // board full
+		if (victim && !isDead(victim) && !isDead(tok)) {
+			tok.sick = false;                              // they attack the turn they arrive
+			resolveCombat(state, pi, tok.uid, { type: 'creature', uid: victim.uid, player: victim.controller });
+		}
+	}
+	sweepDeaths(state);
+});
+
 register('summon', ({ state, pi, target, source, enemies, scaled, hm, pickEnemy, enemyHero, chosenCreature, healCreature, buffCreature, boost }, e) => { {
 			// perEnemy: one token per enemy creature ("Unleash the Hounds");
 			// options: pick a random companion (Animal Companion);
