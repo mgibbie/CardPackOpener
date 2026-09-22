@@ -1,0 +1,126 @@
+{
+ "set": "yneo",
+ "total_cards": 30,
+ "data": [
+  {
+   "name": "Artillery Enthusiast",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Bellowsbreath Ogre",
+   "rarity": "rare"
+  },
+  {
+   "name": "Better Offer",
+   "rarity": "rare"
+  },
+  {
+   "name": "Boseiju Pathlighter",
+   "rarity": "rare"
+  },
+  {
+   "name": "Chronicler of Worship",
+   "rarity": "rare"
+  },
+  {
+   "name": "Consuming Oni",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Dragonfly Pilot",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Experimental Pilot",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Forceful Cultivator",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Forgeborn Phoenix",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Foundry Beetle",
+   "rarity": "rare"
+  },
+  {
+   "name": "Fragment Reality",
+   "rarity": "rare"
+  },
+  {
+   "name": "Futurist Spellthief",
+   "rarity": "rare"
+  },
+  {
+   "name": "Holographic Double",
+   "rarity": "rare"
+  },
+  {
+   "name": "Imperial Blademaster",
+   "rarity": "rare"
+  },
+  {
+   "name": "Inchblade Companion",
+   "rarity": "rare"
+  },
+  {
+   "name": "Jukai Liberator",
+   "rarity": "rare"
+  },
+  {
+   "name": "Junkyard Scrapper",
+   "rarity": "rare"
+  },
+  {
+   "name": "Kami of Bamboo Groves",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Kami of Mourning",
+   "rarity": "rare"
+  },
+  {
+   "name": "Kami of Transmutation",
+   "rarity": "rare"
+  },
+  {
+   "name": "Molten Impact",
+   "rarity": "rare"
+  },
+  {
+   "name": "Mothrider Cavalry",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Painful Bond",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Runaway Growth",
+   "rarity": "rare"
+  },
+  {
+   "name": "Saiba Syphoner",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Semblance Scanner",
+   "rarity": "rare"
+  },
+  {
+   "name": "Soul Servitude",
+   "rarity": "rare"
+  },
+  {
+   "name": "Swarm Saboteur",
+   "rarity": "rare"
+  },
+  {
+   "name": "Undercity Plunder",
+   "rarity": "rare"
+  }
+ ]
+}

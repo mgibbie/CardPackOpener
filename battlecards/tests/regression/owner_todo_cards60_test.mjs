@@ -69,10 +69,17 @@ const put = (st, pi, id, atk = 2, hp = 3) => { const c = E.instantiate(id.starts
 	const pend = st.pickQueue.find(p => p.mode === 'adapt');
 	ok('tapping queues an Adapt pick with 3 options', pend && pend.ids.length === 3 && pend.adaptUids.includes(target.uid), JSON.stringify(pend && { ids: pend.ids, uids: pend.adaptUids }));
 	if (pend) {
-		const before = [target.attack, target.maxHealth, (target.keywords || []).length];
+		// Snapshot every property ADAPT_TABLE can touch. Stats + keywords alone
+		// miss "Deathrattle: two 1/1 Plants", so which of the 10 upgrades the rng
+		// happens to offer decided whether this passed — and the rng stream shifts
+		// whenever cards.json grows, because createGame builds random decks from
+		// the whole pool.
+		const snap = c => JSON.stringify([c.attack, c.maxHealth, (c.keywords || []).slice().sort(), (c.deathrattle || []).length]);
+		const before = snap(target);
+		const chosen = E.ADAPT_TABLE[Number(pend.ids[0])];
 		E.resolvePick(st, pend.ids[0]);
-		const after = [target.attack, target.maxHealth, (target.keywords || []).length];
-		ok('resolving the Adapt upgrades the creature', after.join() !== before.join(), JSON.stringify({ before, after }));
+		ok(`resolving the Adapt upgrades the creature (rolled "${chosen && chosen.label}")`,
+			snap(target) !== before, JSON.stringify({ before, after: snap(target) }));
 	}
 }
 

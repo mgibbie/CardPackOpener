@@ -1,0 +1,266 @@
+{
+ "set": "ymid",
+ "total_cards": 63,
+ "data": [
+  {
+   "name": "Absorb Energy",
+   "rarity": "rare"
+  },
+  {
+   "name": "Angel of Eternal Dawn",
+   "rarity": "rare"
+  },
+  {
+   "name": "Angel of Unity",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Antique Collector",
+   "rarity": "rare"
+  },
+  {
+   "name": "Arms Scavenger",
+   "rarity": "rare"
+  },
+  {
+   "name": "Assemble from Parts",
+   "rarity": "rare"
+  },
+  {
+   "name": "Begin Anew",
+   "rarity": "rare"
+  },
+  {
+   "name": "Bloodrage Alpha",
+   "rarity": "rare"
+  },
+  {
+   "name": "Break Expectations",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Brittle Blast",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Captain Eberhart",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Citystalker Connoisseur",
+   "rarity": "rare"
+  },
+  {
+   "name": "Clone Crafter",
+   "rarity": "rare"
+  },
+  {
+   "name": "Conductive Current",
+   "rarity": "rare"
+  },
+  {
+   "name": "Cursebound Witch",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Discover the Formula",
+   "rarity": "rare"
+  },
+  {
+   "name": "Divine Purge",
+   "rarity": "rare"
+  },
+  {
+   "name": "Electrostatic Blast",
+   "rarity": "rare"
+  },
+  {
+   "name": "Ethereal Escort",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Expedition Supplier",
+   "rarity": "rare"
+  },
+  {
+   "name": "Faithful Disciple",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Fearsome Whelp",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Forsaken Crossroads",
+   "rarity": "rare"
+  },
+  {
+   "name": "Frenzied Geistblaster",
+   "rarity": "rare"
+  },
+  {
+   "name": "Garruk, Wrath of the Wilds",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Geistchanneler",
+   "rarity": "rare"
+  },
+  {
+   "name": "Geist of Regret",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Geistpack Alpha",
+   "rarity": "rare"
+  },
+  {
+   "name": "Gitrog, Horror of Zhava",
+   "rarity": "rare"
+  },
+  {
+   "name": "Grizzled Huntmaster",
+   "rarity": "rare"
+  },
+  {
+   "name": "Gutmorn, Pactbound Servant",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Hinterland Chef",
+   "rarity": "rare"
+  },
+  {
+   "name": "Hollowhenge Wrangler",
+   "rarity": "rare"
+  },
+  {
+   "name": "Inquisitor Captain",
+   "rarity": "rare"
+  },
+  {
+   "name": "Ishkanah, Broodmother",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Key to the Archive",
+   "rarity": "rare"
+  },
+  {
+   "name": "Kindred Denial",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Lupine Harbingers",
+   "rarity": "rare"
+  },
+  {
+   "name": "Obsessive Collector",
+   "rarity": "rare"
+  },
+  {
+   "name": "Oglor, Devoted Assistant",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Ominous Traveler",
+   "rarity": "rare"
+  },
+  {
+   "name": "Patient Zero",
+   "rarity": "rare"
+  },
+  {
+   "name": "Predatory Sludge",
+   "rarity": "rare"
+  },
+  {
+   "name": "Puppet Raiser",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Rahilda, Wanted Cutthroat // Rahilda, Feral Outlaw",
+   "rarity": "mythic",
+   "card_faces": [
+    {
+     "name": "Rahilda, Wanted Cutthroat"
+    },
+    {
+     "name": "Rahilda, Feral Outlaw"
+    }
+   ]
+  },
+  {
+   "name": "Ravenous Pursuit",
+   "rarity": "rare"
+  },
+  {
+   "name": "Rimewall Protector",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Sanguine Brushstroke",
+   "rarity": "rare"
+  },
+  {
+   "name": "Sap Vitality",
+   "rarity": "rare"
+  },
+  {
+   "name": "Settle the Wilds",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Sigardian Evangel",
+   "rarity": "rare"
+  },
+  {
+   "name": "Sinister Reflections",
+   "rarity": "rare"
+  },
+  {
+   "name": "Slayer's Bounty",
+   "rarity": "rare"
+  },
+  {
+   "name": "Soulstealer Axe",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Suntail Squadron",
+   "rarity": "rare"
+  },
+  {
+   "name": "Tenacious Pup",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Tibalt, Wicked Tormentor",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Tireless Angler",
+   "rarity": "rare"
+  },
+  {
+   "name": "Toralf's Disciple",
+   "rarity": "rare"
+  },
+  {
+   "name": "Town-Razer Tyrant",
+   "rarity": "rare"
+  },
+  {
+   "name": "Unexpected Conversion",
+   "rarity": "rare"
+  },
+  {
+   "name": "Veteran Ghoulcaller",
+   "rarity": "rare"
+  },
+  {
+   "name": "Wickerwing Effigy",
+   "rarity": "rare"
+  }
+ ]
+}
