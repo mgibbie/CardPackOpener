@@ -28,14 +28,47 @@ const WAVE2 = ['ymid_geist_of_regret', 'ymid_consuming_oni', 'ymid_mothrider_cav
 	'ymid_better_offer', 'ymid_forgeborn_phoenix', 'ymid_boseiju_pathlighter', 'ymid_suntail_squadron',
 	'ymid_soul_servitude', 'ymid_sanguine_brushstroke', 'ymid_divine_purge', 'ymid_gutmorn_pactbound_servant'];
 
+// wave 3 finished the job: every remaining printed card from both sets except
+// Forsaken Crossroads, which is a LAND — lands are a separate subsystem here
+// (`taps` machinery, cardClass 'magepunk', 75 of 77 coloured), not a class card.
+const WAVE3 = ['ymid_absorb_energy', 'ymid_conductive_current', 'ymid_discover_the_formula', 'ymid_faithful_disciple',
+	'ymid_hinterland_chef', 'ymid_hollowhenge_wrangler', 'ymid_inquisitor_captain', 'ymid_lupine_harbingers',
+	'ymid_obsessive_collector', 'ymid_predatory_sludge', 'ymid_settle_the_wilds', 'ymid_tireless_angler',
+	'ymid_wickerwing_effigy', 'ymid_artillery_enthusiast', 'ymid_experimental_pilot', 'ymid_foundry_beetle',
+	'ymid_fragment_reality', 'ymid_futurist_spellthief', 'ymid_inchblade_companion', 'ymid_jukai_liberator',
+	'ymid_junkyard_scrapper', 'ymid_kami_of_bamboo_groves', 'ymid_kami_of_mourning', 'ymid_kami_of_transmutation',
+	'ymid_runaway_growth', 'ymid_semblance_scanner'];
+
 // ---------------- the shape of the import ----------------
-ok('47 cards imported across the two Alchemy sets (35 + 12)', imported.length === 47, imported.length);
+ok('73 cards imported across the two Alchemy sets (35 + 12 + 26)', imported.length === 73, imported.length);
 ok('all 12 wave-2 cards present', WAVE2.every(id => byId[id]), WAVE2.filter(id => !byId[id]).join(','));
+ok('all 26 wave-3 cards present', WAVE3.every(id => byId[id]), WAVE3.filter(id => !byId[id]).join(','));
+
+// the sets are now exhausted apart from the land — proven against Scryfall, not asserted by hand
+{
+	const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+	const known = new Set(raw.cards.map(c => norm(c.name)));
+	let printed = 0, missing = [];
+	for (const f of ['ymid', 'yneo']) {
+		let dump; try { dump = JSON.parse(fs.readFileSync(new URL('../fixtures/' + f + '.json', import.meta.url))); } catch { dump = null; }
+		if (!dump) { printed = -1; break; }
+		for (const c of dump.data) {
+			printed++;
+			const n = c.card_faces ? c.card_faces[0].name : c.name;
+			if (!known.has(norm(n)) && !known.has(norm(c.name))) missing.push(n);
+		}
+	}
+	if (printed < 0) console.log('note: Scryfall fixtures absent — set-coverage check skipped');
+	else {
+		ok('both Alchemy sets fully accounted for (93 printed)', printed === 93, printed);
+		ok('nothing left unimported but the land', missing.length === 1 && missing[0] === 'Forsaken Crossroads', missing.join(','));
+	}
+}
 {
 	// the owner's wave-1 spec: 18 class uncommons + 10 neutral commons + 5 neutral
 	// legendaries. Scope the bucket counts to wave 1 so wave 2 doesn't inflate them.
-	const w2 = new Set(WAVE2);
-	const wave1 = imported.filter(c => !w2.has(c.id));
+	const later = new Set([...WAVE2, ...WAVE3]);
+	const wave1 = imported.filter(c => !later.has(c.id));
 	ok('wave 1 is still exactly 35 cards', wave1.length === 35, wave1.length);
 	const unc = wave1.filter(c => c.rarity === 'uncommon');
 	ok('18 class uncommons, one per playable class', unc.length === 18 && new Set(unc.map(c => c.cardClass)).size === 18,
@@ -363,6 +396,131 @@ const useWalker = (id, abilityIndex, build = s => s, target) => {
 		.play(0, 'ymid_gutmorn_pactbound_servant').run().state;
 	ok('Gutmorn: I discarded one of my two remaining cards', gm.players[0].hand.length === 1, gm.players[0].hand.length);
 	ok('Gutmorn: the opponent discarded too', gm.players[1].hand.length === 1, gm.players[1].hand.length);
+}
+
+// ---------------- wave 3: the remainder of both sets ----------------
+{
+	// --- Discover-style battlecries: assert the pick queue AND its filter ---
+	const disc = (id, label, pred, build) => {
+		const st = fire(id, build);
+		const q = (st.pickQueue || [])[0];
+		ok(`${label}: queued a Discover`, !!q, (st.pickQueue || []).length);
+		if (q && pred) ok(`${label}: the options match its filter`, q.ids.every(pred), q.ids.map(i => `${i}(${byId[i].cost})`).join(','));
+		return st;
+	};
+	disc('ymid_hinterland_chef', 'Hinterland Chef', null);
+	disc('ymid_wickerwing_effigy', 'Wickerwing Effigy', i => byId[i].type === 'creature');
+	disc('ymid_futurist_spellthief', 'Futurist Spellthief', i => ['sorcery', 'instant', 'secret', 'trap'].includes(byId[i].type) || byId[i].type === 'sorcery');
+	disc('ymid_junkyard_scrapper', 'Junkyard Scrapper', i => (byId[i].cost || 0) <= 2);
+	{
+		const st = disc('ymid_inquisitor_captain', 'Inquisitor Captain', i => byId[i].type === 'creature' && (byId[i].cost || 0) <= 3);
+		ok('Inquisitor Captain: the pick goes to the BOARD', (st.pickQueue || [])[0]?.to === 'board');
+	}
+
+	// --- ramp: all four really add a crystal ---
+	for (const [id, label] of [['ymid_hollowhenge_wrangler', 'Hollowhenge Wrangler'], ['ymid_kami_of_bamboo_groves', 'Kami of Bamboo Groves']]) {
+		const st = fire(id);
+		ok(`${label}: gained a Mana Crystal`, st.players[0].mana.max === 11, st.players[0].mana.max);
+	}
+	{
+		const st = fire('ymid_settle_the_wilds', s => s.def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d']));
+		ok('Settle the Wilds: ramped and drew', st.players[0].mana.max === 11 && st.players[0].hand.some(c => c.id === 't_d'),
+			st.players[0].mana.max + ' / ' + st.players[0].hand.map(c => c.id).join(','));
+	}
+
+	// --- removal ---
+	{
+		const st = fire('ymid_conductive_current', s => s.def('t_a', { type: 'creature', cost: 2, attack: 1, health: 5 }).board(0, [{ id: 't_a' }]).board(1, [{ id: 't_a' }]));
+		ok('Conductive Current: hit BOTH boards for 3', E.hp(st.players[0].board[0]) === 2 && E.hp(st.players[1].board[0]) === 2,
+			E.hp(st.players[0].board[0]) + '/' + E.hp(st.players[1].board[0]));
+	}
+	{
+		const st = fire('ymid_fragment_reality', s => s.def('t_e', { type: 'creature', cost: 3, attack: 3, health: 3 }).board(1, [{ id: 't_e' }]), { targetBoard: [1, 0] });
+		ok('Fragment Reality: removed the creature', st.players[1].board.length === 0, st.players[1].board.length);
+		ok('Fragment Reality: EXILED rather than killed it', (st.players[1].exile || []).some(c => c.id === 't_e'),
+			(st.players[1].exile || []).map(c => c.id).join(','));
+	}
+
+	// --- counterspell ---
+	ok('Absorb Energy is a real counterspell', byId['ymid_absorb_energy'].counterSpell === true && byId['ymid_absorb_energy'].type === 'instant');
+	{
+		const st = fire('ymid_absorb_energy');
+		ok('Absorb Energy: queued its discount', (st.players[0].costDiscounts || []).length === 1);
+	}
+
+	// --- draw / tutor ---
+	{
+		const st = fire('ymid_discover_the_formula', s => s.def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d', 't_d', 't_d']));
+		ok('Discover the Formula: drew 3 from the deck', st.players[0].hand.filter(c => c.id === 't_d').length === 3, st.players[0].hand.length);
+	}
+	{
+		const st = fire('ymid_artillery_enthusiast', s => s.def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d']));
+		ok('Artillery Enthusiast: discarded then drew', st.players[0].hand.some(c => c.id === 't_d'), st.players[0].hand.map(c => c.id).join(','));
+	}
+
+	// --- Swing triggers ---
+	const swing = id => S().board(0, [{ id }]).def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d', 't_d'])
+		.attack(0, 0, { targetHero: 1 }).run().state;
+	ok('Obsessive Collector: Swing drew a card', swing('ymid_obsessive_collector').players[0].hand.some(c => c.id === 't_d'));
+	ok('Obsessive Collector: carries Ward (2)', byId['ymid_obsessive_collector'].ward?.mana === 2);
+	ok('Jukai Liberator: Swing drew a card', swing('ymid_jukai_liberator').players[0].hand.some(c => c.id === 't_d'));
+	ok('Semblance Scanner: Swing conjured a copy of itself',
+		swing('ymid_semblance_scanner').players[0].hand.some(c => c.id === 'ymid_semblance_scanner'));
+
+	// --- deathrattles (killed by a played spell, the only route that runs them) ---
+	const killOnBoard = id => S().def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 99, target: 'creature' }] })
+		.hand(0, ['t_kill']).board(0, [{ id }]).play(0, 't_kill', { targetBoard: [0, 0] }).run().state;
+	{
+		const st = killOnBoard('ymid_faithful_disciple');
+		ok('Faithful Disciple: deathrattle Discovered a Paladin card',
+			((st.pickQueue || [])[0]?.ids || []).length > 0 && st.pickQueue[0].ids.every(i => (byId[i].cardClass || 'neutral') === 'paladin'),
+			((st.pickQueue || [])[0]?.ids || []).map(i => byId[i].cardClass).join(','));
+	}
+	ok('Predatory Sludge: deathrattle conjured a copy of itself',
+		killOnBoard('ymid_predatory_sludge').players[0].hand.some(c => c.id === 'ymid_predatory_sludge'));
+	{
+		// Kami of Mourning resurrects the biggest thing that died — kill a fatty first
+		const st = S().def('t_kill', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 99, target: 'creature' }] })
+			.def('t_fat', { type: 'creature', cost: 8, attack: 8, health: 8 })
+			.hand(0, ['t_kill', 't_kill']).board(0, [{ id: 't_fat' }, { id: 'ymid_kami_of_mourning' }])
+			.play(0, 't_kill', { targetBoard: [0, 0] })
+			.play(0, 't_kill', { targetBoard: [0, 1] }).run().state;
+		ok('Kami of Mourning: deathrattle resurrected the fatty',
+			st.players[0].board.some(c => c.id === 't_fat'), st.players[0].board.map(c => c.id).join(','));
+	}
+
+	// --- buffs / equip / statics ---
+	{
+		// build the hand directly — Scenario.hand() STACKS, so going through fire()
+		// (which already seeds hand(0,[id])) would leave a spare copy for buff-hand to hit
+		const st = S().def('t_h', { type: 'creature', cost: 3, attack: 2, health: 2 })
+			.hand(0, ['ymid_kami_of_transmutation', 't_h']).play(0, 'ymid_kami_of_transmutation').run().state;
+		ok('Kami of Transmutation: buffed the creature in hand', st.players[0].hand.some(c => c.id === 't_h' && c.attack === 3),
+			st.players[0].hand.map(c => c.id + ':' + c.attack).join(','));
+	}
+	{
+		const st = fire('ymid_inchblade_companion', s => s.def('t_f', { type: 'creature', cost: 1, attack: 1, health: 1 }).board(0, [{ id: 't_f' }]), { targetBoard: [0, 0] });
+		ok('Inchblade Companion: buffed a friendly creature', st.players[0].board.some(c => c.id === 't_f' && c.attack === 2));
+	}
+	{
+		const st = fire('ymid_foundry_beetle');
+		ok('Foundry Beetle: equipped a 1/2 weapon', !!st.players[0].weapon && st.players[0].weapon.attack === 1, JSON.stringify(st.players[0].weapon || null));
+	}
+	ok('Experimental Pilot: carries Ward (2)', byId['ymid_experimental_pilot'].ward?.mana === 2);
+	ok('Lupine Harbingers: Rush & Trample', ['rush', 'trample'].every(k => (byId['ymid_lupine_harbingers'].keywords || []).includes(k)));
+	ok('Wickerwing Effigy: Defender', (byId['ymid_wickerwing_effigy'].keywords || []).includes('defender'));
+
+	// --- Landfall + turn-start enchantment ---
+	{
+		const st = S().board(0, [{ id: 'ymid_tireless_angler' }])
+			.do((s, Eng) => Eng.fireOngoing(s, 0, 'landfall')).run().state;
+		ok('Tireless Angler: Landfall queued a Discover', (st.pickQueue || []).length === 1, (st.pickQueue || []).length);
+	}
+	{
+		const before = S().hand(0, ['ymid_runaway_growth']).play(0, 'ymid_runaway_growth').endTurn(2).run().state;
+		ok('Runaway Growth: survives on the enchantment zone', (before.players[0].enchantments || []).some(c => c.id === 'ymid_runaway_growth'),
+			(before.players[0].enchantments || []).map(c => c.id).join(','));
+	}
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
