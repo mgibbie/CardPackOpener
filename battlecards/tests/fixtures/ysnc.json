@@ -1,0 +1,126 @@
+{
+ "set": "ysnc",
+ "total_cards": 30,
+ "data": [
+  {
+   "name": "Agent of Raffine",
+   "rarity": "rare"
+  },
+  {
+   "name": "Arming Gala",
+   "rarity": "rare"
+  },
+  {
+   "name": "Back-Alley Gardener",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Bank Job",
+   "rarity": "rare"
+  },
+  {
+   "name": "Big Spender",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Bind to Secrecy",
+   "rarity": "rare"
+  },
+  {
+   "name": "Brokers' Safeguard",
+   "rarity": "rare"
+  },
+  {
+   "name": "Cabaretti Revels",
+   "rarity": "rare"
+  },
+  {
+   "name": "Celestial Vault",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Choice of Fortunes",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Diviner of Fates",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Effluence Devourer",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Giant Regrowth",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Graven Archfiend",
+   "rarity": "rare"
+  },
+  {
+   "name": "Herald of Vengeance",
+   "rarity": "rare"
+  },
+  {
+   "name": "Loose in the Park",
+   "rarity": "rare"
+  },
+  {
+   "name": "Menagerie Curator",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Nightclub Bouncer",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Obscura Polymorphist",
+   "rarity": "rare"
+  },
+  {
+   "name": "Pass the Torch",
+   "rarity": "rare"
+  },
+  {
+   "name": "Racketeer Boss",
+   "rarity": "rare"
+  },
+  {
+   "name": "Riveteers Provocateur",
+   "rarity": "rare"
+  },
+  {
+   "name": "Rope Line Attendant",
+   "rarity": "rare"
+  },
+  {
+   "name": "Shattering Finale",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Skyline Savior",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Spara's Bodyguard",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Spelldrain Assassin",
+   "rarity": "mythic"
+  },
+  {
+   "name": "Syndicate Recruiter",
+   "rarity": "rare"
+  },
+  {
+   "name": "Traumatic Prank",
+   "rarity": "uncommon"
+  },
+  {
+   "name": "Xander's Wake",
+   "rarity": "uncommon"
+  }
+ ]
+}

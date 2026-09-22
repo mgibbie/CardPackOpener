@@ -273,6 +273,13 @@ for (const id of ['land_ho', 'hook_n_heave', 'follow_the_fuse', 'haunt', 'follow
 // --- Shaman: Desperate Bribe ---------------------------------------------
 {
 	const st = game(11, 'shaman');
+	// Pin the roll. The four summons come from a ~700-card pool, and two random
+	// picks can legitimately interact — an aura debuff landing next to a 1-health
+	// body kills it, so "exactly two survivors" depended on which pair came up.
+	// That pairing shifts whenever cards.json grows (createGame builds random
+	// decks from the whole pool), so fix the stream and test the MECHANIC:
+	// two summons per player, at the stated cost, with yours upgraded a rung.
+	st.rng = () => 0;
 	cast(st, 'desperate_bribe');
 	ok('the opponent got two creatures', st.players[1].board.filter(c => !E.isDead(c)).length === 2,
 		st.players[1].board.length);
