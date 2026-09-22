@@ -22,18 +22,29 @@ const ok = (l, c, extra) => { if (c) pass++; else { fail++; console.log('FAIL:',
 
 const SET = new Set(['YMID', 'YNEO']);
 const imported = raw.cards.filter(c => SET.has(c.set));
+// wave 2 took the marquee cards wave 1 skipped for evasion; MTG flying maps to
+// `elusive` (untargetable), the same stand-in the repo already uses for blue flyers.
+const WAVE2 = ['ymid_geist_of_regret', 'ymid_consuming_oni', 'ymid_mothrider_cavalry', 'ymid_puppet_raiser',
+	'ymid_better_offer', 'ymid_forgeborn_phoenix', 'ymid_boseiju_pathlighter', 'ymid_suntail_squadron',
+	'ymid_soul_servitude', 'ymid_sanguine_brushstroke', 'ymid_divine_purge', 'ymid_gutmorn_pactbound_servant'];
 
 // ---------------- the shape of the import ----------------
-ok('35 cards imported across the two Alchemy sets', imported.length === 35, imported.length);
+ok('47 cards imported across the two Alchemy sets (35 + 12)', imported.length === 47, imported.length);
+ok('all 12 wave-2 cards present', WAVE2.every(id => byId[id]), WAVE2.filter(id => !byId[id]).join(','));
 {
-	const unc = imported.filter(c => c.rarity === 'uncommon');
+	// the owner's wave-1 spec: 18 class uncommons + 10 neutral commons + 5 neutral
+	// legendaries. Scope the bucket counts to wave 1 so wave 2 doesn't inflate them.
+	const w2 = new Set(WAVE2);
+	const wave1 = imported.filter(c => !w2.has(c.id));
+	ok('wave 1 is still exactly 35 cards', wave1.length === 35, wave1.length);
+	const unc = wave1.filter(c => c.rarity === 'uncommon');
 	ok('18 class uncommons, one per playable class', unc.length === 18 && new Set(unc.map(c => c.cardClass)).size === 18,
 		unc.length + ' cards / ' + new Set(unc.map(c => c.cardClass)).size + ' classes');
 	const missing = ROSTER.filter(r => !unc.some(c => c.cardClass === r));
 	ok('every class in classes.json got one', missing.length === 0, missing.join(','));
 	ok('no class uncommon is Neutral', unc.every(c => c.cardClass !== 'neutral'));
-	ok('10 neutral commons', imported.filter(c => c.rarity === 'common' && c.cardClass === 'neutral').length === 10);
-	ok('5 neutral legendaries', imported.filter(c => c.rarity === 'legendary' && c.cardClass === 'neutral').length === 5);
+	ok('10 neutral commons', wave1.filter(c => c.rarity === 'common' && c.cardClass === 'neutral').length === 10);
+	ok('5 neutral legendaries', wave1.filter(c => c.rarity === 'legendary' && c.cardClass === 'neutral').length === 5);
 }
 // colourless, class-identity-only — a `colors` array would make them undraftable
 ok('every imported card is colourless (deck-legal, not land-conjured)',
@@ -236,10 +247,18 @@ const useWalker = (id, abilityIndex, build = s => s, target) => {
 
 // ---------------- 5 neutral legendaries ----------------
 {
-	const og = S().board(0, [{ id: 'ymid_oglor_devoted_assistant' }])
-		.def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d', 't_d'])
-		.endTurn(2).run().state;
-	ok('Oglor: milled at the start of your turn (deck shrank)', og.players[0].deck.length < 3, og.players[0].deck.length);
+	// `mill` defaults to the OPPONENT's deck; Oglor self-mills, so it needs
+	// target:'self'. Measure the mill against a no-Oglor control, otherwise the
+	// turn-start DRAW shrinks the deck on its own and this passes vacuously.
+	const deckAfter = withOglor => {
+		let s = S().def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(0, ['t_d', 't_d', 't_d', 't_d', 't_d']);
+		if (withOglor) s = s.board(0, [{ id: 'ymid_oglor_devoted_assistant' }]);
+		return s.endTurn(2).run().state.players[0].deck.length;
+	};
+	const ctl = deckAfter(false), withO = deckAfter(true);
+	ok('Oglor: milled one MORE card than the turn-start draw alone', withO === ctl - 1, `control ${ctl}, with Oglor ${withO}`);
+	ok('Oglor mills his OWN deck, not the opponent\'s',
+		(byId['ymid_oglor_devoted_assistant'].ongoing?.effects || []).some(e => e.type === 'mill' && e.target === 'self'));
 	const rh = S().board(0, [{ id: 'ymid_rahilda_wanted_cutthroat' }])
 		.def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 }).deck(1, ['t_d', 't_d', 't_d'])
 		.attack(0, 0, { targetHero: 1 }).run().state;
@@ -257,6 +276,93 @@ const useWalker = (id, abilityIndex, build = s => s, target) => {
 	ok('Begin Anew: wiped both boards', ba.players[0].board.length === 0 && ba.players[1].board.length === 0,
 		ba.players[0].board.length + '/' + ba.players[1].board.length);
 	ok('Begin Anew: buffed creatures in hand', ba.players[0].hand.some(c => c.id === 't_a' && c.attack === 3), ba.players[0].hand.map(c => c.id + ':' + c.attack).join(','));
+}
+
+// ---------------- wave 2: the cards the evasion rule had blocked ----------------
+{
+	// flying -> elusive. Assert the mapping actually bites: an Elusive creature
+	// must be untargetable, otherwise it is a cosmetic keyword.
+	const el = S().def('t_bolt', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 1, target: 'creature' }] })
+		.hand(0, ['t_bolt']).board(1, [{ id: 'ymid_geist_of_regret' }]);
+	const legal = el.do((st, Eng) => {
+		const spec = { type: 'creature' };
+		const targets = Eng.legalTargets(st, 0, spec) || [];
+		ok('Elusive really is untargetable (flying’s stand-in has teeth)',
+			!targets.some(t => t.uid === st.players[1].board[0].uid), targets.length + ' legal targets');
+	}).run().state;
+	ok('Geist of Regret carries Elusive', (byId['ymid_geist_of_regret'].keywords || []).includes('elusive'));
+
+	// self-mill: MY deck shrinks by 2, the opponent's is untouched
+	const gr = S().def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.hand(0, ['ymid_geist_of_regret']).deck(0, ['t_d', 't_d', 't_d', 't_d']).deck(1, ['t_d', 't_d', 't_d'])
+		.play(0, 'ymid_geist_of_regret').run().state;
+	ok('Geist of Regret: milled 2 from MY deck', gr.players[0].deck.length === 2, gr.players[0].deck.length);
+	ok('Geist of Regret: left the opponent\'s deck alone', gr.players[1].deck.length === 3, gr.players[1].deck.length);
+
+	// Mothrider Cavalry is a lord: OTHER friendly creatures get +1/+1, not itself
+	const mc = S().def('t_o', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.board(0, [{ id: 't_o' }]).hand(0, ['ymid_mothrider_cavalry']).play(0, 'ymid_mothrider_cavalry').run().state;
+	const other = mc.players[0].board.find(c => c.id === 't_o');
+	const self = mc.players[0].board.find(c => c.id === 'ymid_mothrider_cavalry');
+	ok('Mothrider Cavalry: buffed another creature to 2/2', other.attack === 2 && E.hp(other) === 2, other.attack + '/' + E.hp(other));
+	ok('Mothrider Cavalry: did NOT buff itself (others:true)', self.attack === 2 && E.hp(self) === 2, self.attack + '/' + E.hp(self));
+
+	const pr = S().board(0, [{ id: 'ymid_puppet_raiser' }])
+		.def('t_c', { type: 'creature', cost: 2, attack: 2, health: 2 }).deck(0, ['t_c', 't_c'])
+		.endTurn(1).run().state;
+	ok('Puppet Raiser: end of turn drew a creature', pr.players[0].hand.some(c => c.id === 't_c'), pr.players[0].hand.map(c => c.id).join(','));
+
+	const bo = fire('ymid_better_offer', s => s.def('t_s', { type: 'creature', cost: 2, attack: 2, health: 2 }).deck(1, ['t_s', 't_s', 't_s']));
+	ok('Better Offer: queued a Discover from the enemy deck, onto the board',
+		(bo.pickQueue || []).length === 1 && bo.pickQueue[0].to === 'board', JSON.stringify((bo.pickQueue || [])[0]?.to));
+
+	// Forgeborn Phoenix: Reborn means it comes back once. It is Elusive, so no
+	// targeted spell can kill it — use an untargeted sweep, which is also the only
+	// route that actually runs the death triggers.
+	const fp = S().def('t_sweep', { type: 'sorcery', cost: 0, effects: [{ type: 'damage-all-minions', value: 9 }] })
+		.hand(0, ['t_sweep']).board(0, [{ id: 'ymid_forgeborn_phoenix' }])
+		.play(0, 't_sweep').run().state;
+	ok('Forgeborn Phoenix: Reborn brought it back at 1 health',
+		fp.players[0].board.some(c => c.id === 'ymid_forgeborn_phoenix' && E.hp(c) === 1),
+		fp.players[0].board.map(c => c.id + ':' + E.hp(c)).join(','));
+
+	ok('Boseiju Pathlighter: Discover queued', (fire('ymid_boseiju_pathlighter').pickQueue || []).length === 1);
+	const ss = fire('ymid_suntail_squadron');
+	ok('Suntail Squadron: conjured two Hawks into hand', ss.players[0].hand.filter(c => c.name === 'Suntail Hawk').length === 2,
+		ss.players[0].hand.map(c => c.name).join(','));
+	const sv = fire('ymid_soul_servitude', s => s.def('t_v', { type: 'creature', cost: 2, attack: 2, health: 2 }).board(1, [{ id: 't_v' }]));
+	ok('Soul Servitude: destroyed an enemy creature', sv.players[1].board.length === 0, sv.players[1].board.length);
+
+	// Sanguine Brushstroke drains when YOUR creature dies
+	const sb = S()
+		.def('t_k', { type: 'sorcery', cost: 0, effects: [{ type: 'damage', value: 99, target: 'creature' }] })
+		.def('t_m', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.hand(0, ['ymid_sanguine_brushstroke', 't_k']).board(0, [{ id: 't_m' }])
+		.play(0, 'ymid_sanguine_brushstroke')
+		.play(0, 't_k', { targetBoard: [0, 0] }).run().state;
+	ok('Sanguine Brushstroke: the opponent lost 1 Life when my creature died', sb.players[1].life === 39, sb.players[1].life);
+	ok('Sanguine Brushstroke: I gained 1 Life', sb.players[0].life === 41, sb.players[0].life);
+
+	// Divine Purge exiles only the cheap creatures, and exiles rather than destroys
+	const dp = S().hand(0, ['ymid_divine_purge'])
+		.def('t_small', { type: 'creature', cost: 2, attack: 1, health: 1 })
+		.def('t_big', { type: 'creature', cost: 6, attack: 6, health: 6 })
+		.board(0, [{ id: 't_small' }, { id: 't_big' }]).board(1, [{ id: 't_small' }])
+		.play(0, 'ymid_divine_purge').run().state;
+	ok('Divine Purge: swept cheap creatures from BOTH boards',
+		!dp.players[0].board.some(c => c.id === 't_small') && dp.players[1].board.length === 0,
+		dp.players[0].board.map(c => c.id).join(',') + ' | ' + dp.players[1].board.length);
+	ok('Divine Purge: spared the expensive creature', dp.players[0].board.some(c => c.id === 't_big'));
+	ok('Divine Purge: exiled rather than destroyed', (dp.players[0].exile || []).some(c => c.id === 't_small'),
+		(dp.players[0].exile || []).map(c => c.id).join(','));
+
+	// build the hand directly — fire() already seeds hand(0,[id]), so adding more
+	// via its builder stacks on top and quietly inflates the count
+	const gm = S().def('t_d', { type: 'creature', cost: 1, attack: 1, health: 1 })
+		.hand(0, ['ymid_gutmorn_pactbound_servant', 't_d', 't_d']).hand(1, ['t_d', 't_d'])
+		.play(0, 'ymid_gutmorn_pactbound_servant').run().state;
+	ok('Gutmorn: I discarded one of my two remaining cards', gm.players[0].hand.length === 1, gm.players[0].hand.length);
+	ok('Gutmorn: the opponent discarded too', gm.players[1].hand.length === 1, gm.players[1].hand.length);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

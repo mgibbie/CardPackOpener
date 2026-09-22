@@ -59,6 +59,13 @@ const cast = (st) => E.execEffects(st, 0, JSON.parse(JSON.stringify(CARD.effects
 	st.rng = () => 0.99; // force tails so the Demon buff is observable
 	const before = dem.attack;
 	E.playCard(st, 0, spell.uid, null, null, 0);
+	// createGame builds RANDOM decks from the whole card pool, so whether the
+	// opponent can respond depends on what is in cards.json — adding instants to
+	// the set opened a priority window here and left the spell unresolved on the
+	// stack. Drain priority so this measures the spell, not the deck roll.
+	let guard = 8;
+	while (st.priority != null && guard-- > 0) E.resolveResponse(st, st.priority, null);
+	ok('end-to-end: the spell resolved off the stack', st.stack.length === 0 && st.priority == null, [st.stack.length, st.priority]);
 	ok('end-to-end: casting the spell buffs the friendly Demon', dem.attack === before + 2 && dem.keywords.includes('lifesteal'), [dem.attack, before]);
 }
 
