@@ -1,6 +1,632 @@
 {
-	"generated": "2026-09-21",
+	"generated": "2026-09-22",
 	"entries": [
+		{
+			"sha": "8d65fa0",
+			"date": "2026-09-22",
+			"kind": "cards",
+			"title": "Alchemy import wave 3: the remaining 26 — both sets now exhausted (#537)",
+			"body": "Finishes Alchemy: Innistrad + Alchemy: Kamigawa. Running total 73 of the 93\nprinted cards; the other 20 are the 19 that already shipped under set 'paper'\nplus Forsaken Crossroads.\n\nForsaken Crossroads is deliberately NOT imported: it is a LAND, and lands here\nare a separate subsystem (`taps` machinery, cardClass 'magepunk', 75 of 77 are\ncoloured), so it is not a class-identity card. Happy to add it as a real land\nseparately if wanted.\n\nCoverage is now PROVEN rather than asserted. Slim Scryfall name fixtures live\nat battlecards/tests/fixtures/{ymid,yneo}.json and the suite checks that all\n93 printed names resolve against cards.json, permitting exactly one absence.\nThat turns \"I think we got them all\" into a standing regression guard.\n\nThe 26 span every remaining shape: Discover battlecries with real filters\n(cost caps, creature-only, to-board), ramp, sweepers, exile removal, a\ncounterspell, Swing triggers, deathrattles, Landfall, Ward, Defender, equip,\nand a turn-start enchantment. 73 cards now cover 6 card types, all 18 classes,\nand every rarity.\n\nTwo latent test fragilities my additions EXPOSED rather than broke — both\nverified with `git stash push battlecards/cards.json` to separate the two:\n\n  * owner_todo_cards60's Adapt case resolved pend.ids[0] but snapshotted only\n    [attack, maxHealth, keywords.length], which misses ADAPT_TABLE entry 2\n    (\"Deathrattle: two 1/1 Plants\"). Whether it passed depended on which of\n    the 10 upgrades the roll happened to offer. It now snapshots every\n    property the table can touch.\n  * (wave 2 fixed windswept_heresy the same way.)\n\nRoot cause of both: createGame builds RANDOM decks from the whole card pool,\nso any cards.json addition shifts the RNG stream of every seeded game.\n\nAlso: `tutor` with distinct:true refuses to draw the same card ID twice, which\nsilently capped Discover the Formula's \"draw 3\" at 1. Dropped.\n\nArt for all 73 fetched, deployed, verified byte-for-byte against the CDN.\nalchemy_import_test: 126 assertions. 582/582 suites pass.",
+			"cards": [
+				{
+					"id": "ymid_absorb_energy",
+					"name": "Absorb Energy",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_conductive_current",
+					"name": "Conductive Current",
+					"type": "sorcery",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_discover_the_formula",
+					"name": "Discover the Formula",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "ymid_faithful_disciple",
+					"name": "Faithful Disciple",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_hinterland_chef",
+					"name": "Hinterland Chef",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_hollowhenge_wrangler",
+					"name": "Hollowhenge Wrangler",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ymid_inquisitor_captain",
+					"name": "Inquisitor Captain",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ymid_lupine_harbingers",
+					"name": "Lupine Harbingers",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ymid_obsessive_collector",
+					"name": "Obsessive Collector",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ymid_predatory_sludge",
+					"name": "Predatory Sludge",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_settle_the_wilds",
+					"name": "Settle the Wilds",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ymid_tireless_angler",
+					"name": "Tireless Angler",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_wickerwing_effigy",
+					"name": "Wickerwing Effigy",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_artillery_enthusiast",
+					"name": "Artillery Enthusiast",
+					"type": "creature",
+					"class": "bounty_hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_experimental_pilot",
+					"name": "Experimental Pilot",
+					"type": "creature",
+					"class": "wizard",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_foundry_beetle",
+					"name": "Foundry Beetle",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ymid_fragment_reality",
+					"name": "Fragment Reality",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_futurist_spellthief",
+					"name": "Futurist Spellthief",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_inchblade_companion",
+					"name": "Inchblade Companion",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_jukai_liberator",
+					"name": "Jukai Liberator",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_junkyard_scrapper",
+					"name": "Junkyard Scrapper",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_kami_of_bamboo_groves",
+					"name": "Kami of Bamboo Groves",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_kami_of_mourning",
+					"name": "Kami of Mourning",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_kami_of_transmutation",
+					"name": "Kami of Transmutation",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_runaway_growth",
+					"name": "Runaway Growth",
+					"type": "enchantment",
+					"class": "druid",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_semblance_scanner",
+					"name": "Semblance Scanner",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "fa9556d",
+			"date": "2026-09-22",
+			"kind": "cards",
+			"title": "Alchemy import: 47 cards from Alchemy Innistrad + Kamigawa (#536)",
+			"body": "* Alchemy import: 35 cards from Alchemy Innistrad + Kamigawa\n\nMTG Arena's first two Alchemy sets, adapted to class identity. Per owner\nruling these are COLOURLESS -- class identity only -- so no `colors` field:\na colors array marks a card land-conjured and undraftable, which would have\nquietly kept all 35 out of decks and Duels.\n\n  18 class uncommons  one for every class in classes.json (all 18, including\n                      the 7 sparse custom ones the colour-pie doc calls\n                      greenfield: Bounty Hunter, Bard, Ranger, Sorcerer,\n                      Barbarian, Wizard, Centurion)\n   2 class walkers    Garruk -> Druid, Tibalt -> Warlock, kept AS\n                      planeswalkers and legendary: all 23 pre-existing\n                      walkers are epic/legendary and none is uncommon\n  10 neutral commons\n   5 neutral legendaries\n\nAUDITED BEFORE BUILDING, which changed the result: 19 of Innistrad's 63 were\nalready shipped under set 'paper', already faithfully adapted. A first pass\npicked 10 of them and would have created duplicate names. Kamigawa was added\nto widen the pool on owner request; it had none. Usable pool after removing\nalready-imported, evasion and lands: 61 of 93 printed.\n\nMechanic mapping (each verified by firing, not by reading JSON): spellbook ->\ndiscover, perpetually +1/+1 -> buff-hand, perpetually costs less -> discount\nwithout thisTurn, seek -> tutor{cost}, conjure named -> conjure-id, conjure a\nduplicate -> copy-to-hand, Blood/Clue -> add-token/investigate. Evasion\n(flying/menace/vigilance/reach) stays skipped per the standing WUBRG decision,\ndropping 12 cards.\n\nArt: art_crop for all 35 from Scryfall, verified as real JPEGs and registered\nin art/index.json (re-sorted -- it is a sorted single-line array). That tree is\ngitignored and ships via `npm run deploy-art`, so the art assertions use the\nsame absent-in-CI guard as art_placeholders_test.\n\nRegenerated the two synced artifacts the new cards drift\n(gen-correspondence-bans, gen-pool-rarity).\n\nThe fight_two_target guard added earlier this session caught Ravenous Pursuit\nmissing `fight:true` -- exactly the Garruk's Wrath bug it was written for.\n\ntests/regression/alchemy_import_test.mjs: 65 assertions, every card fired.\n582/582 suites pass.\n\n\n* Alchemy import wave 2: 12 more, incl. the evasion-blocked marquee cards\n\nOwner lifted the design constraints for this batch, so this wave takes the\ncards wave 1 could not: the ones gated by the standing evasion rule. MTG\nflying maps to `elusive` (\"can't be targeted by spells or Hero Powers, by\nanyone\"), which is precedent rather than invention -- the repo already uses\nelusive for MTG blue flyers (Thassa, Bant Skyknight). Still colourless and\nclass-identity only, per the wave-1 ruling.\n\n  class  Geist of Regret (mage), Consuming Oni (warlock), Mothrider Cavalry\n         (paladin), Puppet Raiser (death knight), Better Offer (rogue),\n         Forgeborn Phoenix (shaman)\n  neutral Gutmorn Pactbound Servant, Divine Purge, Sanguine Brushstroke,\n         Soul Servitude, Boseiju Pathlighter, Suntail Squadron\n\nRarity spread widened: this wave is mostly epic, which wave 1 never used.\nRunning total 47 cards across 6 card types and all 18 classes.\n\nTwo real bugs the firing tests caught, one of them in wave 1:\n\n  * `mill` hits the OPPONENT's deck by default; `target:'self'` mills your\n    own. Oglor (wave 1) and Geist of Regret both self-mill in MTG and were\n    wrong. Worse, the shipped Oglor assertion passed for the WRONG reason --\n    the turn-start draw shrinks your deck anyway, so \"the deck got smaller\"\n    was vacuous. It now measures against a no-Oglor control run.\n  * Reborn, like deathrattles, does not fire from a direct damageCreature +\n    sweepDeaths poke. Forgeborn Phoenix is also Elusive, so no targeted spell\n    can kill it either -- the test uses an untargeted sweep.\n\nAlso fixes windswept_heresy_test, which my additions exposed rather than\nbroke: createGame builds RANDOM decks from the whole pool, and its end-to-end\ncase had silently relied on the opponent holding no instants. The new\ncounterspell opened a priority window and left the spell unresolved on the\nstack. It now drains priority, so it measures the spell and not the deck roll.\n\nArt for all 47 fetched, deployed, and verified byte-for-byte against\nmagepunk-cardart.pages.dev (the deploy prints only a preview-hash URL, so a\ngreen exit code is not evidence the production domain updated).\n\nalchemy_import_test: 88 assertions. 582/582 suites pass.\n\n\n---------",
+			"cards": [
+				{
+					"id": "ymid_sigardian_evangel",
+					"name": "Sigardian Evangel",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_sap_vitality",
+					"name": "Sap Vitality",
+					"type": "instant",
+					"class": "priest",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_geistchanneler",
+					"name": "Geistchanneler",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_swarm_saboteur",
+					"name": "Swarm Saboteur",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_cursebound_witch",
+					"name": "Cursebound Witch",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "uncommon",
+					"cost": 1
+				},
+				{
+					"id": "ymid_assemble_from_parts",
+					"name": "Assemble from Parts",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_ravenous_pursuit",
+					"name": "Ravenous Pursuit",
+					"type": "sorcery",
+					"class": "hunter",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_molten_impact",
+					"name": "Molten Impact",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_toralfs_disciple",
+					"name": "Toralf's Disciple",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_bellowsbreath_ogre",
+					"name": "Bellowsbreath Ogre",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_forceful_cultivator",
+					"name": "Forceful Cultivator",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "uncommon",
+					"cost": 4
+				},
+				{
+					"id": "ymid_electrostatic_blast",
+					"name": "Electrostatic Blast",
+					"type": "instant",
+					"class": "bounty_hunter",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_frenzied_geistblaster",
+					"name": "Frenzied Geistblaster",
+					"type": "creature",
+					"class": "barbarian",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_grizzled_huntmaster",
+					"name": "Grizzled Huntmaster",
+					"type": "creature",
+					"class": "ranger",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_chronicler_of_worship",
+					"name": "Chronicler of Worship",
+					"type": "creature",
+					"class": "bard",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_clone_crafter",
+					"name": "Clone Crafter",
+					"type": "creature",
+					"class": "sorcerer",
+					"rarity": "uncommon",
+					"cost": 2
+				},
+				{
+					"id": "ymid_rimewall_protector",
+					"name": "Rimewall Protector",
+					"type": "creature",
+					"class": "wizard",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_imperial_blademaster",
+					"name": "Imperial Blademaster",
+					"type": "creature",
+					"class": "centurion",
+					"rarity": "uncommon",
+					"cost": 3
+				},
+				{
+					"id": "ymid_garruk_wrath_of_the_wilds",
+					"name": "Garruk, Wrath of the Wilds",
+					"type": "planeswalker",
+					"class": "druid",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ymid_tibalt_wicked_tormentor",
+					"name": "Tibalt, Wicked Tormentor",
+					"type": "planeswalker",
+					"class": "warlock",
+					"rarity": "legendary",
+					"cost": 5
+				},
+				{
+					"id": "ymid_brittle_blast",
+					"name": "Brittle Blast",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ymid_unexpected_conversion",
+					"name": "Unexpected Conversion",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ymid_break_expectations",
+					"name": "Break Expectations",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_kindred_denial",
+					"name": "Kindred Denial",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ymid_painful_bond",
+					"name": "Painful Bond",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_undercity_plunder",
+					"name": "Undercity Plunder",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_holographic_double",
+					"name": "Holographic Double",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_dragonfly_pilot",
+					"name": "Dragonfly Pilot",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "ymid_sinister_reflections",
+					"name": "Sinister Reflections",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_ominous_traveler",
+					"name": "Ominous Traveler",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ymid_oglor_devoted_assistant",
+					"name": "Oglor, Devoted Assistant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ymid_rahilda_wanted_cutthroat",
+					"name": "Rahilda, Wanted Cutthroat",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 2
+				},
+				{
+					"id": "ymid_slayers_bounty",
+					"name": "Slayer's Bounty",
+					"type": "artifact",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 1
+				},
+				{
+					"id": "ymid_saiba_syphoner",
+					"name": "Saiba Syphoner",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 4
+				},
+				{
+					"id": "ymid_begin_anew",
+					"name": "Begin Anew",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 7
+				},
+				{
+					"id": "ymid_geist_of_regret",
+					"name": "Geist of Regret",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ymid_consuming_oni",
+					"name": "Consuming Oni",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "epic",
+					"cost": 6
+				},
+				{
+					"id": "ymid_mothrider_cavalry",
+					"name": "Mothrider Cavalry",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "ymid_puppet_raiser",
+					"name": "Puppet Raiser",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ymid_better_offer",
+					"name": "Better Offer",
+					"type": "sorcery",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "ymid_forgeborn_phoenix",
+					"name": "Forgeborn Phoenix",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "ymid_boseiju_pathlighter",
+					"name": "Boseiju Pathlighter",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ymid_suntail_squadron",
+					"name": "Suntail Squadron",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "ymid_soul_servitude",
+					"name": "Soul Servitude",
+					"type": "instant",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_sanguine_brushstroke",
+					"name": "Sanguine Brushstroke",
+					"type": "enchantment",
+					"class": "neutral",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ymid_divine_purge",
+					"name": "Divine Purge",
+					"type": "sorcery",
+					"class": "neutral",
+					"rarity": "epic",
+					"cost": 4
+				},
+				{
+					"id": "ymid_gutmorn_pactbound_servant",
+					"name": "Gutmorn, Pactbound Servant",
+					"type": "creature",
+					"class": "neutral",
+					"rarity": "legendary",
+					"cost": 3
+				}
+			]
+		},
+		{
+			"sha": "24a46b8",
+			"date": "2026-09-21",
+			"kind": "patch",
+			"title": "Duels import: make secrets draftable, + 52 more authored buckets (#535)",
+			"body": "Follow-up audit of tools/data/duels_pool.json against the game. The card\nimport really is complete: of the source entries with no match in cards.json,\nevery one is a placeholder, a dummy enchantment holder, a GameSaveData tooling\nstub, or -- for 102 of them -- another authored loot-bucket name.\n\nBuckets: 43 more neutral authored names (ids use an `hs_` prefix; `m_` is\nalready the mage class-bucket prefix) plus 9 class-tagged ones, taking\nDUELS_BUCKETS 78 -> 121. Every filter was measured against the real draft pool\nbefore being written: offerBuckets silently drops a bucket with fewer than 3\nmatches, so a bad filter is invisible dead content rather than a visible bug.\nNames that duplicate a theme already covered by SET_BUCKETS/MECH_BUCKETS\n(Rush, Ice Cold, Barrens Chat, Deadly Demise, ...) are deliberately not\nre-added, and a handful were too generic to feel themed.\n\nSecrets: DRAFT_TYPES listed only creature/weapon/sorcery/instant, while\nheist.js and tombs.js both count secret and trap as spells. So Duels could\nnever offer a secret -- and three *shipped* class buckets that filter on\ntype === 'secret' (mage Enigmas, paladin Secret Whispers, hunter Traps and\nTrappers) matched zero cards for their own class and had never been offered\nonce. Adding secret+trap revives all three and opens 73 secrets + 9 traps\n(mage 24 / hunter 20 / paladin 15 / rogue 14). Safe because the AI plays cards\ngenerically through E.canPlay and already handles secrets in heist/tombs decks.\nlocation/quest/artifact/enchantment stay out of the draft on purpose.\n\nduels_run_test pinned the old type list inline; updated, and its intent (no\ntokens, no MTG-colored, class-legal, no locations/quests) kept as its own\nassertion. New guard in duels_buckets_test: no class bucket may be dead for\nits own class -- reverting the DRAFT_TYPES line fails it naming all three by id.\n\n581/581 suites pass.",
+			"cards": []
+		},
+		{
+			"sha": "e83e267",
+			"date": "2026-09-21",
+			"kind": "patch",
+			"title": "Duels import: 61 more loot buckets (the authored HS bucket names) (#534)",
+			"body": "Audited what is actually left of the Duels import before adding anything. Of the\n950 PVPDR cards, the CARD import really is done — of 196 pool entries with no\nmatch in cards.json, 11 are placeholders (\"Coming Soon\", \"[PH] … Not Yet\nDefined\"), 156 carry no rules text at all, and the rest are engine internals\n(dummy enchantment holders, \"Build a Designer Bucket - Slot0\" stubs). Nothing\nimportable was being skipped.\n\nThe 156 text-less entries are the interesting part: they are Duels' authored\nLOOT BUCKET names, and buckets are the thing a run offers you every game. We had\n17 generic buckets plus per-class signatures, so runs kept seeing the same few.\n\nImported 61 of them:\n  - 38 EXPANSION buckets (\"Boomsday Project\", \"Blackrock Mountain\", \"Knights of\n    the Frozen Throne\", …). A large share of the authored names simply offer\n    cards from one set, and our `set` field carries the same identity, so each is\n    one filter over real data.\n  - 23 MECHANIC buckets keeping their HS names (\"Battlecry Buddies\",\n    \"1-Health Crusaders\", \"Poisonous Powers\", \"Feel the Rush\", \"Wild Winds\",\n    \"Frozen Might\", \"Sneaky Tricks\", \"New Discoveries\", …).\n\nA mage now has 82 offerable buckets instead of ~23.\n\nThe risk with filter-defined buckets is silent dead content — offerBuckets skips\nany bucket with fewer than 3 matches, so a broken filter simply never appears and\nnobody notices. Every bucket was validated against the real pool before landing:\n0 match nothing, 0 fall under the threshold, 0 duplicate ids or names.\n\nAdds duels_buckets_test.mjs (19 assertions): the table is well-formed and\ncollision-free; EVERY bucket clears the 3-card threshold for some class; each\nexpansion bucket offers cards from exactly one set (a real roll of \"Boomsday\nProject\" returns three Boomsday cards); the mechanic buckets return only cards\nthat fit the theme; the original tribal buckets and the offer flow still work;\nand 40 draws surface 30+ distinct buckets, which is the variety this was for.\nSuite 581/581.",
+			"cards": []
+		},
+		{
+			"sha": "6856eec",
+			"date": "2026-09-21",
+			"kind": "patch",
+			"title": "Fix \"X fights Y\": the fight half never happened (#533)",
+			"body": "Reported from replay /r/05083bf4 — Garruk's Wrath gave its +3/+3 but the fight\ndid nothing. It was not Wrath-specific: EVERY two-target fight card was affected,\nand on both sides of the table.\n\nThe fight handler reads TWO targets: the chosen fighter and target.fightTarget.\nTwo things had to be true for the second one to exist, and neither was:\n\n 1. The card must carry `fight: true` — game.js gates its follow-up \"now pick a\n    creature to fight\" step on pending.card.fight. Only prey_upon declared it, so\n    ten cards silently skipped their fight: omen_of_nylea, trial_of_rhonas,\n    gruul_ragebeast, calix_servant_of_klothys, garruk_wrath, nissa_defeat,\n    nissa_judgement, vivian_hunt, vorinclex_hostility, fight_over_me.\n\n 2. instantiate() had to carry the flag onto the card instance — core.js had no\n    reference to `fight` at all, so even prey_upon's second pick never fired: the\n    UI reads the card in HAND, which is an instance, not the def. Fixing only the\n    data would have looked right and still done nothing. Now instantiate passes\n    through fight + fightTarget.\n\nThe AI was broken the same way from the other side: pickTarget returns ONE target\nand never set fightTarget, so an AI-played fight card no-opped too. It now fuses\nboth picks, preferring a kill its fighter survives, then any kill, then the\nbiggest threat — and returns null when there is no enemy creature, so it won't\nline up a play that cannot resolve.\n\nAlso restricted the first pick on the three \"give a friendly creature +N/+N, then\nIT fights\" cards (garruk_wrath, nissa_judgement, vivian_hunt): the spec derives\nfrom the FIRST targeting effect, so their buff's `creature` target would have\noffered enemy creatures as the fighter. Now `friendly-creature`, matching the text.\n\nAdds fight_two_target_test.mjs (15 assertions): every two-target fight card\ndeclares the flag while selfFights cards correctly stay single-target; Garruk's\nWrath lands the buff AND fights for the BUFFED 5 (proving order); a plain fight\ncard still trades; the AI fuses both targets and declines when there is no foe;\nand the old broken shape — a fight with no fightTarget — is pinned as harming\nnobody, which is exactly what the replay showed. Suite 580/580.",
+			"cards": []
+		},
 		{
 			"sha": "5b91663",
 			"date": "2026-09-21",
