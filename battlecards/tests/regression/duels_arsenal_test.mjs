@@ -431,7 +431,15 @@ const heroSwing = (st, pi) => { st.players[pi].heroAttacksUsed = 0; E.heroAttack
 {
 	const st = fresh();
 	const c = play(st, 0, 'duels_favored_racer');
-	ok('Favored Racer gets Blessed (stats or keyword moved)', c.attack !== 3 || c.maxHealth !== 3 || c.keywords.length > 2, [c.attack, c.maxHealth, c.keywords.join('+')].join('|'));
+	// One of the five Blessings — Blessing of Wisdom — grants an ONGOING rather
+	// than stats or a keyword, so a stats/keyword-only check passed or failed on
+	// which blessing the rng rolled. That roll shifts whenever cards.json grows,
+	// because createGame builds random decks from the whole pool. Cover every
+	// blessing in the pool instead.
+	const moved = c.attack !== 3 || c.maxHealth !== 3 || c.keywords.length > 2
+		|| !!c.ongoing || (c.ongoings || []).length > 0;
+	ok('Favored Racer gets Blessed (stats, keyword or ongoing moved)', moved,
+		[c.attack, c.maxHealth, c.keywords.join('+'), 'ongoings:' + ((c.ongoings || []).length + (c.ongoing ? 1 : 0))].join('|'));
 }
 {
 	const st = fresh();
