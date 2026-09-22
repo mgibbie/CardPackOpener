@@ -49,6 +49,21 @@ register('roll-scry', ({ state, pi, target, source }, e) => {
 	const value = rollDie(state, pi, e.sides || 6);
 	if (value > 0) execEffects(state, pi, [{ type: 'scry', value }], target, source);
 });
+// Die-roll branching, for the D&D sets. Paper rolls a d20 and splits on ranges
+// ("1—9 | … 10—19 | … 20 | …"); here those compress to a d6 (owner ruling,
+// 2026-09-22), so each outcome declares the HIGHEST roll it covers:
+//   { type:'roll-d6', outcomes:[ {max:3, effects:[…]}, {max:5, effects:[…]}, {max:6, effects:[…]} ] }
+// is "1-3 / 4-5 / 6". Outcomes are matched in order, so they must be ascending;
+// the last one catches everything remaining. Goes through rollDie so the
+// die-rolled / die-rolled-max ongoings still fire.
+register('roll-d6', ({ state, pi, target, source }, e) => {
+	const sides = e.sides || 6;
+	const value = rollDie(state, pi, sides);
+	const branch = (e.outcomes || []).find(o => value <= (o.max ?? sides));
+	if (branch && branch.effects && branch.effects.length) {
+		execEffects(state, pi, JSON.parse(JSON.stringify(branch.effects)), target, source);
+	}
+});
 register('assemble', ({ state, pi }) => { assemble(state, pi); });
 register('grant-target', ({ state, pi }, e) => { grantKeywordToChoice(state, pi, e.keyword); });
 register('target-player', ({ state, pi }, e) => { targetOpponent(state, pi, e.action, e.value, !!e.pierce); });
@@ -2134,6 +2149,13 @@ register('conditional', ({ state, pi, target, source, enemies, scaled, hm, pickE
 			else if (e.if.controlOtherTribe) ok = p.board.some(c => c !== source && !isDead(c) && (c.tribe || '').includes(e.if.controlOtherTribe)); // Gorillabot / Fossilized Devilsaur
 			else if (e.if.controlSecret) ok = p.secrets.length > 0; // Avian Watcher
 			else if (e.if.controlArtEnch) ok = p.artifacts.length > 0 || p.enchantments.length > 0; // metalcraft: control an artifact or enchantment
+			// Background (Baldur's Gate): a keyword on enchantments that does nothing on
+			// its own — you may control any number — but other cards care whether you
+			// have one. `controlBackground: N` asks for at least N (default 1).
+			else if (e.if.controlBackground != null) {
+				const n = e.if.controlBackground === true ? 1 : e.if.controlBackground;
+				ok = (p.enchantments || []).filter(c => has(c, KW.BACKGROUND)).length >= n;
+			}
 			else if (e.if.enemyFrozen) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => c.frozen && !isDead(c))); // Cryomancer
 			else if (e.if.enemyHasTaunt) ok = opponentsOf(state, pi).some(o => state.players[o].board.some(c => !isDead(c) && has(c, KW.TAUNT))); // Spiked Hogrider
 			else if (e.if.enemyHandEmpty) ok = opponentsOf(state, pi).some(o => state.players[o].hand.length === 0); // Tanaris Hogchopper
