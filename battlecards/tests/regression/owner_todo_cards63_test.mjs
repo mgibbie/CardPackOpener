@@ -40,12 +40,22 @@ const cast = (st, pi, id, target) => { const c = E.instantiate(cardsById[id], pi
 	ok('reworded "Deal 2 damage to any target & Planeshift."', s.description === 'Deal 2 damage to any target & Planeshift.', s.description);
 	ok('deals 2 to ANY target now (was creature-only)', s.effects.some(e => e.type === 'damage' && e.value === 2 && e.target === 'any'), JSON.stringify(s.effects));
 	ok('and Planeshifts', s.effects.some(e => e.type === 'planeshift'), JSON.stringify(s.effects));
-	// FIRE at the enemy hero (proof "any target" reaches the face) + it shifts the plane
+	// FIRE at the enemy hero (proof "any target" reaches the face) + it shifts the plane.
+	// The two halves are measured SEPARATELY on purpose: Planeshift brings a RANDOM
+	// plane and runs its `arrival`, and some planes change life — so a net-life check
+	// after the whole card is decided by which plane happened to land, and that roll
+	// moves whenever cards.json grows. Fire the card's own damage effect alone to
+	// prove "any target" reaches the face, then cast the real card for the shift.
+	{
+		const st0 = fresh();
+		const life0 = st0.players[1].life;
+		E.execEffects(st0, 0, JSON.parse(JSON.stringify(s.effects.filter(e => e.type === 'damage'))),
+			{ type: 'hero', player: 1 }, null);
+		ok('2 damage lands on the enemy hero', st0.players[1].life === life0 - 2, [life0, st0.players[1].life]);
+	}
 	const st = fresh();
-	const life0 = st.players[1].life;
 	const planeBefore = st.plane || null;
 	cast(st, 0, 'wastes_spatial_contortion', { type: 'hero', player: 1 });
-	ok('2 damage lands on the enemy hero', st.players[1].life === life0 - 2, [life0, st.players[1].life]);
 	ok('a plane is now active (Planeshift fired)', st.plane != null && st.plane !== planeBefore, st.plane);
 	// also legal on a creature
 	const st2 = fresh();
