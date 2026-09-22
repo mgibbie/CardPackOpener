@@ -37,6 +37,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/keepalive: true/.test(mn), 'the unload write uses keepalive');
 	A(/function owGameWeight/.test(mn) && /local holds no game/.test(mn),
 		'an empty local save can never beat a populated remote one');
+	A(/const VOLATILE_KEYS = \[OW_REV_KEY, 'magepunk_playtime'\]/.test(mn),
+		'a self-advancing counter is excluded from the divergence comparison');
+	A(!/setOwRev\(localRev \+ 1\)/.test(mn),
+		'the conflict path does not double-bump the revision');
 	const rs0 = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
 	A(/ow: \{\}, force: true/.test(rs0), 'the deliberate owner wipe still passes force');
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
@@ -253,6 +257,63 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_ow_conflict') || 'null'));
 		A(kept && kept.ow && JSON.parse(kept.ow['magepunk_pos_v1']).map === 'Route3',
 			'9: and the losing copy is preserved, not discarded', kept ? kept.reason : 'nothing stashed');
+
+		// ===== playtime-only drift at ONE revision is not a divergence =====
+		// Reported twice in one morning on instinctloretest0918: the conflict message
+		// and a magepunk_ow_conflict stash on a save whose position, party, story
+		// flags, defeated flags, region, starter, rival, bag, money, dex, journal and
+		// flypoints were ALL byte-identical. The only difference was magepunk_playtime
+		// (44880 remote vs 44905 local) — a counter the game loop writes every ~5s
+		// WITHOUT bumping the revision, so any abruptly-ended session leaves local
+		// ahead of remote at an identical rev. The reconciliation then wrote rev +2
+		// (2679 -> 2681) with only one push behind it.
+		const pt = () => page.evaluate(() => parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0);
+		const putRemote = (mut) => page.evaluate(async (mutSrc) => {
+			const snap = window.__ow.owSnapshot();
+			(new Function('s', mutSrc))(snap);
+			await fetch('/api/mp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'ow-save', ow: snap, force: true }) });
+		}, mut);
+		{
+			await newSession();
+			await page.evaluate(() => { localStorage.removeItem('magepunk_ow_conflict'); localStorage.setItem('magepunk_playtime', '44905'); });
+			await flush(); await sleep(400);
+			const before = await localFp();
+			// remote is the same game, 25 seconds behind on the clock — the exact repro
+			await putRemote("s['magepunk_playtime'] = '44880';");
+			await newSession();
+			const d = await lastDecision();
+			A(d && d.winner === 'equal' && !d.conflict,
+				'playtime-only drift at one revision is not a divergence', JSON.stringify(d && d.reason));
+			A(await page.evaluate(() => localStorage.getItem('magepunk_ow_conflict')) === null,
+				'and nothing is stashed as a conflict for it');
+			const after = await localFp();
+			A(after.rev === before.rev, 'and the revision does not jump (the reported +2)', `${before.rev} -> ${after.rev}`);
+			A(after.x === before.x && after.y === before.y && after.hp === before.hp,
+				'the save loads exactly where it was', JSON.stringify(after));
+			A(await pt() >= 44905, 'the local clock is not rolled backward to the remote one', String(await pt()));
+		}
+		{
+			// the other direction: a device returning to a save with MORE time on it
+			// adopts the larger value, so the counter stays monotonic either way
+			await putRemote("s['magepunk_playtime'] = '99999';");
+			await newSession();
+			A(await pt() >= 99999, 'a higher remote clock is adopted, so no time is lost', String(await pt()));
+			A(await page.evaluate(() => localStorage.getItem('magepunk_ow_conflict')) === null,
+				'and that is not a conflict either');
+		}
+		{
+			// and the guarantee this must not have broken: REAL divergence at one
+			// revision still surfaces and still preserves both copies
+			await newSession();
+			await page.evaluate(() => localStorage.removeItem('magepunk_ow_conflict'));
+			await putRemote("s['magepunk_pos_v1'] = JSON.stringify({ map: 'Route4', x: 3, y: 3, back: null }); s['magepunk_playtime'] = '1';");
+			await newSession();
+			const d = await lastDecision();
+			A(d && d.conflict === true, 'a genuine same-revision divergence still conflicts', JSON.stringify(d && d.reason));
+			const k2 = await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_ow_conflict') || 'null'));
+			A(k2 && k2.ow && JSON.parse(k2.ow['magepunk_pos_v1']).map === 'Route4',
+				'and the remote copy is still preserved', k2 ? k2.reason : 'nothing stashed');
+		}
 
 		// ===== THE FRESH-DEVICE CASE (regression from the first revision fix) =====
 		// Both sides at revision 0 is not a rare tie — before revisions existed EVERY
