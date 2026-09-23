@@ -356,6 +356,7 @@ function startTrainerBattle(t, foeParty, info) {
 			saveParty(party);
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
 			evolution.check(party, battle.data);
+			runPostBattleScript(t.ev.script, t);   // the beat Crystal keeps in <script>.Script
 		} else if (result === 'defeat') {
 			whiteOut();
 		}
@@ -502,6 +503,69 @@ function applyGymLevelFloors() {
 
 // Called on any trainer victory. Gym Leaders award their badge; the Champion
 // crowns you and rolls the Hall of Fame. Ordinary trainers do nothing here.
+// A TRAINER'S POST-BATTLE BEAT LIVES IN A SEPARATE LABEL, AND NOTHING RAN IT.
+//
+// Crystal keeps what happens after you win in `<script>.Script`, alongside the
+// trainer's own label. This port's plain battle path (startTrainerBattle, and
+// the resume handler) only ever marked the trainer defeated — so every one of
+// those beats was dead. Reported as "the last Slowpoke Well grunt's post-battle
+// script never runs": beating him ends the battle and nothing else happens, so
+// EVENT_CLEARED_SLOWPOKE_WELL is never set, Kurt never gives the Lure Ball, and
+// Johto stops at Azalea. There is not even a `TrainerGruntM1` engage label for
+// that grunt — only `TrainerGruntM1.Script` — which is why nothing reached it.
+//
+// 322 trainers carry a .Script; 35 do more than print text and 29 of those carry
+// a story beat. Mostly the Johto phone-number registrations (Joey, Wade, Ralph
+// and friends asking for your number), plus the Slowpoke Well, Sage Koji, and
+// one item gift on Route 34.
+//
+// Display-only .Scripts are skipped: the defeat line is already shown from
+// info.defeatText, and running them would just repeat it. Same classifier the
+// sign_texts shadowing fix uses — a script earns the A press by doing something.
+const POSTBATTLE_KEY = 'magepunk_postbattle_v1';
+function postBattleDone() { try { return new Set(JSON.parse(localStorage.getItem(POSTBATTLE_KEY) || '[]')); } catch (e) { return new Set(); } }
+function markPostBattle(key) {
+	if (!key) return;
+	const s = postBattleDone(); s.add(key);
+	safeSaveStr(POSTBATTLE_KEY, JSON.stringify([...s]));
+}
+
+function runPostBattleScript(script, t) {
+	if (!script || cutscene.blocking) return false;
+	const ops = mapScripts[script + '.Script'];
+	if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) return false;
+	const key = t ? trainers.keyOf(t) : script;
+	markPostBattle(key);   // marked on attempt, so a beat can never loop
+	return runScriptLabel(script + '.Script', t || null);
+}
+
+// RECOVERY, for saves that won the battle before any of this existed.
+//
+// The reporter's save has all four Slowpoke Well grunts beaten and the beat
+// unrun, and a beaten trainer cannot be talked to again — trainers.js drops them
+// from collision so they can't wall a corridor, so you walk straight over the
+// tile. Without this they would be stuck at Azalea for good.
+//
+// Keyed on an explicit "this beat has been attempted" marker rather than
+// inferring from the script's own flags. Inference looked tempting and is wrong:
+// most of these scripts are the Johto phone registrations, whose setflag sits
+// inside a branch you can decline — so "its flag is unset" is a permanent state
+// for a script that DID run, and the catch-up would re-fire on every single map
+// entry forever.
+function catchUpPostBattleScripts() {
+	if (cutscene.blocking || dialog.blocking || battle.blocking) return;
+	const done = postBattleDone();
+	for (const t of trainers.list) {
+		const script = t.ev && t.ev.script;
+		if (!script || !trainers.isDefeated(t)) continue;
+		if (done.has(trainers.keyOf(t))) continue;
+		const ops = mapScripts[script + '.Script'];
+		if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) continue;
+		if (runPostBattleScript(script, t)) return;   // at most one per map entry
+		markPostBattle(trainers.keyOf(t));            // unrunnable: don't retry it forever
+	}
+}
+
 function onTrainerDefeated(script, opts) {
 	// RED at Mt Silver. He keeps his own silence rather than a synthetic toast, but
 	// he is JOHKANTO's CHAMPION and no longer returns early — the league path below
@@ -1376,6 +1440,7 @@ function resumeEndHandler(end, savedMap) {
 			saveParty(party);
 			if (end.script) onTrainerDefeated(end.script);
 			evolution.check(party, battle.data);
+			runPostBattleScript(end.script, t);    // ...and after a reload, too
 		} else if (result === 'defeat') {
 			whiteOut();
 		}
@@ -3227,6 +3292,8 @@ async function refreshMapContent(label) {
 	// (the map is already loaded + loading cleared above).
 	try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
+	// a post-battle beat that was won before the game could run it (see above)
+	try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
@@ -6018,7 +6085,12 @@ let lastTalkedNpc = null;   // VAR_LAST_TALKED: literally "the object you just t
 
 function npcById(localId) {
 	if (localId == null) return null;
-	const list = npcs.list || [];
+	// Trainers are NOT in npcs.list — trainers.js owns them (npcs.js skips any
+	// isTrainerEvent). A script that hides or moves a trainer is common: the four
+	// Slowpoke Well grunts are trainers, and hiding them is what sets
+	// EVENT_SLOWPOKE_WELL_ROCKETS and clears the Azalea gym doorway. Searching one
+	// list found none of them.
+	const list = [...(npcs.list || []), ...((trainers && trainers.list) || [])];
 	// 1. the map's own id, which is what a correctly-named reference uses
 	const exact = list.find(n => n.ev && n.ev.local_id === localId);
 	if (exact) return exact;
@@ -6104,8 +6176,30 @@ function cutsceneCtx(talker, scriptLabel) {
 		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
 		warpXy: (mapId, x, y) => flyTo(mapId, x, y),
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
-		hideObj: who => { const n = npcById(who); if (n) n.hidden = true; },
-		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
+		// Crystal's `disappear`/`appear` do not just hide a sprite — they SET and
+		// CLEAR the object's event flag, which is how the hide survives a reload and
+		// how other maps learn about it. The Slowpoke Well is the clearest case: its
+		// script never sets EVENT_SLOWPOKE_WELL_ROCKETS itself, because hiding the
+		// four grunts is what sets it — and that flag is what removes the Rocket
+		// standing in front of the Azalea gym. A sprite-only hide left the grunts
+		// back on the next load and Bugsy blocked for good.
+		//
+		// Scoped to EVENT_* flags, which is the Crystal convention. FireRed and
+		// Emerald use FLAG_HIDE_* and their scripts set those explicitly alongside
+		// removeobject, so writing them here would be redundant at best and would
+		// persist a mid-cutscene hide at worst.
+		hideObj: who => {
+			const n = npcById(who); if (!n) return;
+			n.hidden = true;
+			const f = n.ev && n.ev.flag;
+			if (f && /^EVENT_/.test(f)) Story.setFlag(f);
+		},
+		showObj: who => {
+			const n = npcById(who); if (!n) return;
+			n.hidden = false;
+			const f = n.ev && n.ev.flag;
+			if (f && /^EVENT_/.test(f)) Story.clearFlag(f);
+		},
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
 		wildBattle: (species, level) => startScriptedWildBattle(species, level),
