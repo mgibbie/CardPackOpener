@@ -212,6 +212,65 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				'an interrupted beat is NOT marked done — this is the softlock fix', JSON.stringify(interrupted));
 			A(interrupted && interrupted.tries === 1, 'it burned one try, not the whole beat', JSON.stringify(interrupted));
 		}
+
+		// ===== a SLOW DEVICE must not time the beat out =====
+		// Reported: on a 3.7 fps playtest browser the watchdog killed the beat every
+		// run, mid-walk — it measured 30s of wall-clock while the scene ran on game
+		// time capped at 50ms a frame. Throttle the CPU and make the beat finish.
+		{
+			// the reporter's exact state: grunts beaten, beat unfinished, marker clean
+			await page.evaluate(() => {
+				const W = window.__ow;
+				W.Story.clearFlag('EVENT_CLEARED_SLOWPOKE_WELL');
+				localStorage.removeItem('magepunk_postbattle_v1');
+			});
+			// pace the game loop at ~1.4 fps: slower than the 3.7 fps playtest browser, so
+			// the beat's silent walk clearly outlasts a 30s wall-clock watchdog
+			await page.evaluate(() => {
+				window.__realRAF = window.requestAnimationFrame;
+				window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 700);
+			});
+			const fps = await page.evaluate(async () => {
+				const f0 = window.__ow.gateReport().tick.frames; await new Promise(r => setTimeout(r, 2000));
+				return (window.__ow.gateReport().tick.frames - f0) / 2;
+			});
+			console.log('    (paced to ~' + fps.toFixed(1) + ' fps)');
+			// ...and walk in, as the player did. Map entry runs the catch-up.
+			await page.evaluate(() => window.__ow.moveToMap('SlowpokeWellB1F', 17, 15));
+			let cleared = false;
+			for (let i = 0; i < 500 && !cleared; i++) {
+				await page.evaluate(() => { try { window.__ow.dialog.key('z'); } catch (e) {} });
+				await sleep(500);
+				cleared = await page.evaluate(() => !!window.__ow.Story.getFlag('EVENT_CLEARED_SLOWPOKE_WELL'));
+			}
+			const st = await page.evaluate(() => ({
+				marker: JSON.parse(localStorage.getItem('magepunk_postbattle_v1') || '{}'),
+				hud: (document.getElementById('hud') || {}).textContent || '',
+			}));
+			A(fps < 2, 'the test really ran slower than the playtest browser', fps.toFixed(1) + ' fps');
+			A(cleared, 'the beat finishes on a slow device instead of timing out', JSON.stringify(st));
+			A(!/timed out/.test(st.hud), 'and the watchdog never fired', st.hud);
+		}
+
+		// ===== the watchdog itself: slow-but-progressing is NOT wedged =====
+		// A silent 15-step walk, no dialog at all, at ~1.5 fps: ~45 real seconds.
+		// The shipped watchdog counted 30s of wall clock and killed it; the fix
+		// only counts game time in which the scene made NO progress.
+		{
+			const res = await page.evaluate(async () => {
+				const W = window.__ow;
+				const steps = []; for (let i = 0; i < 15; i++) steps.push({ dir: i % 2 ? 'left' : 'right', mode: 'walk' });
+				let finished = false;
+				W.cutscene.start([{ op: 'move', who: 'LOCALID_PLAYER', steps }, { op: 'waitmove' }], {
+					player: W.player, npcById: () => null,
+				}, () => { finished = true; });
+				const t0 = Date.now();
+				while (Date.now() - t0 < 120000 && W.cutscene.blocking) await new Promise(r => setTimeout(r, 250));
+				return { finished, secs: Math.round((Date.now() - t0) / 1000), hud: (document.getElementById('hud') || {}).textContent || '' };
+			});
+			A(res.secs > 30, 'the silent scene really outlasted 30 real seconds', res.secs + 's');
+			A(res.finished && !/timed out/.test(res.hud), 'and it ran to the end instead of being killed', JSON.stringify(res));
+		}
 	} finally {
 		if (browser) await browser.close();
 		server.close();
