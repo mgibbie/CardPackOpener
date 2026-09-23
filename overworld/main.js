@@ -983,7 +983,27 @@ function interact() {
 	}
 	if (svc === 'shoalspot') { shoalDig(); return; }
 	if (svc === 'shoalhermit') { shoalHermitTalk(); return; }
-	if (svc === 'kurt') { kurtTalk(); return; }
+	// KURT IS A STORY NPC BEFORE HE IS A SERVICE.
+	//
+	// The services.js 'kurt' zone covers Kurt1's tile (3,2) with no gating, so the
+	// native apricorn counter answered every A press and his map script never ran.
+	// Kurt1 is the beat that sets EVENT_AZALEA_TOWN_SLOWPOKETAIL_ROCKET and walks
+	// him out of the house — so the Slowpoke Well guard never left, and Azalea,
+	// the well, the Lure Ball and Bugsy's gym chain were all unreachable. Reported
+	// with a call stack showing kurtTalk() reached straight from interact(), with
+	// runScriptLabel never called.
+	//
+	// Kurt1 itself branches on EVENT_KURT_GAVE_YOU_LURE_BALL before anything else,
+	// which is precisely where the counter should take over — so gate on the same
+	// flag and let the script own him until then. Checked per press rather than at
+	// map load, so the counter works the moment he hands the ball over.
+	//
+	// This is deliberately narrow. An audit of every service zone found 93 sitting
+	// on an NPC with a real script, and all but Kurt are the port's own native
+	// implementations (nurses, marts, the contest lobby, the Trick House) where
+	// shadowing the script is the whole point. Kurt is the only one whose script
+	// carries a story beat: setflag + move + hideobj.
+	if (svc === 'kurt' && Story.getFlag('EVENT_KURT_GAVE_YOU_LURE_BALL')) { kurtTalk(); return; }
 	if (svc === 'trickmaster') { trickMasterTalk(); return; }
 	if (svc === 'trickscroll') { trickScrollFind(); return; }
 	if (svc === 'trickend') { trickEndTalk(); return; }
