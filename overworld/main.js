@@ -559,12 +559,12 @@ function markPostBattleDone(key) {
 	postBattleSave(st);
 }
 
-function runPostBattleScript(script, t) {
+function runPostBattleScript(script, t, keyOverride) {
 	if (!script || cutscene.blocking) return false;
 	const label = script + '.Script';
 	const ops = mapScripts[label];
 	if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) return false;
-	const key = t ? trainers.keyOf(t) : script;
+	const key = keyOverride || (t ? trainers.keyOf(t) : script);
 	markPostBattleTry(key);                 // the loop guard, not the completion mark
 	const ran = runScriptLabel(label, t || null);
 	// Completion is what counts. cutscene.run's onDone fires only when the scene
@@ -575,6 +575,23 @@ function runPostBattleScript(script, t) {
 }
 // set while a post-battle beat is on screen; cleared by the cutscene finishing
 let postBattlePending = null;
+// ARMED ON MAP ENTRY, FIRED WHEN IDLE. The catch-up used to run once, at the
+// instant of map entry, and give up if anything else was on screen — an
+// onTransition/onFrame scene, a slow load. It also was not on the boot path at
+// all, so the first entry after a page load never ran it (reported: "it ran on
+// the second entry"). Now map entry just arms it, and the tick fires it the
+// first frame nothing else owns the screen.
+let postBattleCatchUpArmed = false;
+// The watchdog stopping a beat is the ENVIRONMENT failing, not the beat — on a
+// slow device it used to happen every run. Charging that as a try would still
+// burn the beat after three reloads, so a watchdog kill hands the try back.
+function refundPostBattleTry() {
+	if (!postBattlePending) return;
+	const st = postBattleStore();
+	if (st.tries[postBattlePending] > 0) st.tries[postBattlePending]--;
+	postBattleSave(st);
+	postBattlePending = null;
+}
 function notePostBattleFinished() {
 	if (postBattlePending) { markPostBattleDone(postBattlePending); postBattlePending = null; }
 }
@@ -592,20 +609,43 @@ function notePostBattleFinished() {
 // inside a branch you can decline — so "its flag is unset" is a permanent state
 // for a script that DID run, and the catch-up would re-fire on every single map
 // entry forever.
+// Every trainer on this map, INCLUDING the hidden ones, keyed exactly as
+// trainers.keyOf keyed them when they were beaten.
+//
+// The catch-up used to walk trainers.list — which drops any trainer whose object
+// flag hides it. A post-battle beat typically hides its own grunts first thing
+// (the Slowpoke Well beat's opening hideobjs set EVENT_SLOWPOKE_WELL_ROCKETS), so
+// a beat cut short after that point could never be caught up again: the trainer
+// it belongs to had vanished from the only list the catch-up looked at. Keys are
+// recomputed over the whole map because the duplicate-sprite suffix ("@5,2")
+// depends on how many trainers share a sprite — which changes once some are
+// hidden, and would otherwise stop matching the defeated key already saved.
+function allTrainersOnMap() {
+	const map = world.current?.map;
+	if (!map) return [];
+	const evs = (map.object_events || []).filter(ev => trainers.claims(ev));
+	const n = new Map();
+	for (const ev of evs) { const b = trainers.baseKeyOf({ ev }); n.set(b, (n.get(b) || 0) + 1); }
+	return evs.map(ev => {
+		const b = trainers.baseKeyOf({ ev });
+		const key = n.get(b) > 1 ? `${map.id}:${b}@${ev.x},${ev.y}` : `${map.id}:${b}`;
+		return { t: trainers.list.find(x => x.ev === ev) || { ev, tx: +ev.x, ty: +ev.y }, key };
+	});
+}
+
 function catchUpPostBattleScripts() {
 	if (cutscene.blocking || dialog.blocking || battle.blocking) return;
 	const st = postBattleStore();
 	const done = new Set(st.done);
-	for (const t of trainers.list) {
+	for (const { t, key } of allTrainersOnMap()) {
 		const script = t.ev && t.ev.script;
-		if (!script || !trainers.isDefeated(t)) continue;
-		const key = trainers.keyOf(t);
+		if (!script || !trainers.defeated.has(key)) continue;
 		if (done.has(key)) continue;
 		if ((st.tries[key] || 0) >= MAX_POSTBATTLE_TRIES) continue;   // give up, don't loop
 		const ops = mapScripts[script + '.Script'];
 		if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) continue;
-		if (runPostBattleScript(script, t)) return;   // at most one per map entry
-		markPostBattleTry(key);                       // unrunnable right now: burn a try
+		if (runPostBattleScript(script, t, key)) return;   // at most one per map entry
+		markPostBattleTry(key);                            // unrunnable right now: burn a try
 	}
 }
 
@@ -891,7 +931,7 @@ function fadeTo(target) {
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
 // block forever with no player-facing UI. Both self-recover after a grace period.
 let loadWatchStart = null;    // rAF timestamp when `loading` first went true
-let cutsceneWatchStart = null;   // rAF timestamp a cutscene first looked stuck
+let cutsceneStall = 0, cutsceneWatchSig = '';   // WATCHDOG 2: game-seconds a cutscene has made no progress
 let strandedSince = null;   // WATCHDOG 4: rAF timestamp the player first looked boxed in
 let moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
 const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
@@ -3337,7 +3377,7 @@ async function refreshMapContent(label) {
 	try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a post-battle beat that was won before the game could run it (see above)
-	try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
+	postBattleCatchUpArmed = true;   // fired by the tick once the screen is free (see there)
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
@@ -8011,6 +8051,12 @@ function tick(now) {
 		else if (now - loadWatchStart > 12000) { loadWatchStart = null; loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
 	} else loadWatchStart = null;
 	if (loading || !world.current) return;
+	if (postBattleCatchUpArmed && !loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+		&& openCanvasMenus().length === 0) {
+		postBattleCatchUpArmed = false;
+		try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
+	}
+
 	// WATCHDOG 2 — a plot cutscene that blocks with NO player-facing UI (no dialog,
 	// battle, evolution, or menu) for a long stretch is genuinely wedged, not just
 	// waiting on the player — force-stop it rather than freeze the map.
@@ -8022,9 +8068,26 @@ function tick(now) {
 	// same list gateReport uses, so this cannot drift from what actually blocks.
 	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking
 		&& !starterMenu.open && openCanvasMenus().length === 0) {
-		if (cutsceneWatchStart == null) cutsceneWatchStart = now;
-		else if (now - cutsceneWatchStart > 30000) { cutsceneWatchStart = null; cutscene.stop(); hud.textContent = 'A scene timed out.'; }
-	} else cutsceneWatchStart = null;
+		// MEASURE STALLS, IN GAME TIME. This used to be 30s of WALL-CLOCK time since
+		// the scene went quiet — but the scene itself runs on game time, which the
+		// tick caps at 50ms a frame. On a slow device (a playtest browser measured
+		// 3.7 fps) game time runs at ~0.19x real time, so the silent part of the
+		// Slowpoke Well beat — ~6s of Kurt walking — took ~30 real seconds and was
+		// killed every single run, mid-walk, with "A scene timed out."
+		//
+		// Now the clock only runs while the scene makes NO progress (its cursor,
+		// its current step and its timers all unchanged), and it counts game time.
+		// A slow scene is never a wedged one; a genuinely wedged scene still dies.
+		const c = cutscene.cur, sub = c && c.sub;
+		const sig = c ? (c.frames || []).map(f => f.i).join(',') + '|' + (sub ? [sub.kind, sub.k, sub.from, Math.round((sub.t || 0) * 20), Math.round((sub.left || 0) * 20)].join(':') : '') : '';
+		if (sig !== cutsceneWatchSig) { cutsceneWatchSig = sig; cutsceneStall = 0; }
+		else cutsceneStall += dt;
+		if (cutsceneStall > 20) {
+			cutsceneStall = 0; cutsceneWatchSig = '';
+			refundPostBattleTry();   // a watchdog kill is not the beat's fault
+			cutscene.stop(); hud.textContent = 'A scene timed out.';
+		}
+	} else { cutsceneStall = 0; cutsceneWatchSig = ''; }
 
 	// WATCHDOG 4 — THE PLAYER IS STANDING SOMEWHERE THEY CANNOT STAND.
 	//
@@ -10219,6 +10282,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	Story.clearTempFlags();
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
+	postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
 	loading = false;
