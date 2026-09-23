@@ -582,6 +582,15 @@ export class Player {
 	update(dt, held) {
 		this.animT += dt;
 		if (this.moving) {
+			// scripts move the PLAYER too (LOCALID_PLAYER), through the same cutscene
+			// driver that borrows `moving` without setting moveFrom/moveTo — so an
+			// interrupted scene can strand the player here exactly as it strands an NPC.
+			// See the twin guard in npcs.js.
+			if (!this.moveTo || !this.moveFrom) {
+				this.px = this.tx * META; this.py = this.ty * META;
+				this.moving = false; this.jumping = false; this.moveT = 0;
+				return;
+			}
 			// the bike is fastest; hold B / Shift to run at nearly double speed
 			const pace = this.biking ? 2.2 : this.run ? 1.85 : 1;
 			this.moveT += (SPEED * pace * dt) / this.moveDist;
