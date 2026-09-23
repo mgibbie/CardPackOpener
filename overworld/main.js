@@ -203,6 +203,18 @@ const pvp = new Pvp();
 const factorySpec = new FactorySpec();
 const cutscene = new Story.Cutscene();
 let signTexts = {};
+// Ops that only DISPLAY. A script built from nothing else is faithfully
+// represented by its extracted sign text, so the cheap dump is fine. Anything
+// else — a branch, an item check, a flag, a special — has to actually RUN, or
+// the sign text becomes a static answer to a question the script was meant to
+// decide. See the bg_event loop in interact().
+const SIGN_INERT_OPS = new Set(['lock', 'lockall', 'release', 'releaseall', 'faceplayer',
+	'msg', 'waitmsg', 'closemsg', 'end', 'return', 'waitbutton', 'nop']);
+function scriptIsDisplayOnly(ops) {
+	if (!Array.isArray(ops)) return true;
+	for (const o of ops) if (o && o.op && !SIGN_INERT_OPS.has(o.op)) return false;
+	return true;
+}
 let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
 let commonStrings = {}; // cross-map / shared text labels (fallback for msg ops)
 let sharedScripts = {}; // bodies the decomps keep outside the map files (see loadMapScripts)
@@ -1052,9 +1064,39 @@ function interact() {
 	}
 	for (const ev of world.current.map.bg_events || []) {
 		if (+ev.x !== fx || +ev.y !== fy) continue;
-		if (signTexts[ev.script]) {
+		const lab = ev.script && ev.script !== '0x0' ? ev.script : null;
+		const scr = lab ? mapScripts[lab] : null;
+		// THE SCRIPT WINS WHENEVER IT DOES MORE THAN PRINT A LINE.
+		//
+		// sign_texts.json is a TEXT DUMP: it holds the `msg` a script would have
+		// shown. That is a faithful stand-in for a plain sign, and a lie for anything
+		// that branches, takes an item or sets a flag. Checking it FIRST — and
+		// returning — meant 373 scripted bg_events across the three regions never ran
+		// at all: the Abandoned Ship door puzzles, the gym statues, and
+		// Route25_SeaCottage_EventScript_Computer, whose Cell Separator sets
+		// FLAG_HELPED_BILL_IN_SEA_COTTAGE and is the ONLY source of the S.S. Ticket.
+		// Reported as "the PC only ever says 'TELEPORTER is displayed on the PC
+		// monitor'" — which is precisely the fallback line the dump captured, served
+		// in place of the script that was supposed to decide whether to show it.
+		//
+		// The other 1038 are genuinely display-only, and keep the cheaper dump.
+		if (scr && !scriptIsDisplayOnly(scr)) {
+			// These 373 have never executed for a player. If one throws, degrade to
+			// the old behaviour rather than eating the A press.
+			try {
+				runScriptLabel(lab);
+				// Some of these are minigame machinery — Game Corner card flip, the
+				// Roulette tables, the Berry Blender — whose opcodes this port has no
+				// implementation for, so the script runs and produces nothing at all.
+				if (!dialog.blocking && !cutscene.blocking) dialog.open(signTexts[lab] ? Story.normalizeText(signTexts[lab], cutsceneCtx()) : '...');
+				return;
+			} catch (e) {
+				console.warn('[bg_event] script failed, falling back to its sign text', lab, e);
+			}
+		}
+		if (signTexts[lab]) {
 			// same normalizer NPC speech uses, so a sign never shows a raw "#"
-			dialog.open(Story.normalizeText(signTexts[ev.script], cutsceneCtx()));
+			dialog.open(Story.normalizeText(signTexts[lab], cutsceneCtx()));
 			return;
 		}
 		// A scripted bg_event with no entry in sign_texts.json used to fall
@@ -1063,11 +1105,8 @@ function interact() {
 		// The map's own script usually has the label; run it the same way an NPC's
 		// script runs, and let runScriptLabel's own fallback handle a dead label
 		// (it says "..." rather than freezing).
-		if (ev.script && ev.script !== '0x0' && mapScripts[ev.script]) {
-			runScriptLabel(ev.script);
-			// Some of these are minigame machinery — Game Corner card flip, the
-			// Roulette tables, the Berry Blender — whose opcodes this port has no
-			// implementation for, so the script runs and produces nothing at all.
+		if (scr) {
+			runScriptLabel(lab);
 			if (!dialog.blocking && !cutscene.blocking) dialog.open('...');
 			return;
 		}
