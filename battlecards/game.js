@@ -3989,6 +3989,13 @@ function wireModalArt(entries) {
 			if (id !== '*' && id !== en.def.id) continue;
 			const fresh = drawCardFace(en.def);
 			if (en.width) fresh.style.width = en.width;
+			// The repaint throws away the element attachTip bound its listeners to, so
+			// without this the card silently stops explaining itself the instant its art
+			// (or the mana font, which repaints EVERY face) arrives — which is always.
+			// Reported as "when you scry there is no zoom text, same with discovering":
+			// scry and Discover are the only two modals that repaint, and were the only
+			// two that went blind.
+			attachTip(fresh, en.def);
 			if (en.cell.firstChild) en.cell.replaceChild(fresh, en.cell.firstChild); else en.cell.appendChild(fresh);
 		}
 	};
