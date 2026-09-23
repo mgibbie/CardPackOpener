@@ -291,7 +291,11 @@ export class Cutscene {
 
 	_actor(who) {
 		const ctx = this.cur.ctx;
-		if (who === 'LOCALID_PLAYER' || who === 'player' || who == null) return ctx.player;
+		// The Crystal scripts say plain `PLAYER` where FireRed/Emerald say
+		// LOCALID_PLAYER — 281 ops, every one of them a move or a face on the player
+		// during a cutscene, and all of them silently no-ops until now. The Slowpoke
+		// Well beat's `face PLAYER right` is one of them.
+		if (who === 'LOCALID_PLAYER' || who === 'PLAYER' || who === 'player' || who == null) return ctx.player;
 		return ctx.npcById?.(who) || null;
 	}
 
