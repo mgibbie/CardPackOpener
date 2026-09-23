@@ -7108,7 +7108,18 @@ const OW_REV_KEY = 'magepunk_ow_rev';
 const owRev = () => Math.max(0, parseInt(localStorage.getItem(OW_REV_KEY), 10) || 0);
 function setOwRev(n) { safeSaveStr(OW_REV_KEY, String(Math.max(0, n | 0))); }
 // the snapshot minus its own revision: "has any real game state changed?"
-function owBody(snap) { const o = { ...snap }; delete o[OW_REV_KEY]; return JSON.stringify(o); }
+// Keys that drift on their own and must NEVER, by themselves, read as a
+// divergence. magepunk_playtime ticks every ~5s straight from the game loop
+// WITHOUT bumping the revision, so a session that ends abruptly leaves local
+// ahead of remote at an IDENTICAL revision — which the equal-revision branch
+// below read as "two devices diverged" and answered with a conflict stash, on a
+// save whose every meaningful key was byte-identical. Reported twice in one
+// morning, with position/party/flags/bag/dex all matching to the byte.
+//
+// Excluding it from the body also means a playtime-only tick no longer counts as
+// a change worth a D1 write, which is the right answer for a cosmetic counter.
+const VOLATILE_KEYS = [OW_REV_KEY, 'magepunk_playtime'];
+function owBody(snap) { const o = { ...snap }; for (const k of VOLATILE_KEYS) delete o[k]; return JSON.stringify(o); }
 // Does this snapshot hold an actual GAME, or is it just an empty browser?
 // This is absence-detection, NOT progress-ordering: it only ever distinguishes
 // "there is no record here" from "there is a record here", and is never used to
@@ -7217,6 +7228,13 @@ async function hydrateOw() {
 			error: r && r.error ? String(r.error) : null,
 		});
 		if (ow && typeof ow === 'object') {
+			// playtime is a monotonic clock, not state to reconcile: keep whichever
+			// side has more so neither device loses time, before any comparison runs
+			{
+				const lp = parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0;
+				const rp = parseInt(ow['magepunk_playtime'], 10) || 0;
+				if (rp > lp) safeSaveStr('magepunk_playtime', String(rp));
+			}
 			const localSnap = owSnapshot();
 			const localRev = owRev(), remoteRev = Math.max(0, parseInt(ow[OW_REV_KEY], 10) || 0);
 			const sameBody = owBody(ow) === owBody(localSnap);
@@ -7268,7 +7286,9 @@ async function hydrateOw() {
 				stashConflict('same-revision divergence (remote copy preserved)', ow, localRev, remoteRev);
 				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote`, rewroteLocal: false, keysOverwritten: [], conflict: true });
 				hud.textContent = 'This game moved on somewhere else too — kept this device\'s copy.';
-				setOwRev(localRev + 1);
+				// pushOw() bumps the revision itself, so local lands on remoteRev + 1 and
+				// the tie is broken. The extra setOwRev here double-counted it: the
+				// reported jump was 2679 -> 2681 with only one write behind it.
 				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
 				pushOw();
 				return;
