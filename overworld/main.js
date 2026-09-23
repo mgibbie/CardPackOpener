@@ -6000,8 +6000,61 @@ function drawBlend(W, H) {
 
 // ---------- cutscenes ----------
 // find an on-map NPC by its object_event local_id (for scripted movement)
+// THE SCRIPTS AND THE MAP DATA NAME THE SAME OBJECT DIFFERENTLY.
+//
+// A transpiled script says `hideobj KURTSHOUSE_KURT1` — the decomp's constant.
+// The map's object_event carries local_id `KurtsHouse_SPRITE_KURT`. npcById was
+// an exact match, so every one of those resolved to null and the op silently did
+// nothing: 1224 references across the game, which is why Kurt kept standing in
+// his house after walking out, and why story NPCs all over Johto never appeared,
+// moved or left.
+//
+// Nothing here invents an object. If the map genuinely has no such object the
+// answer is still null and the op stays the no-op it already was — which is the
+// correct outcome for the ~300 references (AZALEATOWN_RIVAL and friends) whose
+// object simply is not in this port's map data.
+const normObjId = s => String(s == null ? '' : s).toUpperCase().replace(/_SPRITE_/g, '_').replace(/[^A-Z0-9]/g, '');
+let lastTalkedNpc = null;   // VAR_LAST_TALKED: literally "the object you just talked to"
+
 function npcById(localId) {
-	return npcs.list.find(n => n.ev && n.ev.local_id === localId) || null;
+	if (localId == null) return null;
+	const list = npcs.list || [];
+	// 1. the map's own id, which is what a correctly-named reference uses
+	const exact = list.find(n => n.ev && n.ev.local_id === localId);
+	if (exact) return exact;
+
+	// 2. VAR_LAST_TALKED — 193 references, all of them "this one, the one in front
+	//    of you". The decomp keeps it in a var; we keep it on the side.
+	if (localId === 'VAR_LAST_TALKED') return lastTalkedNpc && list.includes(lastTalkedNpc) ? lastTalkedNpc : null;
+
+	// 3. a raw object INDEX into the map's object_events (Battle Dome uses 0/2/4/6)
+	if (typeof localId === 'number' || /^\d+$/.test(String(localId))) {
+		const evs = world.current?.map?.object_events || [];
+		const ev = evs[+localId];
+		return (ev && list.find(n => n.ev === ev)) || null;
+	}
+
+	// 4. the decomp constant vs the map's local_id. Normalising both sides
+	//    (upper-case, drop _SPRITE_, drop punctuation) reconciles 372 of them.
+	const want = normObjId(localId);
+	if (!want) return null;
+	const same = list.filter(n => n.ev && normObjId(n.ev.local_id) === want);
+	if (same.length) return same[0];
+
+	// 5. a trailing index picks the Nth object sharing one local_id — KURTSHOUSE_KURT1
+	//    and KURTSHOUSE_KURT2 are both `KurtsHouse_SPRITE_KURT`, in map order.
+	//    Another 261. A bare stem with no index means the first.
+	const m = want.match(/^(.*?)(\d+)$/);
+	if (m) {
+		const stem = list.filter(n => n.ev && normObjId(n.ev.local_id) === m[1]);
+		const i = +m[2];
+		// STRICT on the range. Every one of the 261 references this resolves today
+		// is in range, so clamping would be dead code — and the only thing a clamp
+		// could ever do is silently act on the WRONG NPC. Out of range stays null,
+		// which is exactly the no-op these references already were.
+		if (i >= 1 && i <= stem.length) return stem[i - 1];
+	}
+	return null;
 }
 // the bridge a running cutscene uses to touch the game
 function cutsceneCtx(talker, scriptLabel) {
@@ -6414,6 +6467,9 @@ function startCutscene(steps, onDone) {
 // run it through the interpreter with the current map's strings
 function runScriptLabel(label, talker) {
 	if (cutscene.blocking || !label) return false;
+	// VAR_LAST_TALKED resolves to whoever this script was started ON. Recorded
+	// here rather than in interact() so trainer talks and coord scripts set it too.
+	if (talker) lastTalkedNpc = talker;
 	syncScriptVars();   // VAR_FACING/VAR_WEEKDAY/VAR_PARTYCOUNT, fresh for this run
 	// In-game trades are intercepted here, before the script runs. The Kanto and
 	// Hoenn scripts exist but drive the trade through four `special` ops this

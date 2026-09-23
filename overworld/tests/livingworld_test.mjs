@@ -176,6 +176,12 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// --- Kurt ---
 		const kurt = await page.evaluate(async () => {
 			const ow = window.__ow;
+			// Kurt does not make balls until the Slowpoke Well is behind you — that is
+			// the real game's order, and it is what Kurt1 itself branches on. Until
+			// then his map script owns him (see kurtstory_test: the apricorn counter
+			// used to answer first and swallowed the whole Slowpoke Well beat).
+			// Put the story past that point before asking him for a craft.
+			ow.Story.setFlag('EVENT_KURT_GAVE_YOU_LURE_BALL');
 			ow.Bag.addItem('redapricorn', 2);
 			await ow.moveToMap('KurtsHouse', 3, 4);
 			const p = ow.player;
