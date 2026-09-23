@@ -412,6 +412,13 @@ export class Cutscene {
 				// and warp-id SWAPPED, leaving a direction constant in `map` and the
 				// real destination in `warp` (`warp UP, HALL_OF_FAME`); that stranded
 				// the Fast Ship gangways, Lance's room and the Bug Contest gates.
+				// Land on a COORDINATE rather than a warp index. Dewford's five warps
+				// are all building doors, so a ferry arrival has nowhere to point; this
+				// bridges to flyTo, which already nudges to the nearest standable tile.
+				case 'warpxy': {
+					ctx.warpXy?.(op.map, op.x, op.y);
+					return this._finish();
+				}
 				case 'warp': {
 					let map = op.map, id = resolveValue(op.warp) || 0;
 					if (WARP_NOT_A_MAP.test(String(map))) {
