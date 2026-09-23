@@ -119,7 +119,14 @@ export const VILLAIN_BEATS = {
 	],
 	JOHTO: [
 		{
-			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB2F', maps: ['SlowpokeWellB1F'], boss: 'PROTON', gate: 'AzaleaGym',
+			// at B1F, NOT B2F. In Crystal, B2F is only reachable with SURF + STRENGTH
+			// (Bulbapedia's Part 5 walkthrough and IGN both list it that way): water
+			// sits between the B1F ladder and the rest of the floor. This beat is
+			// required for the Azalea gym and runs at 1 badge, so on B2F it stranded
+			// Johto for good — and globalTier (min gyms across regions) with it, which
+			// shut every tier gate in all three regions. B1F is the floor the grunts
+			// already spawn on (`maps` below) and the one you can walk into.
+			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB1F', maps: ['SlowpokeWellB1F'], boss: 'PROTON', gate: 'AzaleaGym',
 			team: [{ s: 'zubat', l: 14 }, { s: 'rattata', l: 14 }, { s: 'koffing', l: 16 }],
 			doneFlag: 'villain_johto_slowpoke',
 			objective: 'TEAM ROCKET is cutting SLOWPOKE tails in the SLOWPOKE WELL by AZALEA — stop them.',
