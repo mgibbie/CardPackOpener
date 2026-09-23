@@ -57,6 +57,16 @@ class NPC {
 
 	update(dt, ctx) {
 		if (this.moving) {
+			// `moving` is a flag anyone may set — the cutscene driver borrows it while
+			// animating an actor from the scene's own from/to, without ever filling in
+			// moveFrom/moveTo. Dereferencing them here on that assumption threw every
+			// frame and took the draw loop with it. An actor with nowhere to move to is
+			// simply standing on its tile; heal and carry on.
+			if (!this.moveTo || !this.moveFrom) {
+				this.px = this.tx * META; this.py = this.ty * META;
+				this.moving = false; this.moveT = 0;
+				return;
+			}
 			this.moveT += (NPC_SPEED * dt) / META;
 			if (this.moveT >= 1) {
 				this.px = this.moveTo[0]; this.py = this.moveTo[1];

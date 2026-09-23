@@ -241,8 +241,33 @@ export class Cutscene {
 		this._enter();
 	}
 
-	stop() { this.cur = null; }
-	_finish() { const cb = this.cur?.onDone; this.cur = null; cb?.(); }
+	// A scene that ends mid-step must hand its actors back in a sane state.
+	//
+	// The `move` driver animates px/py from the SCENE's own from/to and merely
+	// BORROWS actor.moving as a flag — it never sets actor.moveFrom/moveTo. A step
+	// that runs to completion clears the flag itself (p >= 1 makes `p < 1` false),
+	// but an INTERRUPTED scene left moving=true with both arrays still null, and the
+	// actor's own update() dereferences them on the very next frame. That threw
+	// every frame from then on, which killed the draw loop: the screen froze on its
+	// last painted frame while the rest of the world kept ticking. Reported twice.
+	//
+	// stop() has a dozen callers — every trigger's catch block, both battle-loss
+	// paths, and the ON_TRANSITION bail, which fires on EVERY entry to a map whose
+	// transition script contains an applymovement.
+	_releaseActors() {
+		const set = this.cur && this.cur.movedActors;
+		if (!set) return;
+		for (const a of set) {
+			if (!a || typeof a.moving !== 'boolean') continue;
+			a.moving = false;
+			if (typeof a.jumping === 'boolean') a.jumping = false;
+			if (typeof a.tx === 'number' && typeof a.ty === 'number') { a.px = a.tx * META; a.py = a.ty * META; }
+			a.moveFrom = null; a.moveTo = null; a.moveT = 0;
+		}
+		set.clear();
+	}
+	stop() { this._releaseActors(); this.cur = null; }
+	_finish() { this._releaseActors(); const cb = this.cur?.onDone; this.cur = null; cb?.(); }
 
 	_frame() { const f = this.cur.frames; return f[f.length - 1]; }
 
@@ -491,7 +516,12 @@ export class Cutscene {
 			const p = Math.min(1, s.t);
 			actor.px = s.from[0] * META + (s.to[0] - s.from[0]) * META * p;
 			actor.py = s.from[1] * META + (s.to[1] - s.from[1]) * META * p;
-			if (typeof actor.moving === 'boolean') actor.moving = p < 1;
+			// borrowing the actor's own flag: remember whom we borrowed it from, so an
+			// interrupted scene can hand it back instead of stranding them (_releaseActors)
+			if (typeof actor.moving === 'boolean') {
+				actor.moving = p < 1;
+				if (p < 1) (c.movedActors || (c.movedActors = new Set())).add(actor);
+			}
 			if (p >= 1) {
 				actor.tx = s.to[0]; actor.ty = s.to[1];
 				actor.px = actor.tx * META; actor.py = actor.ty * META;
