@@ -1,5 +1,6 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
+import { applySailFix } from './sail_fix.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -3148,7 +3149,7 @@ async function loadMapScripts(stem) {
 	// own version; the shared copy is only ever a fallback. Merging here rather
 	// than at each call site means runScriptLabel, `goto` and `call` all resolve
 	// through it without knowing it exists.
-	mapScripts = { ...sharedScripts, ...(c.scr || {}) };
+	mapScripts = applySailFix({ ...sharedScripts, ...(c.scr || {}) });
 	mapStrings = c.str || {};
 }
 
@@ -6027,6 +6028,8 @@ function cutsceneCtx(talker, scriptLabel) {
 		},
 		healParty: () => healParty(party),
 		warp: (mapId, warpId) => warpTo(mapId, warpId),
+		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
+		warpXy: (mapId, x, y) => flyTo(mapId, x, y),
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
 		hideObj: who => { const n = npcById(who); if (n) n.hidden = true; },
 		showObj: who => { const n = npcById(who); if (n) n.hidden = false; },
