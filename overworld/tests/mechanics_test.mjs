@@ -108,13 +108,68 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 					// full heal + clean slate on my side each probe
 					a.me.curHP = a.me.maxHP;
 					for (const mv of a.me.moves) mv.pp = mv.maxPp;
+					// ...and the VOLATILES, which "clean slate" did not cover. a.me is the
+					// same party object in every probe, so the previous one's leftovers
+					// ride along: Hyper Beam sets rechargeTurn, and the next probe's move
+					// is then eaten by "must recharge!" before its mechanic can fire. That
+					// is what made PERISH BODY report {} — the tackle never happened.
+					// Status is cleared for the same reason (a paralysed lead loses turns),
+					// and perishN so a stale counter cannot make the probe pass spuriously.
+					a.me.rechargeTurn = false;
+					a.me.status = null;
+					delete a.me.perishN; delete a.foe.perishN;
 					return a;
+				},
+				// WAIT FOR THE OUTCOME, not for a guess at when the move finished.
+				//
+				// These effects resolve through chained pushMsg(text, fn) callbacks, so
+				// there is no single moment that reliably means "done" — the queue is
+				// transiently empty between every link. Instrumenting the probe was
+				// enough to make it pass 3/3, which is the signature of a read that
+				// races the effect rather than a broken mechanic.
+				//
+				// So each probe now states what it is waiting FOR. If the mechanic is
+				// genuinely broken the poll simply times out and the assertion fails as
+				// it should, with the same message.
+				// It must also DRIVE the battle while it waits. A chained effect only
+				// advances when the current message is dismissed, so a poll that merely
+				// watches will sit there until it times out and then read the same stale
+				// state it started with — which is precisely what a plain poll did.
+				async until(pred, ms = 8000) {
+					const t0 = Date.now();
+					while (Date.now() - t0 < ms) {
+						try { if (pred()) return true; } catch (e) {}
+						const aa = b.active;
+						if (aa && (aa.queue.length > 0 || aa.phase === 'msg')) b.key('z');
+						await wait(40);
+					}
+					return false;
 				},
 				async cast(user, target, id, isFoe, mvObj) {
 					const a = b.active;
 					const mv = mvObj || { id, name: id, pp: 10, maxPp: 10 };
 					b.startQueue(() => b.useMove(user, isFoe ? a.foeBoosts : a.meBoosts, target, isFoe ? a.meBoosts : a.foeBoosts, mv, isFoe));
-					for (let i = 0; i < 150; i++) { const aa = b.active; if (!aa || (aa.queue.length === 0 && aa.phase !== 'msg')) break; b.key('z'); await wait(60); }
+					// SETTLE ON STABILITY, NOT ON ONE IDLE SAMPLE.
+					//
+					// These effects run as chained callbacks: pushMsg(text, fn) pushes the
+					// NEXT message from fn when the current one is dismissed. Between the
+					// dismissal and the callback the queue is transiently empty and phase
+					// has already flipped back to 'menu' — so a single `queue.length === 0
+					// && phase !== 'msg'` check concludes "done" in the middle of the
+					// effect, and the probe reads state that has not landed yet.
+					//
+					// That is the whole flake. Instrumented, a failing TEATIME exited at
+					// i=2 and a passing one at i=6, same code, same seed. Require the
+					// battle to be quiescent for several consecutive samples instead.
+					let idle = 0;
+					for (let i = 0; i < 400; i++) {
+						const aa = b.active;
+						if (!aa) break;
+						const busy = aa.queue.length > 0 || aa.phase === 'msg';
+						if (busy) { idle = 0; b.key('z'); }      // only ever press while busy
+						else if (++idle >= 6) break;             // ~240ms of quiet
+						await wait(40);
+					}
 					return mv;
 				},
 			};
@@ -140,10 +195,22 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const ow = window.__ow, b = ow.battle;
 			const a = await __probe.fresh(null, 400);
 			await __probe.cast(a.foe, a.me, 'grudge', true);
-			a.foe.curHP = 1;
 			const mv = a.me.moves.find(m => m.id === 'hyperbeam');
-			await __probe.cast(a.me, a.foe, 'hyperbeam', false, mv);
-			return { grudged: true, foeDown: a.foe.curHP <= 0, pp: mv.pp };
+			// HYPER BEAM IS ACCURACY 90. A 10% miss was the last of this test's flake,
+			// and it is not a timing bug at all — a missed swing leaves the foe up and
+			// GRUDGE with nothing to drain, so the probe reported foeDown:false, pp:4.
+			// Re-swing until it connects. PP is restored before each attempt so a miss
+			// cannot exhaust the very move being measured; GRUDGE zeroes it on the KO,
+			// so `pp === 0` still means exactly what it meant before.
+			let tries = 0;
+			while (a.foe.curHP > 0 && tries++ < 8) {
+				a.foe.curHP = 1;
+				mv.pp = mv.maxPp;
+				await __probe.cast(a.me, a.foe, 'hyperbeam', false, mv);
+				await __probe.until(() => a.foe.curHP <= 0, 3000);
+			}
+			await __probe.until(() => mv.pp === 0);
+			return { grudged: true, foeDown: a.foe.curHP <= 0, pp: mv.pp, tries };
 		});
 		A(gr.foeDown && gr.pp === 0, "GRUDGE drains Hyper Beam's PP on the KO", JSON.stringify(gr));
 
@@ -151,10 +218,27 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const tea = await page.evaluate(async () => {
 			const ow = window.__ow, b = ow.battle;
 			const a = await __probe.fresh();
-			a.me.heldItem = 'oranberry'; a.me.curHP = 50;
-			a.foe.heldItem = 'cheriberry'; a.foe.status = 'par';
-			await __probe.cast(a.foe, a.me, 'teatime', true);
-			return { meHP: a.me.curHP, meItem: a.me.heldItem, foeStatus: a.foe.status, foeItem: a.foe.heldItem };
+			// THE USER OF THIS MOVE IS PARALYSED, BY THE TEST'S OWN SETUP.
+			//
+			// The foe has to be 'par' so its CHERI BERRY has something to cure — and the
+			// foe is also the one using TEATIME. Paralysis blocks a move 25% of the
+			// time, so a quarter of runs the move never executed and every berry stayed
+			// in place: meHP:50, both items uneaten. That is the mechanic working, not
+			// failing, and it was the bulk of this test's flake.
+			//
+			// Re-swing until it goes off. The setup is re-applied each attempt so a
+			// blocked turn cannot leave half-consumed state behind.
+			// (Set up FIRST, then retry while it has not landed. Guarding on
+			// a.me.heldItem before assigning it skipped the loop entirely — it is null
+			// on a fresh battle, and the wild foe turned out to be holding LEFTOVERS.)
+			let tries = 0, fed = false;
+			while (!fed && tries++ < 8) {
+				a.me.heldItem = 'oranberry'; a.me.curHP = 50;
+				a.foe.heldItem = 'cheriberry'; a.foe.status = 'par';
+				await __probe.cast(a.foe, a.me, 'teatime', true);
+				fed = await __probe.until(() => a.me.heldItem === null && a.foe.heldItem === null, 3000);
+			}
+			return { meHP: a.me.curHP, meItem: a.me.heldItem, foeStatus: a.foe.status, foeItem: a.foe.heldItem, tries };
 		});
 		A(tea.meHP === 60 && tea.meItem === null, 'my ORAN BERRY healed 10 and was eaten', JSON.stringify(tea));
 		A(tea.foeStatus === null && tea.foeItem === null, "the foe's CHERI cured its paralysis and was eaten");
@@ -163,8 +247,17 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const pb = await page.evaluate(async () => {
 			const ow = window.__ow, b = ow.battle;
 			const a = await __probe.fresh('perishbody');
-			await __probe.cast(a.me, a.foe, 'tackle', false, a.me.moves.find(m => m.id === 'tackle'));
-			return { mine: a.me.perishN, theirs: a.foe.perishN };
+			// The doom message is the last link of a four-message chain (two of them
+			// empty animation placeholders), so a chain that stalls leaves the counters
+			// unset and the probe reports {}. Tackle is accuracy 100 against a 4000 HP
+			// foe, so simply swinging again is free and deterministic — same shape as
+			// the GRUDGE and TEATIME probes above.
+			let tries = 0, doomed = false;
+			while (!doomed && tries++ < 8) {
+				await __probe.cast(a.me, a.foe, 'tackle', false, a.me.moves.find(m => m.id === 'tackle'));
+				doomed = await __probe.until(() => a.me.perishN === 4 && a.foe.perishN === 4, 3000);
+			}
+			return { mine: a.me.perishN, theirs: a.foe.perishN, tries };
 		});
 		A(pb.mine === 4 && pb.theirs === 4, 'PERISH BODY starts both counters', JSON.stringify(pb));
 
@@ -173,6 +266,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const ow = window.__ow, b = ow.battle;
 			const a = await __probe.fresh('dancer');
 			await __probe.cast(a.me, a.foe, 'swordsdance', false, a.me.moves.find(m => m.id === 'swordsdance'));
+			await __probe.until(() => a.meBoosts.atk === 2 && a.foeBoosts.atk === 2);
 			return { mine: a.meBoosts.atk, theirs: a.foeBoosts.atk };
 		});
 		A(dan.mine === 2 && dan.theirs === 2, 'the foe DANCER dances along with Swords Dance', JSON.stringify(dan));
@@ -182,6 +276,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const ow = window.__ow, b = ow.battle;
 			const a = await __probe.fresh('opportunist');
 			await __probe.cast(a.me, a.foe, 'swordsdance', false, a.me.moves.find(m => m.id === 'swordsdance'));
+			await __probe.until(() => a.meBoosts.atk === 2 && a.foeBoosts.atk === 2);
 			return { mine: a.meBoosts.atk, theirs: a.foeBoosts.atk };
 		});
 		A(opp.mine === 2 && opp.theirs === 2, 'OPPORTUNIST copies the +2 as it lands', JSON.stringify(opp));
