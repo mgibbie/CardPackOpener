@@ -161,11 +161,32 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		for (let i = 0; i < 300 && !arrived; i++) {
 			await page.evaluate(() => { try { window.__ow.dialog.key('z'); } catch (e) {} });
 			await sleep(80);
-			const st = await page.evaluate(() => ({ m: window.__ow.world.current.name }));
-			if (st.m !== 'Route104') arrived = { map: st.m, ticks: i };
+			const st = await page.evaluate(() => ({
+				m: window.__ow.world.current.name,
+				blocking: !!window.__ow.cutscene.blocking,
+				v: window.__ow.Story.getVar('VAR_BOARD_BRINEY_BOAT_STATE'),
+			}));
+			if (st.m !== 'Route104') { arrived = { map: st.m, ticks: i }; break; }
+			// onFrame is edge-triggered off the step loop, so a scene that never
+			// started (or was released without arriving) needs another step to
+			// re-arm. Re-pump rather than burning the budget waiting on nothing.
+			if (!st.blocking && st.v === 1 && i % 8 === 7) {
+				await page.evaluate(() => { try { window.__ow.pumpPlayer('down', 0.4); } catch (e) {} });
+			}
 		}
 		A(!!arrived, 'the ferry arrives somewhere other than Route 104', JSON.stringify(arrived));
 		A(arrived && arrived.map === 'DewfordTown', 'and that somewhere is Dewford Town', JSON.stringify(arrived));
+
+		// The map NAME flips the moment world.load resolves, but player.setTile and
+		// the NPC rebuild land after it. Sampling on the name alone read Route 104
+		// coordinates on a half-built Dewford — a flake in this test, not the game.
+		// Wait for the arrival to actually finish before looking at it.
+		for (let i = 0; i < 60; i++) {
+			const ready = await page.evaluate(() => (window.__ow.npcs?.list || []).length > 0);
+			if (ready) break;
+			await sleep(100);
+		}
+		await sleep(300);
 
 		const end = await page.evaluate(() => ({
 			map: window.__ow.world.current.name,
