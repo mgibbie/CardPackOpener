@@ -522,21 +522,61 @@ function applyGymLevelFloors() {
 // Display-only .Scripts are skipped: the defeat line is already shown from
 // info.defeatText, and running them would just repeat it. Same classifier the
 // sign_texts shadowing fix uses — a script earns the A press by doing something.
+// DONE vs ATTEMPTS. Shipped as a plain "attempted" set, which burned a beat the
+// moment anything interrupted it: a tester opened the TOWN MAP mid-scene, the
+// watchdog stopped the cutscene 30s later, and the Slowpoke Well beat was marked
+// forever with EVENT_CLEARED_SLOWPOKE_WELL still unset — the save had no path
+// left to Bugsy. Marking on attempt bought loop-safety at the price of a
+// permanent softlock, which is the wrong trade.
+//
+// So: `done` is written when the beat actually COMPLETES, and `tries` is the
+// loop guard. A scene that dies partway is retried on the next map entry, and a
+// beat that genuinely cannot run gives up after MAX_POSTBATTLE_TRIES.
 const POSTBATTLE_KEY = 'magepunk_postbattle_v1';
-function postBattleDone() { try { return new Set(JSON.parse(localStorage.getItem(POSTBATTLE_KEY) || '[]')); } catch (e) { return new Set(); } }
-function markPostBattle(key) {
+const MAX_POSTBATTLE_TRIES = 3;
+function postBattleStore() {
+	try {
+		const raw = JSON.parse(localStorage.getItem(POSTBATTLE_KEY) || '{}');
+		// migrate the shipped array form: those keys were "attempted", and the ones
+		// whose beat never landed deserve their retries back
+		if (Array.isArray(raw)) return { done: [], tries: Object.fromEntries(raw.map(k => [k, 1])) };
+		return { done: Array.isArray(raw.done) ? raw.done : [], tries: raw.tries && typeof raw.tries === 'object' ? raw.tries : {} };
+	} catch (e) { return { done: [], tries: {} }; }
+}
+function postBattleSave(st) { safeSaveStr(POSTBATTLE_KEY, JSON.stringify(st)); }
+function postBattleDone() { return new Set(postBattleStore().done); }
+function markPostBattleTry(key) {
+	if (!key) return 0;
+	const st = postBattleStore();
+	st.tries[key] = (st.tries[key] || 0) + 1;
+	postBattleSave(st);
+	return st.tries[key];
+}
+function markPostBattleDone(key) {
 	if (!key) return;
-	const s = postBattleDone(); s.add(key);
-	safeSaveStr(POSTBATTLE_KEY, JSON.stringify([...s]));
+	const st = postBattleStore();
+	if (!st.done.includes(key)) st.done.push(key);
+	postBattleSave(st);
 }
 
 function runPostBattleScript(script, t) {
 	if (!script || cutscene.blocking) return false;
-	const ops = mapScripts[script + '.Script'];
+	const label = script + '.Script';
+	const ops = mapScripts[label];
 	if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) return false;
 	const key = t ? trainers.keyOf(t) : script;
-	markPostBattle(key);   // marked on attempt, so a beat can never loop
-	return runScriptLabel(script + '.Script', t || null);
+	markPostBattleTry(key);                 // the loop guard, not the completion mark
+	const ran = runScriptLabel(label, t || null);
+	// Completion is what counts. cutscene.run's onDone fires only when the scene
+	// reaches its end — a scene that is stopped partway never calls it, so the beat
+	// stays un-done and the next map entry picks it up again.
+	if (ran) postBattlePending = key;
+	return ran;
+}
+// set while a post-battle beat is on screen; cleared by the cutscene finishing
+let postBattlePending = null;
+function notePostBattleFinished() {
+	if (postBattlePending) { markPostBattleDone(postBattlePending); postBattlePending = null; }
 }
 
 // RECOVERY, for saves that won the battle before any of this existed.
@@ -554,15 +594,18 @@ function runPostBattleScript(script, t) {
 // entry forever.
 function catchUpPostBattleScripts() {
 	if (cutscene.blocking || dialog.blocking || battle.blocking) return;
-	const done = postBattleDone();
+	const st = postBattleStore();
+	const done = new Set(st.done);
 	for (const t of trainers.list) {
 		const script = t.ev && t.ev.script;
 		if (!script || !trainers.isDefeated(t)) continue;
-		if (done.has(trainers.keyOf(t))) continue;
+		const key = trainers.keyOf(t);
+		if (done.has(key)) continue;
+		if ((st.tries[key] || 0) >= MAX_POSTBATTLE_TRIES) continue;   // give up, don't loop
 		const ops = mapScripts[script + '.Script'];
 		if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) continue;
 		if (runPostBattleScript(script, t)) return;   // at most one per map entry
-		markPostBattle(trainers.keyOf(t));            // unrunnable: don't retry it forever
+		markPostBattleTry(key);                       // unrunnable right now: burn a try
 	}
 }
 
@@ -848,7 +891,8 @@ function fadeTo(target) {
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
 // block forever with no player-facing UI. Both self-recover after a grace period.
 let loadWatchStart = null;    // rAF timestamp when `loading` first went true
-let cutsceneWatchStart = null; // rAF timestamp a cutscene first looked stuck
+let cutsceneWatchStart = null;   // rAF timestamp a cutscene first looked stuck
+let strandedSince = null;   // WATCHDOG 4: rAF timestamp the player first looked boxed in
 let moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
 const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
 // Movement input the DOOR turned away. The first version of WATCHDOG 3 armed
@@ -6589,7 +6633,10 @@ function runScriptLabel(label, talker) {
 		cutscene.run({ [label]: std }, label, cutsceneCtx(talker, label), () => { saveParty(party); });
 		return true;
 	}
-	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); });
+	// notePostBattleFinished: onDone fires only when the scene REACHES ITS END.
+	// cutscene.stop() drops the scene without it, which is exactly the signal a
+	// post-battle beat needs — an interrupted beat stays un-done and is retried.
+	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); notePostBattleFinished(); });
 	return true;
 }
 
@@ -7967,10 +8014,59 @@ function tick(now) {
 	// WATCHDOG 2 — a plot cutscene that blocks with NO player-facing UI (no dialog,
 	// battle, evolution, or menu) for a long stretch is genuinely wedged, not just
 	// waiting on the player — force-stop it rather than freeze the map.
-	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking && !starterMenu.open) {
+	// A CANVAS MENU IS PLAYER-FACING UI TOO. This listed starterMenu and nothing
+	// else, so opening the TOWN MAP (or the bag, or the party) mid-scene looked
+	// like a wedged cutscene: 30 seconds later the watchdog stopped it. That is
+	// how the Slowpoke Well beat died halfway through Kurt's walk — reported from
+	// production, with the fly prompt still on screen. openCanvasMenus() is the
+	// same list gateReport uses, so this cannot drift from what actually blocks.
+	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking
+		&& !starterMenu.open && openCanvasMenus().length === 0) {
 		if (cutsceneWatchStart == null) cutsceneWatchStart = now;
 		else if (now - cutsceneWatchStart > 30000) { cutsceneWatchStart = null; cutscene.stop(); hud.textContent = 'A scene timed out.'; }
 	} else cutsceneWatchStart = null;
+
+	// WATCHDOG 4 — THE PLAYER IS STANDING SOMEWHERE THEY CANNOT STAND.
+	//
+	// Two softlocks reported the same afternoon, by different routes:
+	//   * the S.S. Anne departure walked the player 9 tiles south onto open ocean
+	//     and the scene ended there, surfing=false, every direction bumping;
+	//   * the Slateport Harbor exit landed them on the harbor roof at (32,22),
+	//     walled on three sides with water north.
+	// Neither reproduces from the map data — the harbor's exit warp resolves to
+	// the correct door in both region copies, and the departure runs to completion
+	// here. So rather than guess at two causes I cannot see, catch the CLASS: a
+	// scripted walk ignores collision by design, so any script, warp or ferry can
+	// leave the player on a tile the rules forbid, and today that is unrecoverable
+	// without Fly.
+	//
+	// Deliberately conservative. It only acts when the player is on an illegal
+	// tile AND genuinely cannot move AND nothing else owns the screen, for two
+	// full seconds — so it can never argue with surfing, a cutscene that is mid-
+	// walk, or a menu. findLanding is the same nearest-standable-tile search Fly
+	// uses, so the rescue lands somewhere the player could have walked to.
+	{
+		const stuckTile = !loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+			&& !pvp.blocking && !evolution.blocking && openCanvasMenus().length === 0
+			&& !player.moving && !player.surfing
+			&& (!world.isPassable(player.tx, player.ty) || world.isSurfable(player.tx, player.ty));
+		if (stuckTile) {
+			const boxed = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+				.every(([dx, dy]) => !world.isPassable(player.tx + dx, player.ty + dy) || world.isSurfable(player.tx + dx, player.ty + dy));
+			if (boxed) {
+				if (strandedSince == null) strandedSince = now;
+				else if (now - strandedSince > 2000) {
+					strandedSince = null;
+					const [lx, ly] = findLanding(player.tx, player.ty);
+					if (lx !== player.tx || ly !== player.ty) {
+						console.warn('[stranded] player was boxed in at', player.tx, player.ty, '-> moved to', lx, ly);
+						player.setTile(lx, ly);
+						hud.textContent = 'You found your footing.';
+					}
+				}
+			} else strandedSince = null;
+		} else strandedSince = null;
+	}
 
 	// accumulate playtime (whole seconds, throttled writes) for the Trainer Card
 	playAccum += dt;
@@ -10209,7 +10305,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
