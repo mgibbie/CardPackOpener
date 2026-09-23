@@ -194,23 +194,20 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		A(await flag('EVENT_AZALEA_TOWN_SLOWPOKETAIL_ROCKET'),
 			'pressing A on Kurt sets the flag that clears the well guard');
-		// KNOWN LIMITATION, asserted rather than glossed. Kurt1 ends with
-		// `hideobj KURTSHOUSE_KURT1`, but this map's object carries local_id
-		// `KurtsHouse_SPRITE_KURT`, and npcById() is an exact match — so the hide is
-		// a no-op and Kurt stays standing there after the beat. The story advances
-		// correctly (the flag above is what opens the well); only his exit is lost.
+		// He walks out and disappears, which is the whole of Kurt1's tail.
 		//
-		// This is one instance of a WIDER issue, deliberately out of scope here:
-		// 1224 script object references across the game do not resolve to any map
-		// local_id, most of them indirect ones (VAR_LAST_TALKED, VAR_0x8008) which
-		// are a different mechanism entirely. Fixing that is its own change.
+		// This assertion used to read the other way. Kurt1 ends with
+		// `hideobj KURTSHOUSE_KURT1` while this map's object carries local_id
+		// `KurtsHouse_SPRITE_KURT`, and npcById() was an exact match — so the hide
+		// resolved to null and he stayed standing there. It was shipped as a KNOWN
+		// limitation with a deliberate tripwire assertion, so that fixing the
+		// underlying naming mismatch would fail here rather than pass silently.
+		// It did exactly that (see objref_test.mjs), and this is the updated truth.
 		//
-		// Written as an assertion so that whoever does fix it sees this fail and
-		// updates it, rather than finding a test that quietly claimed he left.
+		// He was provably standing there a moment ago, so this cannot pass for a
+		// Kurt who simply never loaded.
 		const after = await kurtAt();
-		A(!!after && !after.hidden,
-			'KNOWN: Kurt does not visually leave — his script hides KURTSHOUSE_KURT1, the map calls him KurtsHouse_SPRITE_KURT',
-			JSON.stringify(after));
+		A(!after || after.hidden, 'and Kurt walks out and is gone', JSON.stringify(after));
 
 		// ...and once he has given the Lure Ball, the counter takes over again
 		await page.evaluate(() => window.__ow.Story.setFlag('EVENT_KURT_GAVE_YOU_LURE_BALL'));

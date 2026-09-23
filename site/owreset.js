@@ -69,6 +69,17 @@ export const OW_RESET_KEYS = [
 	// reset must clear it too — a fresh game starting at a high revision would
 	// outrank, and silently replace, the server copy it was meant to leave alone.
 	'magepunk_ow_rev',
+	// The two companions of the revision, added with it and missed at the time —
+	// the completeness check below is exactly what catches that.
+	//   magepunk_ow_conflict: the preserved losing copy of a same-revision
+	//     divergence. Keeping it across a deliberate wipe would leave a stale
+	//     "this game moved on elsewhere" record attached to a game that no longer
+	//     exists. (The no-discarding rule this stash serves is about ordinary
+	//     reconciliation, not about the owner explicitly asking for a wipe.)
+	//   magepunk_owsync_log: the ?synclog=1 diagnostic ring buffer. Pure
+	//     diagnostics about a save that is being erased.
+	'magepunk_ow_conflict',
+	'magepunk_owsync_log',
 ];
 
 // Deliberately spared, and why. Kept as data so the test can assert it.

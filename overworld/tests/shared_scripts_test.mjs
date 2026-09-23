@@ -73,7 +73,10 @@ const shared = JSON.parse(fs.readFileSync(path.join(D, 'shared_scripts.json'), '
 // ---------- map labels must still win ----------
 {
 	const src = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
-	A(/mapScripts = \{ \.\.\.sharedScripts, \.\.\.\(c\.scr \|\| \{\}\) \}/.test(src),
+	// What matters is the ORDER — the map's own labels spread last, so they win.
+	// The merge may be wrapped (applySailFix patches the Briney ferry legs as the
+	// table is built), which is why this no longer pins the exact spelling.
+	A(/mapScripts = (?:[A-Za-z_$][\w$]*\()?\{ \.\.\.sharedScripts, \.\.\.\(c\.scr \|\| \{\}\) \}/.test(src),
 		"the map's own labels are merged OVER the shared ones, so a map never loses its own version");
 }
 
