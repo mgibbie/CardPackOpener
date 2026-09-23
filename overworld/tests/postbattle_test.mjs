@@ -60,8 +60,22 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/function catchUpPostBattleScripts/.test(mn), 'and a save that already won can still reach it');
 	A(/scriptIsDisplayOnly\(ops\)\) return false/.test(mn),
 		'a display-only .Script is skipped — defeatText already says it');
-	A(/markPostBattle\(key\);\s*\/\/ marked on attempt/.test(mn),
-		'the marker is written on ATTEMPT, so a beat can never loop');
+	// This used to assert the opposite — "marked on attempt, so a beat can never
+	// loop" — which bought loop-safety at the price of a permanent softlock: a
+	// tester opened the TOWN MAP mid-scene, the watchdog stopped the cutscene, and
+	// the Slowpoke Well beat was burned with EVENT_CLEARED_SLOWPOKE_WELL unset and
+	// no path left to Bugsy. Done is now COMPLETION; tries is the loop guard.
+	A(/function notePostBattleFinished/.test(mn) && /markPostBattleDone\(postBattlePending\)/.test(mn),
+		'a beat is marked DONE only when its scene reaches the end');
+	A(/notePostBattleFinished\(\); \}\);/.test(mn),
+		"...hooked to cutscene.run's onDone, which a stopped scene never calls");
+	A(/MAX_POSTBATTLE_TRIES = 3/.test(mn) && />= MAX_POSTBATTLE_TRIES\) continue/.test(mn),
+		'a bounded try counter is the loop guard instead');
+	A(/if \(Array\.isArray\(raw\)\) return \{ done: \[\]/.test(mn),
+		'saves already burned by the old array marker get their retries back');
+	// a canvas menu must count as player-facing UI, or the watchdog kills a paused scene
+	A(/openCanvasMenus\(\)\.length === 0/.test(mn),
+		'WATCHDOG 2 does not kill a scene paused behind the town map');
 
 	const ev = fs.readFileSync(path.join(OW, 'events.js'), 'utf8');
 	A(/who === 'PLAYER'/.test(ev), 'plain PLAYER resolves to the player');
@@ -162,6 +176,42 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(f.rockets, 'hiding the grunts set EVENT_SLOWPOKE_WELL_ROCKETS — the Azalea gym Rocket leaves', JSON.stringify(f));
 		A(f.kurt1 === false, "and Kurt's house flag was cleared so he is back home", JSON.stringify(f));
 		A(errors.length === 0, 'no uncaught page error during the beat', JSON.stringify(errors.slice(0, 2)));
+
+		// ===== an INTERRUPTED beat must be retried, not burned =====
+		// This is the reported softlock: the scene was stopped partway (a menu, the
+		// watchdog, a reload) and the shipped "mark on attempt" rule meant it never
+		// ran again, leaving EVENT_CLEARED_SLOWPOKE_WELL permanently unset.
+		{
+			const state = await page.evaluate(() => {
+				const W = window.__ow;
+				// put the save back to "grunts beaten, beat never finished"
+				W.Story.clearFlag('EVENT_CLEARED_SLOWPOKE_WELL');
+				localStorage.removeItem('magepunk_postbattle_v1');
+				return true;
+			});
+			A(state, 'setup: the beat is pending again');
+
+			// start it, then stop the scene mid-way exactly as the watchdog does
+			const interrupted = await page.evaluate(async () => {
+				const W = window.__ow;
+				const t = (W.trainers.list || []).find(x => x.ev && x.ev.script === 'TrainerGruntM1');
+				if (!t) return null;
+				W.trainers.markDefeated(t);
+				W.catchUpPostBattleScriptsForTest();
+				await new Promise(r => setTimeout(r, 400));
+				const wasRunning = !!W.cutscene.blocking;
+				W.cutscene.stop();                       // the watchdog's exact call
+				await new Promise(r => setTimeout(r, 200));
+				const st = JSON.parse(localStorage.getItem('magepunk_postbattle_v1') || '{}');
+				return { wasRunning, done: (st.done || []).length, tries: Object.values(st.tries || {})[0] || 0,
+					cleared: !!W.Story.getFlag('EVENT_CLEARED_SLOWPOKE_WELL') };
+			});
+			A(interrupted && interrupted.wasRunning, 'the beat started', JSON.stringify(interrupted));
+			A(interrupted && interrupted.cleared === false, 'and was cut short before its flag', JSON.stringify(interrupted));
+			A(interrupted && interrupted.done === 0,
+				'an interrupted beat is NOT marked done — this is the softlock fix', JSON.stringify(interrupted));
+			A(interrupted && interrupted.tries === 1, 'it burned one try, not the whole beat', JSON.stringify(interrupted));
+		}
 	} finally {
 		if (browser) await browser.close();
 		server.close();

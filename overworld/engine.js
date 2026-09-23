@@ -69,12 +69,25 @@ export function getImage(url) {
 }
 
 // ---------- tileset name mangling (MapLoader.getTilesetFileName) ----------
+// gTileset_PetalburgWoods -> petalburg_woods, to match the exported asset names.
+//
+// The old rule put an underscore before EVERY capital, which breaks on a run of
+// them: gTileset_SSAnne became s_s_anne while the exported file is ss_anne. The
+// secondary tileset then 404'd, side() swallowed the failed image load, and the
+// whole S.S. Anne interior rendered black with only sprites visible — no console
+// error to go on. Reported from production, where it blocks the Kanto story.
+//
+// Now a standard camel->snake: split only where a run of capitals ENDS (the last
+// capital before a lowercase starts the next word) or where a lowercase meets a
+// capital. Checked against all 191 tilesets the layouts reference — 189 are
+// byte-identical to the old rule, SSAnne is fixed, and the remaining one is a
+// "NULL" placeholder that resolves to nothing either way.
 function mangle(tilesetName) {
 	let n = tilesetName.replace('gTileset_', '');
-	n = n.replace(/([A-Z])/g, c => '_' + c.toLowerCase());
-	n = n.replace(/(\d+)/g, d => '_' + d);
-	n = n.replace(/^_/, '').replace(/__/g, '_');
-	return n;
+	n = n.replace(/([a-z0-9])([A-Z])/g, '$1_$2')      // Petalburg|Woods
+		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2');   // SS|Anne
+	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
+	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
 const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(name)}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
