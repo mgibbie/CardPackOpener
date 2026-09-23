@@ -1234,6 +1234,25 @@ export class Battle {
 		}
 		return a.info.money || 0;
 	}
+	// Announce AND pay in one call, so the two can never disagree again.
+	//
+	// They did. Only ONE of the five battle builders (startTrainerBattle) credited
+	// info.money in its own victory callback; the scripted-trainer, villain,
+	// rival-tier and rival-intro paths all announced a prize and paid nothing.
+	// Reported as "her win screen said +$168, money never moved. Brock paid, Misty
+	// didn't" — the variable was never the trainer, it was whether that trainer's
+	// decomp script body happened to be loaded (main.js sends scripted trainers
+	// down a different path entirely), which is why it looked random.
+	//
+	// _paid rides in `info`, which is part of the battle snapshot, so a battle
+	// abandoned between the credit and the end of the message cannot pay twice
+	// when it resumes.
+	awardPrize() {
+		const a = this.active;
+		const amt = this.prizeMoney();
+		if (amt > 0 && a?.info && !a.info._paid) { a.info._paid = true; Bag.earn(amt); }
+		return amt;
+	}
 	consumeItem(mon) {
 		mon.consumedItem = mon.heldItem;
 		mon.heldItem = null;
@@ -3569,7 +3588,7 @@ export class Battle {
 				this.pushMsg('', () => { this.applyHazards(a2.foe, 'foe'); this.switchInAbility(a2.foe, 'foe'); });
 			} else if (a2.isTrainer) {
 				this.pushMsg(a2.info.defeatText);
-				this.pushMsg(`You got $${this.prizeMoney()} for winning!`, () => this.finish('victory'));
+				this.pushMsg(`You got $${this.awardPrize()} for winning!`, () => this.finish('victory'));
 			} else {
 				this.finish('victory');
 			}
@@ -4784,7 +4803,7 @@ export class Battle {
 				if (!more) {
 					if (a.isTrainer) {
 						this.pushMsg(a.info.defeatText);
-						this.pushMsg(`You got $${this.prizeMoney()} for winning!`, () => this.finish('victory'));
+						this.pushMsg(`You got $${this.awardPrize()} for winning!`, () => this.finish('victory'));
 					} else this.finish('victory');
 				}
 			} else if (!this.livingMine().length) {

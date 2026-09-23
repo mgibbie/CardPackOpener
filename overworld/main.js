@@ -337,7 +337,9 @@ function startTrainerBattle(t, foeParty, info) {
 	battle.startTrainer(party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
-			safeSaveStr('magepunk_money', (parseInt(localStorage.getItem('magepunk_money'), 10) || 0) + info.money);
+			// the prize is paid by battle.awardPrize(), at the moment it is announced —
+			// this used to be the ONLY path that paid, which is why scripted trainers,
+			// villains and rivals all showed a prize and credited nothing
 			saveParty(party);
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
 			evolution.check(party, battle.data);
@@ -1309,7 +1311,8 @@ function resumeEndHandler(end, savedMap) {
 		if (result === 'victory') {
 			const t = trainers.list.find(x => x.ev?.script === end.script);
 			if (t) trainers.markDefeated(t);
-			Bag.earn(end.money || 0);
+			// paid by battle.awardPrize() when the restored battle announces it, which
+			// also picks up an AMULET COIN the pre-battle endSpec snapshot could not know about
 			saveParty(party);
 			if (end.script) onTrainerDefeated(end.script);
 			evolution.check(party, battle.data);
