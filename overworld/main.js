@@ -30,7 +30,7 @@ import {
 	optionList,
 } from './ow_menus.js';
 import { NPCs } from './npcs.js';
-import { Encounters } from './encounters.js';
+import { Encounters, encounterChance } from './encounters.js';
 import { Battle } from './battle.js';
 import { Trainers, BOSS_CLASSES } from './trainers.js';
 import { Dialog } from './dialog.js';
@@ -3864,7 +3864,7 @@ const HM_FIELD = {
 			dialog.open('The rock was smashed to bits!', () => {
 				items.removeFieldObj(o);
 				const grp = encounters.data[world.current.map.id]?.rock_smash;
-				if (grp && Math.random() * 100 < grp.rate) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
+				if (grp && Math.random() < encounterChance(world.current.map.id, grp.rate)) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
 			});
 			return;
 		}
