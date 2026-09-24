@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -84,7 +85,7 @@ A(!inWild.has('aegislash_blade'), 'nor is Aegislash-Blade');
 
 // ---------- the RIFT PRISM ----------
 const bag = fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8');
-const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const main = overworldSource();
 const dex = fs.readFileSync(path.join(ROOT, 'overworld/pokedex.js'), 'utf8');
 A(/riftprism:\s*\{[^}]*kind: 'form'/.test(bag), 'the RIFT PRISM exists as a form item');
 A(/'key'[\s\S]{0,120}'form'/.test(main), 'and lives in the KEY pocket');
