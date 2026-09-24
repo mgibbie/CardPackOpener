@@ -24,6 +24,7 @@ import * as Settings from './settings.js';
 import { sfx, syncBgmVolume } from './sound.js';
 import { shopStockNow } from './ow_pvp.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { restoreBackup, runSaveAction } from './ow_saves.js';
 import {
 	BAG_POCKETS, DEX_GRID_COLS, FERRY_DESTS, KEY_ACTIONS, NEW_GAME_INTRO, OPTION_ACTIONS,
 	OPTION_KEYS, PC_BOXES, PC_BOX_CAP, ROAMERS, STARTERS, THINGS_TO_DO, bagEntries, bagMenu,
@@ -32,9 +33,9 @@ import {
 	friendsChallenge, friendsMenu, gcMenu, getBox, halfParty, halfPartyNeed, hasFlyPoint, keyBinds,
 	legendStats, levelCapNow, mailMenu, moveShop, nameRater, optionsKey, optionsMenu, partyMenu,
 	pcMatches, pcMenu, playerMenu, playerRegion, portalMenu, postgameLog, postgameObjective,
-	pressKey, questMenu, restoreBackup, roamState, runMenu, runModeItems, runSaveAction, sellList,
-	sellPrice, shinyOwnedCount, shopMenu, socialKey, socialMenu, startItems,
-	startMenu, starterMenu, tidStr, todoRows, townMap, trade, tradeMenu, trainerCard, vfMenu,
+	pressKey, questMenu, roamState, runMenu, runModeItems, sellList, sellPrice, shinyOwnedCount,
+	shopMenu, socialKey, socialMenu, startItems, startMenu, starterMenu, tidStr, todoRows, townMap,
+	trade, tradeMenu, trainerCard, vfMenu,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------

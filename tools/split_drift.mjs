@@ -12,7 +12,9 @@ import { overworldSource } from '../overworld/tests/owsource.mjs';
 const oldMain = execSync('git show HEAD:overworld/main.js', { encoding: 'utf8', maxBuffer: 64 << 20 });
 const newAll = overworldSource();
 const files = fs.readdirSync('overworld/tests').filter(f => f.endsWith('.mjs')).map(f => 'overworld/tests/' + f)
-	.filter(f => /main\.js/.test(fs.readFileSync(f, 'utf8')));
+	// only tests that actually READ the source (mentioning main.js in a comment isn't enough:
+	// their localStorage keys and mock-server actions are runtime values, not source checks)
+	.filter(f => /readFileSync\([^)]*main\.js|overworldSource\(\)/.test(fs.readFileSync(f, 'utf8')));
 const newMain = fs.readFileSync('overworld/main.js', 'utf8');
 for (const f of files) {
 	const text = fs.readFileSync(f, 'utf8');
@@ -22,7 +24,9 @@ for (const f of files) {
 	const hits = [];
 	for (const t of toks) {
 		let ok = null;
-		if (t.type === 'String' || t.type === 'Template') { const lit = t.value.slice(1, -1); if (lit.length >= 6) ok = [oldMain.includes(lit), newSrc.includes(lit)]; }
+		// a bare identifier-like string ('magepunk_story', 'ow-save') is a runtime value —
+		// a localStorage key, a mock-server action — not a piece of source being checked
+		if (t.type === 'String' || t.type === 'Template') { const lit = t.value.slice(1, -1); if (lit.length >= 6 && !/^[\w-]+$/.test(lit)) ok = [oldMain.includes(lit), newSrc.includes(lit)]; }
 		else if (t.type === 'RegularExpression') { try { const re = new RegExp(t.regex.pattern, t.regex.flags.replace('g', '')); ok = [re.test(oldMain), re.test(newSrc)]; } catch {} }
 		if (ok && ok[0] && !ok[1]) hits.push(t.value.slice(0, 90));
 	}

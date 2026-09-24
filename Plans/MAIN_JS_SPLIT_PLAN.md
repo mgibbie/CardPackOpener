@@ -74,6 +74,12 @@ and can be reverted on its own.
   matches, card trades, presence and visiting (559 lines). main.js is at 9,070
   lines. `mailWaiting` was assigned from inside the block, so it moved onto `S`
   first.
+- **Extraction 3: `ow_saves.js`, DONE on this branch.** Server save sync,
+  revision, achievements sync, gifts and the OPTIONS save-data actions
+  (383 lines). main.js is at 8,688 lines. The starter-pick / intro functions
+  that sat at the end of that stretch stayed behind for the intro module.
+  `extract_block` redirected `ow_menus.js`'s imports of `restoreBackup` /
+  `runSaveAction` to `ow_saves.js` by itself.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).
