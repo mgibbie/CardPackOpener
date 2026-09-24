@@ -65,6 +65,24 @@ and can be reverted on its own.
   put. They move with their subsystem in phase 3, and go onto `S` only if other
   code must write them.
 
+### Phase 3 progress
+
+- **Extraction 1: `ow_menus.js`, DONE on this branch.** The full-resolution
+  menus (drawing + taps, 1,231 lines) moved out. main.js went from 10,839 to
+  9,618 lines.
+- **Tools used for every extraction:**
+  - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
+    exports, and whether anything is assigned across the boundary (a blocker).
+  - `tools/extract_block.mjs <from> <to> <module> "<header>" --write` makes the
+    move. The code is byte-identical; the tool adds the import/export plumbing.
+    main.js's own declarations are exported and imported back. That cycle is
+    safe because main.js is loaded plainly as `main.js`, and the tool refuses
+    any block whose top level would read main.js bindings while loading.
+  - `overworld/tests/owsource.mjs` gives source-reading tests main.js + every
+    `ow_*.js`, so a check follows the code when it moves. Before each PR, every
+    test literal is compared old vs new, and anything that no longer matches
+    gets switched over.
+
 ### Phase 3+: extract subsystems, leaf-first, one or two per PR
 
 Each moves with its own private state and exports what main.js calls.

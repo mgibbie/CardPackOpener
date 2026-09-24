@@ -13,6 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -26,7 +27,7 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 // ---------- source: the keyboard-path rules live in the summary key handler ----------
 {
-	const mj = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mj = overworldSource();   // main.js + the modules split out of it
 	A(/kind === 'summary-move'/.test(mj), 'the summary move rows dispatch through menuTap');
 	const summaryBlock = mj.slice(mj.indexOf('if (partyMenu.summary) {'), mj.indexOf('if (partyMenu.summary) {') + 900);
 	A((summaryBlock.match(/partyMenu\.moveSwap = null/g) || []).length >= 3, 'cycling members and X all drop an armed swap', summaryBlock.slice(0, 120));
