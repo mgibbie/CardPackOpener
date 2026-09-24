@@ -107,7 +107,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				const b = window.__ow.battle;
 				for (let i = 0; i < 300; i++) {
 					const a = b.active;
-					if (a && a.phase === 'choose') return true;
+					if (a && a.phase === 'menu') return true;   // the battle's idle phase ('choose' no longer exists; every wait ran out its 18s)
 					if (!a && allowGone) return false;
 					await new Promise(r => setTimeout(r, 60));
 				}
