@@ -55,11 +55,15 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	].find(p => fs.existsSync(p));
 	const PORT = 8974;
 	const STATE = { username: 'freeze', friendCode: 'FREEZE', decks: [], collection: {}, packs: 0, packInbox: 0, stats: { runs: 0, wins: 0 } };
+	// A lead that wins every Lv3 fight in one hit and never evolves. The old Lv5
+	// SQUIRTLE, never healed across ~7 battles, sometimes FAINTED and left the
+	// whiteout dialog up, which the "nothing blocks afterwards" checks then read as
+	// an input freeze. That failed 4 of 6 runs on main.
 	const PARTY = [{
-		speciesId: 'squirtle', name: 'SQUIRTLE', level: 5, gender: 'M', friend: 70, types: ['Water'],
+		speciesId: 'lapras', name: 'LAPRAS', level: 50, gender: 'M', friend: 70, types: ['Water', 'Ice'],
 		ivs: { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 },
-		stats: { hp: 21, atk: 11, def: 12, spa: 11, spd: 11, spe: 10 }, maxHP: 21, curHP: 21,
-		exp: 135, moves: [{ id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }], sprite: 's7.png', num: 7,
+		stats: { hp: 190, atk: 105, def: 95, spa: 105, spd: 115, spe: 75 }, maxHP: 190, curHP: 190,
+		exp: 125000, moves: [{ id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }], sprite: 's131.png', num: 131,
 	}];
 	const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ttf': 'font/ttf', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 	const server = http.createServer(async (req, res) => {
@@ -139,13 +143,27 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			const a = await pos();
 			return b[0] !== a[0] || b[1] !== a[1];
 		};
+		// Win the fight with FIGHT -> first move. Always from the FIGHT slot, and out of
+		// the bag first: a menu left on BAG (the auto-repeat check parks it there)
+		// used to throw the first bag item, a POKe BALL, and the nickname prompt for the
+		// caught RATTATA was then read as a freeze.
 		const fightToEnd = async () => {
 			for (let i = 0; i < 600; i++) {
 				if (!(await page.evaluate(() => window.__ow.battle.blocking))) break;
-				await page.evaluate(() => { try { window.__ow.battle.key('z'); } catch (e) {} });
+				await page.evaluate(() => {
+					try {
+						const b = window.__ow.battle, a = b.active;
+						if (a && ['bag', 'switch'].includes(a.phase)) { b.key('x'); return; }
+						if (a && a.phase === 'menu') a.menuIdx = 0;
+						if (a && a.phase === 'moves') a.moveIdx = 0;
+						b.key('z');
+					} catch (e) {}
+				});
 				await sleep(120);
 			}
 			await sleep(1200);
+			// start the next fight at full HP
+			await page.evaluate(() => { for (const m of window.__ow.party || []) m.curHP = m.maxHP; });
 		};
 
 		await boot();
