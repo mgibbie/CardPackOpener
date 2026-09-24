@@ -23,6 +23,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -36,7 +37,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/\[1751, 'dexcrown'/.test(dex), 'the milestone ladder reaches the full dex (1751 → DEX CROWN)');
 	const bag = fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8');
 	for (const id of ['dexcrown', 'legendcharm', 'redscap']) A(bag.includes(id + ':'), `${id} exists as an item`);
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/setInterval\(refreshMail, 120000\)/.test(main), 'the MAIL badge refreshes without opening the mailbox');
 	A(/dailies system was\s+\/\/ deliberately skipped|deliberately skipped/.test(main), 'the premium stock records WHY it is static (dailies were skipped by user call)');
 }
@@ -146,7 +147,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// ---------- RED's capstone (source-verified: the award path runs inside
 		// the badge-award flow, which a harness can't cleanly trigger) ----------
 		{
-			const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+			const main = overworldSource();
 			A(/Bag\.earn\(100000\);\s*\n\s*Bag\.addItem\('rarecandy', 10\);\s*\n\s*Bag\.addItem\('redscap', 1\)/.test(main),
 				"RED's win pays $100k + 10 candies + RED'S CAP");
 			A(/all_legends_caught/.test(main) && /legendcharm/.test(main),

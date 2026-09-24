@@ -19,4 +19,5 @@ export const S = {
 	mapScripts: undefined,        // the current map's transpiled scripts
 	lastBattleOutcome: undefined, // B_OUTCOME_* of the last battle, for GetBattleOutcome
 	trainerTeams: undefined,      // canonical TRAINER_id -> {class, party}
+	mailWaiting: undefined,       // async matches waiting on ME (START-menu badge); written by ow_pvp.js
 };

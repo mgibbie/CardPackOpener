@@ -99,30 +99,40 @@ function wrap(names) {
 	return lines.join('\n');
 }
 
-// the moved code gets `export` on each declaration main.js still needs
+// a declaration an earlier extraction already exported (another ow_*.js imports it from main.js)
+const stmtOf = def => def.type === 'Variable' ? def.parent : def.node;
+const alreadyExported = stmt => src.slice(Math.max(0, stmt.range[0] - 7), stmt.range[0]) === 'export ';
+
+// the moved code gets `export` on each declaration main.js (or an earlier split module) still needs
 let block = src.slice(start, end);
 const blockEdits = [];
+const reexport = [];   // moved names other split modules import from main.js: main re-exports them
 for (const v of mod.variables) {
-	if (!give.has(v.name)) continue;
 	const def = v.defs[0];
-	const stmt = def.type === 'Variable' ? def.parent : def.node;
+	if (!def || def.type === 'ImportBinding' || !inBlock(def.name)) continue;
+	const stmt = stmtOf(def);
+	if (alreadyExported(stmt)) { reexport.push(v.name); continue; }   // keeps its `export` as it moves
+	if (!give.has(v.name)) continue;
 	blockEdits.push(stmt.range[0] - start);
 }
 for (const off of [...new Set(blockEdits)].sort((x, y) => y - x)) block = block.slice(0, off) + 'export ' + block.slice(off);
 
-// main.js: `export` on its declarations the module needs, drop the block, import the rest
+// main.js: `export` on its declarations the module needs (unless already), drop the block, import the rest
 let main = src;
 const mainEdits = new Set();
 for (const { def } of fromMain) {
-	const stmt = def.type === 'Variable' ? def.parent : def.node;
-	mainEdits.add(stmt.range[0]);
+	const stmt = stmtOf(def);
+	if (!alreadyExported(stmt)) mainEdits.add(stmt.range[0]);
 }
 const ops = [...mainEdits].map(o => ({ at: o, del: 0, text: 'export ' }));
 ops.push({ at: start, del: end - start, text: '' });
 ops.sort((x, y) => y.at - x.at);
 for (const op of ops) main = main.slice(0, op.at) + op.text + main.slice(op.at + op.del);
 const giveList = [...give].sort();
-const importIntoMain = `import {\n${wrap(giveList)}\n} from './${outName.replace(/^overworld\//, '')}';\n`;
+const modPath = `./${outName.replace(/^overworld\//, '')}`;
+let importIntoMain = giveList.length ? `import {\n${wrap(giveList)}\n} from '${modPath}';\n` : '';
+// earlier split modules import these from main.js; keep that working by re-exporting
+if (reexport.length) importIntoMain += `// re-exported for the modules that import them from main.js\nexport {\n${wrap(reexport.sort())}\n} from '${modPath}';\n`;
 // place it after the ow_state import
 const anchor = eol("import { S } from './ow_state.js';\n");
 if (!main.includes(anchor)) throw new Error('anchor import missing');

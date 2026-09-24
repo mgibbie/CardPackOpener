@@ -70,6 +70,10 @@ and can be reverted on its own.
 - **Extraction 1: `ow_menus.js`, DONE on this branch.** The full-resolution
   menus (drawing + taps, 1,231 lines) moved out. main.js went from 10,839 to
   9,618 lines.
+- **Extraction 2: `ow_pvp.js`, DONE on this branch.** Live PvP, async
+  matches, card trades, presence and visiting (559 lines). main.js is at 9,070
+  lines. `mailWaiting` was assigned from inside the block, so it moved onto `S`
+  first.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).
@@ -78,6 +82,11 @@ and can be reverted on its own.
     main.js's own declarations are exported and imported back. That cycle is
     safe because main.js is loaded plainly as `main.js`, and the tool refuses
     any block whose top level would read main.js bindings while loading.
+  - `undef_test` also checks that every relative import names something its
+    module exports. A missing export is a link error that takes the whole page
+    down at load, and no-undef can't see it.
+  - `tools/split_drift.mjs` lists source-reading tests whose literals no longer
+    match after a move.
   - `overworld/tests/owsource.mjs` gives source-reading tests main.js + every
     `ow_*.js`, so a check follows the code when it moves. Before each PR, every
     test literal is compared old vs new, and anything that no longer matches
