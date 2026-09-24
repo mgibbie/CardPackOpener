@@ -1565,6 +1565,20 @@ function resumeEndHandler(end, savedMap) {
 			if (result === 'defeat') whiteOut();
 		}
 	};
+	// the Space Center multi battle: its script is gone after a reload, so a win
+	// replays the "defeated Maxie + Tabitha" scene itself (it sets the story state)
+	if (kind === 'spacecenter') return result => {
+		multiPicks = null;
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			lastBattleOutcome = B_OUTCOME_WON;
+			saveParty(party);
+			runScriptLabel('MossdeepCity_SpaceCenter_2F_EventScript_DefeatedMaxieTabitha');
+		} else {
+			Story.setVar('VAR_RESULT', 2);
+			if (result === 'defeat') whiteOut();
+		}
+	};
 	if (kind === 'villain') return result => {
 		if (result === 'victory') {
 			const beat = Quest.beatAt(end.region, savedMap);
@@ -1592,7 +1606,11 @@ function resumeSavedBattle() {
 	const onEnd = resumeEndHandler(saved.end, saved.map);
 	battle.endSpec = saved.end || { kind: 'wild' };
 	battleSaveDirty = true;   // re-arms the tick, which re-saves while it runs
-	if (snap.isTrainer) battle.startTrainer(party, snap.foes, snap.info, onEnd, { restore: snap });
+	// a multi battle ran on a VIEW of the party (the picked mons); resume on the same one
+	const side = saved.end?.kind === 'spacecenter'
+		? (saved.end.picks || []).map(i => party[i]).filter(Boolean)
+		: party;
+	if (snap.isTrainer) battle.startTrainer(side, snap.foes, snap.info, onEnd, { restore: snap });
 	else battle.start(party, snap.foe.speciesId, snap.foe.level, onEnd, null,
 		{ restore: snap, safari: snap.safari && safari.on ? safari : null });
 	hud.textContent = 'Resuming the battle...';
@@ -1739,10 +1757,47 @@ const daycareMenu = { open: false, mode: 'main', idx: 0, flash: null };
 // in-game NPC trade: the offer, then a party picker (see trades.js)
 const tradeMenu = { open: false, trade: null, idx: 0, flash: null, talker: null };
 const nameRater = { open: false, idx: 0 };
+// ChooseHalfPartyForBattle: pick up to 3 for a multi battle, in order
+const halfParty = { open: false, idx: 0, picked: [], flash: null };
 const moveShop = { open: false, mode: 'main', idx: 0, mon: null, list: null, flash: null };
 
 function openDaycare() { daycareMenu.open = true; daycareMenu.mode = 'main'; daycareMenu.idx = 0; daycareMenu.flash = null; }
 function openNameRater() { nameRater.open = true; nameRater.idx = 0; }
+// Runs UNDER the paused script (the special returns 'wait'); VAR_RESULT is 1 on
+// confirm, 0 on cancel — the script loops back to its prompt on 0.
+const halfPartyNeed = () => Math.min(3, (party || []).filter(m => m.curHP > 0).length);
+function openHalfParty() {
+	if (!halfPartyNeed()) { Story.setVar('VAR_RESULT', 0); return; }
+	Object.assign(halfParty, { open: true, idx: 0, picked: [], flash: null });
+	return 'wait';
+}
+function closeHalfParty(ok) {
+	halfParty.open = false;
+	Story.setVar('VAR_RESULT', ok ? 1 : 0);
+	if (!ok) halfParty.picked = [];
+	cutscene.resume();
+}
+function halfPartyKey(k) {
+	const n = party.length + 1;   // the mons, then BATTLE
+	if (k === 'ArrowUp') halfParty.idx = (halfParty.idx + n - 1) % n;
+	if (k === 'ArrowDown') halfParty.idx = (halfParty.idx + 1) % n;
+	if (k === 'x' || k === 'Escape') { closeHalfParty(false); return; }
+	if (k !== 'z' && k !== 'Enter') return;
+	if (halfParty.idx === party.length) {
+		const need = halfPartyNeed();
+		if (halfParty.picked.length === need) closeHalfParty(true);
+		else halfParty.flash = `Choose ${need} POKeMON.`;
+		return;
+	}
+	const i = halfParty.idx, mon = party[i];
+	const at = halfParty.picked.indexOf(i);
+	if (at >= 0) { halfParty.picked.splice(at, 1); halfParty.flash = null; return; }
+	if (!mon || mon.curHP <= 0) { halfParty.flash = `${mon?.name || 'It'} can't battle.`; return; }
+	if (halfParty.picked.length >= halfPartyNeed()) { halfParty.flash = 'Three are already chosen.'; return; }
+	halfParty.picked.push(i);
+	halfParty.flash = null;
+	if (halfParty.picked.length === halfPartyNeed()) halfParty.idx = party.length;   // hop to BATTLE
+}
 function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
 
 // open the Town Map to the region of the current map (or the first visited one)
@@ -3041,6 +3096,8 @@ function pressKey(k) {
 	// so the shop must keep taking input — otherwise the player can neither buy
 	// nor close it and the script never resumes
 	if (shopMenu.open && shopMenu.fromScript) { shopKey(k); return; }
+	// the multi-battle party pick is open under its paused script, like the shop
+	if (halfParty.open) { halfPartyKey(k); return; }
 	// a scripted battle (gym leader / rival / villain / any trainer engaged via
 	// their EventScript) runs UNDER its paused cutscene — the trainerbattle op
 	// holds the cutscene's `cur` (so `blocking` stays true) until the fight
@@ -3147,7 +3204,7 @@ function pressKey(k) {
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
-	|| daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
+	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;
 const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking
 	|| battle.blocking || pvp.blocking || factorySpec.blocking || canvasMenuOpen() || fading();
@@ -3162,7 +3219,7 @@ function openCanvasMenus() {
 	// built lazily: several of these are declared further down the file
 	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
 		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
-		dexMenu, trainerCard, townMap, daycareMenu, nameRater, moveShop, optionsMenu, questMenu, mailMenu,
+		dexMenu, trainerCard, townMap, daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
 		tradeMenu, gcMenu, vfMenu, contestMenu, blendMenu, slideMenu, decoMenu, socialMenu, slotsMenu };
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
@@ -6796,8 +6853,27 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 // ---------- the Mossdeep Space Center multi battle ----------
 // pokeemerald battle_tower.c: Steven (partner) + you vs Maxie + Tabitha. The foe
 // teams are the decomp's; the two leaders' mons interleave so each side of the
-// double opens with one of each. Until the AI-partner work lands the player fields
-// their own leads.
+// double opens with one of each. Steven fights beside you with sStevenMons.
+// EVs are the decomp's {HP, Atk, Def, Spe, SpA, SpD}, re-keyed.
+const STEVEN_PARTNER = [
+	{ s: 'metang', l: 42, nature: 'brave', evs: { atk: 252, def: 252, spa: 6 }, moves: ['lightscreen', 'psychic', 'reflect', 'metalclaw'] },
+	{ s: 'skarmory', l: 43, nature: 'impish', evs: { hp: 252, spa: 6, spd: 252 }, moves: ['toxic', 'aerialace', 'protect', 'steelwing'] },
+	{ s: 'aggron', l: 44, nature: 'adamant', evs: { atk: 252, spa: 252, spd: 6 }, moves: ['thunder', 'protect', 'solarbeam', 'dragonclaw'] },
+];
+function buildPartnerMon(e) {
+	const mon = battleBuildMon(e.s, e.l, battle.data);
+	if (!mon) return null;
+	mon.ivs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };   // fixedIV = MAX_PER_STAT_IVS
+	mon.nature = e.nature;
+	mon.evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, ...e.evs };
+	mon.stats = statsFor(battle.data.species[e.s], mon.ivs, mon.level, mon);
+	mon.maxHP = mon.curHP = mon.stats.hp;
+	mon.moves = giftMoves(e.moves);
+	return mon;
+}
+// the picked mons (party indices, in pick order) while the multi battle is on
+let multiPicks = null;
+const pickedView = picks => (picks || []).map(i => party[i]).filter(m => m && m.curHP > 0);
 function startSpaceCenterBattle() {
 	const build = tid => (trainerTeams[tid]?.party || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
 	const maxie = build('MAXIE_MOSSDEEP'), tabitha = build('TABITHA_MOSSDEEP');
@@ -6806,10 +6882,13 @@ function startSpaceCenterBattle() {
 		if (maxie[i]) foeParty.push(maxie[i]);
 		if (tabitha[i]) foeParty.push(tabitha[i]);
 	}
-	if (!foeParty.length || !(party || []).some(m => m.curHP > 0)) { Story.setVar('VAR_RESULT', 1); return; }
-	const info = { displayName: 'MAGMA LEADER MAXIE & ADMIN TABITHA', defeatText: '', money: 44 * 8 * 2, boss: true };
-	battle.endSpec = { kind: 'strainer', script: null };
-	battle.startTrainer(party, foeParty, info, result => {
+	const mine = multiPicks?.length ? pickedView(multiPicks) : (party || []).filter(m => m.curHP > 0).slice(0, 3);
+	if (!foeParty.length || !mine.length) { Story.setVar('VAR_RESULT', 1); return; }
+	const steven = STEVEN_PARTNER.map(buildPartnerMon).filter(Boolean);
+	const info = { displayName: 'MAXIE & TABITHA', defeatText: '', money: 44 * 8 * 2, boss: true, double: true,
+		partner: steven.length ? { name: 'STEVEN', party: steven } : null };
+	battle.endSpec = { kind: 'spacecenter', picks: mine.map(m => party.indexOf(m)) };
+	battle.startTrainer(mine, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
 			lastBattleOutcome = B_OUTCOME_WON;
@@ -6817,6 +6896,8 @@ function startSpaceCenterBattle() {
 			cutscene.resume();
 		} else {
 			// the script's own loss path is SetCB2WhiteOut; black out here instead
+			// (the stopped script never reaches its LoadPlayerParty)
+			multiPicks = null;
 			Story.setVar('VAR_RESULT', 2);
 			lastBattleOutcome = B_OUTCOME_LOST;
 			if (result === 'defeat') whiteOut();
@@ -7323,8 +7404,12 @@ function runSpecial(name, store) {
 		// answering 0 looped the player back to Steven's prompt forever. There is no
 		// AI partner yet (Plans/AI_PARTNER_PLAN.md), so the player fields their own
 		// two leads against Maxie + Tabitha as a double battle.
-		case 'SavePlayerParty': case 'LoadPlayerParty': case 'ReducePlayerPartyToSelectedMons': return;
-		case 'ChooseHalfPartyForBattle': Story.setVar('VAR_RESULT', living().length ? 1 : 0); return;
+		// The saved party is never cut down: the picks are a VIEW handed to the battle
+		// (same mon objects, so damage lands on the real ones) and Load just drops it.
+		case 'SavePlayerParty': return;
+		case 'ChooseHalfPartyForBattle': return openHalfParty();
+		case 'ReducePlayerPartyToSelectedMons': multiPicks = halfParty.picked.slice(); return;
+		case 'LoadPlayerParty': multiPicks = null; return;
 		case 'DoSpecialTrainerBattle':
 			if (String(Story.getVar('VAR_0x8004')) === 'SPECIAL_BATTLE_STEVEN') return startSpaceCenterBattle();
 			return;
@@ -8535,6 +8620,7 @@ function tick(now) {
 		else if (tradeMenu.open) drawNpcTrade(SW, MH);
 		else if (daycareMenu.open) drawDaycare(SW, MH);
 		else if (nameRater.open) drawNameRater(SW, MH);
+		else if (halfParty.open) drawHalfParty(SW, MH);
 		else if (moveShop.open) drawMoveShop(SW, MH);
 		else if (optionsMenu.open) drawOptions(SW, MH);
 		else if (questMenu.open) drawQuest(SW, MH);
@@ -9310,6 +9396,20 @@ function drawNameRater(W, H) {
 	party.forEach((m, i) => monRow('nr:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, nameRater.idx === i, u));
 }
 
+function drawHalfParty(W, H) {
+	const u = H / 480;
+	menuChrome(W, H, u, 'MULTI BATTLE', `Choose ${halfPartyNeed()} POKeMON to battle beside STEVEN.`);
+	const ORD = ['1st', '2nd', '3rd'];
+	party.forEach((m, i) => {
+		const at = halfParty.picked.indexOf(i);
+		monRow('hp3:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, halfParty.idx === i || at >= 0, u, at >= 0 ? ORD[at] : '');
+	});
+	const go = { id: 'hp3go', x: W - 226 * u, y: 16 * u, w: 110 * u, h: 36 * u, label: 'BATTLE', center: true };
+	menuUi.push(go);
+	BUI.button(sctx, go, menuHover === 'hp3go' || halfParty.idx === party.length, u);
+	if (halfParty.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(halfParty.flash, 24 * u, H - 18 * u); }
+}
+
 function drawOptions(W, H) {
 	const u = H / 480;
 	if (optionsMenu.mode === 'controls') {
@@ -9817,6 +9917,8 @@ function menuTap(id) {
 	if (kind === 'dc') { daycareMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dcdep') { daycareMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'nr') { nameRater.idx = +a; pressKey('z'); return; }
+	if (kind === 'hp3') { halfParty.idx = +a; pressKey('z'); return; }
+	if (kind === 'hp3go') { halfParty.idx = party.length; pressKey('z'); return; }
 	if (kind === 'ms') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
@@ -9834,7 +9936,7 @@ function menuTap(id) {
 		return;
 	}
 }
-const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
+const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
 
 // ---------- live PvP battles ----------
 // build a self-contained party snapshot the PvP engine can resolve without
@@ -10603,7 +10705,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
 		Fly, get townMap() { return townMap; }, openTownMap, flyTo, hasFlyPoint, markFlyPoint, Clock,
 		Trades, get tradeMenu() { return tradeMenu; }, startNpcTrade,
-		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get moveShop() { return moveShop; },
+		Daycare, get daycareMenu() { return daycareMenu; }, get nameRater() { return nameRater; }, get halfParty() { return halfParty; }, get moveShop() { return moveShop; },
 		openDaycare, openNameRater, openMoveShop, setNickname, relearnable,
 		Settings, get optionsMenu() { return optionsMenu; },
 		Journal, Savefile, runSaveAction, loadBackups, restoreBackup, OPTION_ACTIONS, OPTION_KEYS, OW_KEYS, repelWoreOff, setRepel, drawOptions,

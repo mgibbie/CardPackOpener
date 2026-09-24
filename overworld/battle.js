@@ -898,19 +898,37 @@ export class Battle {
 				getImage(`data/pokemon/${file}`).catch(() => null));
 		};
 		this._loadSprite = loadSprite; // reused by mid-battle form changes (changeForm)
+		// IN-GAME PARTNER (pokeemerald BATTLE_TYPE_INGAME_PARTNER): an AI trainer
+		// owns the ally slot with a party of their own — `info.partner` = { name,
+		// party }. Their mons are never in `party`, so the switch menu, the bag, EXP
+		// and the save all see only the player's. The partner's party travels inside
+		// `info`, which the snapshot already serializes, so a resume gets it back.
+		const partner = info?.partner?.party?.length ? info.partner : null;
 		const backSprites = new Map(), foeSprites = new Map();
 		await Promise.all([
 			...party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))),
+			...(partner ? partner.party.map(async m => backSprites.set(m, await loadSprite(m.sprite, true))) : []),
 			...foeParty.map(async m => foeSprites.set(m, await loadSprite(m.sprite, false))),
 		]);
-		const foe = foeParty[(restore?.foeIdx) || 0] || foeParty[0];
-		const isDouble = foeParty.length >= 2 && /TWINS|COUPLE| & |SR\. AND JR/i.test(info.displayName || '');
-		const meAlly = isDouble ? party.filter(m => m.curHP > 0)[1] || null : null;
-		const foeAlly = isDouble ? foeParty[1] : null;
+		// a resumed double names both foe slots by index (foeIdx is pinned to 1 in
+		// doubles, so it alone put the wrong mon back in the lead slot)
+		const at = i => (i != null && i >= 0 && foeParty[i]?.curHP > 0) ? foeParty[i] : null;
+		const foe = at(restore?.foeAt) || foeParty[(restore?.foeIdx) || 0] || foeParty[0];
+		// doubles are asked for by `info.double` (or a partner); the display-name
+		// regex is the fallback for the class-named pairs the data never flags
+		const isDouble = foeParty.length >= 2 && (!!info?.double || !!partner || /TWINS|COUPLE| & |SR\. AND JR/i.test(info.displayName || ''));
+		const partnerPick = restore && restore.partnerAllyIdx >= 0 ? partner?.party[restore.partnerAllyIdx] : null;
+		const meAlly = !isDouble ? null
+			: partner ? (partnerPick?.curHP > 0 ? partnerPick : partner.party.find(m => m.curHP > 0) || null)
+			: party.filter(m => m.curHP > 0)[1] || null;
+		const foeAlly = !isDouble ? null
+			: restore ? (at(restore.foeAllyAt) || foeParty.find(m => m.curHP > 0 && m !== foe) || null)
+			: foeParty[1];
 		this.active = {
 			double: !!(isDouble && meAlly),
 			meAlly: isDouble && meAlly ? meAlly : null,
 			foeAlly: isDouble && meAlly ? foeAlly : null,
+			partner: isDouble && meAlly && partner ? partner : null,
 			meAllyImg: null, foeAllyImg: null,
 			meAllyBoosts: freshBoosts(), foeAllyBoosts: freshBoosts(),
 			meAllyShownHP: meAlly?.curHP ?? 0, foeAllyShownHP: foeAlly?.curHP ?? 0,
@@ -942,7 +960,7 @@ export class Battle {
 			caughtMon: null,
 		};
 		this._starting = false; // active now drives `blocking`
-		if (!restore) for (const m of party) this.clearVolatiles(m);
+		if (!restore) for (const m of [...party, ...(this.active.partner?.party || [])]) this.clearVolatiles(m);
 		if (this.active.double) {
 			this.active.meAllyImg = backSprites.get(this.active.meAlly);
 			this.active.foeAllyImg = foeSprites.get(this.active.foeAlly);
@@ -952,8 +970,17 @@ export class Battle {
 		this.pushMsg(`You are challenged by ${info.displayName}!`);
 		this.pushMsg(`${info.displayName} sent out ${foe.name}${this.active.double ? ' and ' + this.active.foeAlly.name : ''}!`, () => cry(foe.speciesId));
 		this.pushMsg('', () => this.switchInAbility(this.active.foe, 'foe'));
+		if (this.active.partner) this.pushMsg(`${this.active.partner.name} sent out ${this.active.meAlly.name}!`, () => cry(this.active.meAlly.speciesId));
 		this.queueSendOut(`Go! ${playerMon.name}!`, playerMon, 'me');
 		this.pushMsg('', () => this.switchInAbility(this.active.me, 'me'));
+	}
+
+	// who a combatant belongs to: the player, the in-game partner, or the foe
+	ownerOf(mon) {
+		const a = this.active;
+		if (!a || !mon) return null;
+		if (a.partner?.party.includes(mon)) return 'partner';
+		return (mon === a.me || mon === a.meAlly || a.party.includes(mon)) ? 'player' : 'foe';
 	}
 
 	get blocking() { return this.active != null || !!this._starting; }
@@ -1009,6 +1036,9 @@ export class Battle {
 			foe: strip(a.foe), foeAlly: a.foeAlly ? strip(a.foeAlly) : null,
 			meIdx: Math.max(0, a.party.indexOf(a.me)),
 			meAllyIdx: a.meAlly ? a.party.indexOf(a.meAlly) : -1,
+			partnerAllyIdx: a.partner && a.meAlly ? a.partner.party.indexOf(a.meAlly) : -1,
+			foeAt: a.isTrainer ? a.foes.indexOf(a.foe) : -1,
+			foeAllyAt: a.isTrainer && a.foeAlly ? a.foes.indexOf(a.foeAlly) : -1,
 			boosts: { me: a.meBoosts, foe: a.foeBoosts, meAlly: a.meAllyBoosts, foeAlly: a.foeAllyBoosts },
 			meScreens: a.meScreens, foeScreens: a.foeScreens,
 			meSide: a.meSide, foeSide: a.foeSide,
@@ -3270,25 +3300,32 @@ export class Battle {
 	// heuristic worth of a status move for the foe right now (0 = don't pick it):
 	// hazards and setup early, status on a healthy target, healing under half,
 	// no re-laying / re-statusing / re-screening
-	statusMoveValue(m) {
+	// `side` is whose AI is thinking. 'foe' (the default) reads exactly what it
+	// always did; 'me' is the in-game partner, scoring against the foe side with
+	// its own screens/boosts and the actual user/target.
+	statusMoveValue(m, side = 'foe', user = null, target = null) {
 		const a = this.active;
 		const fx = MOVE_FX[m.id] || {};
 		const st = STAT_MOVES[m.id];
 		const early = (a.turnCount || 0) < 2;
+		const mine = side === 'me';
+		const self = mine ? user : a.foe, opp = mine ? target : a.me;
+		const ownScreens = mine ? a.meScreens : a.foeScreens;
+		const ownBoosts = mine ? this.boostsOf(user) : a.foeBoosts;
 		if (fx.hazard) {
-			const laid = a.meHazards[fx.hazard] || 0;
+			const laid = (mine ? a.foeHazards : a.meHazards)[fx.hazard] || 0;
 			const cap = fx.hazard === 'spikes' ? 3 : fx.hazard === 'toxicspikes' ? 2 : 1;
 			return laid >= cap ? 0 : (early ? 95 : 45);
 		}
-		if (fx.status) return !a.me.status && a.me.curHP > a.me.maxHP * 0.6 ? 85 : 0;
-		if (fx.heal) return a.foe.curHP < a.foe.maxHP * 0.5 ? 90 : 0;
+		if (fx.status) return !opp.status && opp.curHP > opp.maxHP * 0.6 ? 85 : 0;
+		if (fx.heal) return self.curHP < self.maxHP * 0.5 ? 90 : 0;
 		if (fx.weather) return a.weather?.kind === fx.weather ? 0 : 55;
 		if (fx.terrain) return a.terrain?.kind === fx.terrain ? 0 : 50;
-		if (fx.screen) return ((fx.screen === 'light' ? a.foeScreens.light : a.foeScreens.reflect) > 0) ? 0 : 60;
+		if (fx.screen) return ((fx.screen === 'light' ? ownScreens.light : ownScreens.reflect) > 0) ? 0 : 60;
 		if (st && !st.foe) {
 			const key = st.stat || Object.keys(st.stats || {})[0];
-			if (!key || (a.foeBoosts[key] || 0) >= 2) return 0; // already set up
-			return a.foe.curHP > a.foe.maxHP * 0.7 ? (early ? 80 : 40) : 0;
+			if (!key || (ownBoosts[key] || 0) >= 2) return 0; // already set up
+			return self.curHP > self.maxHP * 0.7 ? (early ? 80 : 40) : 0;
 		}
 		if (st && st.foe) return early ? 30 : 15;
 		// A status move the engine has NO model for scores nothing. The old
@@ -3303,14 +3340,19 @@ export class Battle {
 	// entirely and pick uniformly at random — a gym-tier double trainer would
 	// happily spam Splash — even though the comment above the code claimed "each
 	// foe picks its strongest move". Passing the actor in lets both use it.
-	chooseFoeMove(user = this.active.foe, target = this.active.me) {
+	chooseFoeMove(user = this.active.foe, target = this.active.me, side = 'foe') {
 		const a = this.active;
 		if (user.chargeMove) {
 			return user.moves.find(m => m.id === user.chargeMove) || STRUGGLE();
 		}
 		// mid-rampage the AI has no choice either
 		if (user.lockMove) return user.moves.find(m => m.id === user.lockMove) || STRUGGLE();
-		const usable = user.moves.filter(m => this.moveUsable(user, m, 'foe'));
+		let usable = user.moves.filter(m => this.moveUsable(user, m, side));
+		// the partner won't Earthquake the player's own mon when it has another option
+		if (side === 'me' && a.me?.curHP > 0 && this.abilityOf(a.me) !== 'telepathy') {
+			const safe = usable.filter(m => !ALL_ADJACENT.has(m.id));
+			if (safe.length) usable = safe;
+		}
 		if (!usable.length) return STRUGGLE();
 		// wild mons are random; route trainers keep a 15% wobble; boss-tier
 		// trainers (info.boss) always play the scored line
@@ -3322,7 +3364,7 @@ export class Battle {
 			const pw = mv.power || AI_EST_POWER[m.id] || 0;
 			let score;
 			if (!pw) {
-				score = this.statusMoveValue(m) * (boss ? 1 : 0.6); // route trainers value tricks less
+				score = this.statusMoveValue(m, side, user, target) * (boss ? 1 : 0.6); // route trainers value tricks less
 				if (score <= 0) continue;
 			} else {
 				// ability-aware: don't walk into full immunities the player can see
@@ -3535,9 +3577,10 @@ export class Battle {
 	awardBattleExp(fallen) {
 		const a = this.active;
 		const gain = expGain(fallen || a.foe, this.data);
-		const winners = a.double
+		const winners = (a.double
 			? [a.me, a.meAlly].filter(m => m && m.curHP > 0)
-			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean);
+			: [a.me.curHP > 0 ? a.me : (a.meAlly?.curHP > 0 ? a.meAlly : a.me)].filter(Boolean))
+			.filter(m => this.ownerOf(m) !== 'partner');   // the partner's team is not yours to level
 		// LUCKY EGG multiplies its holder's own share (and only its own)
 		const heldOf = m => Bag.ITEMS[m?.heldItem]?.held || null;
 		const share = m => Math.max(1, Math.round(gain * (heldOf(m)?.expBoost || 1)));
@@ -4672,7 +4715,7 @@ export class Battle {
 	pushPlan(plan) {
 		const a = this.active;
 		a.plans.push(plan);
-		if (a.actionFor === 0 && a.meAlly && a.meAlly.curHP > 0) {
+		if (a.actionFor === 0 && a.meAlly && a.meAlly.curHP > 0 && !a.partner) {
 			a.actionFor = 1;
 			a.phase = 'menu';
 			a.menuIdx = 0;
@@ -4699,6 +4742,16 @@ export class Battle {
 			acts.push({
 				user: foeMon, boosts: this.boostsOf(foeMon), move: this.chooseFoeMove(foeMon, target), target,
 			});
+		}
+		// the IN-GAME PARTNER picks like a boss-tier trainer: best matchup, then the
+		// best move against it (battle_controller_player_partner.c uses the same AI)
+		const pal = a.partner && a.meAlly?.curHP > 0 ? a.meAlly : null;
+		if (pal && !acts.some(x => x.user === pal)) {
+			const foes = this.livingFoes();
+			const target = foes.length
+				? foes.reduce((best, m) => this.matchupScore(pal, m) > this.matchupScore(pal, best) ? m : best, foes[0])
+				: a.foe;
+			acts.push({ user: pal, boosts: this.boostsOf(pal), move: this.chooseFoeMove(pal, target, 'me'), target });
 		}
 		// speed order with priority (Prankster: +1 on status moves)
 		const actPrio = act => this.movePriority(act.user, act.move);
@@ -4785,14 +4838,16 @@ export class Battle {
 				mon.faintCounted = true;
 				this.pushMsg(`${mon.name} fainted!`, () => { cry(mon.speciesId); this.clearVolatiles(mon, true); });
 				this.pushMsg('', () => {
-					const next = a.party.find(m => m.curHP > 0 && m !== a.me && m !== a.meAlly);
+					const partnerSlot = !!a.partner && slot === 'meAlly';
+					const bench = partnerSlot ? a.partner.party : a.party;
+					const next = bench.find(m => m.curHP > 0 && m !== a.me && m !== a.meAlly);
 					if (next) {
 						a[slot] = next;
 						a[slot === 'me' ? 'meImg' : 'meAllyImg'] = a.backSprites.get(next);
 						const b = slot === 'me' ? a.meBoosts : a.meAllyBoosts;
 						Object.assign(b, freshBoosts());
 						a[slot === 'me' ? 'meShownHP' : 'meAllyShownHP'] = next.curHP;
-						this.pushMsg(`Go! ${next.name}!`, () => { sfx('ball_open'); cry(next.speciesId); });
+						this.pushMsg(partnerSlot ? `${a.partner.name} sent out ${next.name}!` : `Go! ${next.name}!`, () => { sfx('ball_open'); cry(next.speciesId); });
 					} else if (slot === 'meAlly') a.meAlly = null;
 				});
 			}
@@ -4806,7 +4861,10 @@ export class Battle {
 						this.pushMsg(`You got $${this.awardPrize()} for winning!`, () => this.finish('victory'));
 					} else this.finish('victory');
 				}
-			} else if (!this.livingMine().length) {
+			} else if (!this.livingMine().length || (a.partner && !a.party.some(m => m.curHP > 0))) {
+				// with an in-game partner the loss is YOUR team going down; the
+				// partner's mons don't count (pokeemerald: "In multi battle with
+				// Steven, skip his Pokemon")
 				this.pushMsg('You blacked out...', () => this.finish('defeat'));
 			}
 		});
@@ -5542,9 +5600,13 @@ export class Battle {
 				{ shownHP: a.foeAllyShownHP, boosts: a.foeAllyBoosts });
 		}
 		if (a.double && a.meAlly && a.meAlly.curHP > 0) {
-			const myY = barY - 118 * u;
-			// portrait has no width for two side-by-side panels — the ally goes left
-			UI.monPanel(ctx, a.meAlly, portrait ? 14 * u : W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
+			// portrait has no width for two side-by-side panels (the "ally goes left"
+			// placement ran under the player's panel and hid its HP numbers), so the
+			// ally STACKS above the player's panel, right-aligned with it
+			const allyH = (a.partner ? 78 : 96) * u;
+			const myY = portrait ? barY - 118 * u - allyH - 24 * u : barY - 118 * u;   // clears the party dots
+			UI.monPanel(ctx, a.meAlly, portrait ? W - 14 * u - 300 * u : W - 14 * u - 300 * u - 246 * u, myY, portrait ? 300 * u : 230 * u, u,
+				a.partner ? { shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true, ownerTag: `${a.partner.name}'S` } :
 				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true,
 					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? expForLevel(a.meAlly.level))) });
 		}

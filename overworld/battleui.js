@@ -124,11 +124,12 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	// ability + held item under the level, dim (matches the Love2D panel).
 	// Baseline 43u: at 46u the text sat on the HP bar's top edge whenever the
 	// bar ran full width (no showNumbers gutter — every foe panel).
-	if (opts.abilityName) {
+	// ownerTag names an in-game partner's mon ("STEVEN'S") in the same slot
+	if (opts.abilityName || opts.ownerTag) {
 		ctx.fillStyle = C.faint;
 		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
 		ctx.textAlign = 'right';
-		ctx.fillText(opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : ''), x + w - pad, y + pad + 43 * u);
+		ctx.fillText(opts.ownerTag || (opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : '')), x + w - pad, y + pad + 43 * u);
 		ctx.textAlign = 'left';
 	}
 	ctx.fillStyle = C.dim;

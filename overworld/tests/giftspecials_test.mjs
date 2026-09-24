@@ -91,7 +91,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		const settle = async (ms = 15000) => {
 			const t = Date.now();
 			while (Date.now() - t < ms) {
-				const st = await page.evaluate(() => ({ d: !!window.__ow.dialog.blocking, c: !!window.__ow.cutscene.blocking, b: !!window.__ow.battle.active }));
+				const st = await page.evaluate(() => ({ d: !!window.__ow.dialog.blocking, c: !!window.__ow.cutscene.blocking, b: !!window.__ow.battle.active || !!window.__ow.halfParty?.open }));
 				if (st.b || (!st.d && !st.c)) return st;
 				await page.evaluate(() => { try { window.__ow.dialog.revealed = 1e9; window.__ow.dialog.key('z'); } catch (e) {} });
 				await sleep(80);
@@ -107,7 +107,13 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		// ===== Mossdeep Space Center: Steven's multi battle =====
 		await boot('MossdeepCity_SpaceCenter_2F', 2, 8);
-		const st = await talk(2, 8, 'left');
+		let st = await talk(2, 8, 'left');
+		// the pick screen (two mons in this party: pick both, then BATTLE)
+		if (await page.evaluate(() => !!window.__ow.halfParty?.open)) {
+			const key = k => page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })), k);
+			await key('z'); await key('ArrowDown'); await key('z'); await key('z');
+			await sleep(500); st = await settle();
+		}
 		const fight = await page.evaluate(() => {
 			const a = window.__ow.battle.active;
 			return a ? { double: !!a.double, foes: [a.foe?.speciesId, a.foeAlly?.speciesId], n: a.foeParty?.length } : null;
