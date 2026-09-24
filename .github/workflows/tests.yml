@@ -2,7 +2,8 @@ name: Tests
 
 # Gates every push to main and every PR on the node test suite (battlecards
 # engine + fuzz, save-resilience, both import-graph lints, server hardening + GC).
-# The suite reads only in-repo data and node builtins — no npm install needed. The
+# The suite reads only in-repo data and node builtins; the dev deps are installed
+# only for the overworld undefined-name lint (ESLint) that runs after it. The
 # browser harnesses (relay_harness / relay_fuzz / boot_smoke) are NOT run here: they
 # need headless Chrome and the offloaded, gitignored overworld/data assets, so they
 # stay dev-machine checks.
@@ -25,3 +26,9 @@ jobs:
           node-version: "22"
       - name: Run the test suite
         run: node battlecards/tests/run-all.mjs
+      # the main.js split's safety net: no overworld module may use a name it
+      # doesn't declare or import (ESLint no-undef; needs only the dev deps)
+      - name: Install dev dependencies
+        run: npm install --no-audit --no-fund   # package-lock.json is gitignored, so not `npm ci`
+      - name: Overworld undefined-name check
+        run: node overworld/tests/undef_test.mjs

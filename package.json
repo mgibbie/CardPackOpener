@@ -5,6 +5,8 @@
   "description": "Static site + Cloudflare Pages Functions backend (D1) for /login accounts",
   "devDependencies": {
     "esbuild": "^0.28.1",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
     "puppeteer-core": "^25.3.0"
   },
   "scripts": {
