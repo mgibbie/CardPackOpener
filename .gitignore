@@ -15,3 +15,6 @@ server/__mp_harness_tmp.mjs
 backups/
 tools/perf-shots/
 tools/data/sprite_audit.json
+
+# per-suite timings + flake counts for overworld/tests/run-all.mjs
+overworld/tests/.gate-history.json
