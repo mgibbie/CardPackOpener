@@ -10690,7 +10690,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		// match read-only as a spectator (the server gates it to friends of a player)
 		const qp = new URLSearchParams(location.search);
 		const directBattle = qp.get('battle'), watchBattle = qp.get('watch'), watchFactory = qp.get('watchfactory');
-		if (watchFactory) factorySpec.start(watchFactory, () => { if (history.length > 1) history.back(); else location.href = '/overworld/?mp=1'; });
+		if (watchFactory) factorySpec.start(watchFactory, () => { if (window.history.length > 1) window.history.back(); else location.href = '/overworld/?mp=1'; });
 		else if (watchBattle) enterMatch(watchBattle, true);
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
