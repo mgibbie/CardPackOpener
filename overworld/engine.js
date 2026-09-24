@@ -227,7 +227,10 @@ export class World {
 	constructor() {
 		this.index = null;
 		this.current = null;    // { map, layout, ts, canvases, border }
-		this.connections = {};  // dir -> { map, layout, ts, canvases, offset, name }
+		// [{ dir, map, layout, ts, canvases, offset, name }] — a LIST, not keyed by
+		// direction: a map can have two connections on one side (Route 111's west edge
+		// meets Route 113 at offset 0 AND Route 112 at offset 20)
+		this.connections = [];
 		this.warps = [];
 		this.lastWarpSource = null; // for Crystal -1 back-warps
 		// fully-fetched-and-rendered bundles by map name (LRU). Crossing a route
@@ -278,16 +281,23 @@ export class World {
 		const b = await this._renderedBundle(name);
 		this.current = b;
 		this.warps = (b.map.warp_events || []).map(w => ({ ...w, x: +w.x, y: +w.y }));
-		this.connections = {};
+		// Keyed by direction, this kept ONE connection per side, and the two on
+		// Route 111's west edge loaded concurrently: whichever finished last
+		// overwrote the other. When Route 113 won, Route 112 could not be entered
+		// from Route 111 at all (the playtester's hard block on the Hoenn story);
+		// when Route 112 won, Route 113 was cut off instead. Keep every one, in
+		// the map's own order.
+		this.connections = [];   // the previous map's must not outlive its layout while these load
 		const conns = (b.map.connections || []).filter(c => ['up', 'down', 'left', 'right', 'north', 'south', 'east', 'west'].includes(c.direction));
-		await Promise.all(conns.map(async c => {
+		const loaded = await Promise.all(conns.map(async c => {
 			const file = this.fileFor(c.map);
-			if (!file) return;
+			if (!file) return null;
 			try {
 				const cb = await this._renderedBundle(file);
-				this.connections[normDir(c.direction)] = { ...cb, offset: c.offset || 0 };
-			} catch (e) { console.warn('connection failed', c.map, e); }
+				return { ...cb, dir: normDir(c.direction), offset: c.offset || 0 };
+			} catch (e) { console.warn('connection failed', c.map, e); return null; }
 		}));
+		this.connections = loaded.filter(Boolean);
 	}
 
 	// world-tile -> grid value (main map or connections); 0 = outside
@@ -296,8 +306,8 @@ export class World {
 		if (tx >= 0 && tx < lay.width && ty >= 0 && ty < lay.height) {
 			return lay.map[ty]?.[tx] ?? 0;
 		}
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const lx = tx - ox, ly = ty - oy;
 			if (lx >= 0 && lx < conn.layout.width && ly >= 0 && ly < conn.layout.height) {
@@ -310,8 +320,8 @@ export class World {
 	// which connection (if any) contains this world tile; returns {dir, conn, lx, ly}
 	connectionAt(tx, ty) {
 		const lay = this.current.layout;
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const lx = tx - ox, ly = ty - oy;
 			if (lx >= 0 && lx < conn.layout.width && ly >= 0 && ly < conn.layout.height) {
@@ -472,8 +482,8 @@ export class World {
 			}
 		}
 		// connections
-		for (const dir of Object.keys(this.connections)) {
-			const conn = this.connections[dir];
+		for (const conn of this.connections) {
+			const dir = conn.dir;
 			const [ox, oy] = DIR_OFFSET(dir, lay, conn);
 			const ccv = layer === 'bottom' ? conn.canvases.bottom : conn.canvases.top;
 			blitVisible(ctx, ccv, ox * META - camX, oy * META - camY);

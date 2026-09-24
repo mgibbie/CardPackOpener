@@ -104,7 +104,7 @@ try {
 				if (!file) { out.push({ ...s, why: 'no map file' }); continue; }
 				try {
 					const b = await w.loadBundle(file);
-					w.current = b; w.connections = {};
+					w.current = b; w.connections = [];
 					w.warps = (b.map.warp_events || []).map(x => ({ ...x, x: +x.x, y: +x.y }));
 					const W = b.layout.width, H = b.layout.height;
 					if (s.x < 0 || s.y < 0 || s.x >= W || s.y >= H) { out.push({ ...s, why: `outside the map (${W}x${H})` }); continue; }
