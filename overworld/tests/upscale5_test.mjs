@@ -38,7 +38,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const bag = fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8');
 	for (const id of ['dexcrown', 'legendcharm', 'redscap']) A(bag.includes(id + ':'), `${id} exists as an item`);
 	const main = overworldSource();
-	A(/setInterval\(refreshMail, 120000\)/.test(main), 'the MAIL badge refreshes without opening the mailbox');
+	// (skipped while the tab is hidden since the poll-cadence fix; a visible tab still refreshes every 2 min)
+	A(/setInterval\((?:refreshMail|\(\) => \{ if \(!document\.hidden\) refreshMail\(\); \}), 120000\)/.test(main), 'the MAIL badge refreshes without opening the mailbox');
 	A(/dailies system was\s+\/\/ deliberately skipped|deliberately skipped/.test(main), 'the premium stock records WHY it is static (dailies were skipped by user call)');
 }
 

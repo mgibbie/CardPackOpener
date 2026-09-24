@@ -17,7 +17,7 @@ import {
 // ow_pvp.js: ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
 import {
 	checkRejoin, coLocated, drawFriendGhosts, drawMailMenu, enterAsyncMatch, enterMatch, ghosts,
-	heartbeat, leaveVisit, mailAccept, mailKey, openMailbox, pendingChallengeTo, pollChallenges,
+	heartbeat, leaveVisit, mailAccept, mailKey, openMailbox, pendingChallengeTo, pollChallenges, pollHealth,
 	pollPresence, prettyId, pvpParty, refreshMail, sendCardChallenge, sendChallenge,
 	sendMailChallenge, shopStockNow, startTrade, tradeKey, visitWorld,
 } from './ow_pvp.js';
@@ -8504,13 +8504,31 @@ function drawTouchHud(SW, SH) {
 		// the 450ms cadence is only worth paying when someone is actually watching
 		// this player move — co-located AND mid-step. Standing still next to a friend
 		// is still just one beat every BEAT_FLOOR_MS.
-		const beatLoop = () => heartbeat().finally(() => setTimeout(beatLoop, (coLocated() && player.moving) ? 450 : 1800));
-		const presLoop = () => pollPresence().finally(() => setTimeout(presLoop, coLocated() ? 400 : 1400));
+		const beatLoop = () => (document.hidden ? Promise.resolve() : heartbeat())
+			.finally(() => setTimeout(beatLoop, (coLocated() && player.moving) ? 450 : 1800));
+		// POLL CADENCE. Every call is a Cloudflare function request, and the free plan
+		// allows 100,000 a day. Presence used to poll every ~1.4s and challenges every
+		// 2s whatever was happening: ~4,000 requests an hour per open tab, which ran
+		// the quota out every evening and took logins and saves down with it. Now:
+		//   * a hidden tab polls nothing (it only re-checks on a timer, no request);
+		//   * presence is fast only while a friend shares the map or you're visiting,
+		//     ~10s while a friend is online elsewhere, 30s when nobody is;
+		//   * challenges poll every 10s, 2s only while waiting on a sent challenge;
+		//   * failures back off (x2 per consecutive failure, up to 60s).
+		const backoff = ms => Math.min(60_000, ms * 2 ** Math.min(pollHealth.fails, 5));
+		const presDelay = () => document.hidden ? 30_000
+			: coLocated() ? 400 : backoff(S.friends.some(f => f.online) ? 10_000 : 30_000);
+		const presLoop = () => (document.hidden ? Promise.resolve() : pollPresence())
+			.finally(() => setTimeout(presLoop, presDelay()));
+		const chalLoop = () => (document.hidden ? Promise.resolve() : pollChallenges())
+			.finally(() => setTimeout(chalLoop, document.hidden ? 30_000 : pendingChallengeTo ? 2000 : backoff(10_000)));
 		beatLoop();
 		presLoop();
-		setInterval(pollChallenges, 2000);
+		chalLoop();
+		// back in view: catch up at once rather than waiting out a hidden-tab timer
+		document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollPresence(); pollChallenges(); heartbeat(true); } });
 		refreshMail(); // seed the MAIL badge, then keep it fresh at a gentle cadence
-		setInterval(refreshMail, 45_000);
+		setInterval(() => { if (!document.hidden) refreshMail(); }, 45_000);   // hidden tabs poll nothing
 		syncOverworldAchievements(); // backfill existing progress into the account for the achievements page
 		// Grand Champion catch-up: a save already 3x champion before this shipped gets the
 		// crown + capstone on load (silent — a cutscene mid-boot would be risky)
@@ -8660,7 +8678,7 @@ function drawTouchHud(SW, SH) {
 	// The MAIL badge ("MAIL (2)") only counted after you opened the mailbox — the
 	// one thing a your-move indicator must not require. Populate it at boot and
 	// keep it fresh; play-by-mail is fully built and was just invisible.
-	try { refreshMail(); setInterval(refreshMail, 120000); } catch (e) { /* logged out */ }
+	try { refreshMail(); setInterval(() => { if (!document.hidden) refreshMail(); }, 120000); } catch (e) { /* logged out */ }
 	// keep the server copy of starter/region/position current (deduped ~every 10s + when you leave)
 	try {
 		// TIER 3 — 10s was chosen when a missed write meant lost progress. The
