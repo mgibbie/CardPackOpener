@@ -67,11 +67,19 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	].find(p => fs.existsSync(p));
 	const PORT = 8990;
 	const STATE = { username: 'smoke', friendCode: 'SMOKEE', decks: [], collection: {}, packs: 0, packInbox: 0, stats: { runs: 0, wins: 0 } };
+	// The flake: the ability was unset, so the game rolled one of RATTATA's; with HUSTLE
+	// (0.8x physical accuracy) enough Hyper Beams missed to empty its 5 PP, the loop
+	// kept picking the empty move, and the guard bout never ended ("the win is
+	// recorded" failed with hyperbeam:0 and the battle still active). GUTS is inert
+	// unless statused, and 30 PP means Hyper Beam's own 90% can't strand it either.
+	// Bulk too: at 220 HP the lead sometimes finished the guard bout on 3 HP, and a
+	// LOSS ends the Hill run (the later steps then crashed on hillRun === null). This
+	// suite tests the Hill's mechanics, not the balance of one fight.
 	const PARTY = [{
-		speciesId: 'rattata', name: 'LEAD', level: 60, gender: 'M', friend: 70, types: ['Normal'],
+		speciesId: 'rattata', name: 'LEAD', level: 60, gender: 'M', friend: 70, types: ['Normal'], ability: 'guts',
 		ivs: { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 },
-		stats: { hp: 220, atk: 160, def: 140, spa: 140, spd: 140, spe: 160 }, maxHP: 220, curHP: 220,
-		exp: 216000, moves: [{ id: 'hyperbeam', name: 'Hyper Beam', pp: 5, maxPp: 5 }, { id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }], sprite: 's608.png', num: 19,
+		stats: { hp: 700, atk: 160, def: 300, spa: 140, spd: 300, spe: 160 }, maxHP: 700, curHP: 700,
+		exp: 216000, moves: [{ id: 'hyperbeam', name: 'Hyper Beam', pp: 30, maxPp: 30 }, { id: 'tackle', name: 'Tackle', pp: 35, maxPp: 35 }], sprite: 's608.png', num: 19,
 	}];
 	const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ttf': 'font/ttf', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 	const server = http.createServer(async (req, res) => {
@@ -165,6 +173,9 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				else b.key('z');
 				await wait(80);
 			}
+			// when the win isn't recorded, say why: still fighting? lost? out of PP? which ability?
+			const lead = ow.party[0];
+			o.why = { stillActive: !!b.active, phase: b.active?.phase ?? null, ability: lead?.ability, pp: (lead?.moves || []).map(m => m.id + ':' + m.pp).join(','), leadHP: lead?.curHP };
 			await wait(500);
 			o.beaten = ow.hillRun?.beatenSet['1F:0'] === true;
 			o.left = ow.hillGuardsLeft('1F');
@@ -228,7 +239,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
-		A(false, 'harness crashed: ' + e.message);
+		A(false, 'harness crashed: ' + e.message, String(e.stack).split(String.fromCharCode(10)).slice(1, 6).join(' <- '));   // where, so a rare crash identifies itself
 	} finally {
 		if (browser) await browser.close().catch(() => {});
 		server.close();
