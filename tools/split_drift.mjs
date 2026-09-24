@@ -26,7 +26,7 @@ for (const f of files) {
 		let ok = null;
 		// a bare identifier-like string ('magepunk_story', 'ow-save') is a runtime value —
 		// a localStorage key, a mock-server action — not a piece of source being checked
-		if (t.type === 'String' || t.type === 'Template') { const lit = t.value.slice(1, -1); if (lit.length >= 6 && !/^[\w-]+$/.test(lit)) ok = [oldMain.includes(lit), newSrc.includes(lit)]; }
+		if (t.type === 'String' || t.type === 'Template') { const lit = t.value.slice(1, -1); if (lit.length >= 6 && !/^[\w-]+$/.test(lit) && !/^[a-z]+\/[\w.+-]+$/.test(lit)) ok =[oldMain.includes(lit), newSrc.includes(lit)]; }
 		else if (t.type === 'RegularExpression') { try { const re = new RegExp(t.regex.pattern, t.regex.flags.replace('g', '')); ok = [re.test(oldMain), re.test(newSrc)]; } catch {} }
 		if (ok && ok[0] && !ok[1]) hits.push(t.value.slice(0, 90));
 	}

@@ -11,9 +11,10 @@ import { S } from './ow_state.js';
 import { saveParty } from './party.js';
 import { safeLoad } from './safestore.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { frontier } from './ow_frontier.js';
+import { getBox, setBox } from './ow_menukeys.js';
 import {
-	MP_ON, POS_KEY, TRADE_CATS, deckSelect, emptyOffer, frontier, getBox, mailMenu, moveToMap,
-	openDeckSelect, setBox, trade,
+	MP_ON, POS_KEY, TRADE_CATS, deckSelect, emptyOffer, mailMenu, moveToMap, openDeckSelect, trade,
 } from './main.js';
 
 // ---------- live PvP battles ----------

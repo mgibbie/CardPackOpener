@@ -80,6 +80,15 @@ and can be reverted on its own.
   that sat at the end of that stretch stayed behind for the intro module.
   `extract_block` redirected `ow_menus.js`'s imports of `restoreBackup` /
   `runSaveAction` to `ow_saves.js` by itself.
+- **Extractions 4 + 5: `ow_frontier.js` + `ow_menukeys.js`, DONE on this
+  branch.**
+  - The Battle Frontier facilities, runs and publishing (160 lines) moved
+    out. `recordHallOfFame`, which the League also uses, stayed in main.js.
+  - The menus' input layer (782 lines) moved out: `pressKey`, `menuBlocking`
+    / `canvasMenuOpen`, and the bag / PC / shop / BP-exchange / ferry / portal
+    / starter key handlers.
+  - `fluteState` was assigned from inside the block, so it moved onto `S`.
+  - main.js is at 7,775 lines.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).

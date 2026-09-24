@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -31,7 +32,10 @@ async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 <
 
 // ---------- source: the gate ORDER is the whole bug ----------
 {
-	const mj = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	// scoped to pressKey itself: in the combined source `if (cutscene.blocking) return;`
+	// also appears in other functions, so a whole-file indexOf compared the wrong ones
+	const all = overworldSource();
+	const mj = all.slice(all.indexOf('function pressKey('));
 	const battleGate = mj.indexOf("if (battle.blocking) { battle.key(k); return; }");
 	const cutsceneGate = mj.indexOf('if (cutscene.blocking) return;');
 	A(battleGate > 0 && cutsceneGate > 0, 'both pressKey gates exist');

@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,7 +30,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/snapshot\(\) \{/.test(bt) && /applyRestore\(snap\) \{/.test(bt), 'battle.js grows snapshot/applyRestore');
 	A(/turns === Infinity \? 'inf'/.test(bt) && /'inf' \? Infinity/.test(bt), "endless map weather survives JSON (the Infinity trap)");
 	A(/this\.endSpec = null;   \/\/ main\.js/.test(bt), 'a finished battle clears its resume tag');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	for (const kind of ['wild', 'trainer', 'strainer', 'legendary', 'villain', 'rivaltier', 'rivalintro']) {
 		A(new RegExp(`kind: '${kind}'`).test(main), `the '${kind}' ending is tagged and reconstructable`);
 	}
