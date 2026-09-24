@@ -23,6 +23,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -44,7 +45,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		"EARTHQUAKE's family hits the user's partner in doubles — unless the partner has TELEPATHY");
 	A(/doomdesire' \? 'Steel' : 'Psychic'/.test(bt), 'DOOM DESIRE arrives as Steel, FUTURE SIGHT as Psychic');
 
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();   // main.js + the modules split out of it
 	A(/function pcMatches/.test(main) && /pcnav:find/.test(main) && /if \(k === 'f'\) \{ pcPromptSearch\(\)/.test(main),
 		'the PC storage grows a search (F key + FIND button)');
 }
