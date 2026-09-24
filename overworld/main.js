@@ -3391,8 +3391,7 @@ async function refreshMapContent(label) {
 	// for an ON_FRAME auto-cutscene now that the map is set up. Guard the ported
 	// plot triggers: a throwing story script must not break map entry itself
 	// (the map is already loaded + loading cleared above).
-	try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
-	try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
+	await runMapSetupScripts(false);
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a post-battle beat that was won before the game could run it (see above)
 	postBattleCatchUpArmed = true;   // fired by the tick once the screen is free (see there)
@@ -6811,6 +6810,33 @@ function runMapOnLoad() {
 	cutscene.run(mapScripts, meta.onLoad, cutsceneCtx(), () => {});
 	if (cutscene.blocking) cutscene.stop(); // setup only
 }
+// THE DECOMP RUNS A MAP'S SETUP SCRIPTS BEFORE ITS OBJECTS SPAWN; THIS PORT RUNS
+// THEM AFTER. So a setup script that clears an object's hide flag — Bill's Sea
+// Cottage OnTransition brings Clefairy-Bill back that way — changed the flag but
+// not the already-built object list: re-enter mid-event and there was no Bill to
+// talk to, and the PC (keyed on a temp flag that had just cleared) refused. A
+// softlock that only appeared once hideobj correctly persisted FLAG_HIDE_*.
+//
+// Rather than reorder map entry, re-check afterwards: if setup changed whether
+// any object should be visible, reload the objects and run the setup scripts once
+// more (they are setup-only and idempotent — positions they set, like Bill's
+// setobjxy, need the rebuilt objects to land on).
+async function runMapSetupScripts(isBoot) {
+	const evs = world.current?.map?.object_events || [];
+	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
+	const before = vis();
+	const run = () => {
+		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
+		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
+	};
+	run();
+	if (vis() === before) return;
+	await npcs.loadForMap();
+	await trainers.loadForMap();
+	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
+	run();
+}
+
 function runMapTransition() {
 	// SilphCo floors' OnLoad only erects the Card-Key door barriers (via setMetatile);
 	// that puzzle is broken/unfun in this port and would wall the Giovanni crawl, so
@@ -10347,8 +10373,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
 	loading = false;
-	try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); }
-	runMapTransition();
+	await runMapSetupScripts(true);
 	// ...and the STARTING map's onFrame pass. moveToMap runs one on every later
 	// entry, but boot loads the first map directly (world.load, not moveToMap),
 	// so a scene waiting on the map you resume into would never fire.

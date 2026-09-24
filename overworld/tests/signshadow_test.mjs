@@ -179,7 +179,9 @@ const displayOnly = ops => !Array.isArray(ops) || ops.every(o => !o || !o.op || 
 		// talk to Clefairy-Bill at (10,6) from (10,7) facing up, answer YES
 		await pressA(10, 7, 'up');
 		await settle();
-		A(await flag('BILL_IN_TELEPORTER'), 'Bill goes into the teleporter when you agree to help');
+		// BILL_IN_TELEPORTER is the decomp's .equ alias for FLAG_TEMP_2 (tools/fix_script_equ.mjs
+		// resolved it; it used to be stored as a literal flag name)
+		A(await flag('FLAG_TEMP_2'), 'Bill goes into the teleporter when you agree to help');
 
 		// THE REPORTED STEP: press A on the PC (bg_event at 4,5) from (4,6) facing up
 		await pressA(4, 6, 'up');
@@ -190,7 +192,7 @@ const displayOnly = ops => !Array.isArray(ops) || ops.every(o => !o || !o.op || 
 		A(!/TELEPORTER is displayed/i.test(pc.text) || helped,
 			'the PC no longer answers with the static fallback line', JSON.stringify(pc));
 		A(helped, 'pressing A on the PC runs the Cell Separator');
-		A(await flag('BILL_IN_TELEPORTER') === false, 'and clears BILL_IN_TELEPORTER');
+		A(await flag('FLAG_TEMP_2') === false, 'and clears BILL_IN_TELEPORTER (FLAG_TEMP_2)');
 
 		// talk to human Bill for the ticket
 		const billAt = await page.evaluate(() => {
@@ -204,19 +206,25 @@ const displayOnly = ops => !Array.isArray(ops) || ops.every(o => !o || !o.op || 
 		}
 		A(await flag('FLAG_GOT_SS_TICKET'), 'and Bill hands over the S.S. TICKET');
 
-		// ===== an existing save already mid-flow finishes without a migration =====
-		// (reported: saves already sit at BILL_IN_TELEPORTER=true)
+		// ===== a save stuck mid-flow recovers without a migration =====
+		// Saves from before the alias fix carry the LITERAL flag BILL_IN_TELEPORTER.
+		// It is really FLAG_TEMP_2, which — as in FireRed — clears when you leave the
+		// cottage; the cottage's OnTransition then brings Clefairy-Bill back, so the
+		// recovery is: ask him again, then use the PC. No softlock, no migration.
 		await page.evaluate(() => {
 			const S = window.__ow.Story;
 			S.clearFlag('FLAG_GOT_SS_TICKET');
 			S.clearFlag('FLAG_HELPED_BILL_IN_SEA_COTTAGE');
-			S.setFlag('BILL_IN_TELEPORTER');
+			S.setFlag('BILL_IN_TELEPORTER');           // the old literal, as stuck saves hold it
+			S.setFlag('FLAG_HIDE_BILL_CLEFAIRY');       // and Clefairy hidden, as the old beat left it
 		});
 		await boot('Route25_SeaCottage');
-		await pressA(4, 6, 'up');
-		await settle();
+		const clef = await page.evaluate(() => (window.__ow.npcs?.list || []).some(n => n.ev.local_id === 'LOCALID_BILL_CLEFAIRY' && !n.hidden));
+		A(clef, 'on re-entry Clefairy-Bill is back to talk to');
+		await pressA(10, 7, 'up'); await settle();
+		await pressA(4, 6, 'up'); await settle();
 		A(await flag('FLAG_HELPED_BILL_IN_SEA_COTTAGE'),
-			'a save stuck at BILL_IN_TELEPORTER finishes from the PC, no migration needed');
+			'a save stuck mid-flow finishes: ask Bill again, then the PC runs the Cell Separator');
 	} finally {
 		if (browser) await browser.close();
 		server.close();
