@@ -15,6 +15,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -29,7 +30,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/const DURABLE_BUCKETS = \/\^\(login\|reg\|set-email\):/.test(sv),
 		'brute-force buckets (login/register/set-email) stay durable');
 	A(/prevDay !== today/.test(sv), 'the daily backup only does its bookkeeping on a new UTC day');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/BEAT_FLOOR_MS/.test(mn) && /sig === _lastBeat/.test(mn), 'presence is only written when it changed');
 	A(/setInterval\(\(\) => pushOw\(\), 30000\)/.test(mn), 'ow-save runs on the longer post-revision cadence');
 	A(/coLocated\(\) && player\.moving/.test(mn), 'the fast presence cadence needs co-located AND moving');
@@ -147,7 +148,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		// presence liveness is a source invariant, not something a 30s window can show:
 		// the client floor must stay comfortably under the server's ONLINE_MS (90s),
 		// or an idle player would silently read as offline to their friends.
-		const mnSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+		const mnSrc = overworldSource();
 		const floor = +(mnSrc.match(/const BEAT_FLOOR_MS = ([0-9_]+)/) || [])[1].replace(/_/g, '');
 		const svSrc = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 		const online = +(svSrc.match(/const ONLINE_MS = ([0-9_]+)/) || [])[1].replace(/_/g, '');

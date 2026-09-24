@@ -99,30 +99,58 @@ function wrap(names) {
 	return lines.join('\n');
 }
 
-// the moved code gets `export` on each declaration main.js still needs
+// a declaration an earlier extraction already exported (another ow_*.js imports it from main.js)
+const stmtOf = def => def.type === 'Variable' ? def.parent : def.node;
+const alreadyExported = stmt => src.slice(Math.max(0, stmt.range[0] - 7), stmt.range[0]) === 'export ';
+
+// the moved code gets `export` on each declaration main.js (or an earlier split module) still needs
 let block = src.slice(start, end);
 const blockEdits = [];
+const reexport = [];   // moved names other split modules import from main.js: main re-exports them
 for (const v of mod.variables) {
-	if (!give.has(v.name)) continue;
 	const def = v.defs[0];
-	const stmt = def.type === 'Variable' ? def.parent : def.node;
+	if (!def || def.type === 'ImportBinding' || !inBlock(def.name)) continue;
+	const stmt = stmtOf(def);
+	if (alreadyExported(stmt)) { reexport.push(v.name); continue; }   // keeps its `export` as it moves
+	if (!give.has(v.name)) continue;
 	blockEdits.push(stmt.range[0] - start);
 }
 for (const off of [...new Set(blockEdits)].sort((x, y) => y - x)) block = block.slice(0, off) + 'export ' + block.slice(off);
 
-// main.js: `export` on its declarations the module needs, drop the block, import the rest
+// main.js: `export` on its declarations the module needs (unless already), drop the block, import the rest
 let main = src;
 const mainEdits = new Set();
 for (const { def } of fromMain) {
-	const stmt = def.type === 'Variable' ? def.parent : def.node;
-	mainEdits.add(stmt.range[0]);
+	const stmt = stmtOf(def);
+	if (!alreadyExported(stmt)) mainEdits.add(stmt.range[0]);
 }
 const ops = [...mainEdits].map(o => ({ at: o, del: 0, text: 'export ' }));
 ops.push({ at: start, del: end - start, text: '' });
 ops.sort((x, y) => y.at - x.at);
 for (const op of ops) main = main.slice(0, op.at) + op.text + main.slice(op.at + op.del);
 const giveList = [...give].sort();
-const importIntoMain = `import {\n${wrap(giveList)}\n} from './${outName.replace(/^overworld\//, '')}';\n`;
+const modPath = `./${outName.replace(/^overworld\//, '')}`;
+let importIntoMain = giveList.length ? `import {\n${wrap(giveList)}\n} from '${modPath}';\n` : '';
+// earlier split modules import some moved names from main.js: point those imports at
+// the new module instead. (Not a re-export from main.js: the overworld keeps a plain
+// ESM subset with no re-exports, which battlecards' overworld_imports_test relies on.)
+const redirected = [];
+if (reexport.length) {
+	for (const f of fs.readdirSync('overworld').filter(x => /^ow_.*\.js$/.test(x) && `overworld/${x}` !== outName)) {
+		const p = `overworld/${f}`;
+		let text = fs.readFileSync(p, 'utf8');
+		const m = text.match(/import \{([^}]*)\} from '\.\/main\.js';/);
+		if (!m) continue;
+		const names = m[1].split(',').map(x => x.trim()).filter(Boolean);
+		const moved = names.filter(n => reexport.includes(n));
+		if (!moved.length) continue;
+		const rest = names.filter(n => !reexport.includes(n));
+		const direct = `import { ${moved.sort().join(', ')} } from '${modPath}';${EOL}`;
+		const fromMain = rest.length ? eol(`import {\n${wrap(rest)}\n} from './main.js';`) : '';
+		text = text.replace(m[0], direct + fromMain);
+		redirected.push({ p, text, moved });
+	}
+}
 // place it after the ow_state import
 const anchor = eol("import { S } from './ow_state.js';\n");
 if (!main.includes(anchor)) throw new Error('anchor import missing');
@@ -130,8 +158,10 @@ main = main.replace(anchor, anchor + eol(`// ${outName.replace(/^overworld\//, '
 
 const moduleSrc = eol(`${header.split('\n').map(l => l.startsWith('//') ? l : '// ' + l).join('\n')}\n${importLines.join('\n')}\n\n`) + block;
 console.log(`moved lines ${lo}-${hi}: ${need.size} imports (${fromMain.length} from main.js), ${give.size} exports back to main.js`);
+for (const r of redirected) console.log(`${r.p}: imports ${r.moved.join(', ')} from ${modPath} now, not main.js`);
 if (WRITE) {
 	fs.writeFileSync(outName, moduleSrc);
 	fs.writeFileSync(FILE, main);
+	for (const r of redirected) fs.writeFileSync(r.p, r.text);
 	console.log('written', outName, 'and', FILE);
 } else console.log('(dry run — pass --write)');
