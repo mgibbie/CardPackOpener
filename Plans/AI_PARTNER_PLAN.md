@@ -1,5 +1,15 @@
 # AI partner battles: plan — 2026-09-23
 
+> **Status 2026-09-24: §1–§6 BUILT** (branch `feat/ai-partner`, `partner_test` 16/16).
+> The open decomp question is settled: with Steven, **you lose when your own team
+> is down**; his mons don't count (`battle_script_commands.c`, "In multi battle
+> with Steven, skip his Pokemon"). Deviation from §6: the saved party is never
+> cut down. The three picks are a *view* handed to the battle (same mon
+> objects), so there is no reduced party to recover after a crash, and no
+> recovery key. Also fixed on the way: a resumed trainer double used to restore
+> the wrong mons into the foe slots (`foeIdx` is pinned to 1 in doubles), so the
+> snapshot now records both foe slots by index.
+
 **Goal:** doubles where the second slot on the player's side belongs to an
 AI-controlled NPC trainer with their own party, as in pokeemerald's
 `BATTLE_TYPE_INGAME_PARTNER` multi battles. The first consumer is Steven at the
