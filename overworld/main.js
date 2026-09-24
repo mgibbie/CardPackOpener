@@ -1,6 +1,7 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { applySailFix } from './sail_fix.js';
+import * as GymPuzzles from './gym_puzzles.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -582,6 +583,22 @@ let postBattlePending = null;
 // the second entry"). Now map entry just arms it, and the tick fires it the
 // first frame nothing else owns the screen.
 let postBattleCatchUpArmed = false;
+
+// ONE-TIME REPAIRS for saves written while a bug was live. Each entry is a
+// condition that proves the story already moved past a beat, and the flags that
+// beat should have left behind. Applied at boot; idempotent, so no marker needed.
+const SAVE_REPAIRS = [
+	// hideobj persisted only EVENT_* flags until 2026-09-23, so Wally and his
+	// uncle reappeared outside the Mauville gym after being beaten — Wally on the
+	// only tile south of the door. The beat's own hides are the missing flags.
+	{ when: 'FLAG_DEFEATED_WALLY_MAUVILLE', set: ['FLAG_HIDE_MAUVILLE_CITY_WALLY', 'FLAG_HIDE_MAUVILLE_CITY_WALLYS_UNCLE'] },
+];
+function repairSaves() {
+	for (const r of SAVE_REPAIRS) {
+		if (!Story.getFlag(r.when)) continue;
+		for (const f of r.set) if (!Story.getFlag(f)) { Story.setFlag(f); console.warn('[save-repair]', r.when, '->', f); }
+	}
+}
 // The watchdog stopping a beat is the ENVIRONMENT failing, not the beat — on a
 // slow device it used to happen every run. Charging that as a try would still
 // burn the beat after three reloads, so a watchdog kill hands the try back.
@@ -3374,6 +3391,7 @@ async function refreshMapContent(label) {
 	// for an ON_FRAME auto-cutscene now that the map is set up. Guard the ported
 	// plot triggers: a throwing story script must not break map entry itself
 	// (the map is already loaded + loading cleared above).
+	try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 	try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a post-battle beat that was won before the game could run it (see above)
@@ -3465,7 +3483,7 @@ async function moveToMap(file, px, py) {
 	fadeTo(0);                    // reveal the new map
 }
 
-async function warpTo(mapId, destWarpId) {
+async function warpTo(mapId, destWarpId, destX, destY) {
 	const file = world.fileFor(mapId);
 	// An unresolvable destination used to just warn and return, leaving the player
 	// standing on the warp tile. That is a SOFTLOCK wherever every exit is
@@ -3486,9 +3504,16 @@ async function warpTo(mapId, destWarpId) {
 	try {
 		await world.load(file);
 		let idx = parseInt(destWarpId, 10);
-		if (isNaN(idx) || idx < 0) idx = 0;
-		const w = world.warps[idx] || world.warps[0];
+		const lay = world.current.layout;
+		const hasXY = Number.isInteger(destX) && Number.isInteger(destY) && destX >= 0 && destY >= 0
+			&& destX < lay.width && destY < lay.height;
+		// A scripted warp to a COORDINATE (the decomp's two-arg form) lands exactly
+		// there. A door index wins when it names a real door; the coordinate is the
+		// fallback — the decomp's own rule for its three-arg form.
+		const w = (!isNaN(idx) && idx >= 0 && world.warps[idx]) || null;
 		if (w) player.setTile(w.x, w.y);
+		else if (hasXY) player.setTile(destX, destY);
+		else if (world.warps[0]) player.setTile(world.warps[0].x, world.warps[0].y);
 		else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
 		world.lastWarpSource = source;
 		await refreshMapContent(file);
@@ -6256,27 +6281,33 @@ function cutsceneCtx(talker, scriptLabel) {
 			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
 		},
 		healParty: () => healParty(party),
-		warp: (mapId, warpId) => warpTo(mapId, warpId),
+		warp: (mapId, warpId, x, y) => warpTo(mapId, warpId, x, y),
 		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
 		warpXy: (mapId, x, y) => flyTo(mapId, x, y),
 		setObjXy: (who, x, y) => { const n = npcById(who); if (n) { n.tx = x; n.ty = y; n.px = x * META; n.py = y * META; } },
-		// Crystal's `disappear`/`appear` do not just hide a sprite — they SET and
-		// CLEAR the object's event flag, which is how the hide survives a reload and
-		// how other maps learn about it. The Slowpoke Well is the clearest case: its
-		// script never sets EVENT_SLOWPOKE_WELL_ROCKETS itself, because hiding the
-		// four grunts is what sets it — and that flag is what removes the Rocket
-		// standing in front of the Azalea gym. A sprite-only hide left the grunts
-		// back on the next load and Bugsy blocked for good.
+		// Hiding an object SETS ITS OWN FLAG, in all three decomps — that is how the
+		// hide survives a reload and how other maps learn about it. pokeemerald
+		// RemoveObjectEventByLocalIdAndMap (src/event_object_movement.c:1389) does
+		// FlagSet(GetObjectEventFlagIdByObjectEventId(...)) before removing the
+		// object; Crystal's `disappear` does the same.
 		//
-		// Scoped to EVENT_* flags, which is the Crystal convention. FireRed and
-		// Emerald use FLAG_HIDE_* and their scripts set those explicitly alongside
-		// removeobject, so writing them here would be redundant at best and would
-		// persist a mid-cutscene hide at worst.
+		// This used to write EVENT_* (Crystal) flags only, on the stated belief that
+		// FireRed/Emerald scripts set their FLAG_HIDE_* explicitly alongside
+		// removeobject. That belief was wrong, and a playtester found the cost:
+		// Wally, beaten outside the Mauville gym, hid for the rest of that visit and
+		// then stood on the only tile south of the gym door on the next load — a
+		// hard softlock for anyone without Fly. Every FR/E removeobject-only hide had
+		// the same "comes back on reload" bug.
+		//
+		// SHOWING is not symmetric. Crystal's `appear` clears the flag; FR/E's
+		// `addobject` does not (their scripts `clearflag` explicitly first), so only
+		// Crystal's EVENT_* flags are cleared here. Decoration / secret-base objects
+		// are driven by systems this port does not model and are left alone.
 		hideObj: who => {
 			const n = npcById(who); if (!n) return;
 			n.hidden = true;
 			const f = n.ev && n.ev.flag;
-			if (f && /^EVENT_/.test(f)) Story.setFlag(f);
+			if (f && f !== '0' && !/^FLAG_DECORATION_|^FLAG_HIDE_SECRET_BASE/.test(f)) Story.setFlag(f);
 		},
 		showObj: who => {
 			const n = npcById(who); if (!n) return;
@@ -6759,6 +6790,27 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 // ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
 // It is setup only, so run the instant ops and bail at any waiting op — it must
 // never block the game or pop dialogue.
+// the grid/vars/rng a ported gym special works against
+function puzzleWorld() {
+	return {
+		get: (x, y) => { const row = world.current?.layout?.map?.[y]; return row ? (row[x] ?? 0) & 0x3FF : 0; },
+		set: (x, y, id, impassable) => world.setMetatile(x, y, id, !!impassable),
+		getVar: v => Story.getVar(v) | 0,
+		setVar: (v, n) => Story.setVar(v, n),
+		rng: Math.random,
+	};
+}
+// ON_LOAD: the decomp's map-setup script, run before ON_TRANSITION. It lays out
+// puzzle tiles to match your progress. Only enabled for the maps whose puzzle
+// mechanics are actually ported (GymPuzzles.ONLOAD_MAPS) — game-wide it is 124
+// maps of never-executed setmetatile, some raising walls nothing here can lower.
+function runMapOnLoad() {
+	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name)) return;
+	const meta = mapScripts.__map__;
+	if (!meta || !meta.onLoad || !mapScripts[meta.onLoad] || cutscene.blocking) return;
+	cutscene.run(mapScripts, meta.onLoad, cutsceneCtx(), () => {});
+	if (cutscene.blocking) cutscene.stop(); // setup only
+}
 function runMapTransition() {
 	// SilphCo floors' OnLoad only erects the Card-Key door barriers (via setMetatile);
 	// that puzzle is broken/unfun in this port and would wall the Giovanni crawl, so
@@ -7109,7 +7161,15 @@ function runSpecial(name, store) {
 	const living = () => (party || []).filter(m => m.curHP > 0);
 	switch (name) {
 		// --- action specials ---
-		case 'HealPlayerParty': healParty(party); return;
+		// Crystal names it HealParty; FireRed/Emerald name it HealPlayerParty. Only the
+		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
+		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
+		case 'HealPlayerParty': case 'HealParty': healParty(party); return;
+		// gym puzzles, ported from field_specials.c (see gym_puzzles.js)
+		case 'SetVermilionTrashCans': GymPuzzles.setVermilionTrashCans(puzzleWorld()); return;
+		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
+		case 'MauvilleGymSetDefaultBarriers': GymPuzzles.mauvilleGymSetDefaultBarriers(puzzleWorld()); return;
+		case 'MauvilleGymDeactivatePuzzle': GymPuzzles.mauvilleGymDeactivatePuzzle(puzzleWorld()); return;
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
 			const here = world.current.map.id;
@@ -10269,6 +10329,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	player.setTile(sx, sy);
 	// resuming a save that stood on water means we were surfing
 	if (world.isSurfable(sx, sy)) player.surfing = true;
+	repairSaves();   // before the map's objects are read, so a repaired hide takes effect on THIS load
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
@@ -10286,6 +10347,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
 	loading = false;
+	try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); }
 	runMapTransition();
 	// ...and the STARTING map's onFrame pass. moveToMap runs one on every later
 	// entry, but boot loads the first map directly (world.load, not moveToMap),
@@ -10369,7 +10431,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },

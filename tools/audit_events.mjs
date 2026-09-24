@@ -16,6 +16,22 @@
 //   ugly-text       a string that still carries raw control junk (@, \l, \p,
 //                   stray <...>) or is empty after normalising.
 //
+// Added 2026-09-23, one class per bug shape that blocked the story that day:
+//   bad-warp-index  a warp (script op OR map warp_event) to a door index the
+//                   destination map does not have. warpTo() silently falls back
+//                   to warps[0], so the player lands somewhere arbitrary —
+//                   Route104 warp 13 (8 exist), Vermilion warp 23 (10 exist).
+//   unknown-special a `special` main.js runSpecial() has no case for. It is a
+//                   silent no-op; harmless for pure visuals, fatal when the
+//                   special was what moved the story (DoSSAnneDepartureCutscene).
+//   long-walk       a scripted move of 90+ steps outside the patched ferry legs:
+//                   the transpile's rendering of a camera pan, which walks the
+//                   player off the map (Briney's 194-step "sail").
+//   unresolved-obj  (INFO) a hideobj/move/... target that npcById's rules cannot
+//                   resolve on that map. Mostly objects genuinely absent from
+//                   the port's map data, where null is correct — listed so a
+//                   story-critical one is visible, not counted as broken.
+//
 //   node tools/audit_events.mjs            (repo root)
 //   node tools/audit_events.mjs --list=missing-text   (full list for one class)
 import fs from 'fs';
@@ -52,6 +68,32 @@ const region = stem => /^(NewBark|Cherrygrove|Violet|Azalea|Goldenrod|Ecruteak|O
 	: /^(Littleroot|Oldale|Petalburg|Rustboro|Dewford|Slateport|Mauville|Verdanturf|Fallarbor|Lavaridge|Fortree|Lilycove|Mossdeep|Sootopolis|EverGrande|Pacifidlog|Route1[0-3][0-9]|MtPyre|MeteorFalls|Granite|Jagged|Shoal|NewMauville|AbandonedShip|SkyPillar|Seafloor|MtChimney|Aqua|Magma|BattleFrontier|TrainerHill|Mirage|Desert|IslandCave|AncientTomb|SouthernIsland|Scorched|Sealed|CaveOfOrigin|SSTidal|Trick|Contest|Battle(Tent|Tower))/.test(stem) ? 'HOENN'
 	: 'KANTO';
 
+
+// ---- inputs for the 2026-09-23 classes ----
+const mainSrc = fs.readFileSync('overworld/main.js', 'utf8');
+const rsAt = mainSrc.indexOf('function runSpecial(');
+const rsBody = mainSrc.slice(rsAt, mainSrc.indexOf('\n}\n', rsAt));
+const handledSpecials = new Set([...rsBody.matchAll(/case '([A-Za-z0-9_]+)'/g)].map(m => m[1]));
+const mapByFile = {}, warpCount = {};
+for (const f of fs.readdirSync(`${D}/maps`)) {
+	if (!f.endsWith('_map.json')) continue;
+	try { const m = JSON.parse(fs.readFileSync(`${D}/maps/${f}`, 'utf8')); mapByFile[f.replace(/_map\.json$/, '')] = m; if (m.id) warpCount[m.id] = (m.warp_events || []).length; } catch {}
+}
+const warpsOf = id => { if (typeof id !== 'string') return null; return warpCount[id] ?? warpCount['MAP_' + id] ?? null; };
+const SAIL = new Set(['Route104_EventScript_SailToDewfordNoCall', 'Route104_EventScript_SailToDewfordDadCalls',
+	'DewfordTown_EventScript_SailToPetalburg', 'DewfordTown_EventScript_SailToSlateport', 'Route109_EventScript_DoSailToDewford']);
+const normObj = x => String(x == null ? '' : x).toUpperCase().replace(/_SPRITE_/g, '_').replace(/[^A-Z0-9]/g, '');
+const resolves = (m, who) => {
+	if (who == null || /^(PLAYER|LOCALID_PLAYER|player|VAR_LAST_TALKED|LOCALID_CAMERA)$/.test(who) || /^VAR_/.test(who)) return true;
+	const evs = (m && m.object_events) || [];
+	if (/^\d+$/.test(String(who))) return !!evs[+who];
+	if (evs.some(o => o.local_id === who)) return true;
+	const w = normObj(who);
+	if (evs.some(o => normObj(o.local_id) === w)) return true;
+	const k = w.match(/^(.*?)(\d+)$/);
+	return !!(k && evs.filter(o => normObj(o.local_id) === k[1]).length >= +k[2] && +k[2] >= 1);
+};
+
 const found = {};           // class -> [{region, map, detail}]
 const flag = (cls, region, map, detail) => (found[cls] = found[cls] || []).push({ region, map, detail });
 
@@ -70,6 +112,8 @@ for (const f of fs.readdirSync(`${D}/scripts`)) {
 	for (const [label, ops] of Object.entries(prog)) {
 		if (label === '__map__' || !Array.isArray(ops)) continue;
 		for (const op of ops) {
+			if (op.who != null && ['hideobj', 'showobj', 'move', 'setobjxy', 'face'].includes(op.op) && !resolves(mapByFile[stem], op.who))
+				flag('unresolved-obj', r, stem, `${label} -> ${op.op} ${op.who}`);
 			switch (op.op) {
 				case 'msg': case 'say': case '__wontext':
 					if (op.text && !hasText(op.text)) flag('missing-text', r, stem, `${label} -> ${op.text}`);
@@ -100,8 +144,17 @@ for (const f of fs.readdirSync(`${D}/scripts`)) {
 					// recovers the shape where map and warp-id were swapped
 					const known = n => typeof n === 'string' && (mapIndex[n] || mapIndex['MAP_' + n]);
 					if (op.map && !known(op.map) && !known(op.warp)) flag('bad-warp', r, stem, `${label} -> ${op.map}`);
+					const n = warpsOf(op.map), idx = +op.warp;
+					if (n != null && Number.isInteger(idx) && idx >= n) flag('bad-warp-index', r, stem, `${label} -> ${op.map} warp ${idx} (only ${n})`);
 					break;
 				}
+				case 'special':
+					if (op.name && !handledSpecials.has(op.name)) flag('unknown-special', r, stem, `${label} -> ${op.name}`);
+					break;
+				case 'move':
+					if (Array.isArray(op.steps) && op.steps.length >= 90 && !SAIL.has(label))
+						flag('long-walk', r, stem, `${label} -> ${op.who} ${op.steps.length} steps`);
+					break;
 			}
 		}
 	}
@@ -145,10 +198,15 @@ for (const f of fs.readdirSync(`${D}/maps`)) {
 	}
 	for (const c of (m.coord_events || [])) if (c.script && c.script !== '0x0') named.add(c.script);
 	for (const s of named) if (!prog[s]) flag('missing-script', r, stem, s);
+	for (const w of (m.warp_events || [])) {
+		const dm = w.dest_map || w.map, di = +(w.dest_warp_id ?? w.warp), n = warpsOf(dm);
+		if (n != null && Number.isInteger(di) && di >= n && di !== 127 && di !== 255) flag('bad-warp-index', r, stem, `warp_event ${w.x},${w.y} -> ${dm} warp ${di} (only ${n})`);
+	}
 }
 
 // ---------- report ----------
-const CLASSES = ['missing-text', 'missing-script', 'missing-label', 'bad-item', 'bad-species', 'bad-warp', 'ugly-text'];
+const CLASSES = ['missing-text', 'missing-script', 'missing-label', 'bad-item', 'bad-species', 'bad-warp', 'ugly-text',
+	'bad-warp-index', 'unknown-special', 'long-walk', 'unresolved-obj'];
 if (only) {
 	for (const row of (found[only] || [])) console.log(`${row.region}  ${row.map}  ${row.detail}`);
 	console.log(`\n${(found[only] || []).length} total for ${only}`);
