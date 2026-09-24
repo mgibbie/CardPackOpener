@@ -1307,7 +1307,13 @@ function interact() {
 		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
 		// single-purpose service buildings: talking to the attendant runs it
 		const mid = world.current.map.id;
-		if (DAYCARE_MAPS.has(mid)) { openDaycare(); return; }
+		if (DAYCARE_MAPS.has(mid)) {
+			// Crystal's Day-Care Man gives the ODD EGG the first time you talk to him;
+			// the native service used to swallow that conversation, so it never came
+			if (npc.ev?.script === 'DayCareManScript_Inside' && !Story.getFlag('EVENT_GOT_ODD_EGG')
+				&& runScriptLabel(npc.ev.script, npc)) return;
+			openDaycare(); return;
+		}
 		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
 		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
 		// MOM heals the party in all three games — the op that does it never
@@ -6786,6 +6792,120 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 	});
 	return 'wait';
 }
+
+// ---------- the Mossdeep Space Center multi battle ----------
+// pokeemerald battle_tower.c: Steven (partner) + you vs Maxie + Tabitha. The foe
+// teams are the decomp's; the two leaders' mons interleave so each side of the
+// double opens with one of each. Until the AI-partner work lands the player fields
+// their own leads.
+function startSpaceCenterBattle() {
+	const build = tid => (trainerTeams[tid]?.party || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	const maxie = build('MAXIE_MOSSDEEP'), tabitha = build('TABITHA_MOSSDEEP');
+	const foeParty = [];
+	for (let i = 0; i < Math.max(maxie.length, tabitha.length); i++) {
+		if (maxie[i]) foeParty.push(maxie[i]);
+		if (tabitha[i]) foeParty.push(tabitha[i]);
+	}
+	if (!foeParty.length || !(party || []).some(m => m.curHP > 0)) { Story.setVar('VAR_RESULT', 1); return; }
+	const info = { displayName: 'MAGMA LEADER MAXIE & ADMIN TABITHA', defeatText: '', money: 44 * 8 * 2, boss: true };
+	battle.endSpec = { kind: 'strainer', script: null };
+	battle.startTrainer(party, foeParty, info, result => {
+		if (result === 'victory') {
+			Story.setVar('VAR_RESULT', 1);
+			lastBattleOutcome = B_OUTCOME_WON;
+			saveParty(party);
+			cutscene.resume();
+		} else {
+			// the script's own loss path is SetCB2WhiteOut; black out here instead
+			Story.setVar('VAR_RESULT', 2);
+			lastBattleOutcome = B_OUTCOME_LOST;
+			if (result === 'defeat') whiteOut();
+			cutscene.stop();
+		}
+	});
+	return 'wait';
+}
+
+// ---------- Johto gift POKeMON (pokecrystal engine/events) ----------
+const giftMoves = ids => ids.map(id => battle.data.moves[id] && { id, name: battle.data.moves[id].name, pp: battle.data.moves[id].pp, maxPp: battle.data.moves[id].pp }).filter(Boolean);
+function giveGift(mon) { Dex.markCaught(mon.speciesId); dexMilestoneCheck(); const to = addCaught(party, mon); saveParty(party); return to; }
+// DRAGON SHRINE. The transpile dropped the script's `givepoke DRATINI, 15`, so this
+// special gives the DRATINI as well as setting its moveset: EXTREMESPEED (a move it
+// can't otherwise learn) for a flawless quiz, the plain Lv15 set otherwise.
+function giveDratini() {
+	const mon = buildMonForGift('dratini', 15);
+	if (!mon) return;
+	const wrong = Story.getFlag('EVENT_ANSWERED_DRAGON_MASTER_QUIZ_WRONG');
+	mon.moves = giftMoves(wrong ? ['wrap', 'leer', 'thunderwave', 'twister'] : ['wrap', 'thunderwave', 'twister', 'extremespeed']);
+	giveGift(mon);
+}
+// DAY-CARE MAN: the ODD EGG. data/events/odd_eggs.asm — seven babies, each with a
+// fixed Dizzy Punch set and a separate (much likelier than wild) shiny entry.
+const ODD_EGGS = [
+	{ s: 'pichu', moves: ['thundershock', 'charm', 'dizzypunch'], p: [8, 1] },
+	{ s: 'cleffa', moves: ['pound', 'charm', 'dizzypunch'], p: [16, 3] },
+	{ s: 'igglybuff', moves: ['sing', 'charm', 'dizzypunch'], p: [16, 3] },
+	{ s: 'smoochum', moves: ['pound', 'lick', 'dizzypunch'], p: [14, 2] },
+	{ s: 'magby', moves: ['ember', 'dizzypunch'], p: [10, 2] },
+	{ s: 'elekid', moves: ['quickattack', 'leer', 'dizzypunch'], p: [12, 2] },
+	{ s: 'tyrogue', moves: ['tackle', 'dizzypunch'], p: [10, 1] },
+];
+function rollOddEgg(r = Math.random()) {
+	let acc = 0, roll = r * 100;
+	for (const e of ODD_EGGS) for (let shiny = 0; shiny < 2; shiny++) {
+		acc += e.p[shiny];
+		if (roll < acc) return { s: e.s, moves: e.moves, shiny: !!shiny };
+	}
+	return { s: 'pichu', moves: ODD_EGGS[0].moves, shiny: false };
+}
+function giveOddEgg() {
+	const egg = rollOddEgg();
+	if (Daycare.giftEgg(egg.s, { moves: egg.moves, shiny: egg.shiny })) {
+		hud.textContent = 'You received an ODD EGG! It is at the DAY CARE — walk to hatch it.';
+		return;
+	}
+	// the Day Care egg slot is busy with a bred egg: hand over the baby itself
+	const mon = buildMonForGift(egg.s, 5);
+	if (!mon) return;
+	Daycare.applyPreset(mon, egg, battle.data);
+	giveGift(mon);
+}
+// MANIA's SHUCKIE (engine/events/shuckle.asm). Lv15 SHUCKLE holding a BERRY, OT
+// MANIA / ID 00518. Crystal refuses when the party is full (VAR_RESULT 0 routes
+// the script to its "party full" line); the loan sets a once-a-day flag.
+const MANIA_OT = { name: 'MANIA', id: 518 };
+const localDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+function giveShuckle() {
+	if ((party || []).length >= 6) return 0;
+	const mon = buildMonForGift('shuckle', 15);
+	if (!mon) return 0;
+	mon.nickname = 'SHUCKIE';
+	mon.heldItem = 'berry';
+	mon.otName = MANIA_OT.name;
+	mon.otId = MANIA_OT.id;
+	giveGift(mon);
+	Story.setFlag('ENGINE_GOT_SHUCKIE_TODAY');
+	Story.setVar('VAR_MP_SHUCKIE_DAY', localDay());
+	return 1;
+}
+// Crystal makes you pick a mon; here the SHUCKIE in the party is the one offered.
+// 0 WRONG_MON (none with MANIA's OT) · 2 RETURNED · 3 HAPPY (friendship >= 150,
+// Mania lets you keep it) · 4 FAINTED (it is fainted, or it is your last healthy mon)
+function returnShuckie() {
+	const i = (party || []).findIndex(m => m.speciesId === 'shuckle' && m.otName === MANIA_OT.name && (m.otId ?? MANIA_OT.id) === MANIA_OT.id);
+	if (i < 0) return 0;
+	const mon = party[i];
+	if (mon.curHP <= 0 || !party.some((m, j) => j !== i && m.curHP > 0)) return 4;
+	if ((mon.friend ?? 70) >= 150) return 3;
+	if (mon.heldItem) Bag.addItem(mon.heldItem);
+	party.splice(i, 1);
+	saveParty(party);
+	return 2;
+}
+// ENGINE_GOT_SHUCKIE_TODAY is one of Crystal's daily flags: it lapses at midnight
+function expireDailyFlags() {
+	if (Story.getFlag('ENGINE_GOT_SHUCKIE_TODAY') && Story.getVar('VAR_MP_SHUCKIE_DAY') !== localDay()) Story.clearFlag('ENGINE_GOT_SHUCKIE_TODAY');
+}
 // ON_TRANSITION runs silently on map entry (sets story vars, positions NPCs).
 // It is setup only, so run the instant ops and bail at any waiting op — it must
 // never block the game or pop dialogue.
@@ -6822,6 +6942,7 @@ function runMapOnLoad() {
 // more (they are setup-only and idempotent — positions they set, like Bill's
 // setobjxy, need the rebuilt objects to land on).
 async function runMapSetupScripts(isBoot) {
+	expireDailyFlags();
 	const evs = world.current?.map?.object_events || [];
 	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
 	const before = vis();
@@ -7196,6 +7317,22 @@ function runSpecial(name, store) {
 		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
 		case 'MauvilleGymSetDefaultBarriers': GymPuzzles.mauvilleGymSetDefaultBarriers(puzzleWorld()); return;
 		case 'MauvilleGymDeactivatePuzzle': GymPuzzles.mauvilleGymDeactivatePuzzle(puzzleWorld()); return;
+		// --- the Mossdeep Space Center multi battle (Emerald main story) ---
+		// Unported, no battle ran and VAR_RESULT never read 1, so the script fell
+		// through to SetCB2WhiteOut every time — and before that, ChooseHalfParty
+		// answering 0 looped the player back to Steven's prompt forever. There is no
+		// AI partner yet (Plans/AI_PARTNER_PLAN.md), so the player fields their own
+		// two leads against Maxie + Tabitha as a double battle.
+		case 'SavePlayerParty': case 'LoadPlayerParty': case 'ReducePlayerPartyToSelectedMons': return;
+		case 'ChooseHalfPartyForBattle': Story.setVar('VAR_RESULT', living().length ? 1 : 0); return;
+		case 'DoSpecialTrainerBattle':
+			if (String(Story.getVar('VAR_0x8004')) === 'SPECIAL_BATTLE_STEVEN') return startSpaceCenterBattle();
+			return;
+		// --- Johto gift POKeMON (pokecrystal engine/events) ---
+		case 'GiveDratini': giveDratini(); return;
+		case 'GiveOddEgg': giveOddEgg(); return;
+		case 'GiveShuckle': return set(giveShuckle());
+		case 'ReturnShuckie': return set(returnShuckie());
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
 		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
 			const here = world.current.map.id;
