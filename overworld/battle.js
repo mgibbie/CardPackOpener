@@ -5600,9 +5600,12 @@ export class Battle {
 				{ shownHP: a.foeAllyShownHP, boosts: a.foeAllyBoosts });
 		}
 		if (a.double && a.meAlly && a.meAlly.curHP > 0) {
-			const myY = barY - 118 * u;
-			// portrait has no width for two side-by-side panels — the ally goes left
-			UI.monPanel(ctx, a.meAlly, portrait ? 14 * u : W - 14 * u - 300 * u - 246 * u, myY, 230 * u, u,
+			// portrait has no width for two side-by-side panels (the "ally goes left"
+			// placement ran under the player's panel and hid its HP numbers), so the
+			// ally STACKS above the player's panel, right-aligned with it
+			const allyH = (a.partner ? 78 : 96) * u;
+			const myY = portrait ? barY - 118 * u - allyH - 24 * u : barY - 118 * u;   // clears the party dots
+			UI.monPanel(ctx, a.meAlly, portrait ? W - 14 * u - 300 * u : W - 14 * u - 300 * u - 246 * u, myY, portrait ? 300 * u : 230 * u, u,
 				a.partner ? { shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true, ownerTag: `${a.partner.name}'S` } :
 				{ shownHP: a.meAllyShownHP ?? a.meAlly.curHP, boosts: a.meAllyBoosts, showNumbers: true,
 					showXP: true, expFrac: this.expFracFor(a.meAlly, a.meAllyShownExp ?? (a.meAlly.exp ?? expForLevel(a.meAlly.level))) });
