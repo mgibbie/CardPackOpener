@@ -2,6 +2,11 @@
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
+// the shared singletons (see ow_core.js)
+import {
+	screen, sctx, hud, world, player, npcs, encounters, battle, trainers, dialog, services,
+	arcade, blockers, portals, evolution, items, pvp, factorySpec, cutscene,
+} from './ow_core.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -73,8 +78,6 @@ let SCALE = 3;
 // portrait phone letterboxed the whole battle into a ~220px-tall band with
 // ~20px touch targets and left 70% of the screen black.
 let sceneTall = false;
-const screen = document.getElementById('screen');
-const sctx = screen.getContext('2d', { alpha: false }); // fully repainted opaque every frame
 function fitCanvas() {
 	const dpr = window.devicePixelRatio || 1;
 	if (sceneTall) {
@@ -129,7 +132,6 @@ fitCanvas();
 let fitT = null; // rotations/keyboard fire resize in bursts — settle first
 addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitCanvas, 120); });
 
-const hud = document.getElementById('hud');
 const objectiveEl = document.getElementById('objective');
 // keep the persistent on-screen objective in sync with the quest stage
 function refreshObjective() {
@@ -188,22 +190,6 @@ function postgameLog() {
 	rows.push({ label: `LEGENDS — ${caught}/${total}`, state: caught >= total ? 'done' : (Story.getFlag('beat_red') ? 'current' : 'locked') });
 	return rows;
 }
-const world = new World();
-const player = new Player(world);
-const npcs = new NPCs(world, player);
-const encounters = new Encounters();
-const battle = new Battle();
-const trainers = new Trainers(world, player);
-const dialog = new Dialog();
-const services = new Services(world);
-const arcade = new Arcade(world);
-const blockers = new Blockers(world);
-const portals = new Portals(world);
-const evolution = new Evolution();
-const items = new Items(world);
-const pvp = new Pvp();
-const factorySpec = new FactorySpec();
-const cutscene = new Story.Cutscene();
 let signTexts = {};
 // Ops that only DISPLAY. A script built from nothing else is faithfully
 // represented by its extracted sign text, so the cheap dump is fine. Anything
