@@ -30,7 +30,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(healInPlace <= 2, 'no battle-end handler heals in place any more (Trainer Hill aside)', 'found ' + healInPlace);
 	A((mn.match(/whiteOut\(\)/g) || []).length >= 9, 'every losing battle path routes through it',
 		'call sites: ' + ((mn.match(/whiteOut\(\)/g) || []).length - 1));
-	A(/sfx\('heal'\); healParty\(party\); noteHealPoint\(\);/.test(mn), 'the POKeMON CENTER nurse records the heal point');
+	A(/sfx\('heal'\); healParty\((?:S\.)?party\); noteHealPoint\(\);/.test(mn), 'the POKeMON CENTER nurse records the heal point');
 	A(/Trainer Hill challenge ends/.test(mn), 'a Trainer Hill loss still ends the run instead of blacking out');
 	const rs = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
 	A(/magepunk_healpoint_v1/.test(rs), 'the heal point is part of the canonical save');

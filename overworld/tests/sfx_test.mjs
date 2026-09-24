@@ -44,7 +44,7 @@ const ALL = ['ui_move', 'ui_select', 'ui_cancel', 'ui_denied', 'ui_open', 'text_
 	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
 	A(/player\.onHop = \(\) => sfx\('ledge'\)/.test(main) && /bumpCooldown = now \+ 350/.test(main),
 		'main plays them (bump throttled against held keys)');
-	A(/sfx\('heal'\); healParty\(party\)/.test(main) && /sfx\('pc_on'\)/.test(main) && /sfx\('notice'\)/.test(main),
+	A(/sfx\('heal'\); healParty\((?:S\.)?party\)/.test(main) && /sfx\('pc_on'\)/.test(main) && /sfx\('notice'\)/.test(main),
 		'nurse chime, PC boot and trainer-notice are wired');
 	const bt = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
 	A((bt.match(/sfx\('flee'\); this\.finish\('escaped'\)/g) || []).length >= 3,

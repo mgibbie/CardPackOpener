@@ -46,15 +46,24 @@ and can be reverted on its own.
 - main.js imports them.
 - Zero behaviour change. It is the foundation every later module imports.
 
-### Phase 2: `ow_state.js`, the shared mutable state
+### Phase 2: `ow_state.js`, the shared mutable state — DONE
 
-- Only for the `let`s used across subsystems: `party`, `loading`, `menuUi`,
-  `menuHover`, `lastBattleOutcome`...
-- They live on one exported object, `S`.
-- An acorn-driven, scope-aware codemod rewrites `party` → `S.party` and so on.
-  It only rewrites the top-level binding, never a parameter or local that
-  shadows it; plain regex can't guarantee that.
-- One mechanical PR, reviewed as a diff of renames only.
+- Ten `let`s used across five or more sections now live on `S`:
+  `party` (38 sections), `loading`, `menuUi`, `mpAccount`, `mapScripts`,
+  `menuHover`, `friends`, `lastBattleOutcome`, plus `visiting` and
+  `trainerTeams`.
+- `tools/codemod_state.mjs` did the rewrite: espree + eslint-scope, so only
+  references bound to the module-level variable changed. 479 references.
+  - Each `let x = init` became `S.x = init` in the same spot, so evaluation
+    order is unchanged.
+  - Shorthand `{ loading }` became `loading: S.loading`.
+- Two source-reading tests matched `healParty(party)` literally; both now
+  accept `S.party`. Every regex and string literal in the 45 tests that read
+  main.js's source was checked against old vs new main.js, and none else
+  drifted.
+- Subsystem-owned `let`s (`safari`, `baseCtx`, `follower`, `hillRun`...) stay
+  put. They move with their subsystem in phase 3, and go onto `S` only if other
+  code must write them.
 
 ### Phase 3+: extract subsystems, leaf-first, one or two per PR
 

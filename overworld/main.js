@@ -7,6 +7,8 @@ import {
 	screen, sctx, hud, world, player, npcs, encounters, battle, trainers, dialog, services,
 	arcade, blockers, portals, evolution, items, pvp, factorySpec, cutscene,
 } from './ow_core.js';
+// the shared mutable state (see ow_state.js)
+import { S } from './ow_state.js';
 import { NPCs } from './npcs.js';
 import { Encounters } from './encounters.js';
 import { Battle } from './battle.js';
@@ -60,9 +62,9 @@ import * as Chat from '../battlecards/chat.js';
 // the overworld requires a login — bounce to the account door without one
 MP.requireLogin();
 const MP_ON = MP.hasToken();
-let mpAccount = null;   // { username, friendCode, ... } once loaded
-let friends = [];       // last friends-poll result
-let visiting = null;    // when set: { username, sprite } — roaming a friend's world
+S.mpAccount = null;   // { username, friendCode, ... } once loaded
+S.friends = [];       // last friends-poll result
+S.visiting = null;    // when set: { username, sprite } — roaming a friend's world
 let friendGhost = null; // a friend's live sprite while we visit their map
 
 // Integer-scale the GBA screen to DEVICE pixels. The old fixed 3x canvas was
@@ -142,7 +144,7 @@ function refreshObjective() {
 	// "MEWTWO stirs in CERULEAN CAVE" and the 16-badge climb, RED and the
 	// legendary hunt got no guidance at all.
 	const pg = Quest.stage(playerRegion()) === Quest.DONE ? postgameObjective() : null;
-	objectiveEl.textContent = party ? ('NEXT: ' + (pg || Quest.objective(playerRegion()))) : '';
+	objectiveEl.textContent = S.party ? ('NEXT: ' + (pg || Quest.objective(playerRegion()))) : '';
 }
 
 // ---------- the postgame arc, as guidance ----------
@@ -203,10 +205,10 @@ function scriptIsDisplayOnly(ops) {
 	for (const o of ops) if (o && o.op && !SIGN_INERT_OPS.has(o.op)) return false;
 	return true;
 }
-let trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
+S.trainerTeams = {}; // canonical TRAINER_id -> {class, party} (species/level/moves)
 let commonStrings = {}; // cross-map / shared text labels (fallback for msg ops)
 let sharedScripts = {}; // bodies the decomps keep outside the map files (see loadMapScripts)
-let party = null;
+S.party = null;
 
 // starter picker (fresh saves): 3 regions x 3 starters
 const STARTERS = [
@@ -261,7 +263,7 @@ trainers.onEngage = t => {
 	// body isn't loaded, fall through to the plain battle (+ badge toast for gyms).
 	const role = Badges.scriptInfo(script);
 	const isLeague = role && (role.kind === 'elite' || role.kind === 'champion');
-	if (!isLeague && mapScripts[script] && runScriptLabel(script, t)) return;
+	if (!isLeague && S.mapScripts[script] && runScriptLabel(script, t)) return;
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
 	const begin = () => startTrainerBattle(t, foeParty, info);
 	if (info.introQuote) dialog.open(info.introQuote, begin);
@@ -334,15 +336,15 @@ function startTrainerBattle(t, foeParty, info) {
 	for (const m of foeParty) Dex.markSeen(m.speciesId);
 	if (!info.weather) info.weather = mapWeatherNow();   // the route's own sky
 	battle.endSpec = { kind: 'trainer', script: t?.ev?.script || null, money: info.money || 0 };
-	battle.startTrainer(party, foeParty, info, result => {
+	battle.startTrainer(S.party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
 			// the prize is paid by battle.awardPrize(), at the moment it is announced —
 			// this used to be the ONLY path that paid, which is why scripted trainers,
 			// villains and rivals all showed a prize and credited nothing
-			saveParty(party);
+			saveParty(S.party);
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
-			evolution.check(party, battle.data);
+			evolution.check(S.party, battle.data);
 			runPostBattleScript(t.ev.script, t);   // the beat Crystal keeps in <script>.Script
 		} else if (result === 'defeat') {
 			whiteOut();
@@ -549,7 +551,7 @@ function markPostBattleDone(key) {
 function runPostBattleScript(script, t, keyOverride) {
 	if (!script || cutscene.blocking) return false;
 	const label = script + '.Script';
-	const ops = mapScripts[label];
+	const ops = S.mapScripts[label];
 	if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) return false;
 	const key = keyOverride || (t ? trainers.keyOf(t) : script);
 	markPostBattleTry(key);                 // the loop guard, not the completion mark
@@ -645,7 +647,7 @@ function catchUpPostBattleScripts() {
 		if (!script || !trainers.defeated.has(key)) continue;
 		if (done.has(key)) continue;
 		if ((st.tries[key] || 0) >= MAX_POSTBATTLE_TRIES) continue;   // give up, don't loop
-		const ops = mapScripts[script + '.Script'];
+		const ops = S.mapScripts[script + '.Script'];
 		if (!Array.isArray(ops) || scriptIsDisplayOnly(ops)) continue;
 		if (runPostBattleScript(script, t, key)) return;   // at most one per map entry
 		markPostBattleTry(key);                            // unrunnable right now: burn a try
@@ -716,8 +718,8 @@ function onTrainerDefeated(script, opts) {
 		// Champion's Room (the decomp room-warp + credits roll was never ported). This is
 		// what makes the post-game reachable at all.
 		const finish = () => {
-			if (fresh) recordHallOfFame(info.region, party);
-			healParty(party); saveParty(party);
+			if (fresh) recordHallOfFame(info.region, S.party);
+			healParty(S.party); saveParty(S.party);
 			const home = Quest.START[info.region];
 			const goHome = () => { if (home) moveToMap(home); refreshObjective(); syncOverworldAchievements(); };
 			// the third League just fell -> the GRAND CHAMPION finale, then warp home
@@ -762,7 +764,7 @@ function healTeam(team) {
 	for (const m of (team || [])) { if (!m) continue; m.curHP = m.maxHP; m.status = null; for (const mv of m.moves || []) mv.pp = mv.maxPp; }
 }
 function facLevel(cfg) {
-	const base = Math.min(Badges.MAX_LEVEL, Math.max(50, ...((party || []).filter(Boolean).map(m => m.level || 50))));
+	const base = Math.min(Badges.MAX_LEVEL, Math.max(50, ...((S.party || []).filter(Boolean).map(m => m.level || 50))));
 	if (cfg.level === 50) return 50;
 	if (cfg.level === 'party+5') return Math.min(Badges.MAX_LEVEL, base + 5);
 	return base;
@@ -790,7 +792,7 @@ function frontierPublish(over) {
 function startFrontierPublish() {
 	if (!MP_ON || frontierPubTimer) return;
 	frontierWatchers = 0;
-	const uname = mpAccount?.username; // runner + spectators share the run's chat room
+	const uname = S.mpAccount?.username; // runner + spectators share the run's chat room
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true });
 	const tick = () => { frontierPublish(false); frontierPubTimer = frontier.active ? setTimeout(tick, 1200) : null; };
 	tick();
@@ -818,8 +820,8 @@ function drawWatchingBadge(W, H) {
 
 function startFacility(id) {
 	const cfg = Frontier.FACILITIES[id];
-	if (!cfg || !party || !leadMon(party) || frontier.active || battle.blocking) return;
-	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : party;
+	if (!cfg || !S.party || !leadMon(S.party) || frontier.active || battle.blocking) return;
+	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : S.party;
 	if (cfg.rental && !runParty.length) { dialog.open('No rental POKeMON are available right now.'); return; }
 	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.id = id; frontier.runParty = runParty;
 	startFrontierPublish();
@@ -857,7 +859,7 @@ function runFrontierBattle(foe, info, tier, brain) {
 	battle.startTrainer(frontier.runParty, foe, info, result => {
 		if (result !== 'victory') { endFacility(); return; }
 		frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
-		if (!cfg.rental) saveParty(party);
+		if (!cfg.rental) saveParty(S.party);
 		const cont = () => {
 			if (Number.isFinite(cfg.rounds)) {
 				if (frontier.streak >= cfg.rounds) { Frontier.addBP(cfg.bonus || 0); completeFacility(); }
@@ -878,13 +880,13 @@ function runFrontierBattle(foe, info, tier, brain) {
 function completeFacility() {
 	const cfg = frontier.cfg;
 	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
-	if (factoryStandalone) healTeam(party); else healParty(party); // heal+save only for a real save
+	if (factoryStandalone) healTeam(S.party); else healParty(S.party); // heal+save only for a real save
 	frontierEndDialog(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
 }
 function endFacility() {
 	const cfg = frontier.cfg, s = frontier.streak;
 	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
-	if (factoryStandalone) healTeam(party); else healParty(party);
+	if (factoryStandalone) healTeam(S.party); else healParty(S.party);
 	frontierEndDialog(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
 }
 // at run end: offer the BP EXCHANGE (spend what you just earned), then — in the
@@ -905,9 +907,9 @@ function recordHallOfFame(region, roster) {
 		safeSave('magepunk_hof', hof.slice(-20)); // keep the last 20 clears
 	} catch { }
 }
-evolution.onDone = () => saveParty(party);
+evolution.onDone = () => saveParty(S.party);
 evolution.onEvolved = (from, to) => Journal.add(`${from} evolved into ${to}!`);
-let loading = true;
+S.loading = true;
 // ---------- screen fade (warp/door transitions) ----------
 // Warps used to hard-cut between maps. A short fade-to-black on the way out and
 // a fade-in on the new map reads instantly more finished. The main tick BAILS
@@ -1109,7 +1111,7 @@ function interact() {
 	if (baseCtx && baseDecoInteract(fx, fy)) return;
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
-		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(party); noteHealPoint(); });
+		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
 		return;
 	}
 	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
@@ -1160,14 +1162,14 @@ function interact() {
 	if (svc === 'trickend') { trickEndTalk(); return; }
 	if (svc === 'ruinspuzzle') { openRuinsPuzzle(); return; }
 	if (svc === 'contest') {
-		if (!party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
+		if (!S.party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
 		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
 		sfx('ui_select');
 		contestMenu.open = true; contestMenu.mode = 'category'; contestMenu.idx = 0; contestMenu.flash = null;
 		return;
 	}
 	if (svc === 'berryblend') {
-		if (!party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
+		if (!S.party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
 		sfx('ui_select');
 		blendMenu.open = true; blendMenu.mode = 'pickmon'; blendMenu.idx = 0; blendMenu.flash = null;
 		return;
@@ -1184,13 +1186,13 @@ function interact() {
 	const arc = arcade.kindAt(fx, fy);
 	if (arc === 'pokechess') {
 		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
-			if (k !== 'x') { saveParty(party); savePos(); location.href = 'pokechess.html' + (MP_ON ? '?mp=1' : ''); }
+			if (k !== 'x') { saveParty(S.party); savePos(); location.href = 'pokechess.html' + (MP_ON ? '?mp=1' : ''); }
 		});
 		return;
 	}
 	if (arc === 'pears') {
 		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
-			if (k !== 'x') { saveParty(party); savePos(); location.href = '/pairofpears/?direct=1'; }
+			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/pairofpears/?direct=1'; }
 		});
 		return;
 	}
@@ -1237,7 +1239,7 @@ function interact() {
 	for (const ev of world.current.map.bg_events || []) {
 		if (+ev.x !== fx || +ev.y !== fy) continue;
 		const lab = ev.script && ev.script !== '0x0' ? ev.script : null;
-		const scr = lab ? mapScripts[lab] : null;
+		const scr = lab ? S.mapScripts[lab] : null;
 		// THE SCRIPT WINS WHENEVER IT DOES MORE THAN PRINT A LINE.
 		//
 		// sign_texts.json is a TEXT DUMP: it holds the `msg` a script would have
@@ -1347,15 +1349,15 @@ function drawWaterAnim(ctx, camX, camY, forceOff) {
 // MOM, in every region's player house: a warm word and a full heal
 const MOM_SCRIPTS = new Set(['MomScript', 'PalletTown_PlayersHouse_1F_EventScript_Mom', 'PlayersHouse_1F_EventScript_Mom']);
 function momTalk() {
-	const hurt = (party || []).some(m => m && (m.curHP < m.maxHP || m.status || (m.moves || []).some(mv => mv.pp < mv.maxPp)));
+	const hurt = (S.party || []).some(m => m && (m.curHP < m.maxHP || m.status || (m.moves || []).some(mv => mv.pp < mv.maxPp)));
 	if (!hurt) {
 		dialog.open('MOM: Oh, hi! Your POKeMON look happy\nand healthy to me. Off you go —\nand take care of each other!');
 		return;
 	}
 	dialog.open('MOM: Welcome home! Goodness, you all look\nworn out. Let me look after your POKeMON\nfor a moment...\n\n. . . . .\n\nThere! Rested and raring to go!', () => {
 		sfx('heal');
-		healParty(party);
-		saveParty(party);
+		healParty(S.party);
+		saveParty(S.party);
 		noteHealPoint();   // MOM's is a resting place too — wake up here if you black out
 	});
 }
@@ -1493,7 +1495,7 @@ function persistBattle() {
 			const snap = battle.snapshot();
 			if (!snap) return;
 			safeSave(BATTLE_SAVE_KEY, { v: 1, snap, end: battle.endSpec, map: world.current.name });
-			saveParty(party);   // the party's mid-battle HP/PP must match the snapshot
+			saveParty(S.party);   // the party's mid-battle HP/PP must match the snapshot
 			battleSaveDirty = true;
 		} catch (e) { console.warn('[battle-save] snapshot failed', e); }
 	} else if (battleSaveDirty && !battle.blocking) {
@@ -1512,17 +1514,17 @@ function resumeEndHandler(end, savedMap) {
 	if (kind === 'legendary') return result => {
 		if (result === 'caught' && battle.lastCaught) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(party, battle.lastCaught);
+			const where = addCaught(S.party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 			offerNickname(battle.lastCaught);
 			Story.setFlag(end.flag);
 			syncOverworldAchievements();
 		} else if (result === 'victory') {
 			Story.setFlag(end.flag);
-			evolution.check(party, battle.data);
+			evolution.check(S.party, battle.data);
 		} else if (result === 'defeat') {
 			whiteOut();
-		} else saveParty(party);
+		} else saveParty(S.party);
 	};
 	if (kind === 'trainer') return result => {
 		if (result === 'victory') {
@@ -1530,9 +1532,9 @@ function resumeEndHandler(end, savedMap) {
 			if (t) trainers.markDefeated(t);
 			// paid by battle.awardPrize() when the restored battle announces it, which
 			// also picks up an AMULET COIN the pre-battle endSpec snapshot could not know about
-			saveParty(party);
+			saveParty(S.party);
 			if (end.script) onTrainerDefeated(end.script);
-			evolution.check(party, battle.data);
+			evolution.check(S.party, battle.data);
 			runPostBattleScript(end.script, t);    // ...and after a reload, too
 		} else if (result === 'defeat') {
 			whiteOut();
@@ -1544,7 +1546,7 @@ function resumeEndHandler(end, savedMap) {
 			Story.setVar('VAR_RESULT', 1);
 			const t = trainers.list.find(x => x.ev?.script === end.script);
 			if (t) trainers.markDefeated(t);
-			saveParty(party);
+			saveParty(S.party);
 			if (end.script) onTrainerDefeated(end.script, { silent: true });
 		} else {
 			Story.setVar('VAR_RESULT', 0);
@@ -1557,8 +1559,8 @@ function resumeEndHandler(end, savedMap) {
 		multiPicks = null;
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
-			lastBattleOutcome = B_OUTCOME_WON;
-			saveParty(party);
+			S.lastBattleOutcome = B_OUTCOME_WON;
+			saveParty(S.party);
 			runScriptLabel('MossdeepCity_SpaceCenter_2F_EventScript_DefeatedMaxieTabitha');
 		} else {
 			Story.setVar('VAR_RESULT', 2);
@@ -1569,16 +1571,16 @@ function resumeEndHandler(end, savedMap) {
 		if (result === 'victory') {
 			const beat = Quest.beatAt(end.region, savedMap);
 			if (beat) completeVillainBeat(end.region, beat);
-		} else { healParty(party); saveParty(party); }
+		} else { healParty(S.party); saveParty(S.party); }
 	};
 	if (kind === 'rivaltier') return result => {
 		Story.setFlag(rivalFlag(end.tier));
-		if (result !== 'victory') healParty(party);
-		saveParty(party);
+		if (result !== 'victory') healParty(S.party);
+		saveParty(S.party);
 	};
 	if (kind === 'rivalintro') return result => {
-		if (result !== 'victory') healParty(party);
-		saveParty(party);
+		if (result !== 'victory') healParty(S.party);
+		saveParty(S.party);
 		afterRival(end.region);
 	};
 	return result => wildBattleEnd(result, !!(safari.on && safariZoneOf(world.current?.map?.id)));
@@ -1586,7 +1588,7 @@ function resumeEndHandler(end, savedMap) {
 
 function resumeSavedBattle() {
 	const saved = safeLoad(BATTLE_SAVE_KEY, null);
-	if (!saved || !saved.snap || !party) return false;
+	if (!saved || !saved.snap || !S.party) return false;
 	try { localStorage.removeItem(BATTLE_SAVE_KEY); } catch (e) {}   // consume: a crash must not loop
 	const snap = saved.snap;
 	const onEnd = resumeEndHandler(saved.end, saved.map);
@@ -1594,10 +1596,10 @@ function resumeSavedBattle() {
 	battleSaveDirty = true;   // re-arms the tick, which re-saves while it runs
 	// a multi battle ran on a VIEW of the party (the picked mons); resume on the same one
 	const side = saved.end?.kind === 'spacecenter'
-		? (saved.end.picks || []).map(i => party[i]).filter(Boolean)
-		: party;
+		? (saved.end.picks || []).map(i => S.party[i]).filter(Boolean)
+		: S.party;
 	if (snap.isTrainer) battle.startTrainer(side, snap.foes, snap.info, onEnd, { restore: snap });
-	else battle.start(party, snap.foe.speciesId, snap.foe.level, onEnd, null,
+	else battle.start(S.party, snap.foe.speciesId, snap.foe.level, onEnd, null,
 		{ restore: snap, safari: snap.safari && safari.on ? safari : null });
 	hud.textContent = 'Resuming the battle...';
 	return true;
@@ -1751,7 +1753,7 @@ function openDaycare() { daycareMenu.open = true; daycareMenu.mode = 'main'; day
 function openNameRater() { nameRater.open = true; nameRater.idx = 0; }
 // Runs UNDER the paused script (the special returns 'wait'); VAR_RESULT is 1 on
 // confirm, 0 on cancel — the script loops back to its prompt on 0.
-const halfPartyNeed = () => Math.min(3, (party || []).filter(m => m.curHP > 0).length);
+const halfPartyNeed = () => Math.min(3, (S.party || []).filter(m => m.curHP > 0).length);
 function openHalfParty() {
 	if (!halfPartyNeed()) { Story.setVar('VAR_RESULT', 0); return; }
 	Object.assign(halfParty, { open: true, idx: 0, picked: [], flash: null });
@@ -1764,25 +1766,25 @@ function closeHalfParty(ok) {
 	cutscene.resume();
 }
 function halfPartyKey(k) {
-	const n = party.length + 1;   // the mons, then BATTLE
+	const n = S.party.length + 1;   // the mons, then BATTLE
 	if (k === 'ArrowUp') halfParty.idx = (halfParty.idx + n - 1) % n;
 	if (k === 'ArrowDown') halfParty.idx = (halfParty.idx + 1) % n;
 	if (k === 'x' || k === 'Escape') { closeHalfParty(false); return; }
 	if (k !== 'z' && k !== 'Enter') return;
-	if (halfParty.idx === party.length) {
+	if (halfParty.idx === S.party.length) {
 		const need = halfPartyNeed();
 		if (halfParty.picked.length === need) closeHalfParty(true);
 		else halfParty.flash = `Choose ${need} POKeMON.`;
 		return;
 	}
-	const i = halfParty.idx, mon = party[i];
+	const i = halfParty.idx, mon = S.party[i];
 	const at = halfParty.picked.indexOf(i);
 	if (at >= 0) { halfParty.picked.splice(at, 1); halfParty.flash = null; return; }
 	if (!mon || mon.curHP <= 0) { halfParty.flash = `${mon?.name || 'It'} can't battle.`; return; }
 	if (halfParty.picked.length >= halfPartyNeed()) { halfParty.flash = 'Three are already chosen.'; return; }
 	halfParty.picked.push(i);
 	halfParty.flash = null;
-	if (halfParty.picked.length === halfPartyNeed()) halfParty.idx = party.length;   // hop to BATTLE
+	if (halfParty.picked.length === halfPartyNeed()) halfParty.idx = S.party.length;   // hop to BATTLE
 }
 function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
 
@@ -1833,7 +1835,7 @@ function daycareOptions() {
 		}
 	});
 	if (Daycare.hasReadyEgg()) opts.push({ label: 'Collect the EGG!', act: 'egg' });
-	if (Daycare.canDeposit() && party.length > 1) opts.push({ label: 'Leave a POKeMON', act: 'deposit' });
+	if (Daycare.canDeposit() && S.party.length > 1) opts.push({ label: 'Leave a POKeMON', act: 'deposit' });
 	opts.push({ label: 'See you later', act: 'leave' });
 	return opts;
 }
@@ -1842,7 +1844,7 @@ function daycareOptions() {
 // Offer -> pick a party POKeMON -> it must be the species they asked for -> swap.
 const monName = id => (battle.data?.species?.[id]?.name || id || '').toUpperCase();
 function startNpcTrade(trade, talker) {
-	if (!party || !party.length) return;
+	if (!S.party || !S.party.length) return;
 	if (Story.getFlag(Trades.flagFor(trade.key))) {
 		dialog.open(`How's ${trade.nickname || monName(trade.give)} doing?\n\nI'm glad we traded.`);
 		return;
@@ -1854,23 +1856,23 @@ function startNpcTrade(trade, talker) {
 }
 function npcTradeKey(k) {
 	const t = tradeMenu.trade;
-	if (k === 'ArrowUp') tradeMenu.idx = (tradeMenu.idx + party.length - 1) % party.length;
-	if (k === 'ArrowDown') tradeMenu.idx = (tradeMenu.idx + 1) % party.length;
+	if (k === 'ArrowUp') tradeMenu.idx = (tradeMenu.idx + S.party.length - 1) % S.party.length;
+	if (k === 'ArrowDown') tradeMenu.idx = (tradeMenu.idx + 1) % S.party.length;
 	if (k === 'x' || k === 'Escape') { tradeMenu.open = false; dialog.open('Oh… well, maybe another time.'); return; }
 	if (k !== 'z' && k !== 'Enter') return;
-	const given = party[tradeMenu.idx];
+	const given = S.party[tradeMenu.idx];
 	if (!given || !t) return;
 	if (given.speciesId !== t.want) {
 		tradeMenu.flash = `That's not a ${monName(t.want)}!`;
 		return;
 	}
 	// your last POKeMON would leave you with an empty party mid-overworld
-	if (party.length <= 1) { tradeMenu.flash = "That's your only POKeMON!"; return; }
+	if (S.party.length <= 1) { tradeMenu.flash = "That's your only POKeMON!"; return; }
 	const got = Trades.buildTraded(t, given, battle.data, battleBuildMon);
 	if (!got) { tradeMenu.flash = 'Something went wrong…'; return; }
-	party.splice(tradeMenu.idx, 1);
-	party.push(got);
-	saveParty(party);
+	S.party.splice(tradeMenu.idx, 1);
+	S.party.push(got);
+	saveParty(S.party);
 	Dex.markSeen(got.speciesId); Dex.markCaught(got.speciesId); dexMilestoneCheck();
 	Story.setFlag(Trades.flagFor(t.key));
 	tradeMenu.open = false;
@@ -1881,7 +1883,7 @@ function drawNpcTrade(W, H) {
 	const u = H / 480;
 	const t = tradeMenu.trade;
 	menuChrome(W, H, u, 'TRADE', t ? `Which POKeMON will you give for ${monName(t.give)}?` : '');
-	party.forEach((m, i) => monRow('trade:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, tradeMenu.idx === i, u));
+	S.party.forEach((m, i) => monRow('trade:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, tradeMenu.idx === i, u));
 	if (tradeMenu.flash) {
 		sctx.fillStyle = BUI.C.accent;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
@@ -1891,17 +1893,17 @@ function drawNpcTrade(W, H) {
 
 function daycareKey(k) {
 	if (daycareMenu.mode === 'deposit') {
-		const cands = party.filter((m, i) => i > 0 || party.length > 1); // keep at least one
-		if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % party.length;
+		const cands = S.party.filter((m, i) => i > 0 || S.party.length > 1); // keep at least one
+		if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % S.party.length;
 		if (k === 'x' || k === 'Escape') { daycareMenu.mode = 'main'; daycareMenu.idx = 0; return; }
 		if (k === 'z' || k === 'Enter') {
-			if (party.length <= 1) { daycareMenu.flash = "You can't leave your last POKeMON!"; return; }
-			const mon = party[daycareMenu.idx];
+			if (S.party.length <= 1) { daycareMenu.flash = "You can't leave your last POKeMON!"; return; }
+			const mon = S.party[daycareMenu.idx];
 			if (!mon || !Daycare.canDeposit()) return;
-			party.splice(daycareMenu.idx, 1);
+			S.party.splice(daycareMenu.idx, 1);
 			Daycare.deposit(mon);
-			saveParty(party);
+			saveParty(S.party);
 			daycareMenu.flash = `Left ${mon.name} at the Day Care.`;
 			daycareMenu.mode = 'main'; daycareMenu.idx = 0;
 		}
@@ -1920,16 +1922,16 @@ function daycareKey(k) {
 			const info = Daycare.withdrawInfo(o.slot, battle.data, levelCapNow());
 			if (!Bag.spend(info.cost)) { daycareMenu.flash = "You don't have enough money!"; return; }
 			const mon = Daycare.withdraw(o.slot, battle.data, levelCapNow());
-			const where = addCaught(party, mon);
+			const where = addCaught(S.party, mon);
 			daycareMenu.flash = `Got ${mon.name} back! ${where === 'box' ? '(sent to the box)' : ''}`;
-			saveParty(party);
+			saveParty(S.party);
 			daycareMenu.idx = 0;
 		}
 		if (o.act === 'egg') {
 			const baby = Daycare.collectEgg(battle.data, canLearn); // egg moves filter through TM/level-up compat
 			if (baby) {
 				Dex.markCaught(baby.speciesId); dexMilestoneCheck();
-				const where = addCaught(party, baby);
+				const where = addCaught(S.party, baby);
 				Journal.add(`The EGG hatched into ${baby.name}!`);
 				daycareMenu.flash = `The EGG hatched into ${baby.name}! ${where === 'box' ? '(sent to the box)' : ''}`;
 			}
@@ -1940,11 +1942,11 @@ function daycareKey(k) {
 
 // ---- name rater ----
 function nameRaterKey(k) {
-	if (k === 'ArrowUp') nameRater.idx = (nameRater.idx + party.length - 1) % party.length;
-	if (k === 'ArrowDown') nameRater.idx = (nameRater.idx + 1) % party.length;
+	if (k === 'ArrowUp') nameRater.idx = (nameRater.idx + S.party.length - 1) % S.party.length;
+	if (k === 'ArrowDown') nameRater.idx = (nameRater.idx + 1) % S.party.length;
 	if (k === 'x' || k === 'Escape') { nameRater.open = false; return; }
 	if (k === 'z' || k === 'Enter') {
-		const mon = party[nameRater.idx];
+		const mon = S.party[nameRater.idx];
 		if (mon) promptRename(mon);
 	}
 }
@@ -1970,7 +1972,7 @@ function setNickname(mon, name) {
 	const clean = String(name).trim().slice(0, 12);
 	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
 	mon.name = clean || speciesName;
-	saveParty(party);
+	saveParty(S.party);
 	nameRater.open = false;
 }
 
@@ -1997,11 +1999,11 @@ function moveShopKey(k) {
 		return;
 	}
 	if (m.mode === 'pick-delete' || m.mode === 'pick-relearn') {
-		if (k === 'ArrowUp') m.idx = (m.idx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % party.length;
+		if (k === 'ArrowUp') m.idx = (m.idx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % S.party.length;
 		if (k === 'x' || k === 'Escape') { m.mode = 'main'; m.idx = 0; return; }
 		if (k === 'z' || k === 'Enter') {
-			m.mon = party[m.idx];
+			m.mon = S.party[m.idx];
 			if (m.mode === 'pick-delete') { m.mode = 'delete-move'; m.idx = 0; }
 			else { m.list = relearnable(m.mon); m.mode = 'relearn-move'; m.idx = 0; if (!m.list.length) m.flash = `${m.mon.name} has no moves to recall.`; }
 		}
@@ -2015,7 +2017,7 @@ function moveShopKey(k) {
 		if (k === 'z' || k === 'Enter') {
 			if (moves.length <= 1) { m.flash = "It can't forget its only move!"; return; }
 			const gone = moves.splice(m.idx, 1)[0];
-			saveParty(party);
+			saveParty(S.party);
 			m.flash = `${m.mon.name} forgot ${gone.name}.`;
 			m.mode = 'main'; m.idx = 0;
 		}
@@ -2032,7 +2034,7 @@ function moveShopKey(k) {
 			const info = battle.data.moves[id];
 			if (m.mon.moves.length < 4) {
 				m.mon.moves.push({ id, name: info.name, pp: info.pp, maxPp: info.pp });
-				saveParty(party);
+				saveParty(S.party);
 				m.flash = `${m.mon.name} recalled ${info.name}!`;
 				m.mode = 'main'; m.idx = 0;
 			} else {
@@ -2139,9 +2141,9 @@ function startKey(k) {
 		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full
 		// party silently goes to a box you then could not open
 		else if (it === 'PC') { pcMenu.open = true; }
-		else if (it === 'SAVE') { saveParty(party); savePos(); dialog.open('Your journey has been saved.'); }
+		else if (it === 'SAVE') { saveParty(S.party); savePos(); dialog.open('Your journey has been saved.'); }
 		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; optionsMenu.mode = 'main'; optionsMenu.flash = null; optionsMenu.busy = false; }
-		else if (it === 'EXIT' && visiting) { leaveVisit(); }
+		else if (it === 'EXIT' && S.visiting) { leaveVisit(); }
 		// EXIT just closes
 	}
 }
@@ -2165,7 +2167,7 @@ function playerMenuKey(k) {
 		const who = playerMenu.target;
 		playerMenu.open = false;
 		if (!who) return;
-		const f = friends.find(fr => fr.username === who) || { username: who };
+		const f = S.friends.find(fr => fr.username === who) || { username: who };
 		if (it === 'POKeMON BATTLE') sendChallenge(f);
 		else if (it === 'MAIL BATTLE') sendMailChallenge(f);
 		else if (it === 'CARD BATTLE') sendCardChallenge(f);
@@ -2248,7 +2250,7 @@ function drawTrade(W, H) {
 		if (r.owned != null) lab += `   x${r.owned}` + (r.off ? `  → offering ${r.off}` : '');
 		else if (r.off) lab += '  (offered)';
 		sctx.fillText(lab, bx + 8 * u, y + 13 * u);
-		menuUi.push({ id: 'trade:' + i, x: bx, y, w: bw, h: rowH - 3 * u, label: '' });
+		S.menuUi.push({ id: 'trade:' + i, x: bx, y, w: bw, h: rowH - 3 * u, label: '' });
 	}
 }
 
@@ -2300,7 +2302,7 @@ function cardsKey(k) {
 		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
 		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
 		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; return; }
-		saveParty(party); savePos();
+		saveParty(S.party); savePos();
 		openCardPage(it);
 	}
 }
@@ -2314,7 +2316,7 @@ function runKey(k) {
 	if (k === 'z') {
 		const it = items[runMenu.idx];
 		if (it === 'BACK') { runMenu.open = false; cardsMenu.open = true; return; }
-		saveParty(party); savePos();
+		saveParty(S.party); savePos();
 		openCardPage(it);
 	}
 }
@@ -2341,18 +2343,18 @@ async function refreshFriendBadges() {
 async function refreshFriends() {
 	if (!MP_ON) return;
 	const data = await MP.call('friends');
-	if (data.friends) { friends = data.friends; if (mpAccount) mpAccount.friendCode = data.friendCode; }
+	if (data.friends) { S.friends = data.friends; if (S.mpAccount) S.mpAccount.friendCode = data.friendCode; }
 }
 function friendsKey(k) {
 	// rows: [Add friend] [Inbox] then each friend
-	const rows = 2 + friends.length;
+	const rows = 2 + S.friends.length;
 	if (k === 'ArrowUp') friendsMenu.idx = (friendsMenu.idx + rows - 1) % rows;
 	if (k === 'ArrowDown') friendsMenu.idx = (friendsMenu.idx + 1) % rows;
 	if (k === 'x' || k === 'Escape') { friendsMenu.open = false; return; }
 	if (k === 'z') {
 		if (friendsMenu.idx === 0) { promptAddFriend(); return; }
 		if (friendsMenu.idx === 1) { friendsMenu.open = false; openTradeInbox(); return; }
-		const f = friends[friendsMenu.idx - 2];
+		const f = S.friends[friendsMenu.idx - 2];
 		if (!f) return;
 		friendAction(f);
 	}
@@ -2437,8 +2439,8 @@ function drawBpShopMenu(W, H) {
 		const bid = 'bp:' + i;
 		const b = { id: bid, x: 24 * u, y: (80 + i * 40) * u, w: W - 48 * u, h: 34 * u,
 			label: `${bpItemName(it.id)}   —   ${it.cost} BP`, center: true, kbSel: bpShopMenu.idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || bpShopMenu.idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || bpShopMenu.idx === i, u);
 	});
 }
 const ferryMenu = { open: false, idx: 0 };
@@ -2577,7 +2579,7 @@ function setBox(box) {
 }
 // total shinies owned across the party and PC boxes (Trainer Card, Batch 6c)
 function shinyOwnedCount() {
-	return (party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
+	return (S.party || []).filter(m => m?.shiny).length + getBox().filter(m => m?.shiny).length;
 }
 // snapshot the current frame (the Trainer Card is up) → PNG, then share it via the
 // Web Share API when available, else save it as a download. Mirrors battlecards'
@@ -2653,8 +2655,8 @@ function useRareCandy(mon) {
 	mon.stats = statsFor(sp, ivs, mon.level, mon);
 	mon.maxHP = mon.stats.hp;
 	mon.curHP = Math.min(mon.maxHP, mon.curHP + (mon.maxHP - oldMax));
-	saveParty(party);
-	evolution.check(party, battle.data);
+	saveParty(S.party);
+	evolution.check(S.party, battle.data);
 	return true;
 }
 
@@ -2745,7 +2747,7 @@ function bagKey(k) {
 				const delta = ((p.ppMax ? 3 : curStages + 1) - curStages) * step;
 				mv.maxPp += delta; mv.pp += delta;
 				Bag.consume(p.itemId);
-				saveParty(party);
+				saveParty(S.party);
 				bagMenu.flash = `${mv.name}'s max PP ${p.ppMax ? 'was maxed out' : 'rose'}!`;
 				bagMenu.ppPick = null; bagMenu.picking = false;
 			}
@@ -2762,7 +2764,7 @@ function bagKey(k) {
 			const old = f.mon.moves[f.idx];
 			f.mon.moves[f.idx] = { id: f.mid, name: info.name, pp: info.pp, maxPp: info.pp };
 			if (f.itemId && !f.keepItem) Bag.consume(f.itemId);
-			saveParty(party);
+			saveParty(S.party);
 			bagMenu.flash = `Forgot ${old.name}, learned ${info.name}!`;
 			bagMenu.forget = null;
 			bagMenu.picking = false;
@@ -2770,19 +2772,19 @@ function bagKey(k) {
 		return;
 	}
 	if (bagMenu.picking) {
-		if (k === 'ArrowUp') bagMenu.pickIdx = (bagMenu.pickIdx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') bagMenu.pickIdx = (bagMenu.pickIdx + 1) % party.length;
+		if (k === 'ArrowUp') bagMenu.pickIdx = (bagMenu.pickIdx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') bagMenu.pickIdx = (bagMenu.pickIdx + 1) % S.party.length;
 		if (k === 'x' || k === 'Escape') bagMenu.picking = false;
 		if (k === 'z' || k === 'Enter') {
 			const [id] = entries[bagMenu.idx] || [];
 			const item = Bag.ITEMS[id];
-			const mon = party[bagMenu.pickIdx];
+			const mon = S.party[bagMenu.pickIdx];
 			if (mon) {
 				if (item && item.kind === 'heal' && mon.curHP > 0 && (mon.curHP < mon.maxHP || (item.cures && mon.status))) {
 					Bag.consume(id);
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + item.amount);
 					if (item.cures) mon.status = null; // FULL RESTORE clears status too
-					saveParty(party);
+					saveParty(S.party);
 					bagMenu.picking = false;
 				} else if (item?.kind === 'cure') {
 					// ANTIDOTE and friends bite only on the status they treat;
@@ -2793,7 +2795,7 @@ function bagKey(k) {
 					else {
 						Bag.consume(id);
 						mon.status = null;
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = `${mon.name} was cured!`;
 						bagMenu.picking = false;
 					}
@@ -2801,7 +2803,7 @@ function bagKey(k) {
 					Bag.consume(id);
 					mon.curHP = Math.floor(mon.maxHP / 2);
 					mon.status = null;
-					saveParty(party);
+					saveParty(S.party);
 					bagMenu.picking = false;
 				} else if (item?.kind === 'form') {
 					// cycles rather than opening a submenu: keep using it and you walk
@@ -2812,7 +2814,7 @@ function bagKey(k) {
 						bagMenu.flash = `${mon.name} has no other form.`;
 					} else {
 						const became = cycleForm(mon);
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = became ? `${mon.name} shifted into ${became.toUpperCase()}!` : `Nothing happened.`;
 					}
 				} else if (item?.kind === 'candy' && useRareCandy(mon)) {
@@ -2835,7 +2837,7 @@ function bagKey(k) {
 						mon.stats = statsFor(sp, ivs, mon.level, mon);
 						mon.maxHP = mon.stats.hp;
 						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(0, mon.maxHP - oldMax));
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = `${mon.name}'s ${item.name} raised its stats!`;
 						bagMenu.picking = false;
 					}
@@ -2850,7 +2852,7 @@ function bagKey(k) {
 						mon.stats = statsFor(sp, mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 }, mon.level, mon);
 						mon.maxHP = mon.stats.hp;
 						mon.curHP = Math.max(1, mon.maxHP - dmg);
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = `${mon.name} became ${item.nature.toUpperCase()} natured!`;
 						bagMenu.picking = false;
 					}
@@ -2861,7 +2863,7 @@ function bagKey(k) {
 					else {
 						Bag.consume(id);
 						mon.ability = opts[(Math.max(0, opts.indexOf(mon.ability)) + 1) % opts.length];
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = `${mon.name}'s ability became ${String(mon.ability).toUpperCase()}!`;
 						bagMenu.picking = false;
 					}
@@ -2872,7 +2874,7 @@ function bagKey(k) {
 				} else if (item?.kind === 'ether' && mon.curHP > 0 && mon.moves.some(m => m.pp < m.maxPp)) {
 					Bag.consume(id);
 					for (const mv of mon.moves) mv.pp = Math.min(mv.maxPp, mv.pp + item.amount);
-					saveParty(party);
+					saveParty(S.party);
 					bagMenu.picking = false;
 				} else if ((item?.kind === 'stone' || item?.kind === 'held') && mon.curHP > 0
 					&& (battle.data.extra?.[mon.speciesId]?.evos || [])
@@ -2889,7 +2891,7 @@ function bagKey(k) {
 					Bag.consume(id);
 					if (mon.heldItem) Bag.addItem(mon.heldItem);
 					mon.heldItem = id;
-					saveParty(party);
+					saveParty(S.party);
 					bagMenu.picking = false;
 				} else if (item?.kind === 'stone') {
 					bagMenu.flash = `It won't have any effect on ${mon.name}.`;
@@ -2902,7 +2904,7 @@ function bagKey(k) {
 					else if (mon.moves.length < 4) {
 						mon.moves.push({ id: mid, name: info.name, pp: info.pp, maxPp: info.pp });
 						if (!['hm', 'tm'].includes(Bag.ITEMS[id]?.kind)) Bag.consume(id); // HMs + mart TMs are reusable
-						saveParty(party);
+						saveParty(S.party);
 						bagMenu.flash = `${mon.name} learned ${info.name}!`;
 						bagMenu.picking = false;
 					} else {
@@ -2985,7 +2987,7 @@ function pcKey(k) {
 	const viewIdx = pcMenu.filter != null ? pcMatches(box, pcMenu.filter) : null;
 	const page = viewIdx ? viewIdx.map(i => box[i]) : box.slice(pageStart, pageStart + PC_BOX_CAP);
 	const realIdx = i => (viewIdx ? viewIdx[i] : pageStart + i);
-	const list = pcMenu.side === 0 ? party : page;
+	const list = pcMenu.side === 0 ? S.party : page;
 	// release confirm: Z lets it go, X keeps it (confirm holds the REAL index)
 	if (pcMenu.confirm != null) {
 		if (k === 'z' || k === 'Enter') {
@@ -3026,19 +3028,19 @@ function pcKey(k) {
 	}
 	if ((k === 'z' || k === 'Enter') && list.length) {
 		if (pcMenu.side === 0) {
-			if (party.length <= 1) return; // never deposit the last mon
+			if (S.party.length <= 1) return; // never deposit the last mon
 			if (box.length >= PC_BOXES * PC_BOX_CAP) { pcMenu.flash = 'The storage system is full!'; return; }
-			const [m] = party.splice(pcMenu.idx, 1);
+			const [m] = S.party.splice(pcMenu.idx, 1);
 			// deposit into the viewed box while it has room, else the first free slot
 			box.splice(page.length < PC_BOX_CAP ? pageStart + page.length : box.length, 0, m);
 			setBox(box);
-			saveParty(party);
+			saveParty(S.party);
 		} else {
-			if (party.length >= 6 || !page[pcMenu.idx]) return;
+			if (S.party.length >= 6 || !page[pcMenu.idx]) return;
 			const [m] = box.splice(realIdx(pcMenu.idx), 1);
-			party.push(m);
+			S.party.push(m);
 			setBox(box);
-			saveParty(party);
+			saveParty(S.party);
 		}
 		pcMenu.idx = 0;
 	}
@@ -3157,21 +3159,21 @@ function pressKey(k) {
 		if (partyMenu.summary) {
 			// summary view: up/down cycles party members (dropping any armed move
 			// swap — it belongs to the mon that armed it), X cancels the swap first
-			if (k === 'ArrowUp') { partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length; partyMenu.moveSwap = null; }
-			if (k === 'ArrowDown') { partyMenu.idx = (partyMenu.idx + 1) % party.length; partyMenu.moveSwap = null; }
+			if (k === 'ArrowUp') { partyMenu.idx = (partyMenu.idx + S.party.length - 1) % S.party.length; partyMenu.moveSwap = null; }
+			if (k === 'ArrowDown') { partyMenu.idx = (partyMenu.idx + 1) % S.party.length; partyMenu.moveSwap = null; }
 			if (k === 'x' || k === 'Escape') {
 				if (partyMenu.moveSwap != null) partyMenu.moveSwap = null;
 				else partyMenu.summary = false;
 			}
 			return;
 		}
-		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % party.length;
+		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % S.party.length;
 		if (k === 'z' || k === 'Enter') {
 			if (partyMenu.swapFrom != null && partyMenu.swapFrom !== partyMenu.idx) {
 				const i = partyMenu.swapFrom, j = partyMenu.idx;
-				[party[i], party[j]] = [party[j], party[i]];
-				saveParty(party); refreshFollower();
+				[S.party[i], S.party[j]] = [S.party[j], S.party[i]];
+				saveParty(S.party); refreshFollower();
 				partyMenu.swapFrom = null;
 			} else if (partyMenu.swapFrom === partyMenu.idx) {
 				partyMenu.swapFrom = null;                 // tapping the same slot cancels
@@ -3180,11 +3182,11 @@ function pressKey(k) {
 		if (k === 'x' || k === 'p' || k === 'Escape') { if (partyMenu.swapFrom != null) partyMenu.swapFrom = null; else partyMenu.open = false; }
 		return;
 	}
-	if ((k === 'Enter' || k === 'm') && !loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
-	if (k === 'p' && !loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
-	if (k === 'b' && !loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
-	if (k === 'c' && !loading) { toggleBike(); return; }
-	if (k === 'z' && !loading) interact();
+	if ((k === 'Enter' || k === 'm') && !S.loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
+	if (k === 'p' && !S.loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
+	if (k === 'b' && !S.loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
+	if (k === 'c' && !S.loading) { toggleBike(); return; }
+	if (k === 'z' && !S.loading) interact();
 }
 // any menu that consumes direction presses instead of walking
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
@@ -3222,7 +3224,7 @@ function gateReport() {
 		fade: { alpha: fade.alpha, target: fade.target },
 		menuBlocking: menuBlocking(),
 		// tick gates
-		loading, hasWorld: !!world.current, editView: !!editView.on,
+		loading: S.loading, hasWorld: !!world.current, editView: !!editView.on,
 		starterMenu: !!starterMenu.open, trainersEngaging: !!trainers.engaging,
 		tickMoveGate: !(battle.blocking || pvp.blocking || factorySpec.blocking || dialog.blocking
 			|| evolution.blocking || starterMenu.open || cutscene.blocking),
@@ -3332,8 +3334,8 @@ screen.addEventListener('pointermove', e => {
 	if (battle.blocking) { battle.hover(...screenPos(e)); return; }
 	if (anyMenuOpen()) {
 		const [x, y] = screenPos(e);
-		menuHover = null;
-		for (const b of menuUi) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) menuHover = b.id;
+		S.menuHover = null;
+		for (const b of S.menuUi) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) S.menuHover = b.id;
 	}
 });
 // touch leaves the last pointermove hover latched on a button forever — clear
@@ -3342,7 +3344,7 @@ const clearHovers = e => {
 	if (e.pointerType === 'mouse') return; // a mouse keeps hovering after release
 	if (battle.active) battle.active.hover = null;
 	if (pvp.active) pvp.active.hover = null;
-	menuHover = null;
+	S.menuHover = null;
 };
 screen.addEventListener('pointerup', clearHovers);
 screen.addEventListener('pointercancel', clearHovers);
@@ -3354,7 +3356,7 @@ screen.addEventListener('pointerdown', e => {
 	if (dialog.blocking || evolution.blocking) { pressKey('z'); return; }
 	if (anyMenuOpen()) {
 		const [x, y] = screenPos(e);
-		for (const b of menuUi) {
+		for (const b of S.menuUi) {
 			if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { menuTap(b.id); return; }
 		}
 	}
@@ -3362,10 +3364,10 @@ screen.addEventListener('pointerdown', e => {
 
 // ---------- map transitions ----------
 // per-map ported scripts + resolved text (lazy-loaded, cached)
-let mapScripts = {}, mapStrings = {};
+let mapStrings = {}; S.mapScripts = {};
 const scriptCache = new Map();
 async function loadMapScripts(stem) {
-	mapScripts = {}; mapStrings = {};
+	S.mapScripts = {}; mapStrings = {};
 	if (!stem) return;
 	if (!scriptCache.has(stem)) {
 		const scr = await getJSON(`data/scripts/${stem}.json`).catch(() => null);
@@ -3384,7 +3386,7 @@ async function loadMapScripts(stem) {
 	// own version; the shared copy is only ever a fallback. Merging here rather
 	// than at each call site means runScriptLabel, `goto` and `call` all resolve
 	// through it without knowing it exists.
-	mapScripts = applySailFix({ ...sharedScripts, ...(c.scr || {}) });
+	S.mapScripts = applySailFix({ ...sharedScripts, ...(c.scr || {}) });
 	mapStrings = c.str || {};
 }
 
@@ -3395,7 +3397,7 @@ async function loadMapScripts(stem) {
 function warmBattleSprites() {
 	try {
 		const warm = f => { if (f) getImage(`data/pokemon/${f}`).catch(() => {}); };
-		for (const m of party || []) if (m?.sprite) warm(m.sprite.replace(/\.(png|gif)$/, '-b.$1'));
+		for (const m of S.party || []) if (m?.sprite) warm(m.sprite.replace(/\.(png|gif)$/, '-b.$1'));
 		const groups = encounters.data?.[world.current?.map?.id] || {};
 		const ids = new Set();
 		for (const kind of ['land', 'water']) for (const s of groups[kind]?.slots || []) if (s.id != null) ids.add(s.id);
@@ -3433,7 +3435,7 @@ async function refreshMapContent(label) {
 	// arriving on a Fly-destination map registers it so you can fly back later
 	markFlyPoint(world.current.map.id);
 	savePos();
-	loading = false;
+	S.loading = false;
 	refreshFollower();
 	warmBattleSprites();
 	// run this map's ON_TRANSITION script (story vars, scene setup), then check
@@ -3512,14 +3514,14 @@ function findSurfLanding(px, py) {
 // game never freezes on a bad warp/connection.
 function afterLoadError(where, err) {
 	console.warn(`[load-guard] ${where} failed`, err);
-	loading = false;
+	S.loading = false;
 	if (cutscene.blocking) cutscene.stop();
 	hud.textContent = "That area couldn't be loaded.";
 }
 
 async function moveToMap(file, px, py) {
 	await fadeTo(1);              // dip to black before the swap (fades in below)
-	loading = true;
+	S.loading = true;
 	try {
 		await world.load(file);
 		const cx = px ?? Math.floor(world.current.layout.width / 2);
@@ -3548,7 +3550,7 @@ async function warpTo(mapId, destWarpId, destX, destY) {
 	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
 	await fadeTo(1);             // dip to black as the door opens (fades in below)
-	loading = true;
+	S.loading = true;
 	try {
 		await world.load(file);
 		let idx = parseInt(destWarpId, 10);
@@ -3573,7 +3575,7 @@ async function warpTo(mapId, destWarpId, destX, destY) {
 async function flyTo(mapId, tx, ty) {
 	const file = world.fileFor(mapId);
 	if (!file) { console.warn('unknown fly dest', mapId); return; }
-	loading = true;
+	S.loading = true;
 	player.surfing = false;
 	try {
 		await world.load(file);
@@ -3598,7 +3600,7 @@ async function backWarp() {
 	// src.name is a map FILE stem (what world.load takes) — not a MAP_ id, so it
 	// must not be validated through fileFor(), which maps ids TO stems.
 	if (src?.name) {
-		loading = true;
+		S.loading = true;
 		try {
 			await world.load(src.name);
 			player.setTile(src.tx, src.ty);
@@ -3618,7 +3620,7 @@ async function backWarp() {
 // water, so surfing dismounts it.
 const BIKES = ['bicycle', 'machbike', 'acrobike'];
 function toggleBike() {
-	if (loading || player.moving || player.surfing) return;
+	if (S.loading || player.moving || player.surfing) return;
 	// you need to OWN a bike now (getting off always works) — the shops in
 	// Goldenrod, Mauville, and Cerulean hand out free promotional ones
 	if (!player.biking && !BIKES.some(b => Bag.count(b) > 0)) {
@@ -3741,7 +3743,7 @@ async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 	if (!c) return false;
 	const file = world.fileFor(c.map);
 	if (!file) return false;
-	loading = true;
+	S.loading = true;
 	const src = { name: world.current.name, tx: player.tx, ty: player.ty };
 	try {
 		await world.load(file);
@@ -3779,12 +3781,12 @@ function facingTile() {
 function fieldHealTransfer(user, label) {
 	const cost = Math.floor(user.maxHP / 5);
 	if (user.curHP <= cost) { dialog.open(`${user.name} is too weak to share its health!`); return; }
-	const target = (party || []).filter(m => m && m !== user && m.curHP > 0 && m.curHP < m.maxHP)
+	const target = (S.party || []).filter(m => m && m !== user && m.curHP > 0 && m.curHP < m.maxHP)
 		.sort((a, b) => (a.curHP / a.maxHP) - (b.curHP / b.maxHP))[0];
 	if (!target) { dialog.open('No one needs it right now.'); return; }
 	user.curHP -= cost;
 	target.curHP = Math.min(target.maxHP, target.curHP + cost);
-	saveParty(party);
+	saveParty(S.party);
 	dialog.open(`${user.name} used ${label}!\n\n${target.name} recovered ${cost} HP.`);
 }
 
@@ -3911,18 +3913,18 @@ function useFieldMove(hmId, mon) {
 }
 // build the little action menu shown when you pick a party member
 function openPartyAction(idx) {
-	const mon = party[idx];
+	const mon = S.party[idx];
 	if (!mon) return;
 	const opts = fieldMovesOf(mon).map(mv => ({ label: HM_FIELD[mv.id].name, kind: 'field', hm: mv.id }));
 	opts.push({ label: 'SUMMARY', kind: 'summary' });
-	if (party.length > 1) opts.push({ label: 'SWITCH', kind: 'switch' });
+	if (S.party.length > 1) opts.push({ label: 'SWITCH', kind: 'switch' });
 	opts.push({ label: 'CANCEL', kind: 'cancel' });
 	partyMenu.action = { mon, monIdx: idx, options: opts, idx: 0 };
 }
 
 // re-anchor when the player has walked into a connected map
 async function crossConnection(hit) {
-	loading = true;
+	S.loading = true;
 	const { conn, lx, ly } = hit;
 	try {
 		await world.load(conn.name);
@@ -3940,7 +3942,7 @@ let bumpCooldown = 0;
 player.onBump = (tx, ty) => {
 	const now = performance.now();
 	if (now > bumpCooldown) { bumpCooldown = now + 350; sfx('bump'); }
-	if (dialog.blocking || !party) return;
+	if (dialog.blocking || !S.party) return;
 	const m = blockers.messageAt(tx, ty);
 	if (m) dialog.open(m);
 };
@@ -3950,7 +3952,7 @@ player.onArrive = () => {
 	// FLAME BODY / MAGMA ARMOR halve the steps an egg needs — previously
 	// battle-only text on 20-odd species
 	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; },
-		(party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
+		(S.party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
 	// warp tile?
 	const w = world.warpAt(player.tx, player.ty);
 	if (!w) savePos();
@@ -3995,7 +3997,7 @@ player.onArrive = () => {
 		if (hit) {
 			// no POKeMON yet (new-game intro): don't wander onto wild routes — bounce
 			// back into town and point the player at the lab
-			if (!party) {
+			if (!S.party) {
 				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
 				dialog.open("It's not safe to go out without a POKeMON!\n\nVisit the POKeMON LAB and get your first partner.");
 				return;
@@ -4058,7 +4060,7 @@ player.onArrive = () => {
 	if (!battle.blocking) {
 		// guard: this runs inside the rAF step loop, where a throw is silent and
 		// kills movement outright — `party` is not guaranteed to be populated yet
-		const lead = Array.isArray(party) ? party.find(m => m && m.curHP > 0) : null;
+		const lead = Array.isArray(S.party) ? S.party.find(m => m && m.curHP > 0) : null;
 		// CLEANSE TAG: held by the LEAD, it wards off a third of would-be
 		// encounters. A ¥1000 buyable whose payload nothing read until now.
 		if (Bag.ITEMS[lead?.heldItem]?.held?.cleanseTag && Math.random() < 1 / 3) return;
@@ -4246,7 +4248,7 @@ const AWAKENING_SCENES = [
 ];
 // map-entry / per-step hook: play the next awakening beat if one is due here
 function checkAwakeningTrigger() {
-	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
 	if (!Story.getFlag('villain_hoenn_climax') || playerRegion() !== 'HOENN') return;
 	const aw = awState();
 	const scene = AWAKENING_SCENES.find(s => s.map === world.current.name && s.when(aw));
@@ -4351,8 +4353,8 @@ let lastPlayerTile = null;
 function refreshFollower() {
 	follower = null;
 	lastPlayerTile = { x: player.tx, y: player.ty };
-	if (!Settings.get('followers') || !party) return;
-	const lead = party.find(m => m.curHP > 0) || party[0];
+	if (!Settings.get('followers') || !S.party) return;
+	const lead = S.party.find(m => m.curHP > 0) || S.party[0];
 	if (!lead || !lead.speciesId) return;
 	follower = { id: lead.speciesId, tx: player.tx, ty: player.ty, px: player.tx * META, py: player.ty * META,
 		facing: player.facing, moving: false, from: null, to: null, t: 0, dur: 0.13, step: 0 };
@@ -4381,7 +4383,7 @@ function stepFollower(tx, ty) {
 }
 function updateFollower(dt) {
 	if (!Settings.get('followers')) { follower = null; return; }
-	if (!follower) { if (party) refreshFollower(); return; }
+	if (!follower) { if (S.party) refreshFollower(); return; }
 	// the player moved onto a new tile — trail onto the one they left
 	if (lastPlayerTile && (player.tx !== lastPlayerTile.x || player.ty !== lastPlayerTile.y)) {
 		stepFollower(lastPlayerTile.x, lastPlayerTile.y);
@@ -4432,26 +4434,26 @@ function legendariesHere() {
 }
 function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
 function startLegendaryBattle(e) {
-	if (!party || !leadMon(party) || battle.blocking) return;
+	if (!S.party || !leadMon(S.party) || battle.blocking) return;
 	Dex.markSeen(e.species);
 	dialog.open(e.intro, () => {
 		battle.themeHint = /^regi(rock|ce|steel)/.test(e.species) ? 'regi' : 'legendary';
 		battle.endSpec = { kind: 'legendary', species: e.species, flag: e.flag };
-		battle.start(party, e.species, scaleLegendaryLevel(e.level), result => {
+		battle.start(S.party, e.species, scaleLegendaryLevel(e.level), result => {
 			if (result === 'caught' && battle.lastCaught) {
 				Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-				const where = addCaught(party, battle.lastCaught);
+				const where = addCaught(S.party, battle.lastCaught);
 				hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 				offerNickname(battle.lastCaught);
 				Story.setFlag(e.flag);
 				syncOverworldAchievements(); // a legendary was CAUGHT (only catches count toward the sets)
 			} else if (result === 'victory') {
 				Story.setFlag(e.flag); // fainted it — it won't reappear (matches the games)
-				evolution.check(party, battle.data);
+				evolution.check(S.party, battle.data);
 			} else if (result === 'defeat') {
 				whiteOut();
 			} else {
-				saveParty(party); // ran / fled: leave it catchable
+				saveParty(S.party); // ran / fled: leave it catchable
 			}
 		});
 	});
@@ -4556,8 +4558,8 @@ const WHITEOUT_MONEY_FRACTION = 2;   // you lose 1/this of your money (the Gen 1
 function whiteOut() {
 	const lost = Math.floor(Bag.getMoney() / WHITEOUT_MONEY_FRACTION);
 	if (lost > 0) Bag.spend(lost);
-	healParty(party);
-	saveParty(party);
+	healParty(S.party);
+	saveParty(S.party);
 	const hp = healPoint();
 	const where = hp && hp.name ? hp.name : 'the last POKeMON CENTER';
 	const lines = ['You have no POKeMON that can fight!', '', 'You scurried back to ' + where + '...'];
@@ -4581,13 +4583,13 @@ function noteOutdoor() {
 const PICKUP_TABLE = ['potion', 'superpotion', 'pokeball', 'greatball', 'ultraball',
 	'oranberry', 'sitrusberry', 'revive', 'fullheal', 'rarecandy'];
 function pickupCheck() {
-	for (const mon of party || []) {
+	for (const mon of S.party || []) {
 		if (!mon || mon.curHP <= 0 || mon.ability !== 'pickup' || mon.heldItem) continue;
 		if (Math.random() >= 0.1) continue;
 		const id = PICKUP_TABLE[Math.floor(Math.random() * PICKUP_TABLE.length)];
 		mon.heldItem = id;
 		hud.textContent = `${mon.name} picked up a ${Bag.ITEMS[id].name}!`;
-		saveParty(party);
+		saveParty(S.party);
 		break;    // one find per battle, like the cartridge
 	}
 }
@@ -4642,7 +4644,7 @@ function checkSafariGate() {
 }
 
 function startWildBattle(pick, forceDouble) {
-	if (!party || !leadMon(party)) return;
+	if (!S.party || !leadMon(S.party)) return;
 	// a wild Unown always rolled as the base "unown" (letter A) because no other
 	// letter had a species entry. Now each letter is its own species, so pick one
 	// at random — A..Z always, and ! / ? once every Ruins puzzle is solved.
@@ -4665,13 +4667,13 @@ function startWildBattle(pick, forceDouble) {
 	const inSafari = !!(safari.on && safariZoneOf(world.current.map.id));
 	// a slice of grass encounters are horde-style double battles
 	const second = !inSafari && (forceDouble || Math.random() < 0.1)
-		&& party.filter(m => m.curHP > 0).length >= 2
+		&& S.party.filter(m => m.curHP > 0).length >= 2
 		? encounters.pick(world.current.map.id) : null;
 	if (second) Dex.markSeen(second.id);
 	battle.endSpec = { kind: 'wild' };
 	// special-ball context: how we ran into it (LURE BALL) + dex ownership (REPEAT BALL)
 	const catchCtx = { method: pick.method || (player.surfing ? 'surf' : 'walk'), owns: id => Dex.isCaught(id) };
-	battle.start(party, pick.id, pick.level, result => wildBattleEnd(result, inSafari),
+	battle.start(S.party, pick.id, pick.level, result => wildBattleEnd(result, inSafari),
 		second, { weather: mapWeatherNow(), safari: inSafari ? safari : null, catchCtx });
 }
 
@@ -4685,14 +4687,14 @@ function wildBattleEnd(result, inSafari) {
 		// entry — it joins the party at the judging, not here
 		if (!bugContestCatch(battle.lastCaught)) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(party, battle.lastCaught);
+			const where = addCaught(S.party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 			offerNickname(battle.lastCaught);
 		}
 	} else {
-		saveParty(party);
+		saveParty(S.party);
 	}
-	if (result === 'victory') { evolution.check(party, battle.data); pickupCheck(); }
+	if (result === 'victory') { evolution.check(S.party, battle.data); pickupCheck(); }
 	if (inSafari) {
 		saveSafari();   // the battle burned balls on the shared session
 		if (safari.balls <= 0) endSafari('PA: You are out of SAFARI BALLS! Your SAFARI GAME is over!');
@@ -4718,7 +4720,7 @@ function museumBackfill() {
 	let changed = false;
 	for (const cat of CATS) {
 		if (p.paintings[cat]) continue;
-		const holder = (party || []).find(m => (m.ribbons || []).includes(`${cat}-master`));
+		const holder = (S.party || []).find(m => (m.ribbons || []).includes(`${cat}-master`));
 		if (holder) { p.paintings[cat] = { species: holder.speciesId, name: holder.nickname || holder.name }; changed = true; }
 	}
 	if (changed) safeSave(CONTEST_KEY, p);
@@ -4819,8 +4821,8 @@ function fossilManiacTalk() {
 		if (!mon) return;
 		Bag.consume(held);
 		Dex.markCaught(species); dexMilestoneCheck();
-		const where = addCaught(party, mon);
-		saveParty(party);
+		const where = addCaught(S.party, mon);
+		saveParty(S.party);
 		sfx('levelup');
 		Journal.add(`The Fossil Maniac revived ${name} from the ${Bag.ITEMS[held].name}!`);
 		dialog.open(`The machine hums... a heartbeat!\n\n${name} was revived!${where === 'box' ? '\n(Sent to the box.)' : ''}`);
@@ -4929,13 +4931,13 @@ function hillGuardAt(fx, fy) {
 	return i >= 0 ? { key, i } : null;
 }
 function startHillBattle(key, idx) {
-	const lead = leadMon(party);
+	const lead = leadMon(S.party);
 	const lv = Math.max(20, Math.min(255, lead?.level || 20));
 	const pool = HILL_THEMES[key];
 	const foes = [0, 1].map(() => battleBuildMon(pool[Math.floor(Math.random() * pool.length)], lv, battle.data)).filter(Boolean);
 	if (!foes.length) return;
 	battle.endSpec = null; // leaving mid-bout voids the run anyway (it's in-memory)
-	battle.startTrainer(party, foes, { displayName: `HILL GUARD ${key}-${idx + 1}` }, result => {
+	battle.startTrainer(S.party, foes, { displayName: `HILL GUARD ${key}-${idx + 1}` }, result => {
 		if (result === 'victory') {
 			hillRun.beatenSet[`${key}:${idx}`] = true;
 			Bag.earn(lv * 40);
@@ -4945,11 +4947,11 @@ function startHillBattle(key, idx) {
 			const left = hillGuardsLeft(key);
 			hud.textContent = left ? `Guard down! ${left} more holds this floor. (${hillTimeStr(hillElapsed())})`
 				: `Floor ${key} cleared — the stairs are open! (${hillTimeStr(hillElapsed())})`;
-			saveParty(party);
-			evolution.check(party, battle.data);
+			saveParty(S.party);
+			evolution.check(S.party, battle.data);
 		} else if (result === 'defeat') {
 			hillRun = null;
-			healParty(party);
+			healParty(S.party);
 			hud.textContent = 'The Trainer Hill challenge ends — party healed.';
 		}
 	});
@@ -4975,7 +4977,7 @@ function hillReceptionTalk() {
 		});
 		return;
 	}
-	if (!party.length) { dialog.open('RECEPTION: You need POKeMON to take the HILL!'); return; }
+	if (!S.party.length) { dialog.open('RECEPTION: You need POKeMON to take the HILL!'); return; }
 	dialog.open(`RECEPTION: Welcome to TRAINER HILL!\n\nFour floors, two HILL GUARDS each, and the\nclock runs until the roof. Prizes by your time!${best ? `\nYour best: ${hillTimeStr(best)}.` : ''}\n\nTake the challenge?   Z = Yes   X = No`, d => {
 		if (d === 'x') return;
 		hillRun = { start: Date.now(), beatenSet: {}, guards: {} };
@@ -5143,7 +5145,7 @@ function secretSpotInteract(fx, fy, behavior) {
 	}
 	fetchBaseDir().then(dir => {
 		const owner = dir[key];
-		if (owner && owner !== (mpAccount?.username || '')) {
+		if (owner && owner !== (S.mpAccount?.username || '')) {
 			dialog.open(`This is ${owner.toUpperCase()}'s SECRET BASE!\n\nPeek inside?   Z = Yes   X = No`, d => { if (d !== 'x') enterBase(key, behavior, owner); });
 			return;
 		}
@@ -5228,7 +5230,7 @@ function drawBaseDeco(ctx, camX, camY) {
 const socialMenu = { open: false, mode: 'offermon', friend: null, trades: null, trade: null, idx: 0, flash: null };
 function monLine(m) { return `${m.nickname || m.name} Lv${m.level}`; }
 function openTradeOffer(f) {
-	if (!party || party.length < 2) { dialog.open('You need at least two POKeMON to offer one.'); return; }
+	if (!S.party || S.party.length < 2) { dialog.open('You need at least two POKeMON to offer one.'); return; }
 	socialMenu.open = true; socialMenu.mode = 'offermon'; socialMenu.friend = f; socialMenu.idx = 0; socialMenu.flash = null;
 }
 async function openTradeInbox() {
@@ -5236,10 +5238,10 @@ async function openTradeInbox() {
 	try { socialMenu.trades = (await MP.call('trade-list'))?.trades || []; } catch (e) { socialMenu.trades = []; socialMenu.flash = 'Could not reach the server.'; }
 }
 async function sendTradeOffer(f, monIdx) {
-	const mon = party[monIdx];
-	if (!mon || party.length < 2) return;
-	party.splice(monIdx, 1); // escrow: it leaves the save before the offer sends
-	saveParty(party);
+	const mon = S.party[monIdx];
+	if (!mon || S.party.length < 2) return;
+	S.party.splice(monIdx, 1); // escrow: it leaves the save before the offer sends
+	saveParty(S.party);
 	socialMenu.open = false;
 	try {
 		const r = await MP.call('trade-offer', { to: f.username, mon });
@@ -5247,28 +5249,28 @@ async function sendTradeOffer(f, monIdx) {
 		Journal.add(`Offered ${monLine(mon)} to ${f.username} in a trade`);
 		dialog.open(`Your trade offer is on its way!\n\n${monLine(mon)} will wait with ${f.username}\nuntil they accept or decline.`);
 	} catch (e) {
-		addCaught(party, mon); saveParty(party); // the escrow comes straight home
+		addCaught(S.party, mon); saveParty(S.party); // the escrow comes straight home
 		dialog.open('The offer could not be sent — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
 	}
 }
 async function acceptTrade(trade, monIdx) {
-	const mine = party[monIdx];
-	if (!mine || party.length < 2) return;
-	party.splice(monIdx, 1);
-	saveParty(party);
+	const mine = S.party[monIdx];
+	if (!mine || S.party.length < 2) return;
+	S.party.splice(monIdx, 1);
+	saveParty(S.party);
 	socialMenu.open = false;
 	try {
 		const r = await MP.call('trade-accept', { id: trade.id, mon: mine });
 		if (r?.error) throw new Error(r.error);
 		const got = r.mon;
 		Dex.markCaught(got.speciesId); dexMilestoneCheck();
-		const where = addCaught(party, got);
-		saveParty(party);
+		const where = addCaught(S.party, got);
+		saveParty(S.party);
 		Journal.add(`Traded ${monLine(mine)} to ${trade.from} for ${monLine(got)}!`);
 		sfx('levelup');
 		dialog.open(`Trade complete!\n\n${monLine(got)} arrived from ${trade.from}${where === 'box' ? ' (sent to the box)' : ''}.\nTake good care of it!`);
 	} catch (e) {
-		addCaught(party, mine); saveParty(party);
+		addCaught(S.party, mine); saveParty(S.party);
 		dialog.open('The trade fell through — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
 	}
 }
@@ -5287,8 +5289,8 @@ async function claimTradeDeliveries() {
 		try { got = (await MP.call('trade-claim', { id: d.id }))?.delivery; } catch (e) { continue; }
 		if (!got?.mon) continue;
 		Dex.markCaught(got.mon.speciesId); dexMilestoneCheck();
-		const where = addCaught(party, got.mon);
-		saveParty(party);
+		const where = addCaught(S.party, got.mon);
+		saveParty(S.party);
 		if (got.returned) {
 			dialog.open(`${monLine(got.mon)} came home —\n${got.from} declined the trade.${where === 'box' ? '\n(Sent to the box.)' : ''}`);
 		} else {
@@ -5310,22 +5312,22 @@ function socialKey(k) {
 		const t = list[s.idx];
 		dialog.open(`${t.from} offers ${monLine(t.mon)}!\n\nZ = Accept (pick your POKeMON)\nX = Decline (sends theirs home)`, d => {
 			if (d === 'x') { declineTrade(t); return; }
-			if (!party || party.length < 2) { dialog.open('You need at least two POKeMON to trade one.'); return; }
+			if (!S.party || S.party.length < 2) { dialog.open('You need at least two POKeMON to trade one.'); return; }
 			s.mode = 'acceptmon'; s.trade = t; s.idx = 0;
 		});
 		return;
 	}
 	// offermon / acceptmon: a party row picker
-	if (k === 'ArrowUp') s.idx = (s.idx + party.length - 1) % party.length;
-	if (k === 'ArrowDown') s.idx = (s.idx + 1) % party.length;
+	if (k === 'ArrowUp') s.idx = (s.idx + S.party.length - 1) % S.party.length;
+	if (k === 'ArrowDown') s.idx = (s.idx + 1) % S.party.length;
 	if (k === 'x' || k === 'Escape') { s.open = false; return; }
 	if (k !== 'z' && k !== 'Enter') return;
-	if (!party[s.idx]) return;
+	if (!S.party[s.idx]) return;
 	if (s.mode === 'offermon') {
-		const f = s.friend, mon = party[s.idx];
+		const f = s.friend, mon = S.party[s.idx];
 		dialog.open(`Offer ${monLine(mon)} to ${f.username}?\n\nIt leaves your party until they answer.\nZ = Yes   X = No`, d => { if (d !== 'x') sendTradeOffer(f, s.idx); });
 	} else if (s.mode === 'acceptmon') {
-		const t = s.trade, mine = party[s.idx];
+		const t = s.trade, mine = S.party[s.idx];
 		dialog.open(`Trade YOUR ${monLine(mine)} for\n${t.from}'s ${monLine(t.mon)}?\n\nZ = Trade!   X = No`, d => { if (d !== 'x') acceptTrade(t, s.idx); });
 	}
 }
@@ -5340,7 +5342,7 @@ function drawSocial(W, H) {
 	}
 	menuChrome(W, H, u, s.mode === 'offermon' ? `OFFER A TRADE — to ${s.friend?.username}` : `TRADE WITH ${s.trade?.from}`,
 		s.mode === 'offermon' ? 'Which POKeMON do you offer?' : `Their ${s.trade ? monLine(s.trade.mon) : ''} — pick yours to send.`);
-	party.forEach((mo, i) => monRow('socm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, s.idx === i, u));
+	S.party.forEach((mo, i) => monRow('socm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, s.idx === i, u));
 }
 
 // ---------- Shoal Cave tides ----------
@@ -5488,7 +5490,7 @@ function roamerEnd(key) {
 		const st = roamState();
 		if (result === 'caught' && battle.lastCaught) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(party, battle.lastCaught);
+			const where = addCaught(S.party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 			offerNickname(battle.lastCaught);
 			st[key] = { down: true }; saveRoam(st);
@@ -5496,7 +5498,7 @@ function roamerEnd(key) {
 		} else if (result === 'victory') {
 			st[key] = { down: true }; saveRoam(st); // fainted — gone for this save, like the classics
 			hud.textContent = 'The roaming POKeMON fainted... it will not be seen again.';
-			evolution.check(party, battle.data);
+			evolution.check(S.party, battle.data);
 		} else if (result === 'defeat') {
 			whiteOut();
 		} else {
@@ -5506,18 +5508,18 @@ function roamerEnd(key) {
 				st[key].status = battle.lastFoe?.status || null;
 				saveRoam(st);
 			}
-			saveParty(party);
+			saveParty(S.party);
 		}
 	};
 }
 function startRoamerBattle(key) {
-	if (!party || !leadMon(party) || battle.blocking) return;
+	if (!S.party || !leadMon(S.party) || battle.blocking) return;
 	const st = roamState();
 	Dex.markSeen(key);
 	if (st[key]) { st[key].seen = true; saveRoam(st); }
 	battle.themeHint = 'legendary';
 	battle.endSpec = { kind: 'roamer', roamer: key };
-	battle.start(party, key, ROAMERS[key].level, roamerEnd(key), null,
+	battle.start(S.party, key, ROAMERS[key].level, roamerEnd(key), null,
 		{ roamer: { hp: st[key]?.hp ?? null, status: st[key]?.status || null } });
 }
 
@@ -5703,7 +5705,7 @@ function bugOfficerTalk() {
 	}
 	if (!isBugDay()) { dialog.open('OFFICER: The BUG-CATCHING CONTEST runs every\nTUESDAY, THURSDAY, and SATURDAY.\n\nSee you on a contest day!'); return; }
 	if (bugContest.date === today) { dialog.open("OFFICER: Today's contest is already decided!\nCome back on the next contest day."); return; }
-	if (!party.length) { dialog.open('OFFICER: You need a POKeMON to enter!'); return; }
+	if (!S.party.length) { dialog.open('OFFICER: You need a POKeMON to enter!'); return; }
 	dialog.open('OFFICER: Welcome to the BUG-CATCHING CONTEST!\n\nCatch bugs in the park using 20 SPORT BALLS.\nYou keep ONE catch as your entry — you can swap it\nany time. Leave the park (or run dry) to be judged.\n\nEnter?   Z = Yes   X = No', declined => {
 		if (declined === 'x') return;
 		bugContest.active = true; bugContest.caught = null; bugContest.date = today; saveBugContest();
@@ -5735,8 +5737,8 @@ function endBugContest() {
 		Bag.addItem(prize, 1);
 		const nth = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place + 'th';
 		prizeLine = `You placed ${nth} and won a ${Bag.ITEMS[prize]?.name || prize.toUpperCase()}!`;
-		const where = addCaught(party, mon);
-		saveParty(party);
+		const where = addCaught(S.party, mon);
+		saveParty(S.party);
 		prizeLine += `\n${mon.name} ${where === 'party' ? 'joined the party' : 'was sent to the box'}.`;
 		if (place === 1) { Journal.add(`Won the Bug-Catching Contest with ${mon.name}!`); sfx('levelup'); }
 	}
@@ -6000,7 +6002,7 @@ function contestFinish() {
 		Journal.add(`${st.cs[0].name}'s portrait now hangs in the Lilycove Museum!`);
 	}
 	sfx('levelup');
-	saveParty(party);
+	saveParty(S.party);
 }
 function contestKey(k) {
 	const m = contestMenu;
@@ -6026,12 +6028,12 @@ function contestKey(k) {
 		return;
 	}
 	if (m.mode === 'pickmon') {
-		if (k === 'ArrowUp') m.idx = (m.idx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % party.length;
+		if (k === 'ArrowUp') m.idx = (m.idx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') m.idx = (m.idx + 1) % S.party.length;
 		if (k === 'x' || k === 'Escape') { m.mode = 'rank'; m.idx = 0; m.flash = null; return; }
-		if ((k === 'z' || k === 'Enter') && party[m.idx]) {
+		if ((k === 'z' || k === 'Enter') && S.party[m.idx]) {
 			m.awarded = false; m.purse = 0;
-			m.st = Contest.start({ category: m.category, rank: m.rank, mon: party[m.idx], battleTypes: id => battle.data.moves[id]?.type });
+			m.st = Contest.start({ category: m.category, rank: m.rank, mon: S.party[m.idx], battleTypes: id => battle.data.moves[id]?.type });
 			for (const c of m.st.cs) contestSpriteFor(c.species);
 			m.mode = 'scene'; m.idx = 0; m.entries = null;
 			syncMapBgm(); // the stage theme takes over
@@ -6066,10 +6068,10 @@ function blendBerries() {
 function blendKey(k) {
 	const b = blendMenu;
 	if (b.mode === 'pickmon') {
-		if (k === 'ArrowUp') b.idx = (b.idx + party.length - 1) % party.length;
-		if (k === 'ArrowDown') b.idx = (b.idx + 1) % party.length;
+		if (k === 'ArrowUp') b.idx = (b.idx + S.party.length - 1) % S.party.length;
+		if (k === 'ArrowDown') b.idx = (b.idx + 1) % S.party.length;
 		if (k === 'x' || k === 'Escape') { b.open = false; return; }
-		if ((k === 'z' || k === 'Enter') && party[b.idx]) { b.mon = party[b.idx]; b.mode = 'feed'; b.idx = 0; b.flash = null; }
+		if ((k === 'z' || k === 'Enter') && S.party[b.idx]) { b.mon = S.party[b.idx]; b.mode = 'feed'; b.idx = 0; b.flash = null; }
 		return;
 	}
 	const list = blendBerries();
@@ -6086,7 +6088,7 @@ function blendKey(k) {
 	sfx('heal');
 	const g = Object.entries(r.gains).map(([c, v]) => `${c.toUpperCase()} +${v}`).join('  ') || 'no rise';
 	b.flash = `${g}   SHEEN ${r.sheen}/255`;
-	saveParty(party); // condition lives on the mon
+	saveParty(S.party); // condition lives on the mon
 	b.idx = Math.min(b.idx, blendBerries().length); // ate the last of a kind -> stay in range
 }
 function drawContest(W, H) {
@@ -6096,7 +6098,7 @@ function drawContest(W, H) {
 	if (m.mode === 'rank') { optionList(W, H, u, `${m.category.toUpperCase()} CONTEST`, 'Which rank?', contestRows(), m.idx, 'ctr:', m.flash); return; }
 	if (m.mode === 'pickmon') {
 		menuChrome(W, H, u, `${m.category.toUpperCase()} CONTEST — ${RANKS[m.rank]} RANK`, 'Which POKeMON will perform?');
-		party.forEach((mo, i) => monRow('ctm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
+		S.party.forEach((mo, i) => monRow('ctm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
 		return;
 	}
 	const st = m.st;
@@ -6147,7 +6149,7 @@ function drawContest(W, H) {
 			sctx.fillText((mv ? `${e.who} used ${mv}!  +${e.hearts}♥  ` : `${e.who} `) + e.notes.join(' '), 32 * u, y, W - 220 * u);
 		});
 		const b = { id: 'ct-next', x: W - 184 * u, y: H - 60 * u, w: 152 * u, h: 44 * u, label: st.done ? 'RESULTS' : 'NEXT', center: true };
-		menuUi.push(b);
+		S.menuUi.push(b);
 		BUI.button(sctx, b, true, u);
 		return;
 	}
@@ -6157,7 +6159,7 @@ function drawContest(W, H) {
 	sctx.fillText(me.lockout ? `${me.name} is too spent to appeal — pass the turn.` : 'Choose a move to appeal with:', 28 * u, 268 * u);
 	if (me.lockout) {
 		const b = { id: 'ctmv:0', x: 24 * u, y: 280 * u, w: W - 48 * u, h: 46 * u, label: 'PASS', center: true };
-		menuUi.push(b); BUI.button(sctx, b, true, u);
+		S.menuUi.push(b); BUI.button(sctx, b, true, u);
 		return;
 	}
 	const bw = (W - 64 * u) / 2;
@@ -6170,7 +6172,7 @@ function drawContest(W, H) {
 			id: 'ctmv:' + i, x: 24 * u + (i % 2) * (bw + 16 * u), y: (280 + Math.floor(i / 2) * 56) * u, w: bw, h: 46 * u,
 			label: `${name}  [${mi.cat.toUpperCase().slice(0, 2)} ♥${mi.appeal}${mi.jam ? ' J' + mi.jam : ''}${combo ? ' COMBO!' : ''}]`, center: false,
 		};
-		menuUi.push(b);
+		S.menuUi.push(b);
 		BUI.button(sctx, b, m.idx === i, u);
 	});
 }
@@ -6179,7 +6181,7 @@ function drawBlend(W, H) {
 	const b = blendMenu;
 	if (b.mode === 'pickmon') {
 		menuChrome(W, H, u, 'BERRY BLENDER', 'Whose condition shall we raise?');
-		party.forEach((mo, i) => monRow('bb:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, b.idx === i, u));
+		S.party.forEach((mo, i) => monRow('bb:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, b.idx === i, u));
 		return;
 	}
 	const c = Contest.cond(b.mon);
@@ -6208,8 +6210,8 @@ function drawBlend(W, H) {
 		const idx = start + i;
 		const bid = 'bbf:' + idx;
 		const btn = { id: bid, x: W * 0.55, y: (88 + i * 48) * u, w: W * 0.41, h: 42 * u, label, center: false };
-		menuUi.push(btn);
-		BUI.button(sctx, btn, menuHover === bid || b.idx === idx, u);
+		S.menuUi.push(btn);
+		BUI.button(sctx, btn, S.menuHover === bid || b.idx === idx, u);
 	});
 	if (!list.length) {
 		sctx.fillStyle = BUI.C.dim;
@@ -6299,7 +6301,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		// `checkitem` — the condition behind every item turn-in in the Crystal
 		// scripts (the MACHINE PART, the LOST ITEM, the PASS, the BICYCLE check).
 		hasItem: (id) => !!id && Bag.count(id) > 0,
-		partyCount: () => (party || []).length,   // givemon reports party-vs-box into VAR_RESULT
+		partyCount: () => (S.party || []).length,   // givemon reports party-vs-box into VAR_RESULT
 		// Crystal's yes/no box, answered with the closing key the way every other
 		// prompt in this port is (Z = yes, X = no), stored where the branch reads it.
 		prompt: () => {
@@ -6311,7 +6313,7 @@ function cutsceneCtx(talker, scriptLabel) {
 		},
 		giveMon: (species, level) => {
 			const mon = battle.data.species[species] && buildMonForGift(species, level);
-			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
+			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(S.party, mon); saveParty(S.party); }
 		},
 		// Crystal's `giveegg`. Elm's aide hands over the TOGEPI EGG in the Violet
 		// POKeMON CENTER; the op was dropped in transpile (along with the `scall`
@@ -6326,9 +6328,9 @@ function cutsceneCtx(talker, scriptLabel) {
 			// the Day Care egg slot is busy with a bred egg; hand over the POKeMON
 			// itself rather than dropping the gift on the floor
 			const mon = buildMonForGift(species, level);
-			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(party, mon); saveParty(party); }
+			if (mon) { Dex.markCaught(species); dexMilestoneCheck(); addCaught(S.party, mon); saveParty(S.party); }
 		},
-		healParty: () => healParty(party),
+		healParty: () => healParty(S.party),
 		warp: (mapId, warpId, x, y) => warpTo(mapId, warpId, x, y),
 		// a ferry arrival lands on a tile, not a door (see sail_fix.js)
 		warpXy: (mapId, x, y) => flyTo(mapId, x, y),
@@ -6430,8 +6432,8 @@ function gcKey(k) {
 			const mon = buildMonForGift(pz.mon, 25);
 			if (!mon) { Bag.addCoins(pz.cost); gcMenu.flash = 'The prize desk is out of stock...'; return; }
 			Dex.markSeen(pz.mon); Dex.markCaught(pz.mon); dexMilestoneCheck();
-			const where = addCaught(party, mon);
-			saveParty(party);
+			const where = addCaught(S.party, mon);
+			saveParty(S.party);
 			gcMenu.flash = `${mon.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box!'}`;
 		}
 	}
@@ -6487,7 +6489,7 @@ function drawVfMenu(W, H) {
 			sctx.fillText(t.v === 0 ? 'V!' : String(t.v), cx + cell / 2, cy + cell / 2 + 5 * u);
 			sctx.textAlign = 'left';
 		}
-		menuUi.push({ id: 'vf:' + i, x: cx, y: cy, w: cell, h: cell, label: '' });
+		S.menuUi.push({ id: 'vf:' + i, x: cx, y: cy, w: cell, h: cell, label: '' });
 	}
 	// hint chips: sum over Voltorb count — right of each row, below each column
 	for (let i = 0; i < 5; i++) {
@@ -6525,7 +6527,7 @@ const JOHKANTO_DESIGN_LEVEL = 60;   // the middle of the authored 50-77 band
 // Unprefixed border maps (Seafoam, Cerulean Cave) are shared with Kanto and are
 // deliberately left alone.
 function inJohKanto() { return /^MAP_JOHKANTO_/.test(world.current?.map?.id || ''); }
-function partyLead() { return Math.max(1, ...((party || []).filter(Boolean).map(m => m.level || 1)), 1); }
+function partyLead() { return Math.max(1, ...((S.party || []).filter(Boolean).map(m => m.level || 1)), 1); }
 // WILD ENCOUNTERS: a band below the route trainers.
 //
 // The old relative multiply had two faults. It CLAMPED AT YOUR LEAD, so once you
@@ -6675,23 +6677,23 @@ function cycleForm(mon) {
 // the script's own `GetBattleOutcome` branch works instead of always reading WON.
 function startScriptedWildBattle(species, level) {
 	if (!species || !battle.data?.species?.[species]) return 'skip';
-	if (!party || !leadMon(party) || battle.blocking) return 'skip';
+	if (!S.party || !leadMon(S.party) || battle.blocking) return 'skip';
 	Dex.markSeen(species);
 	battle.endSpec = { kind: 'wild' };   // the blocking script is gone after a reload; a plain wild ending is safe
-	battle.start(party, species, level, result => {
+	battle.start(S.party, species, level, result => {
 		if (result === 'caught' && battle.lastCaught) {
 			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(party, battle.lastCaught);
+			const where = addCaught(S.party, battle.lastCaught);
 			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
 			offerNickname(battle.lastCaught);
-			lastBattleOutcome = B_OUTCOME_CAUGHT;
+			S.lastBattleOutcome = B_OUTCOME_CAUGHT;
 			Story.setVar('VAR_RESULT', B_OUTCOME_CAUGHT);
 			cutscene.resume();
 		} else if (result === 'victory') {
-			lastBattleOutcome = B_OUTCOME_WON;
+			S.lastBattleOutcome = B_OUTCOME_WON;
 			Story.setVar('VAR_RESULT', B_OUTCOME_WON);
-			evolution.check(party, battle.data);
-			saveParty(party);
+			evolution.check(S.party, battle.data);
+			saveParty(S.party);
 			cutscene.resume();
 		} else if (result === 'defeat') {
 			// blacked out: heal and abandon the rest of the script, as trainer
@@ -6699,16 +6701,16 @@ function startScriptedWildBattle(species, level) {
 			// set the object's hide flag before the battle, not after, so losing to
 			// the Route 12 Snorlax costs you that Snorlax. That is what the original
 			// does, and the second one on Route 16 is the game's own second chance.
-			lastBattleOutcome = B_OUTCOME_LOST;
+			S.lastBattleOutcome = B_OUTCOME_LOST;
 			Story.setVar('VAR_RESULT', B_OUTCOME_LOST);
 			whiteOut();
 			cutscene.stop();
 		} else {
 			// ran / it fled — the decomp scripts treat RAN the same as WON (the
 			// encounter is over and the object goes away), so let the script run on
-			lastBattleOutcome = B_OUTCOME_RAN;
+			S.lastBattleOutcome = B_OUTCOME_RAN;
 			Story.setVar('VAR_RESULT', B_OUTCOME_RAN);
-			saveParty(party);
+			saveParty(S.party);
 			cutscene.resume();
 		}
 	});
@@ -6743,19 +6745,19 @@ function runScriptLabel(label, talker) {
 	// full Crystal flow (VAR_UNOWNCOUNT/UnownPrinter) was inert; the scientists are
 	// the reliably-reachable hook (Scientist1/2 are always visible).
 	if (/^RuinsOfAlphResearchCenterScientist\d?Script$/.test(label)) { openUnownDex(); return true; }
-	if (!mapScripts[label]) {
+	if (!S.mapScripts[label]) {
 		// Crystal factors its common NPCs through `jumpstd`, which the transpiler
 		// drops — so 237 bookshelves, signs and trash cans have no label at all.
 		// Run the shared body instead of falling through to silence.
 		const std = Story.crystalStd(label);
 		if (!std) return false;
-		cutscene.run({ [label]: std }, label, cutsceneCtx(talker, label), () => { saveParty(party); });
+		cutscene.run({ [label]: std }, label, cutsceneCtx(talker, label), () => { saveParty(S.party); });
 		return true;
 	}
 	// notePostBattleFinished: onDone fires only when the scene REACHES ITS END.
 	// cutscene.stop() drops the scene without it, which is exactly the signal a
 	// post-battle beat needs — an interrupted beat stays un-done and is retried.
-	cutscene.run(mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(party); notePostBattleFinished(); });
+	cutscene.run(S.mapScripts, label, cutsceneCtx(talker, label), () => { saveParty(S.party); notePostBattleFinished(); });
 	return true;
 }
 
@@ -6764,11 +6766,11 @@ function runScriptLabel(label, talker) {
 // resume the cutscene with the outcome in VAR_RESULT (1 = won). A loss stops the
 // script (the player blacked out) after healing.
 function startScriptedBattle(trainerId, scriptLabel, talker) {
-	if (!party || !leadMon(party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
+	if (!S.party || !leadMon(S.party)) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	// canonical team by TRAINER_ id first (exact species/level/moves), then the
 	// script-label roster, then a class-pool fallback at the map's level
 	const tid = (trainerId || '').replace(/^TRAINER_/, '');
-	const team = trainerTeams[tid];
+	const team = S.trainerTeams[tid];
 	const roster = scriptLabel && trainers.data?.rosters?.[scriptLabel];
 	let foeParty = [];
 	let className = team?.class || roster?.class || 'Trainer';
@@ -6817,18 +6819,18 @@ function startScriptedBattle(trainerId, scriptLabel, talker) {
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
 	battle.endSpec = { kind: 'strainer', script: talker?.ev?.script || null };
-	battle.startTrainer(party, foeParty, info, result => {
+	battle.startTrainer(S.party, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
-			lastBattleOutcome = B_OUTCOME_WON;
+			S.lastBattleOutcome = B_OUTCOME_WON;
 			if (talker && trainers.list.includes(talker)) trainers.markDefeated(talker);
-			saveParty(party);
+			saveParty(S.party);
 			onTrainerDefeated(talker?.ev?.script, { silent: true }); // badge/crown; the script's own speech announces it
 			cutscene.resume(); // continue the script (defeat text, post-battle)
 		} else {
 			// blacked out / fled: heal and abandon the rest of the script
 			Story.setVar('VAR_RESULT', 0);
-			lastBattleOutcome = B_OUTCOME_LOST;
+			S.lastBattleOutcome = B_OUTCOME_LOST;
 			if (result === 'defeat') whiteOut();
 			cutscene.stop();
 		}
@@ -6859,33 +6861,33 @@ function buildPartnerMon(e) {
 }
 // the picked mons (party indices, in pick order) while the multi battle is on
 let multiPicks = null;
-const pickedView = picks => (picks || []).map(i => party[i]).filter(m => m && m.curHP > 0);
+const pickedView = picks => (picks || []).map(i => S.party[i]).filter(m => m && m.curHP > 0);
 function startSpaceCenterBattle() {
-	const build = tid => (trainerTeams[tid]?.party || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
+	const build = tid => (S.trainerTeams[tid]?.party || []).map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
 	const maxie = build('MAXIE_MOSSDEEP'), tabitha = build('TABITHA_MOSSDEEP');
 	const foeParty = [];
 	for (let i = 0; i < Math.max(maxie.length, tabitha.length); i++) {
 		if (maxie[i]) foeParty.push(maxie[i]);
 		if (tabitha[i]) foeParty.push(tabitha[i]);
 	}
-	const mine = multiPicks?.length ? pickedView(multiPicks) : (party || []).filter(m => m.curHP > 0).slice(0, 3);
+	const mine = multiPicks?.length ? pickedView(multiPicks) : (S.party || []).filter(m => m.curHP > 0).slice(0, 3);
 	if (!foeParty.length || !mine.length) { Story.setVar('VAR_RESULT', 1); return; }
 	const steven = STEVEN_PARTNER.map(buildPartnerMon).filter(Boolean);
 	const info = { displayName: 'MAXIE & TABITHA', defeatText: '', money: 44 * 8 * 2, boss: true, double: true,
 		partner: steven.length ? { name: 'STEVEN', party: steven } : null };
-	battle.endSpec = { kind: 'spacecenter', picks: mine.map(m => party.indexOf(m)) };
+	battle.endSpec = { kind: 'spacecenter', picks: mine.map(m => S.party.indexOf(m)) };
 	battle.startTrainer(mine, foeParty, info, result => {
 		if (result === 'victory') {
 			Story.setVar('VAR_RESULT', 1);
-			lastBattleOutcome = B_OUTCOME_WON;
-			saveParty(party);
+			S.lastBattleOutcome = B_OUTCOME_WON;
+			saveParty(S.party);
 			cutscene.resume();
 		} else {
 			// the script's own loss path is SetCB2WhiteOut; black out here instead
 			// (the stopped script never reaches its LoadPlayerParty)
 			multiPicks = null;
 			Story.setVar('VAR_RESULT', 2);
-			lastBattleOutcome = B_OUTCOME_LOST;
+			S.lastBattleOutcome = B_OUTCOME_LOST;
 			if (result === 'defeat') whiteOut();
 			cutscene.stop();
 		}
@@ -6895,7 +6897,7 @@ function startSpaceCenterBattle() {
 
 // ---------- Johto gift POKeMON (pokecrystal engine/events) ----------
 const giftMoves = ids => ids.map(id => battle.data.moves[id] && { id, name: battle.data.moves[id].name, pp: battle.data.moves[id].pp, maxPp: battle.data.moves[id].pp }).filter(Boolean);
-function giveGift(mon) { Dex.markCaught(mon.speciesId); dexMilestoneCheck(); const to = addCaught(party, mon); saveParty(party); return to; }
+function giveGift(mon) { Dex.markCaught(mon.speciesId); dexMilestoneCheck(); const to = addCaught(S.party, mon); saveParty(S.party); return to; }
 // DRAGON SHRINE. The transpile dropped the script's `givepoke DRATINI, 15`, so this
 // special gives the DRATINI as well as setting its moveset: EXTREMESPEED (a move it
 // can't otherwise learn) for a flawless quiz, the plain Lv15 set otherwise.
@@ -6943,7 +6945,7 @@ function giveOddEgg() {
 const MANIA_OT = { name: 'MANIA', id: 518 };
 const localDay = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
 function giveShuckle() {
-	if ((party || []).length >= 6) return 0;
+	if ((S.party || []).length >= 6) return 0;
 	const mon = buildMonForGift('shuckle', 15);
 	if (!mon) return 0;
 	mon.nickname = 'SHUCKIE';
@@ -6959,14 +6961,14 @@ function giveShuckle() {
 // 0 WRONG_MON (none with MANIA's OT) · 2 RETURNED · 3 HAPPY (friendship >= 150,
 // Mania lets you keep it) · 4 FAINTED (it is fainted, or it is your last healthy mon)
 function returnShuckie() {
-	const i = (party || []).findIndex(m => m.speciesId === 'shuckle' && m.otName === MANIA_OT.name && (m.otId ?? MANIA_OT.id) === MANIA_OT.id);
+	const i = (S.party || []).findIndex(m => m.speciesId === 'shuckle' && m.otName === MANIA_OT.name && (m.otId ?? MANIA_OT.id) === MANIA_OT.id);
 	if (i < 0) return 0;
-	const mon = party[i];
-	if (mon.curHP <= 0 || !party.some((m, j) => j !== i && m.curHP > 0)) return 4;
+	const mon = S.party[i];
+	if (mon.curHP <= 0 || !S.party.some((m, j) => j !== i && m.curHP > 0)) return 4;
 	if ((mon.friend ?? 70) >= 150) return 3;
 	if (mon.heldItem) Bag.addItem(mon.heldItem);
-	party.splice(i, 1);
-	saveParty(party);
+	S.party.splice(i, 1);
+	saveParty(S.party);
 	return 2;
 }
 // ENGINE_GOT_SHUCKIE_TODAY is one of Crystal's daily flags: it lapses at midnight
@@ -6992,9 +6994,9 @@ function puzzleWorld() {
 // maps of never-executed setmetatile, some raising walls nothing here can lower.
 function runMapOnLoad() {
 	if (!GymPuzzles.ONLOAD_MAPS.has(world.current.name)) return;
-	const meta = mapScripts.__map__;
-	if (!meta || !meta.onLoad || !mapScripts[meta.onLoad] || cutscene.blocking) return;
-	cutscene.run(mapScripts, meta.onLoad, cutsceneCtx(), () => {});
+	const meta = S.mapScripts.__map__;
+	if (!meta || !meta.onLoad || !S.mapScripts[meta.onLoad] || cutscene.blocking) return;
+	cutscene.run(S.mapScripts, meta.onLoad, cutsceneCtx(), () => {});
 	if (cutscene.blocking) cutscene.stop(); // setup only
 }
 // THE DECOMP RUNS A MAP'S SETUP SCRIPTS BEFORE ITS OBJECTS SPAWN; THIS PORT RUNS
@@ -7030,10 +7032,10 @@ function runMapTransition() {
 	// that puzzle is broken/unfun in this port and would wall the Giovanni crawl, so
 	// skip it — the floors stay freely walkable.
 	if (/^SilphCo_\d/.test(world.current.name)) return;
-	const meta = mapScripts.__map__;
-	if (!meta || !meta.onTransition || !mapScripts[meta.onTransition]) return;
+	const meta = S.mapScripts.__map__;
+	if (!meta || !meta.onTransition || !S.mapScripts[meta.onTransition]) return;
 	if (cutscene.blocking) return;
-	cutscene.run(mapScripts, meta.onTransition, cutsceneCtx(), () => {});
+	cutscene.run(S.mapScripts, meta.onTransition, cutsceneCtx(), () => {});
 	if (cutscene.blocking) cutscene.stop(); // hit a wait — setup only, don't block
 }
 // ON_FRAME table: if a scene var matches, auto-run that cutscene. Value-0
@@ -7041,12 +7043,12 @@ function runMapTransition() {
 // save (story vars default to 0) — they only trigger once a script has set the
 // var, which we track via an explicit presence check.
 function checkOnFrame() {
-	const meta = mapScripts.__map__;
+	const meta = S.mapScripts.__map__;
 	if (!meta || !meta.onFrame || cutscene.blocking) return;
 	for (const e of meta.onFrame) {
 		if (e.value === 0 && !Story.hasVar(e.var)) continue;
 		if (plotBlocked(e.label)) continue; // never runs here (see plotBlocked)
-		if (Story.getVar(e.var) === e.value && mapScripts[e.label]) {
+		if (Story.getVar(e.var) === e.value && S.mapScripts[e.label]) {
 			runScriptLabel(e.label);
 			return;
 		}
@@ -7100,7 +7102,7 @@ function checkCoordTrigger() {
 	for (const e of evs) {
 		if (+e.x !== player.tx || +e.y !== player.ty) continue;
 		if (e.var && e.var !== '0' && Story.getVar(e.var) !== parseInt(e.var_value, 10)) continue;
-		if (e.script && mapScripts[e.script]) {
+		if (e.script && S.mapScripts[e.script]) {
 			if (plotBlocked(e.script)) continue; // never runs here (see plotBlocked)
 			const once = PLOT_ONESHOT[e.script];
 			if (once) {
@@ -7318,7 +7320,7 @@ const FACING_VALUE = { down: 1, up: 2, left: 3, right: 4 };
 function syncScriptVars() {
 	Story.setVar('VAR_FACING', FACING_VALUE[player?.facing] || 1);
 	Story.setVar('VAR_WEEKDAY', new Date().getDay());          // SUNDAY = 0 .. SATURDAY = 6
-	Story.setVar('VAR_PARTYCOUNT', (party || []).length);
+	Story.setVar('VAR_PARTYCOUNT', (S.party || []).length);
 	Story.setVar('VAR_UNOWNCOUNT', Dex.unownCount());          // lights up the Ruins research-center branches
 }
 
@@ -7367,18 +7369,18 @@ const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME_CAUGHT
 // answer WON unconditionally, on the assumption that scripted battles were
 // skipped entirely; now that static wild battles really run, the scripts that
 // branch on the outcome deserve the truth.
-let lastBattleOutcome = B_OUTCOME_WON;
+S.lastBattleOutcome = B_OUTCOME_WON;
 function runSpecial(name, store) {
 	// query specials write their result to the given store var, or VAR_RESULT by
 	// the decomp convention when a plain `special` (no store) is used
 	const set = v => Story.setVar(store || 'VAR_RESULT', v | 0);
-	const living = () => (party || []).filter(m => m.curHP > 0);
+	const living = () => (S.party || []).filter(m => m.curHP > 0);
 	switch (name) {
 		// --- action specials ---
 		// Crystal names it HealParty; FireRed/Emerald name it HealPlayerParty. Only the
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
-		case 'HealPlayerParty': case 'HealParty': healParty(party); return;
+		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
 		// gym puzzles, ported from field_specials.c (see gym_puzzles.js)
 		case 'SetVermilionTrashCans': GymPuzzles.setVermilionTrashCans(puzzleWorld()); return;
 		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
@@ -7418,15 +7420,15 @@ function runSpecial(name, store) {
 		case 'QuestLog_CutRecording': return; // cosmetic / system
 
 		// --- store-writing queries (a following branch reads `store`) ---
-		case 'GetBattleOutcome': return set(lastBattleOutcome); // a real static battle records its own; otherwise WON
-		case 'CalculatePlayerPartyCount': return set((party || []).length);
-		case 'GetPlayerPartyCountForOverworld': return set((party || []).length);
+		case 'GetBattleOutcome': return set(S.lastBattleOutcome); // a real static battle records its own; otherwise WON
+		case 'CalculatePlayerPartyCount': return set((S.party || []).length);
+		case 'GetPlayerPartyCountForOverworld': return set((S.party || []).length);
 		case 'IsNationalPokedexEnabled': return set(1);
 		case 'GetPokedexCount': case 'GetHoennPokedexCount': case 'GetKantoPokedexCount':
 			return set(Dex.counts().caught);
 		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
 			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
-		case 'GetFirstFreePartySlot': return set(Math.min((party || []).length, 6));
+		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
 		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
 			return set(living().length);
 		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
@@ -7498,7 +7500,7 @@ const NEW_GAME_INTRO = {
 // the rival's name, drop the partyless player into the home town, and roll the
 // professor's welcome. The starter is granted later, on-screen, inside the lab.
 function beginNewGame(region) {
-	party = null;
+	S.party = null;
 	seedStoryState(region);                       // full plot-suppression seed + HM kit (no starter yet)
 	safeSaveStr('magepunk_region', region);
 	const cfg = NEW_GAME_INTRO[region];
@@ -7524,7 +7526,7 @@ function checkIntroTrigger() {
 		const cfg0 = NEW_GAME_INTRO[playerRegion()];
 		if (cfg0 && world.current.name !== cfg0.lab) starterMenu.open = false;
 	}
-	if (party || Story.getFlag('intro_done') || cutscene.blocking || dialog.blocking || starterMenu.open) return;
+	if (S.party || Story.getFlag('intro_done') || cutscene.blocking || dialog.blocking || starterMenu.open) return;
 	const cfg = NEW_GAME_INTRO[playerRegion()];
 	if (!cfg || world.current.name !== cfg.lab) return;
 	// The professor speaks ONCE. This runs from the frame loop (so a reload
@@ -7545,7 +7547,7 @@ function checkIntroTrigger() {
 // villain NPCs from the map data are all flag-skipped, so this code-triggered
 // encounter is the whole fight (see quest.js VILLAIN_BEATS).
 function checkVillainTrigger() {
-	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
 	if (!Story.getFlag('intro_done')) return;
 	const region = playerRegion();
 	const beat = Quest.beatAt(region, world.current.name);
@@ -7554,14 +7556,14 @@ function checkVillainTrigger() {
 }
 function startVillainBattle(region, beat) {
 	const foe = beat.team.map(e => battleBuildMon(e.s, e.l, battle.data)).filter(Boolean);
-	if (!foe.length || !party || !leadMon(party)) { completeVillainBeat(region, beat); return; }
+	if (!foe.length || !S.party || !leadMon(S.party)) { completeVillainBeat(region, beat); return; }
 	for (const m of foe) Dex.markSeen(m.speciesId);
 	const info = { displayName: beat.boss, defeatText: '', money: Math.max(...foe.map(m => m.level)) * 12, boss: true };
 	battle.endSpec = { kind: 'villain', region };
-	battle.startTrainer(party, foe, info, result => {
+	battle.startTrainer(S.party, foe, info, result => {
 		if (result === 'victory') { completeVillainBeat(region, beat); }
 		else if (result === 'defeat') whiteOut();
-		else { healParty(party); saveParty(party); }   // fled/forced out: not a blackout
+		else { healParty(S.party); saveParty(S.party); }   // fled/forced out: not a blackout
 	});
 }
 
@@ -7570,7 +7572,7 @@ function startVillainBattle(region, beat) {
 // once per tier at that tier's gym town, in whichever region you reach first. On-arrive,
 // one-shot per tier (flag set win or lose so it never walls you). Threads the region-hopping.
 function checkRivalTrigger() {
-	if (!party || !leadMon(party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
+	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
 	const tier = rivalDue(world.current.map.id);
 	if (tier == null) return;
 	startRivalEncounter(tier);
@@ -7589,17 +7591,17 @@ function startRivalEncounter(tier) {
 	startCutscene(intro.map(text => ({ op: 'say', text })), () => {
 		const info = { displayName: `RIVAL ${name}`, defeatText: '', money: (tier + 1) * 40, boss: true };
 		battle.endSpec = { kind: 'rivaltier', tier };
-		battle.startTrainer(party, foe, info, result => {
+		battle.startTrainer(S.party, foe, info, result => {
 			Story.setFlag(rivalFlag(tier)); // one-shot per tier, win or lose
-			saveParty(party);
+			saveParty(S.party);
 			if (result === 'victory') startCutscene([{ op: 'say', text: `${name}: Tch — you got me. But I'll take the next region first. See you out there!` }]);
-			else { healParty(party); startCutscene([{ op: 'say', text: `${name}: Ha! Told you I was ahead. Go train and catch up!` }]); }
+			else { healParty(S.party); startCutscene([{ op: 'say', text: `${name}: Ha! Told you I was ahead. Go train and catch up!` }]); }
 		});
 	});
 }
 function completeVillainBeat(region, beat) {
 	Story.setFlag(beat.doneFlag);
-	saveParty(party);
+	saveParty(S.party);
 	refreshObjective();
 	syncOverworldAchievements(); // a villain arc just closed — surface it on the profile
 	// the beat is done -> isDungeonFloor now false -> despawn the grunts on this map
@@ -7765,7 +7767,7 @@ function pushOw(opts) {
 	const ow = owSnapshot();  // re-read: the revision just changed
 	const rev = owRev();
 	const seq = _syncSeq + 1;
-	syncLog('push.start', { scope: mpAccount && mpAccount.username || '(unknown)', key: 'ow:<user>', rev, keepalive, fp: owFingerprint(ow), inFlight: ++_owInFlight });
+	syncLog('push.start', { scope: S.mpAccount && S.mpAccount.username || '(unknown)', key: 'ow:<user>', rev, keepalive, fp: owFingerprint(ow), inFlight: ++_owInFlight });
 	const done = (ok, extra) => {
 		if (ok) { _owAcked++; _lastAckedBody = body; } else _owFailed++;
 		syncLog('push.response', { forSeq: seq, rev, ok, acked: _owAcked, failed: _owFailed, inFlight: --_owInFlight, ...extra });
@@ -8012,13 +8014,13 @@ function finishStarterPick(region, col) {
 	const idx = Math.max(0, STARTERS.findIndex(r => r.region === region));
 	const id = STARTERS[idx].ids[col];
 	safeSaveStr('magepunk_starter', id); // Kanto's champion roster is chosen by it
-	party = createStarter(id, battle.data);
-	Journal.add(`Began the adventure in ${region} with ${(party[0]?.name || id).toUpperCase()}`);
+	S.party = createStarter(id, battle.data);
+	Journal.add(`Began the adventure in ${region} with ${(S.party[0]?.name || id).toUpperCase()}`);
 	Dex.markCaught(id);
-	Dex.seedFrom(party);
+	Dex.seedFrom(S.party);
 	refreshFollower();
 	const cfg = NEW_GAME_INTRO[region];
-	const name = (party[0].nickname || party[0].name || id).toUpperCase();
+	const name = (S.party[0].nickname || S.party[0].name || id).toUpperCase();
 	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); dialog.open(`You chose ${name}!`); return; }
 	dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col));
 }
@@ -8037,13 +8039,13 @@ function rivalScene(region, playerCol) {
 
 function startRivalBattle(region, rivalId, rivalName) {
 	const foe = [battleBuildMon(rivalId, 5, battle.data)].filter(Boolean);
-	if (!foe.length || !party || !leadMon(party)) { afterRival(region); return; }
+	if (!foe.length || !S.party || !leadMon(S.party)) { afterRival(region); return; }
 	Dex.markSeen(rivalId);
 	const info = { displayName: `RIVAL ${rivalName}`, defeatText: '', money: 40, boss: true };
 	battle.endSpec = { kind: 'rivalintro', region };
-	battle.startTrainer(party, foe, info, result => {
-		if (result !== 'victory') healParty(party);   // the plot continues win or lose
-		saveParty(party);
+	battle.startTrainer(S.party, foe, info, result => {
+		if (result !== 'victory') healParty(S.party);   // the plot continues win or lose
+		saveParty(S.party);
 		afterRival(region);
 	});
 }
@@ -8069,7 +8071,7 @@ function afterRival(region) {
 
 // kept for the debug hook / older callers: nudge a partyless save into the intro
 function maybeIntroCutscene() {
-	if (Story.getFlag('intro_done') || party) return;
+	if (Story.getFlag('intro_done') || S.party) return;
 	startIntroNarration(playerRegion());
 }
 
@@ -8340,12 +8342,12 @@ function tick(now) {
 	}
 	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
 	// If a map load hangs (never resolves) or a handler after it wedged, recover.
-	if (loading) {
+	if (S.loading) {
 		if (loadWatchStart == null) loadWatchStart = now;
-		else if (now - loadWatchStart > 12000) { loadWatchStart = null; loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
+		else if (now - loadWatchStart > 12000) { loadWatchStart = null; S.loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
 	} else loadWatchStart = null;
-	if (loading || !world.current) return;
-	if (postBattleCatchUpArmed && !loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+	if (S.loading || !world.current) return;
+	if (postBattleCatchUpArmed && !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
 		&& openCanvasMenus().length === 0) {
 		postBattleCatchUpArmed = false;
 		try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
@@ -8403,7 +8405,7 @@ function tick(now) {
 	// walk, or a menu. findLanding is the same nearest-standable-tile search Fly
 	// uses, so the rescue lands somewhere the player could have walked to.
 	{
-		const stuckTile = !loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
+		const stuckTile = !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
 			&& !pvp.blocking && !evolution.blocking && openCanvasMenus().length === 0
 			&& !player.moving && !player.surfing
 			&& (!world.isPassable(player.tx, player.ty) || world.isSurfable(player.tx, player.ty));
@@ -8456,7 +8458,7 @@ function tick(now) {
 		// returned early and nothing ever re-asked. Retry it here instead. It is
 		// four boolean checks and becomes a permanent no-op the moment you have a
 		// party, so it costs nothing for the rest of the game.
-		if (!party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
+		if (!S.party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
 		tickStats.reachedMoveBlock++;
 		trainers.update(dt);
 		player.run = runHeld || Settings.get('autoRun');
@@ -8694,8 +8696,8 @@ function drawTouchHud(SW, SH) {
 }
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------
-let menuUi = [];   // tappable rects rebuilt each draw: {id, x, y, w, h}
-let menuHover = null;
+S.menuUi = [];   // tappable rects rebuilt each draw: {id, x, y, w, h}
+S.menuHover = null;
 const iconCache = new Map();
 function iconOf(mon) {
 	if (!mon.sprite) return null;
@@ -8718,7 +8720,7 @@ function townImg(file) {
 }
 
 function menuChrome(W, H, u, title, sub, closable = true) {
-	menuUi = [];
+	S.menuUi = [];
 	sctx.fillStyle = 'rgba(10,8,18,0.82)';
 	sctx.fillRect(0, 0, W, H);
 	sctx.fillStyle = BUI.C.text;
@@ -8731,15 +8733,15 @@ function menuChrome(W, H, u, title, sub, closable = true) {
 	}
 	if (!closable) return;
 	const close = { id: 'close', x: W - 106 * u, y: 16 * u, w: 90 * u, h: 36 * u, label: 'CLOSE', center: true };
-	menuUi.push(close);
-	BUI.button(sctx, close, menuHover === 'close', u);
+	S.menuUi.push(close);
+	BUI.button(sctx, close, S.menuHover === 'close', u);
 }
 
 // a tappable mon row: sprite icon, name, level, status, HP bar + numbers
 function monRow(id, x, y, w, h, mon, selected, u, note) {
 	const b = { id, x, y, w, h };
-	menuUi.push(b);
-	sctx.fillStyle = selected || menuHover === id ? BUI.C.btnHover : BUI.C.btn;
+	S.menuUi.push(b);
+	sctx.fillStyle = selected || S.menuHover === id ? BUI.C.btnHover : BUI.C.btn;
 	BUI.rr(sctx, x, y, w, h, 8 * u); sctx.fill();
 	sctx.strokeStyle = selected ? BUI.C.accent : BUI.C.panelBorder;
 	sctx.lineWidth = selected ? 3 : 2;
@@ -8787,17 +8789,17 @@ function drawPartyMenu(W, H) {
 	if (partyMenu.summary) { drawSummary(W, H, u); return; }
 	const act = partyMenu.action;
 	menuChrome(W, H, u, 'PARTY', partyMenu.swapFrom != null
-		? `Swapping ${party[partyMenu.swapFrom]?.name || ''} — pick the slot to swap it with (X cancels).`
+		? `Swapping ${S.party[partyMenu.swapFrom]?.name || ''} — pick the slot to swap it with (X cancels).`
 		: act ? `Choose an action for ${act.mon.name}.` : 'Choose a POKEMON, then an action (field moves it knows, SUMMARY, SWITCH).');
-	party.forEach((m, i) => {
+	S.party.forEach((m, i) => {
 		const note = (i === 0 ? 'LEAD ' : '') + (m.heldItem ? Bag.ITEMS[m.heldItem]?.name || m.heldItem : '');
 		monRow('party:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u - (m.heldItem && !act ? 74 * u : 0), 56 * u, m,
 			(act ? act.monIdx : partyMenu.idx) === i, u, note.trim());
 		if (m.heldItem && !act) {
 			const b = { id: 'take:' + i, x: W - 24 * u - 68 * u, y: (76 + i * 62) * u, w: 68 * u, h: 56 * u,
 				label: 'TAKE', center: true };
-			menuUi.push(b);
-			BUI.button(sctx, b, menuHover === b.id, u);
+			S.menuUi.push(b);
+			BUI.button(sctx, b, S.menuHover === b.id, u);
 		}
 	});
 	if (act) {
@@ -8807,8 +8809,8 @@ function drawPartyMenu(W, H) {
 		if (y + total > H - 12 * u) y = Math.max(70 * u, H - 12 * u - total);
 		act.options.forEach((opt, i) => {
 			const b = { id: 'pact:' + i, x, y: y + i * (bh + gap), w: bw, h: bh, label: opt.label, center: true };
-			menuUi.push(b);
-			BUI.button(sctx, b, act.idx === i || menuHover === b.id, u);
+			S.menuUi.push(b);
+			BUI.button(sctx, b, act.idx === i || S.menuHover === b.id, u);
 		});
 	}
 }
@@ -8817,7 +8819,7 @@ const STAT_LABEL = { hp: 'HP', atk: 'ATTACK', def: 'DEFENSE', spa: 'SP. ATK', sp
 
 // full-page summary for one party member: portrait, stats, moves
 function drawSummary(W, H, u) {
-	const m = party[partyMenu.idx];
+	const m = S.party[partyMenu.idx];
 	if (!m) { partyMenu.summary = false; return; }
 	menuChrome(W, H, u, m.name, `Lv${m.level}   ${m.gender === 'M' ? '♂' : m.gender === 'F' ? '♀' : ''}   #${String(Math.abs(m.num || 0)).padStart(3, '0')}`);
 	// portrait + types on the left
@@ -8911,19 +8913,19 @@ function drawSummary(W, H, u) {
 		const ac = (info.acc == null || info.acc === true) ? '—' : `${info.acc}`;
 		sctx.fillText(`${(info.type || '').toUpperCase()}  PW ${pw}  AC ${ac}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
 		const zid = 'summary-move:' + i;
-		if (partyMenu.moveSwap === i || menuHover === zid) {
+		if (partyMenu.moveSwap === i || S.menuHover === zid) {
 			sctx.strokeStyle = partyMenu.moveSwap === i ? '#ffd27a' : BUI.C.accent;
 			sctx.lineWidth = 2;
 			BUI.rr(sctx, bx + 1, yy + 1, bw - 2, 28 * u - 2, 6 * u); sctx.stroke();
 		}
 		// hit zone slightly taller than the drawn row for thumb forgiveness
-		menuUi.push({ id: zid, x: bx, y: yy - 2 * u, w: bw, h: 32 * u });
+		S.menuUi.push({ id: zid, x: bx, y: yy - 2 * u, w: bw, h: 32 * u });
 	});
 	// nav hint / lead button
 	const lead = { id: 'summary-lead', x: 40 * u, y: H - 52 * u, w: 200 * u, h: 40 * u,
 		label: partyMenu.idx === 0 ? 'IS LEAD' : 'MAKE LEAD', center: true };
-	menuUi.push(lead);
-	BUI.button(sctx, lead, menuHover === lead.id, u);
+	S.menuUi.push(lead);
+	BUI.button(sctx, lead, S.menuHover === lead.id, u);
 }
 
 // LIVING DEX — the completion wall: the whole (filtered) roster as an icon grid,
@@ -8953,8 +8955,8 @@ function drawDexGrid(W, H, u, list) {
 		const gx = marginX + (i % cols) * cell, gy = top + (Math.floor(i / cols) - startRow) * cell;
 		const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
 		const sel = dexMenu.idx === i, bid = 'dex:' + i;
-		menuUi.push({ id: bid, x: gx, y: gy, w: cell, h: cell }); // tap → menuTap sets idx + opens detail
-		sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : 'rgba(255,255,255,0.04)';
+		S.menuUi.push({ id: bid, x: gx, y: gy, w: cell, h: cell }); // tap → menuTap sets idx + opens detail
+		sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : 'rgba(255,255,255,0.04)';
 		BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.fill();
 		if (sel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2; BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.stroke(); }
 		if (seen) {
@@ -8999,8 +9001,8 @@ function drawDexMenu(W, H) {
 		const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
 		const bid = 'dex:' + idx;
 		const b = { id: bid, x: 24 * u, y: (76 + i * 40) * u, w: W - 48 * u, h: 34 * u };
-		menuUi.push(b);
-		sctx.fillStyle = dexMenu.idx === idx || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		S.menuUi.push(b);
+		sctx.fillStyle = dexMenu.idx === idx || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
 		BUI.rr(sctx, b.x, b.y, b.w, b.h, 6 * u); sctx.fill();
 		sctx.strokeStyle = dexMenu.idx === idx ? BUI.C.accent : BUI.C.panelBorder;
 		sctx.lineWidth = dexMenu.idx === idx ? 3 : 1;
@@ -9073,8 +9075,8 @@ function drawTownMap(W, H) {
 		const bid = 'townreg:' + i;
 		const b = { id: bid, x: (24 + i * 150) * u, y: 62 * u, w: 142 * u, h: 30 * u,
 			label: Fly.REGION_LABEL[r], center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || townMap.region === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || townMap.region === i, u);
 	});
 	// map panel: dots at normalized grid positions
 	const grid = Fly.GRID[region];
@@ -9111,7 +9113,7 @@ function drawTownMap(W, H) {
 		const visited = hasFlyPoint(t.map);
 		const isSel = townMap.idx === i;
 		const bid = 'town:' + i;
-		menuUi.push({ id: bid, x: dx - 12 * u, y: dy - 12 * u, w: 24 * u, h: 24 * u });
+		S.menuUi.push({ id: bid, x: dx - 12 * u, y: dy - 12 * u, w: 24 * u, h: 24 * u });
 		if (isSel) {
 			sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2;
 			sctx.beginPath(); sctx.arc(dx, dy, 9 * u, 0, Math.PI * 2); sctx.stroke();
@@ -9158,8 +9160,8 @@ function drawTownMap(W, H) {
 	}
 	if (visited) {
 		const b = { id: 'townfly', x: rx + 18 * u, y: ry + ph - 56 * u, w: 198 * u, h: 40 * u, label: 'FLY HERE', center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === 'townfly', u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === 'townfly', u);
 	}
 	// roamer tracker: once you've MET a roamer, the map tracks its current route
 	{
@@ -9238,7 +9240,7 @@ function drawTrainerCard(W, H) {
 		['POKeDEX', `${c.seen} seen / ${c.caught} own`],
 		['SHINIES', `${shinyCount} ★`],
 		['FRONTIER', `${frBP} BP · ${frSym} sym`],
-		['PARTY', `${party.length}/6`],
+		['PARTY', `${S.party.length}/6`],
 		['PLAYTIME', playtimeStr()],
 	];
 	const midX = cardX + cardW * 0.54;
@@ -9351,8 +9353,8 @@ function optionList(W, H, u, title, sub, rows, sel, idPrefix, flash) {
 		const idx = start + i;
 		const bid = idPrefix + idx;
 		const b = { id: bid, x: 24 * u, y: (84 + i * 50) * u, w: W - 48 * u, h: 44 * u, label, center: false };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || sel === idx, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || sel === idx, u);
 	});
 	if (flash) {
 		sctx.fillStyle = BUI.C.accent;
@@ -9366,7 +9368,7 @@ function drawDaycare(W, H) {
 	const st = Daycare.get();
 	if (daycareMenu.mode === 'deposit') {
 		menuChrome(W, H, u, 'DAY CARE', 'Which POKeMON should we look after?');
-		party.forEach((m, i) => monRow('dcdep:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, daycareMenu.idx === i, u));
+		S.party.forEach((m, i) => monRow('dcdep:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, daycareMenu.idx === i, u));
 		if (daycareMenu.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(daycareMenu.flash, 24 * u, H - 18 * u); }
 		return;
 	}
@@ -9379,20 +9381,20 @@ function drawDaycare(W, H) {
 function drawNameRater(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'NAME RATER', 'Whose nickname shall I judge?');
-	party.forEach((m, i) => monRow('nr:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, nameRater.idx === i, u));
+	S.party.forEach((m, i) => monRow('nr:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, nameRater.idx === i, u));
 }
 
 function drawHalfParty(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'MULTI BATTLE', `Choose ${halfPartyNeed()} POKeMON to battle beside STEVEN.`);
 	const ORD = ['1st', '2nd', '3rd'];
-	party.forEach((m, i) => {
+	S.party.forEach((m, i) => {
 		const at = halfParty.picked.indexOf(i);
 		monRow('hp3:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, halfParty.idx === i || at >= 0, u, at >= 0 ? ORD[at] : '');
 	});
 	const go = { id: 'hp3go', x: W - 226 * u, y: 16 * u, w: 110 * u, h: 36 * u, label: 'BATTLE', center: true };
-	menuUi.push(go);
-	BUI.button(sctx, go, menuHover === 'hp3go' || halfParty.idx === party.length, u);
+	S.menuUi.push(go);
+	BUI.button(sctx, go, S.menuHover === 'hp3go' || halfParty.idx === S.party.length, u);
 	if (halfParty.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(halfParty.flash, 24 * u, H - 18 * u); }
 }
 
@@ -9423,8 +9425,8 @@ function drawOptions(W, H) {
 		const sel = optionsMenu.idx === i;
 		const bid = 'opt:' + i;
 		const b = { id: bid, x: 40 * u, y: (84 + i * 46) * u, w: W - 80 * u, h: 40 * u };
-		menuUi.push(b);
-		sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		S.menuUi.push(b);
+		sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
 		BUI.rr(sctx, b.x, b.y, b.w, b.h, 8 * u); sctx.fill();
 		sctx.strokeStyle = sel ? BUI.C.accent : BUI.C.panelBorder;
 		sctx.lineWidth = sel ? 3 : 1;
@@ -9449,8 +9451,8 @@ function drawOptions(W, H) {
 		const bw = (W - 80 * u - 24 * u) / 4;
 		const bid = 'optact:' + i;
 		const b = { id: bid, x: 40 * u + i * (bw + 8 * u), y: actY, w: bw, h: 44 * u, label: a.label, center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || optionsMenu.idx === idx, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || optionsMenu.idx === idx, u);
 	});
 	// hint for the selected action (or a flash from the last one), else the default footer
 	const act = OPTION_ACTIONS[optionsMenu.idx - OPTION_KEYS.length];
@@ -9469,7 +9471,7 @@ function drawMoveShop(W, H) {
 	}
 	if (m.mode === 'pick-delete' || m.mode === 'pick-relearn') {
 		menuChrome(W, H, u, 'MOVE SERVICES', m.mode === 'pick-delete' ? 'Which POKeMON forgets a move?' : 'Which POKeMON recalls a move?');
-		party.forEach((mo, i) => monRow('mspick:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
+		S.party.forEach((mo, i) => monRow('mspick:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, m.idx === i, u));
 		if (m.flash) { sctx.fillStyle = BUI.C.accent; sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`; sctx.fillText(m.flash, 24 * u, H - 18 * u); }
 		return;
 	}
@@ -9490,9 +9492,9 @@ function drawMoveShop(W, H) {
 function drawStarterCell(id, x, y, cw, ch, sel, bid, u) {
 	const sp = battle.data.species[id];
 	const tc = BUI.TYPE_COLORS[sp?.types?.[0]] || '#888';
-	sctx.fillStyle = sel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+	sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
 	BUI.rr(sctx, x, y, cw, ch, 10 * u); sctx.fill();
-	sctx.strokeStyle = sel || menuHover === bid ? tc : BUI.C.panelBorder;
+	sctx.strokeStyle = sel || S.menuHover === bid ? tc : BUI.C.panelBorder;
 	sctx.lineWidth = sel ? 4 : 2;
 	BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 2, 10 * u); sctx.stroke();
 	const img = starterMenu.sprites[id];
@@ -9517,7 +9519,7 @@ function drawStarterMenu(W, H) {
 		row.ids.forEach((id, c) => {
 			const x = (70 + c * 165) * u;
 			const bid = `starterpick:${c}`;
-			menuUi.push({ id: bid, x, y, w: cw, h: ch });
+			S.menuUi.push({ id: bid, x, y, w: cw, h: ch });
 			drawStarterCell(id, x, y, cw, ch, starterMenu.col === c, bid, u);
 		});
 		return;
@@ -9532,8 +9534,8 @@ function drawStarterMenu(W, H) {
 		const rowSel = starterMenu.row === r;
 		const bid = `region:${r}`;
 		const b = { id: bid, x: 30 * u, y, w: W - 60 * u, h: ch };
-		menuUi.push(b);
-		sctx.fillStyle = rowSel || menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
+		S.menuUi.push(b);
+		sctx.fillStyle = rowSel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
 		BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.fill();
 		if (rowSel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2.5 * u; BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.stroke(); }
 		const cfg = NEW_GAME_INTRO[row.region] || {};
@@ -9555,8 +9557,8 @@ function drawShopMenu(W, H) {
 	['buy', 'sell'].forEach((m, i) => {
 		const bid = 'shopmode:' + m;
 		const b = { id: bid, x: (24 + i * 130) * u, y: 62 * u, w: 120 * u, h: 30 * u, label: m.toUpperCase(), center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || shopMenu.mode === m, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || shopMenu.mode === m, u);
 	});
 	const rows = selling ? sellList() : shopStockNow().map(id => ({ id }));
 	if (!rows.length) {
@@ -9573,13 +9575,13 @@ function drawShopMenu(W, H) {
 		const b = { id: bid, x: 24 * u, y: (104 + i * 48) * u, w: W - 118 * u, h: 42 * u,
 			label: it.name, sub: selling ? `have ${row.n}` : `have ${Bag.count(row.id)}`,
 			right: `$${price}`, kbSel: shopMenu.idx === idx };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || shopMenu.idx === idx, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || shopMenu.idx === idx, u);
 	});
 	for (const [id, label, y] of [['shopscroll:-1', '▲', 104], ['shopscroll:1', '▼', 320]]) {
 		const b = { id, x: W - 86 * u, y: y * u, w: 62 * u, h: 130 * u, label, center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === id, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === id, u);
 	}
 	if (shopMenu.flash) {
 		sctx.fillStyle = BUI.C.accent;
@@ -9623,8 +9625,8 @@ function drawBagMenu(W, H) {
 		const bid = 'item:' + idx;
 		const b = { id: bid, x: 24 * u, y: (76 + i * 52) * u, w: colW, h: 46 * u,
 			label: Bag.nameOf(id), right: `x${n}`, iconPad: 46 * u };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || (bagMenu.idx === idx && !bagMenu.picking), u);
 		drawBagIcon(sctx, id, b.x + 8 * u, b.y + (b.h - 32 * u) / 2, 32 * u);
 	});
 	if (bagMenu.ppPick) {
@@ -9636,8 +9638,8 @@ function drawBagMenu(W, H) {
 			const bid = 'pppick:' + i;
 			const b = { id: bid, x: W * 0.5, y: (76 + i * 52) * u, w: W * 0.47, h: 46 * u,
 				label: mv.name, right: `${mv.pp}/${mv.maxPp}` };
-			menuUi.push(b);
-			BUI.button(sctx, b, menuHover === bid || p.idx === i, u);
+			S.menuUi.push(b);
+			BUI.button(sctx, b, S.menuHover === bid || p.idx === i, u);
 		});
 	} else if (bagMenu.forget) {
 		const f = bagMenu.forget;
@@ -9648,14 +9650,14 @@ function drawBagMenu(W, H) {
 			const bid = 'forget:' + i;
 			const b = { id: bid, x: W * 0.5, y: (76 + i * 52) * u, w: W * 0.47, h: 46 * u,
 				label: mv.name, right: `${mv.pp}/${mv.maxPp}` };
-			menuUi.push(b);
-			BUI.button(sctx, b, menuHover === bid || f.idx === i, u);
+			S.menuUi.push(b);
+			BUI.button(sctx, b, S.menuHover === bid || f.idx === i, u);
 		});
 	} else if (bagMenu.picking) {
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 		sctx.fillText('Use on:', W * 0.5, 70 * u);
-		party.forEach((m, i) => {
+		S.party.forEach((m, i) => {
 			monRow('use:' + i, W * 0.5, (76 + i * 54) * u, W * 0.47, 48 * u, m, bagMenu.pickIdx === i, u);
 		});
 	}
@@ -9695,11 +9697,11 @@ function drawPcMenu(W, H) {
 		];
 	for (const [bid, label, x, w] of navBtns) {
 		const b = { id: bid, x, y: 62 * u, w, h: 22 * u, label, center: true };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid, u);
 	}
 	if (pcMenu.confirm != null) return; // the confirm banner + buttons say it all
-	party.forEach((m, i) => {
+	S.party.forEach((m, i) => {
 		monRow('pcp:' + i, 24 * u, (88 + i * 54) * u, W * 0.44, 48 * u, m,
 			pcMenu.side === 0 && pcMenu.idx === i, u);
 	});
@@ -9719,8 +9721,8 @@ function drawFerryMenu(W, H) {
 		const bid = 'sail:' + i;
 		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
 			label: d.label, big: true, center: true, kbSel: ferryMenu.idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || ferryMenu.idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || ferryMenu.idx === i, u);
 	});
 }
 
@@ -9732,8 +9734,8 @@ function drawPortalMenu(W, H) {
 		const bid = 'portal:' + i;
 		const b = { id: bid, x: 24 * u, y: (90 + i * 64) * u, w: W - 48 * u, h: 56 * u,
 			label, big: true, center: true, kbSel: portalMenu.idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || portalMenu.idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || portalMenu.idx === i, u);
 	});
 }
 
@@ -9745,8 +9747,8 @@ function drawVertical(W, H, u, title, sub, items, idx, idPrefix) {
 		const bid = idPrefix + ':' + i;
 		const b = { id: bid, x: W - bw - 24 * u, y: (80 + i * 46) * u, w: bw, h: 40 * u,
 			label: lab, center: true, kbSel: idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === bid || idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || idx === i, u);
 	});
 }
 function drawStartMenu(W, H) {
@@ -9780,7 +9782,7 @@ function drawRunMenu(W, H) {
 function drawFriendsMenu(W, H) {
 	const u = H / 480;
 	const sub = friendsChallenge.mode ? 'Choose a friend to challenge.'
-		: `Your code: ${mpAccount?.friendCode || '……'} — add friends and visit their world.`;
+		: `Your code: ${S.mpAccount?.friendCode || '……'} — add friends and visit their world.`;
 	menuChrome(W, H, u, 'FRIENDS', sub);
 	// row 0: add friend; row 1: the inbox (challenges + trade offers waiting)
 	const bd = friendsMenu.badges;
@@ -9795,7 +9797,7 @@ function drawFriendsMenu(W, H) {
 				: 'no challenges or trade offers waiting',
 		},
 	];
-	friends.forEach((f, i) => rows.push({
+	S.friends.forEach((f, i) => rows.push({
 		id: 'friend:' + (i + 2),
 		label: f.username + (f.online ? '  ●' : '  ○'),
 		sub: f.online ? (friendsChallenge.mode ? 'tap to challenge' : `in ${f.map || 'their world'} — tap to visit`) : 'offline — tap to offer a trade',
@@ -9804,10 +9806,10 @@ function drawFriendsMenu(W, H) {
 	rows.forEach((r, i) => {
 		const b = { id: r.id, x: 24 * u, y: (78 + i * 52) * u, w: W - 48 * u, h: 46 * u,
 			label: r.label, sub: r.sub, kbSel: friendsMenu.idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === r.id || friendsMenu.idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === r.id || friendsMenu.idx === i, u);
 	});
-	if (!friends.length) {
+	if (!S.friends.length) {
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 		sctx.fillText('No friends yet — share your code!', 24 * u, (78 + 60) * u);
@@ -9821,11 +9823,11 @@ function menuTap(id) {
 	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
 	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }
 	if (kind === 'take') {
-		const mon = party[+a];
+		const mon = S.party[+a];
 		if (mon?.heldItem) {
 			Bag.addItem(mon.heldItem);
 			mon.heldItem = null;
-			saveParty(party);
+			saveParty(S.party);
 		}
 		return;
 	}
@@ -9877,13 +9879,13 @@ function menuTap(id) {
 	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'summary-lead') {
-		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = party.splice(partyMenu.idx, 1); party.unshift(m); partyMenu.idx = 0; saveParty(party); }
+		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = S.party.splice(partyMenu.idx, 1); S.party.unshift(m); partyMenu.idx = 0; saveParty(S.party); }
 		return;
 	}
 	if (kind === 'summary-move') {
 		// reorder the summary's move slots: first tap arms, second tap swaps
 		// (same slot cancels) — PP rides along, the order persists on the mon
-		const m = party[partyMenu.idx];
+		const m = S.party[partyMenu.idx];
 		const i = +a;
 		if (!partyMenu.summary || !m || !(m.moves?.length > 1) || i >= m.moves.length) return;
 		if (partyMenu.moveSwap == null) { partyMenu.moveSwap = i; sfx('ui_select'); }
@@ -9892,7 +9894,7 @@ function menuTap(id) {
 			const j = partyMenu.moveSwap;
 			[m.moves[i], m.moves[j]] = [m.moves[j], m.moves[i]];
 			partyMenu.moveSwap = null;
-			saveParty(party);
+			saveParty(S.party);
 			sfx('ui_select');
 		}
 		return;
@@ -9904,7 +9906,7 @@ function menuTap(id) {
 	if (kind === 'dcdep') { daycareMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'nr') { nameRater.idx = +a; pressKey('z'); return; }
 	if (kind === 'hp3') { halfParty.idx = +a; pressKey('z'); return; }
-	if (kind === 'hp3go') { halfParty.idx = party.length; pressKey('z'); return; }
+	if (kind === 'hp3go') { halfParty.idx = S.party.length; pressKey('z'); return; }
 	if (kind === 'ms') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'mspick') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
@@ -9928,8 +9930,8 @@ const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcM
 // build a self-contained party snapshot the PvP engine can resolve without
 // any of our client-only data (move power/type/category baked in)
 function pvpParty() {
-	if (!party || !battle.data) return [];
-	return party.filter(m => m.curHP > 0).slice(0, 6).map(m => ({
+	if (!S.party || !battle.data) return [];
+	return S.party.filter(m => m.curHP > 0).slice(0, 6).map(m => ({
 		speciesId: m.speciesId, name: m.name, level: m.level, types: m.types, sprite: m.sprite,
 		weightkg: battle.data.species[m.speciesId]?.weightkg || 50, // Low Kick family
 		stats: { ...m.stats }, maxHP: m.maxHP, curHP: m.curHP, status: m.status || null,
@@ -10035,7 +10037,7 @@ function mailKey(k) {
 		const row = rows[mailMenu.idx];
 		if (!row) return;
 		if (row.yourInvite) { mailAccept(row); return; }
-		if (row.status === 'invited') { dialog.open(`Waiting for ${row.players.find(p => p !== mpAccount?.username)} to accept.`); return; }
+		if (row.status === 'invited') { dialog.open(`Waiting for ${row.players.find(p => p !== S.mpAccount?.username)} to accept.`); return; }
 		enterAsyncMatch(row.id);
 	}
 }
@@ -10043,7 +10045,7 @@ function drawMailMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'MAIL BATTLES', mailMenu.loading ? 'Checking the mailbox…'
 		: mailWaiting ? `${mailWaiting} waiting on you.` : 'Battle a turn at a time — no need to both be online.');
-	const me = mpAccount?.username;
+	const me = S.mpAccount?.username;
 	const rows = mailMenu.rows.map((m, i) => {
 		const opp = m.players.find(p => p !== me) || '?';
 		const sub = m.status === 'over'
@@ -10063,8 +10065,8 @@ function drawMailMenu(W, H) {
 	rows.forEach((r, i) => {
 		const b = { id: r.id, x: 24 * u, y: (78 + i * 52) * u, w: W - 48 * u, h: 46 * u,
 			label: r.label, sub: r.sub, kbSel: mailMenu.idx === i };
-		menuUi.push(b);
-		BUI.button(sctx, b, menuHover === r.id || mailMenu.idx === i, u);
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === r.id || mailMenu.idx === i, u);
 	});
 }
 
@@ -10137,7 +10139,7 @@ function rebuildTradeRows() {
 		const st = MP.cachedState() || {};
 		rows.push({ kind: 'pack', id: 'pack', label: 'Card Pack', owned: st.packs || 0, off: trade.mine.packs });
 	} else if (cat === 'POKeMON') {
-		party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
+		S.party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'party:' + i) ? 1 : 0 }));
 		getBox().forEach((m, i) => rows.push({ kind: 'mon', src: 'box:' + i, label: `${m.name} Lv.${m.level} (box)`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'box:' + i) ? 1 : 0 }));
@@ -10206,7 +10208,7 @@ function applyTradeSwap(t) {
 		const [z, i] = String(m._src || '').split(':');
 		if (z === 'party') partyRm.add(+i); else if (z === 'box') boxRm.add(+i);
 	}
-	for (let i = party.length - 1; i >= 0; i--) if (partyRm.has(i)) party.splice(i, 1);
+	for (let i = S.party.length - 1; i >= 0; i--) if (partyRm.has(i)) S.party.splice(i, 1);
 	if (boxRm.size) setBox(getBox().filter((_, i) => !boxRm.has(i)));
 	if (got.pokemon && got.pokemon.length) {
 		const nb = getBox();
@@ -10215,7 +10217,7 @@ function applyTradeSwap(t) {
 	}
 	for (const it of (gave.items || [])) for (let n = 0; n < (it.count | 0); n++) Bag.consume(it.id);
 	for (const it of (got.items || [])) Bag.addItem(it.id, it.count | 0);
-	saveParty(party);
+	saveParty(S.party);
 	MP.freshState().catch(() => {}); // pull the updated card collection / packs
 }
 function tradeKey(k) {
@@ -10312,7 +10314,7 @@ async function acceptChallengeFrom(from) {
 	enterMatch(data.matchId, false, data.match, sideOfMe(data.match));
 }
 function sideOfMe(match) {
-	return match.sides.findIndex(sd => sd.name === (mpAccount?.username));
+	return match.sides.findIndex(sd => sd.name === (S.mpAccount?.username));
 }
 async function enterMatch(matchId, spectator, matchObj, side) {
 	let match = matchObj;
@@ -10347,14 +10349,14 @@ const ghosts = new Map(); // username -> { tx, ty, facing, px, py }
 let _lastBeat = '', _lastBeatAt = 0;
 const BEAT_FLOOR_MS = 40_000;
 async function heartbeat(force) {
-	if (!MP_ON || loading) return;
+	if (!MP_ON || S.loading) return;
 	try {
 		const payload = {
 			map: world.current.name, x: player.tx, y: player.ty,
 			facing: player.facing,
 			status: pvp.blocking ? 'battling:' + (pvp.active?.matchId || '')
 				: frontier.active ? 'factory:' + (frontier.cfg?.name || 'BATTLE FRONTIER')
-					: visiting ? 'visiting:' + visiting.username : 'roaming',
+					: S.visiting ? 'visiting:' + S.visiting.username : 'roaming',
 			region: frontier.active ? (frontier.cfg?.name || '') : (world.current.map.name || ''),
 		};
 		// TIER 4 — presence is only worth writing when someone can SEE it. Alone on
@@ -10382,13 +10384,13 @@ async function visitWorld(f) {
 	const p = data.presence;
 	if (!p || !p.map) { dialog.open(`${f.username} isn't roaming right now.`); return; }
 	const file = world.fileFor(p.map) || p.map;
-	visiting = { username: f.username };
+	S.visiting = { username: f.username };
 	await moveToMap(file, p.x, p.y);
 	heartbeat();
 	dialog.open(`You warped into ${f.username}'s world!\n\nPress START and pick EXIT to return home.`);
 }
 async function leaveVisit() {
-	visiting = null;
+	S.visiting = null;
 	ghosts.clear();
 	const home = safeLoad(POS_KEY, null);
 	await moveToMap(home?.map ? (world.fileFor(home.map) || home.map) : 'PalletTown', home?.x, home?.y);
@@ -10400,13 +10402,13 @@ async function pollPresence() {
 	if (!MP_ON || pvp.blocking) return;
 	try {
 		const data = await MP.call('friends');
-		if (data.friends) friends = data.friends;
+		if (data.friends) S.friends = data.friends;
 		const here = new Set();
-		for (const f of friends) {
-			if (visiting && f.username === visiting.username) {
-				if (!f.online) { dialog.open(`${visiting.username} went offline. Returning home…`); await leaveVisit(); return; }
+		for (const f of S.friends) {
+			if (S.visiting && f.username === S.visiting.username) {
+				if (!f.online) { dialog.open(`${S.visiting.username} went offline. Returning home…`); await leaveVisit(); return; }
 				const theirFile = world.fileFor(f.map) || f.map;
-				if (f.map && theirFile !== world.current.name && !loading) { await moveToMap(theirFile, f.x, f.y); }
+				if (f.map && theirFile !== world.current.name && !S.loading) { await moveToMap(theirFile, f.x, f.y); }
 			}
 			if (f.online && f.map === world.current.name) {
 				here.add(f.username);
@@ -10434,8 +10436,8 @@ async function pollPresence() {
 
 // true when someone is (or could be) sharing my screen — drives fast polling
 function coLocated() {
-	return ghosts.size > 0 || !!visiting
-		|| friends.some(f => f.online && (f.map === world.current.name || (f.status || '').startsWith('visiting:')));
+	return ghosts.size > 0 || !!S.visiting
+		|| S.friends.some(f => f.online && (f.map === world.current.name || (f.status || '').startsWith('visiting:')));
 }
 
 // draw every friend ghost on my map, walking it along its waypoint queue at a
@@ -10526,7 +10528,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	await blockers.init();
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
-	trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
+	S.trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through
 	// to printing its own label, so the two have to arrive together
@@ -10535,12 +10537,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
 	}
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
-	party = loadParty(battle.data);
+	S.party = loadParty(battle.data);
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to
 	// the Factory and provisions a throwaway lead just before starting.
 	factoryStandalone = new URLSearchParams(location.search).has('factory');
-	if (party) { Dex.seedFrom([...party, ...getBox()]); dexMilestoneCheck(); }
+	if (S.party) { Dex.seedFrom([...S.party, ...getBox()]); dexMilestoneCheck(); }
 	// "No party" is NOT the same as "new game". Fork B hands over no POKeMON until
 	// you reach the professor's lab, so the whole stretch between choosing a region
 	// and picking a starter is partyless — and keying the region picker on `!party`
@@ -10555,7 +10557,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// a region but no seed (anything predating Fork B) still gets the picker, which
 	// is the safe direction — it can always start, never gets stuck.
 	const alreadyBegun = !!localStorage.getItem('magepunk_region') && Story.getFlag('story_seeded');
-	if (!party && !factoryStandalone && !alreadyBegun) {
+	if (!S.party && !factoryStandalone && !alreadyBegun) {
 		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
 		starterMenu.phase = 'region';
@@ -10597,7 +10599,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
-	loading = false;
+	S.loading = false;
 	await runMapSetupScripts(true);
 	// ...and the STARTING map's onFrame pass. moveToMap runs one on every later
 	// entry, but boot loads the first map directly (world.load, not moveToMap),
@@ -10615,7 +10617,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	try { battleResumed = resumeSavedBattle(); } catch (e) { console.warn('[battle-resume] failed', e); }
 	// heal saves stranded before resume existed: a starter in hand but the
 	// intro flags never landed (left mid-rival-battle), gating all progression
-	if (!battleResumed && party && !Story.getFlag('intro_done')) {
+	if (!battleResumed && S.party && !Story.getFlag('intro_done')) {
 		console.warn('[intro-heal] party without intro_done — completing the intro');
 		afterRival(playerRegion());
 	}
@@ -10624,12 +10626,12 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// a player who reloaded before hearing where to go. Replay the professor's
 	// welcome for them; it self-terminates by setting `intro_started`, so anyone
 	// who already heard it is left alone.
-	if (!party && !factoryStandalone && alreadyBegun && !Story.getFlag('intro_started') && !cutscene.blocking) {
+	if (!S.party && !factoryStandalone && alreadyBegun && !Story.getFlag('intro_started') && !cutscene.blocking) {
 		startIntroNarration(playerRegion());
 	}
 	// headless test hook
 	// test hook: drive the player straight, bypassing the game loop's input
-	function freezeLoop(on) { loading = !!on; }
+	function freezeLoop(on) { S.loading = !!on; }
 	function pumpPlayer(dir, run, ms) {
 		return new Promise(res => {
 			player.run = !!run;
@@ -10648,8 +10650,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 	}
 	// Test Realm: load the account, greet the player, begin presence
 	if (MP_ON) {
-		mpAccount = MP.cachedState() || await MP.freshState();
-		hud.textContent = `${world.current.map.name || startMap}  ·  ${mpAccount?.username || ''} (${mpAccount?.friendCode || '……'})`;
+		S.mpAccount = MP.cachedState() || await MP.freshState();
+		hud.textContent = `${world.current.map.name || startMap}  ·  ${S.mpAccount?.username || ''} (${S.mpAccount?.friendCode || '……'})`;
 		// adaptive presence: ~450ms when someone shares the map (minimal
 		// latency for side-by-side screens), ~1.8s when roaming alone
 		// the 450ms cadence is only worth paying when someone is actually watching
@@ -10681,11 +10683,11 @@ function drawFriendGhosts(ctx, camX, camY) {
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
-	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return party; }, get menuUi() { return menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
+	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return S.party; }, get menuUi() { return S.menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
-		get friends() { return friends; }, get visiting() { return visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
+		get friends() { return S.friends; }, get visiting() { return S.visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
 		get mailMenu() { return mailMenu; }, get mailWaiting() { return mailWaiting; }, refreshMail, sendMailChallenge, mailAccept, enterAsyncMatch,
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
@@ -10716,8 +10718,8 @@ function drawFriendGhosts(ctx, camX, camY) {
 	get safariState() { return safari; }, checkSafariGate, endSafari,
 	gcMenu, vfMenu, VFlip, gcKey, vfKey,
 	bgmNow, syncMapBgm, battleThemeKey, bgmGame, get musicMap() { return musicMap; },
-	persistBattle, resumeSavedBattle, wildBattleEnd, get mapScripts() { return mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
-		get trainerTeams() { return trainerTeams; }, seedStoryState, startScriptedBattle,
+	persistBattle, resumeSavedBattle, wildBattleEnd, get mapScripts() { return S.mapScripts; }, get mapStrings() { return mapStrings; }, get signTexts() { return signTexts; },
+		get trainerTeams() { return S.trainerTeams; }, seedStoryState, startScriptedBattle,
 		checkLegendaryTrigger, startLegendaryBattle, LEGENDARY_ENCOUNTERS, legendaryHere, legendariesHere,
 		toggleBike, diveTo, HM_FIELD, useFieldMove, openPartyAction, fieldMovesOf,
 		Badges, onTrainerDefeated, leagueGateMessage, playerRegion, drawTrainerCard, TIER_REWARDS, grantTierReward,
@@ -10831,7 +10833,7 @@ function drawFriendGhosts(ctx, camX, camY) {
 	// and drop straight into a run
 	if (factoryStandalone) {
 		hud.textContent = 'BATTLE FACTORY';
-		if (!party) party = Frontier.genTeam(battle.data, 50, 1); // throwaway lead (guards)
+		if (!S.party) S.party = Frontier.genTeam(battle.data, 50, 1); // throwaway lead (guards)
 		moveToMap('BattleFrontier_BattleFactoryLobby').then(() => {
 			dialog.open('BATTLE FACTORY\n\nYou’ll be lent a team of RENTAL POKeMON.\nWin battles back-to-back to earn BP!\n\nZ = Begin', () => startFacility('factory'));
 		});
