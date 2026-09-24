@@ -143,9 +143,11 @@ export function step(data, onHatch, hatchBoost = 1) {
 // already treats as "nothing to fold in".
 // Returns false when a bred egg is already occupying the slot, so the caller can
 // fall back to handing over the POKeMON itself rather than silently eating it.
-export function giftEgg(speciesId) {
+// `preset` pins what a scripted gift egg hatches with (the ODD EGG's fixed
+// Dizzy Punch moveset and its shiny roll): { moves: [id...], shiny }.
+export function giftEgg(speciesId, preset = null) {
 	if (!speciesId || state.egg) return false;
-	state.egg = { speciesId, hatch: EGG_HATCH_STEPS, ready: false, inherit: null, gift: true };
+	state.egg = { speciesId, hatch: EGG_HATCH_STEPS, ready: false, inherit: null, gift: true, preset };
 	save(state);
 	return true;
 }
@@ -203,11 +205,21 @@ export function applyInheritance(baby, inh, data, canLearn) {
 	baby.curHP = baby.stats.hp;
 }
 
+export function applyPreset(baby, preset, data) {
+	if (!baby || !preset) return;
+	if (preset.moves?.length) {
+		const moves = preset.moves.map(id => data.moves?.[id] ? { id, name: data.moves[id].name, pp: data.moves[id].pp, maxPp: data.moves[id].pp } : null).filter(Boolean);
+		if (moves.length) baby.moves = moves;
+	}
+	if (preset.shiny) baby.shiny = true;
+}
+
 // build the hatched baby (level 5), fold in the inheritance, clear the egg
 export function collectEgg(data, canLearn) {
 	if (!hasReadyEgg()) return null;
 	const baby = buildMon(state.egg.speciesId, 5, data);
 	applyInheritance(baby, state.egg.inherit, data, canLearn);
+	applyPreset(baby, state.egg.preset, data);
 	state.egg = null;
 	save(state);
 	if (baby) baby.friend = 120; // hatched mons start friendly

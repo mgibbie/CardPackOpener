@@ -24,7 +24,7 @@ progress, or does the script carry on and only skip content?** Most action
 specials sit in scripts that go on to set their own story flags, so a no-op
 skips a scene or a battle rather than stranding the player.
 
-## Verified blocker — fix next
+## Verified blocker — FIXED (giftspecials_test)
 
 - **`DoSpecialTrainerBattle` — Mossdeep Space Center, Steven multi battle
   (Hoenn main story).** No battle runs, `VAR_RESULT` never reads as a win, and
@@ -33,7 +33,10 @@ skips a scene or a battle rather than stranding the player.
   Cavern / Sootopolis. Needs a native multi battle (Steven + player vs Maxie +
   Tabitha), or at minimum a doubles battle whose outcome lands in VAR_RESULT.
   Companions in the same script: `ReducePlayerPartyToSelectedMons`,
-  `LoadPlayerParty`, `SavePlayerParty`.
+  `LoadPlayerParty`, `SavePlayerParty`. Also `ChooseHalfPartyForBattle` answered
+  0, which looped the player back to Steven's prompt forever.
+  **Fixed:** a double vs Maxie + Tabitha (decomp teams). Steven does not fight
+  yet; the AI-partner system is planned in `Plans/AI_PARTNER_PLAN.md`.
 
 ## Verified covered natively — not bugs
 
@@ -63,8 +66,11 @@ The script continues and sets its own flags; the player only misses the beat:
   Daisy's grooming, Buena's password, Kenji, the Celebi shrine event,
   `InitRoamMons` (Burned Tower beasts; check against the native roamers).
 
-The Johto gifts are the most player-visible of these: the NPC's text says a
-Pokémon was given and none arrives.
+The Johto gifts were the most player-visible of these: the NPC's text said a
+Pokémon was given and none arrived. **Fixed:** Dratini (with the Extremespeed
+set), the Odd Egg (the native Day Care service had also been swallowing the
+Day-Care Man's talk), and Shuckie lend/return. `tools/fix_johto_gifts.mjs`
+rebuilds the flattened Mania script.
 
 ## Queries that default to 0 on reachable scripts (worth a pass)
 
