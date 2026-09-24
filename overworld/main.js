@@ -16,10 +16,6 @@ import {
 	pollPresence, prettyId, pvpParty, refreshMail, sendCardChallenge, sendChallenge,
 	sendMailChallenge, shopStockNow, startTrade, tradeKey, visitWorld,
 } from './ow_pvp.js';
-// re-exported for the modules that import them from main.js
-export {
-	shopStockNow,
-} from './ow_pvp.js';
 // ow_menus.js: ow_menus.js — full-resolution canvas menus: party, bag, PC, dex, shops, options, town map...
 import {
 	anyMenuOpen, drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu,

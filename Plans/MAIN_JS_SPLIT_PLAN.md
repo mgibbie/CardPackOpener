@@ -87,6 +87,12 @@ and can be reverted on its own.
     down at load, and no-undef can't see it.
   - `tools/split_drift.mjs` lists source-reading tests whose literals no longer
     match after a move.
+  - CI also runs `battlecards/tests/unit/overworld_imports_test.mjs`, a static
+    import lint that assumes a plain ESM subset with **no re-exports**. So when
+    a moved name was imported from main.js by an earlier split module,
+    `extract_block` rewrites that module to import it from the new one directly
+    (PR #567 first tried a re-export from main.js, and CI caught it). Run it
+    locally before each PR.
   - `overworld/tests/owsource.mjs` gives source-reading tests main.js + every
     `ow_*.js`, so a check follows the code when it moves. Before each PR, every
     test literal is compared old vs new, and anything that no longer matches

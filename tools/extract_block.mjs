@@ -131,8 +131,26 @@ for (const op of ops) main = main.slice(0, op.at) + op.text + main.slice(op.at +
 const giveList = [...give].sort();
 const modPath = `./${outName.replace(/^overworld\//, '')}`;
 let importIntoMain = giveList.length ? `import {\n${wrap(giveList)}\n} from '${modPath}';\n` : '';
-// earlier split modules import these from main.js; keep that working by re-exporting
-if (reexport.length) importIntoMain += `// re-exported for the modules that import them from main.js\nexport {\n${wrap(reexport.sort())}\n} from '${modPath}';\n`;
+// earlier split modules import some moved names from main.js: point those imports at
+// the new module instead. (Not a re-export from main.js: the overworld keeps a plain
+// ESM subset with no re-exports, which battlecards' overworld_imports_test relies on.)
+const redirected = [];
+if (reexport.length) {
+	for (const f of fs.readdirSync('overworld').filter(x => /^ow_.*\.js$/.test(x) && `overworld/${x}` !== outName)) {
+		const p = `overworld/${f}`;
+		let text = fs.readFileSync(p, 'utf8');
+		const m = text.match(/import \{([^}]*)\} from '\.\/main\.js';/);
+		if (!m) continue;
+		const names = m[1].split(',').map(x => x.trim()).filter(Boolean);
+		const moved = names.filter(n => reexport.includes(n));
+		if (!moved.length) continue;
+		const rest = names.filter(n => !reexport.includes(n));
+		const direct = `import { ${moved.sort().join(', ')} } from '${modPath}';${EOL}`;
+		const fromMain = rest.length ? eol(`import {\n${wrap(rest)}\n} from './main.js';`) : '';
+		text = text.replace(m[0], direct + fromMain);
+		redirected.push({ p, text, moved });
+	}
+}
 // place it after the ow_state import
 const anchor = eol("import { S } from './ow_state.js';\n");
 if (!main.includes(anchor)) throw new Error('anchor import missing');
@@ -140,8 +158,10 @@ main = main.replace(anchor, anchor + eol(`// ${outName.replace(/^overworld\//, '
 
 const moduleSrc = eol(`${header.split('\n').map(l => l.startsWith('//') ? l : '// ' + l).join('\n')}\n${importLines.join('\n')}\n\n`) + block;
 console.log(`moved lines ${lo}-${hi}: ${need.size} imports (${fromMain.length} from main.js), ${give.size} exports back to main.js`);
+for (const r of redirected) console.log(`${r.p}: imports ${r.moved.join(', ')} from ${modPath} now, not main.js`);
 if (WRITE) {
 	fs.writeFileSync(outName, moduleSrc);
 	fs.writeFileSync(FILE, main);
+	for (const r of redirected) fs.writeFileSync(r.p, r.text);
 	console.log('written', outName, 'and', FILE);
 } else console.log('(dry run — pass --write)');
