@@ -138,7 +138,9 @@ async function waitFor(fn, ms) {
 			const ow = window.__ow, enc = ow.encounters;
 			// a table whose every slot is far below the lead's level
 			const id = '__repeltest__';
-			enc.data[id] = { land: { rate: 100, slots: [{ id: 'rattata', min: 2, max: 2, w: 100 }] } };
+			// rate 180 = every step on the gen-3 scale (rate*16/2880; see encounterChance).
+			// It was 100 back when every map rolled rate/100, which is now 55%.
+			enc.data[id] = { land: { rate: 180, slots: [{ id: 'rattata', min: 2, max: 2, w: 100 }] } };
 			const world = { isSurfable: () => false, isTallGrass: () => true, hasTallGrass: () => true };
 			let without = 0, with_ = 0;
 			for (let i = 0; i < 40; i++) {
