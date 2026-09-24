@@ -79,6 +79,17 @@ export function objectHiddenByFlag(ev, _crystal) {
 export function clearTempFlags() {
 	let n = 0;
 	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k)) { delete store.flags[k]; n++; }
+	// ...and the TEMP VARS. The decomp's ClearTempFieldEventData wipes
+	// VAR_TEMP_0..F on every map load too; this port kept them forever, so a value
+	// one map wrote gated coord triggers on every map after it. Reported: the
+	// Mauville gym switches are coord_events gated on VAR_TEMP_0 == 0, and
+	// VAR_TEMP_0 held junk the Vermilion gym had written — so no switch worked.
+	//
+	// Also sweep var keys that are not VAR_ names at all. The port only ever writes
+	// VAR_* vars; anything else is an unresolved `.equ` alias the transpile stored
+	// literally (SWITCH1_ID, TRASH_CAN_ID ...), fixed at the source by
+	// tools/fix_script_equ.mjs, whose leftovers would otherwise sit in saves.
+	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^VAR_/.test(k)) { delete store.vars[k]; n++; }
 	if (n) save();
 	return n;
 }
@@ -429,7 +440,12 @@ export class Cutscene {
 						if (typeof op.warp !== 'string' || WARP_NOT_A_MAP.test(op.warp)) return this._finish();
 						map = op.warp; id = 0;
 					}
-					ctx.warp?.(map, id);
+					// x/y were restored from the decomp by tools/fix_script_warps.mjs: the
+					// transpile kept only the first warp arg, so `warp MAP, 13, 51` (a
+					// COORDINATE) had shipped as door 13. `coord` marks a pure coordinate
+					// warp; a door+coord warp carries x/y as the fallback only.
+					const wx = op.x != null ? resolveValue(op.x) : null, wy = op.y != null ? resolveValue(op.y) : null;
+					ctx.warp?.(map, op.coord ? -1 : id, wx, wy);
 					return this._finish();
 				}
 				case 'trainerbattle': {
