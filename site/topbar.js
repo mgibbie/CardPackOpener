@@ -281,12 +281,14 @@ async function fetchNewsLatest() {
 function badgeCount() {
 	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0) + (newsUnseen() ? 1 : 0);
 }
+let pollFails = 0;   // consecutive polls whose challenges call failed: the cadence backs off
 async function poll() {
 	if (!MP.hasToken()) return;
 	fetchNewsLatest().then(() => setBadge(badgeCount())); // once per page life
+	let failed = false;
 	try {
 		const [ch, msg, pk, qs] = await Promise.all([
-			MP.call('challenges').catch(() => ({ challenges: [] })),
+			MP.call('challenges').catch(() => { failed = true; return { challenges: [] }; }),
 			MP.call('chat-get', { room: 'u:' + (MP.cachedState()?.username || '') }).catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
@@ -297,7 +299,19 @@ async function poll() {
 		applyPackTimer(pk);
 		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
 		setBadge(badgeCount());
-	} catch (e) {}
+	} catch (e) { failed = true; }
+	pollFails = failed ? pollFails + 1 : 0;
+}
+// The inbox badge's cadence. Each poll is FOUR function calls, on every open page
+// of the site; at every 12s, hidden or not, that was ~1,200 requests an hour per
+// tab, a big share of the 100,000/day that ran out on the free Cloudflare plan
+// (2026-09-24: the API answered 405 for the rest of the day). Now 30s while the
+// page is visible, nothing while it's hidden (a tab brought back polls at once),
+// and x2 back-off per consecutive failure, up to 5 minutes.
+function schedulePoll() {
+	clearTimeout(pollTimer);
+	const wait = Math.min(300_000, 30_000 * 2 ** Math.min(pollFails, 4));
+	pollTimer = setTimeout(async () => { if (!document.hidden) await poll(); schedulePoll(); }, wait);
 }
 
 // ---------- inbox panel ----------
@@ -962,8 +976,8 @@ function start() {
 	sendHit(); // count this page open (fires for logged-out visitors too)
 	if (!MP.hasToken()) return;
 	poll();
-	pollTimer = setInterval(poll, 12000);
-	document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+	schedulePoll();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); schedulePoll(); } });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
 else start();

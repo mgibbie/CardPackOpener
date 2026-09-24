@@ -345,8 +345,8 @@ export async function pollChallenges() {
 	if (anyMenuOpen() || battle.blocking) return;
 	// fetch the freshest incoming challenge every tick
 	let ch = null;
-	try { const data = await MP.call('challenges'); ch = (data.challenges || [])[0] || null; }
-	catch (e) { return; }
+	try { const data = await MP.call('challenges'); ch = (data.challenges || [])[0] || null; pollHealth.fails = 0; }
+	catch (e) { pollHealth.fails++; return; }
 	if (incomingChallenge) {
 		// a challenge dialog is already up — refresh it if the pending challenge
 		// changed type or sender (e.g. they switched a POKeMON challenge to a
@@ -488,6 +488,10 @@ export async function leaveVisit() {
 
 // one poll of every friend's presence: update ghosts for those on my map,
 // follow a visited friend across maps, drop friends who left
+// Consecutive failed polls, so the loops in main.js can back off. When the
+// Cloudflare function quota runs out every call fails; hammering it helps nobody.
+export const pollHealth = { fails: 0 };
+
 export async function pollPresence() {
 	if (!MP_ON || pvp.blocking) return;
 	try {
@@ -521,7 +525,8 @@ export async function pollPresence() {
 		for (const [u, g] of ghosts) {
 			if (!here.has(u) && ++g.missed >= 3) ghosts.delete(u);
 		}
-	} catch (e) {}
+		pollHealth.fails = 0;
+	} catch (e) { pollHealth.fails++; }
 }
 
 // true when someone is (or could be) sharing my screen — drives fast polling
