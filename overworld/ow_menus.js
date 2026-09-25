@@ -27,9 +27,10 @@ import { shopStockNow } from './ow_pvp.js';
 import { restoreBackup, runSaveAction } from './ow_saves.js';
 import { BAG_POCKETS, FERRY_DESTS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
 import { blendKey, blendMenu, contestKey, contestMenu } from './ow_venues.js';
+import { NEW_GAME_INTRO } from './ow_story.js';
 import {
-	DEX_GRID_COLS, KEY_ACTIONS, NEW_GAME_INTRO, OPTION_ACTIONS, OPTION_KEYS, ROAMERS, STARTERS,
-	THINGS_TO_DO, cardsItems, cardsMenu, daycareMenu, daycareOptions, deckSelect, decoKey, decoMenu,
+	DEX_GRID_COLS, KEY_ACTIONS, OPTION_ACTIONS, OPTION_KEYS, ROAMERS, STARTERS, THINGS_TO_DO,
+	cardsItems, cardsMenu, daycareMenu, daycareOptions, deckSelect, decoKey, decoMenu,
 	dexFilterLabel, dexList, dexMenu, friendsChallenge, friendsMenu, gcMenu, halfParty,
 	halfPartyNeed, hasFlyPoint, keyBinds, legendStats, levelCapNow, mailMenu, moveShop, nameRater,
 	optionsKey, optionsMenu, partyMenu, playerMenu, playerRegion, postgameLog, postgameObjective,

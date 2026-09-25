@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,7 +35,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(y.zubat?.spe === 1, 'Zubat trains Speed', JSON.stringify(y.zubat));
 	A(y.shuckle?.def === 1 && y.shuckle?.spd === 1, 'Shuckle trains BOTH defenses — split yields exist now', JSON.stringify(y.shuckle));
 	A(y.chansey?.hp === 2, 'Chansey trains HP', JSON.stringify(y.chansey));
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/magmaarmor'\)\) \? 2 : 1/.test(main),
 		'FLAME BODY / MAGMA ARMOR pass a double hatch pace into the daycare');
 	const dc = fs.readFileSync(path.join(ROOT, 'overworld/daycare.js'), 'utf8');
@@ -142,7 +143,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		});
 		if (pickup.exposed) A(!!pickup.held, 'PICKUP scoops an item after a win', JSON.stringify(pickup));
 		else {
-			const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+			const main = overworldSource();
 			A(/pickupCheck\(\);/.test(main) && /PICKUP_TABLE/.test(main), 'PICKUP is wired into the wild-victory path (source)');
 		}
 
