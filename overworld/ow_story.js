@@ -23,11 +23,14 @@ import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
+import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene } from './ow_scaling.js';
+import { whiteOut } from './ow_places.js';
+import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
+import { buildMonForGift } from './ow_gamecorner.js';
+import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import {
-	STARTERS, bossLevelFor, buildMonForGift, cutsceneCtx, dexMilestoneCheck, halfParty, inJohKanto,
-	johkantoLeagueKind, moveToMap, notePostBattleFinished, onTrainerDefeated, openHalfParty,
-	playerRegion, refreshFollower, refreshObjective, routeTrainerLevel, startCutscene, starterMenu,
-	urlPinnedMap, warpTo, whiteOut,
+	STARTERS, cutsceneCtx, halfParty, moveToMap, openHalfParty, refreshObjective, starterMenu,
+	urlPinnedMap, warpTo,
 } from './main.js';
 
 // ---------- ported map-script triggers ----------

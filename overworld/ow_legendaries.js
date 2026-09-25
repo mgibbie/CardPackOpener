@@ -9,8 +9,11 @@ import { battle, cutscene, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import { leadMon } from './party.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { startCutscene } from './ow_scaling.js';
+import { playerRegion } from './ow_progression.js';
+import { legendariesHere } from './ow_follower.js';
 import {
-	legendariesHere, playerRegion, startCutscene, starterMenu,
+	starterMenu,
 } from './main.js';
 
 // ---------- static legendary encounters ----------

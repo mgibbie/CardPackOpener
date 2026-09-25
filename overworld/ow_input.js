@@ -17,12 +17,13 @@ import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk, startWildBattle } from './ow_places.js';
+import { gcMenu } from './ow_gamecorner.js';
+import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import {
-	DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, MP_ON, NAMERATER_MAPS, cutsceneCtx, fossilManiacTalk,
-	fossilPick, fossilUnderpassTalk, gateReport, gcMenu, generatorTalk, ghostAt, lastOutdoor,
-	legendaryHere, momTalk, moveToMap, museumCuratorTalk, museumPaintTalk, noteHealPoint,
-	noteRejectedMove, openDaycare, openMoveShop, openNameRater, openTownMap, playerMenu,
-	ruinsWordTalk, scriptIsDisplayOnly, signTexts, startLegendaryBattle, startWildBattle, warpTo,
+	DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, MP_ON, NAMERATER_MAPS, cutsceneCtx, gateReport,
+	ghostAt, momTalk, moveToMap, noteRejectedMove, openDaycare, openMoveShop, openNameRater,
+	openTownMap, playerMenu, scriptIsDisplayOnly, signTexts, warpTo,
 } from './main.js';
 
 // ---------- input ----------

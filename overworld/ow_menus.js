@@ -31,12 +31,13 @@ import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
 import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems } from './ow_screens.js';
 import { KEY_ACTIONS } from './ow_keybinds.js';
+import { levelCapNow, playerRegion } from './ow_progression.js';
+import { gcMenu, vfMenu } from './ow_gamecorner.js';
 import {
 	OPTION_ACTIONS, OPTION_KEYS, STARTERS, THINGS_TO_DO, cardsMenu, daycareMenu, daycareOptions,
-	deckSelect, dexMenu, gcMenu, halfParty, halfPartyNeed, hasFlyPoint, legendStats, levelCapNow,
-	moveShop, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu, playerRegion, postgameLog,
-	postgameObjective, questMenu, runMenu, startMenu, starterMenu, todoRows, townMap, trade,
-	tradeMenu, trainerCard, vfMenu,
+	deckSelect, dexMenu, halfParty, halfPartyNeed, hasFlyPoint, legendStats, moveShop, nameRater,
+	optionsKey, optionsMenu, partyMenu, playerMenu, postgameLog, postgameObjective, questMenu,
+	runMenu, startMenu, starterMenu, todoRows, townMap, trade, tradeMenu, trainerCard,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------

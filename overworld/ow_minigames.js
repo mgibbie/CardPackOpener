@@ -12,9 +12,8 @@ import { safeLoad, safeSave } from './safestore.js';
 import * as Slots from './slots.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import {
-	gcMenu,
-} from './main.js';
+import { gcMenu } from './ow_gamecorner.js';
+
 
 // ---------- Trainer Hill (Hoenn, Route 111) ----------
 // The timed four-floor gauntlet: sign up at the reception desk, the clock

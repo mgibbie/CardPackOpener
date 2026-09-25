@@ -14,8 +14,9 @@ import { safeLoad, safeSave } from './safestore.js';
 import * as Slide from './slidepuzzle.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { dexMilestoneCheck } from './ow_follower.js';
 import {
-	dexMilestoneCheck, syncMapBgm, warpTo,
+	syncMapBgm, warpTo,
 } from './main.js';
 
 // ---------- Bug-Catching Contest (National Park, Tue/Thu/Sat) ----------

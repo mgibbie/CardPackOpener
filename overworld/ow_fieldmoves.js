@@ -24,10 +24,12 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { REPEL_KEY, repelWoreOff, savePos } from './ow_input.js';
+import { endSafari, lastOutdoor, miscEvents, safari, safariZoneOf, saveMiscEvents, saveSafari, startWildBattle } from './ow_places.js';
+import { playerRegion } from './ow_progression.js';
+import { checkLegendaryTrigger } from './ow_follower.js';
 import {
-	afterLoadError, backWarp, checkLegendaryTrigger, endSafari, findLanding, findSurfLanding,
-	lastOutdoor, miscEvents, moveToMap, openTownMap, partyMenu, playerRegion, refreshMapContent,
-	safari, safariZoneOf, saveMiscEvents, saveSafari, startWildBattle, warpTo,
+	afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, openTownMap, partyMenu,
+	refreshMapContent, warpTo,
 } from './main.js';
 
 // ---------- Mach Bike ----------
