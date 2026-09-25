@@ -89,6 +89,15 @@ and can be reverted on its own.
     / starter key handlers.
   - `fluteState` was assigned from inside the block, so it moved onto `S`.
   - main.js is at 7,775 lines.
+- **Extractions 6 + 7: `ow_venues.js` + `ow_minigames.js`, DONE on this
+  branch.**
+  - `ow_venues.js` (584 lines): the Bug-Catching Contest, the Trick House,
+    the Alph sliding puzzles + UNOWN DEX, and Pokémon Contests with the
+    berry blender.
+  - `ow_minigames.js` (226 lines): Trainer Hill and the Game Corner slots.
+  - `hillRun` was assigned from outside its block (a test hook's setter), so
+    it moved onto `S`.
+  - main.js is at 6,979 lines.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).
