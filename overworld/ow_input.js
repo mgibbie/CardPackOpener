@@ -22,9 +22,9 @@ import { gcMenu } from './ow_gamecorner.js';
 import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_music.js';
 import { DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, NAMERATER_MAPS, ghostAt, momTalk, playerMenu } from './ow_menustate.js';
+import { moveToMap, warpTo } from './ow_transitions.js';
 import {
-	MP_ON, cutsceneCtx, gateReport, moveToMap, noteRejectedMove, scriptIsDisplayOnly, signTexts,
-	warpTo,
+	MP_ON, cutsceneCtx, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
 
 // ---------- input ----------

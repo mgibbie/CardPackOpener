@@ -17,8 +17,9 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { mapWeatherNow } from './ow_follower.js';
+import { moveToMap } from './ow_transitions.js';
 import {
-	moveToMap, refreshObjective, scriptIsDisplayOnly,
+	refreshObjective, scriptIsDisplayOnly,
 } from './main.js';
 
 // ---------- the sealed champions ----------

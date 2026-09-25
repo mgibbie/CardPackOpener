@@ -19,9 +19,8 @@ import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck, mapWeatherNow, riftSpecies } from './ow_follower.js';
-import {
-	moveToMap, warpTo,
-} from './main.js';
+import { moveToMap, warpTo } from './ow_transitions.js';
+
 
 // ---------- blacking out ----------
 // Where you wake up after losing. Recorded at a POKeMON CENTER nurse (and at

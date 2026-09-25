@@ -35,8 +35,9 @@ import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcMenu, vfMenu } from './ow_gamecorner.js';
 import { daycareMenu, daycareOptions, halfParty, halfPartyNeed, moveShop, nameRater, optionsKey, tradeMenu } from './ow_music.js';
 import { OPTION_ACTIONS, OPTION_KEYS, THINGS_TO_DO, cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, todoRows, townMap, trade, trainerCard } from './ow_menustate.js';
+import { hasFlyPoint } from './ow_transitions.js';
 import {
-	STARTERS, hasFlyPoint, legendStats, postgameLog, postgameObjective, starterMenu,
+	STARTERS, legendStats, postgameLog, postgameObjective, starterMenu,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------

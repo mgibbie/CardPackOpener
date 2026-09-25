@@ -29,6 +29,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { SAIL_LABELS } from '../sail_fix.js';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -71,7 +72,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 	// the op and its bridge must both exist, or warpxy is a silent no-op
 	const ev = fs.readFileSync(path.join(OW, 'events.js'), 'utf8');
-	const mn = fs.readFileSync(path.join(OW, 'main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/case 'warpxy'/.test(ev), 'events.js understands a coordinate warp');
 	A(/warpXy: \(mapId, x, y\) => flyTo\(mapId, x, y\)/.test(mn), 'and main.js bridges it to flyTo');
 	A(/applySailFix\(\{ \.\.\.sharedScripts/.test(mn), 'the patch is applied where a map loads its scripts');

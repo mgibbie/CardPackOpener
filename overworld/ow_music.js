@@ -17,9 +17,8 @@ import * as Settings from './settings.js';
 import { bgm, sfx, syncBgmVolume } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { OPTION_ACTIONS, OPTION_KEYS, optionsMenu, townMap } from './ow_menustate.js';
-import {
-	flyTo, hasFlyPoint,
-} from './main.js';
+import { flyTo, hasFlyPoint } from './ow_transitions.js';
+
 
 // ---------- background music ----------
 // music_map.json: mapId -> bgm file key (tools/gen_bgm.mjs — the accurate

@@ -29,9 +29,8 @@ import { playerRegion } from './ow_progression.js';
 import { checkLegendaryTrigger } from './ow_follower.js';
 import { openTownMap } from './ow_music.js';
 import { partyMenu } from './ow_menustate.js';
-import {
-	afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo,
-} from './main.js';
+import { afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo } from './ow_transitions.js';
+
 
 // ---------- Mach Bike ----------
 // A free field toggle: faster movement, and the only way across Sky Pillar's
