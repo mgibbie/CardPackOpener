@@ -69,6 +69,18 @@ for (const v of mod.variables) {
 }
 if (problems.length) { console.log('REFUSED:\n  ' + [...new Set(problems)].join('\n  ')); process.exit(1); }
 
+// Statements that DO something at load (not declarations): as a separate module they
+// run before main.js's body, i.e. earlier than they used to. The TDZ check above
+// only covers main.js BINDINGS; page state main.js sets up first (a body class,
+// DOM text, storage) is invisible to it. The touch HUD's observer was installed
+// under `if (document.body.classList.contains('touch'))`, which is false that early
+// (mobile_test caught it). Listed for review, not refused.
+const loadTime = stmts.filter(s => {
+	const d = s.type === 'ExportNamedDeclaration' && s.declaration ? s.declaration : s;
+	return !['FunctionDeclaration', 'ClassDeclaration', 'VariableDeclaration', 'EmptyStatement'].includes(d.type);
+});
+if (loadTime.length) console.log(`REVIEW — these now run when the module loads, before main.js's body:\n  ${loadTime.map(s => `L${s.loc.start.line}: ${src.slice(s.range[0], s.range[1]).split('\n')[0].slice(0, 110)}`).join('\n  ')}`);
+
 // imports for the new module, grouped by source
 const bySource = new Map();   // source -> { ns, def, named: [] }
 const fromMain = [];

@@ -121,6 +121,18 @@ and can be reverted on its own.
   - `repelSteps`, `strengthActive`, `baseCtx` and `radioTune` moved onto `S`.
     `codemod_state` now also handles an **exported** let: it drops the
     `export` and rewrites each split module that imported it to read `S.x`.
+- **Extractions 14–16, DONE on this branch.** main.js is at 3,251 lines.
+  - `ow_loop.js` (380 lines): the frame loop `tick` + the touch HUD. Its
+    eleven watchdog lets (`cutsceneStall`, `moveStarveT`, `strandedSince`...)
+    moved onto `S` first.
+  - `ow_input.js` (364 lines): keyboard input, movement gates, the run button,
+    repel/gadget helpers. `ow_keybinds.js` (38 lines): remappable bindings.
+  - `runHeld`, `keyBinds` and `factoryStandalone` moved onto `S`. The last
+    two were exported, and codemod_state rewrote their importers.
+  - **Refused by extract_block, kept in main.js:** touch controls + INPUT
+    DIAGNOSTICS. Their top-level code calls `fitCanvas()` / `owlog()` while
+    loading, and `fitCanvas` reads main.js lets (`SCALE`) that don't exist
+    until main.js's body runs. That is the TDZ guard doing its job.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).

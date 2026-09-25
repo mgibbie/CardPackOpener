@@ -30,12 +30,13 @@ import { blendKey, blendMenu, contestKey, contestMenu } from './ow_venues.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
 import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems } from './ow_screens.js';
+import { KEY_ACTIONS } from './ow_keybinds.js';
 import {
-	KEY_ACTIONS, OPTION_ACTIONS, OPTION_KEYS, STARTERS, THINGS_TO_DO, cardsMenu, daycareMenu,
-	daycareOptions, deckSelect, dexMenu, gcMenu, halfParty, halfPartyNeed, hasFlyPoint, keyBinds,
-	legendStats, levelCapNow, moveShop, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu,
-	playerRegion, postgameLog, postgameObjective, questMenu, runMenu, startMenu, starterMenu,
-	todoRows, townMap, trade, tradeMenu, trainerCard, vfMenu,
+	OPTION_ACTIONS, OPTION_KEYS, STARTERS, THINGS_TO_DO, cardsMenu, daycareMenu, daycareOptions,
+	deckSelect, dexMenu, gcMenu, halfParty, halfPartyNeed, hasFlyPoint, legendStats, levelCapNow,
+	moveShop, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu, playerRegion, postgameLog,
+	postgameObjective, questMenu, runMenu, startMenu, starterMenu, todoRows, townMap, trade,
+	tradeMenu, trainerCard, vfMenu,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------
@@ -745,7 +746,7 @@ export function drawOptions(W, H) {
 	const u = H / 480;
 	if (optionsMenu.mode === 'controls') {
 		const rows = KEY_ACTIONS.map(a => {
-			const cur = keyBinds[a.id];
+			const cur = S.keyBinds[a.id];
 			const shown = (cur || a.def) === ' ' ? 'SPACE' : (cur || a.def).toUpperCase();
 			return optionsMenu.capture === a.id ? `${a.label}   >>> PRESS A KEY (Esc cancels)` : `${a.label}   —   ${shown}${cur ? '' : '  (default)'}`;
 		}).concat(['RESET ALL TO DEFAULTS', 'Back']);

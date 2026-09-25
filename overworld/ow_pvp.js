@@ -14,8 +14,9 @@ import { safeLoad } from './safestore.js';
 import { frontier } from './ow_frontier.js';
 import { getBox, setBox } from './ow_menukeys.js';
 import { mailMenu, openDeckSelect } from './ow_screens.js';
+import { POS_KEY } from './ow_input.js';
 import {
-	MP_ON, POS_KEY, TRADE_CATS, deckSelect, emptyOffer, moveToMap, trade,
+	MP_ON, TRADE_CATS, deckSelect, emptyOffer, moveToMap, trade,
 } from './main.js';
 
 // ---------- live PvP battles ----------

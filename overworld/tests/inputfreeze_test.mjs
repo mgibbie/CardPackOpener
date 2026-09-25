@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -30,7 +31,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/WATCHDOG 3 — input starvation/.test(mn), 'the tick carries a movement-starvation watchdog');
 	A(/const MOVE_STARVE_LIMIT = \d+/.test(mn), 'the starvation limit is a named constant');
 	A(/function gateReport\(\)/.test(mn) && /blockedBy/.test(mn), 'gateReport() names the blocking gate');

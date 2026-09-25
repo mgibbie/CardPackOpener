@@ -23,11 +23,11 @@ import * as Quest from './quest.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { REPEL_KEY, repelWoreOff, savePos } from './ow_input.js';
 import {
-	REPEL_KEY, afterLoadError, backWarp, checkLegendaryTrigger, endSafari, findLanding,
-	findSurfLanding, lastOutdoor, miscEvents, moveToMap, openTownMap, partyMenu, playerRegion,
-	refreshMapContent, repelWoreOff, safari, safariZoneOf, saveMiscEvents, savePos, saveSafari,
-	startWildBattle, warpTo,
+	afterLoadError, backWarp, checkLegendaryTrigger, endSafari, findLanding, findSurfLanding,
+	lastOutdoor, miscEvents, moveToMap, openTownMap, partyMenu, playerRegion, refreshMapContent,
+	safari, safariZoneOf, saveMiscEvents, saveSafari, startWildBattle, warpTo,
 } from './main.js';
 
 // ---------- Mach Bike ----------
