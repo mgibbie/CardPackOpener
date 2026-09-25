@@ -368,6 +368,11 @@ export function tick(now) {
 // Rather than touch the ~15 call sites, a MutationObserver mirrors those two DOM
 // nodes onto the canvas. Anything that writes the bar keeps working unchanged.
 export const touchHud = { msg: '', until: 0, objective: '' };
+// Called by main.js at the point this setup used to run inline. As a top-level
+// statement here it ran when this module LOADED, before main.js had marked the
+// body 'touch', so the observer was never installed and the touch HUD stayed
+// blank (mobile_test caught it).
+export function initTouchHud() {
 if (document.body.classList.contains('touch')) {
 	const hudEl = document.getElementById('hud'), objEl = document.getElementById('objective');
 	const obs = new MutationObserver(() => {
@@ -377,6 +382,7 @@ if (document.body.classList.contains('touch')) {
 	});
 	for (const el of [hudEl, objEl]) obs.observe(el, { childList: true, characterData: true, subtree: true });
 	touchHud.objective = (objEl.textContent || '').trim();
+}
 }
 function drawTouchHud(SW, SH) {
 	if (!document.body.classList.contains('touch')) return;

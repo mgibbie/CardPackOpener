@@ -20,7 +20,7 @@ import {
 } from './ow_keybinds.js';
 // ow_loop.js: ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
 import {
-	tick, touchHud,
+	initTouchHud, tick, touchHud,
 } from './ow_loop.js';
 // ow_screens.js: the START-menu screens and service counters (dex, friends, mail, quests, deck select, cards, run menu, in-game trades, DAY CARE, NAME RATER, move relearner)
 import {
@@ -2876,6 +2876,8 @@ export function startCutscene(steps, onDone) {
 	cutscene.start(steps, cutsceneCtx(), onDone);
 }
 
+
+initTouchHud();   // the touch HUD's observer, installed here where it always ran (see ow_loop.js)
 
 // ---------- boot ----------
 (async () => {
