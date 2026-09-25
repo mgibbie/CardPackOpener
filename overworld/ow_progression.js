@@ -306,6 +306,12 @@ const SAVE_REPAIRS = [
 	// uncle reappeared outside the Mauville gym after being beaten — Wally on the
 	// only tile south of the door. The beat's own hides are the missing flags.
 	{ when: 'FLAG_DEFEATED_WALLY_MAUVILLE', set: ['FLAG_HIDE_MAUVILLE_CITY_WALLY', 'FLAG_HIDE_MAUVILLE_CITY_WALLYS_UNCLE'] },
+	// The Meteor Falls scene stays rested (see RESTED_SCENE_OUTCOMES in ow_story.js),
+	// so saves that went through Meteor Falls before 2026-09-25 never got its
+	// outcomes, and the Route 112 cable-car guards never left. Meeting Prof. Cozmo
+	// proves the save was inside Meteor Falls, where the scene plays.
+	{ when: 'FLAG_MET_PROF_COZMO', set: ['FLAG_HIDE_METEOR_FALLS_TEAM_MAGMA', 'FLAG_HIDE_METEOR_FALLS_TEAM_AQUA',
+		'FLAG_HIDE_ROUTE_112_TEAM_MAGMA', 'FLAG_MET_ARCHIE_METEOR_FALLS', 'FLAG_HIDE_FALLARBOR_TOWN_BATTLE_TENT_SCOTT'] },
 ];
 export function repairSaves() {
 	for (const r of SAVE_REPAIRS) {
