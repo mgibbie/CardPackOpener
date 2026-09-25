@@ -26,11 +26,10 @@ import { startWildBattle } from './ow_places.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcKey, gcMenu, vfKey, vfMenu } from './ow_gamecorner.js';
 import { refreshFollower } from './ow_follower.js';
+import { daycareMenu, halfParty, halfPartyKey, moveShop, nameRater, optionsKey, townKey, tradeMenu } from './ow_music.js';
+import { cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import {
-	STARTERS, cardsMenu, daycareMenu, deckSelect, dexMenu, fading, flyTo, halfParty, halfPartyKey,
-	moveShop, moveToMap, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu, questMenu,
-	refreshObjective, runMenu, startMenu, starterMenu, townKey, townMap, trade, tradeMenu,
-	trainerCard,
+	STARTERS, fading, flyTo, moveToMap, refreshObjective, starterMenu,
 } from './main.js';
 
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------

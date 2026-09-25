@@ -33,11 +33,10 @@ import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, f
 import { KEY_ACTIONS } from './ow_keybinds.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcMenu, vfMenu } from './ow_gamecorner.js';
+import { daycareMenu, daycareOptions, halfParty, halfPartyNeed, moveShop, nameRater, optionsKey, tradeMenu } from './ow_music.js';
+import { OPTION_ACTIONS, OPTION_KEYS, THINGS_TO_DO, cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, todoRows, townMap, trade, trainerCard } from './ow_menustate.js';
 import {
-	OPTION_ACTIONS, OPTION_KEYS, STARTERS, THINGS_TO_DO, cardsMenu, daycareMenu, daycareOptions,
-	deckSelect, dexMenu, halfParty, halfPartyNeed, hasFlyPoint, legendStats, moveShop, nameRater,
-	optionsKey, optionsMenu, partyMenu, playerMenu, postgameLog, postgameObjective, questMenu,
-	runMenu, startMenu, starterMenu, todoRows, townMap, trade, tradeMenu, trainerCard,
+	STARTERS, hasFlyPoint, legendStats, postgameLog, postgameObjective, starterMenu,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------

@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -40,7 +41,7 @@ const seedMon = {
 // ---------- static: the cap table ----------
 const badgesSrc = fs.readFileSync(path.join(ROOT, 'overworld/badges.js'), 'utf8');
 A(/export const TIER_LEVEL_FLOOR/.test(badgesSrc), 'the gym level floors live in badges.js, beside the cap');
-A(!/^const TIER_LEVEL_FLOOR = \[/m.test(fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8')),
+A(!/^const TIER_LEVEL_FLOOR = \[/m.test(overworldSource()),
 	'main.js no longer keeps its own copy of the floors');
 // the engine default must stay uncapped so PvP and the run modes are untouched
 A(/this\.levelCap = MAX_LEVEL/.test(fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8')),

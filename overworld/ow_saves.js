@@ -13,8 +13,9 @@ import { safeSave, safeSaveStr } from './safestore.js';
 import * as Savefile from './savefile.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { LEGENDARY_ENCOUNTERS, awState } from './ow_legendaries.js';
+import { optionsMenu } from './ow_menustate.js';
 import {
-	MP_ON, optionsMenu,
+	MP_ON,
 } from './main.js';
 
 // ---------- overworld achievements sync ----------

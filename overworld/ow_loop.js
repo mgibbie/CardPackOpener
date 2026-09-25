@@ -22,12 +22,12 @@ import { drawFossilSpots, drawMuseum } from './ow_places.js';
 import { catchUpPostBattleScripts, refundPostBattleTry } from './ow_progression.js';
 import { drawGcMenu, drawVfMenu, gcMenu, vfMenu } from './ow_gamecorner.js';
 import { drawFollower, follower, updateFollower } from './ow_follower.js';
+import { bgmTick, daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
+import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
+import { persistBattle } from './ow_battleresume.js';
 import {
-	FADE_SPEED, MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, bgmTick, cardsMenu, ctx, daycareMenu,
-	deckSelect, dexMenu, drawWaterAnim, fade, findLanding, fitCanvas, frame, gateReport, halfParty,
-	lastRejectAt, moveShop, nameRater, openCanvasMenus, optionsMenu, partyMenu, persistBattle,
-	playerMenu, questMenu, rejectedMoves, runMenu, startMenu, starterMenu, townMap, trade,
-	tradeMenu, trainerCard,
+	FADE_SPEED, MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fade, findLanding, fitCanvas,
+	frame, gateReport, lastRejectAt, openCanvasMenus, rejectedMoves, starterMenu,
 } from './main.js';
 
 // ---------- loop ----------

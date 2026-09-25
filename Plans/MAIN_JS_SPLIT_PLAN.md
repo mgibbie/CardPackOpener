@@ -151,6 +151,19 @@ and can be reverted on its own.
   - `prizemoney_test`'s "no caller re-credits a battle prize" now scans every
     module, which is the scope it always meant: callers had been moving out
     of main.js.
+- **Extractions 22–24: main.js at 1,433 lines, DONE on this branch.**
+  - `ow_music.js`: BGM, plus the service-counter menus that followed it
+    (Day Care, Name Rater, move deleter, the multi-battle party picker, the
+    town map, the options keys).
+  - `ow_battleresume.js`: the battle snapshot + resume endings. Its pagehide
+    / beforeunload listeners still register before the save-sync push
+    (registered in boot), the same order as before.
+  - `ow_menustate.js`: the menus' state objects + service-map tables + MOM,
+    plus the water animation. The "water animation" header covered all of
+    it, so the module is named for the bulk.
+  - Two more end-marker slips: the next section's header had just moved
+    out. Find the next header with `awk` after each extraction, not from the
+    original list.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).
