@@ -11,6 +11,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -20,7 +21,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source ----------
 {
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/const KEY_ACTIONS = \[/.test(mn) && /SWAP MOVE SLOTS/.test(mn) && /RE-THROW BALL/.test(mn) && /FIND \(PC BOX SEARCH\)/.test(mn),
 		'the CONTROLS list names every hidden shortcut');
 	A(/pressKey\(k\)/.test(mn) && /translateKey\(e\.key\)/.test(mn), 'custom keys translate at the keydown door');

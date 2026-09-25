@@ -32,6 +32,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -66,7 +67,7 @@ const displayOnly = ops => !Array.isArray(ops) || ops.every(o => !o || !o.op || 
 		"Bill's PC is one of them");
 
 	// the routing rule must exist and must be checked BEFORE the sign text
-	const mn = fs.readFileSync(path.join(OW, 'main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/function scriptIsDisplayOnly/.test(mn), 'main.js classifies a script as display-only or not');
 	const i = mn.indexOf('for (const ev of world.current.map.bg_events');
 	const body = mn.slice(i, i + 2600);

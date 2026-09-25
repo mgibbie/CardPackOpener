@@ -13,7 +13,7 @@ import * as Dex from './pokedex.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openBpShop } from './ow_menukeys.js';
 import {
-	MP_ON, factoryStandalone,
+	MP_ON,
 } from './main.js';
 
 // ---------- BATTLE FRONTIER (7 facilities) ----------
@@ -159,19 +159,19 @@ function runFrontierBattle(foe, info, tier, brain) {
 function completeFacility() {
 	const cfg = frontier.cfg;
 	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
-	if (factoryStandalone) healTeam(S.party); else healParty(S.party); // heal+save only for a real save
+	if (S.factoryStandalone) healTeam(S.party); else healParty(S.party); // heal+save only for a real save
 	frontierEndDialog(`You conquered the ${cfg.name}!\n\nAll ${cfg.rounds} rounds won — bonus +${cfg.bonus || 0} BP!\nTotal BP: ${Frontier.getBP()}`);
 }
 function endFacility() {
 	const cfg = frontier.cfg, s = frontier.streak;
 	frontier.active = false; frontier.streak = 0; stopFrontierPublish();
-	if (factoryStandalone) healTeam(S.party); else healParty(S.party);
+	if (S.factoryStandalone) healTeam(S.party); else healParty(S.party);
 	frontierEndDialog(`Your ${cfg ? cfg.name : 'FRONTIER'} challenge ends.\n\nStreak this run: ${s}   (best: ${Frontier.bestStreak()})\nTotal BP: ${Frontier.getBP()}`);
 }
 // at run end: offer the BP EXCHANGE (spend what you just earned), then — in the
 // standalone mini-game — offer another run instead of dropping to the overworld
 function frontierEndDialog(msg) {
-	const playAgain = () => { if (factoryStandalone) dialog.open('Play again?   Z = Yes   X = No', d => { if (d !== 'x') startFacility('factory'); }); };
+	const playAgain = () => { if (S.factoryStandalone) dialog.open('Play again?   Z = Yes   X = No', d => { if (d !== 'x') startFacility('factory'); }); };
 	dialog.open(msg + '\n\nSpend BP now?   Z = BP SHOP   X = Leave', declined => {
 		if (declined !== 'x') openBpShop(playAgain); else playAgain();
 	});

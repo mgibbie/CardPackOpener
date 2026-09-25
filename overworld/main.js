@@ -9,6 +9,19 @@ import {
 } from './ow_core.js';
 // the shared mutable state (see ow_state.js)
 import { S } from './ow_state.js';
+// ow_input.js: ow_input.js — keyboard input: held-key tracking, the movement gates, the run button, and the item/repel helpers bound to input.
+import {
+	INPUT_TRACE, KEYMAP, POS_KEY, heldKeys, interact, owlog, repelWoreOff, savePos, setRepel,
+	tickStats, typingInChat, useGadget,
+} from './ow_input.js';
+// ow_keybinds.js: ow_keybinds.js — remappable key bindings (load/save and the action lookup the input layer uses).
+import {
+	KEYBIND_KEY, KEY_ACTIONS, assignKeyBind, normKey, translateKey,
+} from './ow_keybinds.js';
+// ow_loop.js: ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
+import {
+	tick, touchHud,
+} from './ow_loop.js';
 // ow_screens.js: the START-menu screens and service counters (dex, friends, mail, quests, deck select, cards, run menu, in-game trades, DAY CARE, NAME RATER, move relearner)
 import {
 	dexAll, dexFilterLabel, dexKey, dexList, drawDeckSelect, drawNpcTrade, drawPlayerMenu,
@@ -158,17 +171,17 @@ let friendGhost = null; // a friend's live sprite while we visit their map
 // iPhone), so nearest-neighbour doubled some pixel columns and not others and
 // the grid visibly crawled while walking. An integer device-pixel scale keeps
 // every game pixel the same size; it also sizes battle/menu text to the screen.
-let SCALE = 3;
+export let SCALE = 3;
 // Portrait battles: battle/pvp scenes are vector-drawn at full canvas
 // resolution, so while one is blocking on a portrait screen the canvas breaks
 // out of the GBA 3:2 frame and fills the viewport (tick() flips this; the
 // scene lays itself out for the tall aspect via battleui.layout). Without it a
 // portrait phone letterboxed the whole battle into a ~220px-tall band with
 // ~20px touch targets and left 70% of the screen black.
-let sceneTall = false;
-function fitCanvas() {
+S.sceneTall = false;
+export function fitCanvas() {
 	const dpr = window.devicePixelRatio || 1;
-	if (sceneTall) {
+	if (S.sceneTall) {
 		const bdpr = Math.min(dpr, 2); // match the battlecards DPR cap — no visible gain past 2
 		const cssW = innerWidth - 4;   // room for the canvas border
 		const cssH = innerHeight - 68; // topbar clearance (flex-end pins the canvas to the bottom)
@@ -212,9 +225,9 @@ function fitCanvas() {
 	screen.style.height = (VIEW_H * s / dpr) + 'px';
 	sctx.imageSmoothingEnabled = false; // resizing resets context state
 }
-const frame = document.createElement('canvas'); // native view-sized (240x160 landscape)
+export const frame = document.createElement('canvas'); // native view-sized (240x160 landscape)
 frame.width = VIEW_W; frame.height = VIEW_H;
-const ctx = frame.getContext('2d', { alpha: false });
+export const ctx = frame.getContext('2d', { alpha: false });
 ctx.imageSmoothingEnabled = false;
 fitCanvas();
 let fitT = null; // rotations/keyboard fire resize in bursts — settle first
@@ -278,7 +291,7 @@ export function postgameLog() {
 	rows.push({ label: `LEGENDS — ${caught}/${total}`, state: caught >= total ? 'done' : (Story.getFlag('beat_red') ? 'current' : 'locked') });
 	return rows;
 }
-let signTexts = {};
+export let signTexts = {};
 // Ops that only DISPLAY. A script built from nothing else is faithfully
 // represented by its extracted sign text, so the cheap dump is fine. Anything
 // else — a branch, an item check, a flag, a special — has to actually RUN, or
@@ -286,7 +299,7 @@ let signTexts = {};
 // decide. See the bg_event loop in interact().
 const SIGN_INERT_OPS = new Set(['lock', 'lockall', 'release', 'releaseall', 'faceplayer',
 	'msg', 'waitmsg', 'closemsg', 'end', 'return', 'waitbutton', 'nop']);
-function scriptIsDisplayOnly(ops) {
+export function scriptIsDisplayOnly(ops) {
 	if (!Array.isArray(ops)) return true;
 	for (const o of ops) if (o && o.op && !SIGN_INERT_OPS.has(o.op)) return false;
 	return true;
@@ -656,7 +669,7 @@ let postBattlePending = null;
 // all, so the first entry after a page load never ran it (reported: "it ran on
 // the second entry"). Now map entry just arms it, and the tick fires it the
 // first frame nothing else owns the screen.
-let postBattleCatchUpArmed = false;
+S.postBattleCatchUpArmed = false;
 
 // ONE-TIME REPAIRS for saves written while a bug was live. Each entry is a
 // condition that proves the story already moved past a beat, and the flags that
@@ -676,7 +689,7 @@ function repairSaves() {
 // The watchdog stopping a beat is the ENVIRONMENT failing, not the beat — on a
 // slow device it used to happen every run. Charging that as a try would still
 // burn the beat after three reloads, so a watchdog kill hands the try back.
-function refundPostBattleTry() {
+export function refundPostBattleTry() {
 	if (!postBattlePending) return;
 	const st = postBattleStore();
 	if (st.tries[postBattlePending] > 0) st.tries[postBattlePending]--;
@@ -724,7 +737,7 @@ function allTrainersOnMap() {
 	});
 }
 
-function catchUpPostBattleScripts() {
+export function catchUpPostBattleScripts() {
 	if (cutscene.blocking || dialog.blocking || battle.blocking) return;
 	const st = postBattleStore();
 	const done = new Set(st.done);
@@ -844,8 +857,8 @@ S.loading = true;
 // fadeTo(0) (in). While a fade runs, `fading` freezes input via menuBlocking so
 // no stray step slips through the black. Honors REDUCED_MOTION (instant cut).
 export const REDUCED_MOTION_OW = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fade = { alpha: 0, target: 0 };
-const FADE_SPEED = 6; // alpha units/sec (~170ms each way)
+export const fade = { alpha: 0, target: 0 };
+export const FADE_SPEED = 6; // alpha units/sec (~170ms each way)
 export const fading = () => fade.alpha > 0.001 || fade.target > 0.001;
 function fadeTo(target) {
 	if (REDUCED_MOTION_OW) { fade.alpha = target; fade.target = target; return Promise.resolve(); }
@@ -861,383 +874,19 @@ function fadeTo(target) {
 // safety-net watchdogs (see tick): a map load that hangs/throws must never strand
 // loading=true (the whole game loop bails on it), and a plot cutscene must never
 // block forever with no player-facing UI. Both self-recover after a grace period.
-let loadWatchStart = null;    // rAF timestamp when `loading` first went true
-let cutsceneStall = 0, cutsceneWatchSig = '';   // WATCHDOG 2: game-seconds a cutscene has made no progress
-let strandedSince = null;   // WATCHDOG 4: rAF timestamp the player first looked boxed in
-let moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
-const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
+S.loadWatchStart = null;    // rAF timestamp when `loading` first went true
+S.cutsceneStall = 0; S.cutsceneWatchSig = '';   // WATCHDOG 2: game-seconds a cutscene has made no progress
+S.strandedSince = null;   // WATCHDOG 4: rAF timestamp the player first looked boxed in
+S.moveStarveT = 0;          // seconds a held direction has gone undelivered (WATCHDOG 3)
+export const MOVE_STARVE_LIMIT = 3;  // long enough that no legitimate hitch trips it
 // Movement input the DOOR turned away. The first version of WATCHDOG 3 armed
 // only on heldKeys, which is circular: the gate that freezes the player is the
 // same gate that stops heldKeys ever filling, so the watchdog could not see the
 // freeze it was written for. Rejections are the evidence that someone is trying.
-let rejectedMoves = 0, lastRejectAt = 0, rejectStarveT = 0, moveStuckT = 0;
-const REJECT_STARVE_LIMIT = 8; // longer: a dialog legitimately turns arrows away
-function noteRejectedMove() { rejectedMoves++; lastRejectAt = performance.now(); }
+export let rejectedMoves = 0, lastRejectAt = 0; S.rejectStarveT = 0; S.moveStuckT = 0;
+export const REJECT_STARVE_LIMIT = 8; // longer: a dialog legitimately turns arrows away
+export function noteRejectedMove() { rejectedMoves++; lastRejectAt = performance.now(); }
 
-// ---------- input ----------
-// INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
-// movement event, listener attach, and lifecycle transition. See gateReport().
-const INPUT_TRACE = new URLSearchParams(location.search).has('owlog');
-let lastBlockedBy = '(boot)';
-function owlog(...a) { if (INPUT_TRACE) console.log('[owinput]', ...a); }
-// The gate flags only explain a freeze the game KNOWS about. A subsystem that
-// throws every frame freezes the player with every flag clear, so count how far
-// down the tick we actually get.
-const tickStats = { frames: 0, playerUpdates: 0, reachedMoveBlock: 0, lastError: null, errors: 0 };
-addEventListener('error', e => { tickStats.errors++; tickStats.lastError = String(e.message || e.error); });
-addEventListener('unhandledrejection', e => { tickStats.errors++; tickStats.lastError = 'unhandled rejection: ' + String(e.reason && e.reason.message || e.reason); });
-const KEYMAP = {
-	ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-	w: 'up', s: 'down', a: 'left', d: 'right',
-};
-const heldKeys = [];
-let wasInBattle = false; // when a battle ends, flush held keys so we don't take a stray step out of it
-let runHeld = false; // Shift on keyboard, holding B on touch
-// while typing in the chat box, keys belong to the input, not the game
-const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
-addEventListener('keydown', e => {
-	if (typingInChat()) { if (KEYMAP[e.key]) owlog('keydown IGNORED', e.key, 'reason=typingInChat'); return; }
-	// while a menu/dialog/battle is open, arrows navigate options — don't also
-	// queue overworld movement (that made the player walk while browsing menus)
-	if (menuBlocking()) {
-		if (KEYMAP[e.key]) { e.preventDefault(); noteRejectedMove(); if (INPUT_TRACE) owlog('keydown IGNORED', e.key, 'reason=' + gateReport().blockedBy); }
-		return;
-	}
-	if (e.key === 'Shift') runHeld = true;
-	const dir = KEYMAP[e.key];
-	if (dir) {
-		e.preventDefault();
-		if (!heldKeys.includes(dir)) heldKeys.unshift(dir);
-		owlog('keydown ACCEPTED', e.key, '->', dir, 'held=' + heldKeys.join('|'));
-	}
-});
-addEventListener('keyup', e => {
-	if (e.key === 'Shift') runHeld = false;
-	const dir = KEYMAP[e.key];
-	if (dir) {
-		const i = heldKeys.indexOf(dir);
-		if (i >= 0) heldKeys.splice(i, 1);
-		owlog('keyup', e.key, '->', dir, 'held=' + heldKeys.join('|'));
-	}
-});
-owlog('listeners attached: keydown/keyup (movement)');
-
-// where you are, so a return visit resumes there (URL params still win)
-export const POS_KEY = 'magepunk_pos_v1';
-// REPEL steps remaining. Persisted so it survives a reload mid-cave, and read by
-// the step handler + encounters.roll. Nothing read the repel items before this.
-export const REPEL_KEY = 'magepunk_repel_v1';
-export const REPEL_LAST_KEY = 'magepunk_repellast'; // which repel kind was last used, for the wear-off re-offer
-S.repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
-export function setRepel(n) { S.repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(S.repelSteps)); }
-// the gadget key-items (Escape Rope / Itemfinder / Town Map), inert since
-// day one. Returns true when the id was one of them (handled or refused).
-export function useGadget(id) {
-	if (id === 'escaperope') {
-		if ((world.current?.map?.map_type || '') !== 'MAP_TYPE_UNDERGROUND' || !lastOutdoor) {
-			bagMenu.flash = 'Nothing to escape from here.';
-			return true;
-		}
-		Bag.consume(id);
-		bagMenu.open = false;
-		dialog.open('You climbed the ESCAPE ROPE\nback to the open air!', () => moveToMap(lastOutdoor.map, lastOutdoor.x, lastOutdoor.y));
-		return true;
-	}
-	if (id === 'itemfinder') {
-		const hidden = items.balls.filter(b => b.hidden);
-		if (!hidden.length) { sfx('ui_denied'); bagMenu.flash = 'The ITEMFINDER stays silent. Nothing buried here.'; return true; }
-		let best = hidden[0], bd = Infinity;
-		for (const b of hidden) { const d = Math.abs(b.tx - player.tx) + Math.abs(b.ty - player.ty); if (d < bd) { bd = d; best = b; } }
-		const dx = best.tx - player.tx, dy = best.ty - player.ty;
-		sfx('notice');
-		bagMenu.flash = bd === 0 ? "BEEP BEEP BEEP! It's right under you!"
-			: `BEEP! Something is buried to the ${[dy < 0 ? 'north' : dy > 0 ? 'south' : '', dx > 0 ? 'east' : dx < 0 ? 'west' : ''].filter(Boolean).join('-')}${bd <= 6 ? ' — close by!' : '.'}`;
-		return true;
-	}
-	if (id === 'townmap') { bagMenu.open = false; openTownMap(); return true; }
-	return false;
-}
-
-// the gen-5 nicety: when a repel runs out and the bag holds another of the same
-// kind, offer it on the spot instead of making the player dig through the bag
-export function repelWoreOff() {
-	const id = localStorage.getItem(REPEL_LAST_KEY);
-	const item = id && Bag.ITEMS[id];
-	if (!item || item.kind !== 'repel' || Bag.count(id) < 1) {
-		hud.textContent = 'REPEL\'s effect wore off...';
-		return;
-	}
-	dialog.open(`REPEL's effect wore off...\nUse another ${item.name}? (${Bag.count(id)} left)\n\nZ = Yes   X = No`, declined => {
-		if (declined === 'x') return;
-		Bag.consume(id);
-		setRepel(item.steps || 100);
-		hud.textContent = `${item.name} is working again. (${item.steps} steps)`;
-	});
-}
-// standalone Battle Factory mini-game (?factory=1 from the home page): rentals only,
-// no save/party needed — and it must never write over a real overworld save
-export let factoryStandalone = false;
-export function savePos() {
-	if (factoryStandalone) return; // the mini-game never persists position
-	if (window.__followTest) return; // the follower-test arena must never become your saved position
-	// `back` rides along because a few Crystal maps leave by a -1 "return to
-	// where you came from" warp (Pokecenter2F, the dept-store elevators, the Fast
-	// Ship). That source lived only in memory, so reloading inside one of them
-	// left backWarp() with nothing to go back TO and the exit silently did
-	// nothing — you were sealed in. See backWarp's fallback for the second net.
-	safeSave(POS_KEY, {
-		map: world.current.name, x: player.tx, y: player.ty,
-		back: world.lastWarpSource || null,
-	});
-}
-// Z in front of something: services, talk-to trainers (incl. gym leaders), signs
-export function interact() {
-	if (player.moving || trainers.engaging) return;
-	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
-	const fx = player.tx + dx, fy = player.ty + dy;
-	// another player standing on the faced tile — challenge them or offer a trade
-	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
-	// a disguised VOLTORB "item ball" springs its ambush
-	const amb = items.ambushAt(fx, fy);
-	if (amb) {
-		items.takeAmbush(amb);
-		dialog.open("It's not an item — the ball has EYES!\n\nVOLTORB attacked!", () => startWildBattle({ id: amb.ambush, level: 25 }));
-		return;
-	}
-	// item balls / berry trees / hidden items (facing tile, then standing tile)
-	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
-	if (found) { sfx('item_get'); dialog.open(found); return; }
-	// field obstacles: point the player at the right HM (used from the party menu)
-	const fo = items.fieldObjAt(fx, fy);
-	if (fo) {
-		dialog.open(fo.kind === 'rock' ? 'A rugged rock blocks the way.\n\nROCK SMASH could break it apart.'
-			: fo.kind === 'boulder' ? "It's a hefty boulder.\n\nSTRENGTH could push it aside."
-			: 'A leafy tree grows here.\n\nCUT could clear a path through it.');
-		return;
-	}
-	// a static legendary on the faced tile — walk up and challenge it
-	const leg = legendaryHere();
-	if (leg && fx === leg.x && fy === leg.y) { startLegendaryBattle(leg); return; }
-	// a Silph Co shutter with no CARD KEY in the bag
-	if (silphDoorAt(fx, fy) && !Bag.count('cardkey')) {
-		dialog.open('A heavy security shutter bars the way.\nThe card reader blinks RED.\n\nIt wants a CARD KEY.');
-		return;
-	}
-	// a SECRET BASE spot in the rock/tree/shrub face (Emerald's behaviors survive
-	// in the layouts, so all ~70 real spots work), or decorating inside your own
-	{
-		const bb = world.behaviorAt(fx, fy);
-		if (bb >= 0x90 && bb <= 0x9D) { secretSpotInteract(fx, fy, bb); return; }
-	}
-	// a HILL GUARD blocking a Trainer Hill floor
-	{
-		const hg = hillGuardAt(fx, fy);
-		if (hg) { startHillBattle(hg.key, hg.i); return; }
-	}
-	if (S.baseCtx && baseDecoInteract(fx, fy)) return;
-	const svc = services.kindAt(fx, fy);
-	if (svc === 'nurse') {
-		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
-		return;
-	}
-	if (svc === 'pc') { sfx('pc_on'); pcMenu.open = true; pcMenu.side = 0; pcMenu.idx = 0; return; }
-	if (svc === 'shop') { shopMenu.open = true; shopMenu.idx = 0; shopMenu.mode = 'buy'; shopMenu.flash = null; return; }
-	if (svc === 'ferry') { ferryMenu.open = true; ferryMenu.idx = 0; return; }
-	if (svc === 'bugcontest') { bugOfficerTalk(); return; }
-	if (svc === 'bikeshop') { bikeShopTalk(); return; }
-	if (svc === 'glassblower') { glassBlowerTalk(); return; }
-	if (svc === 'museumpaint') { museumPaintTalk(fx, fy); return; }
-	if (svc === 'museumcurator') { museumCuratorTalk(); return; }
-	if (svc === 'ruinsword') { ruinsWordTalk(); return; }
-	if (svc === 'fossilroot') { fossilPick('root'); return; }
-	if (svc === 'fossilclaw') { fossilPick('claw'); return; }
-	if (svc === 'fossilunder') { fossilUnderpassTalk(); return; }
-	if (svc === 'fossilmaniac') { fossilManiacTalk(); return; }
-	if (svc === 'generator') { generatorTalk(); return; }
-	if (svc === 'trainerhill') { hillReceptionTalk(); return; }
-	if (svc === 'hillprize') { hillPrizeTalk(); return; }
-	if (svc === 'hillelevator') {
-		dialog.open('ATTENDANT: Riding down to the entrance!\n\nZ = Ride   X = Stay', d => { if (d !== 'x') warpTo('MAP_TRAINER_HILL_ENTRANCE', '2'); });
-		return;
-	}
-	if (svc === 'shoalspot') { shoalDig(); return; }
-	if (svc === 'shoalhermit') { shoalHermitTalk(); return; }
-	// KURT IS A STORY NPC BEFORE HE IS A SERVICE.
-	//
-	// The services.js 'kurt' zone covers Kurt1's tile (3,2) with no gating, so the
-	// native apricorn counter answered every A press and his map script never ran.
-	// Kurt1 is the beat that sets EVENT_AZALEA_TOWN_SLOWPOKETAIL_ROCKET and walks
-	// him out of the house — so the Slowpoke Well guard never left, and Azalea,
-	// the well, the Lure Ball and Bugsy's gym chain were all unreachable. Reported
-	// with a call stack showing kurtTalk() reached straight from interact(), with
-	// runScriptLabel never called.
-	//
-	// Kurt1 itself branches on EVENT_KURT_GAVE_YOU_LURE_BALL before anything else,
-	// which is precisely where the counter should take over — so gate on the same
-	// flag and let the script own him until then. Checked per press rather than at
-	// map load, so the counter works the moment he hands the ball over.
-	//
-	// This is deliberately narrow. An audit of every service zone found 93 sitting
-	// on an NPC with a real script, and all but Kurt are the port's own native
-	// implementations (nurses, marts, the contest lobby, the Trick House) where
-	// shadowing the script is the whole point. Kurt is the only one whose script
-	// carries a story beat: setflag + move + hideobj.
-	if (svc === 'kurt' && Story.getFlag('EVENT_KURT_GAVE_YOU_LURE_BALL')) { kurtTalk(); return; }
-	if (svc === 'trickmaster') { trickMasterTalk(); return; }
-	if (svc === 'trickscroll') { trickScrollFind(); return; }
-	if (svc === 'trickend') { trickEndTalk(); return; }
-	if (svc === 'ruinspuzzle') { openRuinsPuzzle(); return; }
-	if (svc === 'contest') {
-		if (!S.party.length) { dialog.open('You need a POKeMON to enter a Contest!'); return; }
-		if (!(Contest.data?.opponents || []).length) { dialog.open('The hall is still being prepared for the next Contest...'); return; }
-		sfx('ui_select');
-		contestMenu.open = true; contestMenu.mode = 'category'; contestMenu.idx = 0; contestMenu.flash = null;
-		return;
-	}
-	if (svc === 'berryblend') {
-		if (!S.party.length) { dialog.open('The BLEND MASTER: Bring a POKeMON and some berries, friend!'); return; }
-		sfx('ui_select');
-		blendMenu.open = true; blendMenu.mode = 'pickmon'; blendMenu.idx = 0; blendMenu.flash = null;
-		return;
-	}
-	if (svc === 'gamecorner') {
-		const openHub = () => { gcMenu.open = true; gcMenu.mode = 'hub'; gcMenu.idx = 0; gcMenu.flash = null; };
-		if (!Bag.count('coincase')) {
-			Bag.addItem('coincase');
-			dialog.open('Welcome to the GAME CORNER!\n\nFirst visit? Here — a COIN CASE,\non the house!', openHub);
-		} else openHub();
-		return;
-	}
-	// arcade boxes: Route 1 launches PokéChess; Pallet Town's launches Pair of Pears
-	const arc = arcade.kindAt(fx, fy);
-	if (arc === 'pokechess') {
-		dialog.open('Do you want to play\nPOKéCHESS?', (k) => {
-			if (k !== 'x') { saveParty(S.party); savePos(); location.href = 'pokechess.html' + (MP_ON ? '?mp=1' : ''); }
-		});
-		return;
-	}
-	if (arc === 'pears') {
-		dialog.open('Do you want to play a\nPAIR OF PEARS?', (k) => {
-			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/pairofpears/?direct=1'; }
-		});
-		return;
-	}
-	// BATTLE FRONTIER reception counter — start that facility's challenge
-	const lobby = FACILITY_LOBBIES[world.current.map.id];
-	if (lobby && !frontier.active && lobby.tiles.some(([x, y]) => x === fx && y === fy)) {
-		const cfg = Frontier.FACILITIES[lobby.facility];
-		dialog.open(`Welcome to the ${cfg.name}!\n\nBattle for BP — you have ${Frontier.getBP()} BP.\n\nTake the challenge?   Z = Yes   X = No`, declined => {
-			if (declined !== 'x') startFacility(lobby.facility);
-		});
-		return;
-	}
-	if (lobby && !frontier.active && lobby.bp && lobby.bp.some(([x, y]) => x === fx && y === fy)) {
-		dialog.open(`BP EXCHANGE\n\nWelcome! You have ${Frontier.getBP()} BP to spend.\n\nZ = Shop   X = Leave`, declined => {
-			if (declined !== 'x') openBpShop(null);
-		});
-		return;
-	}
-	// inter-region PORTAL pad — open the destination menu (fly to another region's
-	// same-tier gym town). Also try the tile the player stands on (pads render beside
-	// the PC, so you'll usually be facing or on one).
-	const portal = portals.at(fx, fy) || portals.at(player.tx, player.ty);
-	if (portal) { portalMenu.open = true; portalMenu.idx = 0; portalMenu.dests = portal.dests; portalMenu.town = null; return; }
-	// authentic progression obstacle: a giver hands over its key item; a blocker
-	// (guard / SNORLAX / grunt) turns you back with its themed line
-	if (blockers.giverAt(fx, fy)) { const m = blockers.grantAt(fx, fy); if (m) dialog.open(m); return; }
-	const blk = blockers.kindAt(fx, fy);
-	if (blk) { dialog.open(blk.msg); return; }
-	// water's edge: SURF carries you across (used from the party menu)
-	if (!player.surfing && world.isSurfable(fx, fy)) {
-		dialog.open('The water is a deep blue...\n\nSURF would carry you across.');
-		return;
-	}
-	const t = trainers.trainerAt(fx, fy);
-	if (t) {
-		if (trainers.isDefeated(t)) {
-			const { info } = trainers.buildBattle(t, battle.data);
-			dialog.open(info.defeatText);
-		} else {
-			trainers.talkTo(t, player.facing);
-		}
-		return;
-	}
-	for (const ev of world.current.map.bg_events || []) {
-		if (+ev.x !== fx || +ev.y !== fy) continue;
-		const lab = ev.script && ev.script !== '0x0' ? ev.script : null;
-		const scr = lab ? S.mapScripts[lab] : null;
-		// THE SCRIPT WINS WHENEVER IT DOES MORE THAN PRINT A LINE.
-		//
-		// sign_texts.json is a TEXT DUMP: it holds the `msg` a script would have
-		// shown. That is a faithful stand-in for a plain sign, and a lie for anything
-		// that branches, takes an item or sets a flag. Checking it FIRST — and
-		// returning — meant 373 scripted bg_events across the three regions never ran
-		// at all: the Abandoned Ship door puzzles, the gym statues, and
-		// Route25_SeaCottage_EventScript_Computer, whose Cell Separator sets
-		// FLAG_HELPED_BILL_IN_SEA_COTTAGE and is the ONLY source of the S.S. Ticket.
-		// Reported as "the PC only ever says 'TELEPORTER is displayed on the PC
-		// monitor'" — which is precisely the fallback line the dump captured, served
-		// in place of the script that was supposed to decide whether to show it.
-		//
-		// The other 1038 are genuinely display-only, and keep the cheaper dump.
-		if (scr && !scriptIsDisplayOnly(scr)) {
-			// These 373 have never executed for a player. If one throws, degrade to
-			// the old behaviour rather than eating the A press.
-			try {
-				runScriptLabel(lab);
-				// Some of these are minigame machinery — Game Corner card flip, the
-				// Roulette tables, the Berry Blender — whose opcodes this port has no
-				// implementation for, so the script runs and produces nothing at all.
-				if (!dialog.blocking && !cutscene.blocking) dialog.open(signTexts[lab] ? Story.normalizeText(signTexts[lab], cutsceneCtx()) : '...');
-				return;
-			} catch (e) {
-				console.warn('[bg_event] script failed, falling back to its sign text', lab, e);
-			}
-		}
-		if (signTexts[lab]) {
-			// same normalizer NPC speech uses, so a sign never shows a raw "#"
-			dialog.open(Story.normalizeText(signTexts[lab], cutsceneCtx()));
-			return;
-		}
-		// A scripted bg_event with no entry in sign_texts.json used to fall
-		// straight through and say NOTHING — 381 of them across 84 maps, including
-		// every department-store elevator button and every Game Corner machine.
-		// The map's own script usually has the label; run it the same way an NPC's
-		// script runs, and let runScriptLabel's own fallback handle a dead label
-		// (it says "..." rather than freezing).
-		if (scr) {
-			runScriptLabel(lab);
-			if (!dialog.blocking && !cutscene.blocking) dialog.open('...');
-			return;
-		}
-		// Neither text nor a script label. Say "..." rather than nothing, which is
-		// exactly what an NPC with an unresolvable script already does: pressing A
-		// must always acknowledge that something is there.
-		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
-	}
-	// face-to-face NPC: have them turn toward the player
-	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy);
-	if (npc) {
-		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
-		// single-purpose service buildings: talking to the attendant runs it
-		const mid = world.current.map.id;
-		if (DAYCARE_MAPS.has(mid)) {
-			// Crystal's Day-Care Man gives the ODD EGG the first time you talk to him;
-			// the native service used to swallow that conversation, so it never came
-			if (npc.ev?.script === 'DayCareManScript_Inside' && !Story.getFlag('EVENT_GOT_ODD_EGG')
-				&& runScriptLabel(npc.ev.script, npc)) return;
-			openDaycare(); return;
-		}
-		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
-		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
-		// MOM heals the party in all three games — the op that does it never
-		// survived the transpile, so she chatted without tucking anyone in.
-		// (During the intro her original script still runs its story beats.)
-		if (npc.ev && MOM_SCRIPTS.has(npc.ev.script) && Story.getFlag('intro_done')) { momTalk(); return; }
-		// ported story script for this NPC (dialogue/movement/flags)
-		if (npc.ev && npc.ev.script && runScriptLabel(npc.ev.script, npc)) return;
-	}
-}
 
 // ---------- water animation ----------
 // The map renders ONCE into cached canvases, so water sat frozen in every
@@ -1246,7 +895,7 @@ export function interact() {
 // moves again without any new art. Drawn after the bottom layer and before
 // the top, so bridges stay above the ripple.
 const WATER_PHASE = [0, 1, 0, -1];
-function drawWaterAnim(ctx, camX, camY, forceOff) {
+export function drawWaterAnim(ctx, camX, camY, forceOff) {
 	const cur = world.current;
 	const src = cur?.canvases?.bottom;
 	const lay = cur?.layout;
@@ -1273,8 +922,8 @@ function drawWaterAnim(ctx, camX, camY, forceOff) {
 }
 
 // MOM, in every region's player house: a warm word and a full heal
-const MOM_SCRIPTS = new Set(['MomScript', 'PalletTown_PlayersHouse_1F_EventScript_Mom', 'PlayersHouse_1F_EventScript_Mom']);
-function momTalk() {
+export const MOM_SCRIPTS = new Set(['MomScript', 'PalletTown_PlayersHouse_1F_EventScript_Mom', 'PlayersHouse_1F_EventScript_Mom']);
+export function momTalk() {
 	const hurt = (S.party || []).some(m => m && (m.curHP < m.maxHP || m.status || (m.moves || []).some(mv => mv.pp < mv.maxPp)));
 	if (!hurt) {
 		dialog.open('MOM: Oh, hi! Your POKeMON look happy\nand healthy to me. Off you go —\nand take care of each other!');
@@ -1289,11 +938,11 @@ function momTalk() {
 }
 
 // canonical service buildings (talk to the NPC inside to use the service)
-const DAYCARE_MAPS = new Set(['MAP_DAY_CARE', 'MAP_ROUTE5_POKEMON_DAY_CARE',
+export const DAYCARE_MAPS = new Set(['MAP_DAY_CARE', 'MAP_ROUTE5_POKEMON_DAY_CARE',
 	'MAP_ROUTE117_POKEMON_DAY_CARE', 'MAP_FOUR_ISLAND_POKEMON_DAY_CARE']);
-const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVENDER_NAME_RATER',
+export const NAMERATER_MAPS = new Set(['MAP_GOLDENROD_NAME_RATER', 'MAP_JOHKANTO_LAVENDER_NAME_RATER',
 	'MAP_SLATEPORT_CITY_NAME_RATERS_HOUSE']);
-const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
+export const DELETER_MAPS = new Set(['MAP_MOVE_DELETERS_HOUSE', 'MAP_LILYCOVE_CITY_MOVE_DELETERS_HOUSE']);
 
 export const partyMenu = { open: false, idx: 0, summary: false, action: null, swapFrom: null, moveSwap: null };
 export const startMenu = { open: false, idx: 0 };
@@ -1341,7 +990,7 @@ export const trade = {
 };
 export const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
 // the username of a friend-ghost currently standing on tile (tx,ty), or null
-function ghostAt(tx, ty) {
+export function ghostAt(tx, ty) {
 	for (const [name, g] of ghosts) {
 		if (Math.round(g.px / META) === tx && Math.round(g.py / META) === ty) return name;
 	}
@@ -1364,44 +1013,6 @@ export const OPTION_ACTIONS = [
 	{ id: 'backups', label: 'BACKUPS', hint: 'Restore an automatic daily backup' },
 	{ id: 'controls', label: 'CONTROLS', hint: 'See every shortcut and rebind the single keys' },
 ];
-// ---------- key bindings ----------
-// The single-key shortcuts (S to swap move slots, F to search the PC, C for
-// the bike, R to re-throw a ball...) were undiscoverable and unmovable. The
-// CONTROLS screen lists every one and lets each be rebound; a custom key
-// TRANSLATES to the action's default at the input door, so the defaults keep
-// working alongside (forgiving, not exclusive). Device preference, like the
-// volume sliders — spared by the owner reset.
-const KEYBIND_KEY = 'magepunk_keys_v1';
-export const KEY_ACTIONS = [
-	{ id: 'confirm', label: 'CONFIRM / INTERACT', def: 'z' },
-	{ id: 'cancel', label: 'CANCEL / BACK', def: 'x' },
-	{ id: 'menu', label: 'MAIN MENU', def: 'Enter' },
-	{ id: 'party', label: 'PARTY', def: 'p' },
-	{ id: 'bag', label: 'BAG', def: 'b' },
-	{ id: 'bike', label: 'BIKE ON/OFF', def: 'c' },
-	{ id: 'find', label: 'FIND (PC BOX SEARCH)', def: 'f' },
-	{ id: 'swap', label: 'SWAP MOVE SLOTS (BATTLE)', def: 's' },
-	{ id: 'rethrow', label: 'RE-THROW BALL (BATTLE)', def: 'r' },
-];
-export let keyBinds = safeLoad(KEYBIND_KEY, {}); // action id -> custom key
-// keys that may never be rebound over: movement, the defaults, system keys
-const KEY_RESERVED = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd',
-	'z', 'x', 'enter', 'p', 'b', 'c', 'f', 'r', 'escape', 'm', ' ']);
-const normKey = k => (k && k.length === 1 ? k.toLowerCase() : k);
-function translateKey(k) {
-	const kk = normKey(k);
-	for (const a of KEY_ACTIONS) if (keyBinds[a.id] && keyBinds[a.id] === kk) return a.def;
-	return k;
-}
-function assignKeyBind(actionId, rawKey) {
-	const kk = normKey(rawKey);
-	if (kk && kk.toLowerCase() === 'escape') return 'cancelled';
-	if (!kk || kk.length > 12 || KEY_RESERVED.has(kk.toLowerCase())) return 'reserved';
-	for (const a of KEY_ACTIONS) if (keyBinds[a.id] === kk && a.id !== actionId) delete keyBinds[a.id];
-	keyBinds[actionId] = kk;
-	safeSave(KEYBIND_KEY, keyBinds);
-	return 'bound';
-}
 // ---------- leave-and-resume for battles ----------
 // Hitting the gear (or closing the tab) mid-battle used to vaporize the fight
 // AND its ending — a rival or gym win that never landed its flags broke
@@ -1411,7 +1022,7 @@ function assignKeyBind(actionId, rawKey) {
 // pagehide, consumed at boot.
 const BATTLE_SAVE_KEY = 'magepunk_battle_v1';
 let battleSaveAt = 0, battleSaveDirty = false;
-function persistBattle() {
+export function persistBattle() {
 	const resumable = battle.blocking && battle.active && battle.endSpec && !pvp.blocking && !frontier.active;
 	if (resumable) {
 		const now = performance.now();
@@ -1634,7 +1245,7 @@ export function optionsKey(k) {
 		if (k === 'x' || k === 'Escape') { om.mode = 'main'; om.idx = OPTION_KEYS.length + 3; om.flash = null; return; }
 		if (k !== 'z' && k !== 'Enter') return;
 		if (om.idx === KEY_ACTIONS.length) { // RESET ALL
-			keyBinds = {}; safeSave(KEYBIND_KEY, keyBinds);
+			S.keyBinds = {}; safeSave(KEYBIND_KEY, S.keyBinds);
 			om.flash = 'Every key is back to its default.';
 			sfx('ui_select');
 			return;
@@ -1675,8 +1286,8 @@ export const nameRater = { open: false, idx: 0 };
 export const halfParty = { open: false, idx: 0, picked: [], flash: null };
 export const moveShop = { open: false, mode: 'main', idx: 0, mon: null, list: null, flash: null };
 
-function openDaycare() { daycareMenu.open = true; daycareMenu.mode = 'main'; daycareMenu.idx = 0; daycareMenu.flash = null; }
-function openNameRater() { nameRater.open = true; nameRater.idx = 0; }
+export function openDaycare() { daycareMenu.open = true; daycareMenu.mode = 'main'; daycareMenu.idx = 0; daycareMenu.flash = null; }
+export function openNameRater() { nameRater.open = true; nameRater.idx = 0; }
 // Runs UNDER the paused script (the special returns 'wait'); VAR_RESULT is 1 on
 // confirm, 0 on cancel — the script loops back to its prompt on 0.
 export const halfPartyNeed = () => Math.min(3, (S.party || []).filter(m => m.curHP > 0).length);
@@ -1712,7 +1323,7 @@ export function halfPartyKey(k) {
 	halfParty.flash = null;
 	if (halfParty.picked.length === halfPartyNeed()) halfParty.idx = S.party.length;   // hop to BATTLE
 }
-function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
+export function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
 
 // open the Town Map to the region of the current map (or the first visited one)
 export function openTownMap() {
@@ -1771,7 +1382,7 @@ export function daycareOptions() {
 // movement works but the player is frozen" tells you nothing about WHICH gate is
 // stuck. gateReport() names every one of them at once. `?owlog=1` also traces
 // every movement event, listener attach, and lifecycle transition to the console.
-function openCanvasMenus() {
+export function openCanvasMenus() {
 	// built lazily: several of these are declared further down the file
 	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
 		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
@@ -1780,7 +1391,7 @@ function openCanvasMenus() {
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
 // why the last movement input was accepted or ignored, plus every gate's live value
-function gateReport() {
+export function gateReport() {
 	const menus = openCanvasMenus();
 	const r = {
 		// keydown/d-pad door
@@ -1797,8 +1408,8 @@ function gateReport() {
 		tickMoveGate: !(battle.blocking || pvp.blocking || factorySpec.blocking || dialog.blocking
 			|| evolution.blocking || starterMenu.open || cutscene.blocking),
 		// held-key / movement state
-		heldKeys: heldKeys.slice(), dpadDir, runHeld, wasInBattle,
-		rejectedMoves, moveStarveT: Math.round(moveStarveT * 100) / 100, rejectStarveT: Math.round(rejectStarveT * 100) / 100,
+		heldKeys: heldKeys.slice(), dpadDir, runHeld: S.runHeld, wasInBattle: S.wasInBattle,
+		rejectedMoves, moveStarveT: Math.round(S.moveStarveT * 100) / 100, rejectStarveT: Math.round(S.rejectStarveT * 100) / 100,
 		playerMoving: !!player.moving, moveT: player.moveT, moveOutcome: player.moveOutcome, moveDist: player.moveDist,
 		surfing: !!player.surfing, biking: !!player.biking, facing: player.facing,
 		tx: player.tx, ty: player.ty, map: world.current ? world.current.name : null,
@@ -1887,8 +1498,8 @@ for (const [id, key] of [['t-a', 'z'], ['t-b', 'x'], ['t-start', 'Enter'], ['t-p
 }
 // holding B doubles as the run button while roaming
 const tb = document.getElementById('t-b');
-tb.addEventListener('pointerdown', () => { runHeld = true; });
-for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) tb.addEventListener(ev, () => { runHeld = false; });
+tb.addEventListener('pointerdown', () => { S.runHeld = true; });
+for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) tb.addEventListener(ev, () => { S.runHeld = false; });
 
 // tap/click on the game screen: battle buttons, or advancing dialogs
 function screenPos(e) {
@@ -2013,7 +1624,7 @@ export async function refreshMapContent(label) {
 	await runMapSetupScripts(false);
 	try { checkOnFrame(); } catch (e) { console.warn('[plot] onFrame failed', e); if (cutscene.blocking) cutscene.stop(); }
 	// a post-battle beat that was won before the game could run it (see above)
-	postBattleCatchUpArmed = true;   // fired by the tick once the screen is free (see there)
+	S.postBattleCatchUpArmed = true;   // fired by the tick once the screen is free (see there)
 	// a partyless new-game player who has reached the region's lab: run the
 	// professor greeting + on-screen starter pick (Fork B authentic open)
 	try { checkIntroTrigger(); } catch (e) { console.warn('[intro] trigger failed', e); }
@@ -2253,7 +1864,7 @@ function followMiniCanvas(id) {
 	return fc;
 }
 const FOLLOW_ROW = { down: 0, left: 1, right: 2, up: 3 };
-let follower = null;
+export let follower = null;
 let lastPlayerTile = null;
 export function refreshFollower() {
 	follower = null;
@@ -2286,7 +1897,7 @@ function stepFollower(tx, ty) {
 	// keep pace with a running/biking player
 	follower.dur = player.biking ? 0.07 : player.run ? 0.08 : 0.13;
 }
-function updateFollower(dt) {
+export function updateFollower(dt) {
 	if (!Settings.get('followers')) { follower = null; return; }
 	if (!follower) { if (S.party) refreshFollower(); return; }
 	// the player moved onto a new tile — trail onto the one they left
@@ -2300,7 +1911,7 @@ function updateFollower(dt) {
 		else { follower.px = follower.from[0] + (follower.to[0] - follower.from[0]) * follower.t; follower.py = follower.from[1] + (follower.to[1] - follower.from[1]) * follower.t; }
 	}
 }
-function drawFollower(ctx, camX, camY) {
+export function drawFollower(ctx, camX, camY) {
 	if (!follower || player.surfing) return;
 	const img = followSheet(follower.id);
 	if (!img) {
@@ -2337,8 +1948,8 @@ export function legendariesHere() {
 	if (!v) return [];
 	return (Array.isArray(v) ? v : [v]).filter(e => !Story.getFlag(e.flag) && (!e.requires || e.requires()));
 }
-function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
-function startLegendaryBattle(e) {
+export function legendaryHere() { return legendariesHere()[0] || null; } // the first (single-per-map back-compat)
+export function startLegendaryBattle(e) {
 	if (!S.party || !leadMon(S.party) || battle.blocking) return;
 	Dex.markSeen(e.species);
 	dialog.open(e.intro, () => {
@@ -2442,7 +2053,7 @@ battle.stageOf = battleStageNow; // battle.js reads this at start()/startTrainer
 // MOM's, which heals the same way), persisted so it survives a reload, and
 // falling back to the region's home town for a save that has never healed.
 const HEAL_KEY = 'magepunk_healpoint_v1';
-function noteHealPoint() {
+export function noteHealPoint() {
 	safeSave(HEAL_KEY, {
 		map: world.current.name, x: player.tx, y: player.ty,
 		name: world.current.map?.name || world.current.name,
@@ -2631,7 +2242,7 @@ function museumBackfill() {
 	if (changed) safeSave(CONTEST_KEY, p);
 	return p.paintings;
 }
-function museumPaintTalk(fx, fy) {
+export function museumPaintTalk(fx, fy) {
 	const cat = Object.keys(MUSEUM_PAINTINGS).find(c => MUSEUM_PAINTINGS[c].some(([x, y]) => x === fx && y === fy));
 	if (!cat) return;
 	const paintings = museumBackfill();
@@ -2643,14 +2254,14 @@ function museumPaintTalk(fx, fy) {
 		dialog.open(`An empty frame, waiting.\n\nA small card reads: "Reserved for the next\n${cat.toUpperCase()} CONTEST MASTER RANK champion."`);
 	}
 }
-function museumCuratorTalk() {
+export function museumCuratorTalk() {
 	const n = Object.keys(museumBackfill()).length;
 	dialog.open(n >= 5
 		? 'CURATOR: All five frames filled... you have given\nthis gallery its golden age. Thank you!'
 		: `CURATOR: This floor honors CONTEST champions.\n${n} of 5 frames hold a masterpiece so far.\n\nWin a MASTER RANK contest and the artist will\npaint your POKeMON for the gallery!`);
 }
 // the hung portraits, drawn over the 2F frames
-function drawMuseum(ctx, camX, camY) {
+export function drawMuseum(ctx, camX, camY) {
 	if (world.current?.name !== 'LilycoveCity_LilycoveMuseum_2F') return;
 	const paintings = contestProgress().paintings || {};
 	for (const [cat, tiles] of Object.entries(MUSEUM_PAINTINGS)) {
@@ -2673,7 +2284,7 @@ const WORD_ROOMS = {
 	RuinsOfAlphAerodactylWordRoom: ['aerodactyl', '"ONCE THE SKY ITSELF THUNDERED WITH WINGS."'],
 	RuinsOfAlphHoOhWordRoom: ['hooh', '"LIGHT DESCENDS ON WINGS OF SEVEN COLORS."'],
 };
-function ruinsWordTalk() {
+export function ruinsWordTalk() {
 	const entry = WORD_ROOMS[world.current?.name];
 	if (!entry) return;
 	const [key, text] = entry;
@@ -2689,7 +2300,7 @@ function ruinsWordTalk() {
 
 // MIRAGE TOWER: take ONE fossil and the other sinks with the tower's rumble —
 // it resurfaces in the DESERT UNDERPASS. The FOSSIL MANIAC revives any fossil.
-function fossilPick(which) {
+export function fossilPick(which) {
 	const ev = miscEvents();
 	if (ev.mirage) { dialog.open('Only crumbled sandstone remains here.'); return; }
 	const id = which === 'root' ? 'rootfossil' : 'clawfossil';
@@ -2700,7 +2311,7 @@ function fossilPick(which) {
 	Journal.add(`Pried the ${Bag.ITEMS[id].name} from Mirage Tower!`);
 	dialog.open(`You pried out the ${Bag.ITEMS[id].name}!\n\nThe tower GROANS — sand pours from the walls,\nand the other fossil sinks out of sight...`);
 }
-function fossilUnderpassTalk() {
+export function fossilUnderpassTalk() {
 	const ev = miscEvents();
 	if (!ev.mirage) { dialog.open('A fossil is embedded deep in the rock.\nIt won\'t budge... yet.'); return; }
 	if (ev.underpass) { dialog.open('The rock face is bare now.'); return; }
@@ -2712,7 +2323,7 @@ function fossilUnderpassTalk() {
 	dialog.open(`The fossil that sank with MIRAGE TOWER —\nwashed down into the underpass!\n\nYou found the ${Bag.ITEMS[id].name}!`);
 }
 const FOSSIL_MONS = { rootfossil: 'lileep', clawfossil: 'anorith', helixfossil: 'omanyte', domefossil: 'kabuto', oldamber: 'aerodactyl' };
-function fossilManiacTalk() {
+export function fossilManiacTalk() {
 	const held = Object.keys(FOSSIL_MONS).find(id => Bag.count(id) > 0);
 	if (!held) {
 		dialog.open('FOSSIL MANIAC: Fossils! FOSSILS! I can wake the\nold life sleeping inside one — bring me any\nfossil you dig up!');
@@ -2735,7 +2346,7 @@ function fossilManiacTalk() {
 }
 
 // NEW MAUVILLE: the runaway generator, waiting for someone to throw the switch
-function generatorTalk() {
+export function generatorTalk() {
 	const ev = miscEvents();
 	if (ev.newmauville) { dialog.open('The generator sleeps. The hum is gone.'); return; }
 	dialog.open('The generator WHIRS wildly — the whole floor\nvibrates. A heavy switch juts from the console.\n\nThrow it?   Z = Yes   X = No', d => {
@@ -2750,7 +2361,7 @@ function generatorTalk() {
 	});
 }
 // fossil markers: the pried spots draw a small ammonite swirl until taken
-function drawFossilSpots(ctx, camX, camY) {
+export function drawFossilSpots(ctx, camX, camY) {
 	const here = world.current?.name;
 	const ev = miscEvents();
 	const spots = [];
@@ -3005,12 +2616,12 @@ export function vfKey(k) {
 		}
 	}
 }
-function drawGcMenu(W, H) {
+export function drawGcMenu(W, H) {
 	const title = gcMenu.mode === 'coins' ? 'COIN COUNTER' : gcMenu.mode === 'prizes' ? 'PRIZE CORNER' : 'GAME CORNER';
 	const sub = `Coins: ${Bag.getCoins().toLocaleString()}   Money: $${Bag.getMoney().toLocaleString()}`;
 	optionList(W, H, H / 480, title, sub, gcRows(), gcMenu.idx, 'gc:', gcMenu.flash);
 }
-function drawVfMenu(W, H) {
+export function drawVfMenu(W, H) {
 	const u = H / 480;
 	const g = vfMenu.game;
 	if (!g) return;
@@ -3265,386 +2876,6 @@ export function startCutscene(steps, onDone) {
 	cutscene.start(steps, cutsceneCtx(), onDone);
 }
 
-// ---------- loop ----------
-let last = performance.now();
-let playAccum = 0;
-function tick(now) {
-	requestAnimationFrame(tick);
-	tickStats.frames++;
-	const dt = Math.min((now - last) / 1000, 0.05);
-	last = now;
-	// advance the warp fade before any `loading` bail so it keeps animating in the
-	// loading=false windows on either side of a map swap (it sits at full black
-	// during the load itself, when the loop bails and the screen is frozen anyway)
-	if (fade.alpha !== fade.target) {
-		const d = FADE_SPEED * dt;
-		fade.alpha = fade.alpha < fade.target ? Math.min(fade.target, fade.alpha + d) : Math.max(fade.target, fade.alpha - d);
-	}
-	// battle/pvp on a portrait screen OR any touch screen: swap the canvas
-	// between the GBA frame and full-screen (see fitCanvas); the touch d-pad
-	// hides too — battles are entirely tap-driven. Landscape phones get the
-	// full-width canvas + the scaled bar from battleui.layout (aspect > 1.7).
-	const tallNow = (battle.blocking || pvp.blocking)
-		&& (innerHeight > innerWidth || document.body.classList.contains('touch'));
-	if (tallNow !== sceneTall) {
-		sceneTall = tallNow;
-		document.body.classList.toggle('scene-tall', sceneTall);
-		fitCanvas();
-	}
-	// WATCHDOG 1 — a stuck load freezes everything (the loop bails on `loading`).
-	// If a map load hangs (never resolves) or a handler after it wedged, recover.
-	if (S.loading) {
-		if (loadWatchStart == null) loadWatchStart = now;
-		else if (now - loadWatchStart > 12000) { loadWatchStart = null; S.loading = false; if (cutscene.blocking) cutscene.stop(); hud.textContent = 'Recovered from a stuck load.'; }
-	} else loadWatchStart = null;
-	if (S.loading || !world.current) return;
-	if (postBattleCatchUpArmed && !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
-		&& openCanvasMenus().length === 0) {
-		postBattleCatchUpArmed = false;
-		try { catchUpPostBattleScripts(); } catch (e) { console.warn('[plot] post-battle catch-up failed', e); if (cutscene.blocking) cutscene.stop(); }
-	}
-
-	// WATCHDOG 2 — a plot cutscene that blocks with NO player-facing UI (no dialog,
-	// battle, evolution, or menu) for a long stretch is genuinely wedged, not just
-	// waiting on the player — force-stop it rather than freeze the map.
-	// A CANVAS MENU IS PLAYER-FACING UI TOO. This listed starterMenu and nothing
-	// else, so opening the TOWN MAP (or the bag, or the party) mid-scene looked
-	// like a wedged cutscene: 30 seconds later the watchdog stopped it. That is
-	// how the Slowpoke Well beat died halfway through Kurt's walk — reported from
-	// production, with the fly prompt still on screen. openCanvasMenus() is the
-	// same list gateReport uses, so this cannot drift from what actually blocks.
-	if (cutscene.blocking && !dialog.blocking && !battle.blocking && !pvp.blocking && !evolution.blocking
-		&& !starterMenu.open && openCanvasMenus().length === 0) {
-		// MEASURE STALLS, IN GAME TIME. This used to be 30s of WALL-CLOCK time since
-		// the scene went quiet — but the scene itself runs on game time, which the
-		// tick caps at 50ms a frame. On a slow device (a playtest browser measured
-		// 3.7 fps) game time runs at ~0.19x real time, so the silent part of the
-		// Slowpoke Well beat — ~6s of Kurt walking — took ~30 real seconds and was
-		// killed every single run, mid-walk, with "A scene timed out."
-		//
-		// Now the clock only runs while the scene makes NO progress (its cursor,
-		// its current step and its timers all unchanged), and it counts game time.
-		// A slow scene is never a wedged one; a genuinely wedged scene still dies.
-		const c = cutscene.cur, sub = c && c.sub;
-		const sig = c ? (c.frames || []).map(f => f.i).join(',') + '|' + (sub ? [sub.kind, sub.k, sub.from, Math.round((sub.t || 0) * 20), Math.round((sub.left || 0) * 20)].join(':') : '') : '';
-		if (sig !== cutsceneWatchSig) { cutsceneWatchSig = sig; cutsceneStall = 0; }
-		else cutsceneStall += dt;
-		if (cutsceneStall > 20) {
-			cutsceneStall = 0; cutsceneWatchSig = '';
-			refundPostBattleTry();   // a watchdog kill is not the beat's fault
-			cutscene.stop(); hud.textContent = 'A scene timed out.';
-		}
-	} else { cutsceneStall = 0; cutsceneWatchSig = ''; }
-
-	// WATCHDOG 4 — THE PLAYER IS STANDING SOMEWHERE THEY CANNOT STAND.
-	//
-	// Two softlocks reported the same afternoon, by different routes:
-	//   * the S.S. Anne departure walked the player 9 tiles south onto open ocean
-	//     and the scene ended there, surfing=false, every direction bumping;
-	//   * the Slateport Harbor exit landed them on the harbor roof at (32,22),
-	//     walled on three sides with water north.
-	// Neither reproduces from the map data — the harbor's exit warp resolves to
-	// the correct door in both region copies, and the departure runs to completion
-	// here. So rather than guess at two causes I cannot see, catch the CLASS: a
-	// scripted walk ignores collision by design, so any script, warp or ferry can
-	// leave the player on a tile the rules forbid, and today that is unrecoverable
-	// without Fly.
-	//
-	// Deliberately conservative. It only acts when the player is on an illegal
-	// tile AND genuinely cannot move AND nothing else owns the screen, for two
-	// full seconds — so it can never argue with surfing, a cutscene that is mid-
-	// walk, or a menu. findLanding is the same nearest-standable-tile search Fly
-	// uses, so the rescue lands somewhere the player could have walked to.
-	{
-		const stuckTile = !S.loading && !cutscene.blocking && !dialog.blocking && !battle.blocking
-			&& !pvp.blocking && !evolution.blocking && openCanvasMenus().length === 0
-			&& !player.moving && !player.surfing
-			&& (!world.isPassable(player.tx, player.ty) || world.isSurfable(player.tx, player.ty));
-		if (stuckTile) {
-			const boxed = [[1, 0], [-1, 0], [0, 1], [0, -1]]
-				.every(([dx, dy]) => !world.isPassable(player.tx + dx, player.ty + dy) || world.isSurfable(player.tx + dx, player.ty + dy));
-			if (boxed) {
-				if (strandedSince == null) strandedSince = now;
-				else if (now - strandedSince > 2000) {
-					strandedSince = null;
-					const [lx, ly] = findLanding(player.tx, player.ty);
-					if (lx !== player.tx || ly !== player.ty) {
-						console.warn('[stranded] player was boxed in at', player.tx, player.ty, '-> moved to', lx, ly);
-						player.setTile(lx, ly);
-						hud.textContent = 'You found your footing.';
-					}
-				}
-			} else strandedSince = null;
-		} else strandedSince = null;
-	}
-
-	// accumulate playtime (whole seconds, throttled writes) for the Trainer Card
-	playAccum += dt;
-	if (playAccum >= 5) {
-		const s = (parseInt(localStorage.getItem('magepunk_playtime'), 10) || 0) + Math.floor(playAccum);
-		safeSaveStr('magepunk_playtime', s);
-		playAccum -= Math.floor(playAccum);
-	}
-
-	battle.update(dt);
-	bgmTick();
-	persistBattle();
-	pvp.update(dt);
-	factorySpec.update(dt);
-	evolution.update(dt);
-	dialog.update(dt);
-	cutscene.update(dt);
-	// the moment combat ends, drop any key still held from before it — otherwise
-	// the player takes one stray step straight out of the battle
-	const inBattleNow = battle.blocking || pvp.blocking;
-	if (wasInBattle && !inBattleNow) { heldKeys.length = 0; if (INPUT_TRACE) owlog('BATTLE END — held keys flushed', JSON.stringify(gateReport())); }
-	if (!wasInBattle && inBattleNow && INPUT_TRACE) owlog('BATTLE START', JSON.stringify(gateReport()));
-	wasInBattle = inBattleNow;
-	if (INPUT_TRACE) { const b = gateReport().blockedBy; if (b !== lastBlockedBy) { owlog('gate changed:', lastBlockedBy, '->', b); lastBlockedBy = b; } }
-	if (!battle.blocking && !pvp.blocking && !factorySpec.blocking && !dialog.blocking && !evolution.blocking && !starterMenu.open && !cutscene.blocking) {
-		// The starter hand-over is the one trigger that MUST NOT be missed — without
-		// it you have no POKeMON and no way to get one. Every other trigger fires on
-		// map entry only, which is fine for them, but it means walking into the lab
-		// while ANY cutscene is still playing skipped this one for good: the guard
-		// returned early and nothing ever re-asked. Retry it here instead. It is
-		// four boolean checks and becomes a permanent no-op the moment you have a
-		// party, so it costs nothing for the rest of the game.
-		if (!S.party) { try { checkIntroTrigger(); } catch (e) { console.warn('[intro] retry failed', e); } }
-		tickStats.reachedMoveBlock++;
-		trainers.update(dt);
-		player.run = runHeld || Settings.get('autoRun');
-		// any open menu freezes the player even if a key was held as it opened
-		const heldDir = heldKeys[0] || null;
-		const moveDir = (menuBlocking() || editView.on) ? null : heldDir;
-		if (!trainers.engaging) { tickStats.playerUpdates++; player.update(dt, moveDir); }
-		// WATCHDOG 3 — input starvation. Two ways the player can be stuck:
-		//
-		// (a) a held direction the tick refuses to DELIVER, with menuBlocking() saying
-		//     there is nothing on screen to explain it. Walking into a wall does not
-		//     count: that reaches player.update and reports `bump`.
-		// (b) the direction IS delivered and player.update still never starts a step.
-		//     tryMove reports every refusal (bump/blocked/cracked/hop/moved); the one
-		//     silent path is `busy` — moving stuck true, so no new step can begin.
-		//     Reported from the field: after a lab-exit warp, moveT wedged just above
-		//     1 and no step ever started. (a) alone could never see that.
-		// A step that never completes is the silent one: while `moving` is true,
-		// update() only interpolates and tryMove is not called AT ALL, so nothing
-		// reports a refusal. A real step lasts ~0.13s, so `moving` held true for
-		// seconds is definitive — and it freezes the player whether or not a key
-		// is down, so this arm does not depend on heldDir.
-		if (player.moving) moveStuckT += dt; else moveStuckT = 0;
-		const wedged = moveStuckT > MOVE_STARVE_LIMIT;
-		const delivered = moveDir === heldDir && !trainers.engaging;
-		// starvation and wedging each carry their OWN dwell — requiring both would
-		// mean waiting 2x MOVE_STARVE_LIMIT for a wedge that is already proven
-		if (heldDir && !delivered && !menuBlocking()) moveStarveT += dt; else moveStarveT = 0;
-		if (wedged || moveStarveT > MOVE_STARVE_LIMIT) {
-			{
-				moveStarveT = 0; moveStuckT = 0;
-				const why = wedged ? 'player.moving stuck true for ' + MOVE_STARVE_LIMIT + 's (moveT ' + (Math.round(player.moveT * 100) / 100) + ')'
-					: trainers.engaging ? 'trainers.engaging' : editView.on ? 'editView.on' : 'unknown';
-				console.warn('[input-watchdog] movement starved for ' + MOVE_STARVE_LIMIT + 's — blocker:', why, gateReport());
-				if (wedged) {
-					// land the half-finished step on its own destination tile and let go —
-					// never teleport, never drop the player somewhere they did not walk to
-					if (player.moveTo) { player.px = player.moveTo[0]; player.py = player.moveTo[1]; }
-					player.moving = false; player.jumping = false; player.moveT = 0;
-					player.moveOutcome = 'recovered';
-					hud.textContent = 'Recovered from a stuck step.';
-				} else if (trainers.engaging) {
-					trainers.engagement = null;
-					hud.textContent = 'Recovered from a stuck trainer approach.';
-				} else if (editView.on) {
-					// deliberate (owner tool) — don't fight it, just stop being a mystery
-					hud.textContent = 'MAP EDITOR is open — movement is frozen. Remove ?mapedit=1 from the URL to play.';
-				} else {
-					hud.textContent = 'Recovered from a stuck input lock.';
-				}
-			}
-		}
-		// ...and the case heldKeys can never express: the door itself is turning the
-		// input away. Armed by rejections rather than held keys, so it stays visible
-		// when menuBlocking() is the thing at fault. A dialog legitimately refuses
-		// arrows, hence the longer fuse and the report-only response for gates that
-		// own real UI — this names the blocker rather than fighting it.
-		if (rejectedMoves > 0 && performance.now() - lastRejectAt < 2000) {
-			rejectStarveT += dt;
-			if (rejectStarveT > REJECT_STARVE_LIMIT) {
-				rejectStarveT = 0;
-				const g = gateReport();
-				console.warn('[input-watchdog] movement input refused at the door for ' + REJECT_STARVE_LIMIT + 's — blocker:', g.blockedBy, g);
-				if (g.blockedBy === 'trainers.engaging') { trainers.engagement = null; hud.textContent = 'Recovered from a stuck trainer approach.'; }
-				else hud.textContent = 'Movement is blocked by: ' + (g.blockedBy || 'something invisible') + '. Reloading recovers it.';
-			}
-		} else rejectStarveT = 0;
-		npcs.update(dt);
-		updateFollower(dt);
-	}
-
-	// battle/pvp/factory screens repaint every pixel of the canvas themselves —
-	// rendering the whole overworld underneath them was pure discarded work
-	// (two map blits + every NPC/item/portal + a full-canvas upscale, per frame)
-	const overlayOwnsFrame = battle.blocking || pvp.blocking || factorySpec.blocking;
-	if (!overlayOwnsFrame) {
-		const [camX, camY] = cameraPos();
-		ctx.clearRect(0, 0, VIEW_W, VIEW_H);
-		world.drawLayer(ctx, 'bottom', camX, camY);
-		if (!editView.on) drawWaterAnim(ctx, camX, camY); // the sea moves (editor stays exact)
-		if (!editView.on) drawStepFx(ctx, camX, camY, 'print'); // footprints lie on the ground
-		services.draw(ctx, camX, camY);
-		arcade.draw(ctx, camX, camY);
-		items.draw(ctx, camX, camY);
-		drawBaseDeco(ctx, camX, camY);
-		drawMuseum(ctx, camX, camY);
-		drawFossilSpots(ctx, camX, camY);
-		drawLegendary(ctx, camX, camY);
-		drawAwakening(ctx, camX, camY);
-		portals.draw(ctx, camX, camY); // ground pads render under blockers/entities
-		blockers.draw(ctx, camX, camY);
-		// sprites in y order so overlaps stack correctly. In the editor the player
-		// and follower are never drawn — you're looking at the map itself.
-		const sprites = editView.on
-			? (editView.entities ? [...npcs.list, ...trainers.list] : [])
-			: [...npcs.list, ...trainers.list, player];
-		if (!editView.on && follower && !player.surfing) sprites.push({ py: follower.py, draw: drawFollower });
-		sprites.sort((a, b) => a.py - b.py);
-		for (const s of sprites) s.draw(ctx, camX, camY);
-		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
-		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
-		world.drawLayer(ctx, 'top', camX, camY);
-		drawCaveDark(ctx, camX, camY);
-		drawDayNightTint(ctx);
-		drawWeather(ctx); // rain/sand/hail/ash over the world, under the day-night mood
-		evolution.draw(ctx);
-
-		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
-	}
-	// battle, menus, and dialogs all render at full canvas resolution
-	const SW = screen.width, SH = screen.height;
-	// The full-res menus lay themselves out for the 3:2 frame (unit = H/480
-	// with columns spanning ~720 units). On the tall portrait canvas that unit
-	// would blow past the right edge, so menus get a 3:2 band across the top of
-	// the canvas instead — identical geometry to the pre-tall portrait canvas;
-	// the live world stays visible beneath. Dialogs keep the full height (they
-	// bottom-anchor near the thumbs and are width-capped — dialog.drawHi).
-	const MH = Math.min(SH, Math.round(SW / 1.5));
-	if (battle.blocking) {
-		battle.draw(sctx, SW, SH);
-	} else if (pvp.blocking) {
-		pvp.draw(sctx, SW, SH);
-	} else if (factorySpec.blocking) {
-		factorySpec.draw(sctx, SW, SH);
-	} else {
-		// extend the menus' dim backdrop over the world below the band, and hide
-		// the side MENU/PARTY/BAG buttons that would overlap the band's corner
-		document.body.classList.toggle('ow-menu', canvasMenuOpen());
-		if (canvasMenuOpen() && SH > MH) {
-			sctx.fillStyle = 'rgba(10,8,18,0.82)';
-			sctx.fillRect(0, MH, SW, SH - MH);
-		}
-		if (partyMenu.open) drawPartyMenu(SW, MH);
-		else if (shopMenu.open) drawShopMenu(SW, MH);
-		else if (bagMenu.open) drawBagMenu(SW, MH);
-		else if (pcMenu.open) drawPcMenu(SW, MH);
-		else if (vfMenu.open) drawVfMenu(SW, MH);
-		else if (gcMenu.open) drawGcMenu(SW, MH);
-		else if (contestMenu.open) drawContest(SW, MH);
-		else if (blendMenu.open) drawBlend(SW, MH);
-		else if (slideMenu.open) drawSlide(SW, MH);
-		else if (decoMenu.open) drawDecoMenu(SW, MH);
-		else if (socialMenu.open) drawSocial(SW, MH);
-		else if (slotsMenu.open) drawSlots(SW, MH);
-		else if (dexMenu.open) drawDexMenu(SW, MH);
-		else if (townMap.open) drawTownMap(SW, MH);
-		else if (tradeMenu.open) drawNpcTrade(SW, MH);
-		else if (daycareMenu.open) drawDaycare(SW, MH);
-		else if (nameRater.open) drawNameRater(SW, MH);
-		else if (halfParty.open) drawHalfParty(SW, MH);
-		else if (moveShop.open) drawMoveShop(SW, MH);
-		else if (optionsMenu.open) drawOptions(SW, MH);
-		else if (questMenu.open) drawQuest(SW, MH);
-		else if (trainerCard.open) drawTrainerCard(SW, MH);
-		else if (starterMenu.open) drawStarterMenu(SW, MH);
-		else if (ferryMenu.open) drawFerryMenu(SW, MH);
-		else if (portalMenu.open) drawPortalMenu(SW, MH);
-		else if (bpShopMenu.open) drawBpShopMenu(SW, MH);
-		else if (trade.open) drawTrade(SW, MH);
-		else if (playerMenu.open) drawPlayerMenu(SW, MH);
-		else if (deckSelect.open) drawDeckSelect(SW, MH);
-		else if (radioMenu.open) drawRadio(SW, MH);
-		else if (unownDex.open) drawUnownDex(SW, MH);
-		else if (startMenu.open) drawStartMenu(SW, MH);
-		else if (cardsMenu.open) drawCardsMenu(SW, MH);
-		else if (runMenu.open) drawRunMenu(SW, MH);
-		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
-		else if (mailMenu.open) drawMailMenu(SW, MH);
-		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
-	}
-	// while your run is being spectated, show a live "N watching" badge on top
-	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
-	drawTouchHud(SW, SH);
-	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
-	// dips to black between maps
-	if (fade.alpha > 0.001) {
-		sctx.save();
-		sctx.globalAlpha = Math.min(1, fade.alpha);
-		sctx.fillStyle = '#000';
-		sctx.fillRect(0, 0, SW, SH);
-		sctx.restore();
-	}
-}
-
-// ---------- the touch HUD ----------
-// `body.touch #bar { display: none }` hides #hud AND #objective, and EVERY thing
-// the overworld tells a roaming player goes through hud.textContent: the map name
-// on arrival, "party healed", "X was sent to the BOX", the egg-ready notice, the
-// rift warning, stuck-load recovery. On a phone all of it was invisible — a
-// caught POKeMON silently vanished into storage. The quest objective was hidden
-// too, so the "where do I go next" system existed and could not be read.
-//
-// Rather than touch the ~15 call sites, a MutationObserver mirrors those two DOM
-// nodes onto the canvas. Anything that writes the bar keeps working unchanged.
-const touchHud = { msg: '', until: 0, objective: '' };
-if (document.body.classList.contains('touch')) {
-	const hudEl = document.getElementById('hud'), objEl = document.getElementById('objective');
-	const obs = new MutationObserver(() => {
-		const t = (hudEl.textContent || '').trim();
-		if (t && t !== touchHud.msg) { touchHud.msg = t; touchHud.until = performance.now() + 4200; }
-		touchHud.objective = (objEl.textContent || '').trim();
-	});
-	for (const el of [hudEl, objEl]) obs.observe(el, { childList: true, characterData: true, subtree: true });
-	touchHud.objective = (objEl.textContent || '').trim();
-}
-function drawTouchHud(SW, SH) {
-	if (!document.body.classList.contains('touch')) return;
-	if (menuBlocking()) return;                       // never over a menu or a battle
-	const now = performance.now();
-	const rows = [];
-	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective]);
-	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg]);
-	if (!rows.length) return;
-	const pad = Math.round(SW * 0.02), fs = Math.max(11, Math.round(SW / 34));
-	sctx.save();
-	sctx.font = `${fs}px system-ui, sans-serif`;
-	sctx.textBaseline = 'top';
-	const w = Math.min(SW - pad * 2, Math.max(...rows.map(r => sctx.measureText(r[1]).width)) + pad * 2);
-	const h = rows.length * (fs + 4) + pad;
-	// Sit UNDER the world frame when the canvas is taller than it (landscape
-	// tablets), where the desktop bar would be. On a portrait phone the frame
-	// fills the canvas, so it overlays the top-left instead — left-anchored and
-	// width-capped so it never reaches the MENU/PARTY/BAG buttons on the right.
-	const below = VIEW_H * SCALE + pad;
-	const y = (below + h + pad <= SH) ? below : pad;
-	sctx.fillStyle = 'rgba(10,8,18,0.78)';
-	sctx.fillRect(pad, y, w, h);
-	sctx.strokeStyle = 'rgba(157,143,212,0.5)';
-	sctx.strokeRect(pad + 0.5, y + 0.5, w, h);
-	rows.forEach((r, i) => {
-		sctx.fillStyle = r[0];
-		sctx.fillText(r[1], pad * 2, y + i * (fs + 4) + 4, w - pad * 2);
-	});
-	sctx.restore();
-}
 
 // ---------- boot ----------
 (async () => {
@@ -3702,7 +2933,7 @@ function drawTouchHud(SW, SH) {
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to
 	// the Factory and provisions a throwaway lead just before starting.
-	factoryStandalone = new URLSearchParams(location.search).has('factory');
+	S.factoryStandalone = new URLSearchParams(location.search).has('factory');
 	if (S.party) { Dex.seedFrom([...S.party, ...getBox()]); dexMilestoneCheck(); }
 	// "No party" is NOT the same as "new game". Fork B hands over no POKeMON until
 	// you reach the professor's lab, so the whole stretch between choosing a region
@@ -3718,7 +2949,7 @@ function drawTouchHud(SW, SH) {
 	// a region but no seed (anything predating Fork B) still gets the picker, which
 	// is the safe direction — it can always start, never gets stuck.
 	const alreadyBegun = !!localStorage.getItem('magepunk_region') && Story.getFlag('story_seeded');
-	if (!S.party && !factoryStandalone && !alreadyBegun) {
+	if (!S.party && !S.factoryStandalone && !alreadyBegun) {
 		// fresh save → region picker first (Fork B: no starter until the lab)
 		starterMenu.open = true;
 		starterMenu.phase = 'region';
@@ -3757,7 +2988,7 @@ function drawTouchHud(SW, SH) {
 	Story.clearTempFlags();
 	noteOutdoor();
 	await loadMapScripts(world.current.name);
-	postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all
+	S.postBattleCatchUpArmed = true;   // the boot path never ran the catch-up at all
 	hud.textContent = world.current.map.name || startMap;
 	markFlyPoint(world.current.map.id);
 	S.loading = false;
@@ -3787,7 +3018,7 @@ function drawTouchHud(SW, SH) {
 	// a player who reloaded before hearing where to go. Replay the professor's
 	// welcome for them; it self-terminates by setting `intro_started`, so anyone
 	// who already heard it is left alone.
-	if (!S.party && !factoryStandalone && alreadyBegun && !Story.getFlag('intro_started') && !cutscene.blocking) {
+	if (!S.party && !S.factoryStandalone && alreadyBegun && !Story.getFlag('intro_started') && !cutscene.blocking) {
 		startIntroNarration(playerRegion());
 	}
 	// headless test hook
@@ -3884,7 +3115,7 @@ function drawTouchHud(SW, SH) {
 		get decoMenu() { return decoMenu; }, decoKey, drawDecoMenu, drawBaseDeco, DECO_ITEMS,
 		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
 		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
-		KEY_ACTIONS, get keyBinds() { return keyBinds; }, translateKey, assignKeyBind, optionsKey,
+		KEY_ACTIONS, get keyBinds() { return S.keyBinds; }, translateKey, assignKeyBind, optionsKey,
 		Slots, get slotsMenu() { return slotsMenu; }, slotsKey, drawSlots,
 		get hillRun() { return S.hillRun; }, set hillRun(v) { S.hillRun = v; }, hillReceptionTalk, hillPrizeTalk, hillWarp, hillPrepFloor, hillGuardAt, startHillBattle, hillGuardsLeft, HILL_FLOORS,
 		miscEvents, museumBackfill, museumPaintTalk, museumCuratorTalk, drawMuseum, ruinsWordTalk, fossilPick, fossilUnderpassTalk, fossilManiacTalk, generatorTalk, MUSEUM_PAINTINGS, FOSSIL_MONS,
@@ -4010,7 +3241,7 @@ function drawTouchHud(SW, SH) {
 	} catch (e) { /* best-effort */ }
 	// standalone mini-game: warp to the Battle Factory (moveToMap is the safe path)
 	// and drop straight into a run
-	if (factoryStandalone) {
+	if (S.factoryStandalone) {
 		hud.textContent = 'BATTLE FACTORY';
 		if (!S.party) S.party = Frontier.genTeam(battle.data, 50, 1); // throwaway lead (guards)
 		moveToMap('BattleFrontier_BattleFactoryLobby').then(() => {
