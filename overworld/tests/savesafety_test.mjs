@@ -37,7 +37,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		'BATTLE ANIM is reachable from the options menu (the setting existed with no row)');
 	A(/mp_ow_hydrated/.test(mn) && /location\.reload\(\)/.test(mn),
 		'a hydration that changes module-cached keys reloads once, latched against loops');
-	A(/if \(repelSteps === 0\) repelWoreOff\(\)/.test(mn), 'the wear-off site calls the re-offer prompt');
+	A(/if \((?:S\.)?repelSteps === 0\) repelWoreOff\(\)/.test(mn), 'the wear-off site calls the re-offer prompt');
 
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	for (const a of ['ow-history', 'ow-restore']) A(sv.includes(`action === '${a}'`), `${a} action exists`);

@@ -17,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,7 +35,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const battle = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
 	A(!/return: \(\) => 102/.test(battle), 'Return no longer has a flat 102 power');
 	A(/u\.friend \?\? 70/.test(battle), '...it reads the user\'s friendship');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/cleanseTag && Math\.random\(\) < 1 \/ 3/.test(main.replace(/held\?\./g, '')) || /cleanseTag/.test(main),
 		'the step handler consults CLEANSE TAG before rolling an encounter');
 }

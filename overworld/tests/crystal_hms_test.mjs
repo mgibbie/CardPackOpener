@@ -20,6 +20,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -41,7 +42,7 @@ A(Badges.regionOfMap('MAP_SILVER_CAVE_ROOM_1', 'JOHTO') === 'JOHTO',
 	'unprefixed border maps fall back, since they are Johto ground');
 A(Badges.hmReq('JOHKANTO', 'waterfall') === 0 && Badges.hmReq('JOHTO', 'waterfall') === 8,
 	'JOHKANTO and JOHTO genuinely differ, which is why reading the wrong one mattered');
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 const blockSrc = fs.readFileSync(path.join(ROOT, 'overworld/blockers.js'), 'utf8');
 A(/regionOfMap\(world\.current\?\.map\?\.id/.test(mainSrc), 'useFieldMove reads the map region');
 A(/regionOfMap\(curMapId/.test(blockSrc), 'and so do HM-gated blockers');

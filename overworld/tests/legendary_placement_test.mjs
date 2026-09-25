@@ -16,6 +16,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -34,7 +35,7 @@ const waitFor = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t
 
 const { POSTGAME_LEGENDS, legendsCaught } = await import('../legendaries_postgame.js');
 const bat = JSON.parse(fs.readFileSync(path.join(D, 'species_battle.json'), 'utf8'));
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 const ids = Object.keys(POSTGAME_LEGENDS);
 
 // ---------- the table itself ----------

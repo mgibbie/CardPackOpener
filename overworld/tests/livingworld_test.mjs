@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -38,7 +39,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/shoalsalt/.test(bag) && /shoalshell/.test(bag), 'SHOAL SALT and SHOAL SHELL exist');
 	const sv = fs.readFileSync(path.join(ROOT, 'overworld/services.js'), 'utf8');
 	A(/shoalspot/.test(sv) && /shoalhermit/.test(sv) && /'kurt'/.test(sv), 'shoal digs, the hermit, and Kurt carry zones');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/kind === 'roamer' && end\.roamer/.test(mn), 'a roamer battle left mid-fight resumes with roamer semantics');
 	const rs = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
 	for (const k of ['magepunk_roamers_v1', 'magepunk_shoal_v1']) A(rs.includes(`'${k}'`), `${k} joins the canonical save inventory`);

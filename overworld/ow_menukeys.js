@@ -17,15 +17,15 @@ import { sfx } from './sound.js';
 import { blendKey, blendMenu, contestKey, contestMenu, slideKey, slideMenu, unownDex, unownDexKey } from './ow_venues.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
 import { beginNewGame, finishStarterPick } from './ow_story.js';
+import { decoKey, decoMenu, radioKey, radioMenu, socialKey, socialMenu } from './ow_features.js';
+import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_fieldmoves.js';
+import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
 import {
-	REPEL_LAST_KEY, STARTERS, cardsKey, cardsMenu, cycleForm, daycareKey, daycareMenu, deckSelect,
-	deckSelectKey, decoKey, decoMenu, dexKey, dexMenu, fading, flyTo, formsOf, friendsKey,
-	friendsMenu, gcKey, gcMenu, halfParty, halfPartyKey, interact, levelCapNow, mailMenu, moveShop,
-	moveShopKey, moveToMap, nameRater, nameRaterKey, npcTradeKey, openPartyAction, optionsKey,
-	optionsMenu, partyMenu, playerMenu, playerMenuKey, playerRegion, questKey, questMenu, radioKey,
-	radioMenu, refreshFollower, refreshObjective, repelSteps, runKey, runMenu, saveFlute, setRepel,
-	socialKey, socialMenu, startKey, startMenu, startWildBattle, starterMenu, toggleBike, townKey,
-	townMap, trade, tradeMenu, trainerCard, useFieldMove, useGadget, vfKey, vfMenu,
+	REPEL_LAST_KEY, STARTERS, cardsMenu, cycleForm, daycareMenu, deckSelect, dexMenu, fading, flyTo,
+	formsOf, gcKey, gcMenu, halfParty, halfPartyKey, interact, levelCapNow, moveShop, moveToMap,
+	nameRater, optionsKey, optionsMenu, partyMenu, playerMenu, playerRegion, questMenu,
+	refreshFollower, refreshObjective, runMenu, setRepel, startMenu, startWildBattle, starterMenu,
+	townKey, townMap, trade, tradeMenu, trainerCard, useGadget, vfKey, vfMenu,
 } from './main.js';
 
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------
@@ -542,7 +542,7 @@ function bagKey(k) {
 		const item = Bag.ITEMS[id];
 		if (item?.kind === 'rod') { castRod(id, item); return; }
 		if (item?.kind === 'repel') {
-			if (repelSteps > 0) { bagMenu.flash = 'A REPEL is already working.'; return; }
+			if (S.repelSteps > 0) { bagMenu.flash = 'A REPEL is already working.'; return; }
 			Bag.consume(id);
 			setRepel(item.steps || 100);
 			safeSaveStr(REPEL_LAST_KEY, id); // the wear-off prompt re-offers this same kind

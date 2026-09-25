@@ -105,6 +105,22 @@ and can be reverted on its own.
   - `lastTalkedNpc` and `multiPicks` were assigned across the boundary, so
     they moved onto `S`.
   - main.js is at 6,018 lines.
+- **Extractions 9–13, DONE on this branch.** main.js is at 4,020 lines.
+  - `ow_render.js` (239 lines): camera, caves, day/night, step ambience,
+    banner, weather. The frame loop `tick` stays in main.js: it writes a
+    dozen input-watchdog lets owned by the input code, and belongs with it.
+  - `ow_features.js` (551 lines): Secret Bases, async friend trades, Shoal
+    tides, roamers, the Johto RADIO.
+  - `ow_legendaries.js` (197 lines): static legendaries and the Hoenn
+    awakening chain.
+  - `ow_fieldmoves.js` (466 lines): Mach Bike, Silph doors, the glass
+    workshop, Dive, HM field moves.
+  - `ow_screens.js` (576 lines): the "in-game NPC trades" section turned out
+    to hold the START-menu screens and service counters too, so it is named
+    for what it is.
+  - `repelSteps`, `strengthActive`, `baseCtx` and `radioTune` moved onto `S`.
+    `codemod_state` now also handles an **exported** let: it drops the
+    `export` and rewrites each split module that imported it to read `S.x`.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).
