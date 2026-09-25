@@ -122,7 +122,59 @@ async function loadTilesetsFor(layout) {
 	// split threshold = primary tile capacity (NOT #primaryMetatiles) — MapShared invariant
 	ts.primaryTileCount = ts.primary ? ts.primary.tilesPerBand : 640;
 	ts.primaryMetatileCount = ts.primaryTileCount;
+	await applySharedPalettes(ts, layout);
 	return ts;
+}
+
+// ---------- shared BG palettes ----------
+// Each sheet's 16 bands are coloured with that tileset's OWN palettes, but the GBA
+// shares BG palettes: primary supplies 0..N-1, secondary N..12 (Emerald N=6, FRLG 7).
+// A primary tile drawn with palette 11 must use the SECONDARY's 11 (General's own 11
+// is all zeros — Route 115's Fallarbor terrain came out opaque black), and a
+// secondary tile drawn with 0..N-1 uses the primary's. Repaint those bands per pair
+// from tools/gen_tile_palettes.py's colour indices.
+const NUM_PALS_IN_PRIMARY = { emerald: 6, firered: 7 }, NUM_PALS_TOTAL = 13;
+const palStem = (name, game) => `${game === 'emerald' ? 'emerald_' : ''}${mangle(name)}`;
+let palIndex = null;
+function tilePalettes(name, game) {
+	palIndex ||= getJSON(`${DATA}/tilesets/pal_index.json`).then(a => new Set(a)).catch(() => new Set());
+	return palIndex.then(have => have.has(palStem(name, game))
+		? getJSON(`${DATA}/tilesets/${palStem(name, game)}_pal.json`).catch(() => null) : null);
+}
+function repaintBands(img, own, other, from, to) {
+	const { w, h } = own;
+	if (img.width !== w || img.height !== h * 16) return img;
+	const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+	const g = c.getContext('2d');
+	g.drawImage(img, 0, 0);
+	const raw = atob(own.idx), band = g.createImageData(w, h), d = band.data;
+	for (let b = from; b < to; b++) {
+		const rgb = other.pals[b].map(hex => [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16)));
+		for (let i = 0; i < w * h; i++) {
+			const byte = raw.charCodeAt(i >> 1), v = i & 1 ? byte & 15 : byte >> 4, o = i * 4;
+			if (v) { const col = rgb[v]; d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255; }
+			else d[o] = d[o + 1] = d[o + 2] = d[o + 3] = 0;   // colour 0 is transparent
+		}
+		g.clearRect(0, b * h, w, h);
+		g.putImageData(band, 0, b * h);
+	}
+	return c;
+}
+const pairCache = new Map();   // "game|primary|secondary" -> { primary, secondary } repainted sheets
+async function applySharedPalettes(ts, layout) {
+	const game = layout.game, n = NUM_PALS_IN_PRIMARY[game];
+	if (!n || !ts.primary || !ts.secondary) return;
+	const key = `${game}|${layout.primary_tileset}|${layout.secondary_tileset}`;
+	if (!pairCache.has(key)) {
+		pairCache.set(key, Promise.all([tilePalettes(layout.primary_tileset, game), tilePalettes(layout.secondary_tileset, game)])
+			.then(([p, s]) => p && s ? {
+				primary: repaintBands(ts.primary.img, p, s, n, NUM_PALS_TOTAL),
+				secondary: repaintBands(ts.secondary.img, s, p, 0, n),
+			} : null));
+		if (pairCache.size > 8) pairCache.delete(pairCache.keys().next().value);
+	}
+	const sheets = await pairCache.get(key);
+	if (sheets) { ts.primary.img = sheets.primary; ts.secondary.img = sheets.secondary; }
 }
 
 function metatileOf(ts, metatileId) {
