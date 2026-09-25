@@ -187,8 +187,23 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		};
 		await pressCan(cans.a);
 		A(await page.evaluate(() => !!window.__ow.Story.getFlag('FLAG_TEMP_1')), 'the first switch is found in its can');
+		// the beams block Surge before the switches (a real wall, not just a flag)
+		const surge = [5, 2];
+		A(!(await reach([5, 17], surge)), 'setup: Lt. Surge starts behind the beams');
 		await pressCan(cans.b);
-		A(await page.evaluate(() => !!window.__ow.Story.getFlag('FLAG_FOUND_BOTH_VERMILION_GYM_SWITCHES')), 'and the second one opens the beams');
+		A(await page.evaluate(() => !!window.__ow.Story.getFlag('FLAG_FOUND_BOTH_VERMILION_GYM_SWITCHES')), 'and the second one sets the both-found flag');
+		// The flag alone proved nothing: every scripted setmetatile named its tile
+		// ("METATILE_VermilionGym_Floor"), the engine ANDed the string to 0, and the
+		// "opened" beams became impassable void (playtest 2026-09-25).
+		const beam = await page.evaluate(() => ({ mid: window.__ow.world.isPassable(5, 6), low: window.__ow.world.isPassable(5, 7), tile: window.__ow.world.current.layout.map[6][5] & 0x3FF }));
+		A(beam.mid && beam.low && beam.tile !== 0, 'the beam tiles really become walkable floor (not metatile 0)', JSON.stringify(beam));
+		A(await reach([5, 17], surge), 'and there is now a walkable path to Lt. Surge');
+		// the tester's state: both switches found on an earlier visit, Surge unbeaten.
+		// On re-entry the gym's ON_LOAD re-opens the beams from the flag.
+		await boot('VermilionCity_Gym', 5, 17);
+		const back = await page.evaluate(() => ({ flag: !!window.__ow.Story.getFlag('FLAG_FOUND_BOTH_VERMILION_GYM_SWITCHES'), mid: window.__ow.world.isPassable(5, 6), low: window.__ow.world.isPassable(5, 7) }));
+		A(back.flag && back.mid && back.low, 'returning with both switches already found, the beams are open on load', JSON.stringify(back));
+		A(await reach([5, 17], surge), '...and Lt. Surge is reachable (the reported save state)');
 		A(errors.length === 0, 'no uncaught page error', JSON.stringify(errors.slice(0, 2)));
 	} finally {
 		if (browser) await browser.close();

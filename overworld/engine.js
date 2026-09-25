@@ -5,6 +5,7 @@
 //   MapCollision.lua-> grid collision bits, behaviors, ledges
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
+import { metatileId } from './metatile_labels.js';
 export const TILE = 8, META = 16;
 // The logical view. 240x160 is the GBA window; portrait phones open the
 // vertical view (main.js fitCanvas drives this through setViewSize). These are
@@ -352,6 +353,16 @@ export class World {
 		const lay = cur?.layout;
 		if (!lay || tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) return false;
 		if (!lay.map[ty]) return false;
+		// The scripts name tiles the decomp way ("METATILE_VermilionGym_Floor").
+		// `tile & METATILE_MASK` on a string is 0, the "outside the map" metatile, so
+		// every scripted tile edit used to wall the tile off (the Vermilion Gym beams
+		// stayed shut after both switches; 1,098 ops across 95 maps). Resolve the
+		// name; if it can't be resolved, leave the tile alone rather than write void.
+		if (typeof tile === 'string') {
+			const id = metatileId(tile, cur.name);
+			if (id == null) { console.warn('[setmetatile] unknown tile name', tile, 'on', cur.name); return false; }
+			tile = id;
+		}
 		const prev = lay.map[ty][tx] ?? 0;
 		let v = tile & METATILE_MASK;
 		if (impassable == null) v |= (prev & COLLISION_MASK); // keep existing collision
