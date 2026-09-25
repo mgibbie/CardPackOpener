@@ -28,9 +28,9 @@ import { whiteOut } from './ow_places.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
+import { halfParty, openHalfParty } from './ow_music.js';
 import {
-	STARTERS, cutsceneCtx, halfParty, moveToMap, openHalfParty, refreshObjective, starterMenu,
-	urlPinnedMap, warpTo,
+	STARTERS, cutsceneCtx, moveToMap, refreshObjective, starterMenu, urlPinnedMap, warpTo,
 } from './main.js';
 
 // ---------- ported map-script triggers ----------

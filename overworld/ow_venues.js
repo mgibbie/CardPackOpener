@@ -15,8 +15,9 @@ import * as Slide from './slidepuzzle.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { dexMilestoneCheck } from './ow_follower.js';
+import { syncMapBgm } from './ow_music.js';
 import {
-	syncMapBgm, warpTo,
+	warpTo,
 } from './main.js';
 
 // ---------- Bug-Catching Contest (National Park, Tue/Thu/Sat) ----------

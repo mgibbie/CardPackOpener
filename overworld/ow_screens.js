@@ -23,10 +23,10 @@ import * as Trades from './trades.js';
 import { savePos } from './ow_input.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
+import { daycareMenu, daycareOptions, moveShop, nameRater, openTownMap, tradeMenu } from './ow_music.js';
+import { PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, trade, trainerCard } from './ow_menustate.js';
 import {
-	MP_ON, PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, cardsMenu, daycareMenu, daycareOptions,
-	deckSelect, dexMenu, moveShop, nameRater, openTownMap, optionsMenu, partyMenu, playerMenu,
-	questMenu, runMenu, startMenu, trade, tradeMenu, trainerCard,
+	MP_ON,
 } from './main.js';
 
 // ---------- in-game NPC trades ----------

@@ -27,9 +27,10 @@ import { REPEL_KEY, repelWoreOff, savePos } from './ow_input.js';
 import { endSafari, lastOutdoor, miscEvents, safari, safariZoneOf, saveMiscEvents, saveSafari, startWildBattle } from './ow_places.js';
 import { playerRegion } from './ow_progression.js';
 import { checkLegendaryTrigger } from './ow_follower.js';
+import { openTownMap } from './ow_music.js';
+import { partyMenu } from './ow_menustate.js';
 import {
-	afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, openTownMap, partyMenu,
-	refreshMapContent, warpTo,
+	afterLoadError, backWarp, findLanding, findSurfLanding, moveToMap, refreshMapContent, warpTo,
 } from './main.js';
 
 // ---------- Mach Bike ----------

@@ -17,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -60,7 +61,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/bgmVol: \{ label: 'MUSIC \(BGM\)'/.test(st) && /sfxVol: \{ label: 'SOUND FX'/.test(st),
 		'Settings carries separate MUSIC and SOUND FX sliders');
 	A(/d\.sound != null && d\.sfxVol == null/.test(st), "the legacy single 'sound' option migrates");
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/'textSpeed', 'bgmVol', 'sfxVol'/.test(main), 'the sliders are in the options menu');
 	A((main.match(/syncMapBgm\(\);/g) || []).length >= 2, 'both map-entry paths (transition + boot) retune the music');
 }
@@ -220,7 +221,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		// every theme key BATTLE_THEMES references exists as a real file
 		{
-			const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+			const main = overworldSource();
 			const bgmDir = path.join(ROOT, 'overworld/data/sounds/bgm');
 			const refs = [...new Set([...main.matchAll(/'((?:crystal|firered|emerald)_MUS\w+)'/g)].map(m => m[1]))];
 			const gone = refs.filter(k => !fs.existsSync(path.join(bgmDir, k + '.ogg')));
