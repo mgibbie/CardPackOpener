@@ -12,6 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -27,7 +28,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	}
 	A((bt.match(/'BALL', 'BAIT', 'ROCK', 'RUN'/g) || []).length === 2,
 		'both battle bars (desktop + portrait) swap to BALL/BAIT/ROCK/RUN in safari mode');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/MAP_KANTO_SAFARI_ZONE_NORTH: 'fr'/.test(main) && /MAP_SAFARI_ZONE_NORTHEAST: 'hoenn'/.test(main),
 		'both regions\' play areas are mapped to their gates');
 	A(/const second = !inSafari &&/.test(main), 'hordes never spawn inside a safari game');

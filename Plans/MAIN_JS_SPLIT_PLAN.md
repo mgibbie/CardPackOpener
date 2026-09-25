@@ -133,6 +133,24 @@ and can be reverted on its own.
     DIAGNOSTICS. Their top-level code calls `fitCanvas()` / `owlog()` while
     loading, and `fitCanvas` reads main.js lets (`SCALE`) that don't exist
     until main.js's body runs. That is the TDZ guard doing its job.
+- **Extractions 17–21: main.js under 2,000 (1,905 lines), DONE on this
+  branch.**
+  - `ow_progression.js` (sealed champions → level cap).
+  - `ow_scaling.js` (postgame level scaling + forms).
+  - `ow_gamecorner.js` (Voltorb Flip corner).
+  - `ow_places.js` (blackout, Safari, museum/fossils/New Mauville).
+  - `ow_follower.js` (the follower, plus the legendary triggers, rift wilds,
+    dex milestones, map weather and battle backdrop that shared its stretch).
+  - **The REVIEW list earned its keep.** Two ranges swept in top-level
+    statements that sat just before the next header: `initTouchHud();` (into
+    ow_scaling, which would have reintroduced the #577 touch-HUD bug) and
+    `evolution.onDone / onEvolved / S.loading = true` (into ow_progression).
+    Both were put back in main.js at their original spots. Lesson: when a
+    range ends at "the line before the next header", read the REVIEW output.
+    A block's tail can hold unrelated load-time code.
+  - `prizemoney_test`'s "no caller re-credits a battle prize" now scans every
+    module, which is the scope it always meant: callers had been moving out
+    of main.js.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).

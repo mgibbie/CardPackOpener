@@ -16,8 +16,10 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { offerNickname } from './ow_screens.js';
+import { whiteOut } from './ow_places.js';
+import { dexMilestoneCheck } from './ow_follower.js';
 import {
-	MP_ON, bgmTick, dexMilestoneCheck, warpTo, whiteOut,
+	MP_ON, bgmTick, warpTo,
 } from './main.js';
 
 // ---------- Secret Bases ----------

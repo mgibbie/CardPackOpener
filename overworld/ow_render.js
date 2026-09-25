@@ -6,8 +6,9 @@ import * as Story from './events.js';
 import { player, world } from './ow_core.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { mapWeatherNow } from './ow_follower.js';
 import {
-	REDUCED_MOTION_OW, mapWeatherNow,
+	REDUCED_MOTION_OW,
 } from './main.js';
 
 // ---------- map-editor view ----------

@@ -21,11 +21,12 @@ import { cry } from './sound.js';
 import * as Trades from './trades.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { savePos } from './ow_input.js';
+import { levelCapNow, playerRegion } from './ow_progression.js';
+import { dexMilestoneCheck } from './ow_follower.js';
 import {
 	MP_ON, PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, cardsMenu, daycareMenu, daycareOptions,
-	deckSelect, dexMenu, dexMilestoneCheck, levelCapNow, moveShop, nameRater, openTownMap,
-	optionsMenu, partyMenu, playerMenu, playerRegion, questMenu, runMenu, startMenu, trade,
-	tradeMenu, trainerCard,
+	deckSelect, dexMenu, moveShop, nameRater, openTownMap, optionsMenu, partyMenu, playerMenu,
+	questMenu, runMenu, startMenu, trade, tradeMenu, trainerCard,
 } from './main.js';
 
 // ---------- in-game NPC trades ----------

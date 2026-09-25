@@ -21,12 +21,16 @@ import { decoKey, decoMenu, radioKey, radioMenu, socialKey, socialMenu } from '.
 import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_fieldmoves.js';
 import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
 import { REPEL_LAST_KEY, interact, setRepel, useGadget } from './ow_input.js';
+import { cycleForm, formsOf } from './ow_scaling.js';
+import { startWildBattle } from './ow_places.js';
+import { levelCapNow, playerRegion } from './ow_progression.js';
+import { gcKey, gcMenu, vfKey, vfMenu } from './ow_gamecorner.js';
+import { refreshFollower } from './ow_follower.js';
 import {
-	STARTERS, cardsMenu, cycleForm, daycareMenu, deckSelect, dexMenu, fading, flyTo, formsOf, gcKey,
-	gcMenu, halfParty, halfPartyKey, levelCapNow, moveShop, moveToMap, nameRater, optionsKey,
-	optionsMenu, partyMenu, playerMenu, playerRegion, questMenu, refreshFollower, refreshObjective,
-	runMenu, startMenu, startWildBattle, starterMenu, townKey, townMap, trade, tradeMenu,
-	trainerCard, vfKey, vfMenu,
+	STARTERS, cardsMenu, daycareMenu, deckSelect, dexMenu, fading, flyTo, halfParty, halfPartyKey,
+	moveShop, moveToMap, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu, questMenu,
+	refreshObjective, runMenu, startMenu, starterMenu, townKey, townMap, trade, tradeMenu,
+	trainerCard,
 } from './main.js';
 
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------

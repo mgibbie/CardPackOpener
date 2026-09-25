@@ -18,14 +18,16 @@ import { safeSaveStr } from './safestore.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { INPUT_TRACE, heldKeys, owlog, tickStats } from './ow_input.js';
+import { drawFossilSpots, drawMuseum } from './ow_places.js';
+import { catchUpPostBattleScripts, refundPostBattleTry } from './ow_progression.js';
+import { drawGcMenu, drawVfMenu, gcMenu, vfMenu } from './ow_gamecorner.js';
+import { drawFollower, follower, updateFollower } from './ow_follower.js';
 import {
-	FADE_SPEED, MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, bgmTick, cardsMenu,
-	catchUpPostBattleScripts, ctx, daycareMenu, deckSelect, dexMenu, drawFollower, drawFossilSpots,
-	drawGcMenu, drawMuseum, drawVfMenu, drawWaterAnim, fade, findLanding, fitCanvas, follower,
-	frame, gateReport, gcMenu, halfParty, lastRejectAt, moveShop, nameRater, openCanvasMenus,
-	optionsMenu, partyMenu, persistBattle, playerMenu, questMenu, refundPostBattleTry,
-	rejectedMoves, runMenu, startMenu, starterMenu, townMap, trade, tradeMenu, trainerCard,
-	updateFollower, vfMenu,
+	FADE_SPEED, MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, bgmTick, cardsMenu, ctx, daycareMenu,
+	deckSelect, dexMenu, drawWaterAnim, fade, findLanding, fitCanvas, frame, gateReport, halfParty,
+	lastRejectAt, moveShop, nameRater, openCanvasMenus, optionsMenu, partyMenu, persistBattle,
+	playerMenu, questMenu, rejectedMoves, runMenu, startMenu, starterMenu, townMap, trade,
+	tradeMenu, trainerCard,
 } from './main.js';
 
 // ---------- loop ----------

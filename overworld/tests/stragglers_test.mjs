@@ -14,6 +14,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -32,7 +33,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(/healblock: \{ healBlock: true \}/.test(bt) && /electrify: \{ electrifyTarget: true \}/.test(bt) && /iondeluge: \{ ionDeluge: true \}/.test(bt),
 		'HEAL BLOCK / ELECTRIFY / ION DELUGE are no longer noops');
 	A(/delete mon\.healBlockTurns/.test(bt) && /delete mon\.electrified/.test(bt), 'the new volatiles clear on switch/battle-end');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/followMini/.test(mn) && /data\/pokemon_follow\/\$\{base\}/.test(mn), 'followers fall back: base-form sheet, then battle-sprite mini');
 }
 
