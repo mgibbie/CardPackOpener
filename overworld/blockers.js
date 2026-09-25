@@ -31,6 +31,13 @@ function condMet(cond) {
 	// (globalTier), matching Quest.blocked — otherwise the sprite would vanish while
 	// the quest gate still bounced you (the old invisible-wall bug).
 	if (cond.badge != null) return globalTier() >= cond.badge;
+	// a specific gym's badge, in its own region: a GIVER's promise ("come back once
+	// you've beaten WHITNEY") is about that gym, not the shared corridor tier. The
+	// florist used { badge: 3 } and so waited on globalTier, which a save with
+	// Johto 3 / Hoenn 3 / Kanto 2 badges reads as 2: no SQUIRTBOTTLE, and Sudowoodo
+	// blocked Route 36 after Whitney was beaten (playtest 2026-09-25). The region is
+	// named, not inferred: region() falls back to the STARTING region off JohKanto.
+	if (cond.gymBadge) return Badges.has(cond.gymBadge[0], cond.gymBadge[1]);
 	if (cond.item) return Bag.count(cond.item) > 0;
 	if (cond.flag) return Story.getFlag(cond.flag);
 	// HM field-move availability stays region-local (an ability, not a tier gate)
@@ -172,15 +179,16 @@ export const GIVERS = {
 		pre: 'MR. FUJI: The SNORLAX won’t stir for just anyone... First, deal with those TEAM ROCKET thugs.',
 		give: 'MR. FUJI: For your kindness, take this POKe FLUTE. Its song wakes even the sleepiest POKeMON.',
 		post: 'MR. FUJI: Play it well, traveler.' }],
-	// Johto: the GOLDENROD florist gives the SQUIRTBOTTLE after WHITNEY (3 badges)
+	// Johto: the GOLDENROD florist gives the SQUIRTBOTTLE after WHITNEY (her PLAIN BADGE)
 	MAP_GOLDENROD_FLOWER_SHOP: [{ id: 'g_squirt', tx: 2, ty: 4, img: 'lass',
-		item: 'squirtbottle', name: 'SQUIRTBOTTLE', prereq: { badge: 3 }, onceFlag: 'gave_squirtbottle',
+		item: 'squirtbottle', name: 'SQUIRTBOTTLE', prereq: { gymBadge: ['JOHTO', 'plain'] }, onceFlag: 'gave_squirtbottle',
 		pre: 'FLORIST: Come back once you’ve beaten WHITNEY — I’ll have something for those funny trees!',
 		give: 'FLORIST: Here, take this SQUIRTBOTTLE. Try watering that odd “tree” on ROUTE 36!',
 		post: 'FLORIST: Did that tree run off? Hee hee.' }],
-	// Hoenn: STEVEN gives the DEVON SCOPE on Route 120 (once you can Surf there, 5 badges)
+	// Hoenn: STEVEN gives the DEVON SCOPE on Route 120 (once you can Surf there: NORMAN's
+	// BALANCE BADGE, Hoenn's 5th). Same scope fix as the florist: it was the global tier.
 	MAP_ROUTE120: [{ id: 'g_scope', tx: 13, ty: 15, img: 'cooltrainer_m',
-		item: 'devonscope', name: 'DEVON SCOPE', prereq: { badge: 5 }, onceFlag: 'gave_devonscope',
+		item: 'devonscope', name: 'DEVON SCOPE', prereq: { gymBadge: ['HOENN', 'balance'] }, onceFlag: 'gave_devonscope',
 		pre: 'STEVEN: There’s something odd on this bridge... give me a moment to prepare a countermeasure.',
 		give: 'STEVEN: This DEVON SCOPE reveals hidden POKeMON. That invisible wall ahead? Now you’ll see it.',
 		post: 'STEVEN: Good luck out there.' }],
