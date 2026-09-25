@@ -112,6 +112,9 @@ async function waitFor(fn, ms) {
 		A(mounted, 'the editor mounts');
 		if (!mounted) throw new Error('no editor');
 		await waitFor(() => page.evaluate(() => !!window.__ow?.world?.current?.map), 20000);
+		// the warp-target list fills asynchronously (from the map index) after the editor
+		// mounts; reading it at once raced that load and counted 0 about 1 run in 4
+		await waitFor(() => page.evaluate(() => document.querySelectorAll('#mapedit #me-maplist option').length > 0), 20000);
 
 		const ui = await page.evaluate(() => ({
 			tools: [...document.querySelectorAll('#mapedit .me-tool')].map(b => b.dataset.tool),
