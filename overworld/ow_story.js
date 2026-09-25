@@ -322,11 +322,42 @@ function runMapOnLoad() {
 // any object should be visible, reload the objects and run the setup scripts once
 // more (they are setup-only and idempotent — positions they set, like Bill's
 // setobjxy, need the rebuilt objects to land on).
+// RESTED SCENES, OUTCOMES KEPT. STORY_SEED keeps a few Hoenn set-pieces rested
+// (their var is seeded past the trigger) because replaying the whole script would
+// corrupt a free-roam save. But some of those scenes were also the ONLY thing that
+// moved the story on elsewhere. The Meteor Falls meteorite theft is the one that
+// hard-blocks: its side effect clears the two Team Magma grunts guarding the Route
+// 112 cable car, and with the scene rested they never left, cutting the road to
+// Mt. Chimney and Lavaridge (playtest 2026-09-25). So, on entering the scene's map
+// while it is rested, apply just its lasting OUTCOMES (the choreography stays
+// skipped). You can't get into Meteor Falls without walking through the trigger,
+// so arriving there is when the scene would have played. Idempotent.
+// Mt. Chimney's own Magma/Aqua objects ride their own FLAG_HIDE_MT_CHIMNEY_*
+// flags, which this scene never touches, so the next beat is unaffected.
+export const RESTED_SCENE_OUTCOMES = [
+	{
+		map: 'MeteorFalls_1F_1R', rested: ['VAR_METEOR_FALLS_STATE', 1], done: 'FLAG_MET_ARCHIE_METEOR_FALLS',
+		// MeteorFalls_1F_1R_EventScript_MagmaStealsMeteoriteScene's lasting effects:
+		// its hideobjs (the thieves leave, Archie's party leaves) + its three setflags
+		set: ['FLAG_HIDE_METEOR_FALLS_TEAM_MAGMA', 'FLAG_HIDE_METEOR_FALLS_TEAM_AQUA',
+			'FLAG_HIDE_ROUTE_112_TEAM_MAGMA', 'FLAG_MET_ARCHIE_METEOR_FALLS', 'FLAG_HIDE_FALLARBOR_TOWN_BATTLE_TENT_SCOTT'],
+	},
+];
+export function applyRestedSceneOutcomes(mapName) {
+	for (const r of RESTED_SCENE_OUTCOMES) {
+		if (r.map !== mapName || Story.getFlag(r.done)) continue;
+		if (Story.getVar(r.rested[0]) !== r.rested[1]) continue;   // not rested: the real scene runs
+		for (const f of r.set) Story.setFlag(f);
+		console.info('[rested-scene]', r.map, 'outcomes applied:', r.set.join(', '));
+	}
+}
+
 export async function runMapSetupScripts(isBoot) {
 	expireDailyFlags();
 	const evs = world.current?.map?.object_events || [];
 	const vis = () => evs.map(ev => Story.objectHiddenByFlag(ev) ? 1 : 0).join('');
 	const before = vis();
+	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
