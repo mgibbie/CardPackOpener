@@ -98,6 +98,13 @@ and can be reverted on its own.
   - `hillRun` was assigned from outside its block (a test hook's setter), so
     it moved onto `S`.
   - main.js is at 6,979 lines.
+- **Extraction 8: `ow_story.js`, DONE on this branch.** The story layer
+  (971 lines): map-script triggers, `runScriptLabel` / `runSpecial`, scripted
+  battles, the Space Center multi battle, the Johto gifts, the Fork B
+  campaign open, villain arcs and the recurring rival.
+  - `lastTalkedNpc` and `multiPicks` were assigned across the boundary, so
+    they moved onto `S`.
+  - main.js is at 6,018 lines.
 - **Tools used for every extraction:**
   - `tools/split_deps.mjs <file> <from> <to>` reports what a line range imports,
     exports, and whether anything is assigned across the boundary (a blocker).

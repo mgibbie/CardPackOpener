@@ -22,4 +22,6 @@ export const S = {
 	mailWaiting: undefined,       // async matches waiting on ME (START-menu badge); written by ow_pvp.js
 	fluteState: undefined,        // the glass-workshop flute in use (Route 113); written by ow_menukeys.js
 	hillRun: undefined,           // the Trainer Hill run in progress ({ start, beatenSet, guards }) or null; ow_minigames.js
+	lastTalkedNpc: undefined,     // the NPC the current script was started from (VAR_LAST_TALKED)
+	multiPicks: undefined,        // party indices picked for a multi battle (ChooseHalfPartyForBattle), else null
 };

@@ -16,16 +16,16 @@ import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { blendKey, blendMenu, contestKey, contestMenu, slideKey, slideMenu, unownDex, unownDexKey } from './ow_venues.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
+import { beginNewGame, finishStarterPick } from './ow_story.js';
 import {
-	REPEL_LAST_KEY, STARTERS, beginNewGame, cardsKey, cardsMenu, cycleForm, daycareKey, daycareMenu,
-	deckSelect, deckSelectKey, decoKey, decoMenu, dexKey, dexMenu, fading, finishStarterPick, flyTo,
-	formsOf, friendsKey, friendsMenu, gcKey, gcMenu, halfParty, halfPartyKey, interact, levelCapNow,
-	mailMenu, moveShop, moveShopKey, moveToMap, nameRater, nameRaterKey, npcTradeKey,
-	openPartyAction, optionsKey, optionsMenu, partyMenu, playerMenu, playerMenuKey, playerRegion,
-	questKey, questMenu, radioKey, radioMenu, refreshFollower, refreshObjective, repelSteps, runKey,
-	runMenu, saveFlute, setRepel, socialKey, socialMenu, startKey, startMenu, startWildBattle,
-	starterMenu, toggleBike, townKey, townMap, trade, tradeMenu, trainerCard, useFieldMove,
-	useGadget, vfKey, vfMenu,
+	REPEL_LAST_KEY, STARTERS, cardsKey, cardsMenu, cycleForm, daycareKey, daycareMenu, deckSelect,
+	deckSelectKey, decoKey, decoMenu, dexKey, dexMenu, fading, flyTo, formsOf, friendsKey,
+	friendsMenu, gcKey, gcMenu, halfParty, halfPartyKey, interact, levelCapNow, mailMenu, moveShop,
+	moveShopKey, moveToMap, nameRater, nameRaterKey, npcTradeKey, openPartyAction, optionsKey,
+	optionsMenu, partyMenu, playerMenu, playerMenuKey, playerRegion, questKey, questMenu, radioKey,
+	radioMenu, refreshFollower, refreshObjective, repelSteps, runKey, runMenu, saveFlute, setRepel,
+	socialKey, socialMenu, startKey, startMenu, startWildBattle, starterMenu, toggleBike, townKey,
+	townMap, trade, tradeMenu, trainerCard, useFieldMove, useGadget, vfKey, vfMenu,
 } from './main.js';
 
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------

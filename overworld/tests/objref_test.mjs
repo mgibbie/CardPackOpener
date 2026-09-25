@@ -28,6 +28,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -41,7 +42,7 @@ const norm = s => String(s == null ? '' : s).toUpperCase().replace(/_SPRITE_/g, 
 
 // ---------- the resolver exists and is ordered ----------
 {
-	const mn = fs.readFileSync(path.join(OW, 'main.js'), 'utf8');
+	const mn = overworldSource();   // main.js + the modules split out of it
 	const i = mn.indexOf('function npcById(');
 	const body = mn.slice(i, i + 2400);
 	A(i > 0, 'npcById exists');

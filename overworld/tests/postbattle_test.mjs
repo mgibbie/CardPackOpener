@@ -28,6 +28,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -55,7 +56,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	A(total > 300, 'the audit covered the whole game', String(total));
 	A(story >= 25 && story < 60, 'the set this lights up is bounded, not a sprawl', String(story));
 
-	const mn = fs.readFileSync(path.join(OW, 'main.js'), 'utf8');
+	const mn = overworldSource();   // main.js + the modules split out of it
 	A(/function runPostBattleScript/.test(mn), 'a plain victory runs the beat');
 	A(/function catchUpPostBattleScripts/.test(mn), 'and a save that already won can still reach it');
 	A(/scriptIsDisplayOnly\(ops\)\) return false/.test(mn),
