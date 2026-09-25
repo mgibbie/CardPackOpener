@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as Slide from '../slidepuzzle.js';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -46,7 +47,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		'all eight Trick House rooms carry scroll zones, the End room its master');
 	A(/MAP_RUINS_OF_ALPH_HO_OH_CHAMBER/.test(sv) && /ruinspuzzle/.test(sv), 'all four ruins chambers carry the puzzle wall');
 	A(/sportball/.test(fs.readFileSync(path.join(ROOT, 'overworld/bag.js'), 'utf8')), 'the SPORT BALL exists (never sold)');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/bugContestCatch\(battle\.lastCaught\)/.test(mn), 'the wild catch path defers to the contest entry keeper');
 	const rs = fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8');
 	for (const k of ['magepunk_bugcontest_v1', 'magepunk_trickhouse_v1', 'magepunk_ruins_v1'])

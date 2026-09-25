@@ -21,4 +21,5 @@ export const S = {
 	trainerTeams: undefined,      // canonical TRAINER_id -> {class, party}
 	mailWaiting: undefined,       // async matches waiting on ME (START-menu badge); written by ow_pvp.js
 	fluteState: undefined,        // the glass-workshop flute in use (Route 113); written by ow_menukeys.js
+	hillRun: undefined,           // the Trainer Hill run in progress ({ start, beatenSet, guards }) or null; ow_minigames.js
 };

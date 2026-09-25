@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as Slots from '../slots.js';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -49,7 +50,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const sv = fs.readFileSync(path.join(ROOT, 'overworld/services.js'), 'utf8');
 	A(/MAP_TRAINER_HILL_ENTRANCE/.test(sv) && /hillprize/.test(sv) && /hillelevator/.test(sv),
 		'the reception, roof, and elevator carry zones');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/hillPrepFloor\(label\); \/\/ must precede npcs\.loadForMap/.test(mn), 'guards inject before the NPC load');
 	A(/'PLAY SLOTS'/.test(mn), 'the Game Corner hub offers slots');
 	A(/'magepunk_trainerhill_v1'/.test(fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8')),

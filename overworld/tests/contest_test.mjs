@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Contest, CATS, RANKS, FLAVOR2CAT } from '../contest.js';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -117,7 +118,7 @@ function mkState(moves, category = 'cool', rank = 0) {
 	const sv = fs.readFileSync(path.join(ROOT, 'overworld/services.js'), 'utf8');
 	A(/MAP_LILYCOVE_CITY_CONTEST_LOBBY/.test(sv) && /'contest'/.test(sv) && /'berryblend'/.test(sv),
 		'the Lilycove lobby counters carry contest + blender zones');
-	const mn = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/emerald_MUS_CONTEST'/.test(mn), 'the stage theme takes over during the appeal round');
 	A(/'magepunk_contest_v1'/.test(fs.readFileSync(path.join(ROOT, 'site/owreset.js'), 'utf8')),
 		'contest progress joins the canonical save inventory');
