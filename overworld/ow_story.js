@@ -21,11 +21,13 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import * as Trades from './trades.js';
 import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { openRadio } from './ow_features.js';
+import { startNpcTrade } from './ow_screens.js';
 import {
 	STARTERS, bossLevelFor, buildMonForGift, cutsceneCtx, dexMilestoneCheck, halfParty, inJohKanto,
 	johkantoLeagueKind, moveToMap, notePostBattleFinished, onTrainerDefeated, openHalfParty,
-	openRadio, playerRegion, refreshFollower, refreshObjective, routeTrainerLevel, startCutscene,
-	startNpcTrade, starterMenu, urlPinnedMap, warpTo, whiteOut,
+	playerRegion, refreshFollower, refreshObjective, routeTrainerLevel, startCutscene, starterMenu,
+	urlPinnedMap, warpTo, whiteOut,
 } from './main.js';
 
 // ---------- ported map-script triggers ----------

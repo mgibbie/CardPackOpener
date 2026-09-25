@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -72,7 +73,7 @@ const shared = JSON.parse(fs.readFileSync(path.join(D, 'shared_scripts.json'), '
 
 // ---------- map labels must still win ----------
 {
-	const src = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const src = overworldSource();
 	// What matters is the ORDER — the map's own labels spread last, so they win.
 	// The merge may be wrapped (applySailFix patches the Briney ferry legs as the
 	// table is built), which is why this no longer pins the exact spelling.

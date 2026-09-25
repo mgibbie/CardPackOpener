@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -41,7 +42,7 @@ const ALL = ['ui_move', 'ui_select', 'ui_cancel', 'ui_denied', 'ui_open', 'text_
 	const eng = fs.readFileSync(path.join(ROOT, 'overworld/engine.js'), 'utf8');
 	A(/this\.onBump\?\.\(nx, ny\); return; \}   \/\/ walls thud too/.test(eng) && /this\.onHop\?\.\(\);/.test(eng),
 		'the engine reports wall bumps and ledge hops');
-	const main = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+	const main = overworldSource();
 	A(/player\.onHop = \(\) => sfx\('ledge'\)/.test(main) && /bumpCooldown = now \+ 350/.test(main),
 		'main plays them (bump throttled against held keys)');
 	A(/sfx\('heal'\); healParty\((?:S\.)?party\)/.test(main) && /sfx\('pc_on'\)/.test(main) && /sfx\('notice'\)/.test(main),

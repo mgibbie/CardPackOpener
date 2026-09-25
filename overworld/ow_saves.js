@@ -12,8 +12,9 @@ import * as Dex from './pokedex.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import * as Savefile from './savefile.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { LEGENDARY_ENCOUNTERS, awState } from './ow_legendaries.js';
 import {
-	LEGENDARY_ENCOUNTERS, MP_ON, awState, optionsMenu,
+	MP_ON, optionsMenu,
 } from './main.js';
 
 // ---------- overworld achievements sync ----------

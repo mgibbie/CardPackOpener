@@ -28,14 +28,14 @@ import { restoreBackup, runSaveAction } from './ow_saves.js';
 import { BAG_POCKETS, FERRY_DESTS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
 import { blendKey, blendMenu, contestKey, contestMenu } from './ow_venues.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
+import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
+import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems } from './ow_screens.js';
 import {
-	DEX_GRID_COLS, KEY_ACTIONS, OPTION_ACTIONS, OPTION_KEYS, ROAMERS, STARTERS, THINGS_TO_DO,
-	cardsItems, cardsMenu, daycareMenu, daycareOptions, deckSelect, decoKey, decoMenu,
-	dexFilterLabel, dexList, dexMenu, friendsChallenge, friendsMenu, gcMenu, halfParty,
-	halfPartyNeed, hasFlyPoint, keyBinds, legendStats, levelCapNow, mailMenu, moveShop, nameRater,
-	optionsKey, optionsMenu, partyMenu, playerMenu, playerRegion, postgameLog, postgameObjective,
-	questMenu, roamState, runMenu, runModeItems, socialKey, socialMenu, startItems, startMenu,
-	starterMenu, tidStr, todoRows, townMap, trade, tradeMenu, trainerCard, vfMenu,
+	KEY_ACTIONS, OPTION_ACTIONS, OPTION_KEYS, STARTERS, THINGS_TO_DO, cardsMenu, daycareMenu,
+	daycareOptions, deckSelect, dexMenu, gcMenu, halfParty, halfPartyNeed, hasFlyPoint, keyBinds,
+	legendStats, levelCapNow, moveShop, nameRater, optionsKey, optionsMenu, partyMenu, playerMenu,
+	playerRegion, postgameLog, postgameObjective, questMenu, runMenu, startMenu, starterMenu,
+	todoRows, townMap, trade, tradeMenu, trainerCard, vfMenu,
 } from './main.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------

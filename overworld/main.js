@@ -9,6 +9,37 @@ import {
 } from './ow_core.js';
 // the shared mutable state (see ow_state.js)
 import { S } from './ow_state.js';
+// ow_screens.js: the START-menu screens and service counters (dex, friends, mail, quests, deck select, cards, run menu, in-game trades, DAY CARE, NAME RATER, move relearner)
+import {
+	dexAll, dexFilterLabel, dexKey, dexList, drawDeckSelect, drawNpcTrade, drawPlayerMenu,
+	drawTrade, friendAction, friendsKey, friendsMenu, mailMenu, offerNickname, questKey,
+	refreshFriendBadges, refreshFriends, relearnable, setNickname, startItems, startNpcTrade,
+} from './ow_screens.js';
+// ow_fieldmoves.js: ow_fieldmoves.js — field systems: the Mach Bike, Silph Co locked doors, the Route 113 glass workshop, Dive, and the HM field moves.
+import {
+	HM_FIELD, SILPH_DOORS, bikeShopTalk, diveTo, fieldMovesOf, glassBlowerTalk, openPartyAction,
+	silphDoorAt, silphDoorsApply, toggleBike, useFieldMove,
+} from './ow_fieldmoves.js';
+// ow_legendaries.js: ow_legendaries.js — the static legendary encounters and the Hoenn legendary-awakening chain.
+import {
+	AWAKENING_SCENES, LEGENDARY_ENCOUNTERS, awState, checkAwakeningTrigger, drawAwakening,
+	drawLegendary,
+} from './ow_legendaries.js';
+// ow_features.js: ow_features.js — Secret Bases, async friend trades (the escrowed mailbox), Shoal Cave tides, roaming legendaries and the Johto RADIO.
+import {
+	DECO_ITEMS, ROAMERS, ROAM_ROUTES, acceptTrade, baseDecoInteract, baseRoomFor, baseSpotKey,
+	buenaText, claimTradeDeliveries, declineTrade, decoKey, decoMenu, drawBaseDeco, drawDecoMenu,
+	drawRadio, drawSocial, enterBase, kurtTalk, luckyText, myBase, oakTalkText, openRadio,
+	openTradeInbox, openTradeOffer, playerTID, radioKey, radioMenu, roamState, roamerEnd,
+	roamerHere, roamersOnMapChange, saveMyBase, secretSpotInteract, sendTradeOffer, shoalDig,
+	shoalFixup, shoalHermitTalk, shoalTide, shoalWarp, socialKey, socialMenu, startRoamerBattle,
+	tidStr,
+} from './ow_features.js';
+// ow_render.js: ow_render.js — overworld rendering helpers: the map-editor view flag, camera, unlit-cave darkness, day/night tint, step ambience (grass rustle + footprints), the area-name banner and weather particles. The frame loop itself (tick) stays in main.js.
+import {
+	cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView, mapIsUnlit,
+	showAreaBanner, spawnStepFx, stepFx, weatherFx,
+} from './ow_render.js';
 // ow_story.js: ow_story.js — the story layer: map-script triggers and the ported decomp scripts (runScriptLabel / runSpecial), scripted battles, the Space Center multi battle, the Johto gift POKeMON, the Fork B campaign open, villain arcs and the recurring rival.
 import {
 	B_OUTCOME_CAUGHT, B_OUTCOME_LOST, B_OUTCOME_RAN, B_OUTCOME_WON, NEW_GAME_INTRO, PLOT_BLOCKED,
@@ -289,7 +320,7 @@ player.pushBoulder = (bx, by, dx, dy) => {
 	const obj = items.fieldObjAt(bx, by);
 	if (!obj || obj.kind !== 'boulder') return false;
 	// only shoves once STRENGTH has been used (from the party menu) on this map
-	if (!strengthActive) {
+	if (!S.strengthActive) {
 		if (!strengthHinted) {
 			strengthHinted = true;
 			dialog.open("It's a hefty boulder — but it won't budge.\n\nSTRENGTH could get it moving.");
@@ -812,7 +843,7 @@ S.loading = true;
 // either side of the load: fadeTo(1) (out) → set loading + swap the map →
 // fadeTo(0) (in). While a fade runs, `fading` freezes input via menuBlocking so
 // no stray step slips through the black. Honors REDUCED_MOTION (instant cut).
-const REDUCED_MOTION_OW = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const REDUCED_MOTION_OW = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fade = { alpha: 0, target: 0 };
 const FADE_SPEED = 6; // alpha units/sec (~170ms each way)
 export const fading = () => fade.alpha > 0.001 || fade.target > 0.001;
@@ -895,10 +926,10 @@ owlog('listeners attached: keydown/keyup (movement)');
 export const POS_KEY = 'magepunk_pos_v1';
 // REPEL steps remaining. Persisted so it survives a reload mid-cave, and read by
 // the step handler + encounters.roll. Nothing read the repel items before this.
-const REPEL_KEY = 'magepunk_repel_v1';
+export const REPEL_KEY = 'magepunk_repel_v1';
 export const REPEL_LAST_KEY = 'magepunk_repellast'; // which repel kind was last used, for the wear-off re-offer
-export let repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
-export function setRepel(n) { repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(repelSteps)); }
+S.repelSteps = Math.max(0, parseInt(localStorage.getItem(REPEL_KEY), 10) || 0);
+export function setRepel(n) { S.repelSteps = Math.max(0, n | 0); safeSaveStr(REPEL_KEY, String(S.repelSteps)); }
 // the gadget key-items (Escape Rope / Itemfinder / Town Map), inert since
 // day one. Returns true when the id was one of them (handled or refused).
 export function useGadget(id) {
@@ -929,7 +960,7 @@ export function useGadget(id) {
 
 // the gen-5 nicety: when a repel runs out and the bag holds another of the same
 // kind, offer it on the spot instead of making the player dig through the bag
-function repelWoreOff() {
+export function repelWoreOff() {
 	const id = localStorage.getItem(REPEL_LAST_KEY);
 	const item = id && Bag.ITEMS[id];
 	if (!item || item.kind !== 'repel' || Bag.count(id) < 1) {
@@ -946,7 +977,7 @@ function repelWoreOff() {
 // standalone Battle Factory mini-game (?factory=1 from the home page): rentals only,
 // no save/party needed — and it must never write over a real overworld save
 export let factoryStandalone = false;
-function savePos() {
+export function savePos() {
 	if (factoryStandalone) return; // the mini-game never persists position
 	if (window.__followTest) return; // the follower-test arena must never become your saved position
 	// `back` rides along because a few Crystal maps leave by a -1 "return to
@@ -1003,7 +1034,7 @@ export function interact() {
 		const hg = hillGuardAt(fx, fy);
 		if (hg) { startHillBattle(hg.key, hg.i); return; }
 	}
-	if (baseCtx && baseDecoInteract(fx, fy)) return;
+	if (S.baseCtx && baseDecoInteract(fx, fy)) return;
 	const svc = services.kindAt(fx, fy);
 	if (svc === 'nurse') {
 		dialog.open('Welcome to the POKEMON CENTER!\n\nWe restored your POKEMON\nto full health. See you again!', () => { sfx('heal'); healParty(S.party); noteHealPoint(); });
@@ -1298,7 +1329,7 @@ export function todoRows() {
 }
 // walk-up-and-talk: press Z facing another player's sprite to challenge or trade
 export const playerMenu = { open: false, idx: 0, target: null };
-const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
+export const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE', 'TRADE', 'CANCEL'];
 // deck-selection phase before a card duel: pick which class deck to bring
 export const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
 // RuneScape-style two-party trade window
@@ -1571,7 +1602,7 @@ function battleThemeKey(a) {
 	return jk ? T.kantoTrainer : T.trainer;
 }
 let bgmWant = null;
-function bgmTick() {
+export function bgmTick() {
 	if (!musicMap) return;
 	let want;
 	if (battle.blocking) {
@@ -1582,7 +1613,7 @@ function bgmTick() {
 		battle.themeHint = null;               // any finished battle clears its hint
 		const T = BATTLE_THEMES[bgmGame()];
 		want = (contestMenu.open && contestMenu.st) ? 'emerald_MUS_CONTEST' // the stage theme carries the appeal round
-			: radioTune ? radioTune                // a tuned-in radio takes over the room's music
+			: S.radioTune ? S.radioTune                // a tuned-in radio takes over the room's music
 			: player.surfing ? T?.surf
 			: player.biking ? T?.bike
 			: (musicMap[world.current?.map?.id] || null);
@@ -1684,7 +1715,7 @@ export function halfPartyKey(k) {
 function openMoveShop() { moveShop.open = true; moveShop.mode = 'main'; moveShop.idx = 0; moveShop.mon = null; moveShop.flash = null; }
 
 // open the Town Map to the region of the current map (or the first visited one)
-function openTownMap() {
+export function openTownMap() {
 	townMap.open = true;
 	townMap.idx = 0;
 	townMap.flash = null;
@@ -1733,582 +1764,6 @@ export function daycareOptions() {
 	if (Daycare.canDeposit() && S.party.length > 1) opts.push({ label: 'Leave a POKeMON', act: 'deposit' });
 	opts.push({ label: 'See you later', act: 'leave' });
 	return opts;
-}
-// ---------- in-game NPC trades ----------
-// One flow for both dialects (see trades.js for why they broke differently).
-// Offer -> pick a party POKeMON -> it must be the species they asked for -> swap.
-const monName = id => (battle.data?.species?.[id]?.name || id || '').toUpperCase();
-export function startNpcTrade(trade, talker) {
-	if (!S.party || !S.party.length) return;
-	if (Story.getFlag(Trades.flagFor(trade.key))) {
-		dialog.open(`How's ${trade.nickname || monName(trade.give)} doing?\n\nI'm glad we traded.`);
-		return;
-	}
-	dialog.open(`I have a ${monName(trade.give)}.\n\nWould you trade me your ${monName(trade.want)} for it?`, () => {
-		tradeMenu.open = true; tradeMenu.trade = trade; tradeMenu.idx = 0;
-		tradeMenu.flash = null; tradeMenu.talker = talker || null;
-	});
-}
-export function npcTradeKey(k) {
-	const t = tradeMenu.trade;
-	if (k === 'ArrowUp') tradeMenu.idx = (tradeMenu.idx + S.party.length - 1) % S.party.length;
-	if (k === 'ArrowDown') tradeMenu.idx = (tradeMenu.idx + 1) % S.party.length;
-	if (k === 'x' || k === 'Escape') { tradeMenu.open = false; dialog.open('Oh… well, maybe another time.'); return; }
-	if (k !== 'z' && k !== 'Enter') return;
-	const given = S.party[tradeMenu.idx];
-	if (!given || !t) return;
-	if (given.speciesId !== t.want) {
-		tradeMenu.flash = `That's not a ${monName(t.want)}!`;
-		return;
-	}
-	// your last POKeMON would leave you with an empty party mid-overworld
-	if (S.party.length <= 1) { tradeMenu.flash = "That's your only POKeMON!"; return; }
-	const got = Trades.buildTraded(t, given, battle.data, battleBuildMon);
-	if (!got) { tradeMenu.flash = 'Something went wrong…'; return; }
-	S.party.splice(tradeMenu.idx, 1);
-	S.party.push(got);
-	saveParty(S.party);
-	Dex.markSeen(got.speciesId); Dex.markCaught(got.speciesId); dexMilestoneCheck();
-	Story.setFlag(Trades.flagFor(t.key));
-	tradeMenu.open = false;
-	dialog.open(`You traded your ${monName(t.want)} for ${got.name}!\n\nThanks — take good care of it!`);
-	hud.textContent = `Traded ${monName(t.want)} for ${got.name} (Lv${got.level}).`;
-}
-function drawNpcTrade(W, H) {
-	const u = H / 480;
-	const t = tradeMenu.trade;
-	menuChrome(W, H, u, 'TRADE', t ? `Which POKeMON will you give for ${monName(t.give)}?` : '');
-	S.party.forEach((m, i) => monRow('trade:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, m, tradeMenu.idx === i, u));
-	if (tradeMenu.flash) {
-		sctx.fillStyle = BUI.C.accent;
-		sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
-		sctx.fillText(tradeMenu.flash, 24 * u, H - 18 * u);
-	}
-}
-
-export function daycareKey(k) {
-	if (daycareMenu.mode === 'deposit') {
-		const cands = S.party.filter((m, i) => i > 0 || S.party.length > 1); // keep at least one
-		if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + S.party.length - 1) % S.party.length;
-		if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % S.party.length;
-		if (k === 'x' || k === 'Escape') { daycareMenu.mode = 'main'; daycareMenu.idx = 0; return; }
-		if (k === 'z' || k === 'Enter') {
-			if (S.party.length <= 1) { daycareMenu.flash = "You can't leave your last POKeMON!"; return; }
-			const mon = S.party[daycareMenu.idx];
-			if (!mon || !Daycare.canDeposit()) return;
-			S.party.splice(daycareMenu.idx, 1);
-			Daycare.deposit(mon);
-			saveParty(S.party);
-			daycareMenu.flash = `Left ${mon.name} at the Day Care.`;
-			daycareMenu.mode = 'main'; daycareMenu.idx = 0;
-		}
-		return;
-	}
-	const opts = daycareOptions();
-	if (k === 'ArrowUp') daycareMenu.idx = (daycareMenu.idx + opts.length - 1) % opts.length;
-	if (k === 'ArrowDown') daycareMenu.idx = (daycareMenu.idx + 1) % opts.length;
-	if (k === 'x' || k === 'Escape') { daycareMenu.open = false; return; }
-	if (k === 'z' || k === 'Enter') {
-		const o = opts[daycareMenu.idx];
-		if (!o) return;
-		if (o.act === 'leave') { daycareMenu.open = false; return; }
-		if (o.act === 'deposit') { daycareMenu.mode = 'deposit'; daycareMenu.idx = 0; daycareMenu.flash = null; return; }
-		if (o.act === 'withdraw') {
-			const info = Daycare.withdrawInfo(o.slot, battle.data, levelCapNow());
-			if (!Bag.spend(info.cost)) { daycareMenu.flash = "You don't have enough money!"; return; }
-			const mon = Daycare.withdraw(o.slot, battle.data, levelCapNow());
-			const where = addCaught(S.party, mon);
-			daycareMenu.flash = `Got ${mon.name} back! ${where === 'box' ? '(sent to the box)' : ''}`;
-			saveParty(S.party);
-			daycareMenu.idx = 0;
-		}
-		if (o.act === 'egg') {
-			const baby = Daycare.collectEgg(battle.data, canLearn); // egg moves filter through TM/level-up compat
-			if (baby) {
-				Dex.markCaught(baby.speciesId); dexMilestoneCheck();
-				const where = addCaught(S.party, baby);
-				Journal.add(`The EGG hatched into ${baby.name}!`);
-				daycareMenu.flash = `The EGG hatched into ${baby.name}! ${where === 'box' ? '(sent to the box)' : ''}`;
-			}
-			daycareMenu.idx = 0;
-		}
-	}
-}
-
-// ---- name rater ----
-export function nameRaterKey(k) {
-	if (k === 'ArrowUp') nameRater.idx = (nameRater.idx + S.party.length - 1) % S.party.length;
-	if (k === 'ArrowDown') nameRater.idx = (nameRater.idx + 1) % S.party.length;
-	if (k === 'x' || k === 'Escape') { nameRater.open = false; return; }
-	if (k === 'z' || k === 'Enter') {
-		const mon = S.party[nameRater.idx];
-		if (mon) promptRename(mon);
-	}
-}
-// A caught POKeMON could only ever be named by walking to the NAME RATER —
-// setNickname existed and nothing but that NPC ever called it. Ask at the moment
-// of capture, which is when you actually care and when the games ask.
-function offerNickname(mon) {
-	if (!mon) return;
-	Journal.add(`Caught ${mon.name} (Lv${mon.level})`); // every catch path funnels through here
-	dialog.open(`Give a nickname to ${mon.name}?\n\nZ = Yes   X = No`, declined => {
-		if (declined !== 'x') promptRename(mon);
-	});
-}
-// rename via the browser prompt (headless-safe: no prompt -> unchanged)
-function promptRename(mon) {
-	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
-	let name = null;
-	try { name = typeof prompt === 'function' ? prompt(`New name for ${mon.name}? (blank = ${speciesName})`, mon.name) : null; } catch (e) {}
-	if (name == null) return;
-	setNickname(mon, name);
-}
-function setNickname(mon, name) {
-	const clean = String(name).trim().slice(0, 12);
-	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
-	mon.name = clean || speciesName;
-	saveParty(S.party);
-	nameRater.open = false;
-}
-
-// ---- move deleter / reminder ----
-function relearnable(mon) {
-	const sp = battle.data.species[mon.speciesId];
-	const known = new Set(mon.moves.map(m => m.id));
-	const seen = new Set();
-	const out = [];
-	for (const [lv, id] of (sp?.learnset || [])) {
-		if (lv <= mon.level && !known.has(id) && !seen.has(id) && battle.data.moves[id]) {
-			seen.add(id); out.push(id);
-		}
-	}
-	return out;
-}
-export function moveShopKey(k) {
-	const m = moveShop;
-	if (m.mode === 'main') {
-		if (k === 'ArrowUp') m.idx = (m.idx + 1) % 2;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % 2;
-		if (k === 'x' || k === 'Escape') { m.open = false; return; }
-		if (k === 'z' || k === 'Enter') { m.mode = m.idx === 0 ? 'pick-delete' : 'pick-relearn'; m.idx = 0; }
-		return;
-	}
-	if (m.mode === 'pick-delete' || m.mode === 'pick-relearn') {
-		if (k === 'ArrowUp') m.idx = (m.idx + S.party.length - 1) % S.party.length;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % S.party.length;
-		if (k === 'x' || k === 'Escape') { m.mode = 'main'; m.idx = 0; return; }
-		if (k === 'z' || k === 'Enter') {
-			m.mon = S.party[m.idx];
-			if (m.mode === 'pick-delete') { m.mode = 'delete-move'; m.idx = 0; }
-			else { m.list = relearnable(m.mon); m.mode = 'relearn-move'; m.idx = 0; if (!m.list.length) m.flash = `${m.mon.name} has no moves to recall.`; }
-		}
-		return;
-	}
-	if (m.mode === 'delete-move') {
-		const moves = m.mon.moves;
-		if (k === 'ArrowUp') m.idx = (m.idx + moves.length - 1) % moves.length;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % moves.length;
-		if (k === 'x' || k === 'Escape') { m.mode = 'pick-delete'; m.idx = 0; return; }
-		if (k === 'z' || k === 'Enter') {
-			if (moves.length <= 1) { m.flash = "It can't forget its only move!"; return; }
-			const gone = moves.splice(m.idx, 1)[0];
-			saveParty(S.party);
-			m.flash = `${m.mon.name} forgot ${gone.name}.`;
-			m.mode = 'main'; m.idx = 0;
-		}
-		return;
-	}
-	if (m.mode === 'relearn-move') {
-		const list = m.list || [];
-		if (!list.length) { if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') { m.mode = 'main'; m.idx = 0; } return; }
-		if (k === 'ArrowUp') m.idx = (m.idx + list.length - 1) % list.length;
-		if (k === 'ArrowDown') m.idx = (m.idx + 1) % list.length;
-		if (k === 'x' || k === 'Escape') { m.mode = 'pick-relearn'; m.idx = 0; return; }
-		if (k === 'z' || k === 'Enter') {
-			const id = list[m.idx];
-			const info = battle.data.moves[id];
-			if (m.mon.moves.length < 4) {
-				m.mon.moves.push({ id, name: info.name, pp: info.pp, maxPp: info.pp });
-				saveParty(S.party);
-				m.flash = `${m.mon.name} recalled ${info.name}!`;
-				m.mode = 'main'; m.idx = 0;
-			} else {
-				bagMenu.forget = { itemId: null, mid: id, mon: m.mon, idx: 0, keepItem: true };
-				bagMenu.open = true; bagMenu.picking = false;
-				m.open = false;
-			}
-		}
-		return;
-	}
-}
-
-// full species list for the Pokédex, sorted by dex number (built once)
-// dex filters (Batch 6): narrow the 1,751-entry national list by type, region,
-// and caught-status — the completionist lens. Cycled by T/R/F in dexKey.
-const DEX_TYPES = ['ALL', 'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy'];
-const DEX_REGIONS = [['ALL', () => true], ['KANTO', n => n >= 1 && n <= 151], ['JOHTO', n => n >= 152 && n <= 251], ['HOENN', n => n >= 252 && n <= 386], ['OTHER', n => n > 386 || n < 1]];
-const DEX_CAUGHT = ['ALL', 'OWNED', 'SEEN', 'MISSING'];
-export const DEX_GRID_COLS = 12; // the LIVING DEX completion grid
-function dexAll() {
-	if (dexMenu._all) return dexMenu._all;
-	const sp = battle.data.species;
-	// standard dex (positive nums) first, ascending; fakemon/custom (num <= 0)
-	// after, ordered by magnitude so they group sensibly
-	const key = n => (n > 0 ? n : 100000 + Math.abs(n || 99999));
-	dexMenu._all = Object.keys(sp)
-		.map(id => ({ id, num: sp[id].num || 9999, name: sp[id].name, types: sp[id].types || [] }))
-		.sort((a, b) => key(a.num) - key(b.num) || a.name.localeCompare(b.name));
-	return dexMenu._all;
-}
-export function dexList() {
-	const t = DEX_TYPES[dexMenu.typeI || 0];
-	const inRegion = DEX_REGIONS[dexMenu.regionI || 0][1];
-	const cf = DEX_CAUGHT[dexMenu.caughtI || 0];
-	if (!(dexMenu.typeI || dexMenu.regionI || dexMenu.caughtI)) return dexAll(); // unfiltered: the full list
-	return dexAll().filter(e => {
-		if (t !== 'ALL' && !e.types.includes(t)) return false;
-		if (!inRegion(e.num)) return false;
-		if (cf !== 'ALL') {
-			const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
-			if (cf === 'OWNED' && !caught) return false;
-			if (cf === 'SEEN' && !(seen && !caught)) return false;
-			if (cf === 'MISSING' && caught) return false;
-		}
-		return true;
-	});
-}
-export function dexFilterLabel() {
-	return `${DEX_TYPES[dexMenu.typeI || 0]} · ${DEX_REGIONS[dexMenu.regionI || 0][0]} · ${DEX_CAUGHT[dexMenu.caughtI || 0]}`;
-}
-export const friendsMenu = { open: false, idx: 0 };
-// MAIL BATTLES: correspondence Pokémon matches (server-authoritative, played a
-// turn at a time whenever each side gets around to it — see async-act in mp.mjs)
-export const mailMenu = { open: false, idx: 0, rows: [], loading: false };
-S.mailWaiting = 0; // matches waiting on ME, shown as a badge on the START menu
-
-// the FireRed-style START menu (items depend on Test Realm mode)
-export function startItems() {
-	const items = ['POKeDEX', 'POKeMON', 'CARDS'];
-	if (MP_ON) items.push('FRIENDS', S.mailWaiting > 0 ? `MAIL (${S.mailWaiting})` : 'MAIL');
-	// BIKE had exactly ONE trigger in the whole game — the `c` key. There is no
-	// touch button for it and bike items are kind:'key', which the bag doesn't
-	// action, so a phone player could never mount up — and cracked floors are
-	// gated on player.biking, which made SKY PILLAR literally impassable on a
-	// phone. Hidden while surfing, where toggleBike refuses anyway.
-	items.push('BAG', 'TOWN MAP', 'PC');
-	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
-	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
-	return items;
-}
-export const cardsItems = () => MP_ON
-	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CHALLENGE FRIEND', 'BACK']
-	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'BACK'];
-// DUNGEON RUN opens a submenu of the three run modes
-export const runModeItems = () => ['OG DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'DUELS', 'BACK'];
-const CARD_URLS = {
-	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html', 'PACKS': 'packs.html',
-	'OG DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1', 'TOMBS OF TERROR': '?tombs=1', 'DUELS': '?duels=1',
-};
-function openCardPage(label) {
-	const q = MP_ON ? (label === 'DUNGEON RUN' ? '&mp=1' : '?mp=1') : '';
-	const path = CARD_URLS[label];
-	location.href = '/battlecards/' + (path.startsWith('?') ? path + (MP_ON ? '&mp=1' : '') : path + (MP_ON ? '?mp=1' : ''));
-}
-
-export function startKey(k) {
-	const items = startItems();
-	if (k === 'ArrowUp') startMenu.idx = (startMenu.idx + items.length - 1) % items.length;
-	if (k === 'ArrowDown') startMenu.idx = (startMenu.idx + 1) % items.length;
-	if (k === 'x' || k === 'Escape' || k === 'Enter') { startMenu.open = false; return; }
-	if (k === 'z') {
-		const it = items[startMenu.idx];
-		startMenu.open = false;
-		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; }
-		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; }
-		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
-		else if (it === 'FRIENDS') { openFriends(); }
-		else if (it.startsWith('MAIL')) { openMailbox(); }
-		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; dexMenu.grid = false; }
-		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
-		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; questMenu.page = 0; }
-		else if (it === 'TOWN MAP') { openTownMap(); }
-		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
-		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full
-		// party silently goes to a box you then could not open
-		else if (it === 'PC') { pcMenu.open = true; }
-		else if (it === 'SAVE') { saveParty(S.party); savePos(); dialog.open('Your journey has been saved.'); }
-		else if (it === 'OPTION') { optionsMenu.open = true; optionsMenu.idx = 0; optionsMenu.mode = 'main'; optionsMenu.flash = null; optionsMenu.busy = false; }
-		else if (it === 'EXIT' && S.visiting) { leaveVisit(); }
-		// EXIT just closes
-	}
-}
-
-export function questKey(k) {
-	// ◄ ► flips between the quest LOG (page 0) and the THINGS TO DO checklist (1)
-	if (k === 'ArrowLeft' || k === 'ArrowRight') { questMenu.page = 1 - questMenu.page; questMenu.idx = 0; return; }
-	const n = questMenu.page === 1 ? THINGS_TO_DO.length : Quest.log(playerRegion()).length;
-	if (k === 'ArrowUp') questMenu.idx = (questMenu.idx + n - 1) % n;
-	if (k === 'ArrowDown') questMenu.idx = (questMenu.idx + 1) % n;
-	if (k === 'x' || k === 'z' || k === 'Escape' || k === 'Enter') questMenu.open = false;
-}
-
-export function playerMenuKey(k) {
-	const items = PLAYER_MENU_ITEMS;
-	if (k === 'ArrowUp') playerMenu.idx = (playerMenu.idx + items.length - 1) % items.length;
-	if (k === 'ArrowDown') playerMenu.idx = (playerMenu.idx + 1) % items.length;
-	if (k === 'x' || k === 'Escape') { playerMenu.open = false; return; }
-	if (k === 'z' || k === 'Enter') {
-		const it = items[playerMenu.idx];
-		const who = playerMenu.target;
-		playerMenu.open = false;
-		if (!who) return;
-		const f = S.friends.find(fr => fr.username === who) || { username: who };
-		if (it === 'POKeMON BATTLE') sendChallenge(f);
-		else if (it === 'MAIL BATTLE') sendMailChallenge(f);
-		else if (it === 'CARD BATTLE') sendCardChallenge(f);
-		else if (it === 'TRADE') startTrade(f);
-		// CANCEL just closes
-	}
-}
-function drawPlayerMenu(W, H) {
-	drawVertical(W, H, H / 480, playerMenu.target || 'PLAYER',
-		'Challenge them or offer a trade.', PLAYER_MENU_ITEMS, playerMenu.idx, 'player');
-}
-// the deck-selection phase: list the account's class decks (10+ cards) and call
-// onPick({ classId, count, deck }). Auto-picks when there's only one option.
-export async function openDeckSelect(prompt, onPick) {
-	let st; try { st = await MP.freshState(); } catch (e) { st = MP.cachedState(); }
-	const decks = ((st && st.decks) || [])
-		.filter(d => d && Array.isArray(d.cards) && d.cards.length >= 40)
-		.map(d => ({ classId: d.classId, count: d.cards.length, deck: d.cards, name: d.name, id: d.id, commander: d.commander || null, companion: d.companion || null }));
-	if (!decks.length) { dialog.open('You have no decks :('); return; }
-	if (decks.length === 1) { onPick(decks[0]); return; }
-	deckSelect.open = true; deckSelect.idx = 0; deckSelect.decks = decks;
-	deckSelect.onPick = onPick; deckSelect.prompt = prompt || 'Choose your deck';
-}
-export function deckSelectKey(k) {
-	const n = deckSelect.decks.length;
-	if (k === 'ArrowUp') deckSelect.idx = (deckSelect.idx + n - 1) % n;
-	if (k === 'ArrowDown') deckSelect.idx = (deckSelect.idx + 1) % n;
-	if (k === 'x' || k === 'Escape') { deckSelect.open = false; deckSelect.onPick = null; return; }
-	if (k === 'z' || k === 'Enter') {
-		const picked = deckSelect.decks[deckSelect.idx], cb = deckSelect.onPick;
-		deckSelect.open = false; deckSelect.onPick = null;
-		if (cb && picked) cb(picked);
-	}
-}
-function drawDeckSelect(W, H) {
-	const labels = deckSelect.decks.map(d => `${(d.name || d.classId).toUpperCase()}  ·  ${d.classId.replace(/_/g, ' ')} (${d.count})`);
-	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
-}
-function offerLines(o) {
-	const out = [];
-	if (!o) return out;
-	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${n}`);
-	if (o.packs) out.push(`Card Pack x${o.packs}`);
-	for (const m of (o.pokemon || [])) out.push(`${m.name} Lv.${m.level}`);
-	for (const it of (o.items || [])) out.push(`${Bag.nameOf(it.id)} x${it.count}`);
-	return out;
-}
-function drawTrade(W, H) {
-	const u = H / 480;
-	menuChrome(W, H, u, 'TRADE — ' + trade.them, trade.status || '', false);
-	sctx.textAlign = 'left';
-	const panel = (x, title, offer, accepted) => {
-		sctx.font = `bold ${11 * u}px monospace`;
-		sctx.fillStyle = accepted ? '#7CFC7C' : '#fff';
-		sctx.fillText(title + (accepted ? '  ✓' : ''), x, 70 * u);
-		sctx.font = `${9 * u}px monospace`;
-		const lines = offerLines(offer);
-		let y = 86 * u;
-		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
-		else for (const ln of lines.slice(0, 8)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 13 * u; }
-	};
-	panel(24 * u, 'YOUR OFFER', trade.mine, trade.myAccept);
-	panel(W / 2 + 12 * u, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
-	// category tabs + hint
-	sctx.font = `bold ${9 * u}px monospace`;
-	TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, (24 + i * 66) * u, 208 * u); });
-	sctx.fillStyle = '#8892a8'; sctx.font = `${7 * u}px monospace`;
-	sctx.fillText('< > category   up/down move   Z add / X remove', 24 * u, 222 * u);
-	// inventory + action rows
-	const rows = trade.rows, listTop = 236 * u, rowH = 19 * u;
-	const maxRows = Math.max(1, Math.floor((H - listTop - 10 * u) / rowH));
-	const start = Math.max(0, Math.min(trade.idx - (maxRows >> 1), Math.max(0, rows.length - maxRows)));
-	for (let vi = 0; vi < Math.min(maxRows, rows.length); vi++) {
-		const i = start + vi, r = rows[i]; if (!r) break;
-		const y = listTop + vi * rowH, sel = i === trade.idx, bx = 24 * u, bw = W - 48 * u;
-		if (sel) { sctx.fillStyle = 'rgba(255,210,95,0.22)'; sctx.fillRect(bx, y, bw, rowH - 3 * u); }
-		sctx.fillStyle = r.kind === 'cancel' ? '#ff8a8a' : r.kind === 'accept' ? '#7CFC7C' : '#fff';
-		sctx.font = `${9 * u}px monospace`;
-		let lab = r.label;
-		if (r.owned != null) lab += `   x${r.owned}` + (r.off ? `  → offering ${r.off}` : '');
-		else if (r.off) lab += '  (offered)';
-		sctx.fillText(lab, bx + 8 * u, y + 13 * u);
-		S.menuUi.push({ id: 'trade:' + i, x: bx, y, w: bw, h: rowH - 3 * u, label: '' });
-	}
-}
-
-export function dexKey(k) {
-	const list = dexList();
-	if (dexMenu.detail) {
-		if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
-		if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
-		// 1,366 cries shipped and the dex never played one — Z gives it a voice
-		if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) cry(e.id); }
-		if (k === 'x' || k === 'Escape') dexMenu.detail = false;
-		return;
-	}
-	// T / R / F cycle the type, region and caught-status filters
-	if (k === 't' || k === 'r' || k === 'f') {
-		if (k === 't') dexMenu.typeI = ((dexMenu.typeI || 0) + 1) % DEX_TYPES.length;
-		if (k === 'r') dexMenu.regionI = ((dexMenu.regionI || 0) + 1) % DEX_REGIONS.length;
-		if (k === 'f') dexMenu.caughtI = ((dexMenu.caughtI || 0) + 1) % DEX_CAUGHT.length;
-		dexMenu.idx = 0;
-		return;
-	}
-	// G toggles the LIVING DEX grid (a visual completion wall) vs the list
-	if (k === 'g') { dexMenu.grid = !dexMenu.grid; return; }
-	if (!list.length) { if (k === 'x' || k === 'Escape') dexMenu.open = false; return; }
-	// the grid steps a full row (DEX_GRID_COLS) up/down; the list steps a page of 9
-	const rowStep = dexMenu.grid ? DEX_GRID_COLS : 9;
-	if (dexMenu.grid) {
-		if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - 1);
-		if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + 1);
-		if (k === 'ArrowUp') dexMenu.idx = Math.max(0, dexMenu.idx - rowStep);
-		if (k === 'ArrowDown') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + rowStep);
-	} else {
-		if (k === 'ArrowUp') dexMenu.idx = (dexMenu.idx + list.length - 1) % list.length;
-		if (k === 'ArrowDown') dexMenu.idx = (dexMenu.idx + 1) % list.length;
-		if (k === 'ArrowLeft') dexMenu.idx = Math.max(0, dexMenu.idx - rowStep);
-		if (k === 'ArrowRight') dexMenu.idx = Math.min(list.length - 1, dexMenu.idx + rowStep);
-	}
-	if (k === 'z' || k === 'Enter') { const e = list[dexMenu.idx]; if (e && Dex.isSeen(e.id)) dexMenu.detail = true; }
-	if (k === 'x' || k === 'Escape') dexMenu.open = false;
-}
-
-export function cardsKey(k) {
-	const items = cardsItems();
-	if (k === 'ArrowUp') cardsMenu.idx = (cardsMenu.idx + items.length - 1) % items.length;
-	if (k === 'ArrowDown') cardsMenu.idx = (cardsMenu.idx + 1) % items.length;
-	if (k === 'x' || k === 'Escape') { cardsMenu.open = false; return; }
-	if (k === 'z') {
-		const it = items[cardsMenu.idx];
-		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
-		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
-		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; return; }
-		saveParty(S.party); savePos();
-		openCardPage(it);
-	}
-}
-
-// the run-mode submenu: OG Dungeon Run / Dalaran Heist / Tombs of Terror
-export function runKey(k) {
-	const items = runModeItems();
-	if (k === 'ArrowUp') runMenu.idx = (runMenu.idx + items.length - 1) % items.length;
-	if (k === 'ArrowDown') runMenu.idx = (runMenu.idx + 1) % items.length;
-	if (k === 'x' || k === 'Escape') { runMenu.open = false; cardsMenu.open = true; return; }
-	if (k === 'z') {
-		const it = items[runMenu.idx];
-		if (it === 'BACK') { runMenu.open = false; cardsMenu.open = true; return; }
-		saveParty(S.party); savePos();
-		openCardPage(it);
-	}
-}
-
-// ---- friends ----
-export const friendsChallenge = { mode: null }; // null | 'card' | 'pokemon'
-async function openFriends(challengeType) {
-	friendsChallenge.mode = challengeType || null;
-	friendsMenu.open = true;
-	friendsMenu.idx = 0;
-	friendsMenu.badges = null;
-	refreshFriendBadges(); // the inbox row fills in as the counts land
-	await refreshFriends();
-}
-// pending battle challenges + trade offers, surfaced as the INBOX badge —
-// async PvP existed but nothing TOLD you a challenge was waiting
-async function refreshFriendBadges() {
-	if (!MP_ON) { friendsMenu.badges = { ch: 0, tr: 0 }; return; }
-	try {
-		const [c, t] = await Promise.all([MP.call('challenges'), MP.call('trade-list')]);
-		friendsMenu.badges = { ch: (c?.challenges || []).length, tr: (t?.trades || []).length };
-	} catch (e) { friendsMenu.badges = { ch: 0, tr: 0 }; }
-}
-async function refreshFriends() {
-	if (!MP_ON) return;
-	const data = await MP.call('friends');
-	if (data.friends) { S.friends = data.friends; if (S.mpAccount) S.mpAccount.friendCode = data.friendCode; }
-}
-export function friendsKey(k) {
-	// rows: [Add friend] [Inbox] then each friend
-	const rows = 2 + S.friends.length;
-	if (k === 'ArrowUp') friendsMenu.idx = (friendsMenu.idx + rows - 1) % rows;
-	if (k === 'ArrowDown') friendsMenu.idx = (friendsMenu.idx + 1) % rows;
-	if (k === 'x' || k === 'Escape') { friendsMenu.open = false; return; }
-	if (k === 'z') {
-		if (friendsMenu.idx === 0) { promptAddFriend(); return; }
-		if (friendsMenu.idx === 1) { friendsMenu.open = false; openTradeInbox(); return; }
-		const f = S.friends[friendsMenu.idx - 2];
-		if (!f) return;
-		friendAction(f);
-	}
-}
-async function promptAddFriend() {
-	const code = (prompt('Enter your friend\'s 6-letter code:') || '').toUpperCase().trim();
-	if (!/^[A-Z]{6}$/.test(code)) { if (code) dialog.open('That is not a valid 6-letter friend code.'); return; }
-	const data = await MP.call('add-friend', { code });
-	if (data.error) { dialog.open(data.error); return; }
-	await refreshFriends();
-	dialog.open(`Added ${data.added} as a friend!`);
-}
-function friendAction(f) {
-	if (friendsChallenge.mode === 'card') {
-		friendsMenu.open = false; friendsChallenge.mode = null;
-		if (!f.online) { dialog.open(`${f.username} is offline right now.`); return; }
-		sendCardChallenge(f);
-		return;
-	}
-	if (!f.online) {
-		// offline is exactly when the ASYNC options matter
-		friendsMenu.open = false;
-		dialog.open(`${f.username} is offline right now.\n\nZ = Offer a POKeMON trade   X = Cancel`, declined => {
-			if (declined !== 'x') openTradeOffer(f);
-		});
-		return;
-	}
-	friendsMenu.open = false;
-	// battling friend → offer to spectate; otherwise a challenge/visit choice
-	if ((f.status || '').startsWith('battling:')) {
-		const matchId = f.status.slice('battling:'.length);
-		dialog.open(`${f.username} is in a battle!\n\nPress Z to SPECTATE, X to cancel.`, (declined) => {
-			if (declined !== 'x') enterMatch(matchId, true);
-		});
-		return;
-	}
-	// friend is in a card game → offer to watch it (navigates to Battlecards)
-	if ((f.status || '').startsWith('card:')) {
-		const mode = f.status.slice('card:'.length);
-		const what = mode === 'dungeon' ? 'dungeon run' : 'card battle';
-		dialog.open(`${f.username} is in a ${what}!  Z=Watch  X=Cancel`, (declined) => {
-			if (declined !== 'x') location.href = '/battlecards/?spectate=' + encodeURIComponent(f.username) + '&mp=1';
-		});
-		return;
-	}
-	if ((f.status || '').startsWith('factory:')) {
-		const label = f.status.slice('factory:'.length) || 'BATTLE FRONTIER';
-		dialog.open(`${f.username} is in the ${label}!\n\nZ = Watch   X = Cancel`, (declined) => {
-			if (declined !== 'x') location.href = '/overworld/?watchfactory=' + encodeURIComponent(f.username) + '&mp=1';
-		});
-		return;
-	}
-	dialog.open(`${f.username}:  Z=Battle challenge  X=More…`, (declined) => {
-		if (declined !== 'x') { sendChallenge(f); return; }
-		dialog.open(`${f.username}:  Z=Visit world  X=Offer a trade`, (d2) => {
-			if (d2 === 'x') openTradeOffer(f);
-			else visitWorld(f);
-		});
-	});
 }
 // ---------- INPUT DIAGNOSTICS (temporary instrumentation) ----------
 // Movement has two doors — the keydown/d-pad door (menuBlocking) and the tick's
@@ -2519,15 +1974,15 @@ function warmBattleSprites() {
 	} catch { /* prefetch is best-effort */ }
 }
 
-async function refreshMapContent(label) {
-	strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
+export async function refreshMapContent(label) {
+	S.strengthActive = false; strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
 	shoalFixup(label);
 	silphDoorsApply(label);
 	hillPrepFloor(label); // must precede npcs.loadForMap — it injects the guards
 	roamersOnMapChange();
-	radioTune = null; // leaving the room switches the radio off; map track resumes
-	if (!/^SecretBase_/.test(label || '')) baseCtx = null; // left the base
+	S.radioTune = null; // leaving the room switches the radio off; map track resumes
+	if (!/^SecretBase_/.test(label || '')) S.baseCtx = null; // left the base
 
 	await npcs.loadForMap();
 	await trainers.loadForMap();
@@ -2592,7 +2047,7 @@ function markFlyPoint(mapId) {
 export function hasFlyPoint(mapId) { return loadFlyPoints().has(mapId); }
 
 // nearest walkable tile to a preferred spot (spiral search)
-function findLanding(px, py) {
+export function findLanding(px, py) {
 	for (let r = 0; r < 14; r++) {
 		for (let dy = -r; dy <= r; dy++) {
 			for (let dx = -r; dx <= r; dx++) {
@@ -2607,7 +2062,7 @@ function findLanding(px, py) {
 // nearest SURFABLE (water) tile to a preferred spot — used when emerging into a
 // lake whose underwater twin is a different size (Sootopolis), so the same-tile
 // clamp wouldn't land on water
-function findSurfLanding(px, py) {
+export function findSurfLanding(px, py) {
 	for (let r = 0; r < 24; r++) {
 		for (let dy = -r; dy <= r; dy++) {
 			for (let dx = -r; dx <= r; dx++) {
@@ -2625,7 +2080,7 @@ function findSurfLanding(px, py) {
 // (valid) map — this.current is only reassigned after a full successful render —
 // so the player just stays put. Clear loading + kill any wedged cutscene so the
 // game never freezes on a bad warp/connection.
-function afterLoadError(where, err) {
+export function afterLoadError(where, err) {
 	console.warn(`[load-guard] ${where} failed`, err);
 	S.loading = false;
 	if (cutscene.blocking) cutscene.stop();
@@ -2706,7 +2161,7 @@ export async function flyTo(mapId, tx, ty) {
 // the dept-store elevators, the Fast Ship) have no other way out. If the source
 // is somehow missing, fall back to the region's start town: a big hop, but the
 // alternative is being sealed in a room forever.
-async function backWarp() {
+export async function backWarp() {
 	// in-memory source first, then the one saved alongside the position (this is
 	// what survives a reload)
 	const src = world.lastWarpSource || safeLoad(POS_KEY, null)?.back || null;
@@ -2727,669 +2182,6 @@ async function backWarp() {
 	await moveToMap(Quest.START[playerRegion()] || 'PalletTown');
 }
 
-// ---------- Mach Bike ----------
-// A free field toggle: faster movement, and the only way across Sky Pillar's
-// cracked floors (engine gates those on player.biking). You can't bike on the
-// water, so surfing dismounts it.
-const BIKES = ['bicycle', 'machbike', 'acrobike'];
-export function toggleBike() {
-	if (S.loading || player.moving || player.surfing) return;
-	// you need to OWN a bike now (getting off always works) — the shops in
-	// Goldenrod, Mauville, and Cerulean hand out free promotional ones
-	if (!player.biking && !BIKES.some(b => Bag.count(b) > 0)) {
-		hud.textContent = "You don't own a BIKE! The shops in GOLDENROD, MAUVILLE, and CERULEAN are running promos.";
-		return;
-	}
-	player.biking = !player.biking;
-	const name = Bag.count('machbike') ? 'MACH BIKE' : Bag.count('acrobike') ? 'ACRO BIKE' : 'BICYCLE';
-	hud.textContent = player.biking ? `You got on the ${name}!` : `You got off the ${name}.`;
-}
-// the bike-shop promo: your first bike, on the house
-const BIKE_SHOP_STOCK = {
-	MAP_GOLDENROD_BIKE_SHOP: ['bicycle', 'GOLDENROD CYCLES'],
-	MAP_MAUVILLE_CITY_BIKE_SHOP: ['machbike', "RYDEL'S CYCLES"],
-	MAP_CERULEAN_CITY_BIKE_SHOP: ['bicycle', 'the CERULEAN BIKE SHOP'],
-};
-function bikeShopTalk() {
-	const stock = BIKE_SHOP_STOCK[world.current?.map?.id];
-	if (!stock) return;
-	const [bike, shopName] = stock;
-	if (BIKES.some(b => Bag.count(b) > 0)) {
-		dialog.open(`CLERK: Enjoying the ride? Press C out on the\nroad any time — and tell your friends about\n${shopName}!`);
-		return;
-	}
-	dialog.open(`CLERK: Welcome to ${shopName}!\n\nIt's your lucky day — our grand promotion!\nA free ${Bag.ITEMS[bike].name} for every new rider!\n\nTake it?   Z = Yes   X = No`, d => {
-		if (d === 'x') return;
-		Bag.addItem(bike, 1);
-		sfx('item_get');
-		Journal.add(`Got a free ${Bag.ITEMS[bike].name} from ${shopName}!`);
-		dialog.open(`You received the ${Bag.ITEMS[bike].name}!\n\nPress C outdoors to ride it.`);
-	});
-}
-
-// ---------- Silph Co locked doors ----------
-// FireRed closes these with ON_LOAD scripts our port never ran, so every
-// shutter stood open and the CARD KEY (a real item ball on 5F) opened
-// nothing. The barrier tiles are harvested from silphco_doors.inc: without
-// the key they lock (collision set in place, art untouched); with it, the
-// floor's shutters slide open. The 5F key sits OUTSIDE its floor's shutters,
-// so the climb can never strand.
-const SILPH_DOORS = {
-	SilphCo_2F: [[5, 8], [6, 8], [5, 9], [6, 9], [5, 15], [6, 15], [5, 16], [6, 16]],
-	SilphCo_3F: [[9, 11], [10, 11], [9, 12], [10, 12], [9, 13], [10, 13], [20, 11], [21, 11], [20, 12], [21, 12], [20, 13], [21, 13]],
-	SilphCo_4F: [[3, 16], [4, 16], [3, 17], [4, 17], [14, 11], [15, 11], [14, 12], [15, 12]],
-	SilphCo_5F: [[7, 17], [8, 17], [7, 18], [8, 18], [7, 19], [8, 19], [18, 12], [19, 12], [18, 13], [19, 13], [18, 14], [19, 14]],
-	SilphCo_7F: [[11, 8], [12, 8], [11, 9], [12, 9], [24, 7], [25, 7], [24, 8], [25, 8], [25, 13], [26, 13], [25, 14], [26, 14]],
-	SilphCo_9F: [[2, 9], [3, 9], [2, 10], [3, 10], [2, 11], [3, 11], [12, 15], [13, 15], [12, 16], [13, 16], [12, 17], [13, 17], [21, 6], [22, 6], [21, 7], [22, 7], [21, 12], [22, 12], [21, 13], [22, 13]],
-};
-let silphNoted = false;
-function silphDoorsApply(label) {
-	const doors = SILPH_DOORS[label];
-	const lay = doors && world.current?.layout;
-	if (!lay) return;
-	const lock = Bag.count('cardkey') === 0;
-	for (const [x, y] of doors) {
-		if (!lay.map[y]) continue;
-		const v = lay.map[y][x] ?? 0;
-		lay.map[y][x] = lock ? (v | 0x0C00) : (v & ~0x0C00); // collision bits only
-	}
-	if (!lock && !silphNoted) { silphNoted = true; hud.textContent = 'Your CARD KEY hums — the floor shutters slide open.'; }
-}
-function silphDoorAt(fx, fy) {
-	const doors = SILPH_DOORS[world.current?.name];
-	return !!doors && doors.some(([x, y]) => x === fx && y === fy);
-}
-
-// ---------- the Route 113 glass workshop ----------
-// The SOOT SACK fills as you walk ashy grass (MB_ASHGRASS survives in the
-// layout attributes, same machinery as the secret-base spots); the
-// glassblower trades the ash for his blown-glass flutes.
-const GLASS_WARES = [['blueflute', 250], ['whiteflute', 500], ['blackflute', 1000]];
-function glassBlowerTalk() {
-	const ev = miscEvents();
-	if (!ev.sootsack) {
-		ev.sootsack = true;
-		saveMiscEvents(ev);
-		Bag.addItem('sootsack', 1);
-		sfx('item_get');
-		dialog.open("GLASSBLOWER: I shape VOLCANIC ASH into glass!\n\nTake this SOOT SACK — walk the ashy grass out\non ROUTE 113 and it fills itself. Bring me ash\nand I'll blow you something special!");
-		return;
-	}
-	const ash = ev.ash || 0;
-	const wares = GLASS_WARES.filter(([id]) => !Bag.count(id));
-	if (!wares.length) { dialog.open('GLASSBLOWER: You own my whole catalog!\nMay every note ring true.'); return; }
-	const affordable = wares.filter(([, cost]) => ash >= cost);
-	if (!affordable.length) {
-		dialog.open(`GLASSBLOWER: Your sack holds ${ash} ash.\nMy next piece, the ${Bag.ITEMS[wares[0][0]].name}, needs ${wares[0][1]}.\nKeep walking that soot!`);
-		return;
-	}
-	const [id, cost] = affordable[affordable.length - 1]; // the finest piece you can afford
-	dialog.open(`GLASSBLOWER: ${ash} ash! Enough for a ${Bag.ITEMS[id].name}\n(${cost} ash). Shall I fire up the kiln?\n\nZ = Yes   X = Not yet`, d => {
-		if (d === 'x') return;
-		const ev2 = miscEvents();
-		if ((ev2.ash || 0) < cost) return;
-		ev2.ash -= cost;
-		saveMiscEvents(ev2);
-		Bag.addItem(id, 1);
-		sfx('levelup');
-		Journal.add(`The glassblower blew a ${Bag.ITEMS[id].name} from ${cost} ash!`);
-		dialog.open(`The kiln ROARS... glass spins and sings...\n\nYou received the ${Bag.ITEMS[id].name}!`);
-	});
-}
-// the reusable field flutes: 250 steps of louder (white) or hushed (black) grass
-const FLUTE_KEY = 'magepunk_flute_v1';
-S.fluteState = safeLoad(FLUTE_KEY, null) || { mode: null, steps: 0 };
-export function saveFlute() { safeSave(FLUTE_KEY, S.fluteState); }
-
-// ---------- Dive ----------
-// Dive/emerge are overlay map connections (same footprint, offset 0): plunging
-// swaps the surface map for its underwater twin at the same tile, surfacing does
-// the reverse. Dive needs a Water-type in the party (same gate as Surf).
-// the dive/emerge connection for the current map: the map's own, else a code-level
-// link restored in divelinks.js (maps served read-only from owdata)
-function diveConn(kind) {
-	return (world.current.map.connections || []).find(x => x.direction === kind)
-		|| EXTRA_DIVE[world.current.name]?.[kind] || null;
-}
-async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
-	const c = diveConn(kind);
-	if (!c) return false;
-	const file = world.fileFor(c.map);
-	if (!file) return false;
-	S.loading = true;
-	const src = { name: world.current.name, tx: player.tx, ty: player.ty };
-	try {
-		await world.load(file);
-		const lay = world.current.layout;
-		if (c.x != null && c.y != null) {
-			// explicit landing (size-mismatched twins, e.g. Sootopolis): snap to a
-			// valid tile near it and set surfing from what we actually land on
-			const [lx, ly] = kind === 'emerge' ? findSurfLanding(c.x, c.y) : findLanding(c.x, c.y);
-			player.setTile(lx, ly);
-			player.surfing = world.isSurfable(lx, ly);
-		} else {
-			// same-footprint twin: keep the exact tile, surface -> water / dive -> seabed
-			player.setTile(Math.min(player.tx, lay.width - 1), Math.min(player.ty, lay.height - 1));
-			player.surfing = kind === 'emerge';
-		}
-		player.biking = false;
-		world.lastWarpSource = src;
-		await refreshMapContent(file);
-	} catch (e) { afterLoadError('diveTo ' + file, e); return false; }
-	return true;
-}
-// ---------- HM field moves ----------
-// Faithful trigger: from the PARTY menu you pick a POKeMON that KNOWS the move
-// and choose it — and it only does anything where the move applies. Each `use()`
-// acts if the current tile/facing is valid, otherwise says why. STRENGTH stays
-// "active" for the map so boulders can then be shoved (reset on every map load).
-let strengthActive = false;
-function facingTile() {
-	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
-	return [player.tx + dx, player.ty + dy, dx, dy];
-}
-// SOFTBOILED / MILK DRINK afield: the user gives a fifth of its health to the
-// most-injured OTHER party member. (The cartridge lets you pick the target; with
-// no picker in the field-move flow, "whoever needs it most" is the honest cut.)
-function fieldHealTransfer(user, label) {
-	const cost = Math.floor(user.maxHP / 5);
-	if (user.curHP <= cost) { dialog.open(`${user.name} is too weak to share its health!`); return; }
-	const target = (S.party || []).filter(m => m && m !== user && m.curHP > 0 && m.curHP < m.maxHP)
-		.sort((a, b) => (a.curHP / a.maxHP) - (b.curHP / b.maxHP))[0];
-	if (!target) { dialog.open('No one needs it right now.'); return; }
-	user.curHP -= cost;
-	target.curHP = Math.min(target.maxHP, target.curHP + cost);
-	saveParty(S.party);
-	dialog.open(`${user.name} used ${label}!\n\n${target.name} recovered ${cost} HP.`);
-}
-
-const HM_FIELD = {
-	// ---- field-utility moves (not HMs — no badge gate; hmReq returns 0) ----
-	// Crystal's tree-shaking classic, the last missing encounter modality.
-	// Face something solid (a tree, as far as a route cares), slam it, and the
-	// harvested treemon tables answer — 10% of shakes read the RARE table,
-	// where HERACROSS lives.
-	headbutt: { name: 'HEADBUTT', use() {
-		const set = HEADBUTT_MAPS[world.current?.name];
-		if (!set || !HEADBUTT_SETS[set]) { dialog.open('No sturdy trees around here would\nanswer a HEADBUTT.'); return; }
-		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
-		if (world.isPassable(player.tx + dx, player.ty + dy)) { dialog.open('Face a tree first — THEN slam it!'); return; }
-		const table = HEADBUTT_SETS[set][Math.random() < 0.1 ? 'rare' : 'common'];
-		if (Math.random() < 0.2 || !table.length) { dialog.open('You slammed into the tree...\n\nNothing came out but leaves.'); return; }
-		let r = Math.random() * table.reduce((s, e) => s + e[0], 0), pick = table[table.length - 1];
-		for (const e of table) { r -= e[0]; if (r <= 0) { pick = e; break; } }
-		dialog.open('You slammed into the tree!\n\nSomething dropped out!', () => startWildBattle({ id: pick[1], level: pick[2] }));
-	} },
-	sweetscent: { name: 'SWEET SCENT', use() {
-		const pick = encounters.pick(world.current.map.id, player.surfing ? 'water' : 'land');
-		if (!pick) { dialog.open('The sweet scent drifted away...\n\nNothing came.'); return; }
-		dialog.open('A sweet scent fills the air!', () => startWildBattle(pick));
-	} },
-	teleport: { name: 'TELEPORT', use() {
-		// the classic warp-out. This port has no "last Pokemon Center" record, so
-		// it goes to the region's home town — stated plainly rather than pretended.
-		const home = Quest.START[playerRegion()];
-		if (!home || world.current.name === home) { dialog.open("It won't work here."); return; }
-		dialog.open('You were whisked away home!', () => moveToMap(home));
-	} },
-	dig: { name: 'DIG', use() {
-		const t = world.current?.map?.map_type || '';
-		if (t !== 'MAP_TYPE_UNDERGROUND') { dialog.open('DIG can only tunnel out of caves.'); return; }
-		if (!lastOutdoor) { dialog.open("It won't work here."); return; }
-		dialog.open('You tunneled back to the surface!', () => moveToMap(lastOutdoor.map, lastOutdoor.x, lastOutdoor.y));
-	} },
-	softboiled: { name: 'SOFTBOILED', use(mon) {
-		fieldHealTransfer(mon, 'SOFTBOILED');
-	} },
-	milkdrink: { name: 'MILK DRINK', use(mon) {
-		fieldHealTransfer(mon, 'MILK DRINK');
-	} },
-	cut: { name: 'CUT', use() {
-		const [fx, fy] = facingTile();
-		const o = items.fieldObjAt(fx, fy);
-		if (o && o.kind === 'cut') { dialog.open('The tree was CUT down!', () => items.removeFieldObj(o)); return; }
-		dialog.open("There's nothing here to CUT.");
-	} },
-	rocksmash: { name: 'ROCK SMASH', use() {
-		const [fx, fy] = facingTile();
-		const o = items.fieldObjAt(fx, fy);
-		if (o && o.kind === 'rock') {
-			dialog.open('The rock was smashed to bits!', () => {
-				items.removeFieldObj(o);
-				const grp = encounters.data[world.current.map.id]?.rock_smash;
-				if (grp && Math.random() < encounterChance(world.current.map.id, grp.rate)) { const pick = encounters.pick(world.current.map.id, 'rock_smash'); if (pick) startWildBattle(pick); }
-			});
-			return;
-		}
-		dialog.open("There's no rock here to SMASH.");
-	} },
-	strength: { name: 'STRENGTH', use() {
-		const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => items.fieldObjAt(player.tx + dx, player.ty + dy)?.kind === 'boulder');
-		if (!near) { dialog.open("There's nothing here to use STRENGTH on."); return; }
-		strengthActive = true;
-		dialog.open('STRENGTH made it possible to move boulders!');
-	} },
-	surf: { name: 'SURF', use() {
-		if (player.surfing) { dialog.open("You're already on the water."); return; }
-		const [fx, fy] = facingTile();
-		if (world.isSurfable(fx, fy)) {
-			dialog.open('You surfed out onto the water!', () => { player.surfing = true; player.biking = false; player.beginMove(fx, fy, META, true); });
-			return;
-		}
-		dialog.open("You can't SURF here.");
-	} },
-	waterfall: { name: 'WATERFALL', use() {
-		const [fx, fy, dx, dy] = facingTile();
-		if (player.surfing && world.behaviorAt(fx, fy) === 0x13) { // MB_WATERFALL
-			let nx = fx, ny = fy;
-			while (world.behaviorAt(nx + dx, ny + dy) === 0x13) { nx += dx; ny += dy; }
-			const lx = nx + dx, ly = ny + dy;
-			if (world.isSurfable(lx, ly) || world.isPassable(lx, ly)) { dialog.open('You climbed the WATERFALL!', () => player.setTile(lx, ly)); return; }
-		}
-		dialog.open("You can't use WATERFALL here.");
-	} },
-	dive: { name: 'DIVE', use() {
-		// The Emerald->web tileset flattens all sea to one ocean behavior, so a
-		// "valid dive spot" is a map that offers a dive/emerge overlay (map data or
-		// a code-restored link like Sootopolis).
-		if (diveConn('emerge')) { diveTo('emerge'); return; }
-		if (diveConn('dive')) {
-			if (!player.surfing) { dialog.open('You need to be out on the water to DIVE.'); return; }
-			diveTo('dive'); return;
-		}
-		dialog.open("You can't DIVE here — the water isn't deep enough.");
-	} },
-	flash: { name: 'FLASH', use() {
-		if (world.current.map.requires_flash) { Story.setFlag('flash_' + world.current.map.id); dialog.open('FLASH lit up the surroundings!'); return; }
-		dialog.open("It's not dark enough to need FLASH.");
-	} },
-	fly: { name: 'FLY', use() {
-		if (world.current.map.map_type === 'MAP_TYPE_INDOOR') { dialog.open("You can't FLY indoors."); return; }
-		openTownMap();
-	} },
-};
-function fieldMovesOf(mon) { return (mon?.moves || []).filter(mv => HM_FIELD[mv.id]); }
-export function useFieldMove(hmId, mon) {
-	partyMenu.open = false; partyMenu.action = null; partyMenu.summary = false;
-	// badge gate: an HM can't be used outside battle until you've earned enough of
-	// your region's badges (canonical order). The move is still usable in battle.
-	// the region you are STANDING in, not the one you started in — see
-	// Badges.regionOfMap. HM_GATE.JOHKANTO was unreachable before this.
-	const region = Badges.regionOfMap(world.current?.map?.id, playerRegion());
-	const req = Badges.hmReq(region, hmId);
-	if (req > Badges.count(region)) {
-		const gb = Badges.list(region)[req - 1];
-		dialog.open(`Sorry! A new POKeMON LEAGUE rule\nprevents using ${HM_FIELD[hmId]?.name || hmId.toUpperCase()} outside of battle\nuntil you have the ${gb ? gb.name : 'right badge'}.`);
-		return;
-	}
-	HM_FIELD[hmId]?.use(mon);
-}
-// build the little action menu shown when you pick a party member
-export function openPartyAction(idx) {
-	const mon = S.party[idx];
-	if (!mon) return;
-	const opts = fieldMovesOf(mon).map(mv => ({ label: HM_FIELD[mv.id].name, kind: 'field', hm: mv.id }));
-	opts.push({ label: 'SUMMARY', kind: 'summary' });
-	if (S.party.length > 1) opts.push({ label: 'SWITCH', kind: 'switch' });
-	opts.push({ label: 'CANCEL', kind: 'cancel' });
-	partyMenu.action = { mon, monIdx: idx, options: opts, idx: 0 };
-}
-
-// re-anchor when the player has walked into a connected map
-async function crossConnection(hit) {
-	S.loading = true;
-	const { conn, lx, ly } = hit;
-	try {
-		await world.load(conn.name);
-		player.setTile(lx, ly);
-		await refreshMapContent(conn.name);
-	} catch (e) { afterLoadError('crossConnection ' + conn.name, e); }
-}
-
-// nudge the player toward the bike when a cracked floor stops them
-player.onBlockedCracked = () => { hud.textContent = 'The floor here is cracked and unstable — a bike could carry you across (press C).'; };
-player.onHop = () => sfx('ledge');
-// ONE bump handler: the wall thud (throttled — tryMove fires every held frame)
-// plus the authentic blocker line (guard / SNORLAX / grunt) when one is there
-let bumpCooldown = 0;
-player.onBump = (tx, ty) => {
-	const now = performance.now();
-	if (now > bumpCooldown) { bumpCooldown = now + 350; sfx('bump'); }
-	if (dialog.blocking || !S.party) return;
-	const m = blockers.messageAt(tx, ty);
-	if (m) dialog.open(m);
-};
-
-player.onArrive = () => {
-	// each completed step accrues Day Care EXP and incubates any egg
-	// FLAME BODY / MAGMA ARMOR halve the steps an egg needs — previously
-	// battle-only text on 20-odd species
-	Daycare.step(battle.data, () => { hud.textContent = 'The Day Care egg is ready to hatch!'; },
-		(S.party || []).some(m => m && m.curHP > 0 && (m.ability === 'flamebody' || m.ability === 'magmaarmor')) ? 2 : 1);
-	// warp tile?
-	const w = world.warpAt(player.tx, player.ty);
-	if (!w) savePos();
-	if (w) {
-		const dest = parseInt(w.dest_warp_id, 10);
-		if (dest === -1) { backWarp(); return; } // backward warp — never gated
-		// TRICK HOUSE doors: the maze exit wants the scroll, the entrance door
-		// leads to the CURRENT puzzle, and the End room lets out at the entrance
-		const th = trickWarp(w);
-		if (th === 'blocked') return;
-		if (th) { warpTo(th.map, th.warp); return; }
-		// SHOAL CAVE tides: high water floods the deep rooms, swaps the inner room
-		const sh = shoalWarp(w);
-		if (sh === 'blocked') return;
-		if (sh) { warpTo(sh.map, sh.warp); return; }
-		// TRAINER HILL: no climb without a run, no stairs past standing guards
-		if (hillWarp(w) === 'blocked') return;
-		// leaving the park mid-Bug-Contest means the judging happens at the gate
-		if (bugContest.active && /NATIONAL_PARK_GATE/.test(w.dest_map)) {
-			warpTo(w.dest_map, w.dest_warp_id);
-			setTimeout(() => endBugContest(), 700);
-			return;
-		}
-		// strict-corridor / gym-door gate: block entering a map the current stage
-		// hasn't unlocked (the player stays on the door tile)
-		const destFile = world.fileFor(w.dest_map);
-		// Leaving a POKeMON CENTER is never gated: you must always be able to step back
-		// out into the town you're standing in. (A portal could drop you in a town above
-		// your shared tier; the badge gate then trapped you INSIDE its PC — you'd walk in
-		// and never get out. This also frees any save already stuck that way.)
-		const leavingPC = /poke\w*center/i.test(world.current.map?.id || world.current.name || '');
-		const qb = (destFile && !leavingPC) ? Quest.blocked(playerRegion(), destFile, world.current.name) : null;
-		if (qb) { maybePortalTutorial(qb); return; } // silent strand backstop — the physical blocker shows the reason
-		warpTo(w.dest_map, w.dest_warp_id);
-		return;
-	}
-	// crossed into a connection?
-	const lay = world.current.layout;
-	const outside = player.tx < 0 || player.tx >= lay.width || player.ty < 0 || player.ty >= lay.height;
-	if (outside) {
-		const hit = world.connectionAt(player.tx, player.ty);
-		if (hit) {
-			// no POKeMON yet (new-game intro): don't wander onto wild routes — bounce
-			// back into town and point the player at the lab
-			if (!S.party) {
-				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
-				dialog.open("It's not safe to go out without a POKeMON!\n\nVisit the POKeMON LAB and get your first partner.");
-				return;
-			}
-			// strict-corridor gate: block crossing into an area this quest stage hasn't
-			// unlocked yet — bounce the player back inside (backtracking is never gated)
-			const qb = Quest.blocked(playerRegion(), hit.conn.name, world.current.name);
-			if (qb) {
-				// silent strand backstop — a physical blocker on the near side shows the reason
-				maybePortalTutorial(qb);
-				player.setTile(Math.max(0, Math.min(player.tx, lay.width - 1)), Math.max(0, Math.min(player.ty, lay.height - 1)));
-				return;
-			}
-			crossConnection(hit); return;
-		}
-	}
-	// a coord_event trigger on this tile (var-gated) runs its ported story script.
-	// Guard it: a throwing plot script must not break stepping onto the tile.
-	try {
-		if (!cutscene.blocking && checkCoordTrigger()) return;
-		if (!cutscene.blocking) checkOnFrame();
-	} catch (e) { console.warn('[plot] coord/onFrame trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
-	// a due awakening beat on this map (e.g. WALLACE's pointer right after the clash)
-	try { if (!cutscene.blocking) checkAwakeningTrigger(); } catch (e) { console.warn('[awakening] step trigger failed', e); if (cutscene.blocking) cutscene.stop(); }
-	// a static legendary sitting on this tile
-	if (!cutscene.blocking && !battle.blocking && checkLegendaryTrigger()) return;
-	// trainer sight lines take priority over grass
-	if (!battle.blocking && trainers.checkSight(player.tx, player.ty)) { sfx('notice'); return; }
-	// SAFARI GAME: every step in the zone burns the meter, and the step that
-	// empties it ends the game on the spot (no encounter on the way out)
-	if (safari.on && safariZoneOf(world.current.map.id)) {
-		safari.steps--;
-		saveSafari();
-		if (safari.steps <= 0) { endSafari('PA: Ding-dong! Your SAFARI GAME is over!'); return; }
-		if (safari.steps === 50) hud.textContent = 'PA: Only 50 steps left in your SAFARI GAME!';
-	}
-	// REPEL burns a step, and announces the moment it runs out (that message is
-	// the whole reason the item feels responsive)
-	if (repelSteps > 0) {
-		repelSteps--;
-		safeSaveStr(REPEL_KEY, String(repelSteps));
-		if (repelSteps === 0) repelWoreOff();
-	}
-	// the SOOT SACK drinks the ashy grass underfoot (MB_ASHGRASS = 0x24)
-	if (Bag.count('sootsack') > 0 && world.behaviorAt(player.tx, player.ty) === 0x24) {
-		const ev = miscEvents();
-		ev.ash = (ev.ash || 0) + 1;
-		if (ev.ash % 50 === 0) hud.textContent = `The SOOT SACK swallows more ash... (${ev.ash})`;
-		saveMiscEvents(ev);
-	}
-	// a playing flute fades with the steps
-	if (S.fluteState.steps > 0) {
-		S.fluteState.steps--;
-		if (S.fluteState.steps === 0) { S.fluteState.mode = null; hud.textContent = "The flute's melody faded away."; }
-		saveFlute();
-	}
-	// ambient step fx: rustle the grass / print the sand under the new tile
-	spawnStepFx();
-	// wild encounter?
-	if (!battle.blocking) {
-		// guard: this runs inside the rAF step loop, where a throw is silent and
-		// kills movement outright — `party` is not guaranteed to be populated yet
-		const lead = Array.isArray(S.party) ? S.party.find(m => m && m.curHP > 0) : null;
-		// CLEANSE TAG: held by the LEAD, it wards off a third of would-be
-		// encounters. A ¥1000 buyable whose payload nothing read until now.
-		if (Bag.ITEMS[lead?.heldItem]?.held?.cleanseTag && Math.random() < 1 / 3) return;
-		// the Bug-Catching Contest swaps in its own bug table while it runs;
-		// the BLACK FLUTE hushes normal encounters, the WHITE one doubles them
-		const repelLv = repelSteps > 0 ? (lead?.level || 0) : 0;
-		const rollOnce = () => encounters.roll(world.current.map.id, world, player.tx, player.ty, player.surfing, repelLv);
-		const pick = bugContestRoll()
-			|| (S.fluteState.mode === 'black' && S.fluteState.steps > 0 ? null
-				: rollOnce() || (S.fluteState.mode === 'white' && S.fluteState.steps > 0 ? rollOnce() : null));
-		if (pick) {
-			// a roamer on this route takes over half of the encounters here
-			const roam = roamerHere();
-			if (roam && Math.random() < 0.5) { startRoamerBattle(roam); return; }
-			startWildBattle(pick);
-		}
-	}
-};
-
-// ---------- static legendary encounters ----------
-// The decomp triggers these through an awakening cutscene + a legendary-battle
-// special the web engine doesn't run (and the overworld legendary sprites aren't
-// in the build), so a region-picker could never actually catch them. Instead we
-// place a catchable wild encounter on the legendary's tile: walk onto it (or
-// face it and interact) and a real battle starts — you can throw balls and keep
-// it. A caught/defeated flag stops it re-triggering. The plot awakening scenes
-// stay seeded off (they assume story state and lead to no catch); this is the
-// catch itself, decoupled from them.
-const HAND_PLACED_LEGENDS = {
-	// Hoenn weather trio (decoupled from the awakening plot)
-	MAP_SKY_PILLAR_TOP:  { species: 'rayquaza', dex: 384, level: 70, x: 14, y: 6,  flag: 'legend_caught_rayquaza', intro: 'A colossal POKeMON coils in the air above you...' },
-	MAP_MARINE_CAVE_END: { species: 'kyogre',   dex: 382, level: 70, x: 9,  y: 22, flag: 'legend_caught_kyogre',   intro: 'The water heaves — something immense stirs in the depths...' },
-	MAP_TERRA_CAVE_END:  { species: 'groudon',  dex: 383, level: 70, x: 17, y: 26, flag: 'legend_caught_groudon',  intro: 'The ground blazes with heat as a huge form rises...' },
-	// the three REGI — sealed in their chambers, they stir only for the HOENN CHAMPION
-	MAP_DESERT_RUINS: { species: 'regirock', dex: 377, level: 40, x: 8, y: 7, flag: 'legend_caught_regirock',
-		requires: () => Badges.isChampion('HOENN'), intro: 'A golem of ancient stone stands sealed here — REGIROCK awakens.' },
-	MAP_ISLAND_CAVE: { species: 'regice', dex: 378, level: 40, x: 8, y: 7, flag: 'legend_caught_regice',
-		requires: () => Badges.isChampion('HOENN'), intro: 'The cave breathes freezing air — REGICE emerges from the ice.' },
-	MAP_ANCIENT_TOMB: { species: 'registeel', dex: 379, level: 40, x: 8, y: 7, flag: 'legend_caught_registeel',
-		requires: () => Badges.isChampion('HOENN'), intro: 'A body of tempered steel unseals itself — REGISTEEL awakens.' },
-	// event-island legendaries (reached by the post-game EON/SEAGALLOP ferry, champion-gated)
-	// The EON DUO, both on their island. Emerald gives you one and roams the other,
-	// and we have no roamer — so LATIAS was reachable nowhere at all (the script
-	// route is `BattleSetup_StartLatiBattle`, one of the 427 specials with no
-	// handler). Two eon dragons on one island is the liberty that makes the pair
-	// completable; they take separate flags, so it is still one of each.
-	MAP_SOUTHERN_ISLAND_INTERIOR: [
-		{ species: 'latios', dex: 381, level: 50, x: 13, y: 12, flag: 'legend_caught_latios',
-			requires: () => Badges.isChampion('HOENN'), intro: 'A blue eon POKeMON drifts amid the leaves — LATIOS regards you keenly.' },
-		{ species: 'latias', dex: 380, level: 50, x: 11, y: 12, flag: 'legend_caught_latias',
-			requires: () => Badges.isChampion('HOENN'), intro: 'A red eon POKeMON watches from the branches — LATIAS reveals herself.' },
-	],
-	MAP_BIRTH_ISLAND_EXTERIOR: { species: 'deoxys', dex: 386, level: 60, x: 15, y: 3, flag: 'legend_caught_deoxys',
-		requires: () => Badges.isChampion('HOENN'), intro: 'The strange triangle pulses — DEOXYS materializes from deep space.' },
-	MAP_FARAWAY_ISLAND_INTERIOR: { species: 'mew', dex: 151, level: 30, x: 13, y: 17, flag: 'legend_caught_mew',
-		requires: () => Badges.isChampion('HOENN'), intro: 'Something playful darts through the grass... MEW appears!' },
-	// Kanto birds — catchable in their lairs (no gate)
-	MAP_SEAFOAM_ISLANDS_B4F: { species: 'articuno', dex: 144, level: 50, x: 9, y: 2, flag: 'legend_caught_articuno', intro: 'A freezing gale howls through the cavern — ARTICUNO descends!' },
-	MAP_POWER_PLANT:         { species: 'zapdos',   dex: 145, level: 50, x: 5, y: 11, flag: 'legend_caught_zapdos',  intro: 'The air crackles with electricity — ZAPDOS spreads its wings!' },
-	MAP_MT_EMBER_SUMMIT:     { species: 'moltres',  dex: 146, level: 50, x: 9, y: 6, flag: 'legend_caught_moltres',  intro: 'The summit blazes — MOLTRES erupts from the flames!' },
-	// Mewtwo — only in the depths of Cerulean Cave once you are the KANTO CHAMPION
-	MAP_CERULEAN_CAVE_B1F: { species: 'mewtwo', dex: 150, level: 70, x: 7, y: 12, flag: 'legend_caught_mewtwo',
-		requires: () => Badges.isChampion('KANTO'), intro: 'A cold, immense psychic presence fills the cave... MEWTWO awaits.' },
-	// Johto tower duo — answer to their WINGS (a key-item hunt; wings granted on becoming CHAMPION)
-	MAP_TIN_TOWER_ROOF: { species: 'hooh', dex: 250, level: 60, x: 9, y: 5, flag: 'legend_caught_hooh',
-		requires: () => Bag.count('rainbowwing') > 0, intro: 'Rainbow light spills across the tower — HO-OH answers the RAINBOW WING!' },
-	MAP_WHIRL_ISLAND_LUGIA_CHAMBER: { species: 'lugia', dex: 249, level: 60, x: 9, y: 5, flag: 'legend_caught_lugia',
-		requires: () => Bag.count('silverwing') > 0, intro: 'The sea roars in the depths — LUGIA rises, drawn by the SILVER WING!' },
-	// NAVEL ROCK — the same duo, reached the KANTO way. Deliberately the SAME
-	// flags as the Tin Tower / Whirl Islands entries above, so a save still gets
-	// exactly one HO-OH and one LUGIA: this is a second route to them, not a
-	// second copy. Johto asks for the WINGS, Kanto asks you to be its Champion.
-	MAP_NAVEL_ROCK_TOP: { species: 'hooh', dex: 250, level: 70, x: 12, y: 4, flag: 'legend_caught_hooh',
-		requires: () => Badges.isChampion('KANTO'), intro: 'Light floods the peak — HO-OH descends over NAVEL ROCK!' },
-	MAP_NAVEL_ROCK_BOTTOM: { species: 'lugia', dex: 249, level: 70, x: 11, y: 13, flag: 'legend_caught_lugia',
-		requires: () => Badges.isChampion('KANTO'), intro: 'The cavern floods with sound — LUGIA rises from the deep!' },
-	// CELEBI. Johto's signature mascot did not exist ANYWHERE in this codebase —
-	// zero hits, despite shipping in the species table with a sprite. Crystal
-	// gates it behind the GS Ball, an item this port has no equivalent for, so it
-	// waits at the Ilex Forest shrine for the region's CHAMPION instead. That also
-	// gives Johto a second post-game beat; it previously had only Mt Silver.
-	MAP_ILEX_FOREST: { species: 'celebi', dex: 251, level: 60, x: 4, y: 19, flag: 'legend_caught_celebi',
-		requires: () => Badges.isChampion('JOHTO'),
-		intro: 'The shrine hums, and the forest folds around a small green shape — CELEBI!' },
-	// JOHKANTO had NO legendaries at all, while Hoenn has 9, Johto 5 and Kanto 4.
-	// Its Power Plant is the one bird lair the region actually owns (Seafoam and
-	// Cerulean Cave are unprefixed border maps). Same flag as Kanto's ZAPDOS, so
-	// this is a second route to the bird rather than a second bird.
-	MAP_JOHKANTO_POWER_PLANT: { species: 'zapdos', dex: 145, level: 50, x: 16, y: 4, flag: 'legend_caught_zapdos',
-		intro: 'The generators scream — ZAPDOS bursts from the machinery!' },
-	// The three legendary beasts — once you've woken them at the Burned Tower they can
-	// be confronted at the top of Tin Tower (a map can hold several: an array).
-	MAP_TIN_TOWER_1F: [
-		{ species: 'raikou', dex: 243, level: 40, x: 7, y: 9, flag: 'legend_caught_raikou',
-			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'Thunder cracks — RAIKOU bares its fangs!' },
-		{ species: 'suicune', dex: 245, level: 40, x: 9, y: 9, flag: 'legend_caught_suicune',
-			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'The north wind stirs — SUICUNE regards you with clear eyes.' },
-		{ species: 'entei', dex: 244, level: 40, x: 12, y: 9, flag: 'legend_caught_entei',
-			requires: () => Story.getFlag('EVENT_RELEASED_THE_BEASTS'), intro: 'A volcanic roar — ENTEI blocks your path!' },
-	],
-};
-// ...plus the 87 that had no home anywhere, one at the bottom of each of 87
-// dungeons (legendaries_postgame.js, generated). The hand-placed table wins on a
-// collision, but the generator skips any map named above so there are none.
-export const LEGENDARY_ENCOUNTERS = { ...POSTGAME_LEGENDS, ...HAND_PLACED_LEGENDS };
-// a Pokemon's overworld sprite, loaded on demand from data/pokemon_ow/<id>.png
-const owMonCache = new Map();
-function owMonSprite(id) {
-	if (!id) return null;
-	if (!owMonCache.has(id)) {
-		owMonCache.set(id, null);
-		// Fall back to the BATTLE sprite when there is no overworld one. 28 of the
-		// placed legendaries are gen-9 Paradox/Ruin species with no pokemon_ow art,
-		// and drawLegendary simply skipped them — leaving an invisible tile that
-		// starts a legendary battle when you walk onto it, which reads as a bug
-		// rather than as a secret.
-		getImage(`data/pokemon_ow/${id}.png`)
-			.catch(() => {
-				const sp = battle.data?.species?.[id]?.sprite;
-				return sp ? getImage(`data/pokemon/${sp}`) : Promise.reject(new Error('no sprite'));
-			})
-			.then(img => owMonCache.set(id, img))
-			.catch(() => {});
-	}
-	return owMonCache.get(id);
-}
-function drawLegendary(ctx, camX, camY) {
-	for (const e of legendariesHere()) {
-		const img = owMonSprite(e.species);
-		if (!img) continue;
-		const cx = e.x * META + META / 2, by = e.y * META + META; // bottom-centre on the tile
-		drawOwMon(ctx, img, cx, by, camX, camY);
-	}
-}
-
-// ---------- Hoenn legendary-awakening chain ----------
-// After the Team Aqua climax (villain_hoenn_climax), the roused weather trio tear
-// HOENN apart until RAYQUAZA is woken to calm them. The decomp drives this through
-// camera/weather/battle `special` ops + flag-gated story objects, all of which are
-// inert or never spawned in this port — so the literal scripts would play as
-// invisible state changes. Instead a self-contained director advances its OWN state
-// var (keeping the decomp scene vars dormant, so their onFrame scenes never fire)
-// and RENDERS the beats: KYOGRE & GROUDON clash over SOOTOPOLIS on their real decomp
-// tiles, then RAYQUAZA descends to still them. The catch itself is untouched — it
-// stays a real battle on each legendary's lair tile via LEGENDARY_ENCOUNTERS.
-const AW_VAR = 'VAR_HOENN_AWAKENING'; // 0 ready -> 6 resolved
-export function awState() { return Story.getVar(AW_VAR); }
-function awActive() { return Story.getFlag('villain_hoenn_climax') && awState() < 6; }
-// a scripted actor's real decomp position, read live from the map's object_events
-function awObjPos(re) {
-	const o = (world.current.map.object_events || []).find(e => re.test(e.graphics_id || ''));
-	return o ? { x: +o.x, y: +o.y } : null;
-}
-const AWAKENING_SCENES = [
-	{ map: 'Route128', when: aw => aw === 0, next: 1, lines: [
-		'The sea churns violently off ROUTE 128. ARCHIE stares into the raging water, the BLUE ORB dark and cold in his fist.',
-		'ARCHIE: What have I done...? KYOGRE won’t heed me! The sea itself is rising to swallow everything!',
-		'MAXIE: Your precious KYOGRE has doomed us all, ARCHIE!',
-		'STEVEN: Enough! The two POKeMON have gone berserk — drought and downpour tearing at each other. We must reach SOOTOPOLIS before HOENN drowns.',
-	] },
-	{ map: 'SootopolisCity', when: aw => aw < 2, next: 2, lines: [
-		'You surface into SOOTOPOLIS to chaos. Above the crater lake, KYOGRE and GROUDON are locked in an ancient fury.',
-		'Torrents of rain and searing heat collide over the city — the sky itself is at war.',
-		'STEVEN: Their power only feeds on the clash! No trainer can stop them now... only a greater force could.',
-		'WALLACE: There is one — the serpent that rules the skies above them both. RAYQUAZA.',
-	] },
-	{ map: 'SootopolisCity', when: aw => aw === 2, next: 3, lines: [
-		'WALLACE: RAYQUAZA slumbers atop the SKY PILLAR, far to the east beyond PACIFIDLOG.',
-		'WALLACE: Only it can quell KYOGRE and GROUDON. Go — wake the guardian of the sky, before SOOTOPOLIS is lost!',
-	] },
-	{ map: 'SkyPillar_Outside', when: aw => aw === 3, next: 4, door: true, lines: [
-		'WALLACE stands before the SKY PILLAR’s sealed door, waiting for you.',
-		'WALLACE: I’ve opened the way. Climb to the summit — RAYQUAZA waits at the very top. Hurry!',
-	] },
-	{ map: 'SkyPillar_Top', when: aw => aw === 4, next: 5, lines: [
-		'At the pillar’s summit an immense green POKeMON coils in the thin air. RAYQUAZA.',
-		'Your presence stirs it. RAYQUAZA’s eyes snap open — it uncoils and hurtles skyward, streaking west toward SOOTOPOLIS!',
-	] },
-	{ map: 'SootopolisCity', when: aw => aw === 5, next: 6, resolve: true, lines: [
-		'RAYQUAZA descends through the storm in a spiral of light.',
-		'Its roar shakes the heavens. KYOGRE and GROUDON freeze — then, cowed, sink back into the depths from which they rose.',
-		'The rain stills. The blistering heat fades. RAYQUAZA gives a final cry and vanishes into the clouds.',
-		'STEVEN: It’s over... HOENN is safe. The three still linger in the wild, though — seek them out, if you dare.',
-	] },
-];
-// map-entry / per-step hook: play the next awakening beat if one is due here
-function checkAwakeningTrigger() {
-	if (!S.party || !leadMon(S.party) || cutscene.blocking || battle.blocking || starterMenu.open) return;
-	if (!Story.getFlag('villain_hoenn_climax') || playerRegion() !== 'HOENN') return;
-	const aw = awState();
-	const scene = AWAKENING_SCENES.find(s => s.map === world.current.name && s.when(aw));
-	if (!scene) return;
-	startCutscene(scene.lines.map(text => ({ op: 'say', text })), () => {
-		if (scene.door) { // make the SKY PILLAR door walkable (decomp opens it via an OnLoad the port never runs)
-			const lay = world.current?.layout;
-			if (lay?.map?.[4]) world.setMetatile(14, 4, lay.map[4][14], false);
-			if (lay?.map?.[5]) world.setMetatile(14, 5, lay.map[5][14], false);
-		}
-		Story.setVar(AW_VAR, scene.next);
-		if (scene.resolve) { Story.clearFlag('FLAG_SYS_WEATHER_CTRL'); Story.clearFlag('FLAG_LEGENDARIES_IN_SOOTOPOLIS'); }
-	});
-}
-// render the clashing legendaries over SOOTOPOLIS during the crisis (real decomp tiles)
-function drawAwakening(ctx, camX, camY) {
-	if (world.current.name !== 'SootopolisCity' || !awActive()) return;
-	const put = (species, pos) => {
-		if (!pos) return;
-		const img = owMonSprite(species);
-		if (!img) return;
-		const cx = pos.x * META + META / 2, by = pos.y * META + META;
-		drawOwMon(ctx, img, cx, by, camX, camY);
-	};
-	put('groudon', awObjPos(/GROUDON/));
-	put('kyogre', awObjPos(/KYOGRE/));
-	if (awState() === 5) put('rayquaza', awObjPos(/RAYQUAZA/)); // descends to calm them
-}
 
 // ---------- follower (lead POKeMON walks behind you, HG/SS style) ----------
 // 4x4 walk sheet from data/pokemon_follow/<id>.png: rows down/left/right/up,
@@ -3540,7 +2332,7 @@ function drawFollower(ctx, camX, camY) {
 }
 // all un-caught, requirement-met legendaries on the current map (a map may hold
 // several, e.g. the Tin Tower beasts — stored as an array)
-function legendariesHere() {
+export function legendariesHere() {
 	const v = LEGENDARY_ENCOUNTERS[world.current.map.id];
 	if (!v) return [];
 	return (Array.isArray(v) ? v : [v]).filter(e => !Story.getFlag(e.flag) && (!e.requires || e.requires()));
@@ -3572,7 +2364,7 @@ function startLegendaryBattle(e) {
 	});
 }
 // on-arrive: standing on a legendary's tile starts that encounter
-function checkLegendaryTrigger() {
+export function checkLegendaryTrigger() {
 	const e = legendariesHere().find(x => player.tx === x.x && player.ty === x.y);
 	if (e) { startLegendaryBattle(e); return true; }
 	return false;
@@ -3624,7 +2416,7 @@ const MAP_WEATHER = {
 	MAP_ROUTE123: 'rain',
 	MAP_SILVER_CAVE_OUTSIDE: 'hail',
 };
-function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
+export function mapWeatherNow() { return MAP_WEATHER[world.current?.map?.id] || null; }
 // which visual battle STAGE this encounter happens on — the battle can't see the
 // overworld, so we hand it a { terrain, night } derived from the current map.
 // Terrain drives the backdrop + platform (battle.js drawStage/drawSide).
@@ -3683,7 +2475,7 @@ export function whiteOut() {
 	});
 }
 
-let lastOutdoor = null;
+export let lastOutdoor = null;
 function noteOutdoor() {
 	const t = world.current?.map?.map_type || '';
 	if (t !== 'MAP_TYPE_INDOOR' && t !== 'MAP_TYPE_UNDERGROUND' && !world.current?.map?.indoor) {
@@ -3723,10 +2515,10 @@ const SAFARI_ZONES = {
 };
 const SAFARI_GATES = { fr: 'MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE', hoenn: 'MAP_ROUTE121_SAFARI_ZONE_ENTRANCE' };
 const SAFARI_FEE = 500, SAFARI_BALLS = 30, SAFARI_STEPS = 600;
-let safari = safeLoad('magepunk_safari_v1', null) || { on: false, zone: null, balls: 0, steps: 0 };
-function safariZoneOf(mapId) { return SAFARI_ZONES[mapId] || null; }
-function saveSafari() { safeSave('magepunk_safari_v1', safari); }
-function endSafari(reason) {
+export let safari = safeLoad('magepunk_safari_v1', null) || { on: false, zone: null, balls: 0, steps: 0 };
+export function safariZoneOf(mapId) { return SAFARI_ZONES[mapId] || null; }
+export function saveSafari() { safeSave('magepunk_safari_v1', safari); }
+export function endSafari(reason) {
 	const zone = safari.zone;
 	safari = { on: false, zone: null, balls: 0, steps: 0 };
 	saveSafari();
@@ -3817,8 +2609,8 @@ function wildBattleEnd(result, inSafari) {
 // ---------- museum paintings, ruins words, fossils, New Mauville ----------
 // Small one-shot venue events, remembered together in magepunk_events_v1.
 const EVENTS_KEY = 'magepunk_events_v1';
-function miscEvents() { return safeLoad(EVENTS_KEY, {}); }
-function saveMiscEvents(e) { safeSave(EVENTS_KEY, e); }
+export function miscEvents() { return safeLoad(EVENTS_KEY, {}); }
+export function saveMiscEvents(e) { safeSave(EVENTS_KEY, e); }
 
 // LILYCOVE MUSEUM 2F — the contest capstone: winning a MASTER rank hangs
 // your Pokémon's portrait in its category's frame (recorded at the win;
@@ -3975,557 +2767,6 @@ function drawFossilSpots(ctx, camX, camY) {
 	}
 }
 
-// ---------- Secret Bases ----------
-// Every one of Emerald's REAL base spots survives in the shipped layouts as a
-// metatile behavior (0x90-0x9D: red/brown/yellow/blue cave, tree, shrub), so
-// detection is mechanical — no hand-placed zones, all ~70 spots work. One base
-// per player: claim a spot, decorate it, and FRIENDS who walk up to your spot
-// can step inside and see your handiwork (D1: base-save/base-get/base-dir).
-const BASE_KEY = 'magepunk_base_v1';
-const DECO_ITEMS = [
-	{ id: 'plant', name: 'POTTED PLANT' }, { id: 'table', name: 'WOOD TABLE' },
-	{ id: 'cushion', name: 'CUSHION' }, { id: 'mat', name: 'SPIN MAT' },
-	{ id: 'lamp', name: 'GLOW LAMP' }, { id: 'rock', name: 'PRETTY ROCK' },
-	{ id: 'doll', name: 'POKe DOLL' }, { id: 'banner', name: 'BANNER' },
-];
-const DECO_CAP = 16;
-function myBase() { return safeLoad(BASE_KEY, null); }
-function saveMyBase(b) { safeSave(BASE_KEY, b); if (MP_ON) { try { MP.call('base-save', { spot: b.spot, deco: b.deco || [] }).catch(() => {}); } catch (e) {} } }
-// spot key: map file + the LEFT tile of a tree pair, so both halves agree
-function baseSpotKey(fx, fy, behavior) {
-	const x = behavior === 0x9C ? fx - 1 : fx;
-	return `${world.current?.name}:${x},${fy}`;
-}
-// whose base is on this spot? friends' claims are cached briefly
-let baseDir = null, baseDirAt = 0;
-async function fetchBaseDir() {
-	if (!MP_ON) return {};
-	if (baseDir && Date.now() - baseDirAt < 60000) return baseDir;
-	try { baseDir = (await MP.call('base-dir'))?.dir || {}; baseDirAt = Date.now(); } catch (e) { baseDir = baseDir || {}; }
-	return baseDir;
-}
-// the live base room context (whose deco to draw, whether you may edit)
-let baseCtx = null;
-function baseRoomFor(spotKey, behavior) {
-	const SNAKE = { 0x90: 'RED_CAVE', 0x92: 'BROWN_CAVE', 0x94: 'YELLOW_CAVE', 0x96: 'TREE', 0x98: 'SHRUB', 0x9A: 'BLUE_CAVE', 0x9C: 'TREE' };
-	let h = 0;
-	for (const c of spotKey) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-	return `MAP_SECRET_BASE_${SNAKE[behavior & ~1] || 'RED_CAVE'}${(h % 4) + 1}`;
-}
-async function enterBase(spotKey, behavior, owner) {
-	const mine = owner == null;
-	let deco = [];
-	if (mine) deco = myBase()?.deco || [];
-	else {
-		try { deco = ((await MP.call('base-get', { user: owner }))?.base?.deco) || []; } catch (e) {}
-	}
-	baseCtx = { mine, owner: owner || null, deco, spot: spotKey };
-	await warpTo(baseRoomFor(spotKey, behavior), '0');
-	hud.textContent = mine ? 'Your SECRET BASE. Press Z on open floor to decorate!' : `${(owner || '').toUpperCase()}'s SECRET BASE!`;
-}
-function secretSpotInteract(fx, fy, behavior) {
-	const key = baseSpotKey(fx, fy, behavior);
-	const mine = myBase();
-	if (mine?.spot === key) {
-		dialog.open('Your SECRET BASE!\n\nStep inside?   Z = Yes   X = No', d => { if (d !== 'x') enterBase(key, behavior, null); });
-		return;
-	}
-	fetchBaseDir().then(dir => {
-		const owner = dir[key];
-		if (owner && owner !== (S.mpAccount?.username || '')) {
-			dialog.open(`This is ${owner.toUpperCase()}'s SECRET BASE!\n\nPeek inside?   Z = Yes   X = No`, d => { if (d !== 'x') enterBase(key, behavior, owner); });
-			return;
-		}
-		const q = mine
-			? `A perfect hollow for a SECRET BASE!\n\nMove your base HERE? Your decorations\ncome along.   Z = Yes   X = No`
-			: 'A perfect hollow for a SECRET BASE!\n\nMake this your base?   Z = Yes   X = No';
-		dialog.open(q, d => {
-			if (d === 'x') return;
-			const b = { spot: key, behavior, deco: mine?.deco || [] };
-			saveMyBase(b);
-			baseDir = null; // the directory changed
-			Journal.add('Claimed a SECRET BASE!');
-			sfx('levelup');
-			enterBase(key, behavior, null);
-		});
-	});
-}
-// inside your own base, Z on open floor decorates; Z on a decoration removes it
-export const decoMenu = { open: false, idx: 0, tx: 0, ty: 0 };
-function baseDecoInteract(fx, fy) {
-	if (!baseCtx) return false;
-	const d = (baseCtx.deco || []).find(x => x.x === fx && x.y === fy);
-	if (d) {
-		if (!baseCtx.mine) { dialog.open(`A lovely ${DECO_ITEMS.find(i => i.id === d.id)?.name || d.id}.`); return true; }
-		dialog.open(`Put the ${DECO_ITEMS.find(i => i.id === d.id)?.name || d.id} away?\n\nZ = Yes   X = No`, k => {
-			if (k === 'x') return;
-			baseCtx.deco = baseCtx.deco.filter(x => x !== d);
-			const b = myBase(); if (b) { b.deco = baseCtx.deco; saveMyBase(b); }
-		});
-		return true;
-	}
-	if (!baseCtx.mine) return false;
-	if (!world.isPassable(fx, fy) || world.warpAt(fx, fy)) return false;
-	decoMenu.open = true; decoMenu.idx = 0; decoMenu.tx = fx; decoMenu.ty = fy;
-	sfx('ui_select');
-	return true;
-}
-export function decoKey(k) {
-	const rows = DECO_ITEMS.length + 1;
-	if (k === 'ArrowUp') decoMenu.idx = (decoMenu.idx + rows - 1) % rows;
-	if (k === 'ArrowDown') decoMenu.idx = (decoMenu.idx + 1) % rows;
-	if (k === 'x' || k === 'Escape') { decoMenu.open = false; return; }
-	if (k !== 'z' && k !== 'Enter') return;
-	if (decoMenu.idx >= DECO_ITEMS.length) { decoMenu.open = false; return; }
-	if ((baseCtx?.deco || []).length >= DECO_CAP) { dialog.open(`The base is full! (${DECO_CAP} decorations max.)`); decoMenu.open = false; return; }
-	const it = DECO_ITEMS[decoMenu.idx];
-	baseCtx.deco.push({ id: it.id, x: decoMenu.tx, y: decoMenu.ty });
-	const b = myBase(); if (b) { b.deco = baseCtx.deco; saveMyBase(b); }
-	sfx('item_get');
-	decoMenu.open = false;
-}
-function drawDecoMenu(W, H) {
-	const u = H / 480;
-	optionList(W, H, u, 'DECORATE', `Place what here? (${(baseCtx?.deco || []).length}/${DECO_CAP} placed)`,
-		DECO_ITEMS.map(i => i.name).concat(['Never mind']), decoMenu.idx, 'deco:', null);
-}
-// chunky 16px pixel decorations, drawn in code (no art assets needed)
-function drawDecoSprite(ctx, id, px, py) {
-	const P = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(px + x, py + y, w, h); };
-	switch (id) {
-		case 'plant': P(5, 9, 6, 6, '#8a5a2b'); P(4, 3, 8, 7, '#2e8b3a'); P(6, 1, 4, 4, '#46c455'); break;
-		case 'table': P(2, 5, 12, 7, '#8a5a2b'); P(3, 4, 10, 3, '#c98d4a'); break;
-		case 'cushion': P(3, 6, 10, 7, '#c23b4e'); P(5, 4, 6, 4, '#e26b7c'); break;
-		case 'mat': P(2, 3, 12, 11, '#2c5f9e'); P(5, 6, 6, 5, '#5b8fd0'); break;
-		case 'lamp': P(7, 8, 2, 7, '#666'); P(4, 2, 8, 7, '#ffd75e'); break;
-		case 'rock': P(4, 7, 9, 7, '#8d99a6'); P(6, 5, 5, 4, '#b7c2cc'); break;
-		case 'doll': P(4, 6, 8, 8, '#e87ca0'); P(5, 2, 6, 6, '#f7a8c4'); break;
-		case 'banner': P(3, 2, 10, 10, '#7a4bd0'); P(5, 4, 6, 3, '#ffd75e'); P(3, 12, 10, 2, '#4a2a86'); break;
-		default: P(4, 4, 8, 8, '#999');
-	}
-}
-function drawBaseDeco(ctx, camX, camY) {
-	if (!baseCtx || !/^SecretBase_/.test(world.current?.name || '')) return;
-	for (const d of baseCtx.deco || []) drawDecoSprite(ctx, d.id, d.x * META - camX, d.y * META - camY);
-}
-
-// ---------- async friend trades (mailbox, escrowed) ----------
-// Offer a party POKeMON to a friend whether they're online or not: the mon is
-// escrowed out of your save the moment the offer sends. They accept with a
-// counterpart (which lands in your world as an exactly-once delivery, like a
-// gift) or decline (yours comes home the same way).
-export const socialMenu = { open: false, mode: 'offermon', friend: null, trades: null, trade: null, idx: 0, flash: null };
-function monLine(m) { return `${m.nickname || m.name} Lv${m.level}`; }
-function openTradeOffer(f) {
-	if (!S.party || S.party.length < 2) { dialog.open('You need at least two POKeMON to offer one.'); return; }
-	socialMenu.open = true; socialMenu.mode = 'offermon'; socialMenu.friend = f; socialMenu.idx = 0; socialMenu.flash = null;
-}
-async function openTradeInbox() {
-	socialMenu.open = true; socialMenu.mode = 'inbox'; socialMenu.idx = 0; socialMenu.trades = null; socialMenu.flash = null;
-	try { socialMenu.trades = (await MP.call('trade-list'))?.trades || []; } catch (e) { socialMenu.trades = []; socialMenu.flash = 'Could not reach the server.'; }
-}
-async function sendTradeOffer(f, monIdx) {
-	const mon = S.party[monIdx];
-	if (!mon || S.party.length < 2) return;
-	S.party.splice(monIdx, 1); // escrow: it leaves the save before the offer sends
-	saveParty(S.party);
-	socialMenu.open = false;
-	try {
-		const r = await MP.call('trade-offer', { to: f.username, mon });
-		if (r?.error) throw new Error(r.error);
-		Journal.add(`Offered ${monLine(mon)} to ${f.username} in a trade`);
-		dialog.open(`Your trade offer is on its way!\n\n${monLine(mon)} will wait with ${f.username}\nuntil they accept or decline.`);
-	} catch (e) {
-		addCaught(S.party, mon); saveParty(S.party); // the escrow comes straight home
-		dialog.open('The offer could not be sent — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
-	}
-}
-async function acceptTrade(trade, monIdx) {
-	const mine = S.party[monIdx];
-	if (!mine || S.party.length < 2) return;
-	S.party.splice(monIdx, 1);
-	saveParty(S.party);
-	socialMenu.open = false;
-	try {
-		const r = await MP.call('trade-accept', { id: trade.id, mon: mine });
-		if (r?.error) throw new Error(r.error);
-		const got = r.mon;
-		Dex.markCaught(got.speciesId); dexMilestoneCheck();
-		const where = addCaught(S.party, got);
-		saveParty(S.party);
-		Journal.add(`Traded ${monLine(mine)} to ${trade.from} for ${monLine(got)}!`);
-		sfx('levelup');
-		dialog.open(`Trade complete!\n\n${monLine(got)} arrived from ${trade.from}${where === 'box' ? ' (sent to the box)' : ''}.\nTake good care of it!`);
-	} catch (e) {
-		addCaught(S.party, mine); saveParty(S.party);
-		dialog.open('The trade fell through — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
-	}
-}
-async function declineTrade(trade) {
-	socialMenu.open = false;
-	try { await MP.call('trade-decline', { id: trade.id }); dialog.open(`You declined ${trade.from}'s offer.\nTheir POKeMON is on its way home.`); }
-	catch (e) { dialog.open('Could not decline right now — try again later.'); }
-}
-// on boot: accepted/declined counterparts come home, exactly once each
-async function claimTradeDeliveries() {
-	if (!MP_ON) return;
-	let list = [];
-	try { list = (await MP.call('trade-deliveries'))?.deliveries || []; } catch (e) { return; }
-	for (const d of list) {
-		let got = null;
-		try { got = (await MP.call('trade-claim', { id: d.id }))?.delivery; } catch (e) { continue; }
-		if (!got?.mon) continue;
-		Dex.markCaught(got.mon.speciesId); dexMilestoneCheck();
-		const where = addCaught(S.party, got.mon);
-		saveParty(S.party);
-		if (got.returned) {
-			dialog.open(`${monLine(got.mon)} came home —\n${got.from} declined the trade.${where === 'box' ? '\n(Sent to the box.)' : ''}`);
-		} else {
-			Journal.add(`${got.from} accepted the trade — ${monLine(got.mon)} arrived!`);
-			dialog.open(`${got.from} accepted your trade!\n\n${monLine(got.mon)} is yours now${where === 'box' ? ' (sent to the box)' : ''}.`);
-		}
-	}
-}
-export function socialKey(k) {
-	const s = socialMenu;
-	if (s.mode === 'inbox') {
-		const list = s.trades || [];
-		const rows = list.length + 1;
-		if (k === 'ArrowUp') s.idx = (s.idx + rows - 1) % rows;
-		if (k === 'ArrowDown') s.idx = (s.idx + 1) % rows;
-		if (k === 'x' || k === 'Escape') { s.open = false; return; }
-		if (k !== 'z' && k !== 'Enter') return;
-		if (s.idx >= list.length) { s.open = false; return; }
-		const t = list[s.idx];
-		dialog.open(`${t.from} offers ${monLine(t.mon)}!\n\nZ = Accept (pick your POKeMON)\nX = Decline (sends theirs home)`, d => {
-			if (d === 'x') { declineTrade(t); return; }
-			if (!S.party || S.party.length < 2) { dialog.open('You need at least two POKeMON to trade one.'); return; }
-			s.mode = 'acceptmon'; s.trade = t; s.idx = 0;
-		});
-		return;
-	}
-	// offermon / acceptmon: a party row picker
-	if (k === 'ArrowUp') s.idx = (s.idx + S.party.length - 1) % S.party.length;
-	if (k === 'ArrowDown') s.idx = (s.idx + 1) % S.party.length;
-	if (k === 'x' || k === 'Escape') { s.open = false; return; }
-	if (k !== 'z' && k !== 'Enter') return;
-	if (!S.party[s.idx]) return;
-	if (s.mode === 'offermon') {
-		const f = s.friend, mon = S.party[s.idx];
-		dialog.open(`Offer ${monLine(mon)} to ${f.username}?\n\nIt leaves your party until they answer.\nZ = Yes   X = No`, d => { if (d !== 'x') sendTradeOffer(f, s.idx); });
-	} else if (s.mode === 'acceptmon') {
-		const t = s.trade, mine = S.party[s.idx];
-		dialog.open(`Trade YOUR ${monLine(mine)} for\n${t.from}'s ${monLine(t.mon)}?\n\nZ = Trade!   X = No`, d => { if (d !== 'x') acceptTrade(t, s.idx); });
-	}
-}
-function drawSocial(W, H) {
-	const u = H / 480;
-	const s = socialMenu;
-	if (s.mode === 'inbox') {
-		const list = s.trades;
-		const rows = list == null ? ['(loading…)'] : list.map(t => `${t.from} offers ${monLine(t.mon)}`).concat(['Back']);
-		optionList(W, H, u, 'TRADE OFFERS', 'Z: answer an offer', rows, s.idx, 'soc:', s.flash);
-		return;
-	}
-	menuChrome(W, H, u, s.mode === 'offermon' ? `OFFER A TRADE — to ${s.friend?.username}` : `TRADE WITH ${s.trade?.from}`,
-		s.mode === 'offermon' ? 'Which POKeMON do you offer?' : `Their ${s.trade ? monLine(s.trade.mon) : ''} — pick yours to send.`);
-	S.party.forEach((mo, i) => monRow('socm:' + i, 24 * u, (76 + i * 62) * u, W - 48 * u, 56 * u, mo, s.idx === i, u));
-}
-
-// ---------- Shoal Cave tides ----------
-// The Clock drives Emerald's real rhythm: LOW tide 3-9 and 15-21, HIGH tide
-// otherwise. At high tide the Inner Room swaps to its shipped high-tide layout
-// (flooded — Surf country) and the deeper rooms (Stairs/Lower/Ice) are
-// underwater outright. The high-tide map shipped as a layout-only shell (no
-// warps, even in the decomp — events live on the low map), so its warps are
-// injected at load and arrival is re-placed by hand. SHOAL SALT × 4 and SHOAL
-// SHELL × 4 hide at the classic dig spots (once per save — no respawn timers),
-// and the hermit at the entrance trades 4 + 4 for his SHELL BELL.
-const SHOAL_KEY = 'magepunk_shoal_v1';
-const shoalTide = () => { const h = Clock.hour(); return (h >= 3 && h < 9) || (h >= 15 && h < 21) ? 'low' : 'high'; };
-// which dig spot yields what, by map:x,y (the decomp's ShoalSalt1-4/ShoalShell1-4)
-const SHOAL_ITEM_AT = {
-	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:31,8': 'shoalsalt', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:14,26': 'shoalsalt',
-	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:41,20': 'shoalshell', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:41,10': 'shoalshell',
-	'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:6,9': 'shoalshell', 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM:16,13': 'shoalshell',
-	'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM:18,2': 'shoalsalt', 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM:11,11': 'shoalsalt',
-};
-// the low Inner Room's warp list, mirrored into the high-tide shell at load
-const SHOAL_INNER_WARPS = [
-	{ x: 34, y: 29, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '1' },
-	{ x: 38, y: 15, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM', dest_warp_id: '0' },
-	{ x: 42, y: 4, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM', dest_warp_id: '1' },
-	{ x: 19, y: 14, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '0' },
-	{ x: 15, y: 19, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '1' },
-	{ x: 30, y: 25, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM', dest_warp_id: '2' },
-	{ x: 14, y: 33, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '2' },
-	{ x: 40, y: 33, dest_map: 'MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM', dest_warp_id: '3' },
-];
-let shoalArrival = null; // set by shoalWarp: where to stand after the shell map loads
-// warp overrides: high tide floods the deep rooms and swaps the Inner Room
-function shoalWarp(w) {
-	if (shoalTide() === 'low') return null;
-	if (/SHOAL_CAVE_LOW_TIDE_(STAIRS|LOWER|ICE)_ROOM$/.test(w.dest_map)) {
-		dialog.open('Seawater surges through the passage!\n\nThe way down is underwater until the tide\ngoes out. (Low tide: 3-9 and 15-21.)');
-		return 'blocked';
-	}
-	// only the ENTRANCE door swaps you into the flooded room — climbing back UP
-	// from a deep room lands in the low layout as a grace (no stranding)
-	if (w.dest_map === 'MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM' && world.current?.name === 'ShoalCave_LowTideEntranceRoom') {
-		const idx = Math.max(0, parseInt(w.dest_warp_id, 10) || 0);
-		shoalArrival = [SHOAL_INNER_WARPS[idx]?.x ?? 34, SHOAL_INNER_WARPS[idx]?.y ?? 29];
-		return { map: 'MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM', warp: w.dest_warp_id };
-	}
-	return null;
-}
-function shoalFixup(label) {
-	if (label !== 'ShoalCave_HighTideInnerRoom') { shoalArrival = null; return; }
-	for (const wv of SHOAL_INNER_WARPS) {
-		if (!world.warps.some(x => x.x === wv.x && x.y === wv.y)) world.warps.push({ ...wv });
-	}
-	if (shoalArrival) { player.setTile(shoalArrival[0], shoalArrival[1]); shoalArrival = null; }
-}
-function shoalDig() {
-	const key = `${world.current?.map?.id}:${player.tx + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[0])},${player.ty + ((({ down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] })[player.facing] || [0, 0])[1])}`;
-	const item = SHOAL_ITEM_AT[key];
-	if (!item) { dialog.open('Just wet cave rock.'); return; }
-	const st = safeLoad(SHOAL_KEY, { taken: {} });
-	if (st.taken[key]) { dialog.open('You already dug everything out of this spot.'); return; }
-	st.taken[key] = 1;
-	safeSave(SHOAL_KEY, st);
-	Bag.addItem(item, 1);
-	sfx('item_get');
-	dialog.open(`Buried in the ${item === 'shoalsalt' ? 'briny sand' : 'shallows'}...\n\nYou dug up a ${Bag.ITEMS[item].name}!`);
-}
-function shoalHermitTalk() {
-	const salt = Bag.count('shoalsalt'), shell = Bag.count('shoalshell');
-	if (salt >= 4 && shell >= 4) {
-		dialog.open(`HERMIT: Ooh! ${salt} SHOAL SALT and ${shell} SHOAL SHELL!\nWith 4 of each I can craft my masterpiece.\n\nShall I?   Z = Yes   X = No`, declined => {
-			if (declined === 'x') return;
-			for (let i = 0; i < 4; i++) { Bag.consume('shoalsalt'); Bag.consume('shoalshell'); }
-			Bag.addItem('shellbell', 1);
-			sfx('levelup');
-			Journal.add('The hermit crafted a SHELL BELL from shoal salt and shells!');
-			dialog.open('HERMIT: Grind the salt, polish the shells...\n\nDone! Here — a SHELL BELL! The holder drains\na little life from every hit it lands.');
-		});
-		return;
-	}
-	dialog.open(`HERMIT: I craft SHELL BELLS from what this cave\nhides — 4 SHOAL SALT and 4 SHOAL SHELL.\n(You carry ${salt} salt, ${shell} shell.)\n\nSalt lies deep — low tide only. Shells sit in\nthe inner cavern. Dig at the sparkling spots!`);
-}
-function kurtTalk() {
-	const held = Object.keys(Bag.ITEMS).filter(id => Bag.ITEMS[id].kind === 'apricorn' && Bag.count(id) > 0);
-	if (!held.length) {
-		dialog.open('KURT: I turn APRICORNS into POKe BALLS — my own\nhandiwork, better than store-bought!\n\nAPRICORNS grow on the trees along ROUTE 37\nand ROUTE 42. Bring me any color!');
-		return;
-	}
-	const id = held[0];
-	const ball = Bag.ITEMS[id].ball;
-	dialog.open(`KURT: Ah, a ${Bag.ITEMS[id].name}! I can craft that into\na ${Bag.ITEMS[ball].name}. (You have ${Bag.count(id)}.)\n\nShall I?   Z = Yes   X = No`, declined => {
-		if (declined === 'x') return;
-		Bag.consume(id);
-		Bag.addItem(ball, 1);
-		sfx('levelup');
-		dialog.open(`KURT: Hrmph... rrgh... THERE!\n\nOne ${Bag.ITEMS[ball].name}, made the old way!\nBring me more APRICORNS any time.`);
-	});
-}
-
-// ---------- roaming legendaries ----------
-// RAIKOU and ENTEI prowl Johto's routes, LATIOS and LATIAS Hoenn's, once that
-// region holds 4 badges. They hop to a new route every map change; on their
-// route they can take over a wild encounter — flee-prone (Mean Look holds
-// them) and their wounds persist between meetings, the classic chase. Fainting
-// one loses it for the save, like the old games.
-const ROAM_KEY = 'magepunk_roamers_v1';
-export const ROAMERS = {
-	raikou: { region: 'JOHTO', level: 40 },
-	entei: { region: 'JOHTO', level: 40 },
-	latios: { region: 'HOENN', level: 40 },
-	latias: { region: 'HOENN', level: 40 },
-};
-const ROAM_ROUTES = {
-	JOHTO: ['Route29', 'Route30', 'Route31', 'Route32', 'Route33', 'Route34', 'Route35', 'Route36', 'Route37', 'Route38', 'Route39', 'Route42', 'Route43', 'Route44', 'Route45', 'Route46'],
-	HOENN: ['Route110', 'Route111', 'Route112', 'Route113', 'Route114', 'Route115', 'Route116', 'Route117', 'Route118', 'Route119', 'Route120', 'Route121'],
-};
-export function roamState() { return safeLoad(ROAM_KEY, {}); }
-function saveRoam(st) { safeSave(ROAM_KEY, st); }
-// every map change, each active roamer bolts to a random route of its region
-function roamersOnMapChange() {
-	const st = roamState();
-	let changed = false;
-	for (const [key, cfg] of Object.entries(ROAMERS)) {
-		if (st[key]?.down) continue;
-		if ((Badges.count(cfg.region) || 0) < 4) continue;
-		const pool = ROAM_ROUTES[cfg.region];
-		if (!st[key]) {
-			st[key] = { map: pool[Math.floor(Math.random() * pool.length)], hp: null, seen: false };
-			Journal.add(`Rumors spread of a strange POKeMON roaming ${cfg.region}...`);
-			hud.textContent = `Rumors tell of something powerful roaming ${cfg.region}'s routes...`;
-			changed = true;
-		} else {
-			st[key].map = pool[Math.floor(Math.random() * pool.length)];
-			changed = true;
-		}
-	}
-	if (changed) saveRoam(st);
-}
-const roamerHere = () => Object.keys(ROAMERS).find(k => {
-	const st = roamState()[k];
-	return st && !st.down && st.map === world.current?.name;
-}) || null;
-function roamerEnd(key) {
-	return result => {
-		const st = roamState();
-		if (result === 'caught' && battle.lastCaught) {
-			Dex.markCaught(battle.lastCaught.speciesId); dexMilestoneCheck();
-			const where = addCaught(S.party, battle.lastCaught);
-			hud.textContent = `${battle.lastCaught.name} ${where === 'party' ? 'joined the party!' : 'was sent to the box'}`;
-			offerNickname(battle.lastCaught);
-			st[key] = { down: true }; saveRoam(st);
-			syncOverworldAchievements();
-		} else if (result === 'victory') {
-			st[key] = { down: true }; saveRoam(st); // fainted — gone for this save, like the classics
-			hud.textContent = 'The roaming POKeMON fainted... it will not be seen again.';
-			evolution.check(S.party, battle.data);
-		} else if (result === 'defeat') {
-			whiteOut();
-		} else {
-			// it bolted (or you ran): its wounds travel with it
-			if (st[key] && !st[key].down) {
-				st[key].hp = battle.lastFoe?.curHP ?? st[key].hp;
-				st[key].status = battle.lastFoe?.status || null;
-				saveRoam(st);
-			}
-			saveParty(S.party);
-		}
-	};
-}
-function startRoamerBattle(key) {
-	if (!S.party || !leadMon(S.party) || battle.blocking) return;
-	const st = roamState();
-	Dex.markSeen(key);
-	if (st[key]) { st[key].seen = true; saveRoam(st); }
-	battle.themeHint = 'legendary';
-	battle.endSpec = { kind: 'roamer', roamer: key };
-	battle.start(S.party, key, ROAMERS[key].level, roamerEnd(key), null,
-		{ roamer: { hp: st[key]?.hp ?? null, status: st[key]?.status || null } });
-}
-
-// ---------- the Johto RADIO ----------
-// Every radio object used to print one static "cheerful march" line. Tune in for
-// real: four channels — POKeMON MUSIC (swaps the BGM), OAK'S PKMN TALK (reports
-// where the roaming legendaries were last seen), BUENA'S PASSWORD (a daily
-// Blue-Point draw with a prize ladder) and the LUCKY CHANNEL (a daily lottery
-// against your Trainer ID). Driven as a stateful canvas menu (the gcMenu/shopMenu
-// pattern), intercepted in runScriptLabel before the std body would run.
-const RADIO_CHANNELS = ['POKeMON MUSIC', "OAK'S PKMN TALK", "BUENA'S PASSWORD", 'LUCKY CHANNEL', 'TURN IT OFF'];
-// Crystal's radio-only tunes weren't ported, so real, present city themes stand
-// in as "stations" (each key is confirmed live in music_map.json).
-const RADIO_STATIONS = [
-	{ name: 'POKeMON MARCH', key: 'crystal_MUSIC_GOLDENROD_CITY' },
-	{ name: 'POKeMON LULLABY', key: 'crystal_MUSIC_POKEMON_CENTER' },
-	{ name: 'UNOWN RADIO', key: 'crystal_MUSIC_ECRUTEAK_CITY' },
-];
-let radioTune = null;   // BGM override while a music channel plays; cleared on map change
-export const radioMenu = { open: false, idx: 0, station: 0 };
-// deterministic 32-bit FNV-1a — daily draws hash the date so a channel can't be
-// re-rolled by tuning in twice
-const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
-
-// a stable 5-digit Trainer ID. Derived from the account name (identical across
-// devices when signed in), else a once-seeded local id. Zero-padded at display.
-function playerTID() {
-	const name = (MP.cachedState?.() || {}).username || localStorage.getItem('magepunk_name') || '';
-	if (name) return hashStr(name) % 100000;
-	let tid = parseInt(localStorage.getItem('magepunk_tid') || '0', 10);
-	if (!tid) { tid = 1 + Math.floor(Math.random() * 99998); safeSaveStr('magepunk_tid', String(tid)); }
-	return tid % 100000;
-}
-export const tidStr = () => String(playerTID()).padStart(5, '0');
-
-export function openRadio() { radioMenu.open = true; radioMenu.idx = 0; sfx('ui_open'); }
-
-// POKeMON MUSIC: cycle to the next station and take over the BGM until you leave
-function playRadioStation() {
-	const s = RADIO_STATIONS[radioMenu.station % RADIO_STATIONS.length];
-	radioMenu.station++;
-	radioTune = s.key; bgmTick();   // apply the override immediately
-	return `The RADIO tunes to POKeMON MUSIC.  ♪ Now playing: ${s.name} ♪`;
-}
-
-// OAK'S PKMN TALK: the roaming-legendary sighting report. The roamer system
-// already moves Raikou/Entei/Latios/Latias each map change but nothing announced
-// where — this is that missing readout.
-function oakTalkText() {
-	const st = roamState();
-	const sightings = [];
-	for (const key of Object.keys(ROAMERS)) {
-		const r = st[key];
-		if (!r || r.down || !r.map) continue;
-		const nm = (battle.data?.species?.[key]?.name || key).toUpperCase();
-		sightings.push(`${nm} near ${r.map.replace(/^Route/, 'ROUTE ')}`);
-	}
-	if (!sightings.length) return "PROF. OAK'S PKMN TALK: ...and remember, different POKeMON appear by day and by night! Keep exploring, and you'll fill that POKeDEX.";
-	return 'PROF. OAK\'S PKMN TALK: We have sighting reports! ' + sightings.join('.  ') + '.  Go get \'em!';
-}
-
-// BUENA'S PASSWORD: one tune-in per day earns a Blue Point; crossing a threshold
-// on the ladder hands a prize (once each). The daily password itself is flavour.
-const BUENA_KEY = 'magepunk_buena_v1';
-const BUENA_WORDS = ['LAPRAS', 'PIKACHU', 'MACHOP', 'EEVEE', 'ODDISH', 'SLOWPOKE', 'DIGLETT', 'PIDGEY', 'GEODUDE', 'GENGAR', 'ONIX', 'ABRA', 'MAGIKARP', 'DITTO'];
-const BUENA_PRIZES = [ // Blue-Point balance -> a one-time prize when you reach it
-	{ at: 3, item: 'pokeball', n: 5 }, { at: 7, item: 'ultraball', n: 3 },
-	{ at: 15, item: 'ppup', n: 1 }, { at: 25, item: 'rarecandy', n: 1 }, { at: 40, item: 'maxrevive', n: 2 },
-];
-function buenaText() {
-	const st = safeLoad(BUENA_KEY, { date: '', points: 0, claimed: 0 });
-	const today = new Date().toDateString();
-	const word = BUENA_WORDS[hashStr(today) % BUENA_WORDS.length];
-	if (st.date === today) return `BUENA'S PASSWORD: Today's password is still "${word}"! You've already tuned in today. (Blue Points: ${st.points})`;
-	st.date = today; st.points = (st.points || 0) + 1;
-	let msg = `BUENA'S PASSWORD: Today's password is "${word}"! Thanks for listening — +1 Blue Point! (Total: ${st.points})`;
-	for (const p of BUENA_PRIZES) {
-		if (st.points >= p.at && (st.claimed || 0) < p.at) {
-			st.claimed = p.at; Bag.addItem(p.item, p.n);
-			msg += `  ★ ${p.at} points reached! BUENA sends you ${p.n}x ${(Bag.ITEMS[p.item]?.name || p.item)}!`;
-			break;
-		}
-	}
-	safeSave(BUENA_KEY, st);
-	return msg;
-}
-
-// LUCKY CHANNEL: the daily Lucky Number Show. Today's number is fixed per date;
-// the more trailing digits it shares with your Trainer ID, the bigger the prize.
-const LOTTO_KEY = 'magepunk_lottery_v1';
-const LOTTO_PRIZES = { 5: ['masterball', 1, 'the GRAND PRIZE — a MASTER BALL'], 4: ['ppup', 1, '2nd prize — a PP UP'], 3: ['rarecandy', 1, '3rd prize — a RARE CANDY'], 2: ['ultraball', 2, '4th prize — 2 ULTRA BALLS'] };
-function luckyText() {
-	const st = safeLoad(LOTTO_KEY, { date: '' });
-	const today = new Date().toDateString();
-	const tid = tidStr();
-	if (st.date === today) return `LUCKY CHANNEL: Today's drawing is over! Please come back tomorrow. (Your ID: ${tid})`;
-	st.date = today; safeSave(LOTTO_KEY, st);
-	const draw = String(hashStr('lotto:' + today) % 100000).padStart(5, '0');
-	let match = 0; for (let i = 1; i <= 5; i++) { if (draw.slice(-i) === tid.slice(-i)) match = i; else break; }
-	if (match >= 2) { const [item, n, label] = LOTTO_PRIZES[match]; Bag.addItem(item, n); return `LUCKY CHANNEL: Today's Lucky Number is ${draw}! Your ID ${tid} matches the last ${match} digits — you win ${label}!`; }
-	return `LUCKY CHANNEL: Today's Lucky Number is ${draw}. Your ID is ${tid}. No match today — better luck tomorrow!`;
-}
-
-export function radioKey(k) {
-	const n = RADIO_CHANNELS.length;
-	if (k === 'ArrowUp') { radioMenu.idx = (radioMenu.idx + n - 1) % n; return; }
-	if (k === 'ArrowDown') { radioMenu.idx = (radioMenu.idx + 1) % n; return; }
-	if (k === 'x' || k === 'Escape') { radioMenu.open = false; return; }
-	if (k === 'z' || k === 'Enter') {
-		const ch = radioMenu.idx;
-		if (ch === 4) { radioTune = null; bgmTick(); radioMenu.open = false; return; } // TURN IT OFF
-		const text = ch === 0 ? playRadioStation() : ch === 1 ? oakTalkText() : ch === 2 ? buenaText() : luckyText();
-		radioMenu.open = false;                      // hand off to the dialog...
-		dialog.open(text, () => { radioMenu.open = true; }); // ...then reopen so you can keep tuning
-	}
-}
-function drawRadio(W, H) {
-	drawVertical(W, H, H / 480, 'RADIO', 'Tune in — up/down pick, Z listen, X off.', RADIO_CHANNELS, radioMenu.idx, 'radio');
-}
 
 // ---------- cutscenes ----------
 // find an on-map NPC by its object_event local_id (for scripted movement)
@@ -5022,245 +3263,6 @@ function startScriptedWildBattle(species, level) {
 export function startCutscene(steps, onDone) {
 	if (cutscene.blocking) return;
 	cutscene.start(steps, cutsceneCtx(), onDone);
-}
-
-// ---------- map-editor view ----------
-// ?mapedit=1 turns the game into a plain map viewer: the camera stops following
-// the player, the player and the follower stop drawing, and movement input is
-// frozen so nothing warps or trips an encounter under the editor. Entities stay
-// drawable behind a toggle — they're map data you often want to see while
-// editing. Inert unless the (owner-gated) editor mounts and sets it.
-const editView = { on: false, cam: null, entities: true };
-
-// ---------- camera ----------
-function cameraPos() {
-	// the editor pans its own camera; the map is the subject, not the player
-	if (editView.on && editView.cam) return [Math.round(editView.cam[0]), Math.round(editView.cam[1])];
-	// center on player sprite (feet tile center), GBA-style; no bounds clamp
-	const cx = Math.round(player.px + META / 2 - VIEW_W / 2);
-	const cy = Math.round(player.py + META / 2 - VIEW_H / 2 - 8);
-	return [cx, cy];
-}
-
-// day/night colour wash over the world (not menus/HUD). Keyed to the in-game
-// hour with smooth dawn/dusk ramps; indoor maps stay untinted.
-// ---------- unlit caves ----------
-// FLASH had nothing to do. `HM_FIELD.flash` checked `map.requires_flash`, set a
-// `flash_<map>` story flag — and NOTHING ANYWHERE read that flag, so even on the
-// two Kanto maps that carried the field the cave was never dark. Crystal's
-// thirteen PALETTE_DARK maps (Rock Tunnel among them, which is why Gen-2 Kanto
-// hands you the HM at all) had no field at all.
-//
-// A dark map draws black except a small window around the player, until FLASH is
-// used there. Generous enough to walk by, tight enough that you want the HM.
-const DARK_RADIUS = 44, DARK_FADE = 26;
-function mapIsUnlit() {
-	const m = world.current?.map;
-	return !!(m?.requires_flash && !Story.getFlag('flash_' + m.id));
-}
-function drawCaveDark(ctx, camX, camY) {
-	if (editView.on || !mapIsUnlit()) return;
-	const cx = Math.round(player.px + META / 2 - camX);
-	const cy = Math.round(player.py + META / 2 - camY);
-	ctx.save();
-	// everything outside the sight radius is solid dark...
-	ctx.fillStyle = 'rgba(0,0,0,0.94)';
-	ctx.beginPath();
-	ctx.rect(0, 0, VIEW_W, VIEW_H);
-	ctx.arc(cx, cy, DARK_RADIUS, 0, Math.PI * 2);
-	ctx.fill('evenodd');
-	// ...and the rim fades in, so the edge of sight is soft rather than a cut circle
-	const g = ctx.createRadialGradient(cx, cy, Math.max(0, DARK_RADIUS - DARK_FADE), cx, cy, DARK_RADIUS);
-	g.addColorStop(0, 'rgba(0,0,0,0)');
-	g.addColorStop(1, 'rgba(0,0,0,0.94)');
-	ctx.fillStyle = g;
-	ctx.beginPath();
-	ctx.arc(cx, cy, DARK_RADIUS, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.restore();
-}
-
-function drawDayNightTint(context) {
-	if (!Settings.get('dayNight')) return;
-	if (world.current?.map?.map_type === 'MAP_TYPE_INDOOR' || world.current?.map?.indoor) return;
-	const h = Clock.frac() * 24;
-	// piecewise [color, alpha] control points across the day, lerped between
-	const pts = [
-		[0, [12, 18, 54], 0.42],   // deep night
-		[5, [12, 18, 54], 0.42],   // pre-dawn
-		[7, [80, 60, 70], 0.20],   // dawn (warm)
-		[9, [255, 255, 255], 0.0], // full morning
-		[17, [255, 255, 255], 0.0],// day
-		[19, [90, 55, 60], 0.22],  // dusk (warm)
-		[21, [12, 18, 54], 0.42],  // night falls
-		[24, [12, 18, 54], 0.42],
-	];
-	let a = pts[0], b = pts[pts.length - 1];
-	for (let i = 0; i < pts.length - 1; i++) {
-		if (h >= pts[i][0] && h <= pts[i + 1][0]) { a = pts[i]; b = pts[i + 1]; break; }
-	}
-	const t = b[0] === a[0] ? 0 : (h - a[0]) / (b[0] - a[0]);
-	const lerp = (x, y) => x + (y - x) * t;
-	const col = [Math.round(lerp(a[1][0], b[1][0])), Math.round(lerp(a[1][1], b[1][1])), Math.round(lerp(a[1][2], b[1][2]))];
-	const alpha = lerp(a[2], b[2]);
-	if (alpha <= 0.01) return;
-	context.save();
-	context.globalCompositeOperation = 'multiply';
-	context.globalAlpha = alpha;
-	context.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-	context.fillRect(0, 0, VIEW_W, VIEW_H);
-	context.restore();
-}
-
-// ---------- step ambience: grass rustle + sand/ash footprints ----------
-// Static grass was the giveaway that this is a port. onArrive spawns a one-shot
-// rustle when you step into tall/long grass, and a fading footprint pair when
-// you step in deep sand / ashy grass. Purely cosmetic, screen-decay by real
-// time, camera-relative, capped, REDUCED_MOTION-silent.
-const stepFx = []; // { kind:'rustle'|'print', tx, ty, born, facing }
-const MB_DEEP_SAND = 0x0c, MB_ASHGRASS = 0x24; // desert floor (Route 111) + ashy grass (Route 113)
-function spawnStepFx() {
-	if (REDUCED_MOTION_OW || !world.current) return;
-	const b = world.behaviorAt(player.tx, player.ty);
-	const now = performance.now();
-	if (world.isTallGrass(player.tx, player.ty)) stepFx.push({ kind: 'rustle', tx: player.tx, ty: player.ty, born: now });
-	else if (b === MB_DEEP_SAND || b === MB_ASHGRASS) stepFx.push({ kind: 'print', tx: player.tx, ty: player.ty, born: now, facing: player.facing });
-	if (stepFx.length > 40) stepFx.splice(0, stepFx.length - 40);
-}
-// footprints go down with the ground (under sprites); rustle goes over feet.
-function drawStepFx(ctx, camX, camY, kind) {
-	const now = performance.now();
-	for (let i = stepFx.length - 1; i >= 0; i--) {
-		const f = stepFx[i];
-		const life = f.kind === 'print' ? 4500 : 260;
-		const t = (now - f.born) / life;
-		if (t >= 1) { if (kind === 'rustle') stepFx.splice(i, 1); continue; } // one pass owns removal
-		if (f.kind !== kind) continue;
-		const bx = f.tx * META - camX, by = f.ty * META - camY, cx = bx + META / 2, cy = by + META / 2;
-		if (f.kind === 'print') {
-			ctx.save();
-			ctx.globalAlpha = 0.4 * (1 - t);
-			ctx.fillStyle = '#5a4a34';
-			const off = { down: [-3, 2], up: [3, -2], left: [2, 3], right: [-2, 3] }[f.facing] || [0, 3];
-			ctx.fillRect(Math.round(cx - 3 + off[0]), Math.round(cy + off[1]), 2, 3);
-			ctx.fillRect(Math.round(cx + 1 + off[0]), Math.round(cy + off[1]), 2, 3);
-			ctx.restore();
-		} else { // rustle: a quick low puff of pale-green flecks
-			const k = Math.sin(Math.min(1, t) * Math.PI); // 0→1→0
-			ctx.save();
-			ctx.globalAlpha = 0.8 * k;
-			ctx.fillStyle = '#e6ffcf';
-			const spread = 3 + k * 5;
-			for (const dx of [-spread, -1, spread]) ctx.fillRect(Math.round(cx + dx), Math.round(cy + 6 - k * 3), 2, 2);
-			ctx.strokeStyle = `rgba(120,180,90,${0.7 * k})`;
-			ctx.lineWidth = 1;
-			ctx.beginPath(); ctx.moveTo(cx - spread, cy + 7); ctx.lineTo(cx, cy + 7 - k * 4); ctx.lineTo(cx + spread, cy + 7); ctx.stroke();
-			ctx.restore();
-		}
-	}
-}
-
-// ---------- area-name banner ----------
-// The classic location plaque that slides in when you enter a new outdoor area
-// (town / route / cave). DOM overlay (crisp text, no canvas-scale math), like the
-// MENU cluster; only fires on a name CHANGE so re-entries don't spam it.
-let _areaBannerEl = null, _lastAreaName = null;
-function showAreaBanner(name) {
-	if (!name || name === _lastAreaName || typeof document === 'undefined') return;
-	_lastAreaName = name;
-	if (!_areaBannerEl) {
-		_areaBannerEl = document.createElement('div');
-		_areaBannerEl.id = 'area-banner';
-		Object.assign(_areaBannerEl.style, {
-			position: 'fixed', top: '16px', left: '0', zIndex: '38', padding: '6px 18px 6px 22px',
-			background: 'linear-gradient(90deg, rgba(18,14,30,0.94), rgba(34,26,54,0.9))', color: '#f4ecc9',
-			font: '700 15px m6x11plus, "Segoe UI", sans-serif', letterSpacing: '1.5px',
-			borderRadius: '0 10px 10px 0', borderRight: '2px solid #c9a24a',
-			borderTop: '1px solid #6a5f3a', borderBottom: '1px solid #6a5f3a',
-			boxShadow: '0 3px 10px rgba(0,0,0,0.5)', transform: 'translateX(-110%)',
-			transition: 'transform 0.35s cubic-bezier(.2,.8,.2,1)', pointerEvents: 'none', whiteSpace: 'nowrap',
-		});
-		document.body.appendChild(_areaBannerEl);
-	}
-	// space out camelCase / number runs so "CherrygroveCity" reads "CHERRYGROVE CITY", "Route119" → "ROUTE 119"
-	_areaBannerEl.textContent = name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2').toUpperCase();
-	clearTimeout(_areaBannerEl._t);
-	_areaBannerEl.style.transform = 'translateX(0)';                    // slide in
-	_areaBannerEl._t = setTimeout(() => { if (_areaBannerEl) _areaBannerEl.style.transform = 'translateX(-110%)'; }, 2300); // hold, then out
-}
-
-// ---------- overworld weather ----------
-// MAP_WEATHER only ever fed BATTLE weather; the route itself showed clear sky.
-// A full-screen particle layer (rain/sandstorm/hail/ash) drawn on the GBA frame
-// keyed off mapWeatherNow() gives the weather routes their sky. Particles live
-// in screen space (they blanket the viewport, not the world), so no camera math.
-// REDUCED_MOTION draws the colour wash only, no motion.
-const weatherFx = { type: null, parts: [], last: 0 };
-const WEATHER_SPEC = {
-	// n: particle count · tint [r,g,b,a] multiply wash · per-particle draw+move
-	rain: { n: 90, tint: [70, 90, 130, 0.16], vx: -60, vy: 620, len: 9, draw(ctx, p) { ctx.strokeStyle = 'rgba(170,200,255,0.55)'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 1.4, p.y - p.spec.len); ctx.stroke(); } },
-	sandstorm: { n: 130, tint: [150, 120, 70, 0.30], vx: 340, vy: 40, len: 7, draw(ctx, p) { ctx.strokeStyle = `rgba(214,188,130,${p.a})`; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.spec.len, p.y - 1); ctx.stroke(); } },
-	hail: { n: 70, tint: [150, 170, 200, 0.16], vx: -20, vy: 200, len: 0, draw(ctx, p) { ctx.fillStyle = 'rgba(230,240,255,0.85)'; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
-	ash: { n: 60, tint: [90, 80, 78, 0.20], vx: 12, vy: 55, len: 0, draw(ctx, p) { ctx.fillStyle = `rgba(120,110,108,${p.a})`; ctx.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); } },
-};
-function spawnWeatherPart(spec, anywhere) {
-	return {
-		x: Math.random() * (VIEW_W + 40) - 20,
-		y: anywhere ? Math.random() * VIEW_H : -Math.random() * 20,
-		a: 0.35 + Math.random() * 0.5,
-		vj: 0.6 + Math.random() * 0.8, // per-particle speed jitter
-		spec,
-	};
-}
-function drawWeather(ctx) {
-	const type = (Settings.get('weather') && !world.current?.map?.indoor
-		&& world.current?.map?.map_type !== 'MAP_TYPE_INDOOR') ? mapWeatherNow() : null;
-	if (!type || !WEATHER_SPEC[type]) { weatherFx.type = null; weatherFx.parts.length = 0; return; }
-	const spec = WEATHER_SPEC[type];
-	if (weatherFx.type !== type) {
-		weatherFx.type = type;
-		weatherFx.parts = Array.from({ length: spec.n }, () => spawnWeatherPart(spec, true));
-	}
-	// colour wash (multiply) — the sky's mood, drawn even under REDUCED_MOTION
-	ctx.save();
-	ctx.globalCompositeOperation = 'multiply';
-	ctx.globalAlpha = spec.tint[3];
-	ctx.fillStyle = `rgb(${spec.tint[0]},${spec.tint[1]},${spec.tint[2]})`;
-	ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-	ctx.restore();
-	if (REDUCED_MOTION_OW) return;
-	const now = performance.now();
-	const dt = Math.min((now - weatherFx.last) / 1000, 0.05);
-	weatherFx.last = now;
-	ctx.save();
-	ctx.lineWidth = 1;
-	for (const p of weatherFx.parts) {
-		p.x += spec.vx * p.vj * dt;
-		p.y += spec.vy * p.vj * dt;
-		if (p.y > VIEW_H + 12 || p.x < -24 || p.x > VIEW_W + 24) Object.assign(p, spawnWeatherPart(spec, false));
-		spec.draw(ctx, p);
-	}
-	ctx.restore();
-	// storm extras for rain (past the REDUCED_MOTION_OW gate): ground ripples + lightning
-	if (type === 'rain') {
-		weatherFx.ripples = weatherFx.ripples || [];
-		weatherFx.rippleAcc = (weatherFx.rippleAcc || 0) + dt;
-		while (weatherFx.rippleAcc > 0.05) { weatherFx.rippleAcc -= 0.05; weatherFx.ripples.push({ x: Math.random() * VIEW_W, y: VIEW_H * (0.5 + Math.random() * 0.5), t: 0 }); }
-		weatherFx.ripples = weatherFx.ripples.filter(r => (r.t += dt) < 0.5);
-		ctx.save(); ctx.strokeStyle = 'rgba(190,215,255,1)'; ctx.lineWidth = 1;
-		for (const r of weatherFx.ripples) { const rp = r.t / 0.5; ctx.globalAlpha = 0.4 * (1 - rp); ctx.beginPath(); ctx.ellipse(r.x, r.y, 2 + rp * 10, (2 + rp * 10) * 0.4, 0, 0, Math.PI * 2); ctx.stroke(); }
-		ctx.restore();
-		weatherFx.nextBolt = weatherFx.nextBolt || now + 6000 + Math.random() * 12000;
-		if (now > weatherFx.nextBolt && !weatherFx.bolt) { weatherFx.bolt = now; weatherFx.nextBolt = now + 9000 + Math.random() * 15000; }
-		if (weatherFx.bolt) {
-			const age = now - weatherFx.bolt;
-			if (age > 520) weatherFx.bolt = null;
-			else {
-				let a = age < 90 ? 0.15 + 0.5 * (1 - age / 90) : (age > 160 && age < 260) ? 0.3 * (1 - (age - 160) / 100) : 0;
-				if (a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#e0e8ff'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.restore(); }
-			}
-		}
-	}
 }
 
 // ---------- loop ----------
@@ -5878,7 +3880,7 @@ function drawTouchHud(SW, SH) {
 		get bugContest() { return bugContest; }, bugOfficerTalk, bugContestCatch, bugContestRoll, bugScore, endBugContest, isBugDay,
 		trickState, trickWarp, trickScrollFind, trickMasterTalk, trickEndTalk, Slide, get slideMenu() { return slideMenu; }, openRuinsPuzzle, slideKey, drawSlide,
 		shoalTide, shoalWarp, shoalDig, shoalHermitTalk, kurtTalk, roamState, roamersOnMapChange, roamerHere, startRoamerBattle, roamerEnd, ROAMERS, ROAM_ROUTES,
-		myBase, saveMyBase, baseSpotKey, baseRoomFor, secretSpotInteract, enterBase, baseDecoInteract, get baseCtx() { return baseCtx; }, set baseCtx(v) { baseCtx = v; },
+		myBase, saveMyBase, baseSpotKey, baseRoomFor, secretSpotInteract, enterBase, baseDecoInteract, get baseCtx() { return S.baseCtx; }, set baseCtx(v) { S.baseCtx = v; },
 		get decoMenu() { return decoMenu; }, decoKey, drawDecoMenu, drawBaseDeco, DECO_ITEMS,
 		get socialMenu() { return socialMenu; }, socialKey, drawSocial, openTradeOffer, openTradeInbox, sendTradeOffer, acceptTrade, declineTrade, claimTradeDeliveries,
 		friendsKey, drawFriendsMenu, refreshFriendBadges, friendAction,
@@ -5926,7 +3928,7 @@ function drawTouchHud(SW, SH) {
 		beginNewGame, startIntroNarration, checkIntroTrigger, openStarterPick, finishStarterPick, NEW_GAME_INTRO,
 		get starterMenu() { return starterMenu; }, drawStarterMenu,
 		STORY_SEED, PLOT_ONESHOT, PLOT_BLOCKED, plotBlocked, get firedPlot() { return loadFiredPlot(); }, markPlotFired,
-		openRadio, radioKey, drawRadio, get radioMenu() { return radioMenu; }, get radioTune() { return radioTune; }, playerTID, tidStr, oakTalkText, buenaText, luckyText,
+		openRadio, radioKey, drawRadio, get radioMenu() { return radioMenu; }, get radioTune() { return S.radioTune; }, playerTID, tidStr, oakTalkText, buenaText, luckyText,
 		openUnownDex, unownDexKey, drawUnownDex, get unownDex() { return unownDex; }, rollUnownLetter, unownIdFor, allRuinsSolved, UNOWN_ORDER,
 		refreshFollower, setFollowerSpecies, get follower() { return follower; }, followSheet, followMini, followCache, drawFollower };
 	requestAnimationFrame(tick);

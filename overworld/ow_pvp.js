@@ -13,8 +13,9 @@ import { safeLoad } from './safestore.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { frontier } from './ow_frontier.js';
 import { getBox, setBox } from './ow_menukeys.js';
+import { mailMenu, openDeckSelect } from './ow_screens.js';
 import {
-	MP_ON, POS_KEY, TRADE_CATS, deckSelect, emptyOffer, mailMenu, moveToMap, openDeckSelect, trade,
+	MP_ON, POS_KEY, TRADE_CATS, deckSelect, emptyOffer, moveToMap, trade,
 } from './main.js';
 
 // ---------- live PvP battles ----------

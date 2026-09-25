@@ -33,6 +33,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -43,7 +44,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- the gate, and the audit that justifies its narrowness ----------
 {
-	const mn = fs.readFileSync(path.join(OW, 'main.js'), 'utf8');
+	const mn = overworldSource();
 	A(/svc === 'kurt' && Story\.getFlag\('EVENT_KURT_GAVE_YOU_LURE_BALL'\)/.test(mn),
 		'the apricorn counter is gated on the story beat');
 

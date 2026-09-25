@@ -11,6 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Encounters, encounterChance } from '../encounters.js';
 import { CRYSTAL_RATE_MAPS } from '../encounter_games.js';
+import { overworldSource } from './owsource.mjs';   // main.js + the modules split out of it
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
 let pass = 0, fail = 0;
@@ -46,7 +47,7 @@ const rate = hits / N;
 A(Math.abs(rate - 1 / 18) < 0.003, `Route 111 grass fires ~5.6% of steps (measured ${(rate * 100).toFixed(2)}%)`);
 
 // ---------- Rock Smash uses the same scale ----------
-const mainSrc = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
+const mainSrc = overworldSource();
 A(/encounterChance\(world\.current\.map\.id, grp\.rate\)/.test(mainSrc), 'Rock Smash rolls through encounterChance too');
 
 console.log(`\n${pass} passed, ${fail} failed`);
