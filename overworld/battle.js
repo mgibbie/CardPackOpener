@@ -4975,7 +4975,7 @@ export class Battle {
 			Bag.consume(itemId);
 			this.startQueue(() => {
 				this.pushMsg(`You used a ${item.name}!`, () => {
-					if (cures) a.me.status = null;
+					if (cures) { a.me.status = null; delete a.me.badPsn; delete a.me.toxicN; }   // Toxic's counter too, or a later plain poison escalates
 					if (uncon) a.me.confuseTurns = 0;
 				});
 				this.pushMsg(`${a.me.name} was cured!`);

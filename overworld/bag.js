@@ -481,7 +481,11 @@ export function nameOf(id) {
 	return prettify(id);
 }
 export const SHOP_STOCK = ['pokeball', 'greatball', 'ultraball', 'potion', 'superpotion',
-	'hyperpotion', 'ether', 'revive', 'oldrod', 'goodrod', 'superrod', 'vsseeker',
+	'hyperpotion', 'ether', 'revive',
+	// status cures — defined and working, but stocked nowhere, so Koga's Toxic had no
+	// answer short of a $500 LUM BERRY (every original Mart from Pewter on sells them)
+	'antidote', 'parlyzheal', 'awakening', 'burnheal', 'iceheal', 'fullheal',
+	'oldrod', 'goodrod', 'superrod', 'vsseeker',
 	'firestone', 'waterstone', 'thunderstone', 'leafstone', 'moonstone', 'sunstone',
 	'shinystone', 'duskstone', 'dawnstone', 'icestone', 'linkingcord',
 	'oranberry', 'sitrusberry', 'lumberry', 'leftovers', 'everstone', 'destinyknot',
