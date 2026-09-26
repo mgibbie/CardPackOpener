@@ -30,8 +30,9 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
+import { cutsceneCtx } from './ow_cutscenes.js';
 import {
-	STARTERS, cutsceneCtx, refreshObjective, starterMenu, urlPinnedMap,
+	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
 
 // ---------- ported map-script triggers ----------
