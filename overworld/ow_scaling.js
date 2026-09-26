@@ -12,9 +12,8 @@ import * as Dex from './pokedex.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { whiteOut } from './ow_places.js';
 import { dexMilestoneCheck } from './ow_follower.js';
-import {
-	cutsceneCtx,
-} from './main.js';
+import { cutsceneCtx } from './ow_cutscenes.js';
+
 
 // ---------- postgame level scaling ----------
 // JOHKANTO is the postgame region. Its roster is authored for a team that has

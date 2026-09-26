@@ -23,8 +23,9 @@ import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_music.js';
 import { DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, NAMERATER_MAPS, ghostAt, momTalk, playerMenu } from './ow_menustate.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
+import { cutsceneCtx } from './ow_cutscenes.js';
 import {
-	MP_ON, cutsceneCtx, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
+	MP_ON, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
 
 // ---------- input ----------
