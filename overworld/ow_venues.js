@@ -16,9 +16,8 @@ import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { dexMilestoneCheck } from './ow_follower.js';
 import { syncMapBgm } from './ow_music.js';
-import {
-	warpTo,
-} from './main.js';
+import { warpTo } from './ow_transitions.js';
+
 
 // ---------- Bug-Catching Contest (National Park, Tue/Thu/Sat) ----------
 // The classic: sign up with the gate officer, hunt the park with 20 SPORT

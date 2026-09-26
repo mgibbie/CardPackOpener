@@ -19,8 +19,9 @@ import { offerNickname } from './ow_screens.js';
 import { whiteOut } from './ow_places.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { bgmTick } from './ow_music.js';
+import { warpTo } from './ow_transitions.js';
 import {
-	MP_ON, warpTo,
+	MP_ON,
 } from './main.js';
 
 // ---------- Secret Bases ----------
