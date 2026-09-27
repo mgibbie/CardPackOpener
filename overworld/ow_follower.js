@@ -15,9 +15,8 @@ import { addCaught, leadMon, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import {
-	legendStats,
-} from './main.js';
+import { legendStats } from './ow_postgame.js';
+
 
 // ---------- follower (lead POKeMON walks behind you, HG/SS style) ----------
 // 4x4 walk sheet from data/pokemon_follow/<id>.png: rows down/left/right/up,
