@@ -31,8 +31,12 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(reset.includes(`'${k}'`), `owreset's canonical key list carries ${k}`);
 
 	const mn = overworldSource();
-	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1'\)/.test(mn),
-		'the server sync covers the whole canonical save (minus the live battle snapshot)');
+	// minus the live battle snapshot and the LOCAL-ONLY conflict stash + its archive
+	// (synced, the stash nested each previous one until the save hit the server's
+	// size limit — see owconflict_test)
+	A(/const OW_KEYS = OW_RESET_KEYS\.filter\(k => k !== 'magepunk_battle_v1' && !LOCAL_ONLY_KEYS\.includes\(k\)\)/.test(mn)
+		&& /const LOCAL_ONLY_KEYS = \['magepunk_ow_conflict', 'magepunk_ow_conflict_archive'\]/.test(mn),
+		'the server sync covers the whole canonical save (minus the live battle snapshot and the local-only conflict stash)');
 	A(/'battleAnim'\]/.test(mn.match(/const OPTION_KEYS = \[[^\]]+\]/)?.[0] || ''),
 		'BATTLE ANIM is reachable from the options menu (the setting existed with no row)');
 	A(/mp_ow_hydrated/.test(mn) && /location\.reload\(\)/.test(mn),
