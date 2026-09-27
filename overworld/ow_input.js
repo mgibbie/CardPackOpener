@@ -28,6 +28,8 @@ import {
 	MP_ON, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
 
+const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
+
 // ---------- input ----------
 // INPUT DIAGNOSTICS (temporary instrumentation): `?owlog=1` traces every
 // movement event, listener attach, and lifecycle transition. See gateReport().
@@ -370,7 +372,12 @@ export function interact() {
 		if (ev.script && ev.script !== '0x0') { dialog.open('...'); return; }
 	}
 	// face-to-face NPC: have them turn toward the player
-	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy);
+	// ACROSS A COUNTER: with nobody on the faced tile and that tile a counter
+	// (MB_COUNTER, 0x80 in both FRLG and Emerald), the GBA talks to whoever stands
+	// one tile beyond (field_control_avatar.c). Without it the Celadon store
+	// clerks behind their counters could not be spoken to at all.
+	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy)
+		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => n.tx === fx + dx && n.ty === fy + dy) : null);
 	if (npc) {
 		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
 		// single-purpose service buildings: talking to the attendant runs it
