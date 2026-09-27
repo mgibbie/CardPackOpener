@@ -6,6 +6,7 @@ import { MAX_LEVEL } from './badges.js';
 import { buildMon } from './battle.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { objectHiddenByFlag } from './events.js';
+import { TRAINER_GROUP } from './trainer_pairs.js';
 
 const FACE_OF = {
 	MOVEMENT_TYPE_FACE_DOWN: 'down', MOVEMENT_TYPE_FACE_UP: 'up',
@@ -113,9 +114,10 @@ export class Trainers {
 	// buildBattle's levels, so rematches keep pace with the player.
 	rearmMap(tier) {
 		let n = 0;
-		for (const t of this.list) {
+		// a couple re-arms as ONE encounter: every partner's key clears and takes the tier
+		const beaten = this.list.filter(t => this.isDefeated(t));
+		for (const t of beaten) {
 			const key = this.keyOf(t);
-			if (!this.defeated.has(key)) continue;
 			this.defeated.delete(key);
 			this.rematch[key] = Math.max(this.rematch[key] || 0, Math.max(1, tier || 0));
 			n++;
@@ -156,10 +158,22 @@ export class Trainers {
 			: `${map}:${base}`;
 	}
 
-	isDefeated(t) { return this.defeated.has(this.keyOf(t)); }
+	// ONE TRAINER, SEVERAL NPCs. A double-battle couple (Route 12's GIA & JES) is two
+	// object events whose scripts battle the same decomp trainer id, and the GBA
+	// flags defeat by that id. Keys stay per event (saves are unchanged); a group
+	// is beaten when ANY member's key is, and a win marks every member — so a save
+	// that holds only the partner it was fought from reads the pair as beaten too.
+	partnersOf(t) {
+		const g = TRAINER_GROUP[t.ev?.script];
+		if (!g) return [t];
+		const all = this.list.filter(o => TRAINER_GROUP[o.ev?.script] === g);
+		return all.includes(t) ? all : [t, ...all];
+	}
+
+	isDefeated(t) { return this.partnersOf(t).some(p => this.defeated.has(this.keyOf(p))); }
 
 	markDefeated(t) {
-		this.defeated.add(this.keyOf(t));
+		for (const p of this.partnersOf(t)) this.defeated.add(this.keyOf(p));
 		safeSave(DEFEATED_KEY, [...this.defeated]);
 	}
 
