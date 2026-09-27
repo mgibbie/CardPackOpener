@@ -7,6 +7,7 @@
 //         node overworld/tests/run-all.mjs portals     (only files whose name contains "portals")
 //         node overworld/tests/run-all.mjs --jobs 2    (parallel; default is sized to RAM, 1 below 8 GB)
 //         node overworld/tests/run-all.mjs --no-retry  (report first-run failures as-is)
+//         node overworld/tests/run-all.mjs --resume    (skip suites that already passed on THIS code)
 //         CHROME=<path> node overworld/tests/run-all.mjs
 // Exit code is non-zero if any test fails (after its retry). Each test gets 5 minutes.
 //
@@ -18,11 +19,20 @@
 //     runs alone, so nothing else reads a half-written map.
 // The slowest suites start first, using timings from previous runs.
 //
+// RESUMABLE. Every suite that passes is recorded at once in .gate-progress.json,
+// stamped with the code it ran against (HEAD + the uncommitted diff + untracked
+// file names). A run killed partway — the OS reaps it when memory runs short —
+// loses nothing: `--resume` skips the suites that already passed on the same
+// stamp. Any code change changes the stamp, so nothing stale is ever skipped.
+// (overworld/data is gitignored and not in the stamp: after a data-only change,
+// run without --resume.)
+//
 // FLAKES ARE REPORTED, NOT HIDDEN. A suite that fails is rerun once, alone, after
 // everything else. If it passes then, it is listed as FLAKY (and counted in the
 // history file) rather than silently passed. A suite that fails twice fails the gate.
 import { readdirSync, readFileSync, writeFileSync } from 'fs';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
+import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import os from 'os';
@@ -32,6 +42,7 @@ const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : null; };
 const jobsArg = flag('--jobs');
 const noRetry = args.includes('--no-retry') && args.splice(args.indexOf('--no-retry'), 1);
+const resume = args.includes('--resume') && args.splice(args.indexOf('--resume'), 1);
 const filter = (args[0] || '').toLowerCase(); // substring match on the filename
 const TIMEOUT = 5 * 60_000;
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
@@ -41,6 +52,25 @@ const JOBS = Math.max(1, +jobsArg || Math.min(4, Math.floor(os.totalmem() / 2 **
 // suites that write into the real data tree
 const EXCLUSIVE = new Set(['mapedit_places_test.mjs']);
 const HISTORY = join(here, '.gate-history.json');   // gitignored
+const PROGRESS = join(here, '.gate-progress.json'); // gitignored
+
+// the code under test: HEAD, the uncommitted diff, and untracked SOURCE file names
+// (not every untracked file: suites drop screenshot PNGs as they run)
+function codeStamp() {
+	try {
+		const git = cmd => execSync(`git ${cmd}`, { cwd: join(here, '../..'), encoding: 'utf8', maxBuffer: 256 * 2 ** 20 });
+		return createHash('sha1').update(git('rev-parse HEAD') + git('diff HEAD') + git('ls-files --others --exclude-standard -- "*.js" "*.mjs" "*.html" "*.css"')).digest('hex');
+	} catch { return null; }   // no git: never skip anything
+}
+const stamp = codeStamp();
+let progress = { stamp, passed: [] };
+try { const p = JSON.parse(readFileSync(PROGRESS, 'utf8')); if (stamp && p.stamp === stamp) progress = p; } catch {}
+const alreadyPassed = new Set(resume ? progress.passed : []);
+const notePass = f => {
+	if (!stamp || progress.passed.includes(f)) return;
+	progress.passed.push(f);
+	try { writeFileSync(PROGRESS, JSON.stringify(progress)); } catch {}
+};
 
 // every *_test.mjs, plus the two runnables that predate the naming convention
 // (quest_graph.mjs is a shared helper, not a test)
@@ -48,6 +78,7 @@ const files = [
 	...readdirSync(here).filter(f => f.endsWith('_test.mjs')),
 	'boot_smoke.mjs', 'quest_reach.mjs',
 ].sort().filter(f => !filter || f.toLowerCase().includes(filter));
+const skipped = files.filter(f => alreadyPassed.has(f));
 
 let history = {};
 try { history = JSON.parse(readFileSync(HISTORY, 'utf8')); } catch {}
@@ -55,7 +86,7 @@ const portsOf = f => {
 	const src = readFileSync(join(here, f), 'utf8');
 	return new Set([...src.matchAll(/\bPORT\s*=\s*(\d{4,5})|\.listen\(\s*(\d{4,5})/g)].map(m => m[1] || m[2]));
 };
-const suites = files.map(f => ({ f, ports: portsOf(f), exclusive: EXCLUSIVE.has(f), est: history[f]?.secs ?? 30 }))
+const suites = files.filter(f => !alreadyPassed.has(f)).map(f => ({ f, ports: portsOf(f), exclusive: EXCLUSIVE.has(f), est: history[f]?.secs ?? 30 }))
 	.sort((a, b) => b.est - a.est);
 
 function runOne(f) {
@@ -96,6 +127,7 @@ async function pool(list, jobs) {
 				runOne(s.f).then(r => {
 					running.delete(s);
 					results.push(r);
+					if (r.ok) notePass(r.f);
 					console.log(`${r.ok ? 'ok   ' : 'FAIL '} ${r.f} (${r.secs}s): ${r.tail}`);
 					if (!r.ok && r.fails.length) console.log(r.fails.join('\n'));
 					if (!r.ok && r.err) console.log(r.err.slice(0, 800));
@@ -136,4 +168,4 @@ const secs = Math.round((Date.now() - t0) / 1000);
 console.log(`\n${suites.length - failed.length}/${suites.length} tests passed in ${secs}s (${JOBS} jobs)`);
 if (flaky.length) console.log(`FLAKY (failed, then passed alone): ${flaky.join(', ')}`);
 if (failed.length) console.log(`FAILED: ${failed.join(', ')}`);
-process.exit(failed.length || (!suites.length && filter) ? 1 : 0);
+process.exit(failed.length || (!suites.length && !skipped.length && filter) ? 1 : 0);
