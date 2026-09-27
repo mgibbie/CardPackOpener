@@ -142,7 +142,7 @@ async function pool(list, jobs) {
 }
 
 const t0 = Date.now();
-console.log(`${suites.length} suites, ${JOBS} at a time${noRetry ? '' : ', failures retried once alone'}\n`);
+console.log(`${suites.length} suites, ${JOBS} at a time${noRetry ? '' : ', failures retried once alone'}${skipped.length ? ` (${skipped.length} already passed on this code, skipped)` : ''}\n`);
 const first = await pool(suites, JOBS);
 const failedFirst = first.filter(r => !r.ok);
 let retried = [];
@@ -165,7 +165,7 @@ try { writeFileSync(HISTORY, JSON.stringify(history, null, 1)); } catch {}
 
 if (!suites.length && filter) console.log(`no tests match "${filter}"`);
 const secs = Math.round((Date.now() - t0) / 1000);
-console.log(`\n${suites.length - failed.length}/${suites.length} tests passed in ${secs}s (${JOBS} jobs)`);
+console.log(`\n${suites.length - failed.length}/${suites.length} tests passed in ${secs}s (${JOBS} jobs)${skipped.length ? ` + ${skipped.length} passed earlier on this code` : ''}`);
 if (flaky.length) console.log(`FLAKY (failed, then passed alone): ${flaky.join(', ')}`);
 if (failed.length) console.log(`FAILED: ${failed.join(', ')}`);
 process.exit(failed.length || (!suites.length && !skipped.length && filter) ? 1 : 0);
