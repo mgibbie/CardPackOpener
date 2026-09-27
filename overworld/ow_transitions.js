@@ -21,8 +21,9 @@ import { safeLoad, safeSave } from './safestore.js';
 import { applySailFix } from './sail_fix.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
+import { fadeTo } from './ow_fade.js';
 import {
-	fadeTo, refreshObjective, sharedScripts,
+	refreshObjective, sharedScripts,
 } from './main.js';
 
 // ---------- map transitions ----------

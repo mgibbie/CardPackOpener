@@ -7,9 +7,8 @@ import { player, world } from './ow_core.js';
 import * as Settings from './settings.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { mapWeatherNow } from './ow_follower.js';
-import {
-	REDUCED_MOTION_OW,
-} from './main.js';
+import { REDUCED_MOTION_OW } from './ow_fade.js';
+
 
 // ---------- map-editor view ----------
 // ?mapedit=1 turns the game into a plain map viewer: the camera stops following

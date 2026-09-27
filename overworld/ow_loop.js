@@ -26,9 +26,10 @@ import { bgmTick, daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from 
 import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import { persistBattle } from './ow_battleresume.js';
 import { findLanding } from './ow_transitions.js';
+import { FADE_SPEED, fade } from './ow_fade.js';
 import {
-	FADE_SPEED, MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fade, fitCanvas, frame,
-	gateReport, lastRejectAt, openCanvasMenus, rejectedMoves, starterMenu,
+	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, gateReport, lastRejectAt,
+	openCanvasMenus, rejectedMoves, starterMenu,
 } from './main.js';
 
 // ---------- loop ----------
