@@ -223,8 +223,24 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 		// A scripted warp to a COORDINATE (the decomp's two-arg form) lands exactly
 		// there. A door index wins when it names a real door; the coordinate is the
 		// fallback — the decomp's own rule for its three-arg form.
+		const inBounds = (x, y) => x >= 0 && y >= 0 && x < lay.width && y < lay.height;
+		// upstream puts some exit doors one row past the edge (Safari rest houses,
+		// Slateport harbor): fine, as long as a walkable tile inside touches them
+		const reachable = p => p && (inBounds(p.x, p.y)
+			|| [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => inBounds(p.x + dx, p.y + dy) && world.isPassable(p.x + dx, p.y + dy)));
 		const w = (!isNaN(idx) && idx >= 0 && world.warps[idx]) || null;
-		if (w) player.setTile(w.x, w.y);
+		// A door with no way INTO the map means its events and layout disagree (Rock
+		// Tunnel once served Crystal's 30x36 layout under FireRed's 48x40 events, and
+		// Route 10's south door dropped you at (18,37), sealed in the void). Never
+		// land there: go back through the door you came from.
+		if (w && !reachable(w) && !hasXY) {
+			console.warn(`warp ${mapId}#${destWarpId} lands outside ${lay.width}x${lay.height} at (${w.x},${w.y}) — returning the player`);
+			world.lastWarpSource = source;
+			await backWarp();
+			fadeTo(0);
+			return;
+		}
+		if (w && reachable(w)) player.setTile(w.x, w.y);
 		else if (hasXY) player.setTile(destX, destY);
 		else if (world.warps[0]) player.setTile(world.warps[0].x, world.warps[0].y);
 		else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
