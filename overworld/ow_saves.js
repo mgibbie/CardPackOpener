@@ -64,7 +64,15 @@ export function syncOverworldAchievements() {
 // fraction of the game. Now the whole canonical inventory syncs, except the live mid-battle
 // snapshot: it changes every battle action (churn), and a stale copy resuming on another device
 // after the fight already ended locally would replay a finished battle.
-export const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1');
+// LOCAL-ONLY keys never sync. The conflict stash used to ride in the snapshot, so
+// every remote copy it preserved already held the PREVIOUS stash, which held the
+// one before: each same-revision divergence nested a whole save inside the next,
+// and instinctloretest0918's cloud save grew 147K -> 235K -> 383K -> 652K chars of
+// stash until the server refused it ('ow too large', 1,000,000 bytes) and every
+// push failed. The stash protects THIS device's view of a divergence; the server
+// keeps its own daily backups.
+const LOCAL_ONLY_KEYS = ['magepunk_ow_conflict', 'magepunk_ow_conflict_archive'];
+export const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1' && !LOCAL_ONLY_KEYS.includes(k));
 export function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
 }
@@ -126,7 +134,13 @@ function setOwRev(n) { safeSaveStr(OW_REV_KEY, String(Math.max(0, n | 0))); }
 // Excluding it from the body also means a playtime-only tick no longer counts as
 // a change worth a D1 write, which is the right answer for a cosmetic counter.
 const VOLATILE_KEYS = [OW_REV_KEY, 'magepunk_playtime'];
-function owBody(snap) { const o = { ...snap }; for (const k of VOLATILE_KEYS) delete o[k]; return JSON.stringify(o); }
+// Built from OW_KEYS in a fixed order, so a remote copy that still carries a
+// local-only key (a pre-fix stash) or lists keys in another order compares equal.
+function owBody(snap) {
+	const o = {};
+	for (const k of OW_KEYS) if (snap[k] != null && !VOLATILE_KEYS.includes(k)) o[k] = snap[k];
+	return JSON.stringify(o);
+}
 // Does this snapshot hold an actual GAME, or is it just an empty browser?
 // This is absence-detection, NOT progress-ordering: it only ever distinguishes
 // "there is no record here" from "there is a record here", and is never used to
@@ -151,10 +165,44 @@ function owGameWeight(snap) {
 // The losing side of a discard is never thrown away. Whenever hydration is about
 // to drop a local snapshot, it lands here first so it can be recovered.
 const OW_CONFLICT_KEY = 'magepunk_ow_conflict';
+const OW_CONFLICT_ARCHIVE_KEY = 'magepunk_ow_conflict_archive';
+// the losing copy WITHOUT any stash of its own: one save deep, never nested
+const flatCopy = snap => { const o = { ...snap }; for (const k of LOCAL_ONLY_KEYS) delete o[k]; return o; };
 function stashConflict(reason, losing, localRev, remoteRev) {
-	const rec = { at: new Date().toISOString(), reason, localRev, remoteRev, fp: owFingerprint(losing), ow: losing };
+	const flat = flatCopy(losing);
+	const rec = { at: new Date().toISOString(), reason, localRev, remoteRev, fp: owFingerprint(flat), ow: flat };
 	const wrote = safeSave(OW_CONFLICT_KEY, rec);
 	syncLog('conflict.stash', { reason, localRev, remoteRev, fp: rec.fp, wrote });
+}
+
+// MIGRATION for stashes written before the fix: a record whose `ow` holds another
+// stash is archived WHOLE to a local-only key first, and only then flattened to
+// its newest level. Nothing is dropped unless the archive write succeeded.
+(function flattenNestedConflict() {
+	try {
+		const raw = localStorage.getItem(OW_CONFLICT_KEY);
+		if (!raw) return;
+		const rec = JSON.parse(raw);
+		if (!rec || !rec.ow || rec.ow[OW_CONFLICT_KEY] == null) return;
+		const archived = safeSaveStr(OW_CONFLICT_ARCHIVE_KEY, raw);
+		if (!archived || localStorage.getItem(OW_CONFLICT_ARCHIVE_KEY) !== raw) { syncLog('conflict.migrate', { flattened: false, reason: 'archive write failed', chars: raw.length }); return; }
+		rec.ow = flatCopy(rec.ow);
+		rec.fp = owFingerprint(rec.ow);
+		const wrote = safeSave(OW_CONFLICT_KEY, rec);
+		syncLog('conflict.migrate', { flattened: !!wrote, beforeChars: raw.length, afterChars: JSON.stringify(rec).length, archivedChars: raw.length });
+	} catch (e) { syncLog('conflict.migrate', { flattened: false, reason: String(e && e.message) }); }
+})();
+
+// The server refuses a snapshot over 1,000,000 bytes (server/mp.mjs OW_MAX_BYTES).
+// Sending one anyway fails every ~30s forever while the game looks fine; check
+// first, say which keys are heavy, and tell the player once.
+const OW_PUSH_LIMIT = 990_000;
+let _oversizeWarned = false;
+function oversize(snap) {
+	const bytes = JSON.stringify(snap).length;
+	if (bytes <= OW_PUSH_LIMIT) return null;
+	const heaviest = Object.entries(snap).map(([k, v]) => [k, String(v).length]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+	return { bytes, limit: OW_PUSH_LIMIT, heaviest };
 }
 
 let _lastAckedBody = '';  // body the SERVER has confirmed — advanced only on ack
@@ -168,6 +216,17 @@ export function pushOw(opts) {
 	const body = owBody(owSnapshot());
 	if (body === '{}') { syncLog('push.skip', { reason: 'empty' }); return Promise.resolve(false); }
 	if (body === _lastAckedBody) { syncLog('push.skip', { reason: 'already-acked' }); return Promise.resolve(true); }
+	{
+		const big = oversize(owSnapshot());
+		if (big) {
+			syncLog('push.oversize', big);
+			if (!_oversizeWarned) {
+				_oversizeWarned = true;
+				hud.textContent = 'Cloud save is too large to sync. Your game is safe here: use OPTIONS > EXPORT SAVE for a backup.';
+			}
+			return Promise.resolve(false);
+		}
+	}
 	// Local state the server has NOT confirmed is, by definition, ahead of it —
 	// so stamp a higher revision before the write leaves. Bumping on change (not
 	// on ack) is what protects unpushed progress: if the write never lands, the

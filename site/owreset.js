@@ -79,6 +79,9 @@ export const OW_RESET_KEYS = [
 	//   magepunk_owsync_log: the ?synclog=1 diagnostic ring buffer. Pure
 	//     diagnostics about a save that is being erased.
 	'magepunk_ow_conflict',
+	//   magepunk_ow_conflict_archive: a pre-fix NESTED stash, kept whole (local
+	//     only) when it was flattened, so the migration dropped nothing.
+	'magepunk_ow_conflict_archive',
 	'magepunk_owsync_log',
 	// which trainers' post-battle beats have already been attempted. Part of the
 	// save: without it a reset would replay every beat the catch-up can reach.
