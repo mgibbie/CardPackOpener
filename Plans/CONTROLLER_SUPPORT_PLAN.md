@@ -23,9 +23,14 @@ Gamepad support (the browser Gamepad API) for the three surfaces a player spends
 
 About 115 run-mode screens (dungeon, heist, tombs, duels, lorequest) are DOM overlays built from real `<button>`s with `click` handlers. A generic spatial navigator covers all of them at once.
 
+## Owner decisions (2026-09-28)
+
+- **Signed-in players only.** Controller play starts once the account has loaded with a username. Anyone else who plugs in a pad gets a one-time "Sign in to play with a controller" message.
+- **Nintendo layout is the standard.** The RIGHT face button confirms and the BOTTOM one cancels, as on a Switch, SNES or GBA. The Xbox layout (bottom confirms) is an option (`layout: 'xbox'` in `site/gamepad.js`; settings UI in Phase 5).
+
 ## Button layout
 
-The standard mapping, Xbox names. On PlayStation/Switch controllers the same physical buttons are used; only the on-screen labels change (Phase 5).
+The table below uses Xbox button names for the positions. **With the Nintendo standard, confirm and cancel trade places:** the right face button confirms and the bottom one cancels. The table's "A" is therefore the right face button. On other controllers the same positions are used; only the on-screen labels change (Phase 5).
 
 | Button | Overworld | Pokémon battle | Battlecards match | Menus / DOM |
 |---|---|---|---|---|
@@ -41,7 +46,7 @@ The standard mapping, Xbox names. On PlayStation/Switch controllers the same phy
 
 **Context actions (X/LB/RB)** replace the letter-only shortcuts per screen. For example: in the PC, X = sort, LB/RB = previous/next box, RB+Y = release; in the dex, X cycles filters. Each screen's hint bar shows what the buttons do there.
 
-The Nintendo A/B swap is a settings toggle (Phase 5). The default follows the standard mapping.
+Switching to the Xbox layout is a settings toggle (Phase 5). The Nintendo layout is the default.
 
 ## Phases
 
@@ -150,7 +155,7 @@ Recommended order: **0 → 1 → 2 → 3 → 4 → 5.** After Phase 1 the whole 
 
 ## Open questions for the owner
 
-1. **Layout:** Xbox-style default (A = confirm on the bottom face button), with a Nintendo swap in settings?
+1. ~~**Layout:**~~ answered: Nintendo layout is the standard (see Owner decisions).
 2. **Chat and login:** skip for pad players, or have the on-screen keyboard cover them too?
 3. **End turn:** hold Start (proposed), or a press plus confirmation?
 4. **Order:** start with the overworld (Phase 0–1) as proposed, or Battlecards first?

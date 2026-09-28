@@ -15,7 +15,7 @@ function fakePad(id = 'Xbox Wireless Controller (STANDARD GAMEPAD Vendor: 045e)'
 	p.stick = (x, y) => { p.axes[0] = x; p.axes[1] = y; return p; };
 	return p;
 }
-function rig(opts = {}) {
+function rig(opts = { layout: 'xbox' }) {
 	let pads = [];
 	const log = [];
 	const pad = createGamepad({
@@ -124,14 +124,18 @@ A(['confirm', 'cancel', 'menu', 'select', 'prev', 'next', 'context', 'secondary'
 	b.set(0, false); r.pad.poll(30); r.take();
 }
 
-// ---------- Nintendo A/B swap ----------
+// ---------- the Nintendo layout is the STANDARD (owner's call) ----------
 {
-	const r = rig({ swapAB: true }), p = fakePad('Pro Controller 057e');
+	const r = rig({}), p = fakePad('Pro Controller 057e');
 	r.setPads([p]); r.pad.poll(0); r.take();
 	p.set(1, true); r.pad.poll(10);
-	A(r.take().join() === 'press:confirm', 'with swapAB, the right face button confirms');
+	A(r.take().join() === 'press:confirm', 'by default the RIGHT face button confirms (Nintendo layout)');
 	p.set(1, false).set(0, true); r.pad.poll(20);
 	A(r.take().join() === 'release:confirm,press:cancel', '...and the bottom one cancels');
+	p.set(0, false); r.pad.poll(30); r.take();
+	r.pad.setOptions({ layout: 'xbox' });
+	p.set(0, true); r.pad.poll(40);
+	A(r.take().join() === 'press:confirm', "layout 'xbox' puts confirm back on the bottom button");
 }
 
 // ---------- browser wiring: rAF poller + blur/visibility release ----------
@@ -144,7 +148,7 @@ A(['confirm', 'cancel', 'menu', 'select', 'prev', 'next', 'context', 'secondary'
 	globalThis.removeEventListener = (t, f) => { listeners[t] = (listeners[t] || []).filter(x => x !== f); };
 	globalThis.document = { hidden: false, addEventListener: (t, f) => { (docListeners[t] ||= []).push(f); }, removeEventListener: (t, f) => { docListeners[t] = (docListeners[t] || []).filter(x => x !== f); } };
 	const p = fakePad(), log = [];
-	const pad = startGamepad({ readPads: () => [p], onPress: a => log.push('press:' + a), onRelease: (a, i) => log.push((i.forced ? 'forced:' : 'release:') + a) });
+	const pad = startGamepad({ layout: 'xbox', readPads: () => [p], onPress: a => log.push('press:' + a), onRelease: (a, i) => log.push((i.forced ? 'forced:' : 'release:') + a) });
 	frameCb(0);
 	p.set(0, true); frameCb(16);
 	A(log.join() === 'press:confirm', 'startGamepad polls every animation frame');

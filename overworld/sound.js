@@ -65,8 +65,11 @@ export function syncBgmVolume() {
 }
 // browsers block audio before the first user gesture; the first key/tap
 // unsticks whatever track was refused at map load
-function bgmKick() {
-	if (bgmEl && bgmEl.paused && Settings.bgmMult() > 0) bgmEl.play().catch(() => {});
+// Resolves false when the browser still refuses: a CONTROLLER press is not a
+// user gesture, so a pad-only player needs one click/tap before music can play.
+export function bgmKick() {
+	if (bgmEl && bgmEl.paused && Settings.bgmMult() > 0) return bgmEl.play().then(() => true, () => false);
+	return Promise.resolve(true);
 }
 if (typeof addEventListener === 'function') {
 	addEventListener('keydown', bgmKick);

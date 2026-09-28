@@ -6,6 +6,8 @@
 import { ChessBoard, WHITE, BLACK, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING } from './board.js';
 import { getBestMove } from './ai.js';
 import { Battle, buildMon } from '../battle.js';
+import { startGamepad } from '../../site/gamepad.js';
+import { hasToken, cachedState } from '../../battlecards/mpmode.js';
 
 const battle = new Battle();
 
@@ -325,20 +327,32 @@ canvas.addEventListener('click', e => {
 	const [r, c] = pxToCell(mx, my);
 	if (r) { cursorR = r; cursorC = c; trySelect(r, c); }
 });
+function chessKey(k) {
+	if (phase === 'battle') { battle.key(k); return; } // the battle owns input during a clash
+	if (k === 'Escape') { leave(); return; }
+	if (phase === 'gameover') { if (k === 'z' || k === 'Enter') boot(); return; }
+	if (phase !== 'player') return;
+	if (k === 'ArrowUp' || k === 'w') cursorR = Math.min(8, cursorR + 1);
+	else if (k === 'ArrowDown' || k === 's') cursorR = Math.max(1, cursorR - 1);
+	else if (k === 'ArrowLeft' || k === 'a') cursorC = Math.max(1, cursorC - 1);
+	else if (k === 'ArrowRight' || k === 'd') cursorC = Math.min(8, cursorC + 1);
+	else if (k === 'z' || k === 'Enter') trySelect(cursorR, cursorC);
+	else if (k === 'x') { selR = selC = null; validMoves = null; }
+}
 addEventListener('keydown', e => {
 	// stop the browser from scrolling the page on the keys the game uses
 	if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x', 'Enter'].includes(e.key)) e.preventDefault();
-	if (phase === 'battle') { battle.key(e.key); return; } // the battle owns input during a clash
-	if (e.key === 'Escape') { leave(); return; }
-	if (phase === 'gameover') { if (e.key === 'z' || e.key === 'Enter') boot(); return; }
-	if (phase !== 'player') return;
-	if (e.key === 'ArrowUp' || e.key === 'w') cursorR = Math.min(8, cursorR + 1);
-	else if (e.key === 'ArrowDown' || e.key === 's') cursorR = Math.max(1, cursorR - 1);
-	else if (e.key === 'ArrowLeft' || e.key === 'a') cursorC = Math.max(1, cursorC - 1);
-	else if (e.key === 'ArrowRight' || e.key === 'd') cursorC = Math.min(8, cursorC + 1);
-	else if (e.key === 'z' || e.key === 'Enter') trySelect(cursorR, cursorC);
-	else if (e.key === 'x') { selR = selC = null; validMoves = null; }
+	chessKey(e.key);
 });
+// CONTROLLER (signed-in players only, like the overworld): the same keys, from
+// the shared core — Nintendo layout, View leaves back to the arcade
+if (hasToken() && cachedState()?.username) {
+	const PAD = { confirm: 'z', cancel: 'x', menu: 'Enter', select: 'Escape', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+	startGamepad({
+		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
+		onPress: a => { if (PAD[a]) chessKey(PAD[a]); },
+	});
+}
 function leave() {
 	// return to the overworld where the arcade box sits
 	const mp = new URLSearchParams(location.search).get('mp');

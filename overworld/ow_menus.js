@@ -259,7 +259,7 @@ function drawSummary(W, H, u) {
 		const ac = (info.acc == null || info.acc === true) ? '—' : `${info.acc}`;
 		sctx.fillText(`${(info.type || '').toUpperCase()}  PW ${pw}  AC ${ac}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
 		const zid = 'summary-move:' + i;
-		if (partyMenu.moveSwap === i || S.menuHover === zid) {
+		if (partyMenu.moveSwap === i || S.menuHover === zid || partyMenu.moveCur === i) {
 			sctx.strokeStyle = partyMenu.moveSwap === i ? '#ffd27a' : BUI.C.accent;
 			sctx.lineWidth = 2;
 			BUI.rr(sctx, bx + 1, yy + 1, bw - 2, 28 * u - 2, 6 * u); sctx.stroke();
@@ -1162,21 +1162,45 @@ export function drawFriendsMenu(W, H) {
 	}
 }
 
+// Party/summary actions that used to exist only as taps. Keys (and so the
+// controller) reach them too now: T takes a held item, L moves the summary's
+// mon to the lead, and the summary's move cursor + Z reorders moves.
+export function partyTakeItem(i) {
+	const mon = S.party[i];
+	if (!mon?.heldItem) return false;
+	Bag.addItem(mon.heldItem);
+	mon.heldItem = null;
+	saveParty(S.party);
+	return true;
+}
+export function summaryToLead() {
+	if (!partyMenu.summary || !(partyMenu.idx > 0)) return false;
+	const [m] = S.party.splice(partyMenu.idx, 1); S.party.unshift(m); partyMenu.idx = 0; saveParty(S.party);
+	return true;
+}
+// reorder the summary's move slots: first pick arms, second swaps (same slot
+// cancels) — PP rides along, the order persists on the mon
+export function summaryMovePick(i) {
+	const m = S.party[partyMenu.idx];
+	if (!partyMenu.summary || !m || !(m.moves?.length > 1) || i >= m.moves.length) return;
+	if (partyMenu.moveSwap == null) { partyMenu.moveSwap = i; sfx('ui_select'); }
+	else if (partyMenu.moveSwap === i) { partyMenu.moveSwap = null; sfx('ui_cancel'); }
+	else {
+		const j = partyMenu.moveSwap;
+		[m.moves[i], m.moves[j]] = [m.moves[j], m.moves[i]];
+		partyMenu.moveSwap = null;
+		saveParty(S.party);
+		sfx('ui_select');
+	}
+}
+
 // taps route into the same state + key logic the keyboard uses
 export function menuTap(id) {
 	const [kind, a, b2] = id.split(':');
 	if (kind === 'close') { pressKey('Escape'); pressKey('x'); return; }
 	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
 	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }
-	if (kind === 'take') {
-		const mon = S.party[+a];
-		if (mon?.heldItem) {
-			Bag.addItem(mon.heldItem);
-			mon.heldItem = null;
-			saveParty(S.party);
-		}
-		return;
-	}
+	if (kind === 'take') { partyTakeItem(+a); return; }
 	if (kind === 'region') { starterMenu.row = +a; pressKey('z'); return; }
 	if (kind === 'starterpick') { starterMenu.col = +a; pressKey('z'); return; }
 	if (kind === 'buy' || kind === 'sell') { shopMenu.idx = +a; pressKey('z'); return; }
@@ -1224,27 +1248,8 @@ export function menuTap(id) {
 	if (kind === 'deco') { decoMenu.idx = +a; decoKey('z'); return; }
 	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'summary-lead') {
-		if (partyMenu.summary && partyMenu.idx > 0) { const [m] = S.party.splice(partyMenu.idx, 1); S.party.unshift(m); partyMenu.idx = 0; saveParty(S.party); }
-		return;
-	}
-	if (kind === 'summary-move') {
-		// reorder the summary's move slots: first tap arms, second tap swaps
-		// (same slot cancels) — PP rides along, the order persists on the mon
-		const m = S.party[partyMenu.idx];
-		const i = +a;
-		if (!partyMenu.summary || !m || !(m.moves?.length > 1) || i >= m.moves.length) return;
-		if (partyMenu.moveSwap == null) { partyMenu.moveSwap = i; sfx('ui_select'); }
-		else if (partyMenu.moveSwap === i) { partyMenu.moveSwap = null; sfx('ui_cancel'); }
-		else {
-			const j = partyMenu.moveSwap;
-			[m.moves[i], m.moves[j]] = [m.moves[j], m.moves[i]];
-			partyMenu.moveSwap = null;
-			saveParty(S.party);
-			sfx('ui_select');
-		}
-		return;
-	}
+	if (kind === 'summary-lead') { summaryToLead(); return; }
+	if (kind === 'summary-move') { summaryMovePick(+a); return; }
 	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
 	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; return; }
 	if (kind === 'townfly') { pressKey('z'); return; }

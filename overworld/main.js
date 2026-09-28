@@ -216,6 +216,7 @@ import { OW_RESET_KEYS } from '../site/owreset.js';
 import { Pvp } from './pvp.js';
 import { FactorySpec } from './factoryspec.js';
 import * as Chat from '../battlecards/chat.js';
+import { gamepadNeedsLogin, initGamepad } from './ow_gamepad.js';
 
 // Test Realm mode: ?mp=1 with a login token. The account backend owns the
 // cards; friends, presence, and world-visiting all run through it.
@@ -815,11 +816,27 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
+	// CONTROLLER PLAY is for signed-in players only (owner's call, 2026-09-28):
+	// it starts once the account has loaded with a username. Signed out, a pad
+	// says so instead of silently doing nothing.
+	if (MP_ON && S.mpAccount?.username) {
+		let touchWas = false;
+		const restoreTouch = () => { if (touchWas && !document.body.classList.contains('touch')) { document.body.classList.add('touch'); fitCanvas(); } };
+		S.gamepad = initGamepad({
+			// the touch HUD steps aside while a controller is in use...
+			onConnect: () => { if (document.body.classList.contains('touch')) { touchWas = true; document.body.classList.remove('touch'); fitCanvas(); } },
+			onDisconnect: restoreTouch,
+			// tests feed fake pads (headless Chrome has none)
+			readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
+		});
+		// ...and comes straight back on the next real touch
+		addEventListener('pointerdown', e => { if (e.pointerType === 'touch') restoreTouch(); });
+	} else gamepadNeedsLogin();
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return S.party; }, get menuUi() { return S.menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
-		get friends() { return S.friends; }, get visiting() { return S.visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
+		get gamepad() { return S.gamepad || null; }, get friends() { return S.friends; }, get visiting() { return S.visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
 		get pvp() { return pvp; }, pvpParty, sendChallenge, enterMatch, pollChallenges, get pending() { return pendingChallengeTo; },
 		get mailMenu() { return mailMenu; }, get mailWaiting() { return S.mailWaiting; }, refreshMail, sendMailChallenge, mailAccept, enterAsyncMatch,
 		Dex, get dexMenu() { return dexMenu; }, get trainerCard() { return trainerCard; }, get partyMenu() { return partyMenu; }, get shopMenu() { return shopMenu; }, get bagMenu() { return bagMenu; }, Bag,
