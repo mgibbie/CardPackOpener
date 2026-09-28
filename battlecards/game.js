@@ -6428,6 +6428,7 @@ function bootEncounter(cardsById, bossId, clsId, deckIds, passives, level, anoma
 	if (runHP != null) E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, boss.deck);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	if (boss.passive === 'battlecries-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { battlecriesTwice: true });
 	if (boss.passive === 'deathrattles-twice' || boss.passive === 'both-twice') E.applyHeroMods(state, 1, { deathrattlesTwice: true });
 	E.stripLoadouts(state);
@@ -7085,6 +7086,7 @@ function bootHeistEncounter(cardsById, run) {
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Heist.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	for (const id of run.passives) Heist.applyPassive(state, HUMAN, id);
 	Heist.applyRunMods(state, HUMAN, run); // tavern deck edits (buffs, opening hand)
@@ -7386,6 +7388,7 @@ function bootTombsEncounter(cardsById, run) {
 	E.applyHeroMods(state, HUMAN, { life: runHP, maxLife: runHP });
 	E.resetDeckAndHand(state, 1, Tombs.buildBossDeck(cardsById, boss.theme));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife(run.level);
@@ -7676,6 +7679,7 @@ function bootDuelsEncounter(cardsById, run) {
 	// both sides share the same generated-deck / loot budget - equal footing (no HP scaling)
 	E.resetDeckAndHand(state, 1, Duels.applyImproves(cardsById, [...enemy.deck], run.wins || 0));
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	// Darius Crowley: whichever side he is, the battle opens with his Cannons in place
 	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
@@ -7943,6 +7947,7 @@ function bootLorequestEncounter(cardsById, run) {
 	// both sides use their class default hero power (seated above) — no HP scaling, equal footing
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8112,6 +8117,7 @@ function bootMiddleEarthEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8294,6 +8300,7 @@ function bootSwordCoastEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8474,6 +8481,7 @@ function bootFinalFantasyEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8655,6 +8663,7 @@ function bootMultiverseEncounter(cardsById, run) {
 	state.classPicks = picks;
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	applyRunAnomaly(run.anomaly);
 	setRunLife((run.wins || 0) + (run.losses || 0) + 1);
@@ -8783,6 +8792,7 @@ function bootArenaEncounter(cardsById, run) {
 	if (enemy.powerId && cardsById[enemy.powerId]) { const epw = E.instantiate(cardsById[enemy.powerId], 1); epw.zone = 'heropower'; epw.usedThisTurn = false; state.players[1].heroPowers = [epw]; }
 	E.resetDeckAndHand(state, 1, [...enemy.deck]);
 	E.drawCards(state, 1, 4);
+	E.addCoin(state, 1);   // the boss goes second: re-deal its opening Coin (resetDeckAndHand wiped createGame's)
 	E.stripLoadouts(state);
 	for (const sid of hero.startSummon || []) if (cardsById[sid]) E.execEffects(state, HUMAN, [{ type: 'summon', summonId: sid }], null, null);
 	for (const sid of enemy.startSummon || []) if (cardsById[sid]) E.execEffects(state, 1, [{ type: 'summon', summonId: sid }], null, null);
