@@ -53,12 +53,16 @@ try {
 	const tut = await page.evaluate(() => {
 		const ow = window.__ow;
 		const before = ow.Story.getFlag('tut_portal_seen');
+		// "is the TUTORIAL up", not "is any dialog up" (see the villain check below)
+		const drain = () => { for (let i = 0; i < 30 && ow.dialog.blocking; i++) ow.dialog.key('x'); };
+		const isTut = () => /way ahead is sealed/i.test(JSON.stringify(ow.dialog.pages || ''));
+		drain();
 		ow.maybePortalTutorial({ need: 1 });                 // a real cross-region tier wall
-		const openedFirst = ow.dialog.blocking, flagAfter = ow.Story.getFlag('tut_portal_seen');
-		for (let i = 0; i < 6 && ow.dialog.blocking; i++) ow.dialog.key('x');
+		const openedFirst = isTut(), flagAfter = ow.Story.getFlag('tut_portal_seen');
+		drain();
 		ow.maybePortalTutorial({ need: 1 });                 // second wall -> must NOT re-open
-		const openedSecond = ow.dialog.blocking;
-		for (let i = 0; i < 6 && ow.dialog.blocking; i++) ow.dialog.key('x');
+		const openedSecond = isTut();
+		drain();
 		return { before, openedFirst, flagAfter, openedSecond };
 	});
 	A(tut.before === false, 'tut_portal_seen starts unset on a fresh save');
@@ -69,12 +73,19 @@ try {
 	const vil = await page.evaluate(() => {
 		const ow = window.__ow;
 		ow.Story.clearFlag('tut_portal_seen');
+		// judge by WHAT opened, not by "a dialog is up": the map's own async
+		// dialogs (a sign, an arrival line) could land between the two evaluates
+		// and read as the tutorial (the gate flake, 2026-09-28)
+		for (let i = 0; i < 30 && ow.dialog.blocking; i++) ow.dialog.key('x');
+		const pre = ow.dialog.pages;
 		ow.maybePortalTutorial({ villain: true, need: 0 });  // villain block, not a tier wall
-		const opened = ow.dialog.blocking;
-		for (let i = 0; i < 6 && ow.dialog.blocking; i++) ow.dialog.key('x');
-		return { opened, flag: ow.Story.getFlag('tut_portal_seen') };
+		const now = ow.dialog.pages;
+		const opened = now !== pre && /way ahead is sealed/i.test(JSON.stringify(now || ''));
+		const other = now ? JSON.stringify(now).slice(0, 80) : null;
+		for (let i = 0; i < 30 && ow.dialog.blocking; i++) ow.dialog.key('x');
+		return { opened, other, flag: ow.Story.getFlag('tut_portal_seen') };
 	});
-	A(vil.opened === false && vil.flag === false, 'a villain seal does NOT trigger the portal tutorial');
+	A(vil.opened === false && vil.flag === false, 'a villain seal does NOT trigger the portal tutorial', JSON.stringify(vil));
 
 	// 2: the tier tracker renders from a mocked badge state (K=2, J=1, H=1)
 	const render = await page.evaluate(() => {
