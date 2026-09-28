@@ -6434,7 +6434,7 @@ async function start() {
 			run = { active: true, heroId, classChoice, powerId, anomaly, deck, passives: [], wins: 0, losses: 0, enemy: genDuelsEnemy(cardsById, 0) };
 			saveDuels(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
+		if (run.postGame) resumePostGame(run, duelsLoot, afterDuelsLootBucket, advanceDuels); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Duels fight.'); else bootDuelsEncounter(cardsById, run);
 	} else if (lorequestRunMode) {
 		lorequestCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadLorequest();
@@ -6446,7 +6446,7 @@ async function start() {
 				enemy: genLorequestEnemy(cardsById, 0, 0, null, characterId) };
 			saveLorequest(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
+		if (run.postGame) resumePostGame(run, lorequestLoot, afterLorequestBucket, advanceLorequest); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Lorequest fight.'); else bootLorequestEncounter(cardsById, run);
 	} else if (middleearthRunMode) {
 		middleearthCardsById = cardsById; // pre-state overlays need the card defs
 		let run = loadMiddleearth();
@@ -6458,7 +6458,7 @@ async function start() {
 				enemy: genMiddleEarthEnemy(cardsById, 0, null) };
 			saveMiddleearth(run);
 		}
-		if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
+		if (run.postGame) resumePostGame(run, middleEarthLoot, afterMiddleEarthReward, advanceMiddleEarth); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Middle-earth fight.'); else bootMiddleEarthEncounter(cardsById, run);
 		} else if (swordcoastRunMode) {
 			swordcoastCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadSwordcoast();
@@ -6470,7 +6470,7 @@ async function start() {
 					enemy: genSwordCoastEnemy(cardsById, 0, null) };
 				saveSwordcoast(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
+			if (run.postGame) resumePostGame(run, swordCoastLoot, afterSwordCoastReward, advanceSwordCoast); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Sword Coast fight.'); else bootSwordCoastEncounter(cardsById, run);
 		} else if (finalfantasyRunMode) {
 			finalfantasyCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadFinalfantasy();
@@ -6482,7 +6482,7 @@ async function start() {
 					enemy: genFinalFantasyEnemy(cardsById, 0, null) };
 				saveFinalfantasy(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
+			if (run.postGame) resumePostGame(run, finalFantasyLoot, afterFinalFantasyReward, advanceFinalFantasy); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Final Fantasy fight.'); else bootFinalFantasyEncounter(cardsById, run);
 		} else if (multiverseRunMode) {
 			multiverseCardsById = cardsById; // pre-state overlays need the card defs
 			let run = loadMultiverse();
@@ -6494,7 +6494,7 @@ async function start() {
 					enemy: genMultiverseEnemy(cardsById, 0, null) };
 				saveMultiverse(run);
 			}
-			if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
+			if (run.postGame) resumePostGame(run, multiverseLoot, afterMultiverseBucket, advanceMultiverse); else if (resumeRunSnapshot(run, cardsById)) log('Resumed your paused Multiverse fight.'); else bootMultiverseEncounter(cardsById, run);
 	} else if (arenaRunMode) {
 		duelsCardsById = cardsById; // pre-state overlays reuse this stash
 		let run = loadArena();
@@ -6838,6 +6838,7 @@ function miniFace(def, width = 96) {
 	const c = drawCardFace(def, {});
 	const height = Math.round(width * 134 / 96);
 	c.style.cssText = `width:${width}px;height:${height}px;border-radius:6px;`;
+	c.dataset.cardId = def.id;   // which card this face is (reward screens, tests)
 	attachTip(c, def);
 	// real art lazy-loads after the first paint — redraw once it has arrived
 	const redraw = () => {
@@ -7833,6 +7834,7 @@ function duelsDefeat(run) { afterDuelsGame(run, false); }
 // one game resolved: bank the result, end the run at 12 wins / 3 losses, else loot
 function afterDuelsGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveDuels(run);
 	if (run.wins >= Duels.WINS_TO_CLEAR) { duelsRunComplete(run); return; }
 	if (run.losses >= Duels.LOSSES_TO_END) { duelsRunOver(run); return; }
@@ -7841,17 +7843,18 @@ function afterDuelsGame(run, won) {
 
 // loot after every game: choose 1 of 3 HS-Duels buckets (3 cards each)
 function duelsLoot(run, won) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const hero = duelsEffectiveHero(run);
 	const el = dungeonOverlay(won ? `WIN - ${run.wins}/12` : `LOSS - ${run.losses}/3`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), Math.random, 3);
+	const offered = Duels.offerBuckets(duelsCardsById, Duels.classesOf(hero), lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, Math.random, 3);
+		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (duelsCardsById[id]) box.appendChild(miniFace(duelsCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterDuelsLootBucket(run); }));
 		row.appendChild(box);
@@ -7861,6 +7864,8 @@ function duelsLoot(run, won) {
 
 // games 1/5/9 also grant a passive; 3/7/11 a treasure card; then the next fight
 function afterDuelsLootBucket(run) {
+	postGameStage(run, 2, saveDuels);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	const games = (run.wins || 0) + (run.losses || 0);
 	if (Duels.PASSIVE_GAMES.includes(games)) {
 		const el = dungeonOverlay('PASSIVE TREASURE!', 'Choose a boon for the rest of the run.');
@@ -7868,7 +7873,7 @@ function afterDuelsLootBucket(run) {
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const t = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const t = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;">${Duels.PASSIVES[t].text}</div>`;
@@ -7878,11 +7883,11 @@ function afterDuelsLootBucket(run) {
 		el.appendChild(row);
 	} else if (Duels.TREASURE_GAMES.includes(games)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
+		const options = Object.values(duelsCardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -7895,8 +7900,9 @@ function afterDuelsLootBucket(run) {
 }
 
 function advanceDuels(run) {
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genDuelsEnemy(state.cardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
+	run.enemy = genDuelsEnemy(duelsCardsById, games, run.enemy && run.enemy.id); // next opponent (avoid immediate repeat)
 	saveDuels(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards.`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
@@ -8093,12 +8099,32 @@ function bootLorequestEncounter(cardsById, run) {
 	log(`You are ${run.characterId} with a ${run.deck.length}-card deck; ${enemy.name} fields ${enemy.deck.length}.`);
 }
 
+// POST-FIGHT CHECKPOINT. A won (or, in Duels, any) fight banks its result and
+// then shows a reward screen; the next enemy was only chosen after the pick. A
+// reload on that screen (Bryan: laptop asleep on the card select) found the run
+// with the win banked but the beaten enemy still set, so it rebuilt the SAME
+// fight — with the life scaling of one more game — and the reward was lost.
+// Now the run records where it is (stage 1 = the first reward screen, 2 = the
+// second) with a seed, every offer is rolled from that seed (a reload shows the
+// SAME choices: resume is frame-exact), each pick is saved as it is made, and
+// boot reopens the reward instead of a fight. Advancing clears it.
+function beginPostGame(run, won) { run.postGame = { won: !!won, seed: (Math.random() * 2 ** 31) >>> 0, stage: 1 }; }
+function postGameRng(run, salt) { return E.seededRng(((run.postGame ? run.postGame.seed : (Math.random() * 2 ** 31) >>> 0) + salt * 7919) >>> 0); }
+function postGameStage(run, stage, save) { if (run.postGame) { run.postGame.stage = stage; save(run); } }
+function resumePostGame(run, step1, step2, advance) {
+	const pg = run.postGame;
+	if (pg.stage === 2) return step2(run);
+	if (step1.length > 1) return step1(run, pg.won);   // Duels loots after losses too
+	return pg.won ? step1(run) : advance(run);
+}
+
 function lorequestVictory(run) { afterLorequestGame(run, true); }
 function lorequestDefeat(run) { afterLorequestGame(run, false); }
 
 // one game resolved: bank it, end at 12 wins / 3 losses; loot only on a WIN, else straight to the next fight
 function afterLorequestGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveLorequest(run);
 	if (run.wins >= Lorequest.WINS_TO_CLEAR) { lorequestRunComplete(run); return; }
 	if (run.losses >= Lorequest.LOSSES_TO_END) { lorequestRunOver(run); return; }
@@ -8107,17 +8133,18 @@ function afterLorequestGame(run, won) {
 
 // win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck
 function lorequestLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const cls = [run.cls];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-	const offered = Duels.offerBuckets(lorequestCardsById, cls, Math.random, 3);
+	const offered = Duels.offerBuckets(lorequestCardsById, cls, lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, Math.random, 3);
+		const ids = Duels.rollBucket(lorequestCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (lorequestCardsById[id]) box.appendChild(miniFace(lorequestCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterLorequestBucket(run); }));
 		row.appendChild(box);
@@ -8127,13 +8154,15 @@ function lorequestLoot(run) {
 
 // milestone wins (2/5/8/11) also grant a treasure card, then the next fight
 function afterLorequestBucket(run) {
+	postGameStage(run, 2, saveLorequest);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Lorequest.TREASURE_WINS.includes(run.wins)) {
 		const el = dungeonOverlay('TREASURE!', 'One of these joins your deck.');
-		const options = Object.values(state.cardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
+		const options = Object.values(lorequestCardsById).filter(d => Duels.isActiveTreasure(d) && !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8146,8 +8175,9 @@ function afterLorequestBucket(run) {
 }
 
 function advanceLorequest(run) {
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
 	const games = (run.wins || 0) + (run.losses || 0);
-	run.enemy = genLorequestEnemy(state.cardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
+	run.enemy = genLorequestEnemy(lorequestCardsById, games, run.wins || 0, run.enemy && run.enemy.id, run.characterId);
 	saveLorequest(run);
 	const tier = games < Lorequest.PW_BATTLES ? 'Planeswalker' : 'Boss';
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${tier})`);
@@ -8266,6 +8296,7 @@ function middleEarthDefeat(run) { afterMiddleEarthGame(run, false); }
 
 function afterMiddleEarthGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveMiddleearth(run);
 	if (run.wins >= Middleearth.WINS_TO_CLEAR) { middleEarthRunComplete(run); return; }
 	if (run.losses >= Middleearth.LOSSES_TO_END) { middleEarthRunOver(run); return; }
@@ -8274,16 +8305,17 @@ function afterMiddleEarthGame(run, won) {
 
 // win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
 function middleEarthLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Middleearth.spoilsChoices(middleearthCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Middleearth.spoilsChoices(middleearthCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!middleearthCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(middleearthCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterMiddleEarthReward(run); }));
 		row.appendChild(box);
@@ -8294,18 +8326,20 @@ function middleEarthLoot(run) {
 
 // win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
 function afterMiddleEarthReward(run) {
+	postGameStage(run, 2, saveMiddleearth);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Middleearth.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(middleearthCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(middleearthCardsById, cls, lootRng, 3);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(middleearthCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(middleearthCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (middleearthCardsById[id]) box.appendChild(miniFace(middleearthCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceMiddleEarth(run); }));
 			row.appendChild(box);
@@ -8313,11 +8347,11 @@ function afterMiddleEarthReward(run) {
 		el.appendChild(row);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Middleearth.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Middleearth.treasurePool(middleearthCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8330,7 +8364,8 @@ function afterMiddleEarthReward(run) {
 }
 
 function advanceMiddleEarth(run) {
-	run.enemy = genMiddleEarthEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genMiddleEarthEnemy(middleearthCardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveMiddleearth(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Middleearth.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
@@ -8449,6 +8484,7 @@ function swordCoastDefeat(run) { afterSwordCoastGame(run, false); }
 
 function afterSwordCoastGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveSwordcoast(run);
 	if (run.wins >= Swordcoast.WINS_TO_CLEAR) { swordCoastRunComplete(run); return; }
 	if (run.losses >= Swordcoast.LOSSES_TO_END) { swordCoastRunOver(run); return; }
@@ -8457,16 +8493,17 @@ function afterSwordCoastGame(run, won) {
 
 // win loot step 1 — SPOILS: take 1 of 3 cards drawn from the vanquished foe's own deck, or none
 function swordCoastLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Swordcoast.spoilsChoices(swordcoastCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Swordcoast.spoilsChoices(swordcoastCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!swordcoastCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(swordcoastCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterSwordCoastReward(run); }));
 		row.appendChild(box);
@@ -8477,18 +8514,20 @@ function swordCoastLoot(run) {
 
 // win loot step 2 — ALTERNATING AID: a treasure on odd wins, a class bucket on even wins
 function afterSwordCoastReward(run) {
+	postGameStage(run, 2, saveSwordcoast);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Swordcoast.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(swordcoastCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(swordcoastCardsById, cls, lootRng, 3);
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(swordcoastCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(swordcoastCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (swordcoastCardsById[id]) box.appendChild(miniFace(swordcoastCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceSwordCoast(run); }));
 			row.appendChild(box);
@@ -8496,11 +8535,11 @@ function afterSwordCoastReward(run) {
 		el.appendChild(row);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Swordcoast.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Swordcoast.treasurePool(swordcoastCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8513,7 +8552,8 @@ function afterSwordCoastReward(run) {
 }
 
 function advanceSwordCoast(run) {
-	run.enemy = genSwordCoastEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genSwordCoastEnemy(swordcoastCardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveSwordcoast(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Swordcoast.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
@@ -8630,6 +8670,7 @@ function finalFantasyDefeat(run) { afterFinalFantasyGame(run, false); }
 
 function afterFinalFantasyGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveFinalfantasy(run);
 	if (run.wins >= Finalfantasy.WINS_TO_CLEAR) { finalFantasyRunComplete(run); return; }
 	if (run.losses >= Finalfantasy.LOSSES_TO_END) { finalFantasyRunOver(run); return; }
@@ -8637,16 +8678,17 @@ function afterFinalFantasyGame(run, won) {
 }
 
 function finalFantasyLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const fallen = run.enemy ? run.enemy.name : null;
-	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, Math.random, 3) : [];
+	const options = fallen ? Finalfantasy.spoilsChoices(finalfantasyCardsById, fallen, lootRng, 3) : [];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, `Spoils of war: take one card from ${fallen || 'the fallen'}'s arsenal, or leave it.`);
 	const rowr = document.createElement('div');
 	rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const id of options) {
-		if (!state.cardsById[id]) continue;
+		if (!finalfantasyCardsById[id]) continue;
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
-		box.appendChild(miniFace(state.cardsById[id]));
+		box.appendChild(miniFace(finalfantasyCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterFinalFantasyReward(run); }));
 		rowr.appendChild(box);
@@ -8656,18 +8698,20 @@ function finalFantasyLoot(run) {
 }
 
 function afterFinalFantasyReward(run) {
+	postGameStage(run, 2, saveFinalfantasy);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Finalfantasy.rewardForWin(run.wins) === 'bucket') {
 		const cls = [run.cls];
 		const el = dungeonOverlay(`AID - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck.');
-		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, Math.random, 3);
+		const offered = Duels.offerBuckets(finalfantasyCardsById, cls, lootRng, 3);
 		const rowr = document.createElement('div');
 		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const bucket of offered) {
-			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, Math.random, 3);
+			const ids = Duels.rollBucket(finalfantasyCardsById, cls, bucket, lootRng, 3);
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-			for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+			for (const id of ids) if (finalfantasyCardsById[id]) box.appendChild(miniFace(finalfantasyCardsById[id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); advanceFinalFantasy(run); }));
 			rowr.appendChild(box);
@@ -8675,11 +8719,11 @@ function afterFinalFantasyReward(run) {
 		el.appendChild(rowr);
 	} else {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Finalfantasy.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Finalfantasy.treasurePool(finalfantasyCardsById).filter(d => !run.deck.includes(d.id));
 		const rowr = document.createElement('div');
 		rowr.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8692,7 +8736,8 @@ function afterFinalFantasyReward(run) {
 }
 
 function advanceFinalFantasy(run) {
-	run.enemy = genFinalFantasyEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genFinalFantasyEnemy(finalfantasyCardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveFinalfantasy(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Finalfantasy.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
@@ -8812,6 +8857,7 @@ function multiverseDefeat(run) { afterMultiverseGame(run, false); }
 
 function afterMultiverseGame(run, won) {
 	if (won) run.wins = (run.wins || 0) + 1; else run.losses = (run.losses || 0) + 1;
+	beginPostGame(run, won);   // checkpoint: a reload resumes the reward, not the fight
 	saveMultiverse(run);
 	if (run.wins >= Multiverse.WINS_TO_CLEAR) { multiverseRunComplete(run); return; }
 	if (run.losses >= Multiverse.LOSSES_TO_END) { multiverseRunOver(run); return; }
@@ -8820,17 +8866,18 @@ function afterMultiverseGame(run, won) {
 
 // win loot: choose 1 of 3 class buckets (3 cards each); all 3 join your deck (the enemy matches at parity)
 function multiverseLoot(run) {
+	const lootRng = postGameRng(run, 1);   // same offer after a reload
 	const cls = [run.cls];
 	const el = dungeonOverlay(`WIN - ${run.wins}/12`, 'Choose a loot bucket - all 3 cards join your deck. (The next foe matches your loot.)');
-	const offered = Duels.offerBuckets(multiverseCardsById, cls, Math.random, 3);
+	const offered = Duels.offerBuckets(multiverseCardsById, cls, lootRng, 3);
 	const row = document.createElement('div');
 	row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 	for (const bucket of offered) {
-		const ids = Duels.rollBucket(multiverseCardsById, cls, bucket, Math.random, 3);
+		const ids = Duels.rollBucket(multiverseCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
 		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
-		for (const id of ids) if (state.cardsById[id]) box.appendChild(miniFace(state.cardsById[id]));
+		for (const id of ids) if (multiverseCardsById[id]) box.appendChild(miniFace(multiverseCardsById[id]));
 		box.appendChild(document.createElement('br'));
 		box.appendChild(overlayButton('Take these', () => { run.deck.push(...ids); afterMultiverseBucket(run); }));
 		row.appendChild(box);
@@ -8840,13 +8887,15 @@ function multiverseLoot(run) {
 
 // milestone wins (2/5/8/11) also grant a treasure card, then the next fight
 function afterMultiverseBucket(run) {
+	postGameStage(run, 2, saveMultiverse);   // the step-1 pick is saved
+	const lootRng = postGameRng(run, 2);
 	if (Multiverse.TREASURE_WINS.includes(run.wins)) {
 		const el = dungeonOverlay(`TREASURE! - ${run.wins}/12`, 'One of these joins your deck.');
-		const options = Multiverse.treasurePool(state.cardsById).filter(d => !run.deck.includes(d.id));
+		const options = Multiverse.treasurePool(multiverseCardsById).filter(d => !run.deck.includes(d.id));
 		const row = document.createElement('div');
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (let i = 0; i < 3 && options.length; i++) {
-			const d = options.splice(Math.floor(Math.random() * options.length), 1)[0];
+			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
 			box.appendChild(miniFace(d));
@@ -8859,7 +8908,8 @@ function afterMultiverseBucket(run) {
 }
 
 function advanceMultiverse(run) {
-	run.enemy = genMultiverseEnemy(state.cardsById, run.wins || 0, run.enemy && run.enemy.id);
+	delete run.postGame;   // the reward is done: the next fight is the checkpoint now
+	run.enemy = genMultiverseEnemy(multiverseCardsById, run.wins || 0, run.enemy && run.enemy.id);
 	saveMultiverse(run);
 	const el = dungeonOverlay(`NEXT: ${run.enemy.name}`, `${winLossLabel(run)} - your deck is ${run.deck.length} cards. (${Multiverse.rungLabel(run.wins || 0)})`);
 	el.appendChild(overlayButton('Fight!', () => location.reload()));
