@@ -141,6 +141,18 @@ try {
 		const scoped = await t.page.evaluate(() => { const c = window.__padnav.candidates(); return c.length > 0 && c.every(el => el.closest('#dungeon-overlay')); });
 		A(scoped, 'the overlay scopes focus to its own buttons');
 		await t.tap(BTN.right);                                   // show focus
+		// unplug: the ring goes; plug back in and press: it returns on the same button
+		const ringUp = () => t.page.evaluate(() => !!document.querySelector('.padnav-focus'));
+		const focusedLabel = (await t.focus())?.text;
+		A(await ringUp(), 'setup: the focus ring is showing');
+		await t.page.evaluate(() => { window.__owFakePads.length = 0; });
+		await sleep(250);
+		A(!(await ringUp()), 'unplugging the controller hides the focus ring');
+		await t.page.evaluate(() => { window.__owFakePads.push(window.__pad); });
+		await sleep(150);
+		await t.tap(BTN.down); await t.tap(BTN.up);              // any press: the ring comes back
+		A(await ringUp(), 'plugging it back in and pressing shows the ring again', String(focusedLabel));
+		await t.page.evaluate(b => window.__padnav.focusTo([...document.querySelectorAll('#dungeon-overlay button')].find(x => x.textContent.trim() === b) || window.__padnav.focused), focusedLabel);
 		const chosen = (await t.focus())?.text;
 		const html0 = await t.page.evaluate(() => document.getElementById('dungeon-overlay').innerHTML);
 		await t.tap(BTN.right);                                   // activate

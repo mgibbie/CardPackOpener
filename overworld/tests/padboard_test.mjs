@@ -177,6 +177,24 @@ try {
 	await sleep(700);
 	A(await page.evaluate(() => window.__game.state.current !== window.__game.HUMAN || window.__game.state.turnNumber > 1), 'holding Start for 0.6s ends the turn');
 
+	// ---- unplug / reconnect: the reticle and hints hide, then come back on a press ----
+	{
+		const shown = () => page.evaluate(() => ({ ret: getComputedStyle(document.getElementById('padboard-reticle')).display, hints: getComputedStyle(document.getElementById('padboard-hints')).display }));
+		await tap(BTN.rightD);
+		await sleep(150);
+		const up = await shown();
+		A(up.ret === 'block', 'setup: the reticle is showing', JSON.stringify(up));
+		await page.evaluate(() => { window.__owFakePads.length = 0; });
+		await sleep(250);
+		const gone = await shown();
+		A(gone.ret === 'none' && gone.hints === 'none', 'unplugging the controller hides the reticle and the hint bar', JSON.stringify(gone));
+		await page.evaluate(() => { window.__owFakePads.push(window.__pad); });
+		await sleep(150);
+		await tap(BTN.rightD);
+		await sleep(150);
+		A((await shown()).ret === 'block', 'plugging it back in and pressing shows them again', JSON.stringify(await shown()));
+	}
+
 	// ---- the mouse takes over ----
 	await page.mouse.move(300, 300); await page.mouse.move(340, 320);
 	A(await page.evaluate(() => getComputedStyle(document.getElementById('padboard-reticle')).display === 'none'), 'moving the mouse hides the reticle');

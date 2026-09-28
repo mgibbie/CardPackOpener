@@ -257,6 +257,14 @@ function hintText(m) {
 function onFrame() {
 	if (!api) return;
 	ensureDom();
+	// UNPLUGGED (the last pad gone — checked here, not in onDisconnect, so a second
+	// pad still in use keeps everything): hide the reticle, the hints, the end-turn
+	// bar and the card's hover lift. Focus is remembered; the next press shows it.
+	if (visible && pad && !pad.connected()) {
+		visible = false; holdAt = null;
+		reticle.style.display = 'none'; hints.style.display = 'none'; bar.style.display = 'none';
+		api.setHover(null);
+	}
 	const active = boardActive();
 	const m = active ? mode() : 'off';
 	// a spell or attack just started targeting: jump focus onto the first legal target
