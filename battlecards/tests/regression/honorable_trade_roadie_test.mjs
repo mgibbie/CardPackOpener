@@ -66,5 +66,8 @@ for (const seed of [0.1, 0.4, 0.8]) {
 	ok('whoever breaks it, the weapon is the Roadie player\'s', !!s.players[0].weapon && !s.players[1].weapon);
 }
 
+// 3. Brewster, the Brutal is a Beast (Bryan: "not a beast and it should be")
+ok('Brewster, the Brutal is a Beast', byId.duels_brewster_the_brutal.tribe === 'Beast');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
