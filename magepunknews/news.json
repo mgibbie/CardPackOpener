@@ -1,6 +1,631 @@
 {
-	"generated": "2026-09-22",
+	"generated": "2026-09-28",
 	"entries": [
+		{
+			"sha": "897e928",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Run modes: the boss gets its opening Coin back (#599)",
+			"body": "Bot testing flagged the Coin in the Lorequest runs. A normal game deals The\nCoin to everyone after the first player (createGame), but every run mode\nthen swaps the boss's deck in with resetDeckAndHand(), which clears the hand,\nand none of the ten (dungeon, heist, tombs, duels, lorequest, middle-earth,\nsword coast, final fantasy, multiverse, arena) dealt it back. The boss, who\nalways goes second, never had one. Each now re-adds it right after dealing\nthe boss's hand, as the multiplayer seat deal already does.\n\nruncoin_test: a source check across all ten, and five live runs (dungeon,\nheist, lorequest, middle-earth, multiverse) where the boss opens with\nexactly one Coin and the player (going first) has none. The live checks\nfail on the old code.",
+			"cards": []
+		},
+		{
+			"sha": "c14c119",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Controller support, phase 5: button names, settings, rumble, docs (+ unplug hides the reticle) (#598)",
+			"body": "* Controller support, phase 5: button names, settings, rumble, docs\n\n- Button names for the pad in your hands: site/gamepad.js buttonLabel()\n  names each action by position for Xbox (A/B/X/Y), PlayStation, Switch and\n  generic pads, under the chosen layout and any remap. The overworld's hint\n  bar (#keyhints) shows them live for the screen you're on and restores the\n  keyboard hints when the pad is unplugged; the Battlecards board gets a hint\n  bar per mode (browse / slot / target); the on-screen keyboard names them.\n- OPTIONS > CONTROLS gains the controller rows: LAYOUT (Nintendo, the owner's\n  standard, or Xbox), RUMBLE (off by default), a remap row per action (pick\n  one, press the button you want; assignments SWAP so no action is lost; the\n  assigning press never also acts) and RESET CONTROLLER BUTTONS. One store\n  (magepunk_pad_v1) that the overworld and Battlecards both read.\n- Rumble, when turned on: crits and super-effective hits, a catch, and the\n  Battlecards camera shake (hero hits).\n- The design wiki gets a Controls page (#/controls): every surface's layout,\n  the sign-in rule, where the settings live.\n\ngamepad_core_test 45/45 (layouts, labels, remap swaps, raw presses, rumble on\nand off); controller_polish_test 22/22 (hint names, layout switch, remap\ncapture, rumble, board hints, OSK hints, the wiki page, 1280x800 without\noverflow). Earlier controller tests and inputs_test still pass.\n\n\n* Controller: unplugging hides the board reticle and the menu focus ring\n\nThe board's gold reticle (and the card's hover lift) and padnav's focus\nring stayed up after the controller was unplugged, until the mouse moved.\nNow, once the last pad is gone (checked per frame, so a second pad still\nin use keeps them), padboard hides the reticle, hint bar and end-turn bar,\ndrops the hover and cancels a pending Start hold; padnav drops the ring and\nthe hover it was showing. Focus is remembered: a press on the reconnected\npad shows it again where it was.\n\npadboard_test 26/26 and padnav_test 29/29 (both gained unplug/replug\nchecks; each fails on the old code).\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "8312471",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Controller support, phase 4: playing a Battlecards match on a controller (#597)",
+			"body": "battlecards/padboard.js gives the Three.js board its own focus (signed-in\nplayers): every visible card - your hand, both boards, lands, artifacts,\nwalkers - plus your hero panel and the enemy heroes, navigated spatially by\nscreen position; LB/RB jump hand / your side / the enemy. The focused card\ntakes the game's own hover (lift, zoom, tooltip) under a gold reticle.\n\nIt drives the game through the paths a mouse already ends in:\n- a hand creature/location enters SLOT PICK: left/right move the game's\n  own green place marker, confirm calls releasePlay() - the function every\n  drag-and-drop ends in, so adventure/trade/magnetic/targeted routing is\n  unchanged. Other hand cards go through releasePlay the same way.\n- anything on the board: a replayed quick click at its screen position\n  (arming an attack, a land, an artifact's menu - the game's own routing).\n- TARGETING (a pending spell/power, an armed attacker): focus visits only\n  the legal targets and the red arrow follows it; confirm commits\n  (commitPending / panelClick / the attack click), cancel = clearModes.\n- top face = hero power (the orb), left face = inspect, and END TURN is a\n  0.6s Start hold with a fill bar, so a stray tap can't end your turn.\n\npadnav.js exports openModal() and a board guard: the board owns the pad\nwhenever no modal is open, padnav handles the modals (so choose-one /\ndiscover menus mid-play just work). game.js hands padboard a small API\n(state, cardOf, screen positions, releasePlay, commitPending, ...).\n\npadboard_test 23/23 (slot placement, Fireball targeting over legal targets\nonly, attack arm/cancel/commit on the hero, inspect, the Start hold vs a\ntap, the modal hand-off, the mouse hiding the reticle); fails without the\ngame.js wiring. padnav_test 26/26; decision_modal, targeting_commit,\nhandcard_drag, modal_tip_persist smokes pass.",
+			"cards": []
+		},
+		{
+			"sha": "ebb5a6a",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Controller support, phase 3: Battlecards menus and screens (padnav.js) (#596)",
+			"body": "A spatial navigator for every DOM screen, signed-in players only: every\nvisible, clickable stop on the top layer is reachable with the d-pad; focus\nshows a hover (tooltips, card zoom) and a gold ring that hides as soon as\nthe mouse moves. Loaded from nav.js (deck, packs, gallery, the match) and\ndirectly on the lobby and replays pages.\n\n- Activation replays a real mouse click (pointerdown, mousedown, pointerup,\n  mouseup, click). The in-match modals listen on pointerdown and stop it;\n  switching ~45 handlers to click would have let the page-wide pointerdown\n  handler close menus first. Every mouse/touch path is untouched.\n- An open modal scopes focus to itself: the game's containers (#scry-modal,\n  #walker-menu, #inspect, #dungeon-overlay, aria-modal), with a large fixed\n  overlay as the fallback, so the top bar can't steal a decision's focus.\n- A press after the page changed under focus only SHOWS the new focus; it\n  never acts on an element the player hasn't seen highlighted.\n- Text fields open the phase-2 on-screen keyboard; dropdowns cycle.\n- Cancel = Esc (back/close), LB/RB = Left/Right (pages, replay steps),\n  Start = Space (open a pack, play/pause). Stands aside for the keyboard.\n- Mulligan cells get tabIndex 0 (also a keyboard Tab stop).\n\npadnav_test 26/26 (mulligan and a two-step forced discard on pointerdown-\nonly handlers, a dungeon overlay, the deck builder's field and dropdown,\nthe mouse hiding the ring, and the signed-in rule). Battlecards smokes:\ndecision_modal, handcard_drag, modal_tip_persist, pack_drag, deck_craft,\ndeck_codes all pass; targeting_commit passed 4 of 5 runs (it also passes on\nmain; the one failed run was in a back-to-back batch).",
+			"cards": []
+		},
+		{
+			"sha": "1b8a84e",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Controller support, phase 2: the on-screen keyboard replaces prompt() (#595)",
+			"body": "* Controller support, phase 2: the on-screen keyboard replaces prompt()\n\nsite/osk.js askText() keeps prompt()'s contract (the text, or null on\ncancel) but is the game's own dialog: a real input (type, paste, Enter,\nEscape), tappable keys that keep focus in the field, and - for signed-in\nplayers - the controller (Nintendo layout: the d-pad walks the keys, the\nright face button presses one, the bottom one deletes and closes an empty\nfield, Start is OK, top = space, left = shift).\n\nIt replaces every text-entry prompt(): the nickname/Name Rater rename, a\nfriend code (6-letter code keyboard), PC storage search, and Battlecards'\npasted deck code and replay code. The clipboard \"Copy this link\" fallbacks\nare display, not entry, and stay.\n\nWhile it is up the game stands aside: typingInChat() includes oskOpen(),\nso the overworld's keyboard and controller handlers both ignore input.\n\nosk_test 17/17 (typing, Escape, tapping, the controller, the game ignoring\nkeys, the friend-code cap, and no prompt() left); the rename checks fail on\nthe old code. upscale6's PC search now types into the real keyboard.\n\n\n* upscale6_test: pin the dice for the Quick/Wide Guard battle (Tackle-miss flake)\n\nTackle is 95% accurate, so 'a normal-priority move walks through' (and the\nfoe's single-target Tackle after it) missed ~1 run in 20; it flaked in two\nstraight gates. Math.random is pinned for that battle and restored after.\n12/12 runs pass.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "f344795",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Controller support, phase 1: the overworld and Pokémon battles (#594)",
+			"body": "* Controller support, phase 1: the overworld and Pokemon battles\n\noverworld/ow_gamepad.js feeds the two entry points every input already\nuses, exactly like the touch d-pad: the stick/d-pad walk via heldKeys (the\npad's own slot, re-asserted each frame so a keyboard keyup can't cancel\nit), and every button goes through pressKey() with the keyboard's key\nnames, so menus, dialogs and battles never know a controller exists.\n\nOwner's calls:\n- Signed-in players only: it starts once the account loads with a\n  username; otherwise a pad says \"Sign in to play with a controller\".\n- Nintendo layout is the standard: the right face button confirms, the\n  bottom one cancels (and held, runs). site/gamepad.js `layout` replaces\n  swapAB; 'xbox' remains an option.\n\nAlso:\n- Letter-only shortcuts on buttons, per screen (contextKey): battle\n  rethrow/swap, PC sort/side/release/paging, dex filters/grid/region,\n  trainer-card share, shop buy/sell, bike on the overworld.\n- Tap-only features get keys (keyboard players too): T takes a held item,\n  the summary's move cursor + Z reorders moves, L moves to the lead, and\n  Z advances a PvP animation.\n- Keyboard stuck-key fix: blur / a hidden tab let go of held arrows and run.\n- The touch HUD steps aside while a pad is connected and returns on touch.\n- A pad press tries to start the music; if the browser refuses (a pad is\n  not a user gesture) the HUD asks for one click/tap.\n- PokeChess routes keys through chessKey() and takes the pad (signed in).\n\now_gamepad_test 31/31 (fake pads through the real poller); the signed-in\nchecks fail without the wiring. gamepad_core_test 33/33.\n\n\n* summarymoveswap_test: allow the move cursor layer between swap-cancel and close\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "00421e1",
+			"date": "2026-09-27",
+			"kind": "patch",
+			"title": "Extract the screen fade into ow_fade.js (#591)",
+			"body": "fadeTo(), the fade state the renderer draws, fading() and the\nreduced-motion flag move out of main.js (991 -> 973 lines); ow_loop,\now_menukeys, ow_render and ow_transitions import them directly. The loop\nwatchdog counters beside it stay with main's load-time state.",
+			"cards": []
+		},
+		{
+			"sha": "92c1e4e",
+			"date": "2026-09-27",
+			"kind": "patch",
+			"title": "Extract the postgame arc guidance into ow_postgame.js (#590)",
+			"body": "JohKanto's gym list, the legendary hunt's counter and rumors, and the\npostgame objective / quest-log rows move out of main.js (1,032 -> 991\nlines); ow_menus and ow_follower import them directly.",
+			"cards": []
+		},
+		{
+			"sha": "791bfd3",
+			"date": "2026-09-27",
+			"kind": "patch",
+			"title": "Cloud save: the conflict stash is local-only and one save deep (ow too large) (#589)",
+			"body": "* Cloud save: the conflict stash is local-only and one save deep\n\nPlaytest 2026-09-27 (instinctloretest0918): every push failed with 'ow too\nlarge'. magepunk_ow_conflict synced with the save, so each preserved remote\ncopy already carried the previous stash: 12K -> 49K -> 90K -> 147K -> 235K\n-> 383K -> 652K chars, nested six deep, until the snapshot passed the\nserver's 1,000,000-byte limit and every push was refused.\n\n- The stash (and a new archive key) are local-only: no longer in OW_KEYS,\n  so no synced snapshot can carry one. owBody() compares only OW_KEYS, so a\n  remote that differs only by a legacy stash reads as the same game.\n- stashConflict() stores the losing copy without any stash of its own.\n- Migration: a pre-fix nested stash is archived whole to\n  magepunk_ow_conflict_archive (local-only, cleared by reset, included in\n  export) and only then flattened to its newest level.\n- pushOw() checks the snapshot against the limit before sending: an\n  oversize save is not sent, is logged (push.oversize) with its heaviest\n  keys, burns no revision, and the player is told once to export a backup.\n\nowconflict_test 29/29 (20 fail without the fix, reproducing the nesting,\nthe growth, and the refused pushes); owsync/owreset/boot_smoke pass.\n\n\n* savesafety_test: the synced key list excludes the local-only conflict stash\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "f188002",
+			"date": "2026-09-27",
+			"kind": "patch",
+			"title": "Rock Tunnel is FireRed's map again; doors never land in the void (#588)",
+			"body": "* Rock Tunnel is FireRed's map again; a door never lands in the void\n\nPlaytest 2026-09-26: Route 10's south door into Rock Tunnel put the player\nat (18,37) of a 30x36 map, outside it with every neighbour void and no way\nout. Crystal's Rock Tunnel shares FireRed's layout ids, so the\ncrystal_native build overwrote LAYOUT_ROCK_TUNNEL_1F/_B1F (48x40 upstream)\nwhile RockTunnel_1F/_B1F kept FireRed's events. They are the only two\nFRLG/Emerald maps affected.\n\ntools/restore_frlg_layouts.py rebuilds any FRLG/Emerald layout that is\ncrystal_native from the decomp's map.bin/border.bin (the raw values every\nhealthy layout stores). Data is deployed to magepunk-owdata.\n\nwarpTo() now refuses a landing with no walkable way into the map (upstream\nedge doors one row past the border, like the Safari rest houses, still\nwork) and returns the player through the door they used.\n\n\n* Rock Tunnel's postgame legendaries stand on FireRed's real floor\n\nYVELTAL (1F) and XERNEAS (B1F) were placed on tiles of the Crystal 30x36\nlayout that had replaced Rock Tunnel's; on the restored 48x40 FireRed\nlayout those tiles are solid. They move to each floor's deepest reachable\ntile, (34,19) and (1,38), matching the other placements' intent.\n\n\n* brains_test: build test mons from a fixed seed (route-trainer flake)\n\nThe scoring asserts compare close scores (a route trainer's 0.6x-scaled\nstatus line, 51, vs a weak neutral hit, 60), and buildMon's random\nIVs/nature sometimes flipped them: 1 in 5 runs failed 'a route trainer\nprefers the damage line'. mk() now seeds Math.random while it builds and\nclears the held item. 35/35 runs pass.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "b38e042",
+			"date": "2026-09-26",
+			"kind": "patch",
+			"title": "Mart status cures, talk across counters, double-battle couples are one trainer; resumable gate (#587)",
+			"body": "* Marts sell the status cures; a battle-bag cure clears Toxic's counter\n\nPlaytest 2026-09-26: a full-party Koga attempt blacked out to Toxic with\nno cure in the bag and $394. ANTIDOTE, PARLYZ HEAL, AWAKENING, BURN HEAL,\nICE HEAL and FULL HEAL were defined and working but in no Mart's stock;\nthe only buyable answer was a $500 LUM BERRY. They join the shared\nSHOP_STOCK at their Gen-3 prices (owner's call: every Mart).\n\nThe battle bag's cure branch cleared the status but left badPsn/toxicN,\nso a later plain poison would escalate like Toxic; every other cure path\nalready cleared them.\n\n\n* Talk to clerks across counters (Celadon, Goldenrod, Lilycove)\n\nPlaytest 2026-09-26: the Celadon Dept. Store clerks on 2F/4F/5F could not\nbe spoken to. Each stands behind a counter tile; the GBA's\nfield_control_avatar.c looks one tile further when the faced tile is a\ncounter (MB_COUNTER 0x80, FRLG and Emerald), and interact() only ever\nchecked the faced tile. It now does the same. Lilycove's clerks had the\nsame gap.\n\nThe native Crystal tilesets carried no counter behavior (the builder's\ntable only knew grass and ledges), so Goldenrod's clerks stayed\nunreachable. tools/crystal_counters.py reads each Crystal map's .blk +\ncollision.asm and stamps 0x80 on COUNTER cells' metatiles, cloning any\nmetatile a wall also uses (45 stamped, 13 cloned, 833 cells; data is\ndeployed to magepunk-owdata).\n\ncounters_test sweeps every Celadon/Goldenrod/Lilycove floor: every NPC is\ntalkable from the stair landing's side, across-counter clerks answer\ninteract(), and an NPC behind a plain wall stays unreachable.\n\n\n* A double-battle couple is one trainer (Route 12 Gia & Jes paid twice)\n\nPlaytest 2026-09-26: Route 12's Young Couple GIA & JES were beaten from\nGia, then Jes started the same fight again and paid a second $192. Both\nscripts battle TRAINER_YOUNG_COUPLE_GIA_JES and the GBA flags defeat by\nthat id; the port keyed defeat per event script, and trainers.json has no\ntrainer ids to join them.\n\ntools/gen_trainer_pairs.py reads every trainerbattle in the FRLG and\nEmerald decomps and writes overworld/trainer_pairs.js: the 73 event\nscripts that battle one of 37 shared trainers from different NPCs on a map\n(couples, twins, Gabby & Ty, Tate & Liza; facility placeholders skipped).\ntrainers.js: a win marks every partner, any partner's key reads the group\nbeaten, and the VS Seeker re-arms them together. Keys are unchanged, so a\nsave holding only the partner it was fought from now reads the pair as\nbeaten with no save edit.\n\n\n* Gate: resumable — passes are recorded per code stamp; --resume skips them\n\nA gate the OS reaped for memory lost every suite it had finished. Each\npass is now written to .gate-progress.json (gitignored) at once, stamped\nwith HEAD + the uncommitted diff + untracked source names; --resume skips\nsuites that already passed on the same stamp. Any code change resets it.\n\n\n* Gate: print how many suites --resume skipped\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "ba77015",
+			"date": "2026-09-26",
+			"kind": "patch",
+			"title": "Extract cutscenes into ow_cutscenes.js (#586)",
+			"body": "cutsceneCtx (the script-runner context) and npcById move out of main.js\n(1,183 -> 1,032 lines); ow_input/ow_scaling/ow_story import them directly.",
+			"cards": []
+		},
+		{
+			"sha": "5ae6f84",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "Extract map transitions into ow_transitions.js (#585)",
+			"body": "* Extract map transitions into ow_transitions.js\n\nmoveToMap/warpTo/flyTo, per-map script loading and Fly points move out\nof main.js (1,433 -> 1,183 lines). strengthHinted and mapStrings move\nonto S; importers now name ow_transitions.js directly; sail_test reads\noverworldSource().\n\n\n* Tests: frem_objectflags reads overworldSource(); breeding parents never roll shiny\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "c714d9f",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "Tiles use the shared BG palettes (Route 115 black terrain) (#584)",
+			"body": "Each tileset sheet's 16 bands were coloured with that tileset's own\npalettes, but the GBA shares BG palettes: the primary supplies 0-5\n(FRLG 0-6) and the secondary 6-12. Fallarbor draws General tiles with\npalette 11, and General's own 11 is all zeros, so Route 115's northern\nterrain came out opaque black (151 layouts use primary tiles with a\nsecondary palette; 321 the reverse, subtly mis-coloured).\n\ntools/gen_tile_palettes.py exports each decomp tileset's colour indices\nand palettes (<stem>_pal.json + pal_index.json, deployed with the data);\nengine.js repaints the cross-tileset bands once per primary/secondary\npair. Crystal-sourced sheets have no palette file and are unchanged.",
+			"cards": []
+		},
+		{
+			"sha": "46c3c79",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "Givers honour the gym badge they promise (Squirtbottle after Whitney) (#583)",
+			"body": "Playtest 2026-09-25: Whitney beaten (Johto 3: Zephyr, Hive, Plain), but the\nGoldenrod florist still said \"Come back once you've beaten WHITNEY\": no\nSQUIRTBOTTLE, so Sudowoodo blocked Route 36. Her prereq { badge: 3 } was\nchecked against globalTier(), the shared corridor tier, which that save's\nHoenn 3 / Kanto 2 badges read as 2.\n\n- condMet: new { gymBadge: [region, id] } condition = Badges.has(region, id).\n  The region is named, not inferred: blockers' region() falls back to the\n  STARTING region off JohKanto (the reporter started in Kanto).\n- the florist: { gymBadge: ['JOHTO', 'plain'] }. Audit of the other givers:\n  Steven's DEVON SCOPE had the same mismatch ({ badge: 5 }), now\n  { gymBadge: ['HOENN', 'balance'] }. Mr. Fuji's is a story flag, fine.\n- Corridor gates keep the global tier, as designed.\n- blockers_test's progression model reads gymBadge as that badge's position\n  in its region (PLAIN = Johto 3), so Ecruteak still gates at 3.\n\ngivers_test: the reporter's uneven badges get the SQUIRTBOTTLE; the grant is\none-shot and survives a reload; Sudowoodo no longer bars the tile; before\nWhitney she waits however many other badges you hold; Steven follows the\nBALANCE BADGE both ways. 9/9; 5 fail with the fix reverted, with the exact\nreported dialogue.",
+			"cards": []
+		},
+		{
+			"sha": "625305f",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "setmetatile: resolve the scripts' tile names (every scripted tile edit wrote void) (#582)",
+			"body": "Playtest 2026-09-25: Vermilion Gym, both switches found (the flag is set, as\nin FireRed, from an earlier visit), but the beam stays shut and Lt. Surge is\nunreachable.\n\nEvery one of the 1,098 `setmetatile` ops in the transpiled scripts names its\ntile the decomp way (\"METATILE_VermilionGym_Floor\"). World.setMetatile did\n`tile & 0x3FF`; a string ANDed with a number is 0, the engine's \"outside the\nmap\" metatile, never walkable. So every scripted door, wall and gym puzzle\nacross 95 maps (288 distinct tiles) \"opened\" into impassable void. The gym's\nON_LOAD re-opening the beams from the flag did exactly that.\n\n- tools/gen_metatile_labels.mjs -> overworld/metatile_labels.js: the names the\n  scripts use, as the decomps' own ids (include/constants/metatile_labels.h).\n  All 288 resolve. The 3 names FireRed and Emerald define differently resolve\n  per map by source game; only Seafoam B4F's CalmWater is affected.\n- World.setMetatile resolves a string tile, and REFUSES an unknown name (logs,\n  leaves the tile) instead of writing void.\nStrictly safer than before: 0 was always impassable, so edits that close\nsomething stay closed, and edits that open something now actually open.\n\nTests:\n- gympuzzles now checks the TILES, not just the flag: the beams become\n  walkable floor after the switches, Surge becomes reachable, and on\n  re-entry with both switches already found (the reported state) the beams\n  are open on load. 4 of those fail on the old engine, with tile 0 exactly\n  as reported.\n- metatiles_test: every scripted tile name resolves to a real metatile (a\n  re-transpile adding one fails the gate), plus spot values and the\n  per-game conflict.",
+			"cards": []
+		},
+		{
+			"sha": "c8f53c3",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.10: music, battle resume, menu state move out (1,905 -> 1,433) (#581)",
+			"body": "- ow_music.js: background music, plus the service-counter menus that\n  followed it in main.js (DAY CARE, NAME RATER, move deleter, the multi-battle\n  party picker, the town map, the options keys).\n- ow_battleresume.js: the battle snapshot and the resume endings. Its\n  pagehide/beforeunload listeners still register before the save-sync push\n  (which registers in boot): same order as before.\n- ow_menustate.js: the menus' state objects, the service-map tables + MOM,\n  and the water animation. The \"water animation\" header covered all of it, so\n  the module is named for its bulk.\n\nextract_block redirected the imports of moved names across ten modules.\nbgm / levelcap / orphan_scripts read overworldSource().",
+			"cards": []
+		},
+		{
+			"sha": "a7979c1",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "Meteor Falls: keep the rested scene's outcomes, so the Route 112 guards leave (#580)",
+			"body": "Playtest 2026-09-25 (rev 8446): the Hoenn road to Mt. Chimney / Lavaridge is\nblocked. STORY_SEED keeps the Meteor Falls meteorite-theft scene rested\n(VAR_METEOR_FALLS_STATE = 1, because its full script is unsafe on a free-roam\nsave), but that scene was the only thing that set FLAG_HIDE_ROUTE_112_TEAM_MAGMA.\nThe two Magma grunts guarding the Route 112 cable car never left, and their\ntiles are the only approach to the station.\n\n- RESTED_SCENE_OUTCOMES (ow_story.js): on entering a rested scene's map, apply\n  just its lasting outcomes, not its choreography. For Meteor Falls: the\n  thieves' and Archie's party's hide flags, FLAG_HIDE_ROUTE_112_TEAM_MAGMA,\n  FLAG_MET_ARCHIE_METEOR_FALLS and FLAG_HIDE_FALLARBOR_TOWN_BATTLE_TENT_SCOTT.\n  You can't reach Meteor Falls without the scene's trigger, so arriving is when\n  it would have played. Idempotent; the scene var and cutscene stay rested; a\n  save where the scene is live (var 0) is left alone. Mt. Chimney's own\n  Magma/Aqua objects ride FLAG_HIDE_MT_CHIMNEY_*, which this never touches.\n- SAVE_REPAIRS: saves that already went through (FLAG_MET_PROF_COZMO, met inside\n  Meteor Falls) get the same outcomes once at boot.\n\nmeteorfalls_test: an old save is repaired and walks the real path into the\nstation; a new save's guards stand until Meteor Falls, then leave; the thieves\nleave the cave; outcomes survive a reload; the scene var is untouched; var 0\napplies nothing; Mt. Chimney untouched. 14/14; 7 fail with the fix reverted.\nAlso checked against the tester's own save (rev 8462, read-only copy, local):\nrepaired at boot, guards gone, 6 steps into the cable-car station.",
+			"cards": []
+		},
+		{
+			"sha": "23e57d6",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.9: progression, places, follower, game corner, scaling — main.js under 2,000 (#578)",
+			"body": "Five more sections cut and pasted out; main.js goes from 3,253 to 1,905\nlines (from 10,839 at the start of the split), under the plan's target.\n- ow_progression.js: the sealed champions, badges + the E4 gate + the crown,\n  cross-region tier rewards, the Grand Champion finale, level curve, level cap.\n- ow_scaling.js: postgame level scaling and alternate forms.\n- ow_gamecorner.js: Voltorb Flip, coins and prizes.\n- ow_places.js: blacking out + heal points, the Safari Game, museum\n  paintings, ruins words, fossils, New Mauville.\n- ow_follower.js: the follower, plus the legendary triggers, rift wilds, dex\n  milestones, map weather and the battle backdrop that shared its stretch.\n\nextract_block's REVIEW list caught two ranges that swept in top-level code\nsitting before the next header: initTouchHud(); (would have reintroduced the\n#577 touch-HUD bug) and evolution.onDone/onEvolved + S.loading = true. Both\nare back in main.js at their original spots.\n\njohkanto_league / johkanto_wilds / prizemoney / safari / stragglers read\noverworldSource(); prizemoney's \"no caller re-credits a prize\" now scans every\nmodule, the scope it always meant.",
+			"cards": []
+		},
+		{
+			"sha": "465d466",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.8: the frame loop and keyboard input move out (#577)",
+			"body": "* main.js split, phase 3.8: the frame loop and keyboard input move out\n\n- ow_loop.js (380 lines): the frame loop (tick) and the touch HUD.\n- ow_input.js (364 lines): keyboard input, the movement gates, the run button,\n  and the repel/gadget helpers input drives.\n- ow_keybinds.js (38 lines): remappable key bindings.\nmain.js goes from 4,020 to 3,251 lines.\n\n- The loop's eleven watchdog lets, plus runHeld, keyBinds and\n  factoryStandalone, moved onto S first. codemod_state rewrote the importers\n  of the exported ones (ow_frontier, ow_loop, ow_menus).\n- extract_block REFUSED the touch-controls + input-diagnostics block: its top\n  level calls fitCanvas()/owlog() while loading, and fitCanvas reads main.js\n  lets (SCALE) that don't exist yet at that point. It stays in main.js.\n- inputfreeze / inputs / momwater / signshadow read overworldSource().\n\n\n* Touch HUD: install its observer where it always ran (the split regression)\n\nThe gate caught it: mobile_test failed twice — the touch HUD painted neither\nthe status message nor the objective. The HUD's MutationObserver setup was a\ntop-level `if (document.body.classList.contains('touch'))` in the moved block.\nAs its own module (ow_loop.js) it ran at LOAD, before main.js had marked the\nbody 'touch', so the observer was never installed.\n\nIt's now initTouchHud(), called from main.js exactly where the code used to\nrun (just before boot): mobile_test 3/3.\n\nextract_block now lists every top-level statement in a moved block that runs\nat load (not a declaration) for review. Its TDZ refusal only covers main.js\nbindings; page state like a body class is invisible to it. An audit of all\nthe existing ow_*.js modules found no other case: the player.on* handlers are\neach assigned once, and the input key listeners still register before main's\ndispatcher, as they always did.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "57d37fd",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.7: rendering, world features, legendaries, field moves, screens (#576)",
+			"body": "Five more sections cut and pasted out; main.js goes from 6,018 to 4,020 lines.\n- ow_render.js: camera, unlit caves, day/night tint, step ambience, the area\n  banner and weather. The frame loop (tick) stays: it writes a dozen\n  input-watchdog lets owned by the input code and belongs with it.\n- ow_features.js: Secret Bases, async friend trades, Shoal Cave tides,\n  roaming legendaries, the Johto RADIO.\n- ow_legendaries.js: static legendaries and the Hoenn awakening chain.\n- ow_fieldmoves.js: Mach Bike, Silph doors, the glass workshop, Dive, HM moves.\n- ow_screens.js: the START-menu screens and service counters (the \"in-game NPC\n  trades\" section held far more than trades, so it's named for its contents).\n\n- repelSteps, strengthActive, baseCtx and radioTune moved onto S.\n  codemod_state now handles an EXPORTED let too: drops the `export` and\n  rewrites each split module that imported it to read S.x (ow_menukeys).\n- extract_block redirected imports across ow_features / ow_menus /\n  ow_menukeys / ow_pvp / ow_saves / ow_story.\n- Nine source-reading tests switched to overworldSource(); savesafety's\n  repel check accepts S.repelSteps.",
+			"cards": []
+		},
+		{
+			"sha": "3995965",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.6: the story layer moves to ow_story.js (#575)",
+			"body": "* main.js split, phase 3.6: the story layer moves to ow_story.js\n\nMap-script triggers, runScriptLabel / runSpecial and the ported decomp\nscripts, scripted battles, the Space Center multi battle, the Johto gift\nPOKeMON, the Fork B campaign open, villain arcs and the recurring rival (971\nlines) are cut and pasted into ow_story.js. main.js goes from 6,979 to 6,018\nlines.\n\n- lastTalkedNpc and multiPicks were assigned across the boundary, so they\n  moved onto S first (codemod_state).\n- extract_block redirected ow_menus / ow_menukeys imports of moved names.\n- intro_regions, objref, postbattle, script_constants and upscale4 read\n  overworldSource().\n\n\n* mapedit_places_test: wait for the warp-target list to fill (the flake)\n\nThe editor's map datalist fills asynchronously from the map index after the\neditor mounts; the test counted it immediately and read 0 about 1 run in 4\n('every map id is offered as a warp target'). It now waits for the list: 8/8.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "e679b11",
+			"date": "2026-09-25",
+			"kind": "patch",
+			"title": "main.js split, phase 3.5: side venues and minigames move out (#574)",
+			"body": "- ow_venues.js (584 lines): the Bug-Catching Contest, the Trick House, the\n  Ruins of Alph sliding puzzles and UNOWN DEX, and Pokémon Contests with the\n  berry blender.\n- ow_minigames.js (226 lines): Trainer Hill and the Game Corner slots.\nmain.js goes from 7,775 to 6,979 lines.\n\n- hillRun was assigned from outside its block (the test hook's setter), so it\n  moved onto S first (codemod_state).\n- extract_block redirected ow_menus / ow_menukeys imports of moved names to\n  the new modules.\n- contest / hill / venues / venues2 / whiteout tests read overworldSource().",
+			"cards": []
+		},
+		{
+			"sha": "c7db478",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 3.4: Battle Frontier and the menu input layer move out (#572)",
+			"body": "- ow_frontier.js: the seven facilities, challenge runs/streaks, the Factory\n  spectator publish and the end-of-run flow (160 lines). recordHallOfFame,\n  shared with the League, stays in main.js.\n- ow_menukeys.js: the menus' input layer (782 lines) — the key router\n  pressKey, menuBlocking / canvasMenuOpen, and the bag / PC / shop /\n  BP-exchange / ferry / portal / starter key handlers. The drawing side is\n  ow_menus.js.\nmain.js goes from 8,688 to 7,775 lines.\n\n- fluteState was assigned from inside the block, so it moved onto S first.\n- extract_block redirected ow_frontier / ow_menus / ow_pvp imports of moved\n  names straight to the new modules (no re-exports).\n- Source-reading tests switched to overworldSource(): battleresume,\n  brokenevents, crystal_items, forms, scriptedbattle_keys (its gate-order check\n  now scoped to the pressKey body). split_drift ignores MIME-type strings.",
+			"cards": []
+		},
+		{
+			"sha": "e3801ea",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "Poll the backend far less: hidden tabs silent, idle tabs slow, failures back off (#571)",
+			"body": "* Poll the backend far less: hidden tabs silent, idle tabs slow, failures back off\n\nEvery /api/mp call is a Cloudflare function request; the free plan allows\n100,000 a day. The account used 140,654 / 125,430 / 129,952 on Sept 22-24,\nand past the limit Cloudflare stops running the function: logins, saves and\nmultiplayer answered 405 for the rest of each day. The load was a flat\n5-6k/hour from clients polling around the clock:\n- overworld presence ('friends') every ~1.4s and challenges every 2s:\n  ~4,000 calls/hour per open tab;\n- the site top bar (every page) 4 calls every 12s, hidden or not: ~1,200/hour.\n\nNow:\n- hidden tabs make no calls (overworld loops, mail refresh, top bar); coming\n  back into view catches up at once;\n- presence is fast only while a friend shares the map or you're visiting,\n  ~10s with a friend online elsewhere, 30s otherwise; challenges every 10s,\n  2s only while waiting on a sent challenge;\n- the top bar polls every 30s;\n- failures back off x2 per consecutive failure (overworld up to 60s, top\n  bar up to 5 min).\n\npollcadence_test counts real calls against a mock backend: an idle minute is\n19 calls (was ~93), a hidden tab 0, a co-located friend still gets the fast\ncadence, a failing backend is backed off.\n\n\n* upscale5_test: accept the hidden-tab-aware mail refresh\n\nThe check matched setInterval(refreshMail, 120000) literally; the refresh is\nnow wrapped so a hidden tab skips it. A visible tab still refreshes the MAIL\nbadge every 2 minutes.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "9bd3eba",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "Map connections: keep every one, not one per side (the Route 112 block) (#570)",
+			"body": "Playtest: \"Route 111 is fully exhausted now, so Hoenn is hard-blocked on the\nRt112 connection defect.\"\n\nWorld kept connections in an object keyed by direction, so a map with two\nconnections on one side kept only whichever finished loading LAST (they load\nconcurrently). Route 111's west edge meets Route 113 (offset 0) AND Route 112\n(offset 20): on the tester's save Route 113 won, and Route 112 could not be\nentered from Route 111. Reproduced on that save (rev 8200) and confirmed by\nthe connection list (left: Route113@0 only). The same race cut Route 124 off\nfrom Route 125 or Mossdeep City, and Six Island's Water Path kept one of its\nthree west connections (plus the Hoenn2 copies).\n\nWorld.connections is now a list of { dir, ...bundle, offset }, in map order,\nreset before the loads as before; gridAt / connectionAt / the renderer iterate\nit. connections_test loads every multi-connection map 4x and checks each\nneighbour owns its edge, then walks both Route 111 -> 112 crossings and the\n111 -> 113 one: 10/10; the old engine fails 6 (different ones per load).",
+			"cards": []
+		},
+		{
+			"sha": "7af54a3",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "Wild encounters fire at the source game's rate (Hoenn/Kanto were 1.8x) (#569)",
+			"body": "* Wild encounters fire at the source game's rate (Hoenn/Kanto were 1.8x)\n\nPlaytest: \"wild encounters roll rate/100 per grass step — on Rt111 that's 10%\nvs vanilla's ~5.6%, so ~1.8x the encounter rate.\"\n\nThe two generations store the rate on different scales:\n  gen 3 (Emerald/FRLG wild_encounter.c): Random() % 2880 < rate*16 -> rate/180\n  Crystal (wildmons.asm, `db N percent`): Random() < rate          -> rate/100\nencounters.js rolled rate/100 for every map. encounterChance(mapId, rate) now\napplies the right scale; the step roll and Rock Smash both use it. Johto and\nJohKanto (Crystal) and the port-authored postgame rates are unchanged.\n\ntools/gen_encounter_games.mjs bakes the 114 Crystal-sourced encounter maps\ninto overworld/encounter_games.js (decomp map constants, minus the 10 ids FRLG\nalso has — their data is FRLG's). encounterrate_test: the formulas per game,\nthe classification, and a 200k-step roll measuring ~5.6% on Route 111.\n\n\n* inertsystems_test: its always-encounter fixture is rate 180 on the gen-3 scale\n\nThe repel check's fake map used rate 100 to mean 'every step' - true only on\nthe old rate/100 roll. On the corrected gen-3 scale 100 is 55% (21/40 in the\ngate). 180 is every step.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "e46c45a",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 3.3: the overworld save moves to ow_saves.js (#568)",
+			"body": "Server-authoritative save sync (hydrate / push / revision / instrumentation),\nachievements sync, gifts and the OPTIONS save-data actions (383 lines) are\ncut and pasted into ow_saves.js; main.js goes from 9,070 to 8,688 lines. The\nstarter-pick / intro functions at the end of that stretch stay in main.js\nfor the intro module.\n\n- extract_block redirected ow_menus.js's imports of restoreBackup /\n  runSaveAction to ow_saves.js (no re-exports; CI's import lint stays happy).\n- split_drift.mjs only considers tests that actually read the source, and\n  ignores bare identifier-like strings (localStorage keys, mock-server\n  actions): 46 false alarms down to the 2 real ones. owsync and savesafety now\n  read overworldSource().",
+			"cards": []
+		},
+		{
+			"sha": "5a36839",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 3.2: PvP, async matches, trades and presence move to ow_pvp.js (#567)",
+			"body": "* main.js split, phase 3.2: PvP, async matches, trades and presence move to ow_pvp.js\n\nLive PvP battles, the async-match mailbox, card-trade offers and multiplayer\npresence / world-visiting (559 lines) are cut and pasted into ow_pvp.js;\nmain.js goes from 9,618 to 9,070 lines.\n\n- mailWaiting was assigned from inside the block (an import can't be), so it\n  moved onto S first (codemod_state).\n- extract_block.mjs: declarations an earlier extraction already exported keep\n  their single `export`, and a moved one that another split module imports\n  from main.js is re-exported by main.js (shopStockNow, used by ow_menus.js).\n- undef_test now also checks every relative import against its module's\n  exports: a missing one is a load-time link error no-undef can't see. It\n  caught a planted misspelling from both sides.\n- tools/split_drift.mjs finds source-reading tests whose literals no longer\n  match; storyarcs / upscale5 / writebudget switched to overworldSource().\n\n\n* ow_menus imports shopStockNow from ow_pvp.js directly (no re-export)\n\nCI's overworld_imports_test assumes a plain ESM subset with no re-exports, and\nfailed on main.js's 'export { shopStockNow } from ./ow_pvp.js'. ow_menus.js now\nimports it from ow_pvp.js directly, and extract_block.mjs redirects such\nimports itself instead of re-exporting.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "796e0ea",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 3.1: the full-resolution menus move to ow_menus.js (#565)",
+			"body": "The drawing + tap layer of the canvas menus (party, bag, PC, dex, shops,\noptions, town map, ... 1,231 lines) is cut and pasted into ow_menus.js;\nmain.js goes from 10,839 to 9,618 lines. The menu STATE objects and key\nhandlers stay in main.js for now.\n\n- tools/split_deps.mjs reports a block's imports/exports/cross-boundary writes\n  (this one: 103 imports, 26 exports, 0 blockers).\n- tools/extract_block.mjs does the move: byte-identical code, generated\n  imports/exports. main.js's own declarations it needs are exported and\n  imported back (a safe cycle; it refuses blocks that would read main.js\n  bindings while loading).\n- overworld/tests/owsource.mjs: source-reading tests see main.js + all ow_*.js,\n  so a check follows the code when it moves. looseends / summarymoveswap /\n  upscale6 switched; every test literal re-checked, none else drift.",
+			"cards": []
+		},
+		{
+			"sha": "d928b00",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 2: shared mutable state moves onto S (ow_state.js) (#564)",
+			"body": "* main.js split, phase 2: shared mutable state moves onto S (ow_state.js)\n\nTen top-level lets used across 5+ sections (party, loading, menuUi, mpAccount,\nmapScripts, menuHover, friends, lastBattleOutcome, visiting, trainerTeams) now\nlive on the exported object S. ES module imports are read-only, so modules\nsplit out later could not otherwise reassign them.\n\ntools/codemod_state.mjs made the change with espree + eslint-scope: only\nreferences bound to the module-level variable were rewritten (479), never a\nshadowing parameter or local. Each `let x = init` became `S.x = init` in place,\nso evaluation order is unchanged; shorthand `{ loading }` expanded.\n\nwhiteout_test and sfx_test matched `healParty(party)` in main.js's source and\nnow accept S.party. Every regex/string literal in the 45 source-reading tests\nwas compared against old vs new main.js: no other drift.\n\n\n* deadmoves_test: clear held items between moves (the flake)\n\nA wild PIKACHU sometimes spawns holding an ORAN BERRY (battle.js rolls\nWILD_HELD). After Nature's Madness halved it 400 -> 200 the berry fired and put\n10 back, so the 'halves the target' / Counter / Mirror Coat / Bide checks\nfailed about 1 run in 15 on main as well. heal() now clears held items, as it\nalready did abilities: 25/25.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "4e76789",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 1: shared singletons move to ow_core.js (#563)",
+			"body": "* main.js split, phase 1: shared singletons move to ow_core.js\n\nscreen/sctx/hud and the 16 overworld singletons (world, player, npcs, battle,\ntrainers, dialog, cutscene, ...) are built in ow_core.js and imported by\nmain.js, so modules split out later can import them without a cycle back into\nmain.js. Cut and paste only. The constructors are side-effect free apart from\nTrainers/Items reading their own saved state, which nothing writes earlier.\n\n\n* stepfx_test: close a stray wild battle before each step (the flake)\n\nThe grass step can roll a wild encounter, and that battle then held the sand\nstep: 'stepping in deep sand leaves a footprint' failed with peak=0 and\nblockedBy:\"battle\" about 1 run in 10 (caught by new diagnostics, which stay).\nNow 12/12.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "a4164e9",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "main.js split, phase 0: the undefined-name safety net + plan (#562)",
+			"body": "Plans/MAIN_JS_SPLIT_PLAN.md: split the 10,853-line overworld/main.js into\nmodules, one reversible PR per phase.\n\nPhase 0 moves no code. A name left behind by a move only throws ReferenceError\nwhen that path runs, so the gate can pass while a rare branch is broken. Now:\n- tools/eslint.undef.config.mjs: ESLint no-undef over overworld/*.js, with\n  browser globals allowed minus confusable ones (main.js has its own `screen`,\n  which would silently become window.screen after a bad move).\n- overworld/tests/undef_test.mjs runs it in the gate, and the Tests workflow\n  runs it in CI (npm install; the lockfile is gitignored).\n- Baseline: 54 modules, 0 findings, after making the one genuine\n  browser-global use explicit (window.history in the factory-spectator exit).",
+			"cards": []
+		},
+		{
+			"sha": "ef2191e",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "In-game AI partner battles: Steven at the Space Center (#559)",
+			"body": "* WIP: in-game AI partner battles (Steven at the Space Center)\n\n* AI partner plan: status\n\n* Portrait doubles: stack the ally panel above the player's (it ran underneath and hid the HP numbers)",
+			"cards": []
+		},
+		{
+			"sha": "47e7f0d",
+			"date": "2026-09-24",
+			"kind": "patch",
+			"title": "Space Center multi battle + Johto gift specials; AI partner plan (#558)",
+			"body": "- DoSpecialTrainerBattle (SPECIAL_BATTLE_STEVEN): a double vs Maxie + Tabitha\n  from the decomp teams; a win runs the \"defeated\" branch instead of whiteout.\n  ChooseHalfPartyForBattle no longer loops Steven's prompt forever.\n- GiveDratini (with the Extremespeed set for a clean quiz; the transpile dropped\n  the givepoke), GiveOddEgg (seven babies, Dizzy Punch preset + shiny odds; the\n  native Day Care service no longer swallows the man's first talk), GiveShuckle /\n  ReturnShuckie with the daily ENGINE_GOT_SHUCKIE_TODAY flag.\n- tools/fix_johto_gifts.mjs rebuilds the flattened ManiasHouse script (its local\n  labels were never emitted, so each visit would lend another Shuckie).\n- Plans/AI_PARTNER_PLAN.md: Steven as a real AI teammate.\n- giftspecials_test: 15 assertions via interact(); 11 fail with the fix reverted.",
+			"cards": []
+		},
+		{
+			"sha": "d1ba522",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: scripted warps, gym puzzles, Wally, temp vars, script audit (#556)",
+			"body": "* Overworld: scripted warps, gym puzzles, Wally, temp vars, script audit\n\n1. SCRIPTED WARPS LAND WHERE THE DECOMP SAYS (215 ops)\n   Both transpilers kept only the first warp argument. The decomp macro takes\n   one arg = door, two = (x, y), three = door + (x, y); so `warp MAP, 13, 51`\n   shipped as \"door 13\" and warpTo fell back to door 0. Crystal's warp and\n   warpfacing always take (x, y), so every Johto scripted warp was affected.\n   tools/fix_script_warps.mjs restores x/y from the decomp source (0 ambiguous;\n   the 3 unmatched are hole drops, correct as-is), incl. Petalburg's VAR_ coords\n   and warpfacing's direction-as-map shape. warpTo honours a coordinate when no\n   real door is named. (Data change deploys to magepunk-owdata separately.)\n\n2. `.equ` ALIASES RESOLVED (148 fields, 18 files) via tools/fix_script_equ.mjs.\n   SWITCH1_ID / TRASH_CAN_ID / FOUND_FIRST_SWITCH etc. were stored literally.\n\n3. TEMP VARS CLEARED ON MAP LOAD, as ClearTempFieldEventData does. VAR_TEMP_0\n   junk from the Vermilion gym had disabled the Mauville switch coord triggers.\n\n4. GYM PUZZLES PORTED (gym_puzzles.js, from field_specials.c):\n   SetVermilionTrashCans, MauvilleGymPressSwitch / SetDefaultBarriers /\n   DeactivatePuzzle. ON_LOAD now runs for these two gyms only — game-wide it is\n   124 maps / 506 never-executed setmetatile ops and gets its own review.\n\n5. HIDEOBJ PERSISTS FLAG_HIDE_*, not just EVENT_*. pokeemerald's removeobject\n   FlagSets the object's flag; my earlier comment claiming FR/E scripts set it\n   explicitly was wrong, and Wally respawned on the only tile south of the\n   Mauville gym door. SAVE_REPAIRS restores his hide flags for existing saves.\n\n6. HealParty (Crystal's name) now heals; only HealPlayerParty was handled.\n\n7. tools/audit_events.mjs gains bad-warp-index, unknown-special, long-walk and\n   unresolved-obj — the classes that blocked the story this week.\n\ngympuzzles_test.mjs (18): Wally repair, temp-var sweep, hideobj flag, exact\ncoordinate warp, Mauville switches opening a path to Wattson, Vermilion cans.\nAgainst the old engine Wally is back at the door and VAR_TEMP_0 still leaks.\n\n\n* Overworld: re-sync objects after a map's setup scripts\n\nThe decomp runs a map's ON_LOAD/ON_TRANSITION before its objects spawn; this\nport runs them after. Harmless while hideobj never persisted FLAG_HIDE_*, but\nonce it did (correctly, as removeobject does) a setup script that clears an\nobject's hide flag no longer brought the object back. Bill's Sea Cottage: Bill\nenters the teleporter -> FLAG_HIDE_BILL_CLEFAIRY set; leave and return ->\nFLAG_TEMP_2 (BILL_IN_TELEPORTER, now resolved from its .equ alias) clears and\nOnTransition clears the Clefairy flag — but the object list was already built,\nso no Bill to talk to and a PC that refuses. A softlock.\n\nrunMapSetupScripts(): if setup changed any object's visibility, reload the\nobjects and run the setup scripts once more (setup-only and idempotent; their\nsetobjxy needs the rebuilt objects to land on).\n\nsignshadow_test now checks the real flag (FLAG_TEMP_2) and the recovery path a\nstuck save actually takes: re-enter, Clefairy-Bill is back, ask again, use the\nPC. Without the re-sync it fails at \"Clefairy-Bill is back\".\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "8ccc3dd",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Johto: PROTON's beat moves to reachable Slowpoke Well B1F (#555)",
+			"body": "Reported: the Azalea gym stays shut after the Slowpoke Well story. Its gate reads\nvillain_johto_slowpoke, set by the quest beat whose boss PROTON sat on\nSlowpokeWellB2F — which in Crystal needs SURF + STRENGTH, unreachable at the 1\nbadge this required beat runs at. That stranded Johto at one badge and, through\nglobalTier(), every tier gate in all three regions.\n\nMove the beat to SlowpokeWellB1F, the floor its grunts already spawn on. The\nreporter's save re-triggers PROTON on the next B1F entry.",
+			"cards": []
+		},
+		{
+			"sha": "a4aff9f",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: the cutscene watchdog stops killing slow scenes (#554)",
+			"body": "Reported: on a 3.7 fps playtest browser the Slowpoke Well catch-up died every\nrun at step 6 of Kurt's 15-step walk with \"A scene timed out\", with no menus\ntouched. The reporter's diagnosis was right (and corrected their own earlier\nblame of the Fly menu):\n\n  - the game loop caps dt at 50ms a frame, so at 3.7 fps game time runs at\n    ~0.19x real time;\n  - WATCHDOG 2 killed any quiet cutscene after 30s of WALL-CLOCK time;\n  - so a ~6s silent stretch of the beat took ~30 real seconds and was killed.\n\n1. WATCHDOG 2 now measures STALLS in GAME time. Its clock only runs while the\n   scene makes no progress — cursor, current step and timers all unchanged —\n   and it counts capped dt, not wall time. A slow scene is never a wedged one;\n   a genuinely wedged scene still dies (20 game-seconds of no progress).\n\n2. A watchdog kill refunds the try. The environment failing is not the beat's\n   fault; charging it would still burn the beat after three slow runs. The\n   reporter's save, at tries:2, keeps its last attempt and gets it back if the\n   watchdog ever fires again.\n\n3. Two catch-up trigger gaps, both found while making the test reproduce:\n   - it ran once, at the instant of map entry, and gave up if anything else was\n     on screen; and the BOOT path never called it at all (reported: \"it ran on\n     the second entry\"). Map entry now ARMS it and the tick fires it the first\n     frame nothing else owns the screen.\n   - it walked trainers.list, which drops flag-hidden trainers. The beat's\n     opening hideobjs set EVENT_SLOWPOKE_WELL_ROCKETS, so a beat cut short after\n     that point could never be caught up: its trainer had vanished from the only\n     list it searched. It now walks the map's own object list, hidden included,\n     and recomputes each key the way trainers.keyOf did when the trainer was\n     beaten (the \"@5,2\" duplicate-sprite suffix depends on how many trainers\n     share a sprite, which changes once some are hidden).\n   The reporter's save is in exactly that state, so (3b) is what actually lets\n   it finish.\n\nTests (postbattle_test, 29):\n  - the real path: reporter's state, frames paced slow, walk into the well,\n    the beat finishes;\n  - the watchdog directly: a silent 15-step walk at ~1.5 fps lasting ~45 real\n    seconds. Against the shipped watchdog it is killed at exactly 30s with\n    \"A scene timed out.\" — the report's symptom; with the fix it runs to the end.",
+			"cards": []
+		},
+		{
+			"sha": "f785c0c",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: four story blockers from the afternoon playtest (#553)",
+			"body": "1. THE WELL CATCH-UP BURNED ITSELF (critical; my own design call)\n\n   I shipped the post-battle marker as \"written on ATTEMPT, so a beat can never\n   loop\". That bought loop-safety at the price of a permanent softlock, and a\n   tester found it the same day: they opened the TOWN MAP mid-scene, WATCHDOG 2\n   stopped the cutscene 30s later, and the Slowpoke Well beat was marked forever\n   with EVENT_CLEARED_SLOWPOKE_WELL still unset. No path left to Bugsy.\n\n   `done` is now written only when the scene REACHES ITS END — hooked to\n   cutscene.run's onDone, which a stopped scene never calls — and a bounded try\n   counter (3) is the loop guard instead. Saves already burned by the old array\n   marker migrate to tries:1 and get their retries back, so the reporter's save\n   recovers on the next well entry with no reset.\n\n   Verified by reverting: done:1 under the old rule, done:0 under the new.\n\n   Also the cause of the interruption: WATCHDOG 2 listed starterMenu and nothing\n   else, so a canvas menu (town map, bag, party) looked like a wedged cutscene.\n   It now uses openCanvasMenus(), the same list gateReport reads, so it cannot\n   drift from what actually blocks.\n\n2. S.S. ANNE INTERIORS RENDERED BLACK\n\n   engine.js mangle() put an underscore before EVERY capital, so a RUN of them\n   came apart: gTileset_SSAnne -> s_s_anne while the exported file is ss_anne.\n   The fetch 404'd, side() swallowed the failed image load, and the deck drew\n   black with only sprites — no console error to follow. It blocks the Kanto\n   story, since the S.S. Anne is where HM01 Cut comes from.\n\n   Now a standard camel->snake that splits only where a capital run ENDS.\n   Audited all 191 tilesets the layouts reference: 189 byte-identical, SSAnne\n   fixed, and one \"NULL\" placeholder that resolves to nothing either way.\n   Confirmed against the CDN (s_s_anne 404 / ss_anne 200).\n\n3+4. TWO STRANDINGS I COULD NOT REPRODUCE\n\n   The S.S. Anne departure left a tester on open ocean at (32,23), and the\n   Slateport Harbor exit left another on the harbor roof at (32,22), walled on\n   three sides. Both escapable only by Fly.\n\n   NEITHER reproduces from the data, and I would rather say so than invent a\n   cause. The harbor's exit warp resolves to the correct door in BOTH region\n   copies (warp 8 -> 28,12), and the departure runs to completion when traced\n   live: down 9, back up 9, vars 1->2, warp to Vermilion, scene ends clean.\n\n   So catch the CLASS. A scripted walk ignores collision by design, which means\n   any script, warp or ferry can leave the player on a tile the rules forbid —\n   and today that is unrecoverable on foot. WATCHDOG 4 relocates a player who is\n   on an illegal tile AND boxed in on all four sides AND idle with nothing else\n   owning the screen, after two full seconds, using the same nearest-standable\n   search Fly uses.\n\n   Deliberately timid, and the assertion that matters most is the second one: a\n   SURFING player is left exactly where they are. A rescue that argues with\n   legitimate surfing would be worse than the bug.\n\nLATENT, NOT CHANGED: the departure warps to MAP_VERMILION_CITY warp 23 when\nVermilion has 10 warps (it survives only because warpTo falls back to warps[0]),\nand VAR_0x8005 — FRLG's dock position — is never set, so the departure always\ntakes the walk-down branch. Both worth a look if it misbehaves again.\n\nNew stranded_test.mjs (5) and tilesetname_test.mjs (10); postbattle_test.mjs\ngrows to 24 with the interruption case.",
+			"cards": []
+		},
+		{
+			"sha": "c716b4b",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: a trainer's post-battle beat actually runs (#551)",
+			"body": "Reported: \"Slowpoke Well can't be cleared. The last grunt's post-battle script\nnever runs. The battle ends normally and nothing else happens: no fade, no Kurt,\nno warp, no heal. EVENT_CLEARED_SLOWPOKE_WELL stays unset.\" Johto blocked at\nAzalea — no Lure Ball, and the Rocket in front of the gym never leaves.\n\nCAUSE. Crystal keeps what happens after you win in a SEPARATE label,\n`<script>.Script`, and nothing in this port ever ran it: the plain battle path\nonly marked the trainer defeated. For this grunt it is starker still — there is\nno `TrainerGruntM1` engage label at all, only `TrainerGruntM1.Script`, so the\ntrainer falls through to the plain path and the beat is unreachable by\nconstruction.\n\nAudit: 322 trainers carry a .Script; 35 do more than print text; 29 of those\ncarry a story beat. Mostly the Johto phone-number registrations (Joey, Wade,\nRalph and friends asking for your number), plus the Slowpoke Well, Sage Koji and\none item gift on Route 34. Bounded, not a sprawl.\n\nFOUR THINGS HAD TO LAND TOGETHER, which is why this sat behind the object\nreference fix (#550):\n\n1. Run <script>.Script on a plain victory, and after a reload. Display-only\n   ones are skipped — defeatText already says that line, and running it would\n   just repeat it. Same classifier the sign_texts shadowing fix uses: a script\n   earns the press by doing something.\n\n2. `face PLAYER right`. 281 ops name the player as plain PLAYER, which\n   events.js _actor never mapped (it knew LOCALID_PLAYER and player), so every\n   one of them was a silent no-op.\n\n3. hideobj must SET the object's event flag — Crystal's `disappear` semantics.\n   This script never sets EVENT_SLOWPOKE_WELL_ROCKETS itself: hiding the four\n   grunts is what sets it, and that flag is what removes the Rocket standing in\n   the Azalea gym doorway. Scoped to EVENT_* deliberately; FireRed and Emerald\n   use FLAG_HIDE_* and set those explicitly alongside removeobject, so writing\n   them there would be redundant at best and would persist a mid-cutscene hide\n   at worst.\n\n4. The grunts are TRAINERS, not NPCs. npcById searched npcs.list, and npcs.js\n   skips every isTrainerEvent — so all four Slowpoke Well references still\n   resolved to null even with #550's resolver. The test caught it exactly:\n   cleared:true, rockets:false. It now searches both lists.\n\nRECOVERY for saves that already won. A beaten trainer cannot be talked to again\n(trainers.js drops them from collision so they can't wall a corridor, so you\nwalk over the tile), so the reporter's save would be stuck at Azalea for good.\ncatchUpPostBattleScripts() runs one missed beat per map entry.\n\nIt is keyed on an explicit \"attempted\" marker, NOT inferred from the script's\nown flags. Inference looked tempting and is wrong: most of these 29 are the\nphone registrations, whose setflag sits inside a branch you can decline — so\n\"its flag is unset\" is a permanent state for a script that DID run, and the\ncatch-up would re-fire on every map entry forever. The marker is written on\nATTEMPT, so even an unrunnable beat cannot loop.\n\nNew magepunk_postbattle_v1 save key, registered in owreset's list — the\ncompleteness check there is what catches an unlisted key, as it did this morning.\n\nNew postbattle_test.mjs (15 assertions), including the live beat: engage the\nlast grunt, win, and watch the flags land.",
+			"cards": []
+		},
+		{
+			"sha": "5654755",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: scripts can find the objects they name (#550)",
+			"body": "The transpiled scripts and the map data name the same object differently. A\nscript says `hideobj KURTSHOUSE_KURT1` — the decomp's constant — while the map's\nobject_event carries local_id `KurtsHouse_SPRITE_KURT`. npcById() was an exact\nstring match, so 1224 references across the three regions resolved to null and\ntheir op silently did nothing. That is why Kurt kept standing in his house after\nhis own script walked him out (#549 shipped it as a known limitation), and it is\nthe same silence behind story NPCs that never appear, move or leave.\n\nFIVE resolutions, in order, none of which invents an object:\n\n  1. the map's own local_id, tried FIRST so nothing correctly\n     named can be answered by a near-miss            (already worked: 3655)\n  2. VAR_LAST_TALKED -> whoever you just talked to                    (+193)\n  3. a raw object INDEX into object_events (Battle Dome uses 0/2/4/6) (+small)\n  4. the decomp constant normalised: upper-case, drop _SPRITE_,\n     drop punctuation                                                 (+372)\n  5. a trailing index picking the Nth object sharing one local_id —\n     KURTSHOUSE_KURT1/2 are both KurtsHouse_SPRITE_KURT               (+261)\n\n856 references resolve that did not. Kurt now walks out and disappears, and the\ndeliberate tripwire assertion left in kurtstory_test fired exactly as designed,\nwhich is how I know the rule reaches the case it was written for.\n\nDELIBERATELY NOT FIXED: ~368 references whose object is simply absent from this\nport's map data — AZALEATOWN_RIVAL has no object_event at all. For those, null\nis the CORRECT answer and the op stays the no-op it always was. Resolving them\nwould mean inventing an NPC.\n\nThe trailing-index rule is STRICT on range rather than clamping. All 261 such\nreferences are in range today, so a clamp would be dead code — and the only\nthing a clamp could ever do is silently act on the WRONG NPC. Asserted, so the\nday strict and lenient disagree is a signal instead of a mis-target.\n\nALSO REPAIRS THREE REGRESSIONS I SHIPPED EARLIER TODAY, which the full\noverworld gate caught and my targeted runs did not:\n\n  livingworld     — the apricorn craft. The test asserted Kurt crafts BEFORE\n                    the Slowpoke Well; the real game's order (and what Kurt1\n                    itself branches on) is that he does not. Test corrected to\n                    put the story past that point. From #549.\n  shared_scripts  — a source regex pinned the exact `mapScripts = { ... }`\n                    spelling, which applySailFix() now wraps. Merge ORDER is\n                    what the invariant is about and it is unchanged, so the\n                    assertion now checks the order and tolerates a wrapper.\n                    From #547.\n  owreset         — magepunk_ow_conflict and magepunk_owsync_log were added to\n                    the save by the sync work without being listed as either\n                    reset or kept. A deliberate owner wipe left a stale \"this\n                    game moved on elsewhere\" record and a diagnostic log\n                    attached to a game that no longer exists. Both now reset.\n                    The completeness check is exactly what this test is for.\n\nOnly owreset was a real behaviour bug; the other two were tests encoding the\nold behaviour.\n\nNew objref_test.mjs (16 assertions: the ordering invariant, a whole-game sweep\nmeasuring before/after, and the live Kurt case driven through interact()).",
+			"cards": []
+		},
+		{
+			"sha": "f7102ef",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: Kurt is a story NPC before he is a service (#549)",
+			"body": "Reported: \"Kurt never starts the Slowpoke Well story. Pressing A only ever shows\nthe apricorn line; no flag changes and Kurt doesn't move. The Rocket is still\nguarding the well.\" Johto blocked at Azalea/Bugsy.\n\nSame class as the Bill Sea Cottage PC (#546): a static handler is consulted\nbefore the map script, so the story script never runs for a real player. The\nreport captured the stack — kurtTalk() reached straight from interact(), with\nrunScriptLabel never called.\n\nCAUSE. services.js registers MAP_KURTS_HOUSE with an ungated 'kurt' zone whose\ntiles include (3,2) — Kurt1's own tile — and kindAt() matches a tile with no NPC\nor flag check, so the native apricorn counter swallowed the press. Kurt1 is the\nbeat that sets EVENT_AZALEA_TOWN_SLOWPOKETAIL_ROCKET; AzaleaTownRocket1Script\nhides the well guard only on that flag, so the guard never left.\n\nFIX, deliberately narrow. Kurt1 branches on EVENT_KURT_GAVE_YOU_LURE_BALL before\nanything else, which is exactly where the counter should take over — so gate the\nservice on that same flag and let the script own him until then. Checked per\npress rather than at map load, so the counter works the moment he hands the ball\nover.\n\nWHY NOT THE STRUCTURAL FIX the report offered as an option. Letting any NPC\nscript win over its service zone would break the game. An audit of every zone\nfound 93 sitting on an NPC with a real script, and all but Kurt are the port's\nown native implementations — nurses, marts, the contest lobby, the Trick House —\nwhere shadowing the script IS the implementation. Kurt is the only one whose\nscript carries a story beat (setflag + move + hideobj).\n\nThe audit runs inside the test as a TRIPWIRE, not a one-time observation: it\nasserts the set of shadowed story NPCs is exactly {Kurt1, the Olivine gangway\nsailor}. The sailor is intentional — that is the S.S. Aqua boarding, which the\nport deliberately replaces with the native ferryMenu that the cross-region\ncrossing runs through. A third entry fails the test.\n\nNew kurtstory_test.mjs (12 assertions), driven through interact() — the lesson\nfrom #546, since runScriptLabel bypasses the very shadow being tested. Verified\nby reverting, which reproduces the reported string exactly:\n\n    FAIL: Kurt no longer answers with the apricorn counter line\n          \"KURT: I turn APRICORNS into POKe BALLS — my own handiwork...\"\n    FAIL: pressing A on Kurt sets the flag that clears the well guard\n\nKNOWN LIMITATION, asserted rather than glossed: Kurt does not visually leave.\nHis script ends with `hideobj KURTSHOUSE_KURT1`, but this map's object carries\nlocal_id `KurtsHouse_SPRITE_KURT` and npcById() is an exact match, so the hide\nis a no-op. The story advances correctly — the flag is what opens the well —\nonly his exit is lost. It is one instance of a wider issue left out of scope:\n1224 script object references game-wide do not resolve to any map local_id, most\nof them indirect (VAR_LAST_TALKED, VAR_0x8008), which is a different mechanism\nand its own change. The test asserts the current state so whoever fixes it sees\nthis fail rather than finding a test that quietly claimed he left.\n\nGreen: signshadow 14, scriptstrand 25, sail 18, crystal_story 37,\nbrokenevents 44.",
+			"cards": []
+		},
+		{
+			"sha": "a091dd8",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: Mr Briney's ferry actually delivers you (#547)",
+			"body": "* Overworld: Mr Briney's ferry actually delivers you\n\nReported: \"After 'Anchors aweigh!' the cutscene walks me down the beach and just\nends - no boat, no warp to Dewford, var stuck at 1. Reproduced twice; a reload\nreplays the same stuck cutscene.\" Hoenn blocked at Dewford/Brawly.\n\nTraced live, op by op. TWO INDEPENDENT FAULTS:\n\n1. The sail legs are the decomp's BOAT ANIMATION — the boat and the player hold\n   still on screen while the camera scrolls the ocean past them. The transpile\n   lowered that to literal per-tile walk steps: 194 of them. So the port walks\n   the player physically off the map (traced to y=161, ~42s of walking into\n   void) instead of panning. That is the \"walks me down the beach\", and it is\n   why nothing after it ever ran.\n\n2. Route104.json contains NO warp op anywhere, so the outbound chain can never\n   change maps. Its arrival script stages LOCALID_DEWFORD_BRINEY and clears\n   FLAG_HIDE_MR_BRINEY_DEWFORD_TOWN — Dewford Town objects — while still\n   standing on Route 104. The other three legs (Dewford->Petalburg,\n   Dewford->Slateport, Route109->Dewford) DO carry a correct warp and set their\n   flags before it, so those were only slow, not broken.\n\nRuled out as the cause, though a correct observation from the report:\nLOCALID_ROUTE104_BOAT is in the map data with its hide flag clear and missing\nfrom the live NPC list, because npcs.js skips OBJ_EVENT_GFX_MR_BRINEYS_BOAT as\na prop. It has no sprite in gfx_map.json, so unfiltering it would draw a generic\nman on the water — and a missing actor's move is SKIPPED by the interpreter, not\nstalled. The boat's absence costs the visual only, so the filter is left alone.\n\nAlso checked and ruled out: warps transpile fine elsewhere (218 across 124\nfiles), so Route104's omission is specific rather than a systemic dropped op.\n\nTHE MINIMAL FIX, as chosen. sail_fix.js patches the five sail labels as each map\nloads (unprefixed labels, so one table covers both the Hoenn and Hoenn2 copies):\ndrop the ocean-crossing move, keep every line of dialogue, every flag and the\nshort boarding walks, and replace the outbound `goto ArriveInDewford` with the\nflags that arrival would have set plus the warp Route 104 never had. You board,\nand you are in Dewford.\n\nThe cutoff is 90 steps. The longest legitimate scripted walk in the game is 106\n(a Battle Dome entrance); every sail leg is 97, 171, 173 or 194, and nothing\nsits between — Steven's escort (57), Earl (56) and the Trick House (45) are all\nwell clear. Asserted.\n\nNew op `warpxy` lands on a COORDINATE rather than a warp index, bridged to the\nexisting flyTo (which nudges to the nearest standable tile). Dewford's five\nwarps are all building doors, so a ferry arrival had nowhere to point.\n\nNew sail_test.mjs (18 assertions), run three times for flake. Verified by\nneutering the patch, which reproduces the report exactly:\n\n    FAIL: the ferry arrives somewhere other than Route 104   null\n    FAIL: the boat-state var is cleared, not stuck at 1      var=1\n    FAIL: the player has control back\n          {\"map\":\"Route104\",\"pos\":[22,127],\"v\":1,\"blocking\":true}\n\nKnown cosmetic loss, stated plainly: Briney's arrival lines at the Dewford dock\nare skipped along with the animation. He is standing right there to talk to.\n\nGreen: scriptstrand 25, signshadow 14, brokenevents 44, crystal_story 37,\nlooseends 22.\n\n\n* sail_test: wait for the arrival to finish before sampling it\n\nThe map NAME flips the moment world.load resolves, but player.setTile and the\nNPC rebuild land after it. Sampling on the name alone read Route 104\ncoordinates on a half-built Dewford, so the test failed about 1 run in 4 on\n\"Briney is standing on the Dewford dock\" and \"the player landed on the map\".\n\nThat was the TEST racing the game, not the game misbehaving — the fix itself\nwas working in every one of those runs (map=DewfordTown, var=0,\nleftRoute104=true). Poll until the destination's NPCs exist, then sample.\n6 consecutive clean runs.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "a722dc6",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: a sign's text no longer shadows a script that does work (#546)",
+			"body": "Reported: \"Bill's Sea Cottage PC never runs the Cell Separator (S.S. Ticket\nunobtainable). Step 5 only ever shows 'TELEPORTER is displayed on the PC\nmonitor.' There's no cell separator, animation or flag change.\"\n\nCAUSE, exactly as the report diagnosed it. interact()'s bg_event loop checked\nsign_texts.json FIRST and returned:\n\n    if (signTexts[ev.script]) { dialog.open(...); return; }\n    // ...only after this: if (mapScripts[ev.script]) runScriptLabel(...)\n\nsign_texts.json is a TEXT DUMP — it holds the `msg` a script would have shown.\nFor a plain signpost that is a faithful stand-in. For a script that branches it\nserves a STATIC answer to a question the script was meant to decide. Here the\ndump had captured the Computer script's own FALLBACK line, the one it prints\nwhen Bill is NOT in the teleporter, so the PC printed the failure case forever\nand FLAG_HELPED_BILL_IN_SEA_COTTAGE — the only source of the S.S. Ticket —\ncould never be set.\n\nThis is not one interaction. An audit over every bg_event in all three regions\nfinds 1411 whose label has both a sign text and a real map script: 1038 are\ngenuinely display-only, and 373 DO REAL WORK and have never run for a player.\nAmong them the Abandoned Ship door puzzles (hasitem/takeitem/setflag/special)\nand the gym statues.\n\nFIX: route by what the script actually is, not by which table is consulted\nfirst. A script built only from display ops (msg/lock/release/faceplayer/end/\nreturn/...) is faithfully represented by its dump and keeps the cheaper path.\nAnything else gets the A press. Those 373 have never executed, so a throw\ndegrades to the old behaviour rather than eating the press.\n\nNo migration: the PC finishes a save already sitting at BILL_IN_TELEPORTER=true,\nwhich is where affected saves are stuck. Asserted.\n\nWHY MY EARLIER HEADLESS VERIFICATION MISSED THIS. I drove this same chain\nthrough runScriptLabel() and watched every flag set correctly, and reported the\nevent as working. That proved the SCRIPT works, not that a player can reach it —\nrunScriptLabel bypasses interact(), and interact() is the only door a player\nhas. Every live assertion in the new test goes through interact(): it positions\nthe player, sets facing and presses A. The report named this directly and it was\nthe right call.\n\nNew signshadow_test.mjs (14 assertions). Verified by reverting, which reproduces\nthe report character for character:\n\n    FAIL: the PC no longer answers with the static fallback line\n          {\"text\":\"TELEPORTER is displayed on the PC monitor.\",\"blocking\":true}\n    FAIL: pressing A on the PC runs the Cell Separator\n    FAIL: and Bill hands over the S.S. TICKET\n\nThe display-only signpost control passes against BOTH versions, which is the\nno-regression proof for the other 1038.\n\nGreen: brokenevents 44, crystal_story 37, gymstory 15, inertsystems 52,\nlooseends 22, scriptstrand 25, prizemoney 17.",
+			"cards": []
+		},
+		{
+			"sha": "57fa2ce",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: an interrupted scripted walk no longer freezes the screen (#545)",
+			"body": "Second repro named the mechanism exactly: \"a scripted NPC walk (applymovement)\nending or getting interrupted leaves the NPC at moving=true, moveTo=null. Screen\nfreezes on the old frame while position keeps updating. Reload fixes it, no\nprogress lost.\" All three details are the diagnosis.\n\nCAUSE. The cutscene `move` driver animates an actor's px/py from the SCENE's own\nfrom/to (s.from / s.to) and merely BORROWS actor.moving as a flag -- it never\nfills in actor.moveFrom/moveTo. A step that runs to completion clears the flag\nitself, because `actor.moving = p < 1` is false at p === 1. An INTERRUPTED scene\nleft moving=true with both arrays still null, and the actor's own update()\ndereferences them on the very next frame:\n\n    this.px = this.moveTo[0];        // TypeError, every frame, forever\n\nwhich killed the draw loop. tickStats.frames++ sits at the TOP of tick(), above\nthe throw, which is exactly why position kept updating while the screen sat on\nits last painted frame. None of it is persisted, so a reload clears it.\n\ncutscene.stop() has a dozen callers: every trigger's catch block, both\nbattle-loss paths, and the ON_TRANSITION bail -- which fires on EVERY entry to a\nmap whose transition script contains an applymovement. This is also the most\nlikely identity of the unexplained gym-escort crash, which reported the sibling\nmessage \"Cannot read properties of undefined (reading '1')\".\n\nFIX, two layers:\n\n1. ROOT CAUSE. The scene records whose flag it borrowed (c.movedActors) and hands\n   it back in _releaseActors(), called from both stop() and _finish(): moving\n   cleared, px/py snapped to the actor's own tile, moveFrom/moveTo nulled.\n\n2. HARDENING, per the standing rule to fix the shared lifecycle rather than the\n   one tile. Both actor classes -- NPC (npcs.js) and Actor (engine.js, which is\n   the PLAYER, whom scripts also move as LOCALID_PLAYER) -- now self-heal instead\n   of throwing when the flag is set with no movement behind it. An actor with\n   nowhere to move to is simply standing on its tile. No future producer of this\n   state can take the renderer down with it.\n\nAlso exposes `cutscene` on window.__ow so a test can interrupt a scene the way\nthe real callers do.\n\nNew scriptstrand_test.mjs (25 assertions). Verified by reverting both layers,\nwhich reproduces all three reported symptoms at once:\n\n    FAIL: the interrupted scene left nobody stranded   [\"LOCALID_BILL_CLEFAIRY\"]\n    FAIL: and nothing threw afterwards\n          {\"frames\":205,\"errors\":57,\"lastError\":\"Uncaught TypeError:\n           Cannot read properties of null (reading '0')\"}\n\n57 errors, then 100, then 143 -- one per frame -- while `frames` climbed 205 ->\n248 -> 291. That is \"position keeps updating\" and \"screen freezes\" in one number.\n\nGreen: inputfreeze 55, scriptmove 10, whiteout 21, prizemoney 17, owsync 46.",
+			"cards": []
+		},
+		{
+			"sha": "d3777e5",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: the prize you are shown is the prize you are paid (#544)",
+			"body": "Reported: \"regular trainer prizes still don't credit, but gym-leader payouts do\n- +1500 after Roxanne\" and then, a session later, \"her win screen said +$168,\nmoney never moved. Brock paid, Misty didn't. Route trainers still pay fine.\"\n\nThose two reports contradict each other, and that is the tell: the variable was\nnever the KIND of trainer.\n\nmain.js:262 sends any trainer whose decomp script body happens to be LOADED down\nrunScriptLabel() instead of startTrainerBattle() -- and startTrainerBattle's own\nvictory callback was the only place in the entire game that credited info.money.\nSo whether you were paid depended on which map's scripts had loaded, which from\nthe outside looks exactly like randomness.\n\nFive builders hand a battle an info.money, and FOUR announced a prize and paid\nnothing:\n\n  startTrainerBattle  money: from the trainer    PAID\n  scripted trainers   money: high * 8            not paid  <- Misty's L21 = $168\n  villains            money: level * 12          not paid\n  rival tiers         money: (tier + 1) * 40     not paid\n  rival intro         money: 40                  not paid\n\nThe \"+1500 after Roxanne\" that DID credit is a different system entirely: the\nbadge-tier reward ladder (Bag.earn(r.money)), which is why gyms looked like they\npaid. It is untouched.\n\nFIX -- announce and pay in ONE call, rather than fixing four callers. New\nbattle.awardPrize() computes the prize via the existing idempotent prizeMoney()\n(so AMULET COIN and HAPPY HOUR are included) and credits it, and both victory\nmessages now read `You got $${this.awardPrize()}`. The number on screen and the\nnumber in the wallet are now the same value by construction. Both per-caller\ncredits are deleted, so nothing can pay twice. _paid rides in `info`, which is\npart of the battle snapshot, so a battle abandoned mid-message cannot be paid\nagain when it resumes -- and a resumed battle now also picks up an AMULET COIN\nthat the pre-battle endSpec copy could never have known about.\n\nNew prizemoney_test.mjs (17 assertions: 8 source + 9 live) wins real battles in\nheadless Chrome and counts the money. Verified by reverting, which reproduces\nthe report word for word:\n\n    ok  - and the announced figure is that same number\n    FAIL: a $168 prize moves the money by exactly $168   3000 -> 3000",
+			"cards": []
+		},
+		{
+			"sha": "dd7cd08",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Middle-earth: Ugluk's Door of Destinies buffs the arrival, not the board (#543)",
+			"body": "Reported: \"Ugluk is broken with his card that gives all creatures plus 1 plus 1\nwhen a creature enters. It was triggering twice too.\"\n\nTHE ENGINE WAS CORRECT, and I verified that before changing anything:\ncreature-played fires exactly once per creature played, and tokens summoned by a\nBattlecry correctly do not count as played. The \"twice\" is middleearth.js:136 --\nenemy decks are built as TWO copies of each of their 15 cards, so both Doors are\non the field and every creature played pumped the whole board twice.\n\nWhat was wrong was the card. Across all 21 enemy commanders, six decks carry a\nboard-wide stacking anthem and every one of them carries exactly ONE. Ugluk\ncarried three axes:\n\n  Door of Destinies   x2   +1/+1 to the whole board per creature played\n  Fires of Mount Doom x2   +1/+0 to the whole board per attack\n  \"Whip Them On\" (2)       +1/+0 to the whole board, repeatable every turn\n\nand he is a rung-B Lieutenant fought at 3-6 wins, not a final boss. He is also\nthe only enemy of the 21 whose hero power is itself an anthem.\n\nPlaying a creature is the most common action in the game, so the Door was the\nquadratic term. It now reads \"Whenever you play a creature, give it +1/+1\",\nreusing the existing buff-played-grant-deathrattle trigger (Hawkstrider Rancher's\nshape, minus the deathrattle) rather than adding engine surface. He keeps Fires\nand the hero power -- that is his identity.\n\nThe Great Goblin runs his own weaker Door (+1/+0, board-wide) and only that one\nanthem, so he was never the outlier and is untouched.\n\nNew ugluk_door_test.mjs (18 assertions), verified by restoring the old card,\nwhich quantifies the report: a vanilla 1/1 bystander reached 5/5 after two\ncreature plays with both Doors out, and 3/3 off a single one. Includes an\ninvariant that no enemy deck may carry more than one board-wide stacking anthem.\n\nFull battlecards suite 584/584 (this suite included).",
+			"cards": []
+		},
+		{
+			"sha": "50fc521",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "scry and Discover cards keep their rules text (#542)",
+			"body": "Reported: \"When you scry there is no zoom text. Same with discovering.\"\n\nopenScryModal and openPickModal both attachTip() their faces, and the source\nguard in modal_card_tips_test asserted exactly that -- but they are also the only\ntwo modals that call wireModalArt(), whose repaint did:\n\n    const fresh = drawCardFace(en.def);\n    en.cell.replaceChild(fresh, en.cell.firstChild);\n\nA brand-new canvas swapped in over the one the tip listeners were bound to. The\nlisteners were collected with the old element. That repaint is not an edge case:\ncardart broadcasts artListeners('*') when the MANA FONT loads, so every scry and\nevery Discover went blind within a frame or two of opening. Those two modals are\nthe only ones that repaint, which is why those two were the only ones reported.\n\nFIX: the repaint re-binds the tip to the element it swaps in.\n\nThis is the regression a source guard cannot see -- attachTip is still called, on\nan element no longer in the document. New live test opens the real modal,\nlong-presses a real card, forces the repaint, and presses again. Against the\nunfixed code it fails in a way that matches the report exactly:\n\n    FAIL: scry: a long-press on a card shows its rules   {\"shown\":false,\"chars\":0}\n    FAIL: discover: and it STILL shows them after the art repaint\n\nScry fails on the FIRST press -- its faces had already been repainted before the\ntest could touch them, which is why a player sees it as simply not working.\n\nFull battlecards suite 584/584.",
+			"cards": []
+		},
+		{
+			"sha": "9f7d9be",
+			"date": "2026-09-23",
+			"kind": "patch",
+			"title": "Overworld: playtime drift is not a save conflict (#540)",
+			"body": "Reported twice in one morning on instinctloretest0918: a fresh load after an\nabrupt session end showed \"This game moved on somewhere else too\" and wrote a\nmagepunk_ow_conflict stash, on a save whose position, party, story flags,\ndefeated flags, region, starter, rival, bag, money, dex, journal and flypoints\nwere all byte-identical. Local and remote were at the same revision (2679, then\n3141). The only difference was magepunk_playtime: 44880 remote vs 44905 local.\n\nThis is mine, from #505. Three defects, all confirmed by reverting the fix:\n\n1. owBody() stripped only magepunk_ow_rev before comparing, but\n   magepunk_playtime is in OW_KEYS and the game loop writes it every ~5s\n   WITHOUT bumping the revision. Any session that ends abruptly therefore\n   leaves local ahead of remote at an IDENTICAL revision, and the\n   equal-revision branch read that as \"two devices diverged\". A counter that\n   advances on its own can never be evidence of a competing edit. VOLATILE_KEYS\n   now excludes it from the comparison, which also means a playtime-only tick\n   stops counting as a change worth a D1 write.\n\n2. The conflict path ran setOwRev(localRev + 1) and then pushOw(), which bumps\n   again. That is the reported +2 with one write behind it; the test reproduces\n   it as 57 -> 59 against the unfixed code. pushOw alone lands local on\n   remoteRev + 1, which is all the tie-break needs.\n\n3. Nothing reconciled the counter itself, so a device returning to a save with\n   more time on it silently discarded the larger value. It is monotonic, so\n   hydration now keeps the larger of the two before any comparison runs.\n\nGenuine divergence is unchanged and still covered: differing state at one\nrevision still surfaces the message and still preserves both copies. No save is\nreset, rewritten or migrated by this change.",
+			"cards": []
+		},
+		{
+			"sha": "aa34f6e",
+			"date": "2026-09-22",
+			"kind": "cards",
+			"title": "Alchemy: New Capenna — 28 cards (the third Alchemy set) (#539)",
+			"body": "Scryfall `ysnc`, 2022-06-02, 30 printed. Cabaretti Revels and Riveteers\nProvocateur already ship under set 'paper', so 28 were new. Audited first, as\nwith Innistrad, where 19 of 63 turned out to be already present.\n\nColourless, class identity only, per the standing ruling -- no `colors` field,\nsince that would mark them land-conjured and undraftable. This set is entirely\nclass cards, no Neutrals.\n\nNew Capenna's own mechanics all ride existing engine shapes:\n  shield counter -> divine_shield        Alliance -> ongoing{on:'creature-played'}\n  Treasure       -> conjure-id treasure_token\n  Blitz          -> rush + ephemeral + a draw deathrattle\n  connive        -> draw then discard-random\n  flying         -> elusive, the repo's established stand-in\n\nCoverage is proven, not asserted: a slim Scryfall name fixture ships at\ntests/fixtures/ysnc.json and the suite checks all 30 printed names resolve,\nand that the two pre-existing cards were NOT duplicated.\n\nTwo more instances of the seeded-RNG drift class -- both latent fragility my\nadditions exposed, both verified with `git stash push battlecards/cards.json`:\n\n  * duels_arsenal \"Favored Racer gets Blessed\" checked only stats/keywords,\n    but one of the five Blessings (Blessing of Wisdom) grants an ONGOING\n    instead, so it passed on which blessing the roll produced. Now covers\n    ongoing/ongoings too.\n  * violethold Desperate Bribe wanted \"exactly two survivors\" from four random\n    2-cost summons out of ~700 cards. Two random picks can legitimately\n    INTERACT -- an aura debuff beside a 1-health body kills it. Every pool card\n    summons twice cleanly in isolation, so the bug was the PAIRING, not a card.\n    Now pins the stream and tests the mechanic instead of a random pairing.\n\nThat is four such tests across four waves; the shape is always a narrow\nsnapshot of a randomly-chosen outcome, and createGame builds random decks from\nthe whole pool so every cards.json addition reshuffles it.\n\nArt for all 28 fetched, deployed, verified byte-for-byte (101 Alchemy cards\nlive now). alchemy_capenna_test: 46 assertions, every card fired.\n583/583 suites pass.",
+			"cards": [
+				{
+					"id": "ysnc_agent_of_raffine",
+					"name": "Agent of Raffine",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 1
+				},
+				{
+					"id": "ysnc_bind_to_secrecy",
+					"name": "Bind to Secrecy",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_brokers_safeguard",
+					"name": "Brokers' Safeguard",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_celestial_vault",
+					"name": "Celestial Vault",
+					"type": "artifact",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_choice_of_fortunes",
+					"name": "Choice of Fortunes",
+					"type": "sorcery",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_diviner_of_fates",
+					"name": "Diviner of Fates",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_obscura_polymorphist",
+					"name": "Obscura Polymorphist",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_nightclub_bouncer",
+					"name": "Nightclub Bouncer",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ysnc_skyline_savior",
+					"name": "Skyline Savior",
+					"type": "creature",
+					"class": "priest",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_herald_of_vengeance",
+					"name": "Herald of Vengeance",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ysnc_bank_job",
+					"name": "Bank Job",
+					"type": "enchantment",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_xanders_wake",
+					"name": "Xander's Wake",
+					"type": "enchantment",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_graven_archfiend",
+					"name": "Graven Archfiend",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "ysnc_effluence_devourer",
+					"name": "Effluence Devourer",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_syndicate_recruiter",
+					"name": "Syndicate Recruiter",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "ysnc_spelldrain_assassin",
+					"name": "Spelldrain Assassin",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_shattering_finale",
+					"name": "Shattering Finale",
+					"type": "sorcery",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_traumatic_prank",
+					"name": "Traumatic Prank",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "rare",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_big_spender",
+					"name": "Big Spender",
+					"type": "creature",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_pass_the_torch",
+					"name": "Pass the Torch",
+					"type": "instant",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_arming_gala",
+					"name": "Arming Gala",
+					"type": "enchantment",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 5
+				},
+				{
+					"id": "ysnc_back_alley_gardener",
+					"name": "Back-Alley Gardener",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "epic",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_menagerie_curator",
+					"name": "Menagerie Curator",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_giant_regrowth",
+					"name": "Giant Regrowth",
+					"type": "instant",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "ysnc_loose_in_the_park",
+					"name": "Loose in the Park",
+					"type": "enchantment",
+					"class": "ranger",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_rope_line_attendant",
+					"name": "Rope Line Attendant",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_racketeer_boss",
+					"name": "Racketeer Boss",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "rare",
+					"cost": 2
+				},
+				{
+					"id": "ysnc_sparas_bodyguard",
+					"name": "Spara's Bodyguard",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "epic",
+					"cost": 3
+				}
+			]
+		},
 		{
 			"sha": "8d65fa0",
 			"date": "2026-09-22",
