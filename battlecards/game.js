@@ -2977,6 +2977,7 @@ function openMulliganModal() {
 			tag.className = 'mull-tag';
 			tag.textContent = swap ? 'Replace' : 'Keep';
 			cell.appendChild(tag);
+			cell.tabIndex = 0;   // a stop for the keyboard's Tab and the controller (padnav.js)
 			cell.addEventListener('pointerdown', e => { e.stopPropagation(); if (swap) mulliganPicks.delete(c.uid); else mulliganPicks.add(c.uid); render(); });
 			row.appendChild(cell);
 		});

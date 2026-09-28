@@ -2,6 +2,7 @@
 // the overworld in Test-Realm (mp) mode, or the battle menu in free play. Also
 // keeps cross-page links in mp mode so hopping between card modes doesn't drop you.
 import * as MPX from './mpmode.js';
+import './padnav.js';   // controller navigation (signed-in players; Plans/CONTROLLER_SUPPORT_PLAN.md phase 3)
 
 const MP = MPX.wantsMp() && MPX.hasToken();
 const backHref = MP ? '/overworld/?mp=1' : 'index.html';
