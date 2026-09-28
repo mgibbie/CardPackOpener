@@ -10,6 +10,7 @@ import { battle, cutscene, dialog, encounters, evolution, factorySpec, hud, play
 import { menuChrome, partyTakeItem, summaryMovePick, summaryToLead } from './ow_menus.js';
 import { mailKey, shopStockNow, tradeKey } from './ow_pvp.js';
 import { S } from './ow_state.js';
+import { askText } from '../site/osk.js';
 import { saveParty } from './party.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
@@ -178,10 +179,9 @@ export function pcMatches(box, q) {
 	});
 	return out;
 }
-// prompt-based like promptRename: headless-safe (no prompt -> filter unchanged)
-function pcPromptSearch() {
-	if (typeof prompt !== 'function') return;
-	const q = prompt('Search storage: name, species, a type, or "shiny". Leave empty to clear.', pcMenu.filter || '');
+// the on-screen keyboard (site/osk.js): typed, tapped, or on a controller
+async function pcPromptSearch() {
+	const q = await askText({ title: 'Search storage: name, species, a type, or "shiny". Leave empty to clear.', initial: pcMenu.filter || '', maxLength: 24 });
 	if (q == null) return;
 	pcMenu.filter = q.trim().toLowerCase() || null;
 	pcMenu.side = pcMenu.filter ? 1 : pcMenu.side;

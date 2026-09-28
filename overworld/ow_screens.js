@@ -28,6 +28,7 @@ import { PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, cardsMenu, deckSelect, dex
 import {
 	MP_ON,
 } from './main.js';
+import { askText } from '../site/osk.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -150,11 +151,10 @@ export function offerNickname(mon) {
 		if (declined !== 'x') promptRename(mon);
 	});
 }
-// rename via the browser prompt (headless-safe: no prompt -> unchanged)
-function promptRename(mon) {
+// rename on the on-screen keyboard (site/osk.js): cancel leaves the name as it is
+async function promptRename(mon) {
 	const speciesName = battle.data.species[mon.speciesId]?.name?.toUpperCase() || mon.name;
-	let name = null;
-	try { name = typeof prompt === 'function' ? prompt(`New name for ${mon.name}? (blank = ${speciesName})`, mon.name) : null; } catch (e) {}
+	const name = await askText({ title: `New name for ${mon.name}? (blank = ${speciesName})`, initial: mon.name, maxLength: 12, upper: true });
 	if (name == null) return;
 	setNickname(mon, name);
 }
@@ -550,7 +550,7 @@ export function friendsKey(k) {
 	}
 }
 async function promptAddFriend() {
-	const code = (prompt('Enter your friend\'s 6-letter code:') || '').toUpperCase().trim();
+	const code = ((await askText({ title: 'Enter your friend\'s 6-letter code:', maxLength: 6, charset: 'code' })) || '').toUpperCase().trim();
 	if (!/^[A-Z]{6}$/.test(code)) { if (code) dialog.open('That is not a valid 6-letter friend code.'); return; }
 	const data = await MP.call('add-friend', { code });
 	if (data.error) { dialog.open(data.error); return; }
