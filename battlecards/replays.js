@@ -2,6 +2,7 @@
 // (replayrec.js), lets you watch (→ index.html?replay=<id>), delete, copy a
 // shareable code, or import a code someone pasted. No network, no login.
 import * as Rec from './replayrec.js';
+import { askText } from '../site/osk.js';
 
 const $ = id => document.getElementById(id);
 const MODE_ICON = { solo: '⚔️', ai: '🤖', multiplayer: '🌐', dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍' };
@@ -91,7 +92,7 @@ function render() {
 }
 
 $('import-btn').onclick = async () => {
-	const raw = prompt('Paste a replay code to add it to your list:');
+	const raw = await askText({ title: 'Paste a replay code to add it to your list:', maxLength: 200000 });
 	if (!raw) return;
 	await ensureCards(); // a pasted fat code re-saves slim
 	const id = await Rec.importCode(raw.trim());

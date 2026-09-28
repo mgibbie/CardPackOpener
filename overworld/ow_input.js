@@ -27,6 +27,7 @@ import { cutsceneCtx } from './ow_cutscenes.js';
 import {
 	MP_ON, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
+import { oskOpen } from '../site/osk.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
 
@@ -50,7 +51,8 @@ export const heldKeys = [];
 S.wasInBattle = false; // when a battle ends, flush held keys so we don't take a stray step out of it
 S.runHeld = false; // Shift on keyboard, holding B on touch
 // while typing in the chat box, keys belong to the input, not the game
-export const typingInChat = () => document.activeElement && document.activeElement.tagName === 'INPUT';
+// (and while the on-screen keyboard is up, it owns every key and button)
+export const typingInChat = () => oskOpen() || (document.activeElement && document.activeElement.tagName === 'INPUT');
 addEventListener('keydown', e => {
 	if (typingInChat()) { if (KEYMAP[e.key]) owlog('keydown IGNORED', e.key, 'reason=typingInChat'); return; }
 	// while a menu/dialog/battle is open, arrows navigate options — don't also

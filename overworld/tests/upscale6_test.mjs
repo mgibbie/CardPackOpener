@@ -214,8 +214,11 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			localStorage.setItem('magepunk_box_v1', JSON.stringify(box));
 			const pm = ow.pcMenu;
 			pm.open = true; pm.side = 1; pm.idx = 0; pm.box = 0; pm.filter = null; pm.confirm = null;
-			window.prompt = () => 'dratini';
+			// F opens the on-screen keyboard (site/osk.js, controller phase 2): type, then Enter
 			dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
+			const oskField = document.querySelector('#osk input');
+			if (oskField) { oskField.value = 'dratini'; oskField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); }
+			await new Promise(r => setTimeout(r, 50));
 			const filtered = pm.filter;
 			const partyBefore = ow.party.length;
 			dispatchEvent(new KeyboardEvent('keydown', { key: 'z' }));   // withdraw the single hit
