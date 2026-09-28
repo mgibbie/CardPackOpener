@@ -66,6 +66,7 @@ import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, 
 import * as Rec from './replayrec.js';
 import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
+import { initPadboard } from './padboard.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -5043,6 +5044,26 @@ window.__game = {
 	actAttack: (...a) => actAttack(...a),
 	publishDuel: () => publishDuel(),
 };
+
+// CONTROLLER PLAY on the board (padboard.js, signed-in players): it drives the
+// same functions a mouse ends in — releasePlay for a hand card, a replayed quick
+// click for anything on the board, commitPending / panelClick for targets.
+initPadboard({
+	get state() { return state; }, get HUMAN() { return HUMAN; }, E,
+	busy: () => spectateMode || replayMode || duel.busy,
+	cardOf, entityUids: () => [...entities.keys()],
+	screenPos: uid => window.__game.screenPosOf(uid),
+	panelPos: () => window.__game.panelScreenPos(), orbPos: () => window.__game.orbScreenPos(),
+	foePanels: () => [...foePanelEls.entries()],
+	get pending() { return pending; }, get attacker() { return selectedAttacker; },
+	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
+	canvas: renderer.domElement,
+	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
+	setMouse: (x, y) => { mouseX = x; mouseY = y; },
+	setPlacing: card => { placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
+	boardScreenXs, banner, whyCantPlay,
+	endTurnButton: () => $('end-turn'),
+});
 
 let classRegistry = [];
 

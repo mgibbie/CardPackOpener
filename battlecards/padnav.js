@@ -74,7 +74,7 @@ function overlayOf(el) {
 // veil, so "a big fixed layer" alone can't find it; the page chrome (top bar,
 // Back) stays clickable above the veil but must not steal a modal's focus.
 const MODALS = ['#scry-modal', '#walker-menu', '#inspect', '#dungeon-overlay', '[aria-modal="true"]'];
-function openModal() {
+export function openModal() {
 	let best = null, bestZ = -Infinity;
 	for (const sel of MODALS) for (const m of document.querySelectorAll(sel)) {
 		if (m.closest('#osk') || !shown(m)) continue;
@@ -200,8 +200,14 @@ export async function activate() {
 const key = k => { const t = document.activeElement && document.activeElement !== document.body ? document.activeElement : window;
 	t.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })); };
 
+// On the match page the BOARD owns the pad whenever no modal is open
+// (padboard.js registers this); padnav then handles only the DOM modals.
+let boardGuard = null;
+export const setBoardGuard = fn => { boardGuard = fn; };
+
 export function onPress(action) {
 	if (oskOpen()) return;                         // the on-screen keyboard runs its own pad
+	if (boardGuard && boardGuard()) return;        // the match board has it (padboard.js)
 	// back from the mouse: show the ring again where focus was
 	if (!ringOn && focused && focused.isConnected) { focused.classList.add('padnav-focus'); ringOn = true; }
 	if (DIRS[action]) return move(action);
