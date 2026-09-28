@@ -8,6 +8,8 @@
 //   2. Every power orb drew the PRINTED cost, so even a landed discount still
 //      read (2). The orbs (hero panel, side panel, tooltip) show the live cost:
 //      green when cheaper, red when taxed.
+//   3. "Not able to see my weapon while it's active": the weapon was a small line
+//      at the bottom of the hero panel, under the hand. It is a top-band badge now.
 //
 //   node overworld/tests/hpcost_test.mjs
 import fs from 'fs';
@@ -100,6 +102,18 @@ try {
 	const used = await page.evaluate(pu => { const g = window.__game, p = g.state.players[g.HUMAN]; const power = p.heroPowers.find(c => c.uid === pu); return { used: power.usedThisTurn, mana: p.mana.cur, orb: g.heroOrbCost }; }, setup.powerUid);
 	A(used.used && used.mana === 0, 'the discounted power is used for free', JSON.stringify(used));
 	A(used.orb === setup.printed, 'the discount is one-shot: the orb goes back to the printed cost', JSON.stringify(used));
+	// Bryan: "not able to see my weapon while it's active". It was a small "⚔ 3/2"
+	// on the panel's bottom gear line, under the raised hand. It is a badge in the
+	// top band now, above where the hand reaches.
+	await page.evaluate(() => { const g = window.__game, p = g.state.players[g.HUMAN];
+		const w = g.E.instantiate({ id: 't_axe', name: 'Test Axe', type: 'weapon', cost: 3, attack: 3, durability: 2, rarity: 'common', description: '' }, g.HUMAN); w.zone = 'weapon'; p.weapon = w; g.pump(); });
+	await sleep(700);
+	const badge = await page.evaluate(() => window.__game.weaponBadgeUV);
+	A(!!badge, 'an equipped weapon draws a badge on the hero panel');
+	A(badge && badge.y0 >= 0.5, 'the badge sits in the top band, above the raised hand', JSON.stringify(badge));
+	await page.evaluate(() => { const g = window.__game; g.state.players[g.HUMAN].weapon = null; g.pump(); });
+	await sleep(500);
+	A(await page.evaluate(() => window.__game.weaponBadgeUV) === null, 'no weapon, no badge');
 	A(errors.length === 0, 'no uncaught page error', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));

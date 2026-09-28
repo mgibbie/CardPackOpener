@@ -1642,6 +1642,7 @@ heroPanelMesh.userData.uid = 'heropanel';
 heroPanelMesh.renderOrder = 1;
 heroPanelMesh.visible = false;
 scene.add(heroPanelMesh);
+let weaponBadgeUV = null; // the weapon badge rect in 0..1 UV (y from the bottom), when one is drawn
 let heroOrbCost = null; // the number the hero-panel power orb last showed (test hook)
 let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bottom)
 // THE PLANAR DIE sits on the panel like a second power orb (owner: "treat it like
@@ -1776,18 +1777,41 @@ function drawHeroPanel() {
 	ctx.fillStyle = '#e8e2f4';
 	ctx.font = 'bold 18px system-ui, sans-serif';
 	const myCls = classNameOf(me.heroClass);
-	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, dieOn ? Math.max(60, ddx - 106) : 124);
+	// your weapon gets a badge in the TOP band, under your name: it used to be a
+	// small "⚔ 3/2" on the gear line at the bottom of the panel, which the hand
+	// covers (Bryan: "not able to see my weapon while it's active")
+	const colW = dieOn ? Math.max(60, ddx - 106) : 124;
+	const swingAtk = me.weapon ? me.weapon.attack + (me.heroTempAttack || 0) : me.heroTempAttack || 0;
+	weaponBadgeUV = null;
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, swingAtk || me.weapon ? 44 : 62, colW);
+	if (me.weapon || me.heroTempAttack) {
+		const label = me.weapon ? `${swingAtk}/${me.weapon.durability}` : `+${swingAtk}`;
+		ctx.font = 'bold 22px system-ui, sans-serif';
+		const bw = Math.min(colW, ctx.measureText(label).width + 44), bx = 100, by = 54, bh = 32;
+		ctx.save();
+		if (armed) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 14; }
+		hpRoundRect(ctx, bx, by, bw, bh, 10);
+		const wg = ctx.createLinearGradient(0, by, 0, by + bh);
+		wg.addColorStop(0, '#6b5320'); wg.addColorStop(1, '#3b2c10');
+		ctx.fillStyle = wg; ctx.fill();
+		ctx.lineWidth = 2.5; ctx.strokeStyle = armed ? '#57e389' : '#d9b24a'; ctx.stroke();
+		ctx.restore();
+		ctx.fillStyle = '#ffd25f';
+		ctx.fillText('⚔', bx + 8, by + 24);
+		ctx.fillStyle = '#fff';
+		ctx.fillText(label, bx + 36, by + 24, bw - 40);
+		weaponBadgeUV = { x0: bx / HP_W, x1: (bx + bw) / HP_W, y0: 1 - (by + bh) / HP_H, y1: 1 - by / HP_H };
+		ctx.font = 'bold 18px system-ui, sans-serif';
+	}
 	ctx.fillStyle = '#cbb8e8';
 	ctx.font = '17px system-ui, sans-serif';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
 	// gear line(s)
 	const gear = [];
-	if (me.weapon) gear.push(`⚔ ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) gear.push(`❓ ${me.secrets.length}`);
 	if (me.exile.length) gear.push(`⊘ ${me.exile.length}`);
 	if (me.fatigue) gear.push(`☠ ${me.fatigue}`);
 	if (me.corpses && me.heroClass === 'death_knight') gear.push(`⚰ ${me.corpses}`);
-	if (me.heroTempAttack) gear.push(`⚔ +${me.heroTempAttack}`);
 	ctx.fillStyle = '#ffd25f';
 	ctx.font = '14px system-ui, sans-serif';
 	if (gear.length) ctx.fillText(gear.slice(0, 4).join('   '), 22, 142);
@@ -5166,7 +5190,7 @@ window.__game = {
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
 	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
-	get hoverUid() { return hoverUid; }, get handMini() { return handMini; }, get heroOrbCost() { return heroOrbCost; },
+	get hoverUid() { return hoverUid; }, get handMini() { return handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
 	// the screen y of a card's bottom edge (where attack/health sit)
 	cardBottomY(uid) {
 		const ent = entities.get(uid); if (!ent) return null;
