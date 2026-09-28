@@ -2218,6 +2218,57 @@ async function arenaView() {
     h('div', { style: 'display:flex;flex-wrap:wrap;gap:14px;' }, ...heroCards));
 }
 
+// ---------- Controls: keyboard, touch, and controller (Plans/CONTROLLER_SUPPORT_PLAN.md) ----------
+function controlsView() {
+  const table = (head, rows) => h('table', null,
+    h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))),
+    h('tbody', null, ...rows.map(r => h('tr', null, ...r.map(c => h('td', null, c))))));
+  const section = (title, sub, ...kids) => h('section', { class: 'lp-tier' },
+    h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+  content.replaceChildren(
+    h('h1', null, 'Controls'),
+    h('p', { class: 'muted' }, 'Every mode plays with a keyboard, a mouse or touch, or a game controller. ',
+      h('b', null, 'Controller play is for signed-in players.'),
+      ' The standard layout is Nintendo-style: the RIGHT face button confirms and the BOTTOM one cancels. On a Switch pad that reads A / B; on Xbox, B / A; on PlayStation, ○ / ✕. Switch to the Xbox layout, remap any button, or turn rumble on in the overworld under OPTIONS → CONTROLS (the setting applies everywhere).'),
+    section('Overworld and Pokémon battles', 'Buttons by position; the hint bar at the bottom shows the names for the pad you are holding.',
+      table(['Button', 'Roaming', 'Menus and battles'], [
+        ['Stick / D-pad', 'Walk', 'Move the cursor (held = scroll)'],
+        ['Right face (confirm)', 'Talk / interact', 'Select'],
+        ['Bottom face (cancel)', 'Hold to run', 'Back'],
+        ['Start', 'Start menu', '—'],
+        ['Select', 'Party', 'PC: release · Pokédex: grid view'],
+        ['Top face', 'Bag', 'PC: switch side · Pokédex: caught filter · Shop: buy ↔ sell'],
+        ['Left face (context)', 'Bike', 'Battle: throw last ball / swap moves · PC: sort · Party: take item · Summary: make lead · Pokédex: type filter'],
+        ['LB / RB', '—', 'Page left / right (PC boxes, Pokédex regions, town map)'],
+      ])),
+    section('Battlecards menus and screens', 'The lobby, run-mode screens, pop-ups (mulligan, discover, discard, choose-one), the deck builder, gallery, packs and replays.',
+      table(['Button', 'Action'], [
+        ['Stick / D-pad', 'Move focus to the nearest button, card or field'],
+        ['Right face (confirm)', 'Activate. A text field opens the on-screen keyboard; a dropdown cycles its options'],
+        ['Bottom face (cancel)', 'Back / close'],
+        ['LB / RB', 'Page left / right, replay steps'],
+        ['Start', 'Open a pack, play / pause a replay'],
+      ])),
+    section('Battlecards match board', 'A gold reticle marks the focused card; while targeting it turns red and the arrow follows it.',
+      table(['Button', 'Action'], [
+        ['Stick / D-pad', 'Move between cards in your hand, both boards, and the heroes'],
+        ['LB / RB', 'Jump between your hand, your side, and the enemy side'],
+        ['Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ◄ ►), arm an attack, or pick the target'],
+        ['Bottom face (cancel)', 'Back out of placing or targeting'],
+        ['Top face', 'Hero power'],
+        ['Left face', 'Inspect the focused card'],
+        ['Hold Start (0.6 s)', 'End turn (a quick tap does nothing, so it cannot end your turn by accident)'],
+      ])),
+    section('Typing on a controller', 'Nicknames, friend codes, searches and pasted deck or replay codes use the on-screen keyboard.',
+      table(['Button', 'Action'], [
+        ['D-pad', 'Move over the keys'],
+        ['Right face', 'Type the focused key'],
+        ['Bottom face', 'Delete (on an empty field: close)'],
+        ['Start', 'OK'],
+        ['Top face / left face', 'Space / Shift'],
+      ])));
+}
+
 function route() {
   const rawHash = location.hash.slice(1) || '/';
   const hash = rawHash.split('?')[0];
@@ -2235,6 +2286,7 @@ function route() {
     listView('abilities', 'Abilities', Object.values(DB.abilities).map(a => ({ ...a, sub: (a.pokemon || []).length + ' Pokémon' })).sort(byName));
   if (section === 'tms') return tmsView();
   if (section === 'unlearned') return unlearnedView();
+  if (section === 'controls') return controlsView();
   if (section === 'region') return regionView(id);
   if (section === 'cards') return id ? cardDetail(id) : cardGalleryView();
   if (section === 'land-pools') return id ? landPoolDetail(id) : landPoolsView();

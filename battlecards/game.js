@@ -67,6 +67,7 @@ import * as Rec from './replayrec.js';
 import * as RunRep from './runreplay.js';
 import { openProfile } from './profile.js';
 import { initPadboard } from './padboard.js';
+import { rumble } from '../site/gamepad.js';
 
 // the player index this client controls. Solo/host = 0; a live-duel guest = 1.
 // The board reorients so HUMAN always sits at the bottom facing the camera.
@@ -4986,6 +4987,7 @@ const SHAKE_MS = 320;
 const REDUCED_MOTION = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 let shakeEnd = 0, shakeMag = 0;
 function shake(mag) {
+	rumble(Math.min(1, 0.25 + mag * 1.5), 90 + Math.round(mag * 200));   // the controller feels it too (if rumble is on)
 	if (REDUCED_MOTION) return;
 	shakeMag = performance.now() < shakeEnd ? Math.max(shakeMag, mag) : mag;
 	shakeEnd = performance.now() + SHAKE_MS;

@@ -14,7 +14,7 @@
 //   d-pad / stick  move over the keys      confirm (right face)  press the key
 //   cancel (bottom) backspace; on an empty field, close
 //   Start           OK                     top face  space      left face  shift
-import { startGamepad } from './gamepad.js';
+import { startGamepad, buttonLabel, loadPadSettings } from './gamepad.js';
 
 const ROWS = {
 	text: ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL-', "ZXCVBNM.'!"],
@@ -149,7 +149,11 @@ export function askText(opts = {}) {
 					else if (a === 'context') { shift = !shift; paint(); }
 				},
 			});
-			hint.textContent = 'Controller: move · confirm = key · cancel = delete · START = OK · top = space · left = shift';
+			const setHint = () => {
+				const L = a => `[${buttonLabel(a, (pad && pad.kind()) || 'switch', loadPadSettings())}]`;
+				hint.textContent = `D-pad move · ${L('confirm')} type the key · ${L('cancel')} delete · ${L('menu')} OK · ${L('secondary')} space · ${L('context')} shift`;
+			};
+			setHint(); setTimeout(setHint, 60);   // once the pad has reported its family
 		} else hint.textContent = 'Type, or tap the keys. Enter = OK, Esc = cancel.';
 
 		let done = false;

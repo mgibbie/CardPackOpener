@@ -21,7 +21,7 @@
 //   cancel (bottom) back out (clearModes)      LB / RB   hand ← → your side ← → enemy
 //   top face       hero power                  left face inspect the focused card
 //   hold Start     END TURN (0.6s, with a fill bar, so a tap can't end your turn)
-import { startGamepad } from '../site/gamepad.js';
+import { startGamepad, buttonLabel, loadPadSettings } from '../site/gamepad.js';
 import { oskOpen } from '../site/osk.js';
 import { openModal, setBoardGuard } from './padnav.js';
 
@@ -37,7 +37,7 @@ let slot = null;            // { card, i } while placing a creature
 let holdAt = null;          // performance.now() Start went down
 let visible = false;        // hidden once the mouse moves
 let lastMode = 'browse';
-let reticle = null, bar = null;
+let reticle = null, bar = null, hints = null, lastHints = '';
 
 const keyOf = s => s.kind === 'hero' ? 'h:' + s.player : 'u:' + s.uid;
 const ZONES = ['hand', 'mine', 'enemy'];
@@ -240,11 +240,31 @@ function ensureDom() {
 	bar = document.createElement('div');
 	bar.id = 'padboard-endturn';
 	Object.assign(bar.style, { position: 'fixed', height: '6px', background: '#ffd27a', pointerEvents: 'none', zIndex: '71', display: 'none', borderRadius: '3px' });
-	document.body.append(reticle, bar);
+	hints = document.createElement('div');
+	hints.id = 'padboard-hints';
+	Object.assign(hints.style, { position: 'fixed', left: '50%', bottom: '8px', transform: 'translateX(-50%)', zIndex: '72', pointerEvents: 'none',
+		background: 'rgba(20,16,34,.86)', color: '#e8e2f4', border: '1px solid #6a5f8a', borderRadius: '8px', padding: '5px 12px',
+		font: '600 13px "Segoe UI", sans-serif', whiteSpace: 'nowrap', display: 'none' });
+	document.body.append(reticle, bar, hints);
+}
+// what the buttons do in this mode, named for the pad in your hands (Phase 5)
+function hintText(m) {
+	const L = a => `[${buttonLabel(a, (pad && pad.kind()) || 'switch', loadPadSettings())}]`;
+	if (m === 'slot') return `◄► choose a slot · ${L('confirm')} place · ${L('cancel')} cancel`;
+	if (m === 'target') return `D-pad pick a target · ${L('confirm')} confirm · ${L('cancel')} cancel`;
+	return `D-pad move · ${L('confirm')} play / attack · ${L('prev')}${L('next')} zones · ${L('secondary')} hero power · ${L('context')} inspect · hold ${L('menu')} end turn`;
 }
 function onFrame() {
 	if (!api) return;
 	ensureDom();
+	// UNPLUGGED (the last pad gone — checked here, not in onDisconnect, so a second
+	// pad still in use keeps everything): hide the reticle, the hints, the end-turn
+	// bar and the card's hover lift. Focus is remembered; the next press shows it.
+	if (visible && pad && !pad.connected()) {
+		visible = false; holdAt = null;
+		reticle.style.display = 'none'; hints.style.display = 'none'; bar.style.display = 'none';
+		api.setHover(null);
+	}
 	const active = boardActive();
 	const m = active ? mode() : 'off';
 	// a spell or attack just started targeting: jump focus onto the first legal target
@@ -261,6 +281,9 @@ function onFrame() {
 	if (cur) { reticle.style.display = 'block'; reticle.style.left = cur.x + 'px'; reticle.style.top = cur.y + 'px';
 		reticle.style.borderColor = m === 'target' ? '#ff6b6b' : '#ffd27a'; }
 	else reticle.style.display = 'none';
+	const showHints = active && visible && pad && pad.connected();
+	if (showHints) { const t = hintText(m); if (t !== lastHints) { hints.textContent = t; lastHints = t; } hints.style.display = 'block'; }
+	else hints.style.display = 'none';
 	// hold Start to end the turn
 	const btn = api.endTurnButton();
 	if (holdAt != null && active && btn && api.state.current === api.HUMAN) {

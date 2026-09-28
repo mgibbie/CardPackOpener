@@ -224,6 +224,13 @@ export function initPadnav() {
 	pad = startGamepad({
 		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
 		onPress,
+		// unplugged (the last pad gone): drop the ring and the hover it was showing;
+		// focus is kept, so the next press on a reconnected pad picks up there
+		onFrame: p => {
+			if (!ringOn || p.connected()) return;
+			ringOn = false;
+			if (focused) { focused.classList.remove('padnav-focus'); hover(focused, false); }
+		},
 	});
 	// the mouse takes over: hide the ring (focus is kept for the next pad press)
 	addEventListener('pointermove', e => {

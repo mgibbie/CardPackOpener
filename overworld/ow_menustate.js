@@ -135,5 +135,5 @@ export const OPTION_ACTIONS = [
 	{ id: 'export', label: 'EXPORT SAVE', hint: 'Download your game as a file' },
 	{ id: 'import', label: 'IMPORT SAVE', hint: 'Restore a downloaded save file' },
 	{ id: 'backups', label: 'BACKUPS', hint: 'Restore an automatic daily backup' },
-	{ id: 'controls', label: 'CONTROLS', hint: 'See every shortcut and rebind the single keys' },
+	{ id: 'controls', label: 'CONTROLS', hint: 'Rebind keys; controller layout, buttons and rumble' },
 ];

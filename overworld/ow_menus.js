@@ -40,6 +40,7 @@ import { legendStats, postgameLog, postgameObjective } from './ow_postgame.js';
 import {
 	STARTERS, starterMenu,
 } from './main.js';
+import { padSettingRows } from './ow_gamepad.js';
 
 // ---------- full-resolution menus (battleui components + pixel font) ----------
 S.menuUi = [];   // tappable rects rebuilt each draw: {id, x, y, w, h}
@@ -751,8 +752,8 @@ export function drawOptions(W, H) {
 			const cur = S.keyBinds[a.id];
 			const shown = (cur || a.def) === ' ' ? 'SPACE' : (cur || a.def).toUpperCase();
 			return optionsMenu.capture === a.id ? `${a.label}   >>> PRESS A KEY (Esc cancels)` : `${a.label}   —   ${shown}${cur ? '' : '  (default)'}`;
-		}).concat(['RESET ALL TO DEFAULTS', 'Back']);
-		optionList(W, H, u, 'CONTROLS', 'Every shortcut, rebindable. Arrows + WASD always move.', rows, optionsMenu.idx, 'ctl:', optionsMenu.flash);
+		}).concat(['RESET ALL TO DEFAULTS'], padSettingRows(), ['Back']);
+		optionList(W, H, u, 'CONTROLS', 'Keys and controller, rebindable. Arrows / WASD / the stick always move.', rows, optionsMenu.idx, 'ctl:', optionsMenu.flash);
 		return;
 	}
 	if (optionsMenu.mode === 'backups') {
