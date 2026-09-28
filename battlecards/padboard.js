@@ -39,7 +39,7 @@ let visible = false;        // hidden once the mouse moves
 let lastMode = 'browse';
 let reticle = null, bar = null, hints = null, lastHints = '';
 
-const keyOf = s => s.kind === 'hero' ? 'h:' + s.player : 'u:' + s.uid;
+const keyOf = s => s.kind === 'hero' ? 'h:' + s.player : s.kind === 'die' ? 'die' : 'u:' + s.uid;
 const ZONES = ['hand', 'mine', 'enemy'];
 
 export function boardActive() {
@@ -63,6 +63,8 @@ function stops() {
 	}
 	const pp = api.panelPos();
 	if (pp) out.push({ kind: 'hero', player: H, x: pp.x, y: pp.y, zone: 'mine' });
+	const dp = api.diePos && api.diePos();   // the planar die orb on your panel
+	if (dp) out.push({ kind: 'die', x: dp.x, y: dp.y, zone: 'mine' });
 	for (const [pi, el] of api.foePanels()) {
 		const r = el.getBoundingClientRect();
 		if (r.width < 4 || getComputedStyle(el).display === 'none') continue;
@@ -163,6 +165,7 @@ function confirm() {
 	const s = current(stops());
 	if (!s) return;
 	if (s.kind === 'hero') return s.player === api.HUMAN ? vclick(s.x, s.y) : api.panelClick(s.player);
+	if (s.kind === 'die') return vclick(s.x, s.y);
 	const c = s.card;
 	if (c.zone === 'hand') {
 		const S = api.state, H = api.HUMAN, E = api.E;

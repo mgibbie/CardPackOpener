@@ -1263,6 +1263,7 @@ function layoutTargets() {
 					ent.target.pos.set(x, 1.7 + (hovered ? 0.9 : 0) + i * 0.012, off + 6.9 - Math.abs(x) * 0.04 + (hovered ? 0.45 : 0));
 					sliceQuat(_layoutEuler.set(-0.5, 0, -(i - (n - 1) / 2) * 0.03), HUMAN, ent.target.quat);
 					ent.target.scale = hovered ? 1.0 : 0.68;
+					if (hovered) fitCardOnScreen(ent.target);   // its stats sit at the bottom corners
 				}
 			} else {
 				const spread = Math.min(1.0, 6.5 / Math.max(n, 1));
@@ -1326,13 +1327,15 @@ function layoutTargets() {
 			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.42;
 		});
-		// planeswalkers: center row between the land slots and the hero
-		const wn = p.planeswalkers.length;
+		// planeswalkers FLANK the hero panel (right, left, then further out). They
+		// used to sit dead-centre at the panel's own depth, i.e. right BEHIND your
+		// hero panel — only the name strip showed, and the hand covered the rest
+		// (Bryan: "not able to click on this planeswalker")
 		p.planeswalkers.forEach((card, i) => {
 			const ent = entityFor(card);
 			seen.add(card.uid);
-			const x = (i - (wn - 1) / 2) * 1.45;
-			toWorld(x, 0.07, off + 5.55, pi, ent.target.pos);
+			const side = i % 2 === 0 ? 1 : -1, k = Math.floor(i / 2);
+			toWorld(side * (2.5 + k * 1.35), 0.07, off + 5.0, pi, ent.target.pos);
 			sliceQuat(FLAT, pi, ent.target.quat);
 			ent.target.scale = 0.5;
 		});
@@ -1618,6 +1621,39 @@ heroPanelMesh.renderOrder = 1;
 heroPanelMesh.visible = false;
 scene.add(heroPanelMesh);
 let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bottom)
+// THE PLANAR DIE sits on the panel like a second power orb (owner: "treat it like
+// another hero power that attaches to the hero", but NOT one of the three power
+// slots). It used to be a floating "Planeswalk" DOM button that appeared when a
+// planeswalker hit the board — read as a planeswalker action — and vanished once
+// the next roll cost more mana than you had. The orb stays put (dimmed when you
+// can't roll), shows the next roll's cost, and explains itself on hover.
+let dieOrbUV = null;
+const planarDieOn = pl => !!pl && !state.over && (pl.sparked || pl.planeswalkers.length > 0);
+function drawPlanarDie(ctx, x, y, S, cost, usable) {
+	ctx.save();
+	if (usable) { ctx.shadowColor = 'rgba(80,210,230,0.95)'; ctx.shadowBlur = 16; }
+	ctx.globalAlpha *= usable ? 1 : 0.5;
+	const g = ctx.createRadialGradient(x + S * 0.4, y + S * 0.35, S * 0.1, x + S / 2, y + S / 2, S / 2);
+	g.addColorStop(0, '#7fe3f2'); g.addColorStop(0.6, '#2f8fa3'); g.addColorStop(1, '#154a57');
+	ctx.beginPath(); ctx.arc(x + S / 2, y + S / 2, S / 2, 0, TAU); ctx.fillStyle = g; ctx.fill();
+	ctx.lineWidth = 3; ctx.strokeStyle = '#0c2e36'; ctx.stroke();
+	ctx.shadowBlur = 0;
+	// a white d6 showing six pips
+	const d = S * 0.5, dx = x + (S - d) / 2, dy = y + (S - d) / 2;
+	hpRoundRect(ctx, dx, dy, d, d, d * 0.2); ctx.fillStyle = '#f4f7fb'; ctx.fill();
+	ctx.fillStyle = '#1c2a44';
+	for (const [px, py] of [[0.28, 0.25], [0.28, 0.5], [0.28, 0.75], [0.72, 0.25], [0.72, 0.5], [0.72, 0.75]]) {
+		ctx.beginPath(); ctx.arc(dx + d * px, dy + d * py, d * 0.085, 0, TAU); ctx.fill();
+	}
+	ctx.restore();
+	if (cost > 0) {   // the next roll's price, like a power orb's cost
+		const bx = x + S - 10, by = y + S - 10;
+		ctx.beginPath(); ctx.arc(bx, by, 11, 0, TAU); ctx.fillStyle = '#2a63d6'; ctx.fill();
+		ctx.lineWidth = 2; ctx.strokeStyle = '#0d1e45'; ctx.stroke();
+		ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui, sans-serif'; ctx.textAlign = 'center';
+		ctx.fillText(String(cost), bx, by + 5); ctx.textAlign = 'left';
+	}
+}
 
 function hpRoundRect(ctx, x, y, w, h, r) {
 	ctx.beginPath();
@@ -1665,9 +1701,20 @@ function drawHeroPanel() {
 	ctx.drawImage(port, HP_W - pS - 14, 12, pS, pS);
 	const power = classPowerOf(HUMAN);
 	heroOrbUV = null;
+	dieOrbUV = null;
+	const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
+	// the planar die: its own orb, left of the power orb (or in its place without one)
+	const dS = 46, ddx = (power ? ox : HP_W - pS - 14) - dS - 8, ddy = 22;
+	const dieOn = planarDieOn(me);
+	if (dieOn) {
+		const usable = E.canPlaneswalk(state, HUMAN);
+		ctx.save(); ctx.globalAlpha = me.eliminated ? 0.4 : 1;
+		drawPlanarDie(ctx, ddx, ddy, dS, E.planarRollCost(state, HUMAN), usable);
+		ctx.restore();
+		dieOrbUV = { x0: ddx / HP_W, x1: (ddx + dS) / HP_W, y0: 1 - (ddy + dS) / HP_H, y1: 1 - ddy / HP_H };
+	}
 	if (power) {
 		const orb = drawPowerOrb(power.power.cost, 96);
-		const oS = 58, ox = HP_W - pS - 14 - oS - 8, oy = 16;
 		const usable = state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
 		ctx.save();
 		if (usable) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 18; }
@@ -1705,7 +1752,7 @@ function drawHeroPanel() {
 	ctx.fillStyle = '#e8e2f4';
 	ctx.font = 'bold 18px system-ui, sans-serif';
 	const myCls = classNameOf(me.heroClass);
-	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, 124);
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, dieOn ? Math.max(60, ddx - 106) : 124);
 	ctx.fillStyle = '#cbb8e8';
 	ctx.font = '17px system-ui, sans-serif';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
@@ -1735,6 +1782,11 @@ function pickHeroPanelUV(ev) {
 	raycaster.setFromCamera(pointer, camera);
 	const hit = raycaster.intersectObject(heroPanelMesh)[0];
 	return hit ? hit.uv : null;
+}
+function heroPanelDieHit(uv) {
+	if (!uv || !dieOrbUV) return false;
+	const m = TOUCH ? 0.045 : 0;
+	return uv.x >= dieOrbUV.x0 - m && uv.x <= dieOrbUV.x1 + m && uv.y >= dieOrbUV.y0 - m && uv.y <= dieOrbUV.y1 + m;
 }
 function heroPanelOrbHit(uv) {
 	if (!uv || !heroOrbUV) return false;
@@ -1889,9 +1941,7 @@ function updateHud() {
 		el.classList.toggle('turn', state.current === pi && !state.over);
 	}
 	$('coin-btn').style.display = (me.coins > 0 && state.current === HUMAN) ? '' : 'none';
-	const pwOk = E.canPlaneswalk(state, HUMAN);
-	$('planeswalk-btn').style.display = pwOk ? '' : 'none';
-	if (pwOk) { const rc = E.planarRollCost(state, HUMAN); $('planeswalk-btn').textContent = rc > 0 ? `Planeswalk (${rc})` : 'Planeswalk'; }
+	$('planeswalk-btn').style.display = 'none';   // retired: the planar die is an orb on your hero panel now
 	// concede is available in any active game you're playing (runs, Quick Match, AI,
 	// duels) — but not while merely spectating someone else's match
 	$('concede').style.display = state && !state.over && !spectateMode ? '' : 'none';
@@ -3403,6 +3453,8 @@ function nextEvent() {
 		case 'planarRoll': {
 			const face = ev.roll === 6 ? 'Planeswalker — new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing';
 			log(`${nameOf(ev.player)} ${vbOf(ev.player, 'rolls', 'roll')} the planar die: ${ev.roll} (${face})`);
+			if (ev.player === HUMAN) banner(`🎲 Planar die: ${ev.roll} — ${ev.roll === 6 ? 'a new plane!' : ev.roll === 5 ? 'Chaos!' : 'nothing happens (5 = Chaos, 6 = new plane)'}`
+				+ `  ·  next roll ${E.planarRollCost(state, HUMAN)} mana`, 2200);
 			delay = 550;
 			break;
 		}
@@ -3880,6 +3932,16 @@ function updateTooltip(ev) {
 	const tip = $('tooltip');
 	// the class-power orb on your own 3D panel has no card uid of its own —
 	// resolve it to the power card so hovering the orb reads the power
+	if (hoverUid === 'heropanel' && state && heroPanelDieHit(pickHeroPanelUV(ev))) {
+		const cost = E.planarRollCost(state, HUMAN);
+		tip.innerHTML = `<div class="tt-name">🎲 Planar Die</div><div class="tt-type">ROLL · ${cost ? `COSTS (${cost})` : 'FREE'} · PLANECHASE</div>`
+			+ `<div class="tt-desc">Roll a six-sided die. <b>6</b>: planeswalk to a new plane. <b>5</b>: the current plane's Chaos happens. Anything else: nothing.</div>`
+			+ `<div class="tt-sub">The first roll each turn is free; each more costs 1 more mana. It's yours while you control a planeswalker (or are Sparked). It doesn't use a hero power slot.</div>`;
+		tip.style.display = 'block';
+		tip.style.left = `${Math.min(ev.clientX + 18, innerWidth - 290)}px`;
+		tip.style.top = `${Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 12)}px`;
+		return;
+	}
 	const card = cardOf(hoverUid)
 		|| (hoverUid === 'heropanel' && state && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
 	// never reveal hidden information: enemy hands and face-down traps stay secret
@@ -3902,7 +3964,14 @@ function updateTooltip(ev) {
 		: `${card.cost ?? 0} MANA · ` + classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 			+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
-	if (card.type === 'planeswalker') extra = `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
+	// attack / health on every creature tooltip: in a short window the hand card's
+	// stat corners sit below the screen edge (Bryan: "can't see my creatures' health")
+	if (card.type === 'creature') {
+		const hp = card.health ?? card.maxHealth, max = card.maxHealth ?? hp;
+		extra += `<div class="tt-sub tt-stats">⚔ ${card.attack ?? 0} Attack  ·  ❤ ${hp}${max != null && hp < max ? ` / ${max}` : ''} Health</div>`;
+	}
+	if (card.type === 'weapon') extra += `<div class="tt-sub tt-stats">⚔ ${card.attack ?? 0} Attack  ·  ${card.durability ?? '?'} Durability</div>`;
+	if (card.type === 'planeswalker') extra += `<div class="tt-sub">Loyalty ${card.loyalty}</div>`;
 	if (card.type === 'quest' && card.quest) extra = `<div class="tt-sub">Progress ${card.progress || 0} / ${card.quest.goal.count}</div>`;
 	if (card.quickdrawn) extra += `<div class="tt-sub">Quickdrawn — returns to your deck at end of turn</div>`;
 	if (card.paralyzed) extra += `<div class="tt-sub">⚡ Paralyzed — its attacks fail 50% of the time</div>`;
@@ -3956,9 +4025,27 @@ addEventListener('pointermove', ev => {
 	// (ProMotion) would otherwise raycast the whole scene per input event
 	if (ev.timeStamp - lastHoverPickT < 25) return;
 	lastHoverPickT = ev.timeStamp;
+	const prevHover = hoverUid;
 	hoverUid = pick(ev, placing && placing.dragging ? placing.card.uid : null);
-	// reaching down toward your hand pops it back up
-	if (handMini && mouseY > innerHeight * 0.82) handMini = false;
+	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); keep it
+	// hovered while the pointer stays in its column below it, or it would drop back
+	// under the cursor and flicker
+	if (hoverUid == null && prevHover != null && !(placing && placing.dragging)) {
+		const pc = cardOf(prevHover);
+		if (pc && pc.zone === 'hand' && pc.controller === HUMAN && entities.has(prevHover)) {
+			const m = entities.get(prevHover).mesh;
+			const c = m.position.clone().project(camera);
+			const cx = (c.x + 1) / 2 * innerWidth, cy = (1 - c.y) / 2 * innerHeight;
+			const halfW = Math.abs(m.position.clone().add(new THREE.Vector3(CARD_W * m.scale.x / 2, 0, 0)).project(camera).x - c.x) / 2 * innerWidth;
+			if (Math.abs(ev.clientX - cx) < halfW && ev.clientY > cy) hoverUid = prevHover;
+		}
+	}
+	// reaching down toward your hand pops it back up — but NOT when the pointer is
+	// already on something else down there (a planeswalker, your hero panel): the
+	// risen hand covered it the moment you reached for it (Bryan's planeswalker)
+	const under = hoverUid != null ? cardOf(hoverUid) : null;
+	const reachingForHand = hoverUid == null || (under && under.zone === 'hand' && under.controller === HUMAN);
+	if (handMini && mouseY > innerHeight * 0.82 && reachingForHand) handMini = false;
 	if (placing && placing.dragging) $('tooltip').style.display = 'none';
 	else if (!TOUCH) updateTooltip(ev); // phones use long-press instead of hover
 	const cursor = (placing && placing.dragging) ? 'grabbing'
@@ -4265,7 +4352,13 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	menuDragCandidate = null; // each press starts a fresh gesture
 	if (spectateMode || replayMode || duel.busy) return;
 	if (ev.button !== 0 || !state || state.over) return;
-	const uid = pick(ev);
+	let uid = pick(ev);
+	// a hovered hand card lifts clear of the cursor (fitCardOnScreen); a press
+	// still under it in its column is aimed at that card, so grab it
+	if (uid == null && hoverUid != null && !pending && !selectedAttacker) {
+		const hc = cardOf(hoverUid);
+		if (hc && hc.zone === 'hand' && hc.controller === HUMAN) uid = hoverUid;
+	}
 	const card = cardOf(uid);
 	if (TOUCH) $('tooltip').style.display = 'none';
 	// press-and-hold any card to open its full preview — and block the release
@@ -4278,6 +4371,8 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 	// your own 3D hero panel: the orb fires the class power, elsewhere acts as the
 	// hero (arm an attack, or pick yourself as a spell/attack target via panelClick)
 	if (uid === 'heropanel') {
+		// the planar die orb: armed on press, rolled on a quick release
+		if (heroPanelDieHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker) { heroPress = { die: true }; return; }
 		const power = classPowerOf(HUMAN);
 		if (heroPanelOrbHit(pickHeroPanelUV(ev)) && !pending && !selectedAttacker && power) {
 			// don't fire on press — arm it: a quick release uses the power (or, when
@@ -4484,6 +4579,19 @@ const placeMarker = new THREE.Mesh(
 placeMarker.visible = false;
 scene.add(placeMarker);
 
+// Lift a (hovered hand) card until its whole face is inside the window: its
+// bottom edge, where attack/health sit, fell below the screen in short windows
+// (1366x768 with a taskbar over it). Moves the target back and up a step at a time.
+const _fitV = new THREE.Vector3();
+function fitCardOnScreen(target) {
+	const limit = innerHeight - 14;
+	for (let k = 0; k < 20; k++) {
+		_fitV.set(0, -CARD_H * (target.scale || 1) / 2, 0).applyQuaternion(target.quat).add(target.pos).project(camera);
+		if ((1 - _fitV.y) / 2 * innerHeight <= limit) return;
+		target.pos.z -= 0.16; target.pos.y += 0.05;
+	}
+}
+
 function boardScreenXs() {
 	return state.players[HUMAN].board
 		.filter(c => entities.has(c.uid))
@@ -4645,6 +4753,15 @@ addEventListener('pointerup', ev => {
 	menuDragCandidate = null; // the gesture ended; a click keeps its menu open
 	if (spectateMode || replayMode || duel.busy) return;
 	// hero-power orb released: a quick click uses it; a press-and-hold only previewed
+	if (heroPress && heroPress.die) {
+		heroPress = null;
+		if (ev.button === 0 && !longPressFired && state && Math.hypot(ev.clientX - lastDownX, ev.clientY - lastDownY) < 14) {
+			if (E.canPlaneswalk(state, HUMAN)) actPlaneswalk();
+			else banner(state.current !== HUMAN ? 'The planar die rolls on your turn'
+				: `The next planar roll costs ${E.planarRollCost(state, HUMAN)} mana`);
+		}
+		return;
+	}
 	if (heroPress) {
 		const power = heroPress.power;
 		heroPress = null;
@@ -5023,6 +5140,22 @@ window.__game = {
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
 	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
+	get hoverUid() { return hoverUid; }, get handMini() { return handMini; },
+	// the screen y of a card's bottom edge (where attack/health sit)
+	cardBottomY(uid) {
+		const ent = entities.get(uid); if (!ent) return null;
+		const m = ent.mesh;
+		const v = new THREE.Vector3(0, -CARD_H * m.scale.y / 2, 0).applyQuaternion(m.quaternion).add(m.position).project(camera);
+		return (1 - v.y) / 2 * innerHeight;
+	},
+	dieScreenPos() {
+		if (!heroPanelMesh.visible || !dieOrbUV) return null;
+		const g = heroPanelMesh.geometry.parameters;
+		const lx = ((dieOrbUV.x0 + dieOrbUV.x1) / 2 - 0.5) * g.width;
+		const ly = ((dieOrbUV.y0 + dieOrbUV.y1) / 2 - 0.5) * g.height;
+		const v = heroPanelMesh.localToWorld(new THREE.Vector3(lx, ly, 0)).project(camera);
+		return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+	},
 	orbScreenPos() {
 		if (!heroPanelMesh.visible || !heroOrbUV) return null;
 		const g = heroPanelMesh.geometry.parameters;
@@ -5055,7 +5188,7 @@ initPadboard({
 	busy: () => spectateMode || replayMode || duel.busy,
 	cardOf, entityUids: () => [...entities.keys()],
 	screenPos: uid => window.__game.screenPosOf(uid),
-	panelPos: () => window.__game.panelScreenPos(), orbPos: () => window.__game.orbScreenPos(),
+	panelPos: () => window.__game.panelScreenPos(), orbPos: () => window.__game.orbScreenPos(), diePos: () => window.__game.dieScreenPos(),
 	foePanels: () => [...foePanelEls.entries()],
 	get pending() { return pending; }, get attacker() { return selectedAttacker; },
 	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
