@@ -96,7 +96,7 @@ A spatial-focus navigator for DOM screens.
   - Every run-mode overlay (`dungeonOverlay`/`overlayButton`, ~115 screens, one pattern).
   - Deck builder: tiles are already `tabIndex`; A = zoom, then A = Add.
   - Gallery, profile, and the replay bar (LB/RB = step, A = play/pause).
-- **Modal fix:** switch `#scry-modal` / `#walker-menu` / `#inspect` handlers from `pointerdown` to `click`. Mulligan cells become buttons, so both mouse and pad fire the same path. Keeping pointerdown's instant response on touch needs checking; `click` fires on tap anyway.
+- **Modal fix (as built):** instead of switching the ~45 `pointerdown` handlers to `click`, activation **replays a real mouse click** (pointerdown, mousedown, pointerup, mouseup, click at the element's centre). Switching them would have let the page-wide `pointerdown` handler (`game.js`) close a menu before its button ran; replaying the real sequence leaves every mouse and touch path untouched. Mulligan cells got `tabIndex = 0`. Modal scoping uses the game's own containers (`#scry-modal`, `#walker-menu`, `#inspect`, `#dungeon-overlay`, `aria-modal`), since a decision modal is a small box over a separate veil.
 - **Pack opening:** A opens the pack; stick + A flips cards.
 - **Test:** `padnav_smoke.mjs` (puppeteer, fake pad):
   - walk the lobby → start a dungeon run;
