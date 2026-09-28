@@ -76,6 +76,12 @@ addEventListener('keyup', e => {
 		owlog('keyup', e.key, '->', dir, 'held=' + heldKeys.join('|'));
 	}
 });
+// Leaving the tab mid-walk used to leave the arrow HELD: its keyup never
+// arrives, so the player kept walking on return. Blur / a hidden tab let go of
+// every held direction and the run key (the gamepad core does the same).
+const letGoOfKeys = () => { heldKeys.length = 0; S.runHeld = false; };
+addEventListener('blur', letGoOfKeys);
+document.addEventListener('visibilitychange', () => { if (document.hidden) letGoOfKeys(); });
 owlog('listeners attached: keydown/keyup (movement)');
 
 // where you are, so a return visit resumes there (URL params still win)

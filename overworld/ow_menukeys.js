@@ -7,7 +7,7 @@ import * as BUI from './battleui.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
 import { battle, cutscene, dialog, encounters, evolution, factorySpec, hud, player, pvp, screen, sctx, trainers, world } from './ow_core.js';
-import { menuChrome } from './ow_menus.js';
+import { menuChrome, partyTakeItem, summaryMovePick, summaryToLead } from './ow_menus.js';
 import { mailKey, shopStockNow, tradeKey } from './ow_pvp.js';
 import { S } from './ow_state.js';
 import { saveParty } from './party.js';
@@ -764,7 +764,7 @@ export function pressKey(k) {
 			if (k === 'z' || k === 'Enter') {
 				const opt = a.options[a.idx];
 				if (opt.kind === 'field') useFieldMove(opt.hm, a.mon);
-				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; partyMenu.moveSwap = null; }
+				else if (opt.kind === 'summary') { partyMenu.action = null; partyMenu.summary = true; partyMenu.moveCur = null; partyMenu.moveSwap = null; }
 				else if (opt.kind === 'switch') {
 					// SWITCH used to only ever promote to lead — there was no way to move
 					// slot 5 to slot 3, or to demote the lead. Now it arms a swap and the
@@ -778,14 +778,25 @@ export function pressKey(k) {
 		if (partyMenu.summary) {
 			// summary view: up/down cycles party members (dropping any armed move
 			// swap — it belongs to the mon that armed it), X cancels the swap first
-			if (k === 'ArrowUp') { partyMenu.idx = (partyMenu.idx + S.party.length - 1) % S.party.length; partyMenu.moveSwap = null; }
-			if (k === 'ArrowDown') { partyMenu.idx = (partyMenu.idx + 1) % S.party.length; partyMenu.moveSwap = null; }
+			if (k === 'ArrowUp') { partyMenu.idx = (partyMenu.idx + S.party.length - 1) % S.party.length; partyMenu.moveSwap = null; partyMenu.moveCur = null; }
+			if (k === 'ArrowDown') { partyMenu.idx = (partyMenu.idx + 1) % S.party.length; partyMenu.moveSwap = null; partyMenu.moveCur = null; }
+			// left/right walk a cursor over the moves, Z picks (arm, then swap) — the
+			// same reorder the tap does; L moves this mon to the lead
+			const nMoves = S.party[partyMenu.idx]?.moves?.length || 0;
+			if ((k === 'ArrowLeft' || k === 'ArrowRight') && nMoves > 1) {
+				const c = partyMenu.moveCur == null ? (k === 'ArrowRight' ? -1 : nMoves) : partyMenu.moveCur;
+				partyMenu.moveCur = (c + (k === 'ArrowRight' ? 1 : -1) + nMoves) % nMoves;
+			}
+			if (k === 'z' && partyMenu.moveCur != null) summaryMovePick(partyMenu.moveCur);
+			if (k === 'l') { if (summaryToLead()) sfx('ui_select'); }
 			if (k === 'x' || k === 'Escape') {
 				if (partyMenu.moveSwap != null) partyMenu.moveSwap = null;
+				else if (partyMenu.moveCur != null) partyMenu.moveCur = null;
 				else partyMenu.summary = false;
 			}
 			return;
 		}
+		if (k === 't') { if (partyTakeItem(partyMenu.idx)) sfx('ui_select'); return; }
 		if (k === 'ArrowUp') partyMenu.idx = (partyMenu.idx + S.party.length - 1) % S.party.length;
 		if (k === 'ArrowDown') partyMenu.idx = (partyMenu.idx + 1) % S.party.length;
 		if (k === 'z' || k === 'Enter') {

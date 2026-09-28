@@ -193,6 +193,8 @@ export class Pvp {
 		const a = this.active;
 		if (!a) return;
 		if (a.phase === 'done') { if (k === 'z' || k === 'Enter' || k === 'x') this.quit(); return; }
+		// the tap-to-advance had no key: a keyboard or controller player waited out every line
+		if (a.phase === 'anim' && (k === 'z' || k === 'Enter')) { a.msgT = 9; return; }
 		if (a.spectator) { if (k === 'x') this.quit(); return; }
 		// correspondence: X walks away whenever — the match waits on the server,
 		// so leaving is never a forfeit (only the FORFEIT option is)

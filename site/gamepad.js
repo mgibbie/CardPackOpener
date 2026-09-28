@@ -2,7 +2,7 @@
 //
 // Turns the browser Gamepad API's raw state into LOGICAL actions, so every
 // surface (overworld, Pokémon battles, Battlecards) speaks the same small
-// vocabulary and remapping / the Nintendo A-B swap happen in one place:
+// vocabulary and remapping / the button layout happen in one place:
 //
 //   confirm cancel context secondary prev next select menu   (face / shoulder / meta)
 //   up down left right                                       (d-pad OR left stick)
@@ -18,10 +18,11 @@
 // physically let go before it can press again, so returning to the tab with the
 // stick still pushed does not fire a surprise step.
 
-// W3C "standard" mapping: button index -> logical action
+// W3C "standard" mapping, by POSITION: button index -> logical action. Face
+// buttons 0/1 are the bottom/right ones; which of them confirms is the LAYOUT.
 const BUTTONS = {
-	0: 'confirm',    // A / ✕ / B(Nintendo, bottom)
-	1: 'cancel',     // B / ○
+	0: 'confirm',    // bottom face: Xbox A, PlayStation ✕, Nintendo B
+	1: 'cancel',     // right face:  Xbox B, PlayStation ○, Nintendo A
 	2: 'context',    // X / □
 	3: 'secondary',  // Y / △
 	4: 'prev',       // LB / L1
@@ -37,7 +38,9 @@ export const DEFAULTS = {
 	deadzone: 0.35,        // radial, on the left stick
 	repeatDelay: 250,      // ms before a held direction starts repeating
 	repeatInterval: 90,    // ms between repeats
-	swapAB: false,         // Nintendo layout: the right face button confirms
+	// 'nintendo' (the owner's standard): the RIGHT face button confirms and the
+	// bottom one cancels, as on a Switch / SNES / GBA. 'xbox': bottom confirms.
+	layout: 'nintendo',
 };
 
 // what the pad calls itself -> which button labels to show (Phase 5)
@@ -84,7 +87,7 @@ export function createGamepad(opts = {}) {
 			(p.buttons || []).forEach((b, i) => {
 				let a = BUTTONS[i];
 				if (!a || !pressed(b)) return;
-				if (o.swapAB && (a === 'confirm' || a === 'cancel')) a = a === 'confirm' ? 'cancel' : 'confirm';
+				if (o.layout === 'nintendo' && (a === 'confirm' || a === 'cancel')) a = a === 'confirm' ? 'cancel' : 'confirm';
 				now.add(a);
 			});
 			const dir = stickDirection(p.axes?.[0], p.axes?.[1], o.deadzone);
@@ -150,7 +153,9 @@ export function startGamepad(opts = {}) {
 	const readPads = opts.readPads || (() => (nav && nav.getGamepads ? nav.getGamepads() : []));
 	const pad = createGamepad({ ...opts, readPads });
 	let raf = 0, running = true;
-	const frame = t => { if (!running) return; pad.poll(t); raf = requestAnimationFrame(frame); };
+	// onFrame(pad) runs after every poll: a surface syncs continuous state
+	// (the overworld's walk direction) from pad.direction() there
+	const frame = t => { if (!running) return; pad.poll(t); if (opts.onFrame) opts.onFrame(pad); raf = requestAnimationFrame(frame); };
 	raf = requestAnimationFrame(frame);
 	const letGo = () => pad.releaseAll();
 	const onVis = () => { if (document.hidden) pad.releaseAll(); };
