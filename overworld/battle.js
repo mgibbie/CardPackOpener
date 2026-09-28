@@ -4,6 +4,7 @@
 // no natures; moveset = last 4 level-up moves at the mon's level).
 import { getJSON, getImage, VIEW_W, VIEW_H } from './engine.js';
 import * as Bag from './bag.js';
+import { rumble } from '../site/gamepad.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 import { animScale, charsPerSec } from './settings.js';
@@ -2659,8 +2660,9 @@ export class Battle {
 		// visual punch for the hit that's about to animate: crit = hard shake + white
 		// flash, super-effective = medium shake + orange flash (consumed by the 'hit' anim)
 		if (this.active && total > 0) {
-			if (crits) this.active.hitPunch = { t: 0.34, mag: 14, flash: 'rgba(255,255,255,0.5)' };
-			else if (eff > 1) this.active.hitPunch = { t: 0.3, mag: 11, flash: 'rgba(255,150,60,0.4)' };
+			// ...and the controller feels it, when the player turned rumble on
+			if (crits) { this.active.hitPunch = { t: 0.34, mag: 14, flash: 'rgba(255,255,255,0.5)' }; rumble(0.85, 180); }
+			else if (eff > 1) { this.active.hitPunch = { t: 0.3, mag: 11, flash: 'rgba(255,150,60,0.4)' }; rumble(0.55, 140); }
 		}
 		// Weakness Policy: eating a super-effective hit sharply boosts both attacks
 		if (eff > 1 && total > 0 && !hitsSub && target.curHP > 0 && this.itemFx(target)?.weakPolicy) {
@@ -3776,6 +3778,7 @@ export class Battle {
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
 			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
+				rumble(0.4, 110);
 				sfx('fanfare_capture');
 				// FRIEND BALL sends it home already fond of you; LUXURY BALL primes fast bonding.
 				if (ballId === 'friendball') a.foe.friend = 200;
@@ -3821,7 +3824,8 @@ export class Battle {
 		for (let i = 1; i <= Math.min(shakes, 3); i++) this.pushAnim('ballshake', 'foe', 0.7, () => sfx('ball_drop'));
 		if (shakes >= 4) {
 			this.pushAnim('ballcatch', 'foe', 0.5, () => sfx('ball_drop'));
-			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => { sfx('fanfare_capture'); a.caughtMon = a.foe; });
+			this.pushMsg(`Gotcha! ${a.foe.name} was caught!`, () => {
+				rumble(0.4, 110); sfx('fanfare_capture'); a.caughtMon = a.foe; });
 			this.awardBattleExp();
 			this.pushMsg('', () => this.finish('caught'));
 		} else {

@@ -18,6 +18,7 @@ import { bgm, sfx, syncBgmVolume } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { OPTION_ACTIONS, OPTION_KEYS, optionsMenu, townMap } from './ow_menustate.js';
 import { flyTo, hasFlyPoint } from './ow_transitions.js';
+import { PAD_ROWS, padSettingPick } from './ow_gamepad.js';
 
 
 // ---------- background music ----------
@@ -117,7 +118,11 @@ export function optionsKey(k) {
 	const om = optionsMenu;
 	if (om.mode === 'controls') {
 		if (om.capture) return; // the raw keydown listener owns the capture
-		const rows = KEY_ACTIONS.length + 2; // + RESET ALL + BACK
+		// a controller-button capture: only Esc/X (the keyboard) cancels it
+		if (om.padCapture) { if (k === 'x' || k === 'Escape') { om.padCapture = null; om.flash = 'Cancelled.'; } return; }
+		// keys, RESET ALL, the controller rows (layout, rumble, buttons, reset), BACK
+		const padRows = 2 + PAD_ROWS.length + 1;
+		const rows = KEY_ACTIONS.length + 1 + padRows + 1;
 		if (k === 'ArrowUp') om.idx = (om.idx + rows - 1) % rows;
 		if (k === 'ArrowDown') om.idx = (om.idx + 1) % rows;
 		if (k === 'x' || k === 'Escape') { om.mode = 'main'; om.idx = OPTION_KEYS.length + 3; om.flash = null; return; }
@@ -128,6 +133,8 @@ export function optionsKey(k) {
 			sfx('ui_select');
 			return;
 		}
+		const j = om.idx - (KEY_ACTIONS.length + 1);
+		if (j >= 0 && j < padRows) { om.flash = padSettingPick(j); sfx('ui_select'); return; }
 		if (om.idx > KEY_ACTIONS.length) { om.mode = 'main'; om.idx = OPTION_KEYS.length + 3; om.flash = null; return; }
 		om.capture = KEY_ACTIONS[om.idx].id;
 		om.flash = null;

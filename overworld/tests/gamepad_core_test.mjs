@@ -3,7 +3,7 @@
 // controllers, so every surface's test drives the core the same way.
 //
 //   node overworld/tests/gamepad_core_test.mjs
-import { createGamepad, startGamepad, stickDirection, controllerKind, ACTIONS } from '../../site/gamepad.js';
+import { createGamepad, startGamepad, stickDirection, controllerKind, ACTIONS, actionAt, effectiveTable, remapButton, buttonLabel, rumble, PAD_SETTINGS_KEY } from '../../site/gamepad.js';
 
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
@@ -159,6 +159,45 @@ A(['confirm', 'cancel', 'menu', 'select', 'prev', 'next', 'context', 'secondary'
 	A(log.includes('forced:right'), 'a hidden tab releases them too');
 	pad.stop();
 	A(!listeners.blur.length && !docListeners.visibilitychange.length && frameCb === null, 'stop() removes its listeners and the poller');
+}
+
+// ---------- phase 5: remap, labels, raw presses, rumble ----------
+{
+	const nin = { layout: 'nintendo' }, xb = { layout: 'xbox' };
+	A(actionAt(1, nin) === 'confirm' && actionAt(0, nin) === 'cancel' && actionAt(0, xb) === 'confirm', 'the layout decides which face button confirms');
+	// a Switch pad on the Nintendo layout: confirm is the RIGHT button, labelled A
+	A(buttonLabel('confirm', 'switch', nin) === 'A' && buttonLabel('cancel', 'switch', nin) === 'B', 'a Switch pad reads A = confirm, B = cancel');
+	A(buttonLabel('confirm', 'xbox', xb) === 'A' && buttonLabel('confirm', 'playstation', xb) === '✕', 'on the Xbox layout an Xbox pad confirms with A, a PlayStation pad with ✕');
+	A(buttonLabel('confirm', 'playstation', nin) === '○', '...and on the Nintendo layout a PlayStation pad confirms with ○ (the right button)');
+	A(buttonLabel('menu', 'switch', nin) === '+' && buttonLabel('up', 'xbox', nin) === 'D-pad', 'meta buttons and directions are named too');
+	// remap: put CONFIRM on the top button; the top button's old action moves to where confirm was
+	const t = remapButton(nin, 3, 'confirm');
+	A(t[3] === 'confirm' && t[1] === 'secondary', 'remapping swaps, so no action is orphaned', JSON.stringify(t));
+	const o = { layout: 'nintendo', remap: t };
+	A(actionAt(3, o) === 'confirm' && actionAt(1, o) === 'secondary' && buttonLabel('confirm', 'switch', o) === 'X', 'a remapped button acts and is labelled accordingly');
+	A(Object.values(effectiveTable(o)).sort().join() === Object.values(effectiveTable(nin)).sort().join(), 'the remapped table still holds every action exactly once');
+	// the core applies a remap table
+	const r = rig({ layout: 'nintendo', remap: t }), p = fakePad();
+	r.setPads([p]); r.pad.poll(0); r.take();
+	p.set(3, true); r.pad.poll(10);
+	A(r.take().join() === 'press:confirm', 'the core presses the remapped action');
+	p.set(3, false); r.pad.poll(20); r.take();
+	// raw button presses, for the "press the button you want" capture
+	const raws = [];
+	const r2 = createGamepad({ readPads: () => [p], onButton: i => raws.push(i) });
+	r2.poll(0); p.set(5, true); r2.poll(10); r2.poll(20); p.set(5, false); r2.poll(30);
+	A(raws.join() === '5', 'onButton reports each physical press once, by index', raws.join());
+}
+{
+	// rumble: off unless the player turned it on; only pads with an actuator buzz
+	const store = {};
+	globalThis.localStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } };
+	const calls = [];
+	globalThis.window = { __owFakePads: [{ vibrationActuator: { playEffect: (type, fx) => calls.push([type, fx.duration, fx.strongMagnitude]) } }, {}] };
+	A(rumble(0.8, 150) === false && calls.length === 0, 'rumble is OFF by default');
+	store[PAD_SETTINGS_KEY] = JSON.stringify({ rumble: true });
+	A(rumble(0.8, 150) === true && calls.length === 1 && calls[0][0] === 'dual-rumble' && calls[0][1] === 150, 'turned on, a pad with an actuator buzzes (one without is skipped)', JSON.stringify(calls));
+	delete globalThis.window; delete globalThis.localStorage;
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

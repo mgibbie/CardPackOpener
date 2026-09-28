@@ -43,6 +43,70 @@ export const DEFAULTS = {
 	layout: 'nintendo',
 };
 
+// ---------- player settings (Phase 5) ----------
+// One store for every surface: the overworld's OPTIONS > CONTROLS writes it,
+// Battlecards reads it. `remap` is a full button-index -> action table (only
+// the face / shoulder / meta buttons; the d-pad and stick always move).
+export const PAD_SETTINGS_KEY = 'magepunk_pad_v1';
+export const REMAPPABLE = [0, 1, 2, 3, 4, 5, 8, 9];
+export function loadPadSettings() {
+	try {
+		const v = JSON.parse(localStorage.getItem(PAD_SETTINGS_KEY) || 'null') || {};
+		return { layout: v.layout === 'xbox' ? 'xbox' : 'nintendo', rumble: v.rumble === true, remap: v.remap && typeof v.remap === 'object' ? v.remap : null };
+	} catch (e) { return { layout: 'nintendo', rumble: false, remap: null }; }
+}
+export function savePadSettings(v) {
+	try { localStorage.setItem(PAD_SETTINGS_KEY, JSON.stringify(v)); } catch (e) {}
+}
+// the action a physical button performs under these settings
+export function actionAt(i, o = DEFAULTS) {
+	if (o.remap && Object.prototype.hasOwnProperty.call(o.remap, i)) return o.remap[i] || null;
+	let a = BUTTONS[i] || null;
+	if (o.layout === 'nintendo' && (a === 'confirm' || a === 'cancel')) a = a === 'confirm' ? 'cancel' : 'confirm';
+	return a;
+}
+export function effectiveTable(o = DEFAULTS) {
+	const t = {}; for (const i of REMAPPABLE) t[i] = actionAt(i, o); return t;
+}
+// put `action` on button `index`; whatever button had it takes index's old action
+// (a swap, so no action can be orphaned)
+export function remapButton(o, index, action) {
+	const t = effectiveTable(o);
+	const from = Object.keys(t).find(k => t[k] === action);
+	if (from != null && +from !== index) t[from] = t[index];
+	t[index] = action;
+	return t;
+}
+// what to call a button, by the family of the pad in your hands
+const NAMES = {
+	xbox: { 0: 'A', 1: 'B', 2: 'X', 3: 'Y', 4: 'LB', 5: 'RB', 8: 'View', 9: 'Menu' },
+	playstation: { 0: '✕', 1: '○', 2: '□', 3: '△', 4: 'L1', 5: 'R1', 8: 'Create', 9: 'Options' },
+	switch: { 0: 'B', 1: 'A', 2: 'Y', 3: 'X', 4: 'L', 5: 'R', 8: '−', 9: '+' },
+	generic: { 0: '⬇', 1: '➡', 2: '⬅', 3: '⬆', 4: 'L', 5: 'R', 8: 'Select', 9: 'Start' },
+};
+export function buttonName(index, kind = 'generic') { return (NAMES[kind] || NAMES.generic)[index] || '?'; }
+export function buttonLabel(action, kind = 'generic', o = DEFAULTS) {
+	if (DIRECTIONS.includes(action)) return 'D-pad';
+	const t = effectiveTable(o);
+	const i = Object.keys(t).find(k => t[k] === action);
+	return i == null ? '—' : buttonName(+i, kind);
+}
+// A short rumble, only if the player turned it on (OPTIONS > CONTROLS). Every
+// connected pad with a vibration actuator buzzes; a pad without one is ignored.
+export function rumble(strength = 0.5, ms = 120) {
+	if (!loadPadSettings().rumble) return false;
+	const pads = (typeof window !== 'undefined' && window.__owFakePads) ? window.__owFakePads
+		: (typeof navigator !== 'undefined' && navigator.getGamepads ? [...navigator.getGamepads()] : []);
+	let buzzed = false;
+	for (const p of pads) {
+		const act = p && p.vibrationActuator;
+		if (!act || typeof act.playEffect !== 'function') continue;
+		const m = Math.max(0, Math.min(1, strength));
+		try { act.playEffect('dual-rumble', { duration: ms, strongMagnitude: m, weakMagnitude: m * 0.6 }); buzzed = true; } catch (e) {}
+	}
+	return buzzed;
+}
+
 // what the pad calls itself -> which button labels to show (Phase 5)
 export function controllerKind(id) {
 	const s = String(id || '');
@@ -68,6 +132,8 @@ export function createGamepad(opts = {}) {
 	const onRelease = o.onRelease || (() => {});
 	const onConnect = o.onConnect || (() => {});
 	const onDisconnect = o.onDisconnect || (() => {});
+	const onButton = o.onButton || null;   // raw index presses (remap capture)
+	let rawHeld = new Set();
 
 	const held = new Set();          // logical actions currently down
 	const latched = new Set();       // released by force; wait for a physical release
@@ -78,22 +144,22 @@ export function createGamepad(opts = {}) {
 
 	// the logical actions the pads are asserting right now (all pads merged)
 	function sample() {
-		const now = new Set();
+		const now = new Set(), raw = new Set();
 		const pads = [...(readPads() || [])].filter(Boolean);
 		const seen = new Map();
 		for (const p of pads) {
 			if (p.connected === false) continue;
 			seen.set(p.index ?? seen.size, p.id || '');
 			(p.buttons || []).forEach((b, i) => {
-				let a = BUTTONS[i];
-				if (!a || !pressed(b)) return;
-				if (o.layout === 'nintendo' && (a === 'confirm' || a === 'cancel')) a = a === 'confirm' ? 'cancel' : 'confirm';
-				now.add(a);
+				if (!pressed(b)) return;
+				raw.add(i);
+				const a = actionAt(i, o);
+				if (a) now.add(a);
 			});
 			const dir = stickDirection(p.axes?.[0], p.axes?.[1], o.deadzone);
 			if (dir) now.add(dir);
 		}
-		return { now, seen };
+		return { now, seen, raw };
 	}
 
 	function release(a, forced) {
@@ -105,7 +171,9 @@ export function createGamepad(opts = {}) {
 
 	const api = {
 		poll(t) {
-			const { now, seen } = sample();
+			const { now, seen, raw } = sample();
+			if (onButton) for (const i of raw) if (!rawHeld.has(i)) onButton(i);
+			rawHeld = raw;
 			// connect / disconnect, by pad index
 			for (const [i, id] of seen) if (!known.has(i)) { kind = controllerKind(id); onConnect({ index: i, id, kind }); }
 			for (const [i, id] of known) if (!seen.has(i)) onDisconnect({ index: i, id });
@@ -151,7 +219,8 @@ export function createGamepad(opts = {}) {
 export function startGamepad(opts = {}) {
 	const nav = typeof navigator !== 'undefined' ? navigator : null;
 	const readPads = opts.readPads || (() => (nav && nav.getGamepads ? nav.getGamepads() : []));
-	const pad = createGamepad({ ...opts, readPads });
+	const saved = loadPadSettings();
+	const pad = createGamepad({ layout: saved.layout, remap: saved.remap, ...opts, readPads });
 	let raf = 0, running = true;
 	// onFrame(pad) runs after every poll: a surface syncs continuous state
 	// (the overworld's walk direction) from pad.direction() there
@@ -163,6 +232,8 @@ export function startGamepad(opts = {}) {
 	document.addEventListener('visibilitychange', onVis);
 	addEventListener('gamepaddisconnected', letGo);
 	return Object.assign(pad, {
+		// re-read OPTIONS > CONTROLS (the overworld calls this when they change)
+		reloadSettings() { const v = loadPadSettings(); pad.setOptions({ layout: opts.layout || v.layout, remap: v.remap }); },
 		stop() {
 			running = false; cancelAnimationFrame(raf);
 			removeEventListener('blur', letGo);
