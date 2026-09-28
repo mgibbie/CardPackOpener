@@ -3451,8 +3451,10 @@ export function resolveCombat(state, pi, attackerUid, target) {
 		}
 		// Honorable Kill: an EXACT lethal blow (mark the victim so Korrak knows)
 		if (isDead(defender) && defender.damage === defender.maxHealth) defender.honorablyKilled = true; // Korrak the Bloodrager
-		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth
-			&& !isDead(attacker)) {
+		// it fires even when the attacker dies in the trade (as in Hearthstone): a
+		// 3/2 Sneaky Scout trading into a 3/3 is the whole point of the card, and
+		// gating on a surviving attacker made its discount never land
+		if (attacker.honorableKill && isDead(defender) && defender.damage === defender.maxHealth) {
 			emit(state, { type: 'honorableKill', uid: attacker.uid, player: pi });
 			runSecretEffects(state, pi, attacker.honorableKill, { self: attacker });
 			// Wing Commander Mulverick: friendly minions with a granted Honorable Kill also fire

@@ -414,7 +414,11 @@ register('equip-random', ({ state, pi, target, source, enemies, scaled, hm, pick
 			// Blingtron 3000: equip a random weapon (self, or each player)
 			const pool = Object.values(state.cardsById).filter(d => d.type === 'weapon'
 				&& !d.token && d.collectible !== false && !(d.colors && d.colors.length) && d.attack && d.durability);
-			const who = e.eachPlayer ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
+			// forCreator: the weapon goes to whoever MADE this (Worgen Roadie hands the
+			// enemy an Instrument Case — "break it for a random weapon!" — so the
+			// Roadie's player gets it, not the case's controller)
+			const maker = e.forCreator && source && source.createdBy != null && !state.players[source.createdBy]?.eliminated ? source.createdBy : null;
+			const who = maker != null ? [maker] : e.eachPlayer ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
 			for (const tp of who) {
 				if (!pool.length) break;
 				const wd = pool[Math.floor(state.rng() * pool.length)];

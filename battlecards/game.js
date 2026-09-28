@@ -1535,6 +1535,25 @@ function activateHeroPower(card, ev) {
 	actPower(card.uid, null);
 }
 
+// what the power costs RIGHT NOW. The orbs drew the printed cost, so a discount
+// (Sneaky Scout's Honorable Kill: "your next Hero Power costs (0)") took effect
+// but the orb still read (2), and it looked like the kill did nothing.
+function powerCostNow(pi, power) {
+	try { return E.heroPowerCost(state, pi, power); } catch { return power.power.cost; }
+}
+// the side-panel orb is built once; redraw it when the live cost moves
+function repaintPowerOrb(orb, pi) {
+	const power = classPowerOf(pi);
+	if (!orb || !power) return;
+	const cost = powerCostNow(pi, power);
+	if (orb.dataset.cost === String(cost)) return;
+	orb.dataset.cost = String(cost);
+	if (orb._tip) orb._tip.cost = cost;
+	const ctx = orb.getContext('2d');
+	ctx.clearRect(0, 0, orb.width, orb.height);
+	ctx.drawImage(drawPowerOrb(cost, orb.width, power.power.cost), 0, 0);
+}
+
 // hero portrait + class power orb, sized per panel
 function portraitBlock(pi, big) {
 	const wrap = document.createElement('div');
@@ -1547,12 +1566,15 @@ function portraitBlock(pi, big) {
 	wrap.appendChild(portrait);
 	const power = classPowerOf(pi);
 	if (power) {
-		const orb = drawPowerOrb(power.power.cost, big ? 96 : 64);
+		const live = powerCostNow(pi, power);
+		const orb = drawPowerOrb(live, big ? 96 : 64, power.power.cost);
 		orb.className = 'power-orb';
 		orb.dataset.uid = power.uid;
+		orb.dataset.cost = String(live);
 		orb.style.width = orb.style.height = big ? '48px' : '32px';
 		// hover (PC) / long-press (mobile) reveals what the power does
-		attachTip(orb, { name: power.name, type: 'heropower', cost: power.power.cost, description: power.description });
+		orb._tip = { name: power.name, type: 'heropower', cost: live, description: power.description };
+		attachTip(orb, orb._tip);
 		if (pi === HUMAN) {
 			if (TOUCH) {
 				// a quick tap activates; a hold shows the tooltip instead
@@ -1620,6 +1642,8 @@ heroPanelMesh.userData.uid = 'heropanel';
 heroPanelMesh.renderOrder = 1;
 heroPanelMesh.visible = false;
 scene.add(heroPanelMesh);
+let weaponBadgeUV = null; // the weapon badge rect in 0..1 UV (y from the bottom), when one is drawn
+let heroOrbCost = null; // the number the hero-panel power orb last showed (test hook)
 let heroOrbUV = null; // { x0, x1, y0, y1 } orb rect in 0..1 UV (y from the bottom)
 // THE PLANAR DIE sits on the panel like a second power orb (owner: "treat it like
 // another hero power that attaches to the hero", but NOT one of the three power
@@ -1714,7 +1738,8 @@ function drawHeroPanel() {
 		dieOrbUV = { x0: ddx / HP_W, x1: (ddx + dS) / HP_W, y0: 1 - (ddy + dS) / HP_H, y1: 1 - ddy / HP_H };
 	}
 	if (power) {
-		const orb = drawPowerOrb(power.power.cost, 96);
+		heroOrbCost = powerCostNow(HUMAN, power);
+		const orb = drawPowerOrb(heroOrbCost, 96, power.power.cost);
 		const usable = state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
 		ctx.save();
 		if (usable) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 18; }
@@ -1752,18 +1777,41 @@ function drawHeroPanel() {
 	ctx.fillStyle = '#e8e2f4';
 	ctx.font = 'bold 18px system-ui, sans-serif';
 	const myCls = classNameOf(me.heroClass);
-	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, 62, dieOn ? Math.max(60, ddx - 106) : 124);
+	// your weapon gets a badge in the TOP band, under your name: it used to be a
+	// small "⚔ 3/2" on the gear line at the bottom of the panel, which the hand
+	// covers (Bryan: "not able to see my weapon while it's active")
+	const colW = dieOn ? Math.max(60, ddx - 106) : 124;
+	const swingAtk = me.weapon ? me.weapon.attack + (me.heroTempAttack || 0) : me.heroTempAttack || 0;
+	weaponBadgeUV = null;
+	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, swingAtk || me.weapon ? 44 : 62, colW);
+	if (me.weapon || me.heroTempAttack) {
+		const label = me.weapon ? `${swingAtk}/${me.weapon.durability}` : `+${swingAtk}`;
+		ctx.font = 'bold 22px system-ui, sans-serif';
+		const bw = Math.min(colW, ctx.measureText(label).width + 44), bx = 100, by = 54, bh = 32;
+		ctx.save();
+		if (armed) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 14; }
+		hpRoundRect(ctx, bx, by, bw, bh, 10);
+		const wg = ctx.createLinearGradient(0, by, 0, by + bh);
+		wg.addColorStop(0, '#6b5320'); wg.addColorStop(1, '#3b2c10');
+		ctx.fillStyle = wg; ctx.fill();
+		ctx.lineWidth = 2.5; ctx.strokeStyle = armed ? '#57e389' : '#d9b24a'; ctx.stroke();
+		ctx.restore();
+		ctx.fillStyle = '#ffd25f';
+		ctx.fillText('⚔', bx + 8, by + 24);
+		ctx.fillStyle = '#fff';
+		ctx.fillText(label, bx + 36, by + 24, bw - 40);
+		weaponBadgeUV = { x0: bx / HP_W, x1: (bx + bw) / HP_W, y0: 1 - (by + bh) / HP_H, y1: 1 - by / HP_H };
+		ctx.font = 'bold 18px system-ui, sans-serif';
+	}
 	ctx.fillStyle = '#cbb8e8';
 	ctx.font = '17px system-ui, sans-serif';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
 	// gear line(s)
 	const gear = [];
-	if (me.weapon) gear.push(`⚔ ${me.weapon.attack}/${me.weapon.durability}`);
 	if (me.secrets.length) gear.push(`❓ ${me.secrets.length}`);
 	if (me.exile.length) gear.push(`⊘ ${me.exile.length}`);
 	if (me.fatigue) gear.push(`☠ ${me.fatigue}`);
 	if (me.corpses && me.heroClass === 'death_knight') gear.push(`⚰ ${me.corpses}`);
-	if (me.heroTempAttack) gear.push(`⚔ +${me.heroTempAttack}`);
 	ctx.fillStyle = '#ffd25f';
 	ctx.font = '14px system-ui, sans-serif';
 	if (gear.length) ctx.fillText(gear.slice(0, 4).join('   '), 22, 142);
@@ -1921,9 +1969,11 @@ function updateHud() {
 		const usable = power && state.current === HUMAN && !state.over && E.canUseHeroPower(state, HUMAN, power);
 		myOrb.classList.toggle('usable', !!usable);
 		myOrb.classList.toggle('spent', !usable);
+		repaintPowerOrb(myOrb, HUMAN);
 	}
 	for (const [pi, el] of foePanelEls) {
 		const p = state.players[pi];
+		repaintPowerOrb(el.querySelector('.power-orb'), pi);
 		el.querySelector('.life').textContent = p.life + (p.armor ? `+${p.armor}` : '');
 		el.querySelector('.mana').textContent = `${E.availableMana(p)}/${p.mana.max}`;
 		el.querySelector('.hand').textContent = p.hand.length;
@@ -3960,7 +4010,7 @@ function updateTooltip(ev) {
 		return;
 	}
 	const typeLine = card.type === 'heropower'
-		? `HERO POWER · COSTS (${card.power?.cost ?? 0}) · ` + classNameOf(card.cardClass).toUpperCase()
+		? `HERO POWER · COSTS (${card.power && card.controller != null ? powerCostNow(card.controller, card) : card.power?.cost ?? 0}) · ` + classNameOf(card.cardClass).toUpperCase()
 		: `${card.cost ?? 0} MANA · ` + classNameOf(card.cardClass).toUpperCase() + ' · ' + (card.tribe ? card.tribe + ' ' : '') + card.type.toUpperCase()
 			+ ' · ' + (card.rarity || 'common').toUpperCase();
 	let extra = '';
@@ -5140,7 +5190,7 @@ window.__game = {
 	armAttack(uid) { selectedAttacker = uid; updateHud(); },
 	get telegraphs() { return telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
-	get hoverUid() { return hoverUid; }, get handMini() { return handMini; },
+	get hoverUid() { return hoverUid; }, get handMini() { return handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
 	// the screen y of a card's bottom edge (where attack/health sit)
 	cardBottomY(uid) {
 		const ent = entities.get(uid); if (!ent) return null;
