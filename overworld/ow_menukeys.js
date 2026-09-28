@@ -29,8 +29,9 @@ import { refreshFollower } from './ow_follower.js';
 import { daycareMenu, halfParty, halfPartyKey, moveShop, nameRater, optionsKey, townKey, tradeMenu } from './ow_music.js';
 import { cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import { flyTo, moveToMap } from './ow_transitions.js';
+import { fading } from './ow_fade.js';
 import {
-	STARTERS, fading, refreshObjective, starterMenu,
+	STARTERS, refreshObjective, starterMenu,
 } from './main.js';
 
 // ---------- BP EXCHANGE (spend Battle Frontier points) ----------
