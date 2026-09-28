@@ -24,8 +24,9 @@ import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_musi
 import { DAYCARE_MAPS, DELETER_MAPS, MOM_SCRIPTS, NAMERATER_MAPS, ghostAt, momTalk, playerMenu } from './ow_menustate.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { gateReport } from './ow_diagnostics.js';
 import {
-	MP_ON, gateReport, noteRejectedMove, scriptIsDisplayOnly, signTexts,
+	MP_ON, noteRejectedMove, scriptIsDisplayOnly, signTexts,
 } from './main.js';
 import { oskOpen } from '../site/osk.js';
 

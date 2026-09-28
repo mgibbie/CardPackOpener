@@ -27,9 +27,10 @@ import { cardsMenu, deckSelect, dexMenu, drawWaterAnim, optionsMenu, partyMenu, 
 import { persistBattle } from './ow_battleresume.js';
 import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
+import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
 import {
-	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, gateReport, lastRejectAt,
-	openCanvasMenus, rejectedMoves, starterMenu,
+	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
+	rejectedMoves, starterMenu,
 } from './main.js';
 
 // ---------- loop ----------
