@@ -8,6 +8,9 @@
 //         node overworld/tests/run-all.mjs --jobs 2    (parallel; default is sized to RAM, 1 below 8 GB)
 //         node overworld/tests/run-all.mjs --no-retry  (report first-run failures as-is)
 //         node overworld/tests/run-all.mjs --resume    (skip suites that already passed on THIS code)
+//         node overworld/tests/run-all.mjs --changed   (QUICK gate: only the suites this branch's changes
+//                                                       can affect + a smoke set; see select-changed.mjs.
+//                                                       --base <ref> compares against another ref)
 //         CHROME=<path> node overworld/tests/run-all.mjs
 // Exit code is non-zero if any test fails (after its retry). Each test gets 5 minutes.
 //
@@ -43,6 +46,8 @@ const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args.spli
 const jobsArg = flag('--jobs');
 const noRetry = args.includes('--no-retry') && args.splice(args.indexOf('--no-retry'), 1);
 const resume = args.includes('--resume') && args.splice(args.indexOf('--resume'), 1);
+const baseRef = flag('--base');
+const changedOnly = args.includes('--changed') && args.splice(args.indexOf('--changed'), 1);
 const filter = (args[0] || '').toLowerCase(); // substring match on the filename
 const TIMEOUT = 5 * 60_000;
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
@@ -78,6 +83,21 @@ const files = [
 	...readdirSync(here).filter(f => f.endsWith('_test.mjs')),
 	'boot_smoke.mjs', 'quest_reach.mjs',
 ].sort().filter(f => !filter || f.toLowerCase().includes(filter));
+// QUICK gate: narrow to what the change can affect
+let selection = null;
+if (changedOnly) {
+	const { selectSuites } = await import('./select-changed.mjs');
+	selection = selectSuites({ base: baseRef || undefined });
+	if (selection.full) console.log(`quick gate -> FULL gate (${selection.why})`);
+	else {
+		const keep = new Set(selection.suites.keys());
+		for (let i = files.length - 1; i >= 0; i--) if (!keep.has(files[i])) files.splice(i, 1);
+		const bySmoke = [...selection.suites].filter(([, w]) => w.length === 1 && w[0] === 'smoke').length;
+		console.log(`quick gate: ${selection.changed.length} changed file(s) -> ${files.length} suite(s) (${files.length - bySmoke} selected + ${bySmoke} smoke)`);
+		for (const [s, why] of selection.suites) if (!(why.length === 1 && why[0] === 'smoke')) console.log(`  ${s} <- ${why.slice(0, 2).join('; ')}${why.length > 2 ? ` (+${why.length - 2})` : ''}`);
+		if (selection.broad?.length) console.log(`  (too common to select on: ${selection.broad.join(', ')})`);
+	}
+}
 const skipped = files.filter(f => alreadyPassed.has(f));
 
 let history = {};
@@ -142,6 +162,21 @@ async function pool(list, jobs) {
 }
 
 const t0 = Date.now();
+// the quick gate also runs the Battlecards node suite when Battlecards or the
+// server changed (CI runs it too; locally it is ~1 minute and catches it first)
+let bcFailed = false;
+if (selection && selection.battlecards) {
+	const r = await new Promise(resolve => {
+		const started = Date.now();
+		const child = spawn(process.execPath, [join(here, '../../battlecards/tests/run-all.mjs')], { stdio: ['ignore', 'pipe', 'pipe'] });
+		let out = '';
+		child.stdout.on('data', d => { out += d; }); child.stderr.on('data', d => { out += d; });
+		child.on('close', code => resolve({ ok: code === 0, secs: Math.round((Date.now() - started) / 1000), out }));
+	});
+	bcFailed = !r.ok;
+	console.log(`${r.ok ? 'ok   ' : 'FAIL '} battlecards/tests/run-all.mjs (${r.secs}s): ${r.out.trim().split('\n').pop()}`);
+	if (!r.ok) console.log(r.out.split('\n').filter(l => /^FAIL/.test(l)).slice(0, 10).join('\n'));
+}
 console.log(`${suites.length} suites, ${JOBS} at a time${noRetry ? '' : ', failures retried once alone'}${skipped.length ? ` (${skipped.length} already passed on this code, skipped)` : ''}\n`);
 const first = await pool(suites, JOBS);
 const failedFirst = first.filter(r => !r.ok);
@@ -168,4 +203,6 @@ const secs = Math.round((Date.now() - t0) / 1000);
 console.log(`\n${suites.length - failed.length}/${suites.length} tests passed in ${secs}s (${JOBS} jobs)${skipped.length ? ` + ${skipped.length} passed earlier on this code` : ''}`);
 if (flaky.length) console.log(`FLAKY (failed, then passed alone): ${flaky.join(', ')}`);
 if (failed.length) console.log(`FAILED: ${failed.join(', ')}`);
-process.exit(failed.length || (!suites.length && !skipped.length && filter) ? 1 : 0);
+if (bcFailed) console.log('FAILED: battlecards/tests/run-all.mjs');
+if (selection && !selection.full) console.log('(quick gate: the full gate still runs before big batches / overnight)');
+process.exit(failed.length || bcFailed || (!suites.length && !skipped.length && filter) ? 1 : 0);
