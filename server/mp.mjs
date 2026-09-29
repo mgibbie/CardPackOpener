@@ -2561,6 +2561,18 @@ export default async function handler(req, env) {
 				}
 			}
 		} catch (e) {}
+		// A FORCED write (a file import, a reset) replaces whatever is stored
+		// regardless of revision, so the stored game goes into the UNDO slot first,
+		// the same net ow-restore uses: OPTIONS > SERVER BACKUPS > UNDO brings it
+		// back. If that stash cannot be written, the replace does not happen.
+		if (body.force) {
+			try {
+				const cur = await store.get('ow:' + username);
+				if (cur && cur.ow && Object.keys(cur.ow).length) await store.setJSON('owh:' + username + ':undo', cur);
+			} catch (e) {
+				return json({ error: 'could not back up the stored save before replacing it; nothing changed' }, 503);
+			}
+		}
 		await store.setJSON('ow:' + username, { ow, updated_at: Date.now() });
 		return json({ ok: true });
 	}

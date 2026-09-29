@@ -155,8 +155,8 @@ import {
 } from './ow_frontier.js';
 // ow_saves.js: ow_saves.js — the overworld save: server-authoritative sync (hydrate/push/revision), achievements sync, gifts, and the OPTIONS save-data actions (export/import/backups).
 import {
-	OW_KEYS, claimGifts, hydrateOw, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
-	owSnapshot, owSyncLog, pushOw, restoreBackup, runSaveAction, syncOverworldAchievements,
+	OW_KEYS, claimGifts, hydrateOw, importSave, lastImportResult, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
+	owSnapshot, owSyncLog, pushOw, restoreBackup, rollbackImport, runSaveAction, syncOverworldAchievements, verifySave,
 } from './ow_saves.js';
 // ow_pvp.js: ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
 import {
@@ -791,6 +791,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	} else gamepadNeedsLogin();
 	window.__ow = { world, player, warpTo, moveToMap, npcs, encounters, battle, trainers, dialog, cutscene, evolution, items, tmMoveId, catchUpPostBattleScriptsForTest: catchUpPostBattleScripts, cutsceneCtxForTest: () => cutsceneCtx(), canLearn, pcMenu, get fade() { return fade; }, get weatherFx() { return weatherFx; }, get stepFx() { return stepFx; }, mapWeatherNow, get party() { return S.party; }, get menuUi() { return S.menuUi; }, menuTap, pumpPlayer, freezeLoop, startWildBattle, interact, gateReport, openCanvasMenus, whiteOut, noteHealPoint, healPoint,
 		get owSync() { return owSyncLog; }, owSnapshot, owFingerprint, hydrateOw,
+		// save import without the native file chooser (automation): see importSave in ow_saves.js
+		importSave, lastImportResult, rollbackImport, verifySave,
 		pushOwForTest: () => pushOw(), owDirtyForTest: () => owDirty(), owRevForTest: () => owRev(),
 		get startMenu() { return startMenu; }, get cardsMenu() { return cardsMenu; }, get runMenu() { return runMenu; }, get friendsMenu() { return friendsMenu; },
 		get gamepad() { return S.gamepad || null; }, get friends() { return S.friends; }, get visiting() { return S.visiting; }, refreshFriends, visitWorld, leaveVisit, heartbeat, pollPresence, get ghosts() { return ghosts; }, MP_ON,
