@@ -309,7 +309,11 @@ export function refreshObjective() {
 	// "MEWTWO stirs in CERULEAN CAVE" and the 16-badge climb, RED and the
 	// legendary hunt got no guidance at all.
 	const pg = Quest.stage(playerRegion()) === Quest.DONE ? postgameObjective() : null;
-	objectiveEl.textContent = S.party ? ('NEXT: ' + (pg || Quest.objective(playerRegion()))) : '';
+	// no POKeMON yet (a fresh save past the region pick, or one that lost its
+	// party): the line says where to get one instead of going blank
+	const lab = NEW_GAME_INTRO[playerRegion()];
+	objectiveEl.textContent = S.party && S.party.length ? ('NEXT: ' + (pg || Quest.objective(playerRegion())))
+		: localStorage.getItem('magepunk_region') && lab ? `NEXT: Get your first POKeMON from ${lab.prof} at the LAB` : '';
 }
 
 export let signTexts = {};

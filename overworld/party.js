@@ -37,7 +37,7 @@ export function loadParty(data) {
 
 export function createStarter(speciesId, data) {
 	const party = [buildMon(speciesId, 5, data)];
-	saveParty(party);
+	saveParty(party);   // the caller checks partySaved() and warns if it did not stick
 	return party;
 }
 
@@ -56,8 +56,19 @@ export function addCaught(party, mon) {
 	return 'box';
 }
 
+// true when the party is really on disk. A full browser store used to fail this
+// write in SILENCE: the game played on from memory and the next load came back
+// partyless. Replay tapes (Battlecards, cosmetic and regenerable) are the one
+// thing freed to make room, the same rule the run snapshots follow; then retry.
+const EXPENDABLE = ['magepunk_replays_v1'];
 export function saveParty(party) {
-	safeSave(KEY, party);
+	if (safeSave(KEY, party)) return true;
+	let freed = false;
+	for (const k of EXPENDABLE) { try { if (localStorage.getItem(k) != null) { localStorage.removeItem(k); freed = true; } } catch (e) {} }
+	return freed ? safeSave(KEY, party) : false;
+}
+export function partySaved() {
+	try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); return Array.isArray(v) && v.length > 0; } catch (e) { return false; }
 }
 
 export function healParty(party) {
