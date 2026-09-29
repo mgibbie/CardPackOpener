@@ -212,6 +212,7 @@ export const owDirty = () => owBody(owSnapshot()) !== _lastAckedBody;
 
 export function pushOw(opts) {
 	if (!MP_ON) { syncLog('push.skip', { reason: 'MP_ON=false' }); return Promise.resolve(false); }
+	if (_importing) { syncLog('push.skip', { reason: 'import in progress' }); return Promise.resolve(false); }
 	const keepalive = !!(opts && opts.keepalive === true);
 	const body = owBody(owSnapshot());
 	if (body === '{}') { syncLog('push.skip', { reason: 'empty' }); return Promise.resolve(false); }
@@ -417,22 +418,117 @@ async function doImportSave() {
 	const om = optionsMenu;
 	const picked = await Savefile.pickSaveFile();
 	if (!picked) return;
-	let parsed;
-	try { parsed = Savefile.parseSave(picked.text); } catch (e) { om.flash = e?.message || String(e); return; }
-	const when = parsed.exported_at ? parsed.exported_at.slice(0, 10) : 'an unknown date';
-	if (!confirm(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\n\nEverything you have now will be overwritten.`)) return;
+	// the whole file is validated BEFORE the confirm, and before anything changes
+	const v = Savefile.validateSave(picked.text);
+	if (!v.ok) { om.flash = 'Import refused: ' + v.errors[0] + (v.errors.length > 1 ? ` (+${v.errors.length - 1} more)` : ''); return; }
+	const when = v.exported_at ? v.exported_at.slice(0, 10) : 'an unknown date';
+	if (!confirm(`Replace your CURRENT game with the save from ${when}?\n(${picked.name})\n\nEverything you have now will be overwritten (a backup is kept on this device).`)) return;
 	om.busy = true;
-	Savefile.applySave(parsed.keys);
-	// an import deliberately replaces the game: it must outrank whatever the
-	// server holds, so step past the server's revision and force the write
-	if (MP_ON) {
-		try { const r = await MP.call('ow-load'); setOwRev(Math.max(owRev(), parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0) + 1); } catch (e) { setOwRev(owRev() + 1); }
-	}
-	if (MP_ON) {
-		try { await MP.call('ow-save', { ow: owSnapshot(), force: true }); }
-		catch (e) { alert('The save was restored locally, but the SERVER copy could not be updated.\nIf you are online next load, the old game may come back — try importing again then.'); }
-	}
+	const r = await importSave(v, { source: 'chooser', reload: false });
+	if (!r.ok && r.stage !== 'push' && r.stage !== 'readback') { om.busy = false; om.flash = 'Import failed: ' + r.error; return; }
+	if (!r.ok) alert('The save was restored locally, but the SERVER copy could not be confirmed:\n' + r.error + '\nIf you are online next load, the old game may come back; try importing again then.');
 	location.reload();
+}
+
+// ---------- the import pipeline (chooser AND automation) ----------
+// window.__ow.importSave(json) runs the same path as OPTIONS > IMPORT SAVE,
+// without the native file chooser:
+//   1. validate the WHOLE export (Savefile.validateSave): any problem -> nothing
+//      changes and the result lists every problem
+//   2. size-check what will be pushed (the server refuses > 1MB)
+//   3. read the server's revision (the applied revision must outrank it)
+//   4. back up the current game locally, apply, read every key back; any write
+//      that does not stick rolls the whole game back (Savefile.applySaveSafely)
+//   5. stamp the revision, force-push (the server stashes what it replaces in
+//      its UNDO slot first), then read the server copy back and compare
+// The result survives the reload that follows (lastImportResult()).
+const IMPORT_RESULT_KEY = 'magepunk_ow_import_result';
+let _importing = false;   // pushOw stands down while an import owns the save
+function finishImport(res, reload) {
+	res.at = new Date().toISOString();
+	try { sessionStorage.setItem(IMPORT_RESULT_KEY, JSON.stringify(res)); } catch (e) {}
+	syncLog('import.result', { ok: res.ok, stage: res.stage, source: res.source, fileRev: res.fileRev ?? null, appliedRev: res.appliedRev ?? null, pushed: res.pushed ?? null, readbackOk: res.readback ? res.readback.ok : null, error: res.error || null });
+	// the running modules (story, bag, dex...) cached the OLD game at boot: a
+	// reload is what makes the imported game the one being played
+	if (res.applied && reload) setTimeout(() => location.reload(), 50);
+	else _importing = false;
+	return res;
+}
+// `input`: an export object, its JSON text, or a validateSave() result.
+// opts.reload (default true): reload after a successful apply.
+export async function importSave(input, opts = {}) {
+	const source = opts.source || 'api';
+	const reload = opts.reload !== false;
+	const base = { ok: false, source, applied: false, pushed: false };
+	if (_importing) return { ...base, stage: 'busy', error: 'Another import is still running.' };
+	const v = input && input.errors && input.keys ? input : Savefile.validateSave(input);
+	if (!v.ok) return { ...base, stage: 'validate', error: v.errors.join(' | '), errors: v.errors };
+	// what the push will carry (the synced subset), measured before anything changes
+	const pushable = {}; for (const k of OW_KEYS) if (v.keys[k] != null) pushable[k] = v.keys[k];
+	const big = MP_ON ? oversize(pushable) : null;
+	if (big) return { ...base, stage: 'validate', error: `The save is ${big.bytes} bytes; the server limit is ${big.limit}. Heaviest keys: ${big.heaviest.map(([k, n]) => k + '=' + n).join(', ')}.`, errors: ['too large'] };
+	_importing = true;
+	const prevRev = owRev();
+	let serverRev = null;
+	if (MP_ON) {
+		try { const r = await MP.call('ow-load'); serverRev = Math.max(0, parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0); }
+		catch (e) { serverRev = null; }
+	}
+	const ap = Savefile.applySaveSafely(v.keys);
+	if (!ap.ok) return finishImport({ ...base, stage: 'apply', error: ap.error, rolledBack: ap.rolledBack, fileRev: v.fileRev }, false);
+	// the imported game must outrank the stored one; keep the file's own revision
+	// when it already does (a rev-16413 export lands at 16413 over an older copy)
+	const appliedRev = Math.max(v.fileRev, (serverRev != null ? serverRev : prevRev) + 1);
+	setOwRev(appliedRev);
+	const res = { ...base, applied: true, stage: 'applied', fileRev: v.fileRev, appliedRev, serverRevBefore: serverRev, previousLocalRev: prevRev,
+		backupKey: Savefile.IMPORT_BACKUP_KEY, backupAt: ap.backupAt, fp: owFingerprint(owSnapshot()), exported_at: v.exported_at };
+	if (!MP_ON) return finishImport({ ...res, ok: true, stage: 'local-only', note: 'Not signed in: applied on this device only.' }, reload);
+	const snap = owSnapshot();
+	const body = owBody(snap);
+	try {
+		const r = await MP.call('ow-save', { ow: snap, force: true });
+		if (!r || !r.ok || r.error) return finishImport({ ...res, stage: 'push', error: 'Server refused the save: ' + (r && r.error ? r.error : 'no ok in response') }, reload);
+	} catch (e) { return finishImport({ ...res, stage: 'push', error: 'Could not reach the server: ' + (e && e.message || e) }, reload); }
+	res.pushed = true;
+	_lastAckedBody = body; _pendingBody = body;
+	// read it back: the server copy must BE the imported game, at the applied revision
+	try {
+		const r = await MP.call('ow-load');
+		const ow = r && r.ow && r.ow.ow;
+		const rb = { rev: ow ? Math.max(0, parseInt(ow[OW_REV_KEY], 10) || 0) : null, bodyMatches: !!ow && owBody(ow) === body, fp: ow ? owFingerprint(ow) : null };
+		rb.ok = rb.bodyMatches && rb.rev === appliedRev;
+		res.readback = rb;
+		if (!rb.ok) return finishImport({ ...res, stage: 'readback', error: `Server copy does not match (rev ${rb.rev} vs ${appliedRev}, body ${rb.bodyMatches ? 'matches' : 'differs'}).` }, reload);
+	} catch (e) { return finishImport({ ...res, stage: 'readback', error: 'Pushed, but could not read the server copy back: ' + (e && e.message || e) }, reload); }
+	return finishImport({ ...res, ok: true, stage: 'done' }, reload);
+}
+// the result of the last import (survives its reload), or null
+export function lastImportResult() {
+	try { return JSON.parse(sessionStorage.getItem(IMPORT_RESULT_KEY) || 'null'); } catch (e) { return null; }
+}
+// put back the game the last import replaced (same validated pipeline)
+export async function rollbackImport(opts = {}) {
+	const b = Savefile.importBackup();
+	if (!b) return { ok: false, stage: 'validate', source: 'rollback', error: 'No import backup on this device.' };
+	return importSave({ magic: b.magic, version: b.version, exported_at: b.backed_up_at, keys: b.keys }, { ...opts, source: 'rollback' });
+}
+// compare this device's save with the server's copy (post-reload verification).
+// The running game keeps writing (a reload lays down defaults, playtime ticks),
+// so pending changes are pushed first unless opts.flush === false.
+export async function verifySave(opts = {}) {
+	if (MP_ON && opts.flush !== false && owDirty()) { try { await pushOw(); } catch (e) {} }
+	const local = owSnapshot();
+	const out = { localRev: owRev(), localFp: owFingerprint(local), signedIn: !!MP_ON };
+	if (!MP_ON) return out;
+	try {
+		const r = await MP.call('ow-load');
+		const ow = r && r.ow && r.ow.ow;
+		out.remoteRev = ow ? Math.max(0, parseInt(ow[OW_REV_KEY], 10) || 0) : null;
+		out.remoteFp = ow ? owFingerprint(ow) : null;
+		out.bodiesEqual = !!ow && owBody(ow) === owBody(local);
+		out.ok = out.bodiesEqual && out.remoteRev === out.localRev;
+	} catch (e) { out.error = String(e && e.message || e); out.ok = false; }
+	return out;
 }
 export async function loadBackups() {
 	const om = optionsMenu;

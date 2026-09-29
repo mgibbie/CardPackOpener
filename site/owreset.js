@@ -95,6 +95,8 @@ export const OW_KEEP_KEYS = {
 	magepunk_class_v1: 'BATTLECARDS: written by the deck builder, only read by the overworld',
 	magepunk_settings: 'preferences (text speed, auto-run) — not progress, and annoying to lose on every run',
 	magepunk_keys_v1: 'custom key bindings — a device preference, like the volume sliders',
+	magepunk_ow_import_backup: 'the game a save import replaced: a safety copy that never syncs, so the import stays reversible',
+	magepunk_ow_import_result: 'the outcome of the last save import (sessionStorage, not localStorage): diagnostics only',
 };
 
 export function resetPlan() {
