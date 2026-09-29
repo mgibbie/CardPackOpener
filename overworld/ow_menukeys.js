@@ -813,7 +813,7 @@ export function pressKey(k) {
 		return;
 	}
 	if ((k === 'Enter' || k === 'm') && !S.loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
-	if (k === 'p' && !S.loading) { partyMenu.open = true; partyMenu.idx = 0; return; }
+	if (k === 'p' && !S.loading) { if (!S.party || !S.party.length) { hud.textContent = 'You have no POKeMON yet! Visit the LAB to get one.'; return; } partyMenu.open = true; partyMenu.idx = 0; return; }
 	if (k === 'b' && !S.loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
 	if (k === 'c' && !S.loading) { toggleBike(); return; }
 	if (k === 'z' && !S.loading) interact();

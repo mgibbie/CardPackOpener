@@ -13,7 +13,9 @@ import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './
 import { syncOverworldAchievements } from './ow_saves.js';
 import { S } from './ow_state.js';
 import { openUnownDex } from './ow_venues.js';
-import { addCaught, createStarter, healParty, leadMon, saveParty } from './party.js';
+import { addCaught, createStarter, healParty, leadMon, partySaved, saveParty } from './party.js';
+// a party with at least one POKeMON (null and [] both mean "none yet")
+const hasParty = () => Array.isArray(S.party) && S.party.length > 0;
 import * as Dex from './pokedex.js';
 import * as Quest from './quest.js';
 import { RIVAL_TIERS, rivalDue, rivalFlag } from './rivals.js';
@@ -503,7 +505,8 @@ export const STORY_SEED = {
 		},
 		flags: [
 			'FLAG_ADVENTURE_STARTED',
-			'FLAG_GOT_FIRST_POKEMON',
+			// (NOT FLAG_GOT_FIRST_POKEMON: no script or code reads it, and seeding it
+			// said "has a POKeMON" on every fresh save; the starter pick sets it)
 			// the intro-scene Oak on the Pallet path (script 0x0 — he only exists
 			// for FR's escort cutscene). The old entry had the flag's words in the
 			// wrong order, so he stood there mute forever.
@@ -565,7 +568,7 @@ export const STORY_SEED = {
 			VAR_SEAFLOOR_CAVERN_STATE: 1,
 			VAR_SKY_PILLAR_RAYQUAZA_CRY_DONE: 1,
 		},
-		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON',
+		flags: ['FLAG_ADVENTURE_STARTED',
 			// Emerald's opening-scene actors and props (managed by cutscenes this
 			// port replaces with its own intro): the lab's scene-rival (drawn as
 			// Birch's identical twin), the bag-scene starter balls (three stacked
@@ -616,7 +619,7 @@ export const STORY_SEED = {
 			VAR_SCENE_RadioTower5F: 2,
 			VAR_SCENE_GoldenrodMagnetTrainStation: 1,
 		},
-		flags: ['FLAG_ADVENTURE_STARTED', 'FLAG_GOT_FIRST_POKEMON'],
+		flags: ['FLAG_ADVENTURE_STARTED'],
 	},
 };
 // Arm any seed var this save has NEVER set. Idempotent and non-destructive: a
@@ -848,6 +851,7 @@ export function beginNewGame(region) {
 	S.party = null;
 	seedStoryState(region);                       // full plot-suppression seed + HM kit (no starter yet)
 	safeSaveStr('magepunk_region', region);
+	refreshObjective();                            // "get your first POKeMON at the LAB"
 	const cfg = NEW_GAME_INTRO[region];
 	if (!cfg) { openStarterPick(region); return; } // safety net: region without an authored intro
 	if (!localStorage.getItem('magepunk_rival')) safeSaveStr('magepunk_rival', cfg.rival);
@@ -871,7 +875,13 @@ export function checkIntroTrigger() {
 		const cfg0 = NEW_GAME_INTRO[playerRegion()];
 		if (cfg0 && world.current.name !== cfg0.lab) starterMenu.open = false;
 	}
-	if (S.party || Story.getFlag('intro_done') || cutscene.blocking || dialog.blocking || starterMenu.open) return;
+	// PARTYLESS, not "intro not done": a save can end up with intro_done set and
+	// no party (the party write failed on a full browser store while the small
+	// story write still landed, or a partyless copy came back from the server),
+	// and gating on intro_done then stranded it forever: no starter offered, no
+	// battles possible (Remy, 2026-09-29). Without a POKeMON the lab always
+	// offers one.
+	if (hasParty() || cutscene.blocking || dialog.blocking || starterMenu.open) return;
 	const cfg = NEW_GAME_INTRO[playerRegion()];
 	if (!cfg || world.current.name !== cfg.lab) return;
 	// The professor speaks ONCE. This runs from the frame loop (so a reload
@@ -880,7 +890,7 @@ export function checkIntroTrigger() {
 	// cutscene's remaining lines would trail the player out the door and play
 	// over the town. With the flag, a replay just (re)opens the picker, and
 	// only ever here in the lab.
-	if (Story.getFlag('intro_greeted')) { openStarterPick(playerRegion()); return; }
+	if (Story.getFlag('intro_greeted') || Story.getFlag('intro_done')) { openStarterPick(playerRegion()); return; }
 	Story.setFlag('intro_greeted');
 	startCutscene(cfg.labGreeting.map(text => ({ op: 'say', text })), () => openStarterPick(playerRegion()));
 }
@@ -983,7 +993,21 @@ export function finishStarterPick(region, col) {
 	refreshFollower();
 	const cfg = NEW_GAME_INTRO[region];
 	const name = (S.party[0].nickname || S.party[0].name || id).toUpperCase();
-	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); dialog.open(`You chose ${name}!`); return; }
+	// the party key must really be on disk: a full browser store used to fail
+	// this write in silence, and the save came back partyless on the next load
+	const saved = partySaved();
+	const warn = saved ? null : 'Your browser storage is FULL, so your POKeMON could not be saved!\nUse OPTIONS > EXPORT SAVE, then free some space for this site.';
+	if (!saved) hud.textContent = 'Storage full: your POKeMON is not saved.';
+	// RECOVERY: the intro already ran on this save (it lost its party), so hand
+	// the POKeMON over without replaying the rival battle and the send-off
+	if (Story.getFlag('intro_done')) {
+		Story.setFlag('FLAG_GOT_FIRST_POKEMON');
+		refreshObjective();
+		dialog.open(`${cfg ? cfg.prof : 'PROF. OAK'}: Here, ${name} is yours. Take good care of it this time!` + (warn ? '\n\n' + warn : ''));
+		return;
+	}
+	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); dialog.open(`You chose ${name}!` + (warn ? '\n\n' + warn : '')); return; }
+	if (warn) { dialog.open(warn, () => dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col))); return; }
 	dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col));
 }
 
@@ -1033,7 +1057,7 @@ export function afterRival(region) {
 
 // kept for the debug hook / older callers: nudge a partyless save into the intro
 export function maybeIntroCutscene() {
-	if (Story.getFlag('intro_done') || S.party) return;
+	if (Story.getFlag('intro_done') || hasParty()) return;
 	startIntroNarration(playerRegion());
 }
 

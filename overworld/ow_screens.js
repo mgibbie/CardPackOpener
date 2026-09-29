@@ -318,7 +318,7 @@ export function startKey(k) {
 	if (k === 'z') {
 		const it = items[startMenu.idx];
 		startMenu.open = false;
-		if (it === 'POKeMON') { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; }
+		if (it === 'POKeMON') { if (!S.party || !S.party.length) hud.textContent = 'You have no POKeMON yet! Visit the LAB to get one.'; else { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; } }
 		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
 		else if (it === 'FRIENDS') { openFriends(); }

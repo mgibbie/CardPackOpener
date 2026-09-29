@@ -132,6 +132,7 @@ export function monRow(id, x, y, w, h, mon, selected, u, note) {
 }
 
 export function drawPartyMenu(W, H) {
+	if (!S.party || !S.party.length) { partyMenu.open = false; return; }   // nothing to list (a partyless save)
 	const u = H / 480;
 	if (partyMenu.summary) { drawSummary(W, H, u); return; }
 	const act = partyMenu.action;
