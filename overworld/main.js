@@ -155,7 +155,7 @@ import {
 } from './ow_frontier.js';
 // ow_saves.js: ow_saves.js — the overworld save: server-authoritative sync (hydrate/push/revision), achievements sync, gifts, and the OPTIONS save-data actions (export/import/backups).
 import {
-	OW_KEYS, claimGifts, hydrateOw, importSave, lastImportResult, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
+	OW_KEYS, claimGifts, hydrateOw, importSave, installImportInput, lastImportResult, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
 	owSnapshot, owSyncLog, pushOw, restoreBackup, rollbackImport, runSaveAction, syncOverworldAchievements, verifySave,
 } from './ow_saves.js';
 // ow_pvp.js: ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
@@ -609,6 +609,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
 	}
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
+	installImportInput(); // #ow-save-import: a persistent file input for automated save restores
 	S.party = loadParty(battle.data);
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to

@@ -212,6 +212,39 @@ try {
 			A(ch.last && ch.last.appliedRev === ch.last.serverRevBefore + 1 && ch.last.appliedRev > 20000, '...stepping past the server revision (a rev-1 file)', JSON.stringify(ch.last && { applied: ch.last.appliedRev, before: ch.last.serverRevBefore }));
 		}
 	} finally { try { fs.unlinkSync(tmp); } catch (e) {} }
+	// ===== 7. the PERSISTENT input (#ow-save-import): upload only, read the DOM only =====
+	// the caller that asked for it can't run page code, so nothing below calls a
+	// hook: it uploads files and reads the page
+	{
+		const status = () => page.$eval('#ow-save-import-status', el => ({ status: el.dataset.status, res: el.textContent ? JSON.parse(el.textContent) : null })).catch(() => null);
+		const inputInfo = await page.$eval('#ow-save-import', el => ({ type: el.type, inDoc: document.body.contains(el), display: getComputedStyle(el).display, accept: el.accept })).catch(() => null);
+		A(inputInfo && inputInfo.type === 'file' && inputInfo.inDoc && inputInfo.display !== 'none', 'a persistent file input #ow-save-import is in the document from boot (hidden, not display:none)', JSON.stringify(inputInfo));
+		const up = async (name, doc) => {
+			const f = path.join(HERE, name);
+			fs.writeFileSync(f, typeof doc === 'string' ? doc : JSON.stringify(doc));
+			try { const el = await page.$('#ow-save-import'); await el.uploadFile(f); } finally { setTimeout(() => { try { fs.unlinkSync(f); } catch (e) {} }, 3000); }
+		};
+		// malformed: an actionable error in the DOM, and nothing changes
+		const before = await localState();
+		const forcedBefore = calls.forced;
+		await up('_bad_upload.json', exportB(30000, { magepunk_party_v1: '{"oops":1}', magepunk_money: 'lots' }));
+		let st = null;
+		for (let i = 0; i < 30 && !(st && st.status === 'error'); i++) { await sleep(100); st = await status(); }
+		A(st && st.status === 'error' && st.res.stage === 'validate' && /magepunk_party_v1/.test(st.res.error) && /magepunk_money/.test(st.res.error),
+			'a malformed upload: data-status=error, and the status names every bad key', JSON.stringify(st));
+		A(await localState() === before && calls.forced === forcedBefore, '...nothing on this device changed, and nothing was pushed');
+		// valid: applied, pushed, read back, then the page reloads and still shows it
+		await up('_good_upload.json', exportB(30000, { magepunk_money: '31337' }));
+		let done = null;
+		for (let i = 0; i < 60 && !(done && done.status === 'ok'); i++) { await sleep(150); done = await status(); }
+		await sleep(1500); await boot();
+		const after = await status();
+		A(after && after.status === 'ok' && after.res.source === 'dom-input' && after.res.fileRev === 30000 && after.res.appliedRev === 30000,
+			'a valid upload imports, and after the reload #ow-save-import-status still reports it (fileRev = appliedRev = 30000)', JSON.stringify(after && after.res && { ok: after.res.ok, source: after.res.source, fileRev: after.res.fileRev, appliedRev: after.res.appliedRev }));
+		A(after && after.res.readback && after.res.readback.ok && after.res.readback.rev === 30000 && after.res.readback.bodyMatches, '...the server copy was read back at rev 30000, same body', JSON.stringify(after && after.res.readback));
+		A(revOf(DB.get('ow').ow) >= 30000 && DB.get('ow').ow.magepunk_money === '31337', '...and the server holds the restored game');
+		A(await page.evaluate(() => localStorage.getItem('magepunk_money')) === '31337', '...and so does this device');
+	}
 	A(errors.length === 0, 'no uncaught page error', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));
