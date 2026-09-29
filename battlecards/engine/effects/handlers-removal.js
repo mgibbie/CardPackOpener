@@ -1736,6 +1736,7 @@ register('destroy-all', ({ state, pi, target, source, enemies, scaled, hm, pickE
 				if (e.minCost != null && (c.cost || 0) < e.minCost) continue; // Austere Command: MV 4 or greater
 				if (e.requireDamaged && !(c.damage > 0)) continue; // King Mosh: only damaged creatures
 				if (e.maxAttack != null && (c.attack || 0) > e.maxAttack) continue; // Mossy Horror: 2 or less Attack
+				if (e.minAttack != null && (c.attack || 0) < e.minAttack) continue; // Shadow Word: Forbid (corrupted): exactly 4 Attack, with maxAttack
 				if (e.exile) {
 					const owner = state.players[c.controller];
 					owner.board = owner.board.filter(x => x !== c);
