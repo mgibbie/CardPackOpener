@@ -219,11 +219,16 @@ try {
 		const status = () => page.$eval('#ow-save-import-status', el => ({ status: el.dataset.status, res: el.textContent ? JSON.parse(el.textContent) : null })).catch(() => null);
 		const inputInfo = await page.$eval('#ow-save-import', el => ({ type: el.type, inDoc: document.body.contains(el), display: getComputedStyle(el).display, accept: el.accept })).catch(() => null);
 		A(inputInfo && inputInfo.type === 'file' && inputInfo.inDoc && inputInfo.display !== 'none', 'a persistent file input #ow-save-import is in the document from boot (hidden, not display:none)', JSON.stringify(inputInfo));
+		// (the browser reads an uploaded file lazily, so the temp files are removed
+		// at the end of this section, not right after the upload)
+		const temps = [];
 		const up = async (name, doc) => {
 			const f = path.join(HERE, name);
 			fs.writeFileSync(f, typeof doc === 'string' ? doc : JSON.stringify(doc));
-			try { const el = await page.$('#ow-save-import'); await el.uploadFile(f); } finally { setTimeout(() => { try { fs.unlinkSync(f); } catch (e) {} }, 3000); }
+			temps.push(f);
+			const el = await page.$('#ow-save-import'); await el.uploadFile(f);
 		};
+		try {
 		// malformed: an actionable error in the DOM, and nothing changes
 		const before = await localState();
 		const forcedBefore = calls.forced;
@@ -244,6 +249,7 @@ try {
 		A(after && after.res.readback && after.res.readback.ok && after.res.readback.rev === 30000 && after.res.readback.bodyMatches, '...the server copy was read back at rev 30000, same body', JSON.stringify(after && after.res.readback));
 		A(revOf(DB.get('ow').ow) >= 30000 && DB.get('ow').ow.magepunk_money === '31337', '...and the server holds the restored game');
 		A(await page.evaluate(() => localStorage.getItem('magepunk_money')) === '31337', '...and so does this device');
+		} finally { for (const f of temps) { try { fs.unlinkSync(f); } catch (e) {} } }
 	}
 	A(errors.length === 0, 'no uncaught page error', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
