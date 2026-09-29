@@ -502,6 +502,59 @@ export async function importSave(input, opts = {}) {
 	} catch (e) { return finishImport({ ...res, stage: 'readback', error: 'Pushed, but could not read the server copy back: ' + (e && e.message || e) }, reload); }
 	return finishImport({ ...res, ok: true, stage: 'done' }, reload);
 }
+// ---------- a PERSISTENT file input for automation ----------
+// Upload tooling can only drive a real <input type=file> that is in the DOM,
+// and some callers cannot run page code at all, so OPTIONS > IMPORT SAVE (whose
+// input only exists while the chooser is open) is out of reach. This input sits
+// in the document for the whole session, visually hidden (not display:none, so
+// every tool can target it), and an upload runs the SAME importSave pipeline:
+// full validation first (malformed = no change, no push), backup + apply with
+// rollback, revision stamp, force-push, server read-back. There is no confirm()
+// here: the input is invisible to players, and a caller that cannot evaluate
+// code cannot answer a dialog either.
+// The outcome is written to #ow-save-import-status (textContent = the result
+// JSON; data-status = idle|busy|ok|error), and restored there from
+// lastImportResult() after the reload a successful import triggers.
+export const IMPORT_INPUT_ID = 'ow-save-import';
+export const IMPORT_STATUS_ID = 'ow-save-import-status';
+function showImportStatus(el, status, res) {
+	if (!el) return;
+	el.dataset.status = status;
+	el.textContent = res ? JSON.stringify(res) : '';
+}
+export function installImportInput() {
+	if (document.getElementById(IMPORT_INPUT_ID)) return document.getElementById(IMPORT_INPUT_ID);
+	const hide = 'position:absolute;left:-10000px;top:0;width:1px;height:1px;opacity:0;overflow:hidden;';
+	const inp = document.createElement('input');
+	inp.type = 'file';
+	inp.id = IMPORT_INPUT_ID;
+	inp.accept = '.json,application/json';
+	inp.setAttribute('aria-label', 'Import an overworld save file');
+	inp.tabIndex = -1;
+	inp.style.cssText = hide;
+	const out = document.createElement('output');
+	out.id = IMPORT_STATUS_ID;
+	out.setAttribute('for', IMPORT_INPUT_ID);
+	out.style.cssText = hide;
+	document.body.appendChild(inp);
+	document.body.appendChild(out);
+	// the previous import's outcome survives its reload
+	const last = lastImportResult();
+	showImportStatus(out, last ? (last.ok ? 'ok' : 'error') : 'idle', last);
+	inp.addEventListener('change', async () => {
+		const f = inp.files && inp.files[0];
+		if (!f) return;
+		showImportStatus(out, 'busy', { stage: 'reading', file: f.name });
+		let text;
+		try { text = await f.text(); }
+		catch (e) { showImportStatus(out, 'error', { ok: false, stage: 'read', error: 'Could not read the file: ' + (e && e.message || e) }); inp.value = ''; return; }
+		const res = await importSave(text, { source: 'dom-input' });
+		res.file = f.name;
+		showImportStatus(out, res.ok ? 'ok' : 'error', res);
+		inp.value = '';   // the same file can be uploaded again
+	});
+	return inp;
+}
 // the result of the last import (survives its reload), or null
 export function lastImportResult() {
 	try { return JSON.parse(sessionStorage.getItem(IMPORT_RESULT_KEY) || 'null'); } catch (e) { return null; }
