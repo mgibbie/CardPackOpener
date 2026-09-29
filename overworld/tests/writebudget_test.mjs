@@ -86,6 +86,22 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 		const page = await browser.newPage();
 		await page.setViewport({ width: 1100, height: 800 });
+		// a SWITCHABLE fast clock: timers and clocks run SPEED x faster from the
+		// first script on (so the boot-time timers are fast too), for the idle
+		// window below (30s of page time in ~6s real); window.__setSpeed(1) then
+		// puts the walking checks back on real time, since the game steps on
+		// real frame time
+		const SPEED = 5;
+		await page.evaluateOnNewDocument(startSpeed => {
+			const st = setTimeout, si = setInterval, now = Date.now, pnow = performance.now.bind(performance);
+			let speed = startSpeed, vd = now(), rd = now(), vp = pnow(), rp = pnow();
+			const vDate = () => vd + (now() - rd) * speed, vPerf = () => vp + (pnow() - rp) * speed;
+			window.__setSpeed = s => { vd = vDate(); rd = now(); vp = vPerf(); rp = pnow(); speed = s; };
+			window.setTimeout = (f, ms, ...a) => st(f, (+ms || 0) / speed, ...a);
+			window.setInterval = (f, ms, ...a) => si(f, (+ms || 0) / speed, ...a);
+			Date.now = () => Math.round(vDate());
+			performance.now = () => vPerf();
+		}, SPEED);
 		await page.evaluateOnNewDocument((st, party) => {
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
@@ -96,12 +112,13 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		await page.goto(`http://localhost:${PORT}/overworld/index.html?map=Route1`, { waitUntil: 'domcontentloaded' });
 		const t0 = Date.now();
 		while (Date.now() - t0 < 60000 && !(await page.evaluate(() => !!window.__ow?.battle?.data).catch(() => false))) await sleep(200);
-		await sleep(2000);
+		await sleep(2000 / SPEED);
 
 		// measure a 30s window of a player standing still — the common case, and the
 		// one the old code billed at ~17 presence writes per 30s
 		calls.clear();
-		await sleep(30000);
+		await sleep(30000 / SPEED);   // 30s of page time
+		await page.evaluate(() => window.__setSpeed(1));
 		const writes = [...calls.entries()].filter(([a]) => WRITERS.has(a));
 		const total = writes.reduce((n, [, c]) => n + c, 0);
 		const beats = calls.get('heartbeat') || 0;
@@ -119,6 +136,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 		// TIER 4 — the case tiers 1-3 did NOT help: a solo player actually WALKING.
 		// x/y changed every step, so every beat still wrote. Nobody was reading it.
+		// Liveness (one beat per BEAT_FLOOR_MS, 40s) is not what this measures: send
+		// that beat now, so the 9s walk can't straddle the floor by timing alone
+		await page.evaluate(() => window.__ow.heartbeat(true));
+		await sleep(500);
 		calls.clear();
 		await page.evaluate(() => { window.__ow.player.tx = 12; window.__ow.player.ty = 34; });
 		for (let i = 0; i < 10; i++) {
