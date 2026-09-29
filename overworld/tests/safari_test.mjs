@@ -76,6 +76,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		page.on('pageerror', e => errors.push(e.message));
 		await page.evaluateOnNewDocument((st, party) => {
 			localStorage.setItem('magepunk_mp_token_v1', 'smoke-token');
+			// instant text + no battle animations: this suite checks outcomes, not pacing
+			localStorage.setItem('magepunk_settings', JSON.stringify({ textSpeed: 'instant', battleAnim: 'off' }));
 			localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			localStorage.setItem('magepunk_region', 'KANTO');

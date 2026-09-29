@@ -59,11 +59,17 @@ const server = http.createServer(async (req, res) => {
 	});
 });
 await new Promise(r => server.listen(PORT, r));
+// FAST CLOCK. The cadences are 10-60 SECONDS, and the windows below are written
+// in the page's time. The page's timers and clocks run SPEED x faster, and every
+// wait here is divided by SPEED, so the same counts come out in a fifth of the
+// wall time (this suite was the gate's slowest at ~214s).
+const SPEED = 5;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pageSleep = ms => sleep(ms / SPEED);   // a wait measured in page time
 const reset = () => { for (const k of Object.keys(counts)) delete counts[k]; };
 const read = () => ({ friends: counts.friends || 0, challenges: counts.challenges || 0, heartbeat: counts.heartbeat || 0,
 	all: Object.values(counts).reduce((a, b) => a + b, 0) });
-const window_ = async ms => { reset(); await sleep(ms); return read(); };
+const window_ = async ms => { reset(); await pageSleep(ms); return read(); };
 
 let browser;
 try {
@@ -71,6 +77,14 @@ try {
 	const page = await browser.newPage();
 	const errors = [];
 	page.on('pageerror', e => errors.push(String(e.message)));
+	await page.evaluateOnNewDocument(speed => {
+		const st = setTimeout, si = setInterval, now = Date.now, pnow = performance.now.bind(performance);
+		const t0 = now(), p0 = pnow();
+		window.setTimeout = (f, ms, ...a) => st(f, (+ms || 0) / speed, ...a);
+		window.setInterval = (f, ms, ...a) => si(f, (+ms || 0) / speed, ...a);
+		Date.now = () => Math.round(t0 + (now() - t0) * speed);
+		performance.now = () => p0 + (pnow() - p0) * speed;
+	}, SPEED);
 	await page.evaluateOnNewDocument(st => {
 		localStorage.setItem('magepunk_mp_token_v1', 'polls-token');
 		localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
@@ -83,7 +97,7 @@ try {
 	}, STATE);
 	await page.goto(`http://localhost:${PORT}/overworld/index.html?map=Route101&x=10&y=12`, { waitUntil: 'domcontentloaded' });
 	for (let i = 0; i < 200 && !(await page.evaluate(() => !!window.__ow?.world?.current?.layout).catch(() => false)); i++) await sleep(200);
-	await sleep(3000);
+	await pageSleep(3000);
 
 	// the old cadence for reference, 60s alone: overworld presence ~43 + challenges ~30,
 	// plus the site top bar's 4 calls every 12s (~20) = ~93 calls a minute
@@ -103,12 +117,12 @@ try {
 
 	friendMode = null;
 	await page.evaluate(() => { window.__hidden = true; document.dispatchEvent(new Event('visibilitychange')); });
-	await sleep(3000);
+	await pageSleep(3000);
 	const hidden = await window_(40000);
 	A(hidden.all === 0, 'a hidden tab makes no calls at all (overworld and top bar)', JSON.stringify(counts));
 	reset();   // BEFORE showing: the catch-up calls go out at once
 	await page.evaluate(() => { window.__hidden = false; document.dispatchEvent(new Event('visibilitychange')); });
-	await sleep(1500);
+	await pageSleep(1500);
 	const shown = read();
 	A(shown.friends >= 1 && shown.challenges >= 1, 'coming back into view catches up at once', JSON.stringify(shown));
 
