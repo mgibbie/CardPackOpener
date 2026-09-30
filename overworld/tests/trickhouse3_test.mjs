@@ -122,7 +122,16 @@ try {
 	const pos = () => page.evaluate(() => ({ x: window.__ow.player.tx, y: window.__ow.player.ty, out: window.__ow.player.moveOutcome }));
 	const idle = () => page.evaluate(() => { const ow = window.__ow; return !ow.player.moving && !ow.cutscene.blocking && !ow.dialog.blocking; });
 	const settle = async () => { for (let i = 0; i < 60; i++) { if (await idle()) return; await page.evaluate(() => { if (window.__ow.dialog.blocking) window.__ow.dialog.key('z'); }); await sleep(100); } };
-	const step = async dir => { await page.keyboard.down(dir); await sleep(260); await page.keyboard.up(dir); await sleep(350); await settle(); };
+	// hold until the step STARTS (or is refused), then let it finish: a fixed 260ms
+	// hold on a slow run released before the step began and read (8,3) mid-walk
+	const step = async dir => {
+		const from = await pos();
+		await page.keyboard.down(dir);
+		for (let i = 0; i < 40; i++) { await sleep(25); const p = await pos(); if (p.x !== from.x || p.y !== from.y || p.out === 'bump' || await page.evaluate(() => window.__ow.player.moving)) break; }
+		await page.keyboard.up(dir);
+		for (let i = 0; i < 80 && await page.evaluate(() => window.__ow.player.moving); i++) await sleep(25);
+		await sleep(150); await settle();
+	};
 	// every tile a door/button script edits must carry the collision THAT script
 	// asked for, whenever the tile currently shows that script's metatile
 	const audit = () => page.evaluate(async () => {
