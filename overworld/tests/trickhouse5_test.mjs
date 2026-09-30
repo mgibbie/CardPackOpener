@@ -13,7 +13,13 @@
 //   5. a full run with real keys: all five dolls, the scroll, the reward
 //   6. reload + the server push keep the stage, the reward and the six-POKeMON party
 //
-//   node overworld/tests/trickhouse5_test.mjs
+// Split in two so each part fits the gate's 5-minute suite limit (30 of the 45
+// answers are wrong, and each wrong one warps back to the start):
+//   part A (this file):             dolls 1-3, checks 1-4
+//   part B (trickhouse5b_test.mjs): dolls 4-5, checks 1-4, then 5 and 6
+//
+//   node overworld/tests/trickhouse5_test.mjs           (part A)
+//   P5_PART=B node overworld/tests/trickhouse5_test.mjs  (part B)
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
@@ -27,7 +33,9 @@ const CHROME = process.env.CHROME || [
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
 	'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
 ].find(p => fs.existsSync(p));
-const PORT = 9178;
+const PART = process.env.P5_PART === 'B' ? 'B' : 'A';
+const DOLLS = PART === 'A' ? [1, 2, 3] : [4, 5];
+const PORT = PART === 'A' ? 9178 : 9179;
 const MAP = 'Route110_TrickHousePuzzle5';
 const STATE = { username: 'puzzle5', friendCode: 'PZL500', decks: [], collection: {}, packs: 0, packInbox: 0, stats: { runs: 0, wins: 0 } };
 const mon = (s, n) => ({
@@ -69,7 +77,7 @@ for (let d = 1; d <= 5; d++) for (let q = 1; q <= 3; q++) {
 	const i = ops.findIndex(o => o.op === 'multichoice');
 	const mc = ops[i];
 	const right = ops.slice(i + 1).find(o => o.op === 'branch' && /CorrectAnswer$/.test(o.label || ''));
-	QUIZ[`${d}.${q}`] = { options: mc ? mc.options : null, prompt: mc ? mc.prompt : null, correct: right ? +right.cond.value : null };
+	QUIZ[`${d}.${q}`] = { list: mc ? mc.list : null, options: mc ? mc.options : null, prompt: mc ? mc.prompt : null, correct: right ? +right.cond.value : null };
 }
 
 let browser;
@@ -98,32 +106,35 @@ try {
 	const key = k => page.keyboard.press(k === 'z' ? 'z' : k);
 	const W = f => page.evaluate(f);
 	const choiceOpen = () => page.evaluate(async () => (await import('./choice.js')).choiceMenu.open);
-	const choiceState = () => page.evaluate(async () => { const c = (await import('./choice.js')).choiceMenu; return { open: c.open, options: c.options.slice(), prompt: c.prompt, idx: c.idx }; });
-	// press Z through dialog until the answer menu opens (or the scene ends)
-	const toMenu = async () => {
-		for (let i = 0; i < 80; i++) {
-			if (await choiceOpen()) return true;
-			const busy = await W(() => window.__ow.dialog.blocking || window.__ow.cutscene.blocking);
-			if (!busy) return false;
-			if (await W(() => window.__ow.dialog.blocking)) await key('z');
-			await sleep(60);
-		}
-		return false;
-	};
-	const drain = async () => {
-		for (let i = 0; i < 200; i++) {
-			if (await choiceOpen()) return 'menu';
-			const s = await W(() => ({ d: window.__ow.dialog.blocking, c: window.__ow.cutscene.blocking }));
-			if (!s.d && !s.c) { await sleep(200); if (!(await W(() => window.__ow.dialog.blocking || window.__ow.cutscene.blocking))) return 'idle'; }
-			if (s.d) { await W(() => { (window.__said = window.__said || []).push(JSON.stringify(window.__ow.dialog.pages || '')); }); await key('z'); }
-			await sleep(60);
+	const choiceState = () => page.evaluate(async () => { const c = (await import('./choice.js')).choiceMenu; return { open: c.open, list: c.list, options: c.options.slice(), prompt: c.prompt, idx: c.idx }; });
+	// the dialog driver runs IN the page: one round trip per wait, not one per page,
+	// pressing Z as real keydown events (the keyboard's own input path)
+	const inPage = mode => page.evaluate(async mode => {
+		const C = await import('./choice.js'), W2 = window.__ow;
+		const press = k => dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+		const t0 = Date.now();
+		let calm = 0;
+		while (Date.now() - t0 < 20000) {
+			if (C.choiceMenu.open) return 'menu';
+			const d = W2.dialog.blocking, c = W2.cutscene.blocking;
+			// idle = no dialog, no scene AND no screen fade (a warp fades out, loads,
+			// fades in with the scene already over), held for ~half a second
+			const f = W2.fade || { alpha: 0, target: 0 };
+			const still = !d && !c && f.alpha < 0.001 && f.target < 0.001;
+			if (still) { if (++calm >= 12) return 'idle'; }
+			else calm = 0;
+			if (d) { (window.__said = window.__said || []).push(JSON.stringify(W2.dialog.pages || '')); press('z'); }
+			await new Promise(r => setTimeout(r, 40));
 		}
 		return 'timeout';
-	};
+	}, mode);
+	// press Z through dialog until the answer menu opens (or the scene ends)
+	const toMenu = async () => (await inPage('toMenu')) === 'menu';
+	const drain = () => inPage('drain');
 	const logTail = () => W(() => (window.__owChoiceLog || []).slice(-2));
 
 	// ===== 1-4: every variant, every option =====
-	for (let d = 1; d <= 5; d++) for (let q = 1; q <= 3; q++) {
+	for (const d of DOLLS) for (let q = 1; q <= 3; q++) {
 		const exp = QUIZ[`${d}.${q}`];
 		A(exp.options && exp.options.length >= 2 && exp.correct != null, `[${d}.${q}] the restored quiz has its option list and a right answer`, JSON.stringify(exp));
 		if (!exp.options) continue;
@@ -156,7 +167,8 @@ try {
 		}
 	}
 
-	// ===== 5: a full run with real keys =====
+	// ===== 5: a full run with real keys (part B) =====
+	if (PART === 'B') {
 	await page.evaluate(m => window.__ow.moveToMap(m, 0, 21), MAP); await boot(MAP);
 	const dolls = await W(() => window.__ow.npcs.list.filter(n => /MECHADOLL/.test(n.ev && n.ev.local_id || '')).map(n => ({ id: n.ev.local_id, x: n.tx, y: n.ty })));
 	A(dolls.length === 5, 'setup: five Mechadolls on the map', JSON.stringify(dolls));
@@ -176,7 +188,7 @@ try {
 		if (!(await toMenu())) { A(false, `[doll ${d}] talking opens a quiz`); continue; }
 		const st = await choiceState();
 		// which of this doll's three quizzes is it? match the options
-		const which = [1, 2, 3].map(q => QUIZ[`${d}.${q}`]).find(e => JSON.stringify(e.options) === JSON.stringify(st.options));
+		const which = [1, 2, 3].map(q => QUIZ[`${d}.${q}`]).find(e => e.list === st.list);
 		for (let i = 0; i < which.correct; i++) { await key('ArrowDown'); await sleep(40); }
 		await key('z');
 		await drain();
@@ -202,6 +214,7 @@ try {
 	await sleep(800);
 	const rl = await W(() => ({ th: JSON.parse(localStorage.getItem('magepunk_trickhouse_v1')), party: window.__ow.party.length, magnet: window.__ow.Bag.count('magnet') }));
 	A(rl.th.stage === 5 && rl.party === 6 && rl.magnet >= 1, 'after a reload: stage 5, the MAGNET, six POKeMON', JSON.stringify(rl));
+	}
 	A(errors.length === 0, 'no uncaught page error', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 4).join(' <- '));

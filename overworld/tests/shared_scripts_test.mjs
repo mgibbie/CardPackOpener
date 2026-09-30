@@ -77,8 +77,13 @@ const shared = JSON.parse(fs.readFileSync(path.join(D, 'shared_scripts.json'), '
 	// What matters is the ORDER — the map's own labels spread last, so they win.
 	// The merge may be wrapped (applySailFix patches the Briney ferry legs as the
 	// table is built), which is why this no longer pins the exact spelling.
-	A(/mapScripts = (?:[A-Za-z_$][\w$]*\()?\{ \.\.\.sharedScripts, \.\.\.\(c\.scr \|\| \{\}\) \}/.test(src),
-		"the map's own labels are merged OVER the shared ones, so a map never loses its own version");
+	// Later layers may follow the map's own (its restored menus, the PHONE's
+	// scripts), but nothing SHARED may spread after it.
+	const merge = (src.match(/mapScripts = (?:[A-Za-z_$][\w$]*\()?\{([^}]*\.\.\.\(c\.scr \|\| \{\}\)[^}]*)\}/) || [])[1] || '';
+	const own = merge.indexOf('...(c.scr || {})');
+	A(merge && merge.indexOf('...sharedScripts') >= 0 && merge.indexOf('...sharedScripts') < own
+		&& !/shared/i.test(merge.slice(own)),
+		"the map's own labels are merged OVER the shared ones, so a map never loses its own version", merge);
 }
 
 // ---------- live ----------
