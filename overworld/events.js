@@ -375,6 +375,12 @@ export class Cutscene {
 				// (a headless harness) takes the agreed path deterministically rather
 				// than silently refusing — refusing is what the old mistranspile did,
 				// and it is why the BICYCLE and the SUPER ROD could never be obtained.
+				// FireRed/Emerald multichoice (restored by tools/gen_multichoice.mjs): the
+				// menu WAITS for the player; the pick lands in VAR_RESULT before the
+				// switch that follows reads it. No UI -> no answer is invented.
+				case 'multichoice':
+					if (ctx.multichoice?.(op) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					break;
 				case 'prompt':
 					setVar('VAR_RESULT', 1);
 					if (ctx.prompt?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
@@ -415,6 +421,7 @@ export class Cutscene {
 					if (op.cond.item != null) hit = !!ctx.hasItem?.(itemId(op.cond.item)) === !!op.cond.state;
 					else if (op.cond.flag != null) hit = getFlag(op.cond.flag) === !!op.cond.state;
 					else hit = cmp(getVar(op.cond.var), op.cond.cmp, resolveValue(op.cond.value));
+					if (op.cond.var === 'VAR_RESULT') ctx.noteCompare?.(op.cond, hit);   // multichoice instrumentation
 					if (hit) {
 						if (op.kind === 'call') { this._advance(); this._goto(op.label, true); }
 						else if (!this._goto(op.label, false)) this._advance(); // dangling: don't spin
