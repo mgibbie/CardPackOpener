@@ -66,6 +66,7 @@ export function startTrainerBattle(t, foeParty, info) {
 	battle.startTrainer(S.party, foeParty, info, result => {
 		if (result === 'victory') {
 			trainers.markDefeated(t);
+			if (info.beatEvent) Story.setFlag(info.beatEvent);   // a Crystal trainer header's EVENT_BEAT_*
 			// the prize is paid by battle.awardPrize(), at the moment it is announced —
 			// this used to be the ONLY path that paid, which is why scripted trainers,
 			// villains and rivals all showed a prize and credited nothing
