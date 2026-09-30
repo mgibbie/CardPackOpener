@@ -117,11 +117,16 @@ register('add-random-card', ({ state, pi, target, source, enemies, scaled }, e) 
 				&& (e.maxCost == null || (d.cost || 0) <= e.maxCost)
 				&& (e.cost == null || (d.cost || 0) === e.cost)
 				&& (!e.otherClass || ((d.cardClass || 'neutral') !== 'neutral' && !(d.cardClass || '').split('__').includes(heroClass || ''))));
-			for (let n = 0; n < (e.count || 1); n++) {
-				if (p.hand.length >= MAX_HAND || !pool.length) break;
-				const def = pool[Math.floor(state.rng() * pool.length)];
-				const card = instantiate(def, pi); card.zone = 'hand'; p.hand.push(card);
-				emit(state, { type: 'conjure', player: pi, card, color: null });
+			// eachPlayer: every (living) player gets their own random card (Lupine Harbingers)
+			const who = e.eachPlayer ? state.players.map((_, i) => i).filter(i => !state.players[i].eliminated) : [pi];
+			for (const tp of who) {
+				const tpl = state.players[tp];
+				for (let n = 0; n < (e.count || 1); n++) {
+					if (tpl.hand.length >= MAX_HAND || !pool.length) break;
+					const def = pool[Math.floor(state.rng() * pool.length)];
+					const card = instantiate(def, tp); card.zone = 'hand'; tpl.hand.push(card);
+					emit(state, { type: 'conjure', player: tp, card, color: null });
+				}
 			}
 });
 
