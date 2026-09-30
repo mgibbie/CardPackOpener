@@ -2,6 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Bag from './bag.js';
 import { Contest } from './contest.js';
+import { crystalTrainerHeader } from './crystal_trainers.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
 import { arcade, battle, blockers, cutscene, dialog, hud, items, npcs, player, portals, services, trainers, world } from './ow_core.js';
@@ -325,6 +326,10 @@ export function interact() {
 	const t = trainers.trainerAt(fx, fy);
 	if (t) {
 		if (trainers.isDefeated(t)) {
+			// a Crystal trainer header's loaded script IS its after-battle
+			// continuation (Olivia's line, Dana's phone number and rematch): run it
+			const hdr = crystalTrainerHeader(world, t.ev.script);
+			if (hdr && S.mapScripts[t.ev.script] && runScriptLabel(t.ev.script, t)) return;
 			const { info } = trainers.buildBattle(t, battle.data);
 			dialog.open(info.defeatText);
 		} else {

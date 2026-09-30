@@ -202,6 +202,7 @@ import * as Badges from './badges.js';
 import * as Trades from './trades.js';
 import * as Quest from './quest.js';
 import { EXTRA_DIVE } from './divelinks.js';
+import { crystalTrainerHeader } from './crystal_trainers.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
@@ -387,8 +388,24 @@ trainers.onEngage = t => {
 	// body isn't loaded, fall through to the plain battle (+ badge toast for gyms).
 	const role = Badges.scriptInfo(script);
 	const isLeague = role && (role.kind === 'elite' || role.kind === 'champion');
-	if (!isLeague && S.mapScripts[script] && runScriptLabel(script, t)) return;
+	// A CRYSTAL TRAINER HEADER is not a battle script. pokecrystal points a trainer
+	// object at `trainer CLASS, ID, EVENT_BEAT_*, SeenText, BeatenText, 0, .Script`
+	// and the transpile kept only `.Script`, the AFTER-battle continuation, under
+	// the header's label. Running it for an unbeaten trainer skipped the battle:
+	// Route 38's Olivia/Toby/Valerie/Harry said their post-battle line, Dana asked
+	// for a phone number (2026-09-30). A header always gets the ordinary first
+	// battle, with its authentic seen/beaten texts and beat event; the
+	// continuation runs on later talks (ow_input.js). Full scripts (Gym Leaders,
+	// Kevin, Sage Li...) are not headers and still run themselves.
+	const hdr = crystalTrainerHeader(world, script);
+	if (!isLeague && !hdr && S.mapScripts[script] && runScriptLabel(script, t)) return;
 	const { party: foeParty, info } = trainers.buildBattle(t, battle.data);
+	if (hdr) {
+		const say = lab => S.mapStrings?.[lab] ? Story.normalizeText(S.mapStrings[lab], cutsceneCtx()) : null;
+		info.introQuote = say(hdr.seen) || info.introQuote;
+		info.defeatText = say(hdr.beaten) || info.defeatText;
+		info.beatEvent = hdr.beat;
+	}
 	const begin = () => startTrainerBattle(t, foeParty, info);
 	if (info.introQuote) dialog.open(info.introQuote, begin);
 	else begin();
