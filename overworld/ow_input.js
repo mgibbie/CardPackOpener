@@ -156,6 +156,17 @@ export function savePos() {
 		back: world.lastWarpSource || null,
 	});
 }
+// the `msg` right after a script's first trainerbattle: what an already-beaten
+// trainer says (the decomp's trainerbattle skips the battle once beaten)
+function postBattleLine(label) {
+	const ops = label && S.mapScripts[label];
+	if (!Array.isArray(ops)) return null;
+	const i = ops.findIndex(o => o.op === 'trainerbattle');
+	const next = i >= 0 ? ops[i + 1] : null;
+	if (!next || next.op !== 'msg') return null;
+	const raw = (S.mapStrings && S.mapStrings[next.text]) || null;
+	return raw ? Story.normalizeText(raw, cutsceneCtx()) : null;
+}
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 export function interact() {
 	if (player.moving || trainers.engaging) return;
@@ -330,6 +341,10 @@ export function interact() {
 			// continuation (Olivia's line, Dana's phone number and rematch): run it
 			const hdr = crystalTrainerHeader(world, t.ev.script);
 			if (hdr && S.mapScripts[t.ev.script] && runScriptLabel(t.ev.script, t)) return;
+			// Emerald/FireRed: an already-beaten trainer's `trainerbattle` skips to
+			// the next line, which is their post-battle line (Jeff: "...")
+			const post = postBattleLine(t.ev.script);
+			if (post) { dialog.open(post); return; }
 			const { info } = trainers.buildBattle(t, battle.data);
 			dialog.open(info.defeatText);
 		} else {
