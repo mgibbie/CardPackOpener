@@ -1,12 +1,13 @@
 // ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { phoneMenu } from './phone.js';
 import { VIEW_H, VIEW_W } from './engine.js';
 import { arcade, battle, blockers, cutscene, dialog, evolution, factorySpec, hud, items, npcs, player, portals, pvp, screen, sctx, services, trainers, world } from './ow_core.js';
 import { decoMenu, drawBaseDeco, drawDecoMenu, drawRadio, drawSocial, radioMenu, socialMenu } from './ow_features.js';
 import { drawWatchingBadge, frontier, frontierWatchers } from './ow_frontier.js';
 import { drawAwakening, drawLegendary } from './ow_legendaries.js';
 import { bagMenu, bpShopMenu, canvasMenuOpen, drawBpShopMenu, ferryMenu, menuBlocking, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
-import { drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu, drawFriendsMenu, drawHalfParty, drawMoveShop, drawNameRater, drawOptions, drawPartyMenu, drawPcMenu, drawPortalMenu, drawQuest, drawRunMenu, drawShopMenu, drawStartMenu, drawStarterMenu, drawTownMap, drawTrainerCard } from './ow_menus.js';
+import { drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu, drawFriendsMenu, drawHalfParty, drawMoveShop, drawNameRater, drawOptions, drawPartyMenu, drawPcMenu, drawPhoneMenu, drawPortalMenu, drawQuest, drawRunMenu, drawShopMenu, drawStartMenu, drawStarterMenu, drawTownMap, drawTrainerCard } from './ow_menus.js';
 import { drawSlots, slotsMenu } from './ow_minigames.js';
 import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
 import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
@@ -335,6 +336,7 @@ export function tick(now) {
 		else if (starterMenu.open) drawStarterMenu(SW, MH);
 		else if (ferryMenu.open) drawFerryMenu(SW, MH);
 		else if (portalMenu.open) drawPortalMenu(SW, MH);
+		else if (phoneMenu.open) drawPhoneMenu(SW, MH);
 		else if (bpShopMenu.open) drawBpShopMenu(SW, MH);
 		else if (trade.open) drawTrade(SW, MH);
 		else if (playerMenu.open) drawPlayerMenu(SW, MH);

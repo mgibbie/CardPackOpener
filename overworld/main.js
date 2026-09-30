@@ -203,6 +203,7 @@ import * as Trades from './trades.js';
 import * as Quest from './quest.js';
 import { EXTRA_DIVE } from './divelinks.js';
 import { crystalTrainerHeader } from './crystal_trainers.js';
+import { grantPhoneIfDue, loadPhoneData, mergePhoneTeams, phoneMenu } from './phone.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { statsFor, buildMon as battleBuildMon } from './battle.js';
@@ -622,6 +623,9 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await items.init();
 	signTexts = await getJSON('data/sign_texts.json').catch(() => ({}));
 	S.trainerTeams = await getJSON('data/trainer_teams.json').catch(() => ({}));
+	// the PHONE: contacts, call lines, restored trainer scripts + Crystal's rematch teams
+	await loadPhoneData(getJSON);
+	mergePhoneTeams(S.trainerTeams);
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through
 	// to printing its own label, so the two have to arrive together
@@ -632,6 +636,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
 	installImportInput(); // #ow-save-import: a persistent file input for automated save restores
 	S.party = loadParty(battle.data);
+	grantPhoneIfDue();   // every save past the intro has a PHONE, whichever region it started in
 	// standalone Battle Factory mini-game (?factory=1): no save/party needed (it
 	// battles with rentals). Suppress the region picker; the post-boot hook warps to
 	// the Factory and provisions a throwaway lead just before starting.

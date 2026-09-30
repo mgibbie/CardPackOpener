@@ -1,4 +1,5 @@
 // ow_diagnostics.js — input diagnostics: openCanvasMenus() and gateReport(), which name every movement gate at once (?owlog=1 traces the rest). Split from main.js.
+import { phoneMenu } from './phone.js';
 import { battle, cutscene, dialog, evolution, factorySpec, player, pvp, trainers, world } from './ow_core.js';
 import { fade, fading } from './ow_fade.js';
 import { decoMenu, radioMenu, socialMenu } from './ow_features.js';
@@ -28,7 +29,7 @@ export function openCanvasMenus() {
 	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
 		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
 		dexMenu, trainerCard, townMap, daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
-		tradeMenu, gcMenu, vfMenu, contestMenu, blendMenu, slideMenu, decoMenu, socialMenu, slotsMenu };
+		tradeMenu, gcMenu, vfMenu, contestMenu, blendMenu, slideMenu, decoMenu, socialMenu, slotsMenu, phoneMenu };
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
 // why the last movement input was accepted or ignored, plus every gate's live value

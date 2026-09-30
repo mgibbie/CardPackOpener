@@ -1,5 +1,6 @@
 // ow_progression.js — progression: the sealed champions, badges + the Elite Four gate + the champion crown, cross-region tier rewards, the Grand Champion finale, the level curve and the level cap.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { phoneAfterVictory } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
@@ -74,6 +75,7 @@ export function startTrainerBattle(t, foeParty, info) {
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
 			evolution.check(S.party, battle.data);
 			runPostBattleScript(t.ev.script, t);   // the beat Crystal keeps in <script>.Script
+			phoneAfterVictory(t, info);   // a phone trainer offers their number / a rematch moves up a tier
 		} else if (result === 'defeat') {
 			whiteOut();
 		}

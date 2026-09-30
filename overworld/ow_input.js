@@ -1,5 +1,6 @@
 // ow_input.js — keyboard input: held-key tracking, the movement gates, the run button, and the item/repel helpers bound to input.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { phoneTalkDefeated } from './phone.js';
 import * as Bag from './bag.js';
 import { Contest } from './contest.js';
 import { crystalTrainerHeader } from './crystal_trainers.js';
@@ -337,6 +338,8 @@ export function interact() {
 	const t = trainers.trainerAt(fx, fy);
 	if (t) {
 		if (trainers.isDefeated(t)) {
+			// a beaten Hoenn/Kanto PHONE trainer: register, rematch, or their line
+			if (phoneTalkDefeated(t)) return;
 			// a Crystal trainer header's loaded script IS its after-battle
 			// continuation (Olivia's line, Dana's phone number and rematch): run it
 			const hdr = crystalTrainerHeader(world, t.ev.script);

@@ -1,4 +1,5 @@
 // ow_transitions.js — map transitions: moveToMap/warpTo/flyTo, per-map script loading, Fly points (split from main.js).
+import { phoneScriptOverrides } from './phone.js';
 import { getImage, getJSON } from './engine.js';
 import * as Story from './events.js';
 import * as Fly from './flydata.js';
@@ -56,7 +57,7 @@ export async function loadMapScripts(stem) {
 	// own version; the shared copy is only ever a fallback. Merging here rather
 	// than at each call site means runScriptLabel, `goto` and `call` all resolve
 	// through it without knowing it exists.
-	S.mapScripts = applySailFix({ ...sharedScripts, ...(c.scr || {}) });
+	S.mapScripts = applySailFix({ ...sharedScripts, ...(c.scr || {}), ...phoneScriptOverrides(stem) });   // + the PHONE's restored trainer scripts
 	S.mapStrings = c.str || {};
 }
 
