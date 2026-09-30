@@ -1,4 +1,5 @@
 // / ow_cutscenes.js — cutscenes: the script-runner context (cutsceneCtx) and NPC lookup by local id (split from main.js).
+import { noteCompare, startChoice } from './choice.js';
 import * as Bag from './bag.js';
 import * as Daycare from './daycare.js';
 import { META } from './engine.js';
@@ -170,6 +171,8 @@ export function cutsceneCtx(talker, scriptLabel) {
 			return 'wait';
 		},
 		special: (name, store, op) => runSpecial(name, store, op), // handlers write `store`; unknown -> 0
+		multichoice: op => startChoice(op),          // the restored FireRed/Emerald menu (choice.js)
+		noteCompare: (cond, hit) => noteCompare(cond, hit),
 		hud: msg => { hud.textContent = msg; },
 	};
 }
