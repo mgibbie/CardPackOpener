@@ -375,6 +375,11 @@ export class Cutscene {
 				// (a headless harness) takes the agreed path deterministically rather
 				// than silently refusing — refusing is what the old mistranspile did,
 				// and it is why the BICYCLE and the SUPER ROD could never be obtained.
+				// restored by tools/gen_multichoice.mjs (the transpile dropped them):
+				// money gates that never checked or charged, and elevator exits
+				case 'checkmoney': setVar('VAR_RESULT', (ctx.money?.() ?? 0) >= (+op.amount || 0) ? 1 : 0); break;
+				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
 				// FireRed/Emerald multichoice (restored by tools/gen_multichoice.mjs): the
 				// menu WAITS for the player; the pick lands in VAR_RESULT before the
 				// switch that follows reads it. No UI -> no answer is invented.
@@ -648,6 +653,8 @@ function giveArgs(op) {
 //     the item out, so recover it from "…Received<Thing>From…");
 //   • a VAR_ symbol (a runtime-computed item, 24 of them) — unresolvable
 //     statically, so hand back null and let the caller skip the give entirely.
+let itemByNum = null;
+const ITEM_BY_NUM = () => itemByNum || (itemByNum = Object.fromEntries(Object.entries(SCRIPT_CONSTANTS).filter(([k]) => /^ITEM_/.test(k)).map(([k, v]) => [v, k])));
 export function itemId(sym) {
 	if (typeof sym !== 'string') return sym;
 	// A runtime item. The script sets the var to the real ITEM_ symbol immediately
@@ -655,7 +662,11 @@ export function itemId(sym) {
 	// this way — so read the var back instead of dropping the give on the floor.
 	if (/^VAR_/.test(sym)) {
 		const v = getVar(sym);
-		return (typeof v === 'string' && /^ITEM_/.test(v)) ? itemId(v) : null;
+		if (typeof v === 'string' && /^ITEM_/.test(v)) return itemId(v);
+		// a symbol script_constants knows was stored as its number (Lilycove's
+		// vending machine: setvar VAR_TEMP_0, ITEM_FRESH_WATER -> 26): name it back
+		if (typeof v === 'number' && v > 0) { const k = ITEM_BY_NUM()[v]; return k ? itemId(k) : null; }
+		return null;
 	}
 	// Placeholders the real engine fills from a table at run time — there is no
 	// item behind the name, so hand back nothing rather than inventing one.

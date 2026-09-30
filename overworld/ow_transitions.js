@@ -208,6 +208,15 @@ export async function moveToMap(file, px, py) {
 }
 
 export async function warpTo(mapId, destWarpId, destX, destY) {
+	// MAP_DYNAMIC: wherever the last setdynamicwarp pointed (Lilycove's elevator
+	// sets the floor you chose). Used once; with none set, the unknown-dest path
+	// below returns you where you came from, as it always has.
+	if (mapId === 'MAP_DYNAMIC' && S.dynamicWarp) {
+		const d = S.dynamicWarp; S.dynamicWarp = null;
+		// by warp id, or by tile (`setdynamicwarp MAP, x, y` names no warp: a null
+		// id lets the x,y win over the map's first warp)
+		return warpTo(d.map, d.warp, d.x ?? undefined, d.y ?? undefined);
+	}
 	const file = world.fileFor(mapId);
 	// An unresolvable destination used to just warn and return, leaving the player
 	// standing on the warp tile. That is a SOFTLOCK wherever every exit is

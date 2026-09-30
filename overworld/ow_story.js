@@ -732,6 +732,16 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Lilycove Department Store's elevator (its menu + dynamic warp are
+		// restored by tools/gen_multichoice.mjs). The floor you rode from is the
+		// map you came in by; the menu's cursor starts on it (5F is option 0).
+		case 'SetDeptStoreFloor': {
+			const m = /DepartmentStore_(\d)F$/.exec((world.lastWarpSource && world.lastWarpSource.name) || '');
+			if (m) Story.setVar('VAR_DEPT_STORE_FLOOR', 3 + (+m[1]));   // DEPT_STORE_FLOORNUM_1F = 4
+			return;
+		}
+		case 'GetDeptStoreDefaultFloorChoice': set(Math.max(0, Math.min(4, 8 - (Story.getVar('VAR_DEPT_STORE_FLOOR') | 0)))); return;
+		case 'ShowDeptStoreElevatorFloorSelect': case 'CloseDeptStoreElevatorWindow': case 'MoveElevator': return;   // display only
 		// gym puzzles, ported from field_specials.c (see gym_puzzles.js)
 		case 'SetVermilionTrashCans': GymPuzzles.setVermilionTrashCans(puzzleWorld()); return;
 		case 'MauvilleGymPressSwitch': GymPuzzles.mauvilleGymPressSwitch(puzzleWorld()); return;
