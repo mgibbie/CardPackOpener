@@ -36,7 +36,13 @@ export async function loadMapScripts(stem) {
 	if (!stem) return;
 	if (!scriptCache.has(stem)) {
 		const scr = await getJSON(`data/scripts/${stem}.json`).catch(() => null);
-		const str = await getJSON(`data/strings/${stem}.json`).catch(() => ({}));
+		let str = await getJSON(`data/strings/${stem}.json`).catch(() => ({}));
+		// Emerald keeps a building's text in its 1F file: the Lavaridge Gym B1F
+		// trainers' lines are LavaridgeTown_Gym_1F's. A floor map reads its 1F's
+		// strings UNDER its own, so a label it names but does not define resolves
+		// (their intros showed "...").
+		const first = stem.replace(/_(B\d+F|\d+F)$/, '_1F');
+		if (first !== stem) str = { ...(await getJSON(`data/strings/${first}.json`).catch(() => ({}))), ...str };
 		scriptCache.set(stem, { scr, str });
 	}
 	const c = scriptCache.get(stem);
