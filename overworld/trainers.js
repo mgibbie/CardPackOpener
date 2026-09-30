@@ -56,7 +56,9 @@ export function isTrainerEvent(ev) {
 	// `type` field entirely, so treat a missing type as 'object' (else no Hoenn
 	// trainer — gym leaders included — would ever spawn)
 	return (ev.type === 'object' || ev.type == null)
-		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS')
+		// BURIED: Lavaridge Gym's trainers in the ash. Not counted, they were plain
+		// NPCs: a win recorded nothing and the next talk battled again (2026-09-30)
+		&& (ev.trainer_type === 'TRAINER_TYPE_NORMAL' || ev.trainer_type === 'TRAINER_TYPE_SEE_ALL_DIRECTIONS' || ev.trainer_type === 'TRAINER_TYPE_BURIED')
 		&& ev.script && ev.script !== '0x0';
 }
 

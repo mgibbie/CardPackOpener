@@ -457,9 +457,17 @@ export class Cutscene {
 					const post = a.find(x => /_EventScript_/.test(x));
 					const seq = [];
 					if (texts[0]) seq.push({ op: 'msg', text: texts[0] });
-					seq.push({ op: '__battle', trainer: a[0] });
+					// the TRAINER, not the battle form: most layouts lead with the
+					// trainer, but `trainerbattle TRAINER_BATTLE_CONTINUE_SCRIPT,
+					// TRAINER_JEFF, LOCALID_JEFF, ...` (Lavaridge Gym, 20 uses) leads with
+					// the mode, and passing that built a fallback team (2026-09-30)
+					const tid = /^TRAINER_BATTLE_/.test(a[0] || '') ? (a.find(x => /^TRAINER_(?!BATTLE_)/.test(x)) || a[0]) : a[0];
+					seq.push({ op: '__battle', trainer: tid });
 					if (texts[1]) seq.push({ op: '__wontext', text: texts[1] });
-					if (post) seq.push({ op: 'goto', label: post });
+					// a CONTINUE_SCRIPT battle goes ON to its post script and never comes
+					// back; if that label is not loaded here, the script ends rather than
+					// fall back into the after-battle line meant for a LATER talk
+					if (post) seq.push({ op: 'goto', label: post }, { op: 'end' });
 					seq.push({ op: 'return' });
 					this._advance();
 					c.program.__tb__ = seq; // held by reference once pushed (safe to overwrite)
