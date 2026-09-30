@@ -122,7 +122,24 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(fight?.double && fight.foes[0] === 'mightyena' && fight.foes[1] === 'camerupt',
 			"it is a double vs Maxie's and Tabitha's leads", JSON.stringify(fight));
 		await page.evaluate(() => { if (window.__ow.battle.active) window.__ow.battle.finish('victory'); });
-		await sleep(1500); await settle(20000);
+		// settle() returns while a battle is still open, and finish() only STARTS the
+		// wrap-up (the win text, then control back to Steven's script). On a slow run
+		// the state was read before the victory branch ran (gate flake, 2026-09-30),
+		// and that still-running script derailed the sections after it. Drive it all
+		// to a real idle: no battle, no dialog, no scene, twice in a row.
+		{
+			const t0 = Date.now();
+			let calm = 0;
+			while (Date.now() - t0 < 30000 && calm < 2) {
+				const s = await page.evaluate(() => { const W = window.__ow;
+					if (W.battle.active || W.battle.blocking) { try { W.battle.key('z'); } catch (e) {} return 'b'; }
+					if (W.dialog.blocking) { W.dialog.revealed = 1e9; W.dialog.key('z'); return 'd'; }
+					if (W.cutscene.blocking) return 'c';
+					return 'idle'; });
+				calm = s === 'idle' ? calm + 1 : 0;
+				await sleep(s === 'idle' ? 250 : 60);
+			}
+		}
 		const after = await page.evaluate(() => ({ sc: window.__ow.Story.getVar('VAR_MOSSDEEP_SPACE_CENTER_STATE'), city: window.__ow.Story.getVar('VAR_MOSSDEEP_CITY_STATE'), map: window.__ow.world.current.name }));
 		A(after.sc === 3 && after.city === 3, 'winning runs the "defeated Maxie + Tabitha" branch (not the whiteout)', JSON.stringify(after));
 
