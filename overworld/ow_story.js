@@ -298,7 +298,7 @@ function expireDailyFlags() {
 function puzzleWorld() {
 	return {
 		get: (x, y) => { const row = world.current?.layout?.map?.[y]; return row ? (row[x] ?? 0) & 0x3FF : 0; },
-		set: (x, y, id, impassable) => world.setMetatile(x, y, id, !!impassable),
+		set: (x, y, id, impassable) => world.setMetatile(x, y, id, impassable ?? false),   // (no !!: the engine parses script booleans; "FALSE" is truthy)
 		getVar: v => Story.getVar(v) | 0,
 		setVar: (v, n) => Story.setVar(v, n),
 		rng: Math.random,

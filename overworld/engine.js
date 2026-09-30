@@ -6,6 +6,23 @@
 //   Player.lua      -> grid movement @120px/s, 9-frame sprite, walk anim
 
 import { metatileId } from './metatile_labels.js';
+// A decomp script boolean -> true / false / null. Scripts write TRUE/FALSE
+// (symbolic), 1/0, or real booleans; null/undefined means "not given" (callers
+// keep their default). NEVER Boolean(v) / !!v: the string "FALSE" is truthy.
+// Anything else is not a boolean the scripts use: warn and treat it as not given.
+export function scriptBool(v, what = 'script boolean') {
+	if (v == null) return null;
+	if (typeof v === 'boolean') return v;
+	if (typeof v === 'number') return v !== 0;
+	if (typeof v === 'string') {
+		const t = v.trim().toUpperCase();
+		if (t === 'TRUE' || t === '1') return true;
+		if (t === 'FALSE' || t === '0') return false;
+	}
+	console.warn('[' + what + '] not a boolean:', v);
+	return null;
+}
+
 export const TILE = 8, META = 16;
 // The logical view. 240x160 is the GBA window; portrait phones open the
 // vertical view (main.js fitCanvas drives this through setViewSize). These are
@@ -399,8 +416,13 @@ export class World {
 	// the CURRENT section and repaint just that cell into the cached bottom/top
 	// canvases so plot scenes can open a passage / drop an object mid-cutscene.
 	// impassable toggles the collision bits; pass null to keep the tile's current
-	// passability. Returns true if a tile was changed.
+	// passability. It arrives straight from the decomp scripts, which spell it
+	// TRUE/FALSE (957 ops) or 1/0, so it goes through scriptBool: the string
+	// "FALSE" is TRUTHY in JS, and every one of 502 FALSE ops used to wall its
+	// tile off (Trick House puzzle 3's buttons and open doors, 2026-09-30).
+	// Returns true if a tile was changed.
 	setMetatile(tx, ty, tile, impassable) {
+		impassable = scriptBool(impassable, 'setmetatile impassable');
 		const cur = this.current;
 		const lay = cur?.layout;
 		if (!lay || tx < 0 || ty < 0 || tx >= lay.width || ty >= lay.height) return false;
@@ -417,7 +439,7 @@ export class World {
 		}
 		const prev = lay.map[ty][tx] ?? 0;
 		let v = tile & METATILE_MASK;
-		if (impassable == null) v |= (prev & COLLISION_MASK); // keep existing collision
+		if (impassable === null) v |= (prev & COLLISION_MASK); // keep existing collision
 		else if (impassable) v |= COLLISION_MASK;
 		lay.map[ty][tx] = v;
 		// repaint the single cell: clear the old pixels, redraw the new metatile

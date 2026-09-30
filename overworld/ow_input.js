@@ -169,8 +169,13 @@ export function interact() {
 		dialog.open("It's not an item — the ball has EYES!\n\nVOLTORB attacked!", () => startWildBattle({ id: amb.ambush, level: 25 }));
 		return;
 	}
-	// item balls / berry trees / hidden items (facing tile, then standing tile)
-	const found = items.interactAt(fx, fy) || items.interactAt(player.tx, player.ty);
+	// item balls / berry trees / hidden items (facing tile, then standing tile).
+	// A PERSON on the faced tile is talked to, not searched under: Emerald hides
+	// the Trick House NUGGET on the very tile the Trick Master stands on, and
+	// checking items first made the first Z dig it up instead of claiming the
+	// puzzle reward (objects come before bg events on cartridge).
+	const personFaced = npcs.list.some(n => n.tx === fx && n.ty === fy);
+	const found = items.interactAt(fx, fy, { skipHidden: personFaced }) || items.interactAt(player.tx, player.ty);
 	if (found) { sfx('item_get'); dialog.open(found); return; }
 	// field obstacles: point the player at the right HM (used from the party menu)
 	const fo = items.fieldObjAt(fx, fy);

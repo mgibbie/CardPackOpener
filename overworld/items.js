@@ -219,8 +219,9 @@ export class Items {
 	}
 
 	// pickup / harvest at a tile; returns a message or null
-	interactAt(tx, ty) {
-		const i = this.balls.findIndex(b => !b.ambush && b.tx === tx && b.ty === ty);
+	// opts.skipHidden: leave hidden items alone (someone is standing on the tile)
+	interactAt(tx, ty, opts) {
+		const i = this.balls.findIndex(b => !b.ambush && b.tx === tx && b.ty === ty && !(opts && opts.skipHidden && b.hidden));
 		if (i >= 0) {
 			const b = this.balls[i];
 			this.balls.splice(i, 1);
