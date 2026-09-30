@@ -1,5 +1,6 @@
 // ow_story.js — the story layer: map-script triggers and the ported decomp scripts (runScriptLabel / runSpecial), scripted battles, the Space Center multi battle, the Johto gift POKeMON, the Fork B campaign open, villain arcs and the recurring rival.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { givePhone, runPhoneSpecial } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon, statsFor } from './battle.js';
@@ -718,7 +719,9 @@ export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME
 // skipped entirely; now that static wild battles really run, the scripts that
 // branch on the outcome deserve the truth.
 S.lastBattleOutcome = B_OUTCOME_WON;
-export function runSpecial(name, store) {
+export function runSpecial(name, store, op) {
+	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
+	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
 	// query specials write their result to the given store var, or VAR_RESULT by
 	// the decomp convention when a plain `special` (no store) is used
 	const set = v => Story.setVar(store || 'VAR_RESULT', v | 0);
@@ -1002,11 +1005,12 @@ export function finishStarterPick(region, col) {
 	// the POKeMON over without replaying the rival battle and the send-off
 	if (Story.getFlag('intro_done')) {
 		Story.setFlag('FLAG_GOT_FIRST_POKEMON');
+		givePhone();
 		refreshObjective();
 		dialog.open(`${cfg ? cfg.prof : 'PROF. OAK'}: Here, ${name} is yours. Take good care of it this time!` + (warn ? '\n\n' + warn : ''));
 		return;
 	}
-	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); dialog.open(`You chose ${name}!` + (warn ? '\n\n' + warn : '')); return; }
+	if (!cfg) { Story.setFlag('intro_done'); Story.setFlag('FLAG_GOT_FIRST_POKEMON'); givePhone(); dialog.open(`You chose ${name}!` + (warn ? '\n\n' + warn : '')); return; }
 	if (warn) { dialog.open(warn, () => dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col))); return; }
 	dialog.open(`${cfg.prof}: So, you want ${name}?\nA fine choice — take good care of it!`, () => rivalScene(region, col));
 }
@@ -1041,12 +1045,15 @@ export function afterRival(region) {
 	Story.setFlag('intro_done');
 	Story.setFlag('FLAG_GOT_FIRST_POKEMON');
 	Story.setFlag('FLAG_SYS_POKEDEX_GET');
+	givePhone();        // every region's professor hands over the PHONE with the POKeDEX
 	refreshObjective(); // intro over — the gym-1 objective is now live
 	const prof = cfg ? cfg.prof : 'PROF. OAK';
 	const sendoff = cfg ? cfg.sendoff : 'Your adventure begins now!';
 	startCutscene([
 		{ op: 'say', text: `${prof}: Wait — take this with you.\nIt's the POKeDEX! It records every POKeMON you meet.` },
 		{ op: 'hud', text: 'Received the POKeDEX!' },
+		{ op: 'say', text: `${prof}: And take this PHONE, too. TRAINERS you beat may give you their numbers, and they'll call when they want a rematch. You can call your MOM and me anytime from the START menu!` },
+		{ op: 'hud', text: 'Received the PHONE!' },
 		{ op: 'say', text: sendoff },
 		// the tri-region premise — why the journey spans all three regions, and the portal + rival
 		{ op: 'say', text: `${prof}: One thing you should know: the GYMS of KANTO, JOHTO, and HOENN are linked now.` },

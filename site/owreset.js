@@ -86,6 +86,8 @@ export const OW_RESET_KEYS = [
 	// which trainers' post-battle beats have already been attempted. Part of the
 	// save: without it a reset would replay every beat the catch-up can reach.
 	'magepunk_postbattle_v1',
+	// the PHONE: whether you have it, who is in it, their rematch/gift state
+	'magepunk_phone_v1',
 ];
 
 // Deliberately spared, and why. Kept as data so the test can assert it.

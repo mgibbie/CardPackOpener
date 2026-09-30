@@ -1,5 +1,6 @@
 // ow_fieldmoves.js — field systems: the Mach Bike, Silph Co locked doors, the Route 113 glass workshop, Dive, and the HM field moves.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { phoneStep } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Daycare from './daycare.js';
@@ -474,6 +475,8 @@ player.onArrive = () => {
 	}
 	// ambient step fx: rustle the grass / print the sand under the new tile
 	spawnStepFx();
+	// a PHONE call rings instead of this step's encounter roll (never mid-scene)
+	if (phoneStep(battle.blocking || cutscene.blocking || dialog.blocking || trainers.engaging || safari.on)) return;
 	// wild encounter?
 	if (!battle.blocking) {
 		// guard: this runs inside the rAF step loop, where a throw is silent and

@@ -1,5 +1,6 @@
 // ow_screens.js — the START-menu screens and service counters: the menu itself, POKeDEX, friends, mail, quests, the player/trainer menu, deck select and CARDS, the run-mode menu, and the service NPCs (in-game trades, the DAY CARE, the NAME RATER, the move relearner).
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { hasPhone, openPhoneMenu } from './phone.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
@@ -290,7 +291,9 @@ export function startItems() {
 	// action, so a phone player could never mount up — and cracked floors are
 	// gated on player.biking, which made SKY PILLAR literally impassable on a
 	// phone. Hidden while surfing, where toggleBike refuses anyway.
-	items.push('BAG', 'TOWN MAP', 'PC');
+	items.push('BAG');
+	if (hasPhone()) items.push('PHONE');
+	items.push('TOWN MAP', 'PC');
 	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
 	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'EXIT');
 	return items;
@@ -321,6 +324,7 @@ export function startKey(k) {
 		if (it === 'POKeMON') { if (!S.party || !S.party.length) hud.textContent = 'You have no POKeMON yet! Visit the LAB to get one.'; else { partyMenu.open = true; partyMenu.idx = 0; partyMenu.summary = false; } }
 		else if (it === 'BAG') { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; }
 		else if (it === 'CARDS') { cardsMenu.open = true; cardsMenu.idx = 0; }
+		else if (it === 'PHONE') openPhoneMenu();
 		else if (it === 'FRIENDS') { openFriends(); }
 		else if (it.startsWith('MAIL')) { openMailbox(); }
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; dexMenu.grid = false; }

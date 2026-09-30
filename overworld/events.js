@@ -393,7 +393,7 @@ export class Cutscene {
 					break;
 				}
 				case 'special':
-					if (ctx.special?.(op.name, op.store) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
+					if (ctx.special?.(op.name, op.store, op) === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 					break;
 				// A jump to a label this map doesn't define used to `continue`
 				// without advancing — the same op re-ran until the loop guard

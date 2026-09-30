@@ -1,5 +1,6 @@
 // ow_menukeys.js — the menus' input layer: the key router (pressKey), menu gating (menuBlocking / canvasMenuOpen), and the key handlers for the bag, PC, shops, BP exchange, ferry, portals and starter picker.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only. The drawing side is ow_menus.js.
+import { phoneKey, phoneMenu } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { statsFor } from './battle.js';
@@ -728,6 +729,7 @@ export function pressKey(k) {
 	if (mailMenu.open) { mailKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
 	if (portalMenu.open) { portalKey(k); return; }
+	if (phoneMenu.open) { phoneKey(k); return; }
 	if (bpShopMenu.open) { bpShopKey(k); return; }
 	if (shopMenu.open) { shopKey(k); return; }
 	if (bagMenu.open) { bagKey(k); return; }
@@ -820,7 +822,7 @@ export function pressKey(k) {
 }
 // any menu that consumes direction presses instead of walking
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
-export const canvasMenuOpen = () => starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
+export const canvasMenuOpen = () => phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
 	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blendMenu.open || slideMenu.open || decoMenu.open || socialMenu.open || slotsMenu.open;

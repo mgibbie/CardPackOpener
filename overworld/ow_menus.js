@@ -1,6 +1,7 @@
 // ow_menus.js — full-resolution canvas menus: party, bag, PC, dex, shops, options, town map...
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 // The menus' STATE objects and key handlers still live in main.js; this is the drawing + tap layer.
+import { phoneMenu, phoneMenuRows } from './phone.js';
 import { badgeGhost, badgeSprite } from './badgeart.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -1074,6 +1075,21 @@ export function drawFerryMenu(W, H) {
 	});
 }
 
+export function drawPhoneMenu(W, H) {
+	const u = H / 480;
+	const rows = phoneMenuRows();
+	menuChrome(W, H, u, 'PHONE', 'Z calls  -  (!) wants a rematch  -  X closes');
+	// a long list scrolls with the selection
+	const per = Math.max(3, Math.floor((H / u - 110) / 52));
+	const top = Math.max(0, Math.min(phoneMenu.idx - per + 1, rows.length - per));
+	rows.slice(top, top + per).forEach((label, j) => {
+		const i = top + j, bid = 'phone:' + i;
+		const b = { id: bid, x: 24 * u, y: (86 + j * 52) * u, w: W - 48 * u, h: 46 * u, label, center: false, kbSel: phoneMenu.idx === i };
+		S.menuUi.push(b);
+		BUI.button(sctx, b, S.menuHover === bid || phoneMenu.idx === i, u);
+	});
+}
+
 export function drawPortalMenu(W, H) {
 	const u = H / 480;
 	menuChrome(W, H, u, 'PORTAL', 'The pad hums. Where to, traveler?');
@@ -1210,6 +1226,7 @@ export function menuTap(id) {
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'portal') { portalMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'phone') { phoneMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'bp') { bpShopMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'item') { bagMenu.idx = +a; bagMenu.picking = false; bagMenu.forget = null; pressKey('z'); return; }
 	if (kind === 'use') { bagMenu.pickIdx = +a; pressKey('z'); return; }
@@ -1277,5 +1294,5 @@ export function menuTap(id) {
 		return;
 	}
 }
-export const anyMenuOpen = () => partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
+export const anyMenuOpen = () => phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open;
 

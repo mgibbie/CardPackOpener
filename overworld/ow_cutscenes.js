@@ -169,7 +169,7 @@ export function cutsceneCtx(talker, scriptLabel) {
 			shopMenu.fromScript = true;
 			return 'wait';
 		},
-		special: (name, store) => runSpecial(name, store), // handlers write `store`; unknown -> 0
+		special: (name, store, op) => runSpecial(name, store, op), // handlers write `store`; unknown -> 0
 		hud: msg => { hud.textContent = msg; },
 	};
 }
