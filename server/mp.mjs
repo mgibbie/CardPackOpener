@@ -1567,8 +1567,10 @@ export default async function handler(req, env) {
 		return true;
 	};
 	// can this user READ the room?
+	const dmAllowed = who => who === username || (Array.isArray(user.friends) && user.friends.includes(who)) || isAdmin(username);
 	const canChat = async (room) => {
 		if (typeof room !== 'string') return false;
+		if (room.startsWith('dm:')) return dmAllowed(room.slice(3));
 		if (room.startsWith('spec:')) return await isSpectatorOf(room.slice(5)); // spectator-only chat
 		if (room.startsWith('u:')) {
 			const who = room.slice(2);
@@ -1591,6 +1593,12 @@ export default async function handler(req, env) {
 		if (typeof room !== 'string') return false;
 		if (room.startsWith('spec:')) return await isSpectatorOf(room.slice(5)); // spectators post to their own room
 		if (room.startsWith('u:')) return room.slice(2) === username; // only the runner posts in their own room
+		// dm:<name> is <name>'s DIRECT-MESSAGE inbox (site/topbar.js). DMs used to be
+		// posted into the friend's u: room — the runner's live-chat room, which friends
+		// may only read — so every DM was refused ("spectators are read-only"). Their
+		// own room now: you, a FRIEND (friendship is mutual), or the owner (messages to
+		// the playtesters) may post; see canChat/chat-get for who reads what.
+		if (room.startsWith('dm:')) return dmAllowed(room.slice(3));
 		if (room.startsWith('m:')) {
 			const id = room.slice(2);
 			const cm = await store.get('cardmatch:' + id);
@@ -1620,7 +1628,10 @@ export default async function handler(req, env) {
 	if (action === 'chat-get') {
 		const room = String(body.room || '');
 		if (!(await canChat(room))) return json({ error: 'not in this room' }, 403);
-		const list = (await store.get('chat:' + room)) || [];
+		let list = (await store.get('chat:' + room)) || [];
+		// someone else's DM inbox: only the messages YOU sent there (your side of the
+		// thread) — never what other people sent them
+		if (room.startsWith('dm:') && room.slice(3) !== username) list = list.filter(m => m.from === username);
 		const since = +body.since || 0;
 		return json({ messages: since ? list.filter(m => m.ts > since) : list.slice(-12), now: Date.now() });
 	}
