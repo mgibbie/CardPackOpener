@@ -26,6 +26,21 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+// ---------- direct messages ----------
+// A DM to <name> lands in their own inbox room `dm:<name>` (the server lets a
+// friend or the owner post there; anyone but <name> reading it sees only their
+// own messages). Older messages sat in the `u:<name>` live-chat room, so the
+// inbox reads both.
+async function fetchInbox(me) {
+	if (!me) return { messages: [] };
+	const [dm, legacy] = await Promise.all([
+		MP.call('chat-get', { room: 'dm:' + me }).catch(() => ({ messages: [] })),
+		MP.call('chat-get', { room: 'u:' + me }).catch(() => ({ messages: [] })),
+	]);
+	const all = [...(dm.messages || []), ...(legacy.messages || []).filter(m => m.from !== me)];
+	return { messages: all.sort((a, b) => (a.ts || 0) - (b.ts || 0)) };
+}
+
 // ---------- styles (injected once) ----------
 function injectStyles() {
 	if ($('#mp-topbar-style')) return;
@@ -289,7 +304,7 @@ async function poll() {
 	try {
 		const [ch, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => { failed = true; return { challenges: [] }; }),
-			MP.call('chat-get', { room: 'u:' + (MP.cachedState()?.username || '') }).catch(() => ({ messages: [] })),
+			fetchInbox(MP.cachedState()?.username || '').catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
 		]);
@@ -382,12 +397,11 @@ function closeInbox() {
 }
 
 async function refreshData() {
-	const room = 'u:' + (state.me || '');
 	try {
 		const [ch, fr, msg, pk, qs] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('friends').catch(() => ({ friends: [] })),
-			MP.call('chat-get', { room }).catch(() => ({ messages: [] })),
+			fetchInbox(state.me || '').catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
 		]);
@@ -736,12 +750,12 @@ function renderMessages(body) {
 }
 
 // ----- a single DM thread -----
-// A conversation lives in two rooms: messages the friend sent me are in u:<me>,
-// messages I sent are in u:<other> (both readable by both friends). Merge them.
+// A conversation lives in two inboxes: what the friend sent me is in dm:<me>,
+// what I sent is in dm:<other> (the server shows me only my own messages there).
 async function loadThread(other) {
 	const [mine, theirs] = await Promise.all([
-		MP.call('chat-get', { room: 'u:' + state.me }).catch(() => ({ messages: [] })),
-		MP.call('chat-get', { room: 'u:' + other }).catch(() => ({ messages: [] })),
+		fetchInbox(state.me).catch(() => ({ messages: [] })),
+		MP.call('chat-get', { room: 'dm:' + other }).catch(() => ({ messages: [] })),
 	]);
 	state.inbox = mine.messages || state.inbox; // keep the badge/preview source fresh
 	const incoming = (mine.messages || []).filter(m => m.from === other).map(m => ({ ...m, dir: 'them' }));
@@ -768,7 +782,8 @@ function renderThread(body, other) {
 		const text = input.value.trim(); if (!text) return;
 		input.value = '';
 		try {
-			await MP.call('chat-post', { room: 'u:' + other, text });   // lands in the friend's inbox room
+			const r = await MP.call('chat-post', { room: 'dm:' + other, text });   // lands in the friend's DM inbox
+			if (!r || r.error) throw new Error(r && r.error);
 			(state.threadMsgs = state.threadMsgs || []).push({ from: state.me, text, ts: Date.now(), dir: 'me' }); // optimistic echo
 			renderThread(body, other);
 		} catch { toast('Could not send.'); }
