@@ -192,7 +192,8 @@ function runScriptedBall(sb) {
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 export function interact() {
 	if (player.moving || trainers.engaging) return;
-	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	// a facing that isn't a direction must not crash Z (it did — live reports)
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
 	const fx = player.tx + dx, fy = player.ty + dy;
 	// another player standing on the faced tile — challenge them or offer a trade
 	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
@@ -434,7 +435,7 @@ export function interact() {
 	const npc = npcs.list.find(n => n.tx === fx && n.ty === fy)
 		|| (world.behaviorAt(fx, fy) === MB_COUNTER ? npcs.list.find(n => n.tx === fx + dx && n.ty === fy + dy) : null);
 	if (npc) {
-		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing];
+		npc.facing = { up: 'down', down: 'up', left: 'right', right: 'left' }[player.facing] || npc.facing;
 		// single-purpose service buildings: talking to the attendant runs it
 		const mid = world.current.map.id;
 		if (DAYCARE_MAPS.has(mid)) {

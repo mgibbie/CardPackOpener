@@ -107,8 +107,9 @@ class NPC {
 		if (this.isMon) { drawOwMon(ctx2d, this.img, this.px + META / 2, this.py + META, camX, camY); return; }
 		const stills = { down: 0, up: 1, left: 2, right: 2 };
 		const walks = { down: [3, 4], up: [5, 6], left: [7, 8], right: [7, 8] };
-		let frame = stills[this.facing];
-		if (this.moving && this.frames >= 9 && this.moveT < 0.5) frame = walks[this.facing][this.stepParity];
+		const f = stills[this.facing] != null ? this.facing : 'down';   // never crash on a bad facing
+		let frame = stills[f];
+		if (this.moving && this.frames >= 9 && this.moveT < 0.5) frame = walks[f][this.stepParity];
 		if (frame >= this.frames) frame = 0;
 		const x = Math.round(this.px - camX), y = Math.round(this.py - 16 - camY);
 		const mirror = this.facing === 'right';
