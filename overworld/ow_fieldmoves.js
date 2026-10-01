@@ -191,7 +191,7 @@ export async function diveTo(kind) { // 'dive' (down) | 'emerge' (up)
 // "active" for the map so boulders can then be shoved (reset on every map load).
 S.strengthActive = false;
 function facingTile() {
-	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
 	return [player.tx + dx, player.ty + dy, dx, dy];
 }
 // SOFTBOILED / MILK DRINK afield: the user gives a fifth of its health to the
@@ -218,7 +218,7 @@ export const HM_FIELD = {
 	headbutt: { name: 'HEADBUTT', use() {
 		const set = HEADBUTT_MAPS[world.current?.name];
 		if (!set || !HEADBUTT_SETS[set]) { dialog.open('No sturdy trees around here would\nanswer a HEADBUTT.'); return; }
-		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+		const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
 		if (world.isPassable(player.tx + dx, player.ty + dy)) { dialog.open('Face a tree first — THEN slam it!'); return; }
 		const table = HEADBUTT_SETS[set][Math.random() < 0.1 ? 'rare' : 'common'];
 		if (Math.random() < 0.2 || !table.length) { dialog.open('You slammed into the tree...\n\nNothing came out but leaves.'); return; }

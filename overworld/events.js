@@ -375,7 +375,7 @@ export class Cutscene {
 				case 'lock': case 'release': case 'waitmove': case 'waitmsg':
 				case 'closemsg': case 'waitstate': case 'fade': break;
 				case 'faceplayer': if (ctx.talker && ctx.player) ctx.talker.facing = opposite(ctx.player.facing); break;
-				case 'face': { const a = this._actor(op.who); if (a && op.dir) a.facing = op.dir; break; }
+				case 'face': { const a = this._actor(op.who); if (a && DIRS[op.dir]) a.facing = op.dir; break; }
 				case 'setflag': setFlag(op.flag); break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
@@ -568,7 +568,7 @@ export class Cutscene {
 	_planMove(op) {
 		const actor = this._actor(op.who);
 		if (!actor) return null;
-		let steps = op.steps;
+		let steps = op.steps && op.steps.flatMap(rawStep);
 		if (!steps && op.path) steps = op.path.map(d => ({ dir: d, mode: 'walk' }));
 		if (!steps && op.dir && op.count) steps = Array(op.count).fill({ dir: op.dir, mode: 'walk' });
 		if (!steps || !steps.length) return null;
@@ -587,12 +587,16 @@ export class Cutscene {
 			if (s.from == null) {
 				if (s.k >= s.steps.length) return this._resume();
 				const st = s.steps[s.k];
-				if (st.mode === 'face') { actor.facing = st.dir; s.k++; return; }
+				if (st.mode === 'face') { if (DIRS[st.dir]) actor.facing = st.dir; s.k++; return; }
 				if (st.mode === 'noop') { s.k++; return; }
 				if (st.mode === 'delay') { s.from = 'delay'; s.t = 0; s.dur = (st.frames || 8) / 60; return; }
 				if (st.mode === 'invisible') { actor.hidden = st.v; s.k++; return; }
 				const [dx, dy] = DIRS[st.dir] || [0, 0];
-				actor.facing = st.dir;
+				// only ever a real direction: a step with none used to set facing to
+				// undefined, and the next Z press (ow_input interact) or an NPC's walk
+				// frame (npcs.js draw) crashed on it — live error reports, 2026-09-30/10-01
+				if (DIRS[st.dir]) actor.facing = st.dir;
+				else { s.k++; return; }
 				// A scripted walk has NO collision — the decomp scripts assume the player
 				// is standing exactly where the scene expects. Ours can be anywhere when
 				// a post-battle script fires, so an approach/exit walk could step an NPC
@@ -633,6 +637,23 @@ export class Cutscene {
 
 	// a special/trainerbattle that returned 'wait' resumes here when ready
 	resume() { if (this.cur && this.cur.sub && (this.cur.sub.kind === 'special' || this.cur.sub.kind === 'battle')) this._resume(); }
+}
+
+// The movement transpile kept 233 macros it could not express as { mode:'raw',
+// macro } — no `dir`. Those reached the walk code and set the actor's facing to
+// undefined (see update()). Translate the ones that mean a direction; the rest
+// (affine / anim / ground-effect toggles, scripted walk_to_* routes) do nothing.
+
+function rawStep(st) {
+	if (!st || st.mode !== 'raw') return [st];
+	const m = String(st.macro || '');
+	let r;
+	if ((r = /^jump_in_place_(up|down|left|right)$/.exec(m))) return [{ mode: 'face', dir: r[1] }];
+	if ((r = /^(?:walk_(up|down|left|right)(?:_start)?_affine|jump_(up|down|left|right)|ride_water_current_(up|down|left|right))$/.exec(m))) return [{ mode: 'walk', dir: r[1] || r[2] || r[3] }];
+	if ((r = /^walk_slow_diag_(north|south)(east|west)$/.exec(m))) {
+		return [{ mode: 'slow', dir: r[1] === 'north' ? 'up' : 'down' }, { mode: 'slow', dir: r[2] === 'east' ? 'right' : 'left' }];
+	}
+	return [{ mode: 'noop' }];
 }
 
 function opposite(dir) { return { up: 'down', down: 'up', left: 'right', right: 'left' }[dir] || 'down'; }

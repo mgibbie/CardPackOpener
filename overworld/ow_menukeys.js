@@ -330,7 +330,7 @@ export function canLearn(mon, mid) {
 // classic Gen3 slot bands of the map's fishing table (0-1 / 2-4 / 5-9).
 function castRod(id, item) {
 	bagMenu.open = false;
-	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing];
+	const [dx, dy] = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[player.facing] || [0, 1];
 	const fx = player.tx + dx, fy = player.ty + dy;
 	if (!world.isSurfable(fx, fy)) {
 		dialog.open('No good — you need to face the water to fish.');
