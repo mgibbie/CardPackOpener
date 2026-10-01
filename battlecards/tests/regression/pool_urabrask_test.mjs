@@ -58,8 +58,10 @@ for (const c of pool) {
 
 // ---- aggression enchantment: played creatures gain Charge ----
 { const st = game(); play(st, 0, 'urabrask_aggression', null);
-  const { c } = play(st, 0, '_plain', null);
-  ok('Aggression gives a freshly played creature Charge', has(c, 'charge'), c.keywords); }
+  // owner_todo cards76 (2026-10-01): now "Alliance: Discover a Red Card."
+  play(st, 0, '_plain', null);
+  const q = (st.pickQueue || []).find(e => e.discover || e.ids);
+  ok('Aggression: playing a creature Discovers a Red (Mountain-pool) card', !!q && (q.ids || []).length > 0 && q.ids.every(id => st.cardsById[id] && st.cardsById[id].landSet === 'Mountain'), q && q.ids); }
 
 // ---- rebel leader: +1/+0 anthem ----
 { const st = game(); put(st, 0, 'urabrask_rebel_leader'); const v = put(st, 0, '_plain'); E.recomputeAuras(st);

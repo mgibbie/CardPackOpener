@@ -30,7 +30,7 @@ import {
 	spendMana, breakWeapon, resolveCombat, addCardToHand, syncCthun, degradeWeapon,
 	runBattlecry, kindredActive, firePonder,
 	applyRollEntry, targetSpec, legalTargets, runSpell,
-	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent, destroyWalker,
+	fireEmerge, staticValue, growBlubberBaron, queueAdapt, returnBlinked, has, MAX_SECRETS, destroyPermanent, findPermanent, destroyWalker, damageWalker,
 	EXCAVATE_TIERS, EXCAVATE_LEGENDARIES, ALL_AZERITE_LEGENDARIES,
 } from '../../engine.js';
 import { damageCreature, healHero } from '../damage.js';
@@ -1803,6 +1803,8 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 				const pushBoard = side => { for (const c of state.players[side].board) if (!isDead(c) && c.type !== 'location' && !(e.exceptTribe && (c.tribe || '').includes(e.exceptTribe)) && !(e.exceptSource && c === source)) pool.push({ c }); };
 				if (e.pool === 'friendly-others') { for (const c of state.players[pi].board) if (!isDead(c) && c !== source && c.type !== 'location') pool.push({ c }); } // Loose Specimen
 				else if (e.pool === 'enemy-creatures') { for (const o of enemies) pushBoard(o); }
+				// "a random creature or planeswalker you don't control" (Long List of the Ents)
+				else if (e.pool === 'enemy-creatures-walkers') { for (const o of enemies) { pushBoard(o); for (const w of state.players[o].planeswalkers || []) pool.push({ w }); } }
 				else if (e.pool === 'all-creatures') { for (let s = 0; s < state.players.length; s++) pushBoard(s); }
 				else if (e.pool === 'enemies') { for (const o of enemies) { pushBoard(o); pool.push({ hero: o }); } }
 				else if (e.pool === 'characters') {
@@ -1814,11 +1816,12 @@ register('random-damage', ({ state, pi, target, source, enemies, scaled, hm, pic
 				}
 				if (!pool.length) break;
 				let pickPool = pool;
-				if (_rdHit) { pickPool = pool.filter(x => !_rdHit.has(x.hero != null ? 'h' + x.hero : x.c.uid)); if (!pickPool.length) break; }
+				if (_rdHit) { pickPool = pool.filter(x => !_rdHit.has(x.hero != null ? 'h' + x.hero : (x.w || x.c).uid)); if (!pickPool.length) break; }
 				const pick = pickPool[Math.floor(state.rng() * pickPool.length)];
-				if (_rdHit) _rdHit.add(pick.hero != null ? 'h' + pick.hero : pick.c.uid);
+				if (_rdHit) _rdHit.add(pick.hero != null ? 'h' + pick.hero : (pick.w || pick.c).uid);
 				const rdv = e.heraldScaled ? hm() : (e.valuePer ? scaled(e) : e.value); // Blade Dance: damage = hero Attack
 				if (pick.hero != null) damageHero(state, pick.hero, rdv, pi);
+				else if (pick.w) damageWalker(state, pick.w, rdv);
 				else {
 					// Siege Tank, Deployed: excess damage hits the enemy hero
 					const rem = Math.max(0, pick.c.maxHealth - pick.c.damage);

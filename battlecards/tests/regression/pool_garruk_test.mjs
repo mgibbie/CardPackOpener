@@ -69,9 +69,11 @@ for (const c of pool) {
 { const st = game(); play(st, 0, 'garruk_savagery', null);
   const w = st.players[0].weapon;
   ok('Savagery equips (4/2 axe)', w && w.attack === 4 && w.durability === 2, w && [w.attack, w.durability]);
-  const b0 = st.players[0].board.length;
-  E.fireOngoing(st, 0, 'hero-kills-creature');
-  ok('Savagery spawns a 3/3 Beast when the hero kills a creature', st.players[0].board.some(c => c.name === 'Beast' && c.attack === 3) && st.players[0].board.length === b0 + 1, st.players[0].board.map(c => c.name)); }
+  // owner_todo cards76 (2026-10-01): "Honorable Kill & Overkill: Summon a 3/3 Beast
+  // with Trample." — a hit that kills (exactly or with excess) spawns the Beast
+  const foe = put(st, 1, '_v'); const b0 = st.players[0].board.length;
+  E.heroAttack(st, 0, { type: 'creature', uid: foe.uid, player: 1 });
+  ok('Savagery spawns a 3/3 Trample Beast when the hero kills a creature (Honorable Kill / Overkill)', st.players[0].board.some(c => c.name === 'Beast' && c.attack === 3 && c.keywords.includes('trample')) && st.players[0].board.length === b0 + 1, st.players[0].board.map(c => c.name)); }
 
 // ---- gorehorn: Overkill spawns a Beast ----
 { const st = game(); const g = put(st, 0, 'garruk_gorehorn'); const foe = put(st, 1, '_v'); const b0 = st.players[0].board.length;

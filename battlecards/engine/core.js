@@ -3674,7 +3674,7 @@ function findWalker(state, uid) {
 	return null;
 }
 
-function damageWalker(state, walker, amount) {
+export function damageWalker(state, walker, amount) {
 	if (amount <= 0) return;
 	walker.loyalty -= amount;
 	emit(state, { type: 'walkerDamage', uid: walker.uid, amount, loyalty: walker.loyalty });
