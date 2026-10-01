@@ -2251,13 +2251,12 @@ function controlsView() {
       ])),
     section('Battlecards match board', 'A gold reticle marks the focused card; while targeting it turns red and the arrow follows it.',
       table(['Button', 'Action'], [
-        ['Stick / D-pad', 'Move between cards in your hand, both boards, and the heroes'],
-        ['LB / RB', 'Jump between your hand, your side, and the enemy side'],
-        ['Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ◄ ►), arm an attack, or pick the target'],
+        ['Stick / D-pad', 'Move between cards in your hand, both boards, the heroes, your hero power, and the End Turn / Log buttons'],
+        ['LB / RB', 'Jump between your hand, your side, the enemy side, and the buttons (starting on End Turn)'],
+        ['Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ◄ ►), arm an attack, pick the target, use your hero power, or press the focused button (End Turn, Log)'],
         ['Bottom face (cancel)', 'Back out of placing or targeting'],
-        ['Top face', 'Hero power'],
         ['Left face', 'Inspect the focused card'],
-        ['Hold Start (0.6 s)', 'End turn (a quick tap does nothing, so it cannot end your turn by accident)'],
+        ['Start', 'Menu: game log, auto-pass, sound, concede'],
       ])),
     section('Typing on a controller', 'Nicknames, friend codes, searches and pasted deck or replay codes use the on-screen keyboard.',
       table(['Button', 'Action'], [

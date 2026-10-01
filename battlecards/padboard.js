@@ -18,14 +18,15 @@
 //
 // Buttons (Nintendo layout, site/gamepad.js):
 //   d-pad / stick  move focus (spatially)     confirm (right)  play / attack / pick
-//   cancel (bottom) back out (clearModes)      LB / RB   hand ← → your side ← → enemy
-//   top face       hero power                  left face inspect the focused card
-//   hold Start     END TURN (0.6s, with a fill bar, so a tap can't end your turn)
+//   cancel (bottom) back out (clearModes)      LB / RB   hand ← → your side ← → enemy ← → buttons
+//   left face      inspect the focused card    Start     the match menu (log, auto-pass, sound, concede)
+// END TURN, the HERO POWER orb and the LOG are places on the board you move to
+// and confirm (owner, 2026-10-01: no dedicated hero-power button, no end turn on
+// Start, and the selector must be able to reach End Turn).
 import { startGamepad, buttonLabel, loadPadSettings } from '../site/gamepad.js';
 import { oskOpen } from '../site/osk.js';
 import { openModal, setBoardGuard } from './padnav.js';
 
-const HOLD_MS = 600;
 const signedIn = () => {
 	try { return !!localStorage.getItem('magepunk_mp_token_v1') && !!JSON.parse(localStorage.getItem('magepunk_mp_state_v1') || 'null')?.username; }
 	catch (e) { return false; }
@@ -34,13 +35,15 @@ const signedIn = () => {
 let api = null, pad = null;
 let focusKey = null;        // 'u:<uid>' | 'h:<playerIndex>'
 let slot = null;            // { card, i } while placing a creature
-let holdAt = null;          // performance.now() Start went down
 let visible = false;        // hidden once the mouse moves
 let lastMode = 'browse';
-let reticle = null, bar = null, hints = null, lastHints = '';
+let reticle = null, hints = null, lastHints = '';
+let menuEl = null;          // the Start menu, while open
 
-const keyOf = s => s.kind === 'hero' ? 'h:' + s.player : s.kind === 'die' ? 'die' : 'u:' + s.uid;
-const ZONES = ['hand', 'mine', 'enemy'];
+const keyOf = s => s.kind === 'hero' ? 'h:' + s.player : s.kind === 'die' ? 'die' : s.kind === 'orb' ? 'orb' : s.kind === 'btn' ? 'b:' + s.el.id : 'u:' + s.uid;
+const ZONES = ['hand', 'mine', 'enemy', 'hud'];
+// the HUD buttons the selector can land on (only while shown and enabled)
+const HUD_BUTTONS = ['end-turn', 'coin-btn', 'planeswalk-btn', 'log-btn'];
 
 export function boardActive() {
 	if (!api) return false;
@@ -65,6 +68,15 @@ function stops() {
 	if (pp) out.push({ kind: 'hero', player: H, x: pp.x, y: pp.y, zone: 'mine' });
 	const dp = api.diePos && api.diePos();   // the planar die orb on your panel
 	if (dp) out.push({ kind: 'die', x: dp.x, y: dp.y, zone: 'mine' });
+	const op = api.orbPos && api.orbPos();   // your HERO POWER: move onto it and confirm
+	if (op) out.push({ kind: 'orb', x: op.x, y: op.y, zone: 'mine' });
+	for (const id of HUD_BUTTONS) {
+		const el = document.getElementById(id);
+		if (!el || el.disabled) continue;
+		const r = el.getBoundingClientRect();
+		if (r.width < 4 || getComputedStyle(el).display === 'none' || getComputedStyle(el).visibility === 'hidden') continue;
+		out.push({ kind: 'btn', el, x: r.left + r.width / 2, y: r.top + r.height / 2, zone: 'hud' });
+	}
 	for (const [pi, el] of api.foePanels()) {
 		const r = el.getBoundingClientRect();
 		if (r.width < 4 || getComputedStyle(el).display === 'none') continue;
@@ -165,7 +177,8 @@ function confirm() {
 	const s = current(stops());
 	if (!s) return;
 	if (s.kind === 'hero') return s.player === api.HUMAN ? vclick(s.x, s.y) : api.panelClick(s.player);
-	if (s.kind === 'die') return vclick(s.x, s.y);
+	if (s.kind === 'die' || s.kind === 'orb') return vclick(s.x, s.y);   // the orb: the hero power, as a click on it
+	if (s.kind === 'btn') return s.el.click();                         // End Turn / Coin / Planeswalk / Log
 	const c = s.card;
 	if (c.zone === 'hand') {
 		const S = api.state, H = api.HUMAN, E = api.E;
@@ -207,7 +220,8 @@ function jumpZone(step) {
 	let zi = cur ? ZONES.indexOf(cur.zone) : 0;
 	for (let k = 0; k < ZONES.length; k++) {
 		zi = (zi + step + ZONES.length) % ZONES.length;
-		const f = firstIn(list, ZONES[zi]);
+		// the buttons start on End Turn (the one you'll want most)
+		const f = (ZONES[zi] === 'hud' && list.find(x => x.kind === 'btn' && x.el.id === 'end-turn')) || firstIn(list, ZONES[zi]);
 		if (f) return setFocus(f);
 	}
 }
@@ -225,11 +239,54 @@ function onPress(action) {
 	if (action === 'prev') return jumpZone(-1);
 	if (action === 'next') return jumpZone(1);
 	if (action === 'context') { const s = current(stops()); if (s?.card) api.toggleInspect(s.card); return; }
-	if (action === 'secondary') { const o = api.orbPos(); if (o && mode() === 'browse') vclick(o.x, o.y); return; }
-	if (action === 'menu') { holdAt = performance.now(); return; }
+	if (action === 'menu') { if (mode() === 'browse') openMatchMenu(); return; }
 }
-function onRelease(action) {
-	if (action === 'menu') holdAt = null;
+
+// ---------- the Start menu ----------
+// A small DOM modal (aria-modal, so padnav drives it); cancel / Esc / Back close it.
+function closeMatchMenu() {
+	if (!menuEl) return;
+	menuEl.remove(); menuEl = null;
+	removeEventListener('keydown', menuKey, true);
+}
+function menuKey(e) { if (e.key === 'Escape' && menuEl) { e.stopPropagation(); closeMatchMenu(); } }
+function openMatchMenu() {
+	if (menuEl) return;
+	api.hideInspect();
+	menuEl = document.createElement('div');
+	menuEl.id = 'pad-match-menu';
+	menuEl.setAttribute('role', 'dialog');
+	menuEl.setAttribute('aria-modal', 'true');
+	Object.assign(menuEl.style, { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: '9100',
+		minWidth: '240px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '7px',
+		background: 'rgba(20,15,34,.97)', border: '1px solid #8f6fff', borderRadius: '12px', boxShadow: '0 14px 44px rgba(0,0,0,.7)',
+		font: '600 14px "Segoe UI", sans-serif', color: '#e8e2f4' });
+	const title = document.createElement('div');
+	title.textContent = 'Menu';
+	Object.assign(title.style, { fontWeight: '800', letterSpacing: '1px', color: '#c9b8ff', marginBottom: '2px' });
+	menuEl.appendChild(title);
+	const item = (label, fn) => {
+		const b = document.createElement('button');
+		b.textContent = label;
+		Object.assign(b.style, { textAlign: 'left', padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
+			background: '#3a2e5c', color: '#e8e2f4', border: '1px solid #5a4a8a', font: 'inherit' });
+		b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
+		menuEl.appendChild(b);
+		return b;
+	};
+	const click = id => document.getElementById(id)?.click();
+	const shownBtn = id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none'; };
+	item('📜 Game log', () => { closeMatchMenu(); api.openLog ? api.openLog() : click('log-btn'); });
+	if (shownBtn('autopass-btn')) {
+		const ap = () => document.getElementById('autopass-btn').textContent;
+		item(ap(), b => { click('autopass-btn'); b.textContent = ap(); });
+	}
+	const sfx = () => (document.getElementById('sfx-btn')?.classList.contains('muted') ? '🔇 Sound: OFF' : '🔊 Sound: ON');
+	item(sfx(), b => { click('sfx-btn'); b.textContent = sfx(); });
+	if (shownBtn('concede')) item('🏳 Concede', () => { closeMatchMenu(); click('concede'); });
+	item('Back', () => closeMatchMenu());
+	document.body.appendChild(menuEl);
+	addEventListener('keydown', menuKey, true);
 }
 
 // ---------- the per-frame bits: reticle, targeting entry, the end-turn hold ----------
@@ -240,32 +297,29 @@ function ensureDom() {
 	Object.assign(reticle.style, { position: 'fixed', width: '86px', height: '86px', marginLeft: '-43px', marginTop: '-43px',
 		border: '3px solid #ffd27a', borderRadius: '50%', boxShadow: '0 0 14px rgba(255,210,122,.6)', pointerEvents: 'none',
 		zIndex: '70', display: 'none', transition: 'left .06s, top .06s' });
-	bar = document.createElement('div');
-	bar.id = 'padboard-endturn';
-	Object.assign(bar.style, { position: 'fixed', height: '6px', background: '#ffd27a', pointerEvents: 'none', zIndex: '71', display: 'none', borderRadius: '3px' });
 	hints = document.createElement('div');
 	hints.id = 'padboard-hints';
 	Object.assign(hints.style, { position: 'fixed', left: '50%', bottom: '8px', transform: 'translateX(-50%)', zIndex: '72', pointerEvents: 'none',
 		background: 'rgba(20,16,34,.86)', color: '#e8e2f4', border: '1px solid #6a5f8a', borderRadius: '8px', padding: '5px 12px',
 		font: '600 13px "Segoe UI", sans-serif', whiteSpace: 'nowrap', display: 'none' });
-	document.body.append(reticle, bar, hints);
+	document.body.append(reticle, hints);
 }
 // what the buttons do in this mode, named for the pad in your hands (Phase 5)
 function hintText(m) {
 	const L = a => `[${buttonLabel(a, (pad && pad.kind()) || 'switch', loadPadSettings())}]`;
 	if (m === 'slot') return `◄► choose a slot · ${L('confirm')} place · ${L('cancel')} cancel`;
 	if (m === 'target') return `D-pad pick a target · ${L('confirm')} confirm · ${L('cancel')} cancel`;
-	return `D-pad move · ${L('confirm')} play / attack · ${L('prev')}${L('next')} zones · ${L('secondary')} hero power · ${L('context')} inspect · hold ${L('menu')} end turn`;
+	return `D-pad move · ${L('confirm')} play / attack / use · ${L('prev')}${L('next')} zones · ${L('context')} inspect · ${L('menu')} menu`;
 }
 function onFrame() {
 	if (!api) return;
 	ensureDom();
 	// UNPLUGGED (the last pad gone — checked here, not in onDisconnect, so a second
 	// pad still in use keeps everything): hide the reticle, the hints, the end-turn
-	// bar and the card's hover lift. Focus is remembered; the next press shows it.
+	// and the card's hover lift. Focus is remembered; the next press shows it.
 	if (visible && pad && !pad.connected()) {
-		visible = false; holdAt = null;
-		reticle.style.display = 'none'; hints.style.display = 'none'; bar.style.display = 'none';
+		visible = false;
+		reticle.style.display = 'none'; hints.style.display = 'none';
 		api.setHover(null);
 	}
 	const active = boardActive();
@@ -281,20 +335,19 @@ function onFrame() {
 	// the reticle rides on whatever is focused (cards animate, so every frame)
 	const list = m === 'target' ? targetStops() || [] : stops();
 	const cur = active && visible && m !== 'slot' ? current(list) : null;
-	if (cur) { reticle.style.display = 'block'; reticle.style.left = cur.x + 'px'; reticle.style.top = cur.y + 'px';
-		reticle.style.borderColor = m === 'target' ? '#ff6b6b' : '#ffd27a'; }
+	if (cur && cur.kind === 'btn') {
+		// a HUD button: the reticle becomes a rounded box around it
+		const r = cur.el.getBoundingClientRect();
+		Object.assign(reticle.style, { display: 'block', left: cur.x + 'px', top: cur.y + 'px', width: (r.width + 12) + 'px', height: (r.height + 12) + 'px',
+			marginLeft: -(r.width + 12) / 2 + 'px', marginTop: -(r.height + 12) / 2 + 'px', borderRadius: '12px', borderColor: '#ffd27a' });
+	} else if (cur) {
+		Object.assign(reticle.style, { display: 'block', left: cur.x + 'px', top: cur.y + 'px', width: '86px', height: '86px',
+			marginLeft: '-43px', marginTop: '-43px', borderRadius: '50%', borderColor: m === 'target' ? '#ff6b6b' : '#ffd27a' });
+	}
 	else reticle.style.display = 'none';
 	const showHints = active && visible && pad && pad.connected();
 	if (showHints) { const t = hintText(m); if (t !== lastHints) { hints.textContent = t; lastHints = t; } hints.style.display = 'block'; }
 	else hints.style.display = 'none';
-	// hold Start to end the turn
-	const btn = api.endTurnButton();
-	if (holdAt != null && active && btn && api.state.current === api.HUMAN) {
-		const pct = Math.min(1, (performance.now() - holdAt) / HOLD_MS);
-		const r = btn.getBoundingClientRect();
-		Object.assign(bar.style, { display: 'block', left: r.left + 'px', top: (r.bottom + 4) + 'px', width: (r.width * pct) + 'px' });
-		if (pct >= 1) { holdAt = null; bar.style.display = 'none'; btn.click(); }
-	} else bar.style.display = 'none';
 }
 
 export function initPadboard(gameApi) {
@@ -303,11 +356,12 @@ export function initPadboard(gameApi) {
 	setBoardGuard(boardActive);
 	pad = startGamepad({
 		readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
-		onPress, onRelease, onFrame,
+		onPress, onFrame,
 	});
 	// the mouse takes over: hide the reticle until the next pad press
 	addEventListener('pointermove', e => { if (e.isTrusted && visible) { visible = false; if (reticle) reticle.style.display = 'none'; } }, { passive: true });
-	window.__padboard = { get focus() { return focusKey; }, get slot() { return slot && { uid: slot.card.uid, i: slot.i }; }, get mode() { return api ? mode() : 'off'; }, stops, targetStops, active: boardActive,
+	window.__padboard = { get focus() { return focusKey; }, get menuOpen() { return !!menuEl; }, openMatchMenu, closeMatchMenu,
+		focusKey(k) { const s = stops().find(x => keyOf(x) === k); if (s) setFocus(s); return !!s; }, get slot() { return slot && { uid: slot.card.uid, i: slot.i }; }, get mode() { return api ? mode() : 'off'; }, stops, targetStops, active: boardActive,
 		// tests: put focus on a card directly (walking there depends on layout)
 		focusUid(uid) { const s = stops().find(x => x.uid === uid); if (s) setFocus(s); return !!s; } };
 	return pad;

@@ -54,11 +54,6 @@
 		.panel.foe-sm .sub { font-size: 11.5px; }
 		.panel.foe-sm .gear { font-size: 11.5px; }
 
-		#player-count {
-			background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 6px; padding: 2px 6px; margin-left: 12px; pointer-events: auto;
-		}
-
 		/* hover rules tooltip */
 		#tooltip {
 			position: fixed; display: none; z-index: 9; width: 264px; pointer-events: none;
@@ -270,9 +265,8 @@
 		}
 		#nav-toggle:hover { color: #cfc6e6; border-color: #6a5f8a; }
 		body.in-match #nav-toggle { display: inline-block; }
-		body.in-match #title a:not(.brand), body.in-match #title select { display: none; }
+		body.in-match #title a:not(.brand) { display: none; }
 		body.in-match.nav-open #title a:not(.brand) { display: inline; }
-		body.in-match.nav-open #title select { display: inline-block; }
 		/* narrow screens: the brand text would push ☰ under the topbar's
 		   gear/bell cluster — show just the ☰ */
 		@media (max-width: 640px) {
@@ -363,7 +357,6 @@
 			/* the compact top bar covers navigation on mobile — keep just the
 			   wordmark (which links to the mode picker) so the top isn't cramped */
 			#title a:not(:first-of-type) { display: none; }
-			#class-select, #player-count { font-size: 11px; margin-left: 6px !important; }
 			.panel { left: 8px; width: 148px; padding: 7px 10px; }
 			.panel .life { font-size: 24px; }
 			.panel .sub, .panel .gear { font-size: 11px; }
@@ -446,16 +439,6 @@
 <body>
 	<div id="scene"></div>
 	<div id="title" class="hud"><a class="brand" href="start.html" title="Choose a mode">MAGEPUNK BATTLECARDS</a><button id="nav-toggle" title="Menu">☰</button> <a href="start.html">modes</a> <a href="packs.html">packs</a> <a href="deck.html">deck builder</a> <a href="viewer.html">gallery</a> <a href="../overworld/">play the RPG</a>
-		<select id="class-select" title="your class" style="background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:2px 6px;margin-left:12px;pointer-events:auto"></select>
-		<select id="player-count" title="players">
-			<option value="2">2 players</option>
-			<option value="3">3 players</option>
-			<option value="4">4 players</option>
-			<option value="5">5 players</option>
-			<option value="6">6 players</option>
-			<option value="7">7 players</option>
-			<option value="8">8 players</option>
-		</select>
 	</div>
 
 	<div id="foe-panels"></div>

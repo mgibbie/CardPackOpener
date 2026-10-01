@@ -4,8 +4,9 @@
 // Fake pads ride in window.__owFakePads through the real site/gamepad.js poller
 // (headless Chrome has no controllers). A seeded board, then: play a creature
 // into a chosen slot, cast a targeted spell, arm/cancel/commit an attack on the
-// hero, inspect, the Start hold that ends the turn (a tap doesn't), and the
-// hand-off to padnav while a modal is up.
+// hero, inspect, the hero-power orb and End Turn as places you move to (no
+// shortcut buttons, Plans/CONTROLLER_V2_PLAN.md B), the Start menu, no test bar,
+// and the hand-off to padnav while a modal is up.
 //
 //   node overworld/tests/padboard_test.mjs
 import fs from 'fs';
@@ -51,6 +52,7 @@ try {
 		window.__owFakePads = [pad]; window.__pad = pad;
 		localStorage.setItem('magepunk_mp_token_v1', 'padboard-token');
 		localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
+		localStorage.setItem('magepunk_class_v1', 'druid');   // a class with an untargeted hero power (the orb)
 	}, STATE);
 	await page.goto(`http://localhost:${PORT}/battlecards/index.html?players=2`, { waitUntil: 'domcontentloaded' });
 	const t0 = Date.now();
@@ -164,18 +166,83 @@ try {
 	A(await page.evaluate(() => { const i = document.getElementById('inspect'); return !!i && getComputedStyle(i).display !== 'none'; }), 'the left face button inspects the focused card');
 	await tap(BTN.bottom);
 
-	// ---- end turn: a tap does nothing, a 0.6s hold ends it ----
-	const turn0 = await page.evaluate(() => window.__game.state.current === window.__game.HUMAN);
-	await tap(BTN.start, 120);
-	await sleep(300);
-	A(turn0 && await page.evaluate(() => window.__game.state.current === window.__game.HUMAN), 'a quick tap of Start does NOT end the turn');
-	await page.evaluate(() => { window.__pad.buttons[9] = { pressed: true, value: 1 }; });
-	await sleep(350);
-	A(await page.evaluate(() => getComputedStyle(document.getElementById('padboard-endturn')).display === 'block'), 'holding Start fills the end-turn bar');
-	await sleep(500);
-	await page.evaluate(() => { window.__pad.buttons[9] = { pressed: false, value: 0 }; });
-	await sleep(700);
-	A(await page.evaluate(() => window.__game.state.current !== window.__game.HUMAN || window.__game.state.turnNumber > 1), 'holding Start for 0.6s ends the turn');
+	// ---- the test bar is gone (owner, 2026-10-01) ----
+	A(await page.evaluate(() => !document.getElementById('class-select') && !document.getElementById('player-count') && !document.querySelector('#title select')),
+		'no class picker / player-count bar on the match page');
+	await page.evaluate(() => document.getElementById('nav-toggle')?.click());
+	A(await page.evaluate(() => !document.querySelector('#title select')), '...not even behind the ☰ menu');
+	await page.evaluate(() => document.getElementById('nav-toggle')?.click());
+
+	// ---- the top face is no longer the hero power; the orb is a place you move to ----
+	{
+		const used = () => page.evaluate(() => { const g = window.__game, p = g.state.players[g.HUMAN]; return { cur: p.mana.cur, uses: p.heroPowerUses ?? p.powerUsed ?? null, log: document.getElementById('log').textContent }; });
+		const before = await used();
+		await tap(BTN.top);
+		await sleep(400);
+		const afterTop = await used();
+		A(JSON.stringify(before) === JSON.stringify(afterTop) && (await pb()).mode === 'browse', 'the top face button does nothing (no hero-power shortcut)', JSON.stringify({ before, afterTop }));
+		const hasOrb = await page.evaluate(() => window.__padboard.stops().some(s => s.kind === 'orb'));
+		A(hasOrb, 'the hero-power orb is a stop on the board');
+		if (hasOrb) {
+			await page.evaluate(() => window.__padboard.focusKey('orb'));
+			A((await pb()).focus === 'orb', 'focus can sit on the hero-power orb');
+			const m0 = await page.evaluate(() => { const g = window.__game; return g.state.players[g.HUMAN].mana.cur; });
+			await tap(BTN.right);
+			await sleep(500);
+			const st = await page.evaluate(() => { const g = window.__game, p = g.state.players[g.HUMAN]; return { mana: p.mana.cur, mode: window.__padboard.mode, pending: !!g.targeting?.pending || window.__padboard.mode === 'target' }; });
+			A(st.mana < m0 || st.mode === 'target', 'confirm on the orb uses the hero power (pays for it, or starts picking its target)', JSON.stringify({ m0, ...st }));
+			if (st.mode === 'target') { await tap(BTN.bottom); await sleep(200); }
+		}
+	}
+
+	// ---- Start: the match menu (not end turn) ----
+	{
+		const mine = () => page.evaluate(() => window.__game.state.current === window.__game.HUMAN);
+		A(await mine(), 'setup: still my turn');
+		await page.evaluate(() => { window.__pad.buttons[9] = { pressed: true, value: 1 }; });
+		await sleep(900);   // held well past the old 0.6s
+		await page.evaluate(() => { window.__pad.buttons[9] = { pressed: false, value: 0 }; });
+		await sleep(300);
+		A(await mine(), 'holding Start does NOT end the turn any more');
+		A(await page.evaluate(() => window.__padboard.menuOpen && !!document.getElementById('pad-match-menu')), 'Start opens the match menu');
+		const items = await page.evaluate(() => [...document.querySelectorAll('#pad-match-menu button')].map(b => b.textContent));
+		A(items.some(t => /log/i.test(t)) && items.some(t => /sound/i.test(t)) && items.some(t => /back/i.test(t)), '...with Game log, Sound and Back', JSON.stringify(items));
+		A(await page.evaluate(() => window.__padboard.active() === false && !!window.__padnav), '...and padnav drives it (the board stands aside)');
+		// Sound toggles in place
+		const m0 = await page.evaluate(() => document.getElementById('sfx-btn').classList.contains('muted'));
+		await page.evaluate(() => [...document.querySelectorAll('#pad-match-menu button')].find(b => /sound/i.test(b.textContent)).click());
+		const m1 = await page.evaluate(() => document.getElementById('sfx-btn').classList.contains('muted'));
+		A(m0 !== m1, 'Menu > Sound toggles the sound');
+		await page.evaluate(() => [...document.querySelectorAll('#pad-match-menu button')].find(b => /sound/i.test(b.textContent)).click());
+		await tap(BTN.bottom);
+		await sleep(200);
+		A(!(await page.evaluate(() => window.__padboard.menuOpen)), 'cancel closes the menu');
+		await tap(BTN.start, 120);
+		await sleep(200);
+		await page.evaluate(() => [...document.querySelectorAll('#pad-match-menu button')].find(b => /log/i.test(b.textContent)).click());
+		await sleep(300);
+		A(await page.evaluate(() => !window.__padboard.menuOpen && document.getElementById('log-full').classList.contains('open')), 'Menu > Game log opens the log');
+		await page.evaluate(() => document.querySelector('#log-full .lf-close').click());
+	}
+
+	// ---- End Turn is a place on the board: reach it and confirm ----
+	{
+		const hasBtn = await page.evaluate(() => window.__padboard.stops().some(s => s.kind === 'btn' && s.el.id === 'end-turn'));
+		A(hasBtn, 'End Turn is a stop the selector can reach');
+		// RB from the board lands on it (the buttons zone starts on End Turn)
+		let reached = false;
+		for (let i = 0; i < 4 && !reached; i++) { await tap(BTN.rb); reached = (await pb()).focus === 'b:end-turn'; }
+		A(reached, 'RB reaches End Turn', JSON.stringify(await pb()));
+		// and the d-pad walks there too: from the hand, rightwards/upwards
+		await page.evaluate(() => { const s = window.__padboard.stops().find(x => x.zone === 'mine' && x.kind === 'card'); if (s) window.__padboard.focusUid(s.uid); });
+		let walked = false;
+		for (let i = 0; i < 10 && !walked; i++) { await tap(i % 2 ? BTN.up : BTN.rightD); walked = (await pb()).focus === 'b:end-turn'; }
+		A(walked, 'the d-pad can move the selector onto End Turn', JSON.stringify(await pb()));
+		A(await page.evaluate(() => { const r = document.getElementById('padboard-reticle').getBoundingClientRect(), b = document.getElementById('end-turn').getBoundingClientRect(); return r.width > b.width && r.left <= b.left && r.right >= b.right; }), '...and the reticle frames the button');
+		await tap(BTN.right);
+		await sleep(900);
+		A(await page.evaluate(() => window.__game.state.current !== window.__game.HUMAN || window.__game.state.turnNumber > 1), 'confirm on End Turn ends the turn');
+	}
 
 	// ---- unplug / reconnect: the reticle and hints hide, then come back on a press ----
 	{

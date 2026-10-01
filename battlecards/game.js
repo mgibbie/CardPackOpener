@@ -75,7 +75,7 @@ let HUMAN = 0;
 const TAU = Math.PI * 2;
 const UP = new THREE.Vector3(0, 1, 0);
 
-// player count comes from ?players=N (2-8); the in-game selector rewrites it
+// player count comes from ?players=N (2-8): a URL setting only (tests, deep links)
 let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
@@ -4994,13 +4994,6 @@ $('concede').addEventListener('click', () => {
 	}));
 	el.appendChild(overlayButton(ffa ? 'Keep playing' : 'Keep fighting', () => hideDungeonOverlay()));
 });
-$('player-count').addEventListener('change', ev => {
-	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
-	const url = new URL(location.href);
-	url.searchParams.set('players', playerCount);
-	history.replaceState(null, '', url);
-	start();
-});
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
 // mobile browsers fire resize in bursts (rotation, keyboard, URL-bar); each
@@ -5271,7 +5264,6 @@ initPadboard({
 	setMouse: (x, y) => { mouseX = x; mouseY = y; },
 	setPlacing: card => { placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
 	boardScreenXs, banner, whyCantPlay,
-	endTurnButton: () => $('end-turn'),
 });
 
 let classRegistry = [];
@@ -5416,8 +5408,6 @@ function startSpectate(cardsById) {
 	$('end-turn').style.display = 'none';
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
@@ -5584,8 +5574,6 @@ async function startDuel(cardsById) {
 	duel.size = data.cardmatch.size || 2;
 	duel.seat = data.seat ?? (data.role === 'host' ? 0 : 1); // my seat index (FFA: 0..N-1)
 	startDebugOverlay();
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	$('concede').style.display = 'none';
 	if (duel.role === 'host') startDuelHost(cardsById);
 	else startDuelGuest(cardsById);
@@ -6375,7 +6363,6 @@ async function start() {
 	clearModes();
 	Chat.clear(); // fresh game → fresh chat log (no-op if chat isn't mounted)
 	$('restart').style.display = 'none';
-	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
 	logHistory.length = 0; // fresh match → fresh log history
 	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
@@ -6390,20 +6377,9 @@ async function start() {
 	if (spectateMode) { startSpectate(cardsById); return; }
 	if (!classRegistry.length) {
 		try {
+			// your class comes from your deck (the deck builder writes magepunk_class_v1);
+			// the in-match class / player-count test bar is gone (owner, 2026-10-01)
 			classRegistry = (await (await fetch('classes.json')).json()).classes;
-			const sel = $('class-select');
-			sel.innerHTML = '<option value="">No class</option>';
-			for (const c of classRegistry) {
-				const opt = document.createElement('option');
-				opt.value = c.id;
-				opt.textContent = c.name + (c.power ? '' : ' (no power yet)');
-				sel.appendChild(opt);
-			}
-			sel.value = localStorage.getItem('magepunk_class_v1') || '';
-			sel.addEventListener('change', ev => {
-				localStorage.setItem('magepunk_class_v1', ev.target.value);
-				start();
-			});
 		} catch (e) { classRegistry = []; }
 	}
 	if (asyncGame.on) { await startAsync(cardsById); return; }
