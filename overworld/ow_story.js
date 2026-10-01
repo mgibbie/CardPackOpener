@@ -6,7 +6,7 @@ import * as Bag from './bag.js';
 import { buildMon as battleBuildMon, statsFor } from './battle.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Daycare from './daycare.js';
-import { getImage } from './engine.js';
+import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { Journal } from './journal.js';
@@ -33,6 +33,8 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
+import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
+import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
@@ -719,6 +721,58 @@ export const B_OUTCOME_WON = 1, B_OUTCOME_LOST = 2, B_OUTCOME_RAN = 4, B_OUTCOME
 // skipped entirely; now that static wild battles really run, the scripts that
 // branch on the outcome deserve the truth.
 S.lastBattleOutcome = B_OUTCOME_WON;
+// ---------- the CABLE CAR ----------
+// CableCarWarp: VAR_0x8004 == 0 rides UP to Mt. Chimney, anything else DOWN to
+// Route 112; you step out onto (6,4) either way. The Hoenn2 copy of the stations
+// stays in Hoenn2.
+export function cableCarDestination() {
+	// engine.js scriptBool: TRUE/1 -> down; FALSE/0 (never JS truthiness — 'FALSE' is a truthy string) -> up
+	const down = scriptBool(Story.getVar('VAR_0x8004'), 'CableCarWarp VAR_0x8004') === true;
+	const h2 = /^MAP_HOENN2_/.test(world.current?.map?.id || '') || /^Hoenn2_/.test(world.current?.name || '');
+	return { map: (h2 ? 'MAP_HOENN2_' : 'MAP_') + (down ? 'ROUTE112_CABLE_CAR_STATION' : 'MT_CHIMNEY_CABLE_CAR_STATION'), x: 6, y: 4 };
+}
+// CableCar: the ride. The screen dips to black (input is frozen while it's
+// dark), a beat for the trip, then the warp to the other station. The script
+// waits on it (`waitstate`) and resumes once you've arrived; then the arrival
+// station's ON_FRAME scene (VAR_CABLE_CAR_STATION_STATE) walks you off the car
+// and resets the state — it was skipped during the load because the ride scene
+// was still open, so it's checked here once that scene has ended.
+const CABLE_RIDE_MS = 1100;
+function rideCableCar() {
+	const d = S.cableCarDest;
+	S.cableCarDest = null;
+	if (!d) return;                     // no CableCarWarp first: nothing to ride to
+	S.cableCarRiding = true;
+	(async () => {
+		await fadeTo(1);
+		hud.textContent = 'The CABLE CAR glides along the ropeway…';
+		if (!REDUCED_MOTION_OW) await new Promise(r => setTimeout(r, CABLE_RIDE_MS));
+		await warpTo(d.map, null, d.x, d.y);
+		S.cableCarRiding = false;
+		cutscene.resume();               // the ride script's release / end
+		const t0 = performance.now();
+		const arrive = () => {
+			if (cutscene.blocking && performance.now() - t0 < 4000) { requestAnimationFrame(arrive); return; }
+			try { checkOnFrame(); } catch (e) { console.warn('[cablecar] arrival scene failed', e); if (cutscene.blocking) cutscene.stop(); }
+			// the scene walks you off the car; save where it leaves you, or a
+			// reload (or another device) puts you back on the boarding tile
+			const t1 = performance.now();
+			const settled = () => {
+				if (cutscene.blocking && performance.now() - t1 < 15000) { requestAnimationFrame(settled); return; }
+				savePos();
+			};
+			requestAnimationFrame(settled);
+		};
+		requestAnimationFrame(arrive);
+	})().catch(e => {
+		console.warn('[cablecar] ride failed', e);
+		S.cableCarRiding = false;
+		if (cutscene.blocking) cutscene.stop();
+		fadeTo(0);
+	});
+	return 'wait';
+}
+
 export function runSpecial(name, store, op) {
 	// the PHONE's specials (converted Crystal scripts, Emerald's restored register)
 	if (/^Phone/.test(name || '')) { const r = runPhoneSpecial(name, store, op || {}); if (r !== undefined) return r; }
@@ -768,6 +822,11 @@ export function runSpecial(name, store, op) {
 		case 'GiveShuckle': return set(giveShuckle());
 		case 'ReturnShuckie': return set(returnShuckie());
 		case 'UnownPrinter': openUnownDex(); return; // the research-center "print my letters" report
+		// the Mt. Chimney CABLE CAR (pokeemerald field_specials.c CableCarWarp +
+		// cable_car.c CableCar). Neither had a handler, so "Yes" walked you aboard
+		// and the ride never left (playtest, 2026-09-30 / 10-01).
+		case 'CableCarWarp': S.cableCarDest = cableCarDestination(); return;
+		case 'CableCar': return rideCableCar();
 		case 'MagnetTrain': { // the GOLDENROD <-> SAFFRON (JohKanto) crossing
 			const here = world.current.map.id;
 			const dest = here === 'MAP_GOLDENROD_MAGNET_TRAIN_STATION'
