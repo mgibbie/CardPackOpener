@@ -71,7 +71,7 @@ export function syncOverworldAchievements() {
 // stash until the server refused it ('ow too large', 1,000,000 bytes) and every
 // push failed. The stash protects THIS device's view of a divergence; the server
 // keeps its own daily backups.
-const LOCAL_ONLY_KEYS = ['magepunk_ow_conflict', 'magepunk_ow_conflict_archive'];
+const LOCAL_ONLY_KEYS = ['magepunk_ow_conflict', 'magepunk_ow_conflict_archive', 'magepunk_ow_story_conflict'];
 export const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1' && !LOCAL_ONLY_KEYS.includes(k));
 export function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;

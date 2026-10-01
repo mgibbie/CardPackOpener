@@ -82,6 +82,9 @@ export const OW_RESET_KEYS = [
 	//   magepunk_ow_conflict_archive: a pre-fix NESTED stash, kept whole (local
 	//     only) when it was flattened, so the migration dropped nothing.
 	'magepunk_ow_conflict_archive',
+	//   magepunk_ow_story_conflict: the local STORY a same-revision tie set aside
+	//     when it was a strict regression of the server's (local only).
+	'magepunk_ow_story_conflict',
 	'magepunk_owsync_log',
 	// which trainers' post-battle beats have already been attempted. Part of the
 	// save: without it a reset would replay every beat the catch-up can reach.
