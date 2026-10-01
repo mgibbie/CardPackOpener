@@ -86,6 +86,22 @@ export function getImage(url) {
 	return imgCache.get(url);
 }
 
+// A few tilesets have their OWN metatiles but BORROW another tileset's tile
+// graphics and palettes (src/data/tilesets/headers.h). FireRed's gTileset_SilphCo
+// is `.tiles = gTilesetTiles_Condominiums, .palettes = gTilesetPalettes_Condominiums`
+// ("// Shared by SilphCo") — there is no silph_co sheet to export, so silph_co_tiles
+// .png 404'd and Rocket Hideout B1F-B4F, its elevator, the Celadon store elevator,
+// the Five Island warehouse and Silph Co drew a black map under the sprites
+// (production, 2026-10-01). Emerald's Building -> InsideBuilding is the only other
+// such pair, and its sheet was exported under its own name. Graphics only: the
+// metatile JSON keeps the tileset's own name.
+const SHARED_GRAPHICS = { firered: { SilphCo: 'Condominiums' } };
+const gfxName = (name, game) => {
+	const own = String(name || '').replace('gTileset_', '');
+	const to = SHARED_GRAPHICS[game] && SHARED_GRAPHICS[game][own];
+	return to ? 'gTileset_' + to : name;
+};
+
 // ---------- tileset name mangling (MapLoader.getTilesetFileName) ----------
 // gTileset_PetalburgWoods -> petalburg_woods, to match the exported asset names.
 //
@@ -107,21 +123,6 @@ function mangle(tilesetName) {
 	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
 	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
-// A few tilesets have their OWN metatiles but BORROW another tileset's tile
-// graphics and palettes (src/data/tilesets/headers.h). FireRed's gTileset_SilphCo
-// is `.tiles = gTilesetTiles_Condominiums, .palettes = gTilesetPalettes_Condominiums`
-// ("// Shared by SilphCo") — there is no silph_co sheet to export, so silph_co_tiles
-// .png 404'd and Rocket Hideout B1F-B4F, its elevator, the Celadon store elevator,
-// the Five Island warehouse and Silph Co drew a black map under the sprites
-// (production, 2026-10-01). Emerald's Building -> InsideBuilding is the only other
-// such pair, and its sheet was exported under its own name. Graphics only: the
-// metatile JSON keeps the tileset's own name.
-const SHARED_GRAPHICS = { firered: { SilphCo: 'Condominiums' } };
-const gfxName = (name, game) => {
-	const own = String(name || '').replace('gTileset_', '');
-	const to = SHARED_GRAPHICS[game] && SHARED_GRAPHICS[game][own];
-	return to ? 'gTileset_' + to : name;
-};
 const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
 	`${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
