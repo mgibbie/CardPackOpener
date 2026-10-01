@@ -1214,6 +1214,34 @@ function openTapMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
 }
 
+// an artifact {T} ability: targeted ones pick a target, others fire at once
+function armArtifactTap(card, idx) {
+	const spec = E.tapArtifactSpec(state, HUMAN, card.uid, idx);
+	if (spec && spec.required) {
+		const targets = E.legalTargets(state, HUMAN, spec);
+		if (targets.length) { pending = { card, spec, targets, mode: 'tapart', tapIndex: idx }; updateHud(); }
+	} else actTapArtifact(card.uid, null, idx); // relays in a duel (guest)
+}
+// an artifact with several {T} abilities (Mirkwood Darkflame Arrow): pick one
+function openArtifactTapMenu(card, ev) {
+	const menu = $('walker-menu');
+	menu.innerHTML = `<div class="wm-title">${card.name} — tap for:</div>`;
+	E.artifactTaps(card).forEach((t, i) => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<span class="wm-cost">⟳</span>${t.text}`;
+		btn.disabled = !E.canTapArtifact(state, HUMAN, card.uid, i);
+		btn.addEventListener('pointerdown', e => {
+			e.stopPropagation();
+			hideWalkerMenu();
+			armArtifactTap(card, i);
+		});
+		menu.appendChild(btn);
+	});
+	menu.style.display = 'block';
+	menu.style.left = `${Math.min(ev.clientX, innerWidth - 300)}px`;
+	menu.style.top = `${Math.min(ev.clientY, innerHeight - 200)}px`;
+}
+
 let sprocketRing = null; // gold ring marking the human's active Contraption slot
 function layoutTargets() {
 	if (!state) return;
@@ -4525,14 +4553,10 @@ renderer.domElement.addEventListener('pointerdown', ev => {
 			actSacToken(card.uid); // relays in a duel (guest)
 		}
 	} else if (card.zone === 'artifact' && card.controller === HUMAN && card.tapAbility) {
-		// click an artifact with a {T} ability to tap it (targeted ones pick a target)
-		if (E.canTapArtifact(state, HUMAN, card.uid)) {
-			const spec = E.tapArtifactSpec(state, HUMAN, card.uid);
-			if (spec && spec.required) {
-				const targets = E.legalTargets(state, HUMAN, spec);
-				if (targets.length) { pending = { card, spec, targets, mode: 'tapart' }; updateHud(); }
-			} else { actTapArtifact(card.uid, null); } // relays in a duel (guest)
-		}
+		// click an artifact with a {T} ability to tap it (targeted ones pick a target);
+		// one with several {T} abilities asks which first
+		if (E.artifactTaps(card).length > 1) { if (!card.tapped) openArtifactTapMenu(card, ev); }
+		else if (E.canTapArtifact(state, HUMAN, card.uid)) armArtifactTap(card, 0);
 	} else if (card.zone === 'planeswalker' && card.controller === HUMAN) {
 		// click your planeswalker to pick an ability
 		if (E.canUseWalker(state, HUMAN, card)) openWalkerMenu(card, ev);
@@ -4580,7 +4604,7 @@ function commitPending(t) {
 		else if (p.mode === 'equip') { localFn = () => E.equip(state, HUMAN, p.card.uid, t.uid); intent = { k: 'equip', uid: p.card.uid, target: t.uid }; }
 		else if (p.mode === 'walker') { localFn = () => E.useWalker(state, HUMAN, p.card.uid, p.ability, t); intent = { k: 'walker', uid: p.card.uid, ability: p.ability, target: t || null }; }
 		else if (p.mode === 'tap') { localFn = () => E.tapLand(state, HUMAN, p.card.uid, p.tapIndex, t); intent = { k: 'tap', uid: p.card.uid, tapIndex: p.tapIndex, target: t || null }; }
-		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t); intent = { k: 'tapart', uid: p.card.uid, target: t || null }; }
+		else if (p.mode === 'tapart') { localFn = () => E.tapArtifact(state, HUMAN, p.card.uid, t, p.tapIndex || 0); intent = { k: 'tapart', uid: p.card.uid, target: t || null, tapIndex: p.tapIndex || 0 }; }
 		else if (p.mode === 'respond') { const a = { ...p.action, target: t || null }; localFn = () => E.resolveResponse(state, HUMAN, a); intent = { k: 'respond', action: a }; }
 		else if (p.mode === 'adventure') { localFn = () => E.playAdventure(state, HUMAN, p.card.uid, t, p.choice); intent = { k: 'adventure', uid: p.card.uid, target: t || null, choice: p.choice }; }
 		else { localFn = () => E.playCard(state, HUMAN, p.card.uid, t, p.choice, p.position, p.useAlt, p.kicked); intent = { k: 'play', uid: p.card.uid, target: t || null, choice: p.choice, position: p.position, useAlt: p.useAlt, kicked: p.kicked }; }
@@ -4593,7 +4617,7 @@ function commitPending(t) {
 	else if (pending.mode === 'equip') E.equip(state, HUMAN, pending.card.uid, t.uid);
 	else if (pending.mode === 'walker') E.useWalker(state, HUMAN, pending.card.uid, pending.ability, t);
 	else if (pending.mode === 'tap') E.tapLand(state, HUMAN, pending.card.uid, pending.tapIndex, t);
-	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t);
+	else if (pending.mode === 'tapart') E.tapArtifact(state, HUMAN, pending.card.uid, t, pending.tapIndex || 0);
 	else if (pending.mode === 'respond') { E.resolveResponse(state, HUMAN, { ...pending.action, target: t || null }); }
 	else if (pending.mode === 'adventure') E.playAdventure(state, HUMAN, pending.card.uid, t, pending.choice);
 	else E.playCard(state, HUMAN, pending.card.uid, t, pending.choice, pending.position, pending.useAlt, pending.kicked);
@@ -5023,7 +5047,7 @@ function updateRings() {
 			else if (c.zone === 'planeswalker' && c.controller === HUMAN && E.canUseWalker(state, HUMAN, c)) color = '#57e389';
 			else if ((c.zone === 'companion' || c.zone === 'command') && c.controller === HUMAN && E.canPlay(state, HUMAN, c)) color = '#57e389';
 			else if (c.zone === 'land' && c.controller === HUMAN && E.canTapLand(state, HUMAN, c)) color = '#57e389';
-			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.canTapArtifact(state, HUMAN, c.uid)) color = '#57e389';
+			else if (c.zone === 'artifact' && c.controller === HUMAN && c.tapAbility && E.artifactTaps(c).some((_, i) => E.canTapArtifact(state, HUMAN, c.uid, i))) color = '#57e389';
 		}
 		if (color && (c.zone === 'board' || c.zone === 'heropower' || c.zone === 'planeswalker' || c.zone === 'companion' || c.zone === 'command' || c.zone === 'land' || c.zone === 'artifact')) {
 			ent.ring.visible = true;
@@ -5716,7 +5740,7 @@ function applyGuestIntent(it) {
 			case 'walker': E.useWalker(state, P, it.uid, it.ability, it.target || null); break;
 			case 'tap': E.tapLand(state, P, it.uid, it.tapIndex, it.target || null); break;
 				case 'sacland': E.sacrificeLand(state, P, it.uid); break;
-				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null); break;
+				case 'tapart': E.tapArtifact(state, P, it.uid, it.target || null, it.tapIndex || 0); break;
 				case 'sactoken': E.sacrificeToken(state, P, it.uid); break;
 				case 'heroattack': E.heroAttack(state, P, it.target); break;
 			case 'attack': E.attack(state, P, it.attacker, it.target); break;
@@ -6049,9 +6073,9 @@ function actWalker(uid, ability, target) { // planeswalker loyalty ability, no t
 	E.useWalker(state, HUMAN, uid, ability, target || null); pump();
 	if (duel.on) publishDuel();
 }
-function actTapArtifact(uid, target) { // {T} artifact ability (mana rocks etc.)
-	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null), { k: 'tapart', uid, target: target || null });
-	E.tapArtifact(state, HUMAN, uid, target || null); pump();
+function actTapArtifact(uid, target, idx = 0) { // {T} artifact ability (mana rocks etc.)
+	if (isGuest()) return guestApply(() => E.tapArtifact(state, HUMAN, uid, target || null, idx), { k: 'tapart', uid, target: target || null, tapIndex: idx });
+	E.tapArtifact(state, HUMAN, uid, target || null, idx); pump();
 	if (duel.on) publishDuel();
 }
 function actSacToken(uid) { // cash in a Treasure/Blood/Food token

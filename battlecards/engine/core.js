@@ -355,6 +355,7 @@ export function instantiate(def, controller) {
 		shieldMultiHit: def.shieldMultiHit || 0, // Toreth: your Divine Shields take this many hits to break
 		healDoubleAura: def.healDoubleAura || false, // Crystalsmith Kangor: your healing is doubled
 		tapAbility: def.tapAbility || null, // artifact {T} ability: { effects, text, condition? }
+		tapAbilities: def.tapAbilities ? JSON.parse(JSON.stringify(def.tapAbilities)) : null, // several {T} abilities; one tap uses one
 		tapTurns: def.tapTurns || 1,  // artifact {T} recharge: 1 = untaps next turn; 2/3 = double/triple-tap
 		tapCooldown: 0,               // turn-starts remaining before a multi-turn-tap artifact untaps
 		abilityUsedThisTurn: false,   // creatures never tap: abilities are once/turn
@@ -1577,34 +1578,43 @@ export function tapLand(state, pi, cardUid, tapIndex, target) {
 // def.tapAbility = { effects, text, condition? }: an activated {T} ability on a
 // permanent artifact. It taps (untapping at the owner's next turn start) and runs
 // its effects, optionally gated by a per-turn condition (e.g. sacrificed a Clue).
+// def.tapAbilities = [ability, ...]: an artifact with several {T} abilities (one
+// tap uses one of them; `tapAbility` stays the first so older readers still work).
+export function artifactTaps(card) {
+	if (card?.tapAbilities?.length) return card.tapAbilities;
+	return card?.tapAbility ? [card.tapAbility] : [];
+}
 function tapArtifactCondOk(state, pi, cond) {
 	if (!cond) return true;
 	const p = state.players[pi];
 	if (cond.sacrificedThisTurn) return ((p.sacrificedThisTurn || {})[cond.sacrificedThisTurn] || 0) > 0;
 	return true;
 }
-export function tapArtifactSpec(state, pi, cardUid) {
+export function tapArtifactSpec(state, pi, cardUid, idx = 0) {
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
-	if (!card || !card.tapAbility) return null;
-	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: card.tapAbility.effects });
+	const ab = artifactTaps(card)[idx | 0];
+	if (!ab) return null;
+	return targetSpec(state, pi, { id: card.id, type: 'sorcery', effects: ab.effects });
 }
-export function canTapArtifact(state, pi, cardUid) {
+export function canTapArtifact(state, pi, cardUid, idx = 0) {
 	if (state.over || state.current !== pi) return false;
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
-	if (!card || !card.tapAbility || card.tapped) return false;
-	if (!tapArtifactCondOk(state, pi, card.tapAbility.condition)) return false;
-	const spec = tapArtifactSpec(state, pi, cardUid);
+	const ab = artifactTaps(card)[idx | 0];
+	if (!card || !ab || card.tapped) return false;
+	if (!tapArtifactCondOk(state, pi, ab.condition)) return false;
+	const spec = tapArtifactSpec(state, pi, cardUid, idx);
 	if (spec && spec.required && legalTargets(state, pi, spec).length === 0) return false;
 	return true;
 }
-export function tapArtifact(state, pi, cardUid, target = null) {
-	if (!canTapArtifact(state, pi, cardUid)) return false;
+export function tapArtifact(state, pi, cardUid, target = null, idx = 0) {
+	if (!canTapArtifact(state, pi, cardUid, idx)) return false;
 	const card = state.players[pi].artifacts.find(a => a.uid === cardUid);
+	const ab = artifactTaps(card)[idx | 0];
 	card.tapped = true;
 	// double/triple-tap: stay tapped for (tapTurns - 1) extra turn-starts before untapping
 	card.tapCooldown = Math.max(0, (card.tapTurns || 1) - 1);
-	emit(state, { type: 'artifactTapped', player: pi, card, text: card.tapAbility.text, target: target || null });
-	execEffects(state, pi, JSON.parse(JSON.stringify(card.tapAbility.effects)), target, card);
+	emit(state, { type: 'artifactTapped', player: pi, card, text: ab.text, target: target || null });
+	execEffects(state, pi, JSON.parse(JSON.stringify(ab.effects)), target, card);
 	sweepDeaths(state);
 	return true;
 }
