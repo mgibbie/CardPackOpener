@@ -4196,6 +4196,21 @@ function showInspect(card) {
 	const box = $('inspect');
 	box.innerHTML = '';
 	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
+	fillCardDetail(box, card, { close: hideInspect, open: showInspect });
+	box.style.display = 'block';
+	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
+	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
+	// the face is drawn with a procedural fallback until its art image and the mana
+	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
+	if (inspectArtFn) artListeners.delete(inspectArtFn);
+	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
+	artListeners.add(inspectArtFn);
+}
+// everything under a card's face in a reader: keyword/modifier lines, the cards it
+// creates (each opens in the same reader via `open`), its action buttons (each
+// closes the reader via `close` first) and the can't-play-yet hint. Shared by the
+// small inspect panel and the centered card focus view.
+function fillCardDetail(box, card, { close, open }) {
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	// every specific card this one generates (tokens, corrupted forms, equips,
@@ -4214,7 +4229,7 @@ function showInspect(card) {
 			line.style.cursor = 'pointer';
 			line.addEventListener('pointerdown', e => {
 				e.stopPropagation();
-				showInspect({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
+				open({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
 			});
 			d.appendChild(line);
 		}
@@ -4231,7 +4246,7 @@ function showInspect(card) {
 		const btn = document.createElement('button');
 		btn.textContent = label;
 		if (cls) btn.className = cls;
-		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideInspect(); fn(e); });
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); close(); fn(e); });
 		actions.appendChild(btn);
 	};
 	if (inHand && yourTurn) {
@@ -4269,15 +4284,105 @@ function showInspect(card) {
 			: (() => { try { return whyCantPlay(card); } catch (e) { return 'can’t be played right now'; } })();
 		box.appendChild(hint);
 	}
-	box.style.display = 'block';
-	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
-	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
-	// the face is drawn with a procedural fallback until its art image and the mana
-	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
-	if (inspectArtFn) artListeners.delete(inspectArtFn);
-	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
-	artListeners.add(inspectArtFn);
 }
+
+// ---------- the card FOCUS view (Plans/CONTROLLER_V2_PLAN.md C) ----------
+// A centered, large reader with the board dimmed behind it. Opened by right-click
+// or press-and-hold (mouse / touch), the controller's inspect button, a log name,
+// or confirm on a card you can't act on. ◄ ► (arrow keys, LB/RB) step through the
+// cards beside it (your hand, a board row); Esc / cancel / the backdrop close it.
+// Hidden information never opens: an enemy's hand, a face-down enemy card.
+let focusCard = null, focusArtFn = null, focusOnClose = null;
+const cardFocusOpen = () => !!focusCard;
+function focusSiblings(card) {
+	if (!state || !card || card.zone === 'preview') return [card];
+	const p = state.players[card.controller];
+	if (!p) return [card];
+	const z = card.zone;
+	const list = z === 'hand' ? p.hand : z === 'board' ? p.board : z === 'land' ? p.lands : z === 'artifact' ? p.artifacts : z === 'enchantment' ? p.enchantments : [card];
+	const ok = list.filter(c => c && !(c.disguised && c.controller !== HUMAN));
+	return ok.includes(card) ? ok : [card];
+}
+function canFocusCard(card) {
+	if (!card) return false;
+	if (card.disguised && card.controller !== HUMAN) return false;
+	if (card.controller != null && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'deck' || card.zone === 'trap')) return false;
+	return true;
+}
+function showCardFocus(card, opts = {}) {
+	if (!canFocusCard(card)) return false;
+	hideInspect();
+	$('tooltip').style.display = 'none';
+	if ('onClose' in opts) focusOnClose = opts.onClose;
+	focusCard = card;
+	let root = $('card-focus');
+	if (!root) {
+		root = document.createElement('div');
+		root.id = 'card-focus';
+		root.setAttribute('role', 'dialog');
+		root.setAttribute('aria-modal', 'true');
+		root.innerHTML = '<div class="cf-backdrop"></div><div class="cf-panel"></div>';
+		root.querySelector('.cf-backdrop').addEventListener('pointerdown', e => { e.stopPropagation(); hideCardFocus(); });
+		root.querySelector('.cf-panel').addEventListener('pointerdown', e => e.stopPropagation());
+		document.body.appendChild(root);
+	}
+	const panel = root.querySelector('.cf-panel');
+	panel.innerHTML = '';
+	const sib = focusSiblings(card), at = sib.indexOf(card);
+	const nav = document.createElement('div');
+	nav.className = 'cf-nav';
+	const btn = (txt, title, fn, cls) => {
+		const b = document.createElement('button');
+		b.textContent = txt; b.title = title; if (cls) b.className = cls;
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); fn(); });
+		return b;
+	};
+	const label = document.createElement('span');
+	label.className = 'cf-count';
+	label.textContent = sib.length > 1 ? `${at + 1} / ${sib.length}` : '';
+	if (sib.length > 1) nav.append(btn('◄', 'Previous card', () => stepCardFocus(-1), 'cf-prev'), label, btn('►', 'Next card', () => stepCardFocus(1), 'cf-next'));
+	else nav.append(label);
+	nav.append(btn('✕', 'Close', hideCardFocus, 'cf-close'));
+	panel.appendChild(nav);
+	const face = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+	face.className = 'cf-face';
+	panel.appendChild(face);
+	fillCardDetail(panel, card, { close: hideCardFocus, open: c => showCardFocus(c) });
+	root.style.display = 'block';
+	if (focusArtFn) artListeners.delete(focusArtFn);
+	focusArtFn = id => {
+		if (focusCard !== card || !(id === '*' || id === card.id)) return;
+		const fresh = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+		fresh.className = 'cf-face';
+		const old = panel.querySelector('canvas.cf-face');
+		if (old) panel.replaceChild(fresh, old);
+	};
+	artListeners.add(focusArtFn);
+	return true;
+}
+function hideCardFocus() {
+	if (!focusCard) return;
+	const card = focusCard, cb = focusOnClose;
+	focusCard = null; focusOnClose = null;
+	if (focusArtFn) { artListeners.delete(focusArtFn); focusArtFn = null; }
+	const root = $('card-focus');
+	if (root) root.style.display = 'none';
+	if (cb) cb(card);
+}
+function stepCardFocus(d) {
+	if (!focusCard) return;
+	const sib = focusSiblings(focusCard);
+	if (sib.length < 2) return;
+	const i = sib.indexOf(focusCard);
+	showCardFocus(sib[(i + d + sib.length) % sib.length]);
+}
+// capture phase, so Esc closes the reader before the board's Esc (clearModes) runs
+addEventListener('keydown', ev => {
+	if (!focusCard) return;
+	if (ev.key === 'Escape') { ev.stopPropagation(); ev.preventDefault(); hideCardFocus(); }
+	else if (ev.key === 'ArrowLeft') { ev.stopPropagation(); stepCardFocus(-1); }
+	else if (ev.key === 'ArrowRight') { ev.stopPropagation(); stepCardFocus(1); }
+}, true);
 // resolve a Choose-One from the inspect panel (mirrors openChoiceMenu's per-branch logic)
 function playChoiceFromInspect(card, i) {
 	if (!E.canPlay(state, HUMAN, card)) return;
@@ -4423,7 +4528,15 @@ function openWalkerMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 140)}px`;
 }
 
-addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
+addEventListener('contextmenu', ev => {
+	ev.preventDefault();
+	if (pending || selectedAttacker || placing) { clearModes(); return; }
+	// right-click a card: the card focus view (Plans/CONTROLLER_V2_PLAN.md C)
+	if (ev.target !== renderer.domElement || !state) return;
+	const uid = pick(ev) ?? hoverUid;
+	const c = cardOf(uid) || (uid === 'heropanel' && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
+	if (c) showCardFocus(c);
+});
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
@@ -4748,7 +4861,7 @@ function startLongPress(uid, x, y) {
 			// a held card/power is previewed, never triggered — release is suppressed below
 			$('tooltip').style.display = 'none';
 			hideInspect();
-			showInspect(c);
+			if (!showCardFocus(c)) showInspect(c);
 		} else {
 			hoverUid = uid;
 			updateTooltip({ clientX: x, clientY: y });
@@ -5183,6 +5296,7 @@ animate();
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
+	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
 	get boardVanishLog() { return boardVanishLog; },
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
@@ -5259,6 +5373,9 @@ initPadboard({
 	foePanels: () => [...foePanelEls.entries()],
 	get pending() { return pending; }, get attacker() { return selectedAttacker; },
 	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
+	// the card focus view: onClose hands focus back to the board on the card you read
+	openCardFocus: (card, onClose) => showCardFocus(card, { onClose }), cardFocusOpen, hideCardFocus,
+	heroPowerCard: () => classPowerOf(HUMAN),
 	canvas: renderer.domElement,
 	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
 	setMouse: (x, y) => { mouseX = x; mouseY = y; },

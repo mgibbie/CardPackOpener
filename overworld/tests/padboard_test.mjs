@@ -163,7 +163,7 @@ try {
 	await page.evaluate(u => window.__padboard.focusUid(u), seed.mine[1]);
 	await tap(BTN.left);
 	await sleep(200);
-	A(await page.evaluate(() => { const i = document.getElementById('inspect'); return !!i && getComputedStyle(i).display !== 'none'; }), 'the left face button inspects the focused card');
+	A(await page.evaluate(u => window.__game.cardFocus?.uid === u, seed.mine[1]), 'the left face button opens the focused card in the focus view');
 	await tap(BTN.bottom);
 
 	// ---- the test bar is gone (owner, 2026-10-01) ----

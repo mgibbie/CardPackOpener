@@ -89,6 +89,39 @@
 		#inspect .ins-actions button:hover { background: #4c3d78; }
 		#inspect .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
 
+		/* the card FOCUS view: a centered, large reader with the board dimmed behind it
+		   (right-click / hold a card, the controller's inspect button, a log name) */
+		#card-focus { position: fixed; inset: 0; z-index: 9050; display: none; }
+		#card-focus .cf-backdrop { position: absolute; inset: 0; background: rgba(6,4,12,0.74); }
+		#card-focus .cf-panel {
+			position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+			width: min(400px, 92vw); max-height: 94vh; overflow-y: auto; box-sizing: border-box;
+			background: rgba(18,12,30,0.97); border: 1px solid #8f6fff; border-radius: 16px;
+			padding: 12px 14px 14px; box-shadow: 0 16px 60px rgba(0,0,0,0.8);
+		}
+		#card-focus .cf-face { width: 100%; height: auto; display: block; border-radius: 12px; }
+		#card-focus .cf-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+		#card-focus .cf-nav button {
+			background: #3a2e5c; color: #e8e2f4; border: 1px solid #5a4a8a; border-radius: 8px;
+			font-size: 15px; padding: 5px 12px; cursor: pointer;
+		}
+		#card-focus .cf-nav button:hover { background: #4c3d78; }
+		#card-focus .cf-nav .cf-close { margin-left: auto; }
+		#card-focus .cf-count { color: #9a8fc0; font-size: 12px; min-width: 44px; text-align: center; }
+		#card-focus .ins-kw { margin-top: 10px; font-size: 13px; line-height: 1.4; color: #d8d0ee; }
+		#card-focus .ins-kw .tt-kw { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.12); }
+		#card-focus .ins-kw .tt-kw b { color: #9fd0ff; }
+		#card-focus .ins-hint { margin-top: 10px; font-size: 12.5px; color: #9a8fc0; }
+		#card-focus .ins-hint.no { color: #d98a8a; }
+		#card-focus .ins-actions { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+		#card-focus .ins-actions button {
+			width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer;
+			background: #3a2e5c; color: #e8e2f4; border: 1px solid #5a4a8a; font-size: 14px;
+		}
+		#card-focus .ins-actions button:hover { background: #4c3d78; }
+		#card-focus .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
+		@media (max-height: 560px) { #card-focus .cf-panel { width: min(300px, 92vw); } }
+
 		/* scry / gaze decision modal */
 		/* z-index was 11, which put a BLOCKING decision below almost every other
 		   panel (game UI runs 8-70, the chat sits at 9000), so a Scry/Discover/

@@ -19,7 +19,8 @@
 // Buttons (Nintendo layout, site/gamepad.js):
 //   d-pad / stick  move focus (spatially)     confirm (right)  play / attack / pick
 //   cancel (bottom) back out (clearModes)      LB / RB   hand ← → your side ← → enemy ← → buttons
-//   left face      inspect the focused card    Start     the match menu (log, auto-pass, sound, concede)
+//   left face      read the focused card (the centered focus view; also confirm on a card you can't act on)
+//   Start          the match menu (log, auto-pass, sound, concede)
 // END TURN, the HERO POWER orb and the LOG are places on the board you move to
 // and confirm (owner, 2026-10-01: no dedicated hero-power button, no end turn on
 // Start, and the selector must be able to reach End Turn).
@@ -180,20 +181,29 @@ function confirm() {
 	if (s.kind === 'die' || s.kind === 'orb') return vclick(s.x, s.y);   // the orb: the hero power, as a click on it
 	if (s.kind === 'btn') return s.el.click();                         // End Turn / Coin / Planeswalk / Log
 	const c = s.card;
+	// nothing to DO with it (an enemy's card): read it in the focus view instead
+	if (c.controller !== api.HUMAN) return openFocus(c);
 	if (c.zone === 'hand') {
 		const S = api.state, H = api.HUMAN, E = api.E;
-		if (S.current !== H) { api.banner("can't play on your opponent's turn"); return; }
+		if (S.current !== H) return openFocus(c);   // their turn: read it (it says why it can't be played)
 		const canPlay = E.canPlay(S, H, c);
 		if ((c.type === 'creature' || c.type === 'location') && canPlay && S.players[H].board.length && !c.adventure) {
 			slot = { card: c, i: Math.min(S.players[H].board.length, Math.ceil(S.players[H].board.length / 2)) };
 			showSlot();
 			return;
 		}
-		if (!canPlay && !(c.tradeable || c.prepare || c.forge || c.adventure)) { api.banner(api.whyCantPlay(c)); return; }
+		if (!canPlay && !(c.tradeable || c.prepare || c.forge || c.adventure)) return openFocus(c);   // the reader says why
 		// spells and the rest: the drag-drop entry, dropped on empty felt (nothing under it)
 		return api.releasePlay(c, { clientX: 2, clientY: 2, button: 0 });
 	}
 	return vclick(s.x, s.y);                     // board: the game's own click routing
+}
+// the card focus view (game.js); closing it puts board focus back on that card
+function openFocus(card) {
+	api.openCardFocus(card, c => {
+		const s = c && stops().find(x => x.uid === c.uid);
+		if (s) setFocus(s);
+	});
 }
 function cancel() {
 	if (slot) { slot = null; api.setPlacing(null); return; }
@@ -238,7 +248,12 @@ function onPress(action) {
 	if (action === 'cancel') return cancel();
 	if (action === 'prev') return jumpZone(-1);
 	if (action === 'next') return jumpZone(1);
-	if (action === 'context') { const s = current(stops()); if (s?.card) api.toggleInspect(s.card); return; }
+	if (action === 'context') {
+		const s = current(stops());
+		if (s?.card) openFocus(s.card);
+		else if (s?.kind === 'orb') { const hp = api.heroPowerCard(); if (hp) openFocus(hp); }
+		return;
+	}
 	if (action === 'menu') { if (mode() === 'browse') openMatchMenu(); return; }
 }
 
