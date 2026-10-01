@@ -794,11 +794,13 @@ export function drawOptions(W, H) {
 		sctx.fillText('►', b.x + b.w - 20 * u, b.y + 27 * u);
 		sctx.textAlign = 'left';
 	});
-	// SAVE DATA + CONTROLS — four action buttons in one row under the settings
+	// SAVE DATA + CONTROLS + REPORT A BUG — the action buttons share one row
+	// under the settings (sized from the list, so a new action can't run off it)
 	const actY = (84 + OPTION_KEYS.length * 46 + 8) * u;
+	const nAct = OPTION_ACTIONS.length;
 	OPTION_ACTIONS.forEach((a, i) => {
 		const idx = OPTION_KEYS.length + i;
-		const bw = (W - 80 * u - 24 * u) / 4;
+		const bw = (W - 80 * u - (nAct - 1) * 8 * u) / nAct;
 		const bid = 'optact:' + i;
 		const b = { id: bid, x: 40 * u + i * (bw + 8 * u), y: actY, w: bw, h: 44 * u, label: a.label, center: true };
 		S.menuUi.push(b);

@@ -136,4 +136,6 @@ export const OPTION_ACTIONS = [
 	{ id: 'import', label: 'IMPORT SAVE', hint: 'Restore a downloaded save file' },
 	{ id: 'backups', label: 'BACKUPS', hint: 'Restore an automatic daily backup' },
 	{ id: 'controls', label: 'CONTROLS', hint: 'Rebind keys; controller layout, buttons and rumble' },
+	// playtesters: opens /bugs/ with where you are attached (the server checks who may file)
+	{ id: 'bugreport', label: 'REPORT A BUG', hint: 'Playtesters: tell Michael what broke (opens a form)' },
 ];

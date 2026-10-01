@@ -6,7 +6,7 @@ import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
-import { dialog, hud } from './ow_core.js';
+import { dialog, hud, player, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import * as Dex from './pokedex.js';
 import { safeSave, safeSaveStr } from './safestore.js';
@@ -444,6 +444,17 @@ export function runSaveAction(id) {
 		return;
 	}
 	if (id === 'controls') { om.mode = 'controls'; om.idx = 0; om.capture = null; om.flash = null; return; }
+	if (id === 'bugreport') {
+		// the Bug Report Review list's form, with where you are attached — the
+		// player never has to type a map name or coordinates
+		const lead = (S.party || []).find(m => m && m.curHP > 0) || (S.party || [])[0];
+		const ctx = { from: 'overworld', area: 'overworld', map: world.current?.name || '', x: player.tx, y: player.ty, facing: player.facing,
+			region: localStorage.getItem('magepunk_region') || '', rev: owRev(), party: lead ? `${lead.name} ${lead.level} (+${(S.party || []).length - 1})` : '' };
+		const url = '/bugs/?' + new URLSearchParams(Object.entries(ctx).map(([k, v]) => [k, String(v ?? '')])).toString();
+		const w = window.open(url, '_blank');
+		om.flash = w ? 'The bug report form opened in a new tab.' : 'Open ' + location.origin + url.slice(0, 60) + '… to report a bug.';
+		return;
+	}
 }
 async function doImportSave() {
 	const om = optionsMenu;

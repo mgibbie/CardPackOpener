@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Magepunk — Bug Report Review</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="noindex">
+	<link rel="icon" href="data:,">
+	<style>
+		html, body { margin: 0; min-height: 100%; background: #0d0a14; color: #e8e2f4; font: 14px 'Segoe UI', system-ui, sans-serif; }
+		.wrap { max-width: 900px; margin: 0 auto; padding: 22px 16px 60px; }
+		header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+		h1 { font-size: 22px; margin: 0; }
+		header .count { color: #ffd25f; font-weight: 700; }
+		header .spacer { flex: 1; }
+		a { color: #9d8fd4; }
+		.hint { color: #8b82a8; font-size: 12.5px; margin: 4px 0 18px; }
+		button { background: #2a2440; color: #e8e2f4; border: 1px solid #6a5f8a; border-radius: 8px; padding: 7px 14px; cursor: pointer; font: 600 13px 'Segoe UI', sans-serif; }
+		button:hover { background: #3a3258; }
+		.bug { background: #171226; border: 1px solid #352c52; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+		.bug .top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+		.bug .title { font-weight: 700; font-size: 15px; flex: 1; min-width: 200px; }
+		.bug .meta { color: #8b82a8; font-size: 12px; margin: 4px 0 8px; }
+		.sev { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .5px; }
+		.sev.blocker { background: #5a2030; color: #ffb3c0; } .sev.bug { background: #4a3a18; color: #ffd27a; }
+		.sev.cosmetic { background: #1f3a4a; color: #a8dcff; } .sev.idea { background: #1f4a30; color: #a8f0c0; }
+		.ctx { font: 12px ui-monospace, Consolas, monospace; color: #b9b0d4; margin-bottom: 8px; }
+		details summary { cursor: pointer; color: #c9b8ff; font-weight: 600; }
+		.text { white-space: pre-wrap; overflow-wrap: break-word; color: #d9d2ea; line-height: 1.5; font: 12.5px ui-monospace, Consolas, monospace; margin-top: 8px; max-height: 480px; overflow: auto; }
+		.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+		.filters button.on { background: #4c3d78; border-color: #9d8fd4; }
+		#empty { text-align: center; color: #8b82a8; padding: 60px 0 30px; font-size: 15px; }
+		#msg { min-height: 18px; color: #9fd8b0; font-size: 13px; }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<header>
+			<a href="/" title="Magepunk home" style="text-decoration:none;font-size:20px;">⚙️</a>
+			<h1>Bug Report Review <span class="count" id="count"></span></h1>
+			<span class="spacer"></span>
+			<a href="/bugs/">+ file one</a>
+			<button id="refresh">↻ Refresh</button>
+		</header>
+		<div class="hint">Bug reports from the playtesters (Instinct, Muse) and you. Newest first.
+			Tell Claude to "do the bug report review list" to have them investigated and fixed; mark one ✓ Done when it's handled.</div>
+		<div class="filters" id="filters"></div>
+		<div id="list"><div id="empty">Loading…</div></div>
+		<div id="msg"></div>
+	</div>
+	<script type="module">
+	import * as MP from '/battlecards/mpmode.js';
+	const OWNER = 'mgibbie';
+	const NAMES = { instinctloretest0918: 'Instinct', remygl: 'Muse', mgibbie: 'Michael' };
+	const $ = id => document.getElementById(id);
+	const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+	async function requireOwner() {
+		if (!MP.requireLogin()) return false;
+		try { const r = await MP.call('state'); if ((r?.state?.username || '') === OWNER) return true; } catch (e) {}
+		document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#e8e2f4;font:16px \'Segoe UI\',sans-serif;">'
+			+ '<div style="text-align:center;">🔒 The Bug Report Review list is an owner tool.<br><br><a href="/bugs/" style="color:#9d8fd4;">File a bug report instead →</a></div></div>';
+		return false;
+	}
+
+	let bugs = [], filter = 'all';
+	function render() {
+		const sevs = ['all', 'blocker', 'bug', 'cosmetic', 'idea'];
+		$('filters').innerHTML = sevs.map(s => `<button data-f="${s}" class="${filter === s ? 'on' : ''}">${s}${s === 'all' ? '' : ' ' + bugs.filter(b => b.severity === s).length}</button>`).join('');
+		$('filters').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { filter = b.dataset.f; render(); }));
+		$('count').textContent = bugs.length ? '(' + bugs.length + ')' : '';
+		const shown = bugs.filter(b => filter === 'all' || b.severity === filter).sort((a, b) => b.ts - a.ts);
+		const list = $('list');
+		if (!shown.length) { list.innerHTML = `<div id="empty">${bugs.length ? 'Nothing at this level.' : 'No open bug reports. 🎉'}</div>`; return; }
+		list.innerHTML = '';
+		for (const b of shown) {
+			const el = document.createElement('div');
+			el.className = 'bug';
+			const ctx = Object.entries(b.context || {}).filter(([k]) => k !== 'ua').map(([k, v]) => `${k}=${v}`).join('  ');
+			el.innerHTML = `<div class="top"><span class="sev ${esc(b.severity)}">${esc(b.severity)}</span><span class="title">${esc(b.title || '(untitled)')}</span><button class="done">✓ Done</button></div>
+				<div class="meta">${esc(NAMES[b.user] || b.user)} · ${esc(b.area)} · ${esc(new Date(b.ts).toLocaleString())} · <code>${esc(b.id)}</code></div>
+				${ctx ? `<div class="ctx">${esc(ctx)}</div>` : ''}
+				<details${shown.length <= 3 ? ' open' : ''}><summary>Report (${Math.round((b.text || '').length / 100) / 10}k chars)</summary><div class="text">${esc(b.text)}</div></details>`;
+			el.querySelector('.done').addEventListener('click', async () => {
+				el.style.opacity = '0.4';
+				try {
+					const r = await MP.call('bug-done', { id: b.id });
+					if (r.error) throw new Error(r.error);
+					bugs = bugs.filter(x => x.id !== b.id);
+					render();
+					$('msg').textContent = 'marked done — ' + bugs.length + ' left';
+				} catch (e) { el.style.opacity = ''; $('msg').textContent = 'failed: ' + String(e.message || e).slice(0, 80); }
+			});
+			list.appendChild(el);
+		}
+	}
+	async function load() {
+		$('msg').textContent = '';
+		try {
+			const r = await MP.call('bug-list');
+			if (r.error) throw new Error(r.error);
+			bugs = Array.isArray(r.bugs) ? r.bugs : [];
+			render();
+		} catch (e) { $('list').innerHTML = '<div id="empty">Could not load: ' + esc(String(e.message || e).slice(0, 100)) + '</div>'; }
+	}
+	if (await requireOwner()) { $('refresh').addEventListener('click', load); load(); }
+	</script>
+</body>
+</html>
