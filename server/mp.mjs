@@ -97,6 +97,8 @@ const TGET_LIMIT = [60, 60_000];    // per-IP public tuning fetch (2 per game bo
 const AFETCH_LIMIT = [40, 60_000];  // per-IP public override-image fetch (1 per overridden card per boot)
 const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
 const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
+const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
+const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -942,6 +944,63 @@ export default async function handler(req, env) {
 		const next = list.filter(e => !drop.has(e.ts));
 		await store.setJSON('owner_todo', next.length ? next : null);
 		return json({ ok: true, count: next.length });
+	}
+
+	// ---------- Bug Report Review list (playtesters -> owner) ----------
+	// The to-do inbox's twin for BUGS (2026-10-01). The playtesters (MP_BUG_REPORTERS,
+	// default Instinct + Muse) and the owner file reports from /bugs/, the in-game
+	// OPTIONS > REPORT A BUG, or straight at this API (Remy's bot). Each report is
+	// its OWN row ('bug:<ts>-<user>') — reports run to 10KB+ of markdown, and a
+	// per-row store makes "done" race-free (exact keys, never a wipe). The owner
+	// reviews at /bugreview/; "do the bug report review list" = a dev session
+	// reads them, fixes, and marks them done. The reporter comes from the verified
+	// token, never the client.
+	if (action === 'bug-add' || action === 'bug-mine' || action === 'bug-list' || action === 'bug-done') {
+		const reporters = (process.env.MP_BUG_REPORTERS || 'instinctloretest0918,remygl').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+		const canFile = isAdmin(username) || reporters.includes(username);
+		const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
+		if (action === 'bug-add') {
+			if (!canFile) return json({ error: 'bug reports are open to playtesters only' }, 403);
+			const text = clip(body.text, BUG_TEXT_MAX).trim();
+			if (!text) return json({ error: 'empty report' }, 400);
+			const mine = (await store.list('bug:')).filter(r => r.value && r.value.user === username).length;
+			if (mine >= BUG_OPEN_MAX) return json({ error: `you have ${mine} open reports — wait for some to be reviewed` }, 429);
+			// context: whatever the client attached (map, position, revision, page...),
+			// kept as a small flat object of short strings/numbers
+			const ctx = {};
+			if (body.context && typeof body.context === 'object' && !Array.isArray(body.context)) {
+				for (const [k, v] of Object.entries(body.context).slice(0, 24)) {
+					if (/token|password|secret|auth|cookie/i.test(k)) continue;   // never store credentials
+					if (typeof v === 'number' || typeof v === 'boolean') ctx[clip(k, 40)] = v;
+					else if (typeof v === 'string') ctx[clip(k, 40)] = clip(v, 300);
+				}
+			}
+			const ts = Date.now();
+			const rec = {
+				ts, user: username,
+				title: clip(body.title, 140).trim() || clip(text.split('\n').find(l => l.trim()) || '', 140).replace(/^#+\s*/, ''),
+				area: ['overworld', 'battlecards', 'site'].includes(body.area) ? body.area : 'overworld',
+				severity: ['blocker', 'bug', 'cosmetic', 'idea'].includes(body.severity) ? body.severity : 'bug',
+				text, context: ctx,
+			};
+			await store.setJSON(`bug:${ts}-${username}`, rec);
+			return json({ ok: true, id: `${ts}-${username}` });
+		}
+		if (action === 'bug-mine') {
+			if (!canFile) return json({ error: 'bug reports are open to playtesters only' }, 403);
+			const rows = (await store.list('bug:')).filter(r => r.value && r.value.user === username);
+			return json({ bugs: rows.map(r => ({ id: r.key.slice(4), ts: r.value.ts, title: r.value.title, area: r.value.area, severity: r.value.severity })) });
+		}
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
+		if (action === 'bug-list') {
+			const rows = await store.list('bug:');
+			return json({ bugs: rows.map(r => ({ id: r.key.slice(4), ...r.value })) });
+		}
+		// bug-done: the exact ids reviewed — there is deliberately no clear-all
+		const ids = (Array.isArray(body.ids) ? body.ids : [body.id]).map(String).filter(id => /^\d{10,16}-[a-z0-9_]+$/i.test(id));
+		if (!ids.length) return json({ error: 'no ids' }, 400);
+		await store.deleteKeys(ids.map(id => 'bug:' + id));
+		return json({ ok: true, removed: ids.length });
 	}
 
 	// ---------- gifts ----------

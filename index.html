@@ -214,6 +214,14 @@
 				<div class="glyph">📋</div>
 				<div><h3>Design To-Do <span class="arrow">→</span></h3><p>Owner tools — the design-change inbox filed from the wiki's card pages.</p></div>
 			</a>
+			<a class="tile" id="tile-bugreview" href="bugreview/" hidden>
+				<div class="glyph">🐞</div>
+				<div><h3>Bug Report Review <span class="arrow">→</span></h3><p>Owner tools — bug reports filed by the playtesters.</p></div>
+			</a>
+			<a class="tile" id="tile-bugs" href="bugs/" hidden>
+				<div class="glyph">🐞</div>
+				<div><h3>Report a Bug <span class="arrow">→</span></h3><p>Playtesters — tell Michael what broke.</p></div>
+			</a>
 			<a class="tile" id="tile-arttune" href="battlecards/arttune.html" hidden>
 				<div class="glyph">🎨</div>
 				<div><h3>Art Tuner <span class="arrow">→</span></h3><p>Owner tools — reframe or replace card art on the live renderers.</p></div>
@@ -252,8 +260,10 @@
 	<script type="module">
 	import * as MP from './battlecards/mpmode.js';
 	if (MP.hasToken()) { const c = document.getElementById('tile-collection'); if (c) c.hidden = false; }
+	// the playtesters' Report a Bug tile (the server re-checks who may file)
+	if (['instinctloretest0918', 'remygl'].includes(MP.cachedState()?.username)) { const b = document.getElementById('tile-bugs'); if (b) b.hidden = false; }
 	if (MP.cachedState()?.username === 'mgibbie') {
-		for (const id of ['tile-todo', 'tile-arttune', 'tile-spritetune', 'tile-followtest', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
+		for (const id of ['tile-todo', 'tile-bugreview', 'tile-arttune', 'tile-spritetune', 'tile-followtest', 'tile-mapedit', 'tile-owreset']) { const a = document.getElementById(id); if (a) a.hidden = false; }
 		// the reset tile DOES something rather than going somewhere, so it needs a
 		// handler — which re-checks ownership with the server before touching a thing
 		import('./site/owreset.js').then(m => m.mount(document.getElementById('tile-owreset'))).catch(() => {});
