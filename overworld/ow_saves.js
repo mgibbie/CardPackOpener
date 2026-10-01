@@ -71,7 +71,7 @@ export function syncOverworldAchievements() {
 // stash until the server refused it ('ow too large', 1,000,000 bytes) and every
 // push failed. The stash protects THIS device's view of a divergence; the server
 // keeps its own daily backups.
-const LOCAL_ONLY_KEYS = ['magepunk_ow_conflict', 'magepunk_ow_conflict_archive'];
+const LOCAL_ONLY_KEYS = ['magepunk_ow_conflict', 'magepunk_ow_conflict_archive', 'magepunk_ow_story_conflict'];
 export const OW_KEYS = OW_RESET_KEYS.filter(k => k !== 'magepunk_battle_v1' && !LOCAL_ONLY_KEYS.includes(k));
 export function owSnapshot() {
 	const o = {}; for (const k of OW_KEYS) { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch (e) {} } return o;
@@ -165,6 +165,23 @@ function owGameWeight(snap) {
 // The losing side of a discard is never thrown away. Whenever hydration is about
 // to drop a local snapshot, it lands here first so it can be recovered.
 const OW_CONFLICT_KEY = 'magepunk_ow_conflict';
+// the local story set aside when the same-revision tie adopts the server's (local only)
+const STORY_CONFLICT_KEY = 'magepunk_ow_story_conflict';
+// Is the local story a STRICT regression of the remote one? Every true local flag
+// (TEMP flags aside — map loads wipe those) is also true remotely, and the remote
+// has earned flags the local lacks. Returns { missing } or null. This never
+// unions two stories: it only recognises a copy that has nothing the other lacks.
+export function storyRegression(localRaw, remoteRaw) {
+	let l, r;
+	try { l = JSON.parse(localRaw || 'null'); r = JSON.parse(remoteRaw || 'null'); } catch (e) { return null; }
+	if (!l || !r || typeof l.flags !== 'object' || typeof r.flags !== 'object') return null;
+	const on = o => Object.keys(o.flags || {}).filter(k => o.flags[k] && !/^FLAG_TEMP_/.test(k));
+	const lf = on(l), rset = new Set(on(r));
+	if (lf.some(k => !rset.has(k))) return null;          // local has progress of its own
+	const lset = new Set(lf);
+	const missing = [...rset].filter(k => !lset.has(k));
+	return missing.length ? { missing } : null;
+}
 const OW_CONFLICT_ARCHIVE_KEY = 'magepunk_ow_conflict_archive';
 // the losing copy WITHOUT any stash of its own: one save deep, never nested
 const flatCopy = snap => { const o = { ...snap }; for (const k of LOCAL_ONLY_KEYS) delete o[k]; return o; };
@@ -351,7 +368,21 @@ export async function hydrateOw() {
 				// provably newer, so DISCARD NOTHING — keep local (a deterministic
 				// tie-break), preserve remote, and step the revision so the tie resolves.
 				stashConflict('same-revision divergence (remote copy preserved)', ow, localRev, remoteRev);
-				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote`, rewroteLocal: false, keysOverwritten: [], conflict: true });
+				// ...except a local STORY that is a strict regression of the server's:
+				// nothing local has that the server lacks, and earned flags missing.
+				// That is the signature of a stale cache having written over the story
+				// (2026-10-01: 21 flags, Fortree badge through Maxie, lost this way and
+				// then published). Keeping it would publish lost progress; adopting the
+				// server's story discards nothing local — the local story is kept in
+				// its own record first, and every other key stays local as before.
+				const reg = storyRegression(localSnap['magepunk_story'], ow['magepunk_story']);
+				if (reg) {
+					safeSave(STORY_CONFLICT_KEY, { at: new Date().toISOString(), reason: 'local story was a regression of the server copy at the same revision', localRev, remoteRev, missing: reg.missing, story: localSnap['magepunk_story'] });
+					safeSaveStr('magepunk_story', ow['magepunk_story']);
+					Story.reloadStory();
+					syncLog('hydrate.story', { action: 'adopted remote story', reason: 'local story was a strict regression', missing: reg.missing.length, sample: reg.missing.slice(0, 8) });
+				}
+				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote${reg ? ', story from remote' : ''}`, rewroteLocal: !!reg, keysOverwritten: reg ? ['magepunk_story'] : [], conflict: true });
 				hud.textContent = 'This game moved on somewhere else too — kept this device\'s copy.';
 				// pushOw() bumps the revision itself, so local lands on remoteRev + 1 and
 				// the tie is broken. The extra setOwRev here double-counted it: the
