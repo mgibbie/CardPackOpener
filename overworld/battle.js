@@ -981,7 +981,7 @@ export class Battle {
 		const a = this.active;
 		if (!a || !mon) return null;
 		if (a.partner?.party.includes(mon)) return 'partner';
-		return (mon === a.me || mon === a.meAlly || a.party.includes(mon)) ? 'player' : 'foe';
+		return (mon === a.me || mon === a.meAlly || (a.party || []).includes(mon)) ? 'player' : 'foe';
 	}
 
 	// a combatant's name as a battle message opens with it: the foe side reads
@@ -992,7 +992,8 @@ export class Battle {
 	label(mon) {
 		if (!mon) return '';
 		const a = this.active;
-		if (!a || this.ownerOf(mon) !== 'foe') return mon.name;
+		// no sides known (a bare stub: the EXP / level-up readers) -> the plain name
+		if (!a || !Array.isArray(a.party) || this.ownerOf(mon) !== 'foe') return mon.name;
 		return (a.isTrainer ? 'Foe ' : 'Wild ') + mon.name;
 	}
 
