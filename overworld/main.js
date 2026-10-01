@@ -156,7 +156,7 @@ import {
 } from './ow_frontier.js';
 // ow_saves.js: ow_saves.js — the overworld save: server-authoritative sync (hydrate/push/revision), achievements sync, gifts, and the OPTIONS save-data actions (export/import/backups).
 import {
-	OW_KEYS, claimGifts, hydrateOw, importSave, installImportInput, lastImportResult, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
+	OW_KEYS, checkRepair, claimGifts, hydrateOw, importSave, installImportInput, lastImportResult, loadBackups, overworldSummary, owDirty, owFingerprint, owRev,
 	owSnapshot, owSyncLog, pushOw, restoreBackup, rollbackImport, runSaveAction, syncOverworldAchievements, verifySave,
 } from './ow_saves.js';
 // ow_pvp.js: ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
@@ -797,7 +797,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 			grantGrandChampionReward();
 			hud.textContent = 'GRAND CHAMPION of all three regions! A GOLD TROPHY awaits in your BAG.';
 		}
-		claimGifts(); // anything the owner sent this account, applied on arrival
+		claimGifts().then(() => checkRepair()); // anything the owner sent this account; then a queued save repair, offered
 		claimTradeDeliveries(); // trade counterparts and returns come home, exactly once each
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
