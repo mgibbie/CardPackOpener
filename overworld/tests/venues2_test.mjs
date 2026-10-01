@@ -25,8 +25,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 // ---------- source ----------
 {
 	const it = fs.readFileSync(path.join(ROOT, 'overworld/items.js'), 'utf8');
-	A(/EventScript_Voltorb\\d\+\$/.test(it) && /ambushAt/.test(it), 'the Voltorb balls ambush instead of parsing as junk');
-	A(/!b\.ambush && b\.tx === tx/.test(it), 'pickups skip ambush balls');
+	// the Voltorb balls are SCRIPTED balls now (scripted_balls_test): their own
+	// script fights, so there is no one-off ambush any more
+	A(/scripted: true/.test(it) && /scriptedAt/.test(it), 'non-item balls are scripted objects instead of parsing as junk');
+	A(/!b\.scripted && b\.tx === tx/.test(it), 'pickups skip scripted balls');
 	const mn = overworldSource();
 	A(/st\.rank === 3/.test(mn) && /paintings\[st\.category\]/.test(mn), 'a MASTER win commissions the portrait');
 	A(/GFX_FOSSIL/.test(fs.readFileSync(path.join(ROOT, 'overworld/npcs.js'), 'utf8')), 'FOSSIL props never render as villagers');
@@ -194,26 +196,24 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(gen2.stone >= 1 && gen2.done === true, 'the switch pays the THUNDERSTONE once', JSON.stringify(gen2));
 		const amb = await page.evaluate(() => {
 			const ow = window.__ow;
-			const ball = ow.items.ambushAt(25, 18);
+			const ball = ow.items.scriptedAt(25, 18);
 			const junk = ow.items.interactAt(25, 18); // the pickup path must ignore it
-			return { ball: !!ball, species: ball?.ambush, junk };
+			return { ball: !!ball, script: ball?.script, junk };
 		});
-		A(amb.ball && amb.species === 'voltorb' && amb.junk === null, 'a disguised VOLTORB waits — and is no longer a junk pickup', JSON.stringify(amb));
+		A(amb.ball && /Voltorb\d$/.test(amb.script || '') && amb.junk === null, 'a disguised VOLTORB waits — and is no longer a junk pickup', JSON.stringify(amb));
 		const sprung = await page.evaluate(async () => {
 			const ow = window.__ow, p = ow.player;
 			p.tx = 25; p.ty = 19; p.px = 25 * 16; p.py = 19 * 16; p.facing = 'up';
 			ow.interact();
-			return ow.dialog.blocking;
+			return ow.cutscene.blocking;
 		});
-		A(sprung, 'facing it springs the ambush');
-		await closeDialog('z');
+		A(sprung, 'facing it runs its encounter script');
 		for (let i = 0; i < 40 && !(await page.evaluate(() => window.__ow.battle.blocking)); i++) await new Promise(r => setTimeout(r, 200));
 		const battle = await page.evaluate(() => ({
 			blocking: window.__ow.battle.blocking,
 			foe: window.__ow.battle.active?.foe?.speciesId,
-			ballGone: !window.__ow.items.ambushAt(25, 18),
 		}));
-		A(battle.blocking && battle.foe === 'voltorb' && battle.ballGone, 'VOLTORB attacks and the ball never respawns', JSON.stringify(battle));
+		A(battle.blocking && battle.foe === 'voltorb', 'VOLTORB attacks', JSON.stringify(battle));
 		await page.evaluate(async () => {
 			const b = window.__ow.battle;
 			for (let i = 0; i < 100; i++) { const a = b.active; if (a && (a.phase === 'menu' || a.phase === 'choose')) break; await new Promise(r => setTimeout(r, 100)); }
@@ -222,6 +222,11 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 				for (let i = 0; i < 150 && b.active; i++) await new Promise(r => setTimeout(r, 100));
 			}
 		});
+		for (let i = 0; i < 40 && await page.evaluate(() => window.__ow.cutscene.blocking || window.__ow.dialog.blocking); i++) {
+			await page.evaluate(() => { if (window.__ow.dialog.blocking) dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true })); });
+			await new Promise(r => setTimeout(r, 150));
+		}
+		A(await page.evaluate(() => !window.__ow.items.scriptedAt(25, 18)), 'after the encounter the ball is gone (it never respawns)');
 
 		A(errors.length === 0, 'no uncaught page errors', errors.slice(0, 3).join(' | '));
 	} catch (e) {
