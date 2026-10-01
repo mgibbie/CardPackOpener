@@ -2255,7 +2255,7 @@ function controlsView() {
         ['LB / RB', 'Jump between your hand, your side, the enemy side, and the buttons (starting on End Turn)'],
         ['Right face (confirm)', 'Play a hand card (creatures then pick a board slot with ◄ ►), arm an attack, pick the target, use your hero power, or press the focused button (End Turn, Log)'],
         ['Bottom face (cancel)', 'Back out of placing or targeting'],
-        ['Left face', 'Read the focused card in the large focus view (◄ ► / LB RB step through the cards beside it; cancel closes). Confirm on a card you can't act on opens it too'],
+        ['Left face', 'Read the focused card in the large focus view (◄ ► / LB RB step through the cards beside it; cancel closes). Confirm on a card you cannot act on opens it too'],
         ['Start', 'Menu: game log, auto-pass, sound, concede'],
       ])),
     section('Typing on a controller', 'Nicknames, friend codes, searches and pasted deck or replay codes use the on-screen keyboard.',
