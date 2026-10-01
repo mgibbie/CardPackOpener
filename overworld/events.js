@@ -382,7 +382,10 @@ export class Cutscene {
 				case 'addvar': setVar(op.var, getVar(op.var) + resolveValue(op.value)); break;
 				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
 				case 'setrespawn': break;
-				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); break; }
+				// giveitem / additem answer in VAR_RESULT (TRUE = it went in the bag), and the
+				// scripts branch on it straight away: the Rocket Hideout SILPH SCOPE / LIFT
+				// KEY read FALSE and said "Too bad! The BAG is full…" while handing it over
+				case 'give': { const g = giveArgs(op); if (g.id) ctx.giveItem?.(g.id, g.n); setVar('VAR_RESULT', g.id ? 1 : 0); break; }
 				case 'takeitem': { const g = giveArgs(op); if (g.id) ctx.takeItem?.(g.id, g.n); break; }
 				// `givemon` answers into VAR_RESULT — the script after it says something
 				// different when the mon went to a BOX because your party was full, and

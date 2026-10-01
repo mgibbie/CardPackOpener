@@ -170,17 +170,23 @@ export class Items {
 				// ball must not sit there grabbable — Birch's bag-scene starter
 				// balls were stacked three-deep on the lab floor
 				if (objectHiddenByFlag(o, !!map._crystal_tileset)) continue;
-				// New Mauville's three "item balls" are VOLTORB in disguise. The
-				// generic parser was minting them as junk pickups named after their
-				// script — they ambush instead (main.js springs the battle).
-				if (/EventScript_Voltorb\d+$/.test(o.script || '')) {
-					const key = this.keyFor('', o);
-					if (this.collected.has(key)) continue;
-					this.balls.push({ tx: +o.x, ty: +o.y, ambush: 'voltorb', key, hidden: false });
+				// Crystal names an item ball's script <Map><Item>; that guess is only
+				// valid on a Crystal map. Applied to Emerald/FireRed it turned EVERY
+				// scripted ball into a junk pickup named after its script: Aqua
+				// Hideout's Electrodes ("Found _EVENT SCRIPT_ELECTRODE2!", 2026-10-01),
+				// the Power Plant Electrodes, the Rocket Hideout SILPH SCOPE and LIFT
+				// KEY, the EEVEE / BELDUM / Dojo gift balls.
+				const crystal = !!map._crystal_tileset;
+				const parsed = parseBallScript(o.script) || (crystal ? parseCrystalBall(o.script, this.world.current.name) : null);
+				if (!parsed) {
+					// not an item pickup: a SCRIPTED ball. Talking to it runs its own
+					// authored script (an encounter, a gift, a key item); the script's
+					// hide (removeobject) takes it away. Never minted as an item.
+					if (!crystal && o.script && o.script !== '0x0') {
+						this.balls.push({ tx: +o.x, ty: +o.y, scripted: true, ev: o, script: o.script, key: this.keyFor('', o), hidden: false });
+					}
 					continue;
 				}
-				const parsed = parseBallScript(o.script) || parseCrystalBall(o.script, this.world.current.name);
-				if (!parsed) continue;
 				const key = this.keyFor('', o);
 				if (this.collected.has(key)) continue;
 				this.balls.push({ tx: +o.x, ty: +o.y, id: parsed[0], pretty: parsed[1], key, hidden: false });
@@ -209,19 +215,17 @@ export class Items {
 		}
 	}
 
-	// a disguised-Pokémon "ball" waiting at this tile (the host springs the battle)
-	ambushAt(tx, ty) {
-		return this.balls.find(b => b.ambush && b.tx === tx && b.ty === ty) || null;
+	// a scripted ball at this tile (its script is run by the host, ow_input.js)
+	scriptedAt(tx, ty) {
+		return this.balls.find(b => b.scripted && !b.hidden && b.tx === tx && b.ty === ty) || null;
 	}
-	takeAmbush(b) {
-		this.balls = this.balls.filter(x => x !== b);
-		this.markCollected(b.key);
-	}
+	// the scripted balls, for scripts that address them (removeobject VAR_LAST_TALKED)
+	scriptedBalls() { return this.balls.filter(b => b.scripted); }
 
 	// pickup / harvest at a tile; returns a message or null
 	// opts.skipHidden: leave hidden items alone (someone is standing on the tile)
 	interactAt(tx, ty, opts) {
-		const i = this.balls.findIndex(b => !b.ambush && b.tx === tx && b.ty === ty && !(opts && opts.skipHidden && b.hidden));
+		const i = this.balls.findIndex(b => !b.scripted && b.tx === tx && b.ty === ty && !(opts && opts.skipHidden && b.hidden));
 		if (i >= 0) {
 			const b = this.balls[i];
 			this.balls.splice(i, 1);
