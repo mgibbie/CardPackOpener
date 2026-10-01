@@ -172,6 +172,10 @@ export function cutsceneCtx(talker, scriptLabel) {
 		},
 		special: (name, store, op) => runSpecial(name, store, op), // handlers write `store`; unknown -> 0
 		multichoice: op => startChoice(op),          // the restored FireRed/Emerald menu (choice.js)
+		money: () => Bag.getMoney(),
+		spendMoney: n => { Bag.spend(n); },
+		// the next MAP_DYNAMIC warp goes here (an elevator's floor, set by its script)
+		setDynamicWarp: op => { S.dynamicWarp = { map: op.map, warp: op.warp ?? null, x: op.x ?? null, y: op.y ?? null }; },
 		noteCompare: (cond, hit) => noteCompare(cond, hit),
 		hud: msg => { hud.textContent = msg; },
 	};
