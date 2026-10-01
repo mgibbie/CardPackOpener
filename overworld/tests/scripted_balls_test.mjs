@@ -146,6 +146,28 @@ try {
 		await p.close();
 	}
 
+	// ===== legacy saves (pre-#626) =====
+	// The old Voltorb ambush recorded a FOUGHT ball in `collected`; the junk pickups
+	// put Electrode / Lift Key balls there too, with nothing actually done.
+	{
+		const p = await open('HOENN', 'NewMauville_Inside');
+		await p.evaluate(async () => {
+			const O = window.__ow;
+			O.items.markCollected('FLAG_HIDE_NEW_MAUVILLE_VOLTORB_1');       // fought under the old ambush
+			O.items.markCollected('FLAG_HIDE_AQUA_HIDEOUT_B1F_ELECTRODE_2'); // junk-picked
+			await O.moveToMap('NewMauville_Inside');
+		});
+		await sleep(800);
+		const nm = await ballsOf(p);
+		A(!nm.some(b => /Voltorb1$/.test(b.script || '')) && nm.some(b => /Voltorb2$/.test(b.script || '')),
+			'[legacy] a Voltorb already fought under the old ambush stays gone; the others are still there', JSON.stringify(nm.filter(b => b.scripted)));
+		await p.evaluate(async () => { await window.__ow.moveToMap('AquaHideout_B1F'); });
+		await sleep(800);
+		const aq = await ballsOf(p);
+		A(aq.some(b => /Electrode2$/.test(b.script || '')), '[legacy] an Electrode that was only junk-picked comes back to be fought', JSON.stringify(aq.filter(b => b.scripted)));
+		await p.close();
+	}
+
 	// ===== 4. key items =====
 	{
 		const p = await open('KANTO', 'RocketHideout_B4F');
