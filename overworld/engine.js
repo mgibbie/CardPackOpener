@@ -107,7 +107,22 @@ function mangle(tilesetName) {
 	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
 	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
-const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(name)}_tiles.png`;
+// A few tilesets have their OWN metatiles but BORROW another tileset's tile
+// graphics and palettes (src/data/tilesets/headers.h). FireRed's gTileset_SilphCo
+// is `.tiles = gTilesetTiles_Condominiums, .palettes = gTilesetPalettes_Condominiums`
+// ("// Shared by SilphCo") — there is no silph_co sheet to export, so silph_co_tiles
+// .png 404'd and Rocket Hideout B1F-B4F, its elevator, the Celadon store elevator,
+// the Five Island warehouse and Silph Co drew a black map under the sprites
+// (production, 2026-10-01). Emerald's Building -> InsideBuilding is the only other
+// such pair, and its sheet was exported under its own name. Graphics only: the
+// metatile JSON keeps the tileset's own name.
+const SHARED_GRAPHICS = { firered: { SilphCo: 'Condominiums' } };
+const gfxName = (name, game) => {
+	const own = String(name || '').replace('gTileset_', '');
+	const to = SHARED_GRAPHICS[game] && SHARED_GRAPHICS[game][own];
+	return to ? 'gTileset_' + to : name;
+};
+const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
 	`${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
 
@@ -125,7 +140,13 @@ async function loadTilesetsFor(layout) {
 			getImage(tilesetPng(name, game)).catch(() => null),
 			getJSON(metatileJson(name, isPrimary, game)).catch(() => null), // some primaries have none
 		]);
-		if (!img) return null;
+		if (!img) {
+			// never silently: a missing sheet draws a black map under the sprites
+			// (S.S. Anne, then Silph Co). Say which file and which layout.
+			const msg = `tilesheet missing: ${tilesetPng(name, game)} (${isPrimary ? 'primary' : 'secondary'} ${name}, layout ${layout.id || layout.name || '?'})`;
+			try { console.error('[tileset] ' + msg); globalThis.reportErr && globalThis.reportErr(msg, 'engine.loadTilesetsFor'); } catch (e) {}
+			return null;
+		}
 		const bandH = img.height / 16;                       // 16 palette bands
 		const tilesPerBand = (bandH / TILE) * (img.width / TILE);
 		return { img, bandH, tilesPerBand, metatiles: meta?.metatiles || null, attributes: meta?.attributes || null };
@@ -151,7 +172,7 @@ async function loadTilesetsFor(layout) {
 // secondary tile drawn with 0..N-1 uses the primary's. Repaint those bands per pair
 // from tools/gen_tile_palettes.py's colour indices.
 const NUM_PALS_IN_PRIMARY = { emerald: 6, firered: 7 }, NUM_PALS_TOTAL = 13;
-const palStem = (name, game) => `${game === 'emerald' ? 'emerald_' : ''}${mangle(name)}`;
+const palStem = (name, game) => `${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}`;   // palettes travel with the graphics
 let palIndex = null;
 function tilePalettes(name, game) {
 	palIndex ||= getJSON(`${DATA}/tilesets/pal_index.json`).then(a => new Set(a)).catch(() => new Set());
