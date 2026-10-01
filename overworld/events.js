@@ -12,20 +12,69 @@ const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
 const DIRS = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
+// THE STORY STORE. It used to be read ONCE at import, and every setFlag/setVar/
+// clearFlag wrote that whole cached object back. A cache older than storage —
+// another tab, storage restored after this module loaded, the hydrate's "adopt
+// the newer server copy, then reload" window — therefore replaced the newer story
+// on its next write, silently and without a revision bump. The next boot saw a
+// same-revision divergence, kept the damaged local copy and published it
+// (instinctloretest0918, 2026-10-01: 21 earned flags gone, Fortree badge through
+// Maxie). Now:
+//   * every write re-reads storage first and applies ITS ONE CHANGE on top of
+//     what is there (a rebase, not a merge: sets and clears both keep meaning);
+//   * a write that changes nothing writes nothing;
+//   * another tab's write refreshes this tab's cache (the `storage` event).
+// See overworld/tests/story_rollback_test.mjs.
+const fresh = () => ({ flags: {}, vars: {} });
+function parse(raw) {
+	if (raw == null) return null;
+	try { const d = JSON.parse(raw); return (d && typeof d === 'object' && d.flags && d.vars) ? d : null; } catch (e) { return null; }
+}
+function readRaw() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
 function load() {
 	const d = safeLoad(KEY, null);
-	return (d && typeof d === 'object') ? d : { flags: {}, vars: {} };
+	if (!d || typeof d !== 'object') return fresh();
+	if (!d.flags || typeof d.flags !== 'object') d.flags = {};
+	if (!d.vars || typeof d.vars !== 'object') d.vars = {};
+	return d;
 }
 let store = load();
-function save() { safeSave(KEY, store); }
+let storeRaw = readRaw();          // the stored text this cache was read from
+export let storyRebases = 0;       // writes that found storage newer than the cache (diagnostics)
+// re-read when storage no longer holds what this cache was built from
+function sync() {
+	const raw = readRaw();
+	if (raw === storeRaw) return;
+	const d = parse(raw);
+	if (raw != null && !d) return;   // unreadable: keep ours rather than adopt garbage
+	store = d || fresh();
+	storeRaw = raw;
+	storyRebases++;
+	try { console.warn('[story] storage was newer than this page\'s cache — rebased'); } catch (e) {}
+}
+// one change, applied to the CURRENT stored story
+function mutate(fn) {
+	sync();
+	const before = JSON.stringify(store);
+	fn(store);
+	const after = JSON.stringify(store);
+	if (after === before) return;    // nothing changed: no write, no revision churn
+	if (safeSave(KEY, store)) storeRaw = readRaw();
+}
+// reload the cache from storage (after a hydrate/import rewrote it in this tab)
+export function reloadStory() { storeRaw = undefined; sync(); }
+if (typeof addEventListener === 'function') {
+	addEventListener('storage', e => { if (e.key === KEY || e.key === null) sync(); });
+}
 
 export function getFlag(f) { return !!store.flags[f]; }
-export function setFlag(f) { store.flags[f] = true; save(); }
-export function clearFlag(f) { delete store.flags[f]; save(); }
+// (each checks the CURRENT stored value first, so a no-op costs no serialising)
+export function setFlag(f) { sync(); if (store.flags[f] === true) return; mutate(s => { s.flags[f] = true; }); }
+export function clearFlag(f) { sync(); if (!(f in store.flags)) return; mutate(s => { delete s.flags[f]; }); }
 export function getVar(v) { return store.vars[v] || 0; }
 export function hasVar(v) { return Object.prototype.hasOwnProperty.call(store.vars, v); }
-export function setVar(v, val) { store.vars[v] = val; save(); }
-export function resetStory() { store = { flags: {}, vars: {} }; save(); }
+export function setVar(v, val) { sync(); if (Object.prototype.hasOwnProperty.call(store.vars, v) && store.vars[v] === val) return; mutate(s => { s.vars[v] = val; }); }
+export function resetStory() { store = fresh(); if (safeSave(KEY, store)) storeRaw = readRaw(); }
 
 // ---------- object visibility ----------
 // Crystal hides an object_event while its event flag is SET, and shows it while
@@ -78,6 +127,7 @@ export function objectHiddenByFlag(ev, _crystal) {
 // mostly HM obstacles, which items.js owns, but the scripts branch on them too.
 export function clearTempFlags() {
 	let n = 0;
+	mutate(store => {   // the same rebase-then-write as every other story change
 	for (const k of Object.keys(store.flags)) if (/^FLAG_TEMP_/.test(k)) { delete store.flags[k]; n++; }
 	// ...and the TEMP VARS. The decomp's ClearTempFieldEventData wipes
 	// VAR_TEMP_0..F on every map load too; this port kept them forever, so a value
@@ -90,7 +140,7 @@ export function clearTempFlags() {
 	// literally (SWITCH1_ID, TRASH_CAN_ID ...), fixed at the source by
 	// tools/fix_script_equ.mjs, whose leftovers would otherwise sit in saves.
 	for (const k of Object.keys(store.vars)) if (/^VAR_TEMP_/.test(k) || !/^VAR_/.test(k)) { delete store.vars[k]; n++; }
-	if (n) save();
+	});
 	return n;
 }
 
