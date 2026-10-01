@@ -298,6 +298,27 @@ export async function claimGifts() {
 	}
 }
 
+// A SAVE REPAIR the owner queued for this account (server repair-send): offered
+// once the screen is free, applied only on the player's Z, through importSave —
+// so it gets validation, the local backup, the stale-baseRev refusal and the
+// read-back like any import. The outcome goes back to the owner (repair-done).
+// X leaves it pending; it asks again next time.
+export async function checkRepair() {
+	if (!MP_ON) return;
+	let r = null;
+	try { r = (await MP.call('repair-get'))?.repair; } catch (e) { return; }
+	if (!r || !r.doc) return;
+	for (let i = 0; i < 600 && (dialog.blocking || S.loading); i++) await new Promise(res => setTimeout(res, 100));
+	const ask = ['Michael sent a save repair:', r.title, r.note || '', 'Apply it now? A backup is kept.', 'Z = Apply    X = Later'].filter(Boolean).join('\n');
+	dialog.open(ask, async k => {
+		if (k === 'x' || k === 'Escape') { hud.textContent = 'Save repair kept for later — it will ask again next time.'; return; }
+		const res = await importSave(r.doc, { source: 'repair', reload: false });
+		try { await MP.call('repair-done', { id: r.id, ok: !!res.ok, stage: res.stage, error: res.error || null, appliedRev: res.appliedRev ?? null }); } catch (e) {}
+		if (res.ok) { dialog.open('Save repair applied. Reloading…'); setTimeout(() => location.reload(), 900); }
+		else dialog.open('The save repair could not be applied:\n' + String(res.error || res.stage).slice(0, 220));
+	});
+}
+
 export async function hydrateOw() {
 	if (!MP_ON) { syncLog('hydrate.skip', { reason: 'MP_ON=false' }); return; }
 	try {
@@ -498,6 +519,7 @@ function finishImport(res, reload) {
 }
 // `input`: an export object, its JSON text, or a validateSave() result.
 // opts.reload (default true): reload after a successful apply.
+const STALE_PLAY_S = 90;   // play time after a repair file was built that makes it stale
 export async function importSave(input, opts = {}) {
 	const source = opts.source || 'api';
 	const reload = opts.reload !== false;
@@ -511,17 +533,24 @@ export async function importSave(input, opts = {}) {
 	if (big) return { ...base, stage: 'validate', error: `The save is ${big.bytes} bytes; the server limit is ${big.limit}. Heaviest keys: ${big.heaviest.map(([k, n]) => k + '=' + n).join(', ')}.`, errors: ['too large'] };
 	_importing = true;
 	const prevRev = owRev();
-	let serverRev = null;
+	let serverRev = null, serverPlay = null;
 	if (MP_ON) {
-		try { const r = await MP.call('ow-load'); serverRev = Math.max(0, parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0); }
+		try { const r = await MP.call('ow-load'); serverRev = Math.max(0, parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0); serverPlay = parseInt(r?.ow?.ow?.magepunk_playtime, 10) || 0; }
 		catch (e) { serverRev = null; }
 	}
 	// A repair file built FROM a particular save (a story restore, a junk cleanup)
 	// carries `baseRev`: the server revision it was made from. If the account has
 	// been played since, the file is stale and would silently undo that play —
 	// refuse, nothing changed, and say what to ask for. (opts.allowStale overrides.)
-	const baseRev = (() => { try { const d = typeof input === 'string' ? JSON.parse(input) : input; return Number.isInteger(d && d.baseRev) ? d.baseRev : null; } catch (e) { return null; } })();
-	if (baseRev != null && serverRev != null && serverRev > baseRev && !opts.allowStale) {
+	// "Played since" means real PLAY, not just a newer revision: simply loading the
+	// game pushes a save (boot writes its defaults), so the revision moves on the
+	// moment the player opens it. With basePlaytime, stale = revision moved AND
+	// more than STALE_PLAY_S of play; without it (older files), the revision alone.
+	const fileMeta = (() => { try { const d = typeof input === 'string' ? JSON.parse(input) : input; return d || {}; } catch (e) { return {}; } })();
+	const baseRev = Number.isInteger(fileMeta.baseRev) ? fileMeta.baseRev : null;
+	const basePlay = Number.isInteger(fileMeta.basePlaytime) ? fileMeta.basePlaytime : null;
+	const playedSince = basePlay == null || serverPlay == null || serverPlay - basePlay > STALE_PLAY_S;
+	if (baseRev != null && serverRev != null && serverRev > baseRev && playedSince && !opts.allowStale) {
 		_importing = false;
 		return finishImport({ ...base, stage: 'stale', fileRev: v.fileRev, baseRev, serverRevBefore: serverRev,
 			error: `This file was made from your save at revision ${baseRev}, but your save has moved on to ${serverRev} since. Importing it would undo that play — nothing was changed. Ask for a fresh file.` }, false);

@@ -99,6 +99,7 @@ const ART_OVERRIDE_MAX = 500_000;   // one re-encoded 768px jpeg as a data URL
 const ART_OVERRIDE_SLOTS = 20;      // bounded: fold into the repo before saving more
 const BUG_TEXT_MAX = 60_000;        // a bug report: up to ~60KB of markdown (testers write long ones)
 const BUG_OPEN_MAX = 60;            // per reporter, open (un-reviewed) reports
+const REPAIR_MAX_BYTES = 600_000;   // one queued save repair (a full save export)
 
 // ---------- lazy GC of ephemeral keys ----------
 // D1 has no TTL, so these per-match / per-session rows would grow forever. A lazy
@@ -1009,6 +1010,45 @@ export default async function handler(req, env) {
 	// is therefore a message the recipient's own client claims and applies: the
 	// server only ever holds the promise of the items, never the inventory.
 	// Owner-only to send; anyone may list/claim their own.
+	// ---------- save repairs (owner -> one player's game, applied by THEIR client) ----------
+	// A repair (a story restore, a junk-item cleanup) is a full save file built from
+	// the player's server copy. It used to reach them as a file sent by hand; now it
+	// is queued here and their game offers it on load ("Michael sent a save repair —
+	// apply?"), applying it through the normal importSave pipeline (validation,
+	// backup, the stale-baseRev refusal, the server's undo slot, read-back). One
+	// pending repair per player; the outcome is recorded for the owner.
+	if (action === 'repair-send') {
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
+		const to = String(body.to || '').trim().toLowerCase();
+		if (!to || !(await store.get(to))) return json({ error: 'no player with that username' }, 404);
+		const doc = body.doc;
+		if (!doc || typeof doc !== 'object' || doc.magic !== 'magepunk-ow-save' || !doc.keys || typeof doc.keys !== 'object') return json({ error: 'doc must be a magepunk-ow-save export' }, 400);
+		if (JSON.stringify(doc).length > REPAIR_MAX_BYTES) return json({ error: 'repair too large' }, 413);
+		const rec = { id: 'r' + Date.now().toString(36), ts: Date.now(), from: username, title: String(body.title || 'Save repair').slice(0, 100),
+			note: String(body.note || '').slice(0, 400), baseRev: Number.isInteger(doc.baseRev) ? doc.baseRev : null, doc, status: 'pending' };
+		await store.setJSON('repair:' + to, rec);
+		return json({ ok: true, id: rec.id });
+	}
+	if (action === 'repair-get') {
+		const r = await store.get('repair:' + username);
+		return json({ repair: r && r.status === 'pending' ? { id: r.id, title: r.title, note: r.note, baseRev: r.baseRev, doc: r.doc } : null });
+	}
+	if (action === 'repair-done') {
+		const r = await store.get('repair:' + username);
+		if (!r || r.id !== String(body.id || '')) return json({ error: 'no such repair' }, 404);
+		r.status = body.ok ? 'applied' : 'failed';
+		r.result = { ok: !!body.ok, stage: String(body.stage || '').slice(0, 40), error: body.error ? String(body.error).slice(0, 300) : null,
+			appliedRev: Number.isInteger(body.appliedRev) ? body.appliedRev : null, at: Date.now() };
+		delete r.doc;   // the outcome is what the owner needs; drop the 60KB payload
+		await store.setJSON('repair:' + username, r);
+		return json({ ok: true, status: r.status });
+	}
+	if (action === 'repair-status') {
+		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
+		const rows = await store.list('repair:');
+		return json({ repairs: rows.map(x => ({ user: x.key.slice(7), id: x.value.id, title: x.value.title, status: x.value.status, ts: x.value.ts, baseRev: x.value.baseRev, result: x.value.result || null })) });
+	}
+
 	if (action === 'gift-send') {
 		if (!isAdmin(username)) return json({ error: 'owner only' }, 403);
 		const to = String(body.to || '').trim().toLowerCase();

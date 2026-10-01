@@ -89,6 +89,16 @@ try {
 	const r2 = await page.evaluate(d => window.__ow.importSave(d, { reload: false }), fresh);
 	A(r2.ok === true && r2.stage === 'done' && DB.ow.magepunk_money === '4242', 'a file built from the CURRENT revision imports and reads back', JSON.stringify({ ok: r2.ok, stage: r2.stage, err: r2.error }));
 
+	// 5. basePlaytime: a newer revision WITHOUT real play (loading the game pushes a
+	//    save) is not stale; the same with 10 minutes of play is
+	DB = { ow: { ...DB.ow, magepunk_ow_rev: '301', magepunk_playtime: '5030' }, updated_at: Date.now() };
+	const timed = { ...doc, baseRev: 300, basePlaytime: 5000, keys: { ...doc.keys, magepunk_ow_rev: '300', magepunk_money: '3030' } };
+	const r5 = await page.evaluate(d => window.__ow.importSave(d, { reload: false }), timed);
+	A(r5.ok === true, 'rev 300 -> 301 with 30 s more playtime (just loading the game): imports', JSON.stringify({ ok: r5.ok, stage: r5.stage, err: r5.error }));
+	DB = { ow: { ...DB.ow, magepunk_ow_rev: '320', magepunk_playtime: '5600' }, updated_at: Date.now() };
+	const r6 = await page.evaluate(d => window.__ow.importSave(d, { reload: false }), timed);
+	A(r6.ok === false && r6.stage === 'stale', 'rev 300 -> 320 with 10 minutes more playtime: stale, refused', JSON.stringify({ ok: r6.ok, stage: r6.stage }));
+
 	// 4. no baseRev: unchanged behaviour
 	DB = { ow: { ...DB.ow, magepunk_ow_rev: '900' }, updated_at: Date.now() };
 	const plain = { ...doc, keys: { ...doc.keys, magepunk_money: '1234' } }; delete plain.baseRev;
