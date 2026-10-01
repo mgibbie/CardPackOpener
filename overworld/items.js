@@ -183,7 +183,14 @@ export class Items {
 					// authored script (an encounter, a gift, a key item); the script's
 					// hide (removeobject) takes it away. Never minted as an item.
 					if (!crystal && o.script && o.script !== '0x0') {
-						this.balls.push({ tx: +o.x, ty: +o.y, scripted: true, ev: o, script: o.script, key: this.keyFor('', o), hidden: false });
+						const key = this.keyFor('', o);
+						// LEGACY: before scripted balls, New Mauville's Voltorbs were a one-off
+						// ambush that recorded a FOUGHT ball in `collected` (not its hide flag).
+						// Those stay gone. Every other scripted ball found in `collected` got
+						// there as a junk pickup (no battle, no item, no flag), so it comes
+						// back to be used properly.
+						if (/EventScript_Voltorb\d+$/.test(o.script) && this.collected.has(key)) continue;
+						this.balls.push({ tx: +o.x, ty: +o.y, scripted: true, ev: o, script: o.script, key, hidden: false });
 					}
 					continue;
 				}
