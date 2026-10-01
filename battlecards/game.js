@@ -75,7 +75,7 @@ let HUMAN = 0;
 const TAU = Math.PI * 2;
 const UP = new THREE.Vector3(0, 1, 0);
 
-// player count comes from ?players=N (2-8); the in-game selector rewrites it
+// player count comes from ?players=N (2-8): a URL setting only (tests, deep links)
 let playerCount = Math.max(2, Math.min(E.MAX_PLAYERS,
 	parseInt(new URLSearchParams(location.search).get('players'), 10) || 2));
 
@@ -1499,32 +1499,142 @@ const logEl = $('log');
 // full match history (for the scrollable log drawer); the inline #log HUD keeps
 // only the last few lines. Bounded so a very long game can't grow without limit.
 const logHistory = [];
-function log(msg) {
+// CARD NAMES in the log are links (Plans/CONTROLLER_V2_PLAN.md D): parallel to
+// logHistory, each line's [{ s, e, id, uid }] — character span, card id, and the
+// uid of a PUBLIC copy when there was one. Clicking one opens the card focus view.
+const logLinks = [];
+// every card name this match can print, mapped to its id and (when one is face-up
+// on the table, in a graveyard/exile, or in YOUR hand) a public uid. A name is
+// only linked where the log already printed it, and a hidden copy's uid is never
+// stored — so a link reveals nothing the line didn't.
+function logNameIndex() {
+	const out = new Map();
+	if (!state) return out;
+	const add = (c, pub) => {
+		if (!c || !c.name || typeof c !== 'object') return;
+		const e = out.get(c.name) || { id: c.id, uid: null };
+		if (pub && e.uid == null && !(c.disguised && c.controller !== HUMAN)) e.uid = c.uid;
+		if (!e.id) e.id = c.id;
+		out.set(c.name, e);
+	};
+	state.players.forEach((p, pi) => {
+		for (const z of ['board', 'lands', 'artifacts', 'enchantments', 'planeswalkers', 'emblems', 'graveyard', 'exile', 'quests', 'heroPowers', 'command'])
+			for (const c of p[z] || []) add(c, true);
+		add(p.weapon, true); add(p.companion, true);
+		for (const c of p.hand || []) add(c, pi === HUMAN);
+		for (const z of ['deck', 'secrets', 'traps']) for (const c of p[z] || []) add(c, false);
+		const hp = classPowerOf(pi); if (hp) add(hp, true);
+	});
+	return out;
+}
+function findLogLinks(msg, refs) {
+	const links = [];
+	if (!msg || !state) return links;
+	const taken = (s0, e0) => links.some(l => s0 < l.e && e0 > l.s);
+	const wordAt = (s0, e0) => !/[\w']/.test(msg[s0 - 1] || ' ') && !/[\w]/.test(msg[e0] || ' ');
+	// explicit refs first (two copies of one name resolve to the right one)
+	for (const r of refs || []) {
+		const name = r && (r.name || cardOf(r.uid)?.name);
+		if (!name) continue;
+		const i = msg.indexOf(name);
+		if (i < 0 || taken(i, i + name.length)) continue;
+		const live = r.uid != null ? cardOf(r.uid) : null;
+		const hidden = live && live.controller !== HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
+		// a dead card's event carries only its name: find its id by name
+		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(state.cardsById).find(d => d && d.name === name)?.id || null;
+		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null) });
+	}
+	// then every other card name the line printed, longest first
+	const idx = logNameIndex();
+	const names = [...idx.keys()].filter(n => n.length >= 3 && msg.includes(n)).sort((a, b) => b.length - a.length);
+	for (const n of names) {
+		let from = 0, i;
+		while ((i = msg.indexOf(n, from)) >= 0) {
+			from = i + n.length;
+			if (!wordAt(i, i + n.length) || taken(i, i + n.length)) continue;
+			const e = idx.get(n);
+			links.push({ s: i, e: i + n.length, id: e.id, uid: e.uid });
+		}
+	}
+	return links.sort((a, b) => a.s - b.s);
+}
+// a log line as DOM: text with its card names as buttons
+function logLineEl(msg, links) {
+	const d = document.createElement('div');
+	if (/^— Turn \d+/.test(msg)) d.className = 'lf-turn';
+	let at = 0;
+	for (const l of links || []) {
+		if (l.s > at) d.appendChild(document.createTextNode(msg.slice(at, l.s)));
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'log-card';
+		b.textContent = msg.slice(l.s, l.e);
+		b.title = 'See this card';
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); openLogCard(l); });
+		d.appendChild(b);
+		at = l.e;
+	}
+	if (at < msg.length) d.appendChild(document.createTextNode(msg.slice(at)));
+	return d;
+}
+// a log link -> the card focus view: the live card while it's still public, else its definition
+function openLogCard(l) {
+	let c = l.uid != null ? cardOf(l.uid) : null;
+	if (c && !canFocusCard(c)) c = null;
+	if (!c && state) {
+		const def = state.cardsById[l.id] || (l.id && Object.values(state.cardsById).find(d => d && d.id === l.id));
+		if (def) c = { ...def, uid: 'preview_' + def.id, zone: 'preview', controller: null, maxHealth: def.health, keywords: def.keywords || [], damage: 0 };
+	}
+	if (c) showCardFocus(c);
+}
+function log(msg, refs) {
+	const links = findLogLinks(msg, refs);
 	logHistory.push(msg);
-	if (logHistory.length > 500) logHistory.shift();
-	const div = document.createElement('div');
-	div.textContent = msg;
+	logLinks.push(links);
+	if (logHistory.length > 500) { logHistory.shift(); logLinks.shift(); }
+	const div = logLineEl(msg, links);
 	logEl.appendChild(div);
 	// the inline feed shows only the freshest few events and each fades out on
-	// its own — the full history stays behind the 📜 Log drawer
-	setTimeout(() => {
+	// its own — the full history stays behind the 📜 Log drawer. A line whose card
+	// name is under the pointer waits, so you can click it.
+	const fade = () => {
+		if (div.querySelector('.log-card:hover')) { setTimeout(fade, 600); return; }
 		div.classList.add('fade');
 		setTimeout(() => div.remove(), 800);
-	}, 4200);
+	};
+	setTimeout(fade, 4200);
 	while (logEl.children.length > 3) logEl.removeChild(logEl.firstChild);
-	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg);
+	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg, links);
 }
 const logFull = $('log-full');
 const logFullBody = logFull && logFull.querySelector('.lf-body');
-function appendLogFullLine(msg) {
-	const d = document.createElement('div'); d.textContent = msg; logFullBody.appendChild(d);
-	logFullBody.scrollTop = logFullBody.scrollHeight;
+function appendLogFullLine(msg, links) {
+	// stay pinned to the newest line unless you've scrolled up to read
+	const atEnd = logFullBody.scrollHeight - logFullBody.scrollTop - logFullBody.clientHeight < 24;
+	logFullBody.appendChild(logLineEl(msg, links));
+	if (atEnd) logFullBody.scrollTop = logFullBody.scrollHeight;
 }
 function renderLogFull() {
 	logFullBody.innerHTML = '';
-	for (const line of logHistory) { const d = document.createElement('div'); d.textContent = line; logFullBody.appendChild(d); }
+	logHistory.forEach((line, i) => logFullBody.appendChild(logLineEl(line, logLinks[i])));
 	logFullBody.scrollTop = logFullBody.scrollHeight;
 }
+// the drawer is a dialog: padnav drives it on a controller (up/down between card
+// names, confirm opens one, cancel closes) and Esc closes it for a keyboard
+function openLogFull() {
+	if (!logFull) return;
+	logFull.classList.add('open');
+	logFull.setAttribute('aria-modal', 'true');
+	renderLogFull();
+}
+function closeLogFull() {
+	if (!logFull) return;
+	logFull.classList.remove('open');
+	logFull.removeAttribute('aria-modal');
+}
+addEventListener('keydown', ev => {
+	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); closeLogFull(); }
+}, true);
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)
 		const b = $('sfx-btn');
@@ -1532,11 +1642,8 @@ if (logFull) {
 		paint();
 		b.addEventListener('click', () => { SFX.setMuted(!SFX.isMuted()); paint(); if (!SFX.isMuted()) SFX.play('click'); });
 	}
-	$('log-btn').addEventListener('click', () => {
-		logFull.classList.toggle('open');
-		if (logFull.classList.contains('open')) renderLogFull();
-	});
-	logFull.querySelector('.lf-close').addEventListener('click', () => logFull.classList.remove('open'));
+	$('log-btn').addEventListener('click', () => { if (logFull.classList.contains('open')) closeLogFull(); else openLogFull(); });
+	logFull.querySelector('.lf-close').addEventListener('click', () => closeLogFull());
 	$('nav-toggle')?.addEventListener('click', () => document.body.classList.toggle('nav-open'));
 }
 
@@ -3276,7 +3383,7 @@ function nextEvent() {
 		case 'play':
 			if (matchStats) statInc(matchStats.cards, ev.player);
 			SFX.play('cardPlay');
-			log(`${nameOf(ev.player)} played ${ev.card.name}`);
+			log(`${nameOf(ev.player)} played ${ev.card.name}`, [ev.card]);
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
@@ -3286,7 +3393,7 @@ function nextEvent() {
 		case 'summon':
 			if (matchStats) statInc(matchStats.summons, ev.player);
 			SFX.play('summon');
-			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
+			log(`${nameOf(ev.player)} summoned ${ev.card.name}`, [ev.card]);
 			delay = 260;
 			break;
 		case 'attack': {
@@ -3366,7 +3473,7 @@ function nextEvent() {
 			const ent = entities.get(ev.uid);
 			SFX.play('death');
 			if (ent) { ent.dying = performance.now(); }
-			if (ev.name) log(`${ev.name} died`);
+			if (ev.name) log(`${ev.name} died`, [{ uid: ev.uid, name: ev.name, id: ev.id }]);
 			delay = 330;
 			break;
 		}
@@ -3392,7 +3499,7 @@ function nextEvent() {
 			delay = 200;
 			break;
 		case 'weaponEquip':
-			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
+			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`, [ev.card]);
 			delay = 320;
 			break;
 		case 'weaponDurability': delay = 60; break;
@@ -4196,6 +4303,21 @@ function showInspect(card) {
 	const box = $('inspect');
 	box.innerHTML = '';
 	box.appendChild(drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card))); // art + rules + stats
+	fillCardDetail(box, card, { close: hideInspect, open: showInspect });
+	box.style.display = 'block';
+	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
+	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
+	// the face is drawn with a procedural fallback until its art image and the mana
+	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
+	if (inspectArtFn) artListeners.delete(inspectArtFn);
+	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
+	artListeners.add(inspectArtFn);
+}
+// everything under a card's face in a reader: keyword/modifier lines, the cards it
+// creates (each opens in the same reader via `open`), its action buttons (each
+// closes the reader via `close` first) and the can't-play-yet hint. Shared by the
+// small inspect panel and the centered card focus view.
+function fillCardDetail(box, card, { close, open }) {
 	const kw = modifierLinesHtml(card) + keywordLinesHtml(card);
 	if (kw) { const d = document.createElement('div'); d.className = 'ins-kw'; d.innerHTML = kw; box.appendChild(d); }
 	// every specific card this one generates (tokens, corrupted forms, equips,
@@ -4214,7 +4336,7 @@ function showInspect(card) {
 			line.style.cursor = 'pointer';
 			line.addEventListener('pointerdown', e => {
 				e.stopPropagation();
-				showInspect({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
+				open({ ...def, uid: 'preview_' + gid, zone: 'preview', controller: card.controller, maxHealth: def.health, keywords: def.keywords || [], damage: 0 });
 			});
 			d.appendChild(line);
 		}
@@ -4231,7 +4353,7 @@ function showInspect(card) {
 		const btn = document.createElement('button');
 		btn.textContent = label;
 		if (cls) btn.className = cls;
-		btn.addEventListener('pointerdown', e => { e.stopPropagation(); hideInspect(); fn(e); });
+		btn.addEventListener('pointerdown', e => { e.stopPropagation(); close(); fn(e); });
 		actions.appendChild(btn);
 	};
 	if (inHand && yourTurn) {
@@ -4269,15 +4391,105 @@ function showInspect(card) {
 			: (() => { try { return whyCantPlay(card); } catch (e) { return 'can’t be played right now'; } })();
 		box.appendChild(hint);
 	}
-	box.style.display = 'block';
-	// the chat yields this corner while a card is being read (see #mp-chat.mc-yield)
-	try { document.getElementById('mp-chat')?.classList.add('mc-yield'); } catch (e) {}
-	// the face is drawn with a procedural fallback until its art image and the mana
-	// font load; repaint in place when they arrive (same as the 3D cards' refreshFace)
-	if (inspectArtFn) artListeners.delete(inspectArtFn);
-	inspectArtFn = id => { if (inspectUid === card.uid && (id === '*' || id === card.id)) renderInspectFace(card); };
-	artListeners.add(inspectArtFn);
 }
+
+// ---------- the card FOCUS view (Plans/CONTROLLER_V2_PLAN.md C) ----------
+// A centered, large reader with the board dimmed behind it. Opened by right-click
+// or press-and-hold (mouse / touch), the controller's inspect button, a log name,
+// or confirm on a card you can't act on. ◄ ► (arrow keys, LB/RB) step through the
+// cards beside it (your hand, a board row); Esc / cancel / the backdrop close it.
+// Hidden information never opens: an enemy's hand, a face-down enemy card.
+let focusCard = null, focusArtFn = null, focusOnClose = null;
+const cardFocusOpen = () => !!focusCard;
+function focusSiblings(card) {
+	if (!state || !card || card.zone === 'preview') return [card];
+	const p = state.players[card.controller];
+	if (!p) return [card];
+	const z = card.zone;
+	const list = z === 'hand' ? p.hand : z === 'board' ? p.board : z === 'land' ? p.lands : z === 'artifact' ? p.artifacts : z === 'enchantment' ? p.enchantments : [card];
+	const ok = list.filter(c => c && !(c.disguised && c.controller !== HUMAN));
+	return ok.includes(card) ? ok : [card];
+}
+function canFocusCard(card) {
+	if (!card) return false;
+	if (card.disguised && card.controller !== HUMAN) return false;
+	if (card.controller != null && card.controller !== HUMAN && (card.zone === 'hand' || card.zone === 'deck' || card.zone === 'trap')) return false;
+	return true;
+}
+function showCardFocus(card, opts = {}) {
+	if (!canFocusCard(card)) return false;
+	hideInspect();
+	$('tooltip').style.display = 'none';
+	if ('onClose' in opts) focusOnClose = opts.onClose;
+	focusCard = card;
+	let root = $('card-focus');
+	if (!root) {
+		root = document.createElement('div');
+		root.id = 'card-focus';
+		root.setAttribute('role', 'dialog');
+		root.setAttribute('aria-modal', 'true');
+		root.innerHTML = '<div class="cf-backdrop"></div><div class="cf-panel"></div>';
+		root.querySelector('.cf-backdrop').addEventListener('pointerdown', e => { e.stopPropagation(); hideCardFocus(); });
+		root.querySelector('.cf-panel').addEventListener('pointerdown', e => e.stopPropagation());
+		document.body.appendChild(root);
+	}
+	const panel = root.querySelector('.cf-panel');
+	panel.innerHTML = '';
+	const sib = focusSiblings(card), at = sib.indexOf(card);
+	const nav = document.createElement('div');
+	nav.className = 'cf-nav';
+	const btn = (txt, title, fn, cls) => {
+		const b = document.createElement('button');
+		b.textContent = txt; b.title = title; if (cls) b.className = cls;
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); fn(); });
+		return b;
+	};
+	const label = document.createElement('span');
+	label.className = 'cf-count';
+	label.textContent = sib.length > 1 ? `${at + 1} / ${sib.length}` : '';
+	if (sib.length > 1) nav.append(btn('◄', 'Previous card', () => stepCardFocus(-1), 'cf-prev'), label, btn('►', 'Next card', () => stepCardFocus(1), 'cf-next'));
+	else nav.append(label);
+	nav.append(btn('✕', 'Close', hideCardFocus, 'cf-close'));
+	panel.appendChild(nav);
+	const face = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+	face.className = 'cf-face';
+	panel.appendChild(face);
+	fillCardDetail(panel, card, { close: hideCardFocus, open: c => showCardFocus(c) });
+	root.style.display = 'block';
+	if (focusArtFn) artListeners.delete(focusArtFn);
+	focusArtFn = id => {
+		if (focusCard !== card || !(id === '*' || id === card.id)) return;
+		const fresh = drawCardFace({ ...card, health: card.maxHealth }, inspectFaceOpts(card));
+		fresh.className = 'cf-face';
+		const old = panel.querySelector('canvas.cf-face');
+		if (old) panel.replaceChild(fresh, old);
+	};
+	artListeners.add(focusArtFn);
+	return true;
+}
+function hideCardFocus() {
+	if (!focusCard) return;
+	const card = focusCard, cb = focusOnClose;
+	focusCard = null; focusOnClose = null;
+	if (focusArtFn) { artListeners.delete(focusArtFn); focusArtFn = null; }
+	const root = $('card-focus');
+	if (root) root.style.display = 'none';
+	if (cb) cb(card);
+}
+function stepCardFocus(d) {
+	if (!focusCard) return;
+	const sib = focusSiblings(focusCard);
+	if (sib.length < 2) return;
+	const i = sib.indexOf(focusCard);
+	showCardFocus(sib[(i + d + sib.length) % sib.length]);
+}
+// capture phase, so Esc closes the reader before the board's Esc (clearModes) runs
+addEventListener('keydown', ev => {
+	if (!focusCard) return;
+	if (ev.key === 'Escape') { ev.stopPropagation(); ev.preventDefault(); hideCardFocus(); }
+	else if (ev.key === 'ArrowLeft') { ev.stopPropagation(); stepCardFocus(-1); }
+	else if (ev.key === 'ArrowRight') { ev.stopPropagation(); stepCardFocus(1); }
+}, true);
 // resolve a Choose-One from the inspect panel (mirrors openChoiceMenu's per-branch logic)
 function playChoiceFromInspect(card, i) {
 	if (!E.canPlay(state, HUMAN, card)) return;
@@ -4423,7 +4635,15 @@ function openWalkerMenu(card, ev) {
 	menu.style.top = `${Math.min(ev.clientY, innerHeight - 140)}px`;
 }
 
-addEventListener('contextmenu', ev => { ev.preventDefault(); clearModes(); });
+addEventListener('contextmenu', ev => {
+	ev.preventDefault();
+	if (pending || selectedAttacker || placing) { clearModes(); return; }
+	// right-click a card: the card focus view (Plans/CONTROLLER_V2_PLAN.md C)
+	if (ev.target !== renderer.domElement || !state) return;
+	const uid = pick(ev) ?? hoverUid;
+	const c = cardOf(uid) || (uid === 'heropanel' && heroPanelOrbHit(pickHeroPanelUV(ev)) ? classPowerOf(HUMAN) : null);
+	if (c) showCardFocus(c);
+});
 
 renderer.domElement.addEventListener('pointerdown', ev => {
 	hideWalkerMenu();
@@ -4748,7 +4968,7 @@ function startLongPress(uid, x, y) {
 			// a held card/power is previewed, never triggered — release is suppressed below
 			$('tooltip').style.display = 'none';
 			hideInspect();
-			showInspect(c);
+			if (!showCardFocus(c)) showInspect(c);
 		} else {
 			hoverUid = uid;
 			updateTooltip({ clientX: x, clientY: y });
@@ -4994,13 +5214,6 @@ $('concede').addEventListener('click', () => {
 	}));
 	el.appendChild(overlayButton(ffa ? 'Keep playing' : 'Keep fighting', () => hideDungeonOverlay()));
 });
-$('player-count').addEventListener('change', ev => {
-	playerCount = Math.max(2, Math.min(E.MAX_PLAYERS, parseInt(ev.target.value, 10) || 2));
-	const url = new URL(location.href);
-	url.searchParams.set('players', playerCount);
-	history.replaceState(null, '', url);
-	start();
-});
 
 addEventListener('keydown', ev => { if (ev.key === 'Escape') clearModes(); wake(); });
 // mobile browsers fire resize in bursts (rotation, keyboard, URL-bar); each
@@ -5190,6 +5403,9 @@ animate();
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
+	logForTest: (msg, refs) => log(msg, refs),
+	get logLinks() { return logLinks.map(a => a.map(l => ({ ...l }))); }, get logLines() { return logHistory.slice(); }, openLogFull, closeLogFull,
+	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
 	get boardVanishLog() { return boardVanishLog; },
 	get state() { return state; },
 	get HUMAN() { return HUMAN; }, // spectate smoke: the view-switch flips this
@@ -5266,12 +5482,22 @@ initPadboard({
 	foePanels: () => [...foePanelEls.entries()],
 	get pending() { return pending; }, get attacker() { return selectedAttacker; },
 	clearModes, commitPending, panelClick, releasePlay, toggleInspect, hideInspect,
+	// the card focus view: onClose hands focus back to the board on the card you read
+	openCardFocus: (card, onClose) => showCardFocus(card, { onClose }), cardFocusOpen, hideCardFocus,
+	heroPowerCard: () => classPowerOf(HUMAN),
+	// opened from the pad: start the selector on the newest card name
+	openLog: () => {
+		openLogFull();
+		requestAnimationFrame(() => {
+			const last = [...(logFullBody?.querySelectorAll('.log-card') || [])].pop();
+			if (last && window.__padnav) window.__padnav.focusTo(last);
+		});
+	},
 	canvas: renderer.domElement,
 	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
 	setMouse: (x, y) => { mouseX = x; mouseY = y; },
 	setPlacing: card => { placing = card ? { card, dragging: true } : null; if (!card) placeMarker.visible = false; },
 	boardScreenXs, banner, whyCantPlay,
-	endTurnButton: () => $('end-turn'),
 });
 
 let classRegistry = [];
@@ -5416,8 +5642,6 @@ function startSpectate(cardsById) {
 	$('end-turn').style.display = 'none';
 	$('concede').style.display = 'none';
 	$('coin-btn').style.display = 'none';
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
@@ -5584,8 +5808,6 @@ async function startDuel(cardsById) {
 	duel.size = data.cardmatch.size || 2;
 	duel.seat = data.seat ?? (data.role === 'host' ? 0 : 1); // my seat index (FFA: 0..N-1)
 	startDebugOverlay();
-	$('player-count').style.display = 'none';
-	$('class-select').style.display = 'none';
 	$('concede').style.display = 'none';
 	if (duel.role === 'host') startDuelHost(cardsById);
 	else startDuelGuest(cardsById);
@@ -6375,10 +6597,10 @@ async function start() {
 	clearModes();
 	Chat.clear(); // fresh game → fresh chat log (no-op if chat isn't mounted)
 	$('restart').style.display = 'none';
-	$('player-count').value = String(playerCount);
 	logEl.innerHTML = '';
 	logHistory.length = 0; // fresh match → fresh log history
-	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
+	logLinks.length = 0;
+	if (logFull) { closeLogFull(); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
 	const data = await loadCardsData();
@@ -6390,20 +6612,9 @@ async function start() {
 	if (spectateMode) { startSpectate(cardsById); return; }
 	if (!classRegistry.length) {
 		try {
+			// your class comes from your deck (the deck builder writes magepunk_class_v1);
+			// the in-match class / player-count test bar is gone (owner, 2026-10-01)
 			classRegistry = (await (await fetch('classes.json')).json()).classes;
-			const sel = $('class-select');
-			sel.innerHTML = '<option value="">No class</option>';
-			for (const c of classRegistry) {
-				const opt = document.createElement('option');
-				opt.value = c.id;
-				opt.textContent = c.name + (c.power ? '' : ' (no power yet)');
-				sel.appendChild(opt);
-			}
-			sel.value = localStorage.getItem('magepunk_class_v1') || '';
-			sel.addEventListener('change', ev => {
-				localStorage.setItem('magepunk_class_v1', ev.target.value);
-				start();
-			});
 		} catch (e) { classRegistry = []; }
 	}
 	if (asyncGame.on) { await startAsync(cardsById); return; }

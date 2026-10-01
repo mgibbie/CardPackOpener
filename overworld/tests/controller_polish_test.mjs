@@ -144,7 +144,7 @@ try {
 		await t.tap(15);   // first press shows focus (and the hints)
 		await sleep(200);
 		const hb = await t.page.evaluate(() => { const e = document.getElementById('padboard-hints'); return e ? { show: getComputedStyle(e).display, text: e.textContent } : null; });
-		A(hb && hb.show === 'block' && /\[A\] play \/ attack/.test(hb.text) && /hold \[\+\] end turn/.test(hb.text), 'the board hint bar names this pad\'s buttons', JSON.stringify(hb));
+		A(hb && hb.show === 'block' && /\[A\] play \/ attack/.test(hb.text) && /\[\+\] menu/.test(hb.text), 'the board hint bar names this pad\'s buttons', JSON.stringify(hb));
 		A(await t.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'at 1280×800 the match has no horizontal overflow');
 		A(t.errors.length === 0, 'no uncaught page error in the match', JSON.stringify(t.errors.slice(0, 2)));
 		await t.ctx.close();

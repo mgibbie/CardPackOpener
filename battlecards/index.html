@@ -54,11 +54,6 @@
 		.panel.foe-sm .sub { font-size: 11.5px; }
 		.panel.foe-sm .gear { font-size: 11.5px; }
 
-		#player-count {
-			background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 6px; padding: 2px 6px; margin-left: 12px; pointer-events: auto;
-		}
-
 		/* hover rules tooltip */
 		#tooltip {
 			position: fixed; display: none; z-index: 9; width: 264px; pointer-events: none;
@@ -93,6 +88,39 @@
 		}
 		#inspect .ins-actions button:hover { background: #4c3d78; }
 		#inspect .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
+
+		/* the card FOCUS view: a centered, large reader with the board dimmed behind it
+		   (right-click / hold a card, the controller's inspect button, a log name) */
+		#card-focus { position: fixed; inset: 0; z-index: 9050; display: none; }
+		#card-focus .cf-backdrop { position: absolute; inset: 0; background: rgba(6,4,12,0.74); }
+		#card-focus .cf-panel {
+			position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+			width: min(400px, 92vw); max-height: 94vh; overflow-y: auto; box-sizing: border-box;
+			background: rgba(18,12,30,0.97); border: 1px solid #8f6fff; border-radius: 16px;
+			padding: 12px 14px 14px; box-shadow: 0 16px 60px rgba(0,0,0,0.8);
+		}
+		#card-focus .cf-face { width: 100%; height: auto; display: block; border-radius: 12px; }
+		#card-focus .cf-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+		#card-focus .cf-nav button {
+			background: #3a2e5c; color: #e8e2f4; border: 1px solid #5a4a8a; border-radius: 8px;
+			font-size: 15px; padding: 5px 12px; cursor: pointer;
+		}
+		#card-focus .cf-nav button:hover { background: #4c3d78; }
+		#card-focus .cf-nav .cf-close { margin-left: auto; }
+		#card-focus .cf-count { color: #9a8fc0; font-size: 12px; min-width: 44px; text-align: center; }
+		#card-focus .ins-kw { margin-top: 10px; font-size: 13px; line-height: 1.4; color: #d8d0ee; }
+		#card-focus .ins-kw .tt-kw { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.12); }
+		#card-focus .ins-kw .tt-kw b { color: #9fd0ff; }
+		#card-focus .ins-hint { margin-top: 10px; font-size: 12.5px; color: #9a8fc0; }
+		#card-focus .ins-hint.no { color: #d98a8a; }
+		#card-focus .ins-actions { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+		#card-focus .ins-actions button {
+			width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer;
+			background: #3a2e5c; color: #e8e2f4; border: 1px solid #5a4a8a; font-size: 14px;
+		}
+		#card-focus .ins-actions button:hover { background: #4c3d78; }
+		#card-focus .ins-actions button.trade { background: #2f4a5c; border-color: #4a7a8a; }
+		@media (max-height: 560px) { #card-focus .cf-panel { width: min(300px, 92vw); } }
 
 		/* scry / gaze decision modal */
 		/* z-index was 11, which put a BLOCKING decision below almost every other
@@ -260,6 +288,13 @@
 		   (the full history lives behind the 📜 Log drawer) */
 		#log div { transition: opacity 0.7s ease; }
 		#log div.fade { opacity: 0; }
+		/* card names in the log are links to the card (both the feed and the drawer) */
+		.log-card {
+			pointer-events: auto; cursor: pointer; font: inherit; color: #ffd27a; background: none;
+			border: none; border-bottom: 1px dotted rgba(255,210,122,0.55); padding: 0; margin: 0;
+			text-shadow: inherit; line-height: inherit;
+		}
+		.log-card:hover { color: #fff1c9; border-bottom-style: solid; }
 
 		/* during a match the site nav + game-setup dropdowns tuck behind ☰ —
 		   they're pre-game controls and a misclick risk mid-game */
@@ -270,9 +305,8 @@
 		}
 		#nav-toggle:hover { color: #cfc6e6; border-color: #6a5f8a; }
 		body.in-match #nav-toggle { display: inline-block; }
-		body.in-match #title a:not(.brand), body.in-match #title select { display: none; }
+		body.in-match #title a:not(.brand) { display: none; }
 		body.in-match.nav-open #title a:not(.brand) { display: inline; }
-		body.in-match.nav-open #title select { display: inline-block; }
 		/* narrow screens: the brand text would push ☰ under the topbar's
 		   gear/bell cluster — show just the ☰ */
 		@media (max-width: 640px) {
@@ -344,7 +378,7 @@
 		#sfx-btn:hover { opacity: 1; }
 		#sfx-btn.muted { opacity: 0.5; }
 		#log-full {
-			position: fixed; right: 12px; top: 132px; width: 300px; max-height: 56vh; z-index: 60;
+			position: fixed; right: 12px; top: 132px; width: min(380px, 94vw); max-height: 70vh; z-index: 60;
 			display: none; flex-direction: column;
 			background: rgba(20,15,34,0.95); border: 1px solid #5a4a80; border-radius: 10px;
 			box-shadow: 0 14px 44px rgba(0,0,0,0.6); overflow: hidden;
@@ -352,7 +386,9 @@
 		#log-full.open { display: flex; }
 		#log-full .lf-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #3a2f57; color: #e8e2f4; font-weight: 700; font-size: 13px; }
 		#log-full .lf-close { background: none; border: none; color: #cbb8e8; font-size: 16px; line-height: 1; cursor: pointer; }
-		#log-full .lf-body { overflow-y: auto; padding: 8px 12px; font-size: 12.5px; line-height: 1.5; color: #b9b0d4; }
+		#log-full .lf-body { overflow-y: auto; padding: 8px 12px; font-size: 13.5px; line-height: 1.55; color: #c3bbdc; }
+		#log-full .lf-body .lf-turn { margin: 10px 0 3px; padding-top: 6px; border-top: 1px solid #3a2f57; color: #c9b8ff; font-weight: 700; font-size: 12px; letter-spacing: .4px; }
+		#log-full .lf-body .lf-turn:first-child { margin-top: 0; border-top: none; padding-top: 0; }
 		#log-full .lf-body div { padding: 1px 0; }
 		#log-full .lf-body div:nth-child(even) { color: #a89ec8; }
 
@@ -363,7 +399,6 @@
 			/* the compact top bar covers navigation on mobile — keep just the
 			   wordmark (which links to the mode picker) so the top isn't cramped */
 			#title a:not(:first-of-type) { display: none; }
-			#class-select, #player-count { font-size: 11px; margin-left: 6px !important; }
 			.panel { left: 8px; width: 148px; padding: 7px 10px; }
 			.panel .life { font-size: 24px; }
 			.panel .sub, .panel .gear { font-size: 11px; }
@@ -446,16 +481,6 @@
 <body>
 	<div id="scene"></div>
 	<div id="title" class="hud"><a class="brand" href="start.html" title="Choose a mode">MAGEPUNK BATTLECARDS</a><button id="nav-toggle" title="Menu">☰</button> <a href="start.html">modes</a> <a href="packs.html">packs</a> <a href="deck.html">deck builder</a> <a href="viewer.html">gallery</a> <a href="../overworld/">play the RPG</a>
-		<select id="class-select" title="your class" style="background:#241b38;color:#e8e2f4;border:1px solid #4a3f6b;border-radius:6px;padding:2px 6px;margin-left:12px;pointer-events:auto"></select>
-		<select id="player-count" title="players">
-			<option value="2">2 players</option>
-			<option value="3">3 players</option>
-			<option value="4">4 players</option>
-			<option value="5">5 players</option>
-			<option value="6">6 players</option>
-			<option value="7">7 players</option>
-			<option value="8">8 players</option>
-		</select>
 	</div>
 
 	<div id="foe-panels"></div>
