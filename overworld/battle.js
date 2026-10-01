@@ -984,6 +984,18 @@ export class Battle {
 		return (mon === a.me || mon === a.meAlly || a.party.includes(mon)) ? 'player' : 'foe';
 	}
 
+	// a combatant's name as a battle message opens with it: the foe side reads
+	// "Wild TAILLOW" / "Foe TAILLOW" as in Gen 3, so in a double (or against a
+	// species you also own) every line says whose turn it was. A playtest read
+	// "TAILLOW used Growl!" in a WHISMUR fight as a stale name — it was the
+	// second wild foe of a double, which the line never said.
+	label(mon) {
+		if (!mon) return '';
+		const a = this.active;
+		if (!a || this.ownerOf(mon) !== 'foe') return mon.name;
+		return (a.isTrainer ? 'Foe ' : 'Wild ') + mon.name;
+	}
+
 	get blocking() { return this.active != null || !!this._starting; }
 
 	pushMsg(text, fn) { this.active.queue.push({ text, fn }); }
@@ -1296,7 +1308,7 @@ export class Battle {
 		if ((fx.berryHeal || fx.berryHealFrac) && mon.curHP <= mon.maxHP / 2) {
 			const ripe = this.abilityOf(mon) === 'ripen' ? 2 : 1;   // was inert: 3 species
 			const amt = (fx.berryHeal || Math.floor(mon.maxHP * fx.berryHealFrac)) * ripe;
-			this.pushMsg(`${mon.name} ate its ${this.itemName(mon)}!`, () => {
+			this.pushMsg(`${this.label(mon)} ate its ${this.itemName(mon)}!`, () => {
 				mon.curHP = Math.min(mon.maxHP, mon.curHP + amt);
 				this.float(side, `+${amt}`, '#6be08a');
 				if (this.abilityOf(mon) === 'cheekpouch') {
@@ -1312,10 +1324,10 @@ export class Battle {
 			const stat = stats[Math.floor(Math.random() * stats.length)];
 			const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
 			const boosts = this.boostsOf(mon);
-			this.pushMsg(`${mon.name} ate its ${this.itemName(mon)}!`, () => {
+			this.pushMsg(`${this.label(mon)} ate its ${this.itemName(mon)}!`, () => {
 				boosts[stat] = Math.min(6, (boosts[stat] || 0) + fx.starfBoost);
 			});
-			this.pushMsg(`${mon.name}'s ${words[stat]} rose sharply!`);
+			this.pushMsg(`${this.label(mon)}'s ${words[stat]} rose sharply!`);
 			this.consumeItem(mon);
 		}
 		// LEPPA BERRY: restores PP to a move that has run dry. Held-item berries fire
@@ -1324,7 +1336,7 @@ export class Battle {
 			const dry = (mon.moves || []).find(mv => mv.pp <= 0);
 			if (dry) {
 				const ripe = this.abilityOf(mon) === 'ripen' ? 2 : 1;
-				this.pushMsg(`${mon.name}'s ${this.itemName(mon)} restored ${dry.name}'s PP!`, () => {
+				this.pushMsg(`${this.label(mon)}'s ${this.itemName(mon)} restored ${dry.name}'s PP!`, () => {
 					dry.pp = Math.min(dry.maxPp, dry.pp + fx.ppRestore * ripe);
 				});
 				this.consumeItem(mon);
@@ -1335,7 +1347,7 @@ export class Battle {
 				|| (fx.cure === 'confusion' && mon.confuseTurns > 0)
 				|| fx.cure === mon.status;
 			if (cures) {
-				this.pushMsg(`${mon.name}'s ${this.itemName(mon)} cured it!`, () => {
+				this.pushMsg(`${this.label(mon)}'s ${this.itemName(mon)} cured it!`, () => {
 					if (fx.cure === 'any' || fx.cure === mon.status) { mon.status = null; delete mon.badPsn; }
 					if (fx.cure === 'any' || fx.cure === 'confusion') delete mon.confuseTurns;
 				});
@@ -1423,27 +1435,27 @@ export class Battle {
 		const otherBoosts = side === 'me' ? a.foeBoosts : a.meBoosts;
 		if (ab === 'intimidate' && other.curHP > 0) {
 			if (other.subHP > 0 || !this.canLowerStat(other, 'atk')) {
-				this.pushMsg(`${mon.name}'s Intimidate failed to cow ${other.name}!`);
+				this.pushMsg(`${this.label(mon)}'s Intimidate failed to cow ${other.name}!`);
 			} else {
 				otherBoosts.atk = Math.max(-6, (otherBoosts.atk || 0) - 1);
-				this.pushMsg(`${mon.name}'s Intimidate cut ${other.name}'s Attack!`);
+				this.pushMsg(`${this.label(mon)}'s Intimidate cut ${other.name}'s Attack!`);
 			}
 		}
 		const weatherAb = { drizzle: 'rain', drought: 'sun', sandstream: 'sand', snowwarning: 'hail' }[ab];
 		if (weatherAb && a.weather?.kind !== weatherAb) {
 			a.weather = { kind: weatherAb, turns: 8 };
-			this.pushMsg(`${mon.name}'s ${this.abilityName(ab)} kicked up the weather!`);
+			this.pushMsg(`${this.label(mon)}'s ${this.abilityName(ab)} kicked up the weather!`);
 		}
 		if (ab === 'download' && other.curHP > 0) {
 			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
 			const key = other.stats.def < other.stats.spd ? 'atk' : 'spa';
 			boosts[key] = Math.min(6, (boosts[key] || 0) + 1);
-			this.pushMsg(`${mon.name}'s Download raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
+			this.pushMsg(`${this.label(mon)}'s Download raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
 		}
 		if (ab === 'trace' && other.ability) {
 			this.snapAbility(mon);
 			mon.ability = other.ability;
-			this.pushMsg(`${mon.name} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
+			this.pushMsg(`${this.label(mon)} traced ${other.name}'s ${this.abilityName(other.ability)}!`);
 		}
 		// PROTOSYNTHESIS / QUARK DRIVE: the paradox pair. Each boosts its own best
 		// stat while its field condition holds.
@@ -1453,11 +1465,11 @@ export class Battle {
 			const best = ['atk', 'def', 'spa', 'spd', 'spe']
 				.reduce((b, k) => (mon.stats[k] || 0) > (mon.stats[b] || 0) ? k : b, 'atk');
 			boosts[best] = Math.min(6, (boosts[best] || 0) + 1);
-			this.pushMsg(`${mon.name}'s ${this.abilityName(ab)} boosted its ${best.toUpperCase()}!`);
+			this.pushMsg(`${this.label(mon)}'s ${this.abilityName(ab)} boosted its ${best.toUpperCase()}!`);
 		}
 		// NEUTRALIZING GAS switches every OTHER ability off while it is on the field
 		if (ab === 'neutralizinggas') {
-			this.pushMsg(`${mon.name} released NEUTRALIZING GAS — abilities were suppressed!`);
+			this.pushMsg(`${this.label(mon)} released NEUTRALIZING GAS — abilities were suppressed!`);
 			for (const m of this.actorMons()) if (m !== mon) m.abilitySuppressed = true;
 		}
 		// POWER OF ALCHEMY / RECEIVER inherit a fallen ally's ability
@@ -1466,7 +1478,7 @@ export class Battle {
 			if (ally && ally.curHP <= 0 && ally.ability) {
 				this.snapAbility(mon);
 				mon.ability = ally.ability;
-				this.pushMsg(`${mon.name} inherited ${this.abilityName(ally.ability)}!`);
+				this.pushMsg(`${this.label(mon)} inherited ${this.abilityName(ally.ability)}!`);
 			}
 		}
 		// doubles pick-me-ups that only ever help the partner
@@ -1476,17 +1488,17 @@ export class Battle {
 				if (ab === 'hospitality') {
 					const heal = Math.max(1, Math.floor(ally.maxHP / 4));
 					ally.curHP = Math.min(ally.maxHP, ally.curHP + heal);
-					this.pushMsg(`${mon.name} showered ${ally.name} with HOSPITALITY!`);
+					this.pushMsg(`${this.label(mon)} showered ${ally.name} with HOSPITALITY!`);
 				}
 				if (ab === 'curiousmedicine') {
 					const ab2 = this.boostsOf(ally);
 					for (const k of Object.keys(ab2)) ab2[k] = 0;
-					this.pushMsg(`${mon.name}'s CURIOUS MEDICINE reset ${ally.name}'s stats!`);
+					this.pushMsg(`${this.label(mon)}'s CURIOUS MEDICINE reset ${ally.name}'s stats!`);
 				}
 				if (ab === 'costar') {
 					const mine = this.boostsOf(mon), theirs = this.boostsOf(ally);
 					for (const k of Object.keys(theirs)) mine[k] = theirs[k];
-					this.pushMsg(`${mon.name} copied ${ally.name}'s stat changes!`);
+					this.pushMsg(`${this.label(mon)} copied ${ally.name}'s stat changes!`);
 				}
 			}
 		}
@@ -1494,64 +1506,64 @@ export class Battle {
 		if (ab === 'supersweetsyrup' && other.curHP > 0 && !mon._syrupUsed) {
 			mon._syrupUsed = true;
 			otherBoosts.eva = Math.max(-6, (otherBoosts.eva || 0) - 1);
-			this.pushMsg(`${mon.name} coated the field in SUPERSWEET SYRUP!`);
+			this.pushMsg(`${this.label(mon)} coated the field in SUPERSWEET SYRUP!`);
 		}
 		// MIMICRY takes the terrain's type
 		if (ab === 'mimicry' && a.terrain?.kind) {
 			const T = { electric: 'Electric', grassy: 'Grass', misty: 'Fairy', psychic: 'Psychic' }[a.terrain.kind];
-			if (T) { this.snapTypes(mon); mon.types = [T]; this.pushMsg(`${mon.name}'s MIMICRY made it ${T}-type!`); }
+			if (T) { this.snapTypes(mon); mon.types = [T]; this.pushMsg(`${this.label(mon)}'s MIMICRY made it ${T}-type!`); }
 		}
 		// scouting abilities — all three were inert (frisk 33 species, forewarn 8,
 		// anticipation 17). They only ever tell you something, which is exactly
 		// what makes them safe to add and useful to a player reading the log.
 		if (ab === 'frisk' && other.curHP > 0 && other.heldItem) {
-			this.pushMsg(`${mon.name} frisked ${other.name} and found its ${this.itemName(other)}!`);
+			this.pushMsg(`${this.label(mon)} frisked ${other.name} and found its ${this.itemName(other)}!`);
 		}
 		if (ab === 'forewarn' && other.curHP > 0) {
 			const best = (other.moves || []).reduce((b, m) =>
 				((this.data.moves[m.id]?.power || 0) > (this.data.moves[b?.id]?.power || 0) ? m : b), null);
-			if (best) this.pushMsg(`${mon.name}'s FOREWARN sensed ${other.name}'s ${best.name}!`);
+			if (best) this.pushMsg(`${this.label(mon)}'s FOREWARN sensed ${other.name}'s ${best.name}!`);
 		}
 		if (ab === 'anticipation' && other.curHP > 0) {
 			const scary = (other.moves || []).some(m => {
 				const mv = this.data.moves[m.id] || {};
 				return mv.power && effectiveness(mv.type, mon.types) > 1;
 			});
-			if (scary) this.pushMsg(`${mon.name} shuddered with ANTICIPATION!`);
+			if (scary) this.pushMsg(`${this.label(mon)} shuddered with ANTICIPATION!`);
 		}
 		if (ab === 'intrepidsword') {
 			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
 			boosts.atk = Math.min(6, (boosts.atk || 0) + 1);
-			this.pushMsg(`${mon.name}'s Intrepid Sword raised its Attack!`);
+			this.pushMsg(`${this.label(mon)}'s Intrepid Sword raised its Attack!`);
 		}
 		if (ab === 'dauntlessshield') {
 			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
 			boosts.def = Math.min(6, (boosts.def || 0) + 1);
-			this.pushMsg(`${mon.name}'s Dauntless Shield raised its Defense!`);
+			this.pushMsg(`${this.label(mon)}'s Dauntless Shield raised its Defense!`);
 		}
 		const surge = { electricsurge: 'electric', grassysurge: 'grassy', mistysurge: 'misty', psychicsurge: 'psychic' }[ab];
 		if (surge && a.terrain?.kind !== surge) {
 			a.terrain = { kind: surge, turns: 8 };
-			this.pushMsg(`${mon.name}'s ${this.abilityName(ab)} charged the field!`);
+			this.pushMsg(`${this.label(mon)}'s ${this.abilityName(ab)} charged the field!`);
 		}
 		if (ab === 'screencleaner') {
 			a.meScreens = { reflect: 0, light: 0 };
 			a.foeScreens = { reflect: 0, light: 0 };
-			this.pushMsg(`${mon.name}'s Screen Cleaner swept the screens away!`);
+			this.pushMsg(`${this.label(mon)}'s Screen Cleaner swept the screens away!`);
 		}
 		if (ab === 'slowstart') {
 			mon.slowStartT = 5;
-			this.pushMsg(`${mon.name} can't get it going!`);
+			this.pushMsg(`${this.label(mon)} can't get it going!`);
 		}
-		if (ab === 'pressure') this.pushMsg(`${mon.name} is exerting its Pressure!`);
-		if (ab === 'unnerve') this.pushMsg(`${mon.name}'s Unnerve makes the foe nervous!`);
+		if (ab === 'pressure') this.pushMsg(`${this.label(mon)} is exerting its Pressure!`);
+		if (ab === 'unnerve') this.pushMsg(`${this.label(mon)}'s Unnerve makes the foe nervous!`);
 		if (ab === 'imposter' && other.curHP > 0) {
 			this.snapStats(mon); this.snapTypes(mon);
 			mon.stats = { ...other.stats, hp: mon.stats.hp };
 			mon.types = [...other.types];
 			mon.transformedMoves = mon.transformedMoves || mon.moves;
 			mon.moves = other.moves.map(m2 => ({ id: m2.id, name: m2.name, pp: 5, maxPp: 5 }));
-			this.pushMsg(`${mon.name}'s Imposter transformed it into ${other.name}!`);
+			this.pushMsg(`${this.label(mon)}'s Imposter transformed it into ${other.name}!`);
 		}
 	}
 
@@ -1593,13 +1605,13 @@ export class Battle {
 			: target === a2.foe ? a2.foeAlly : target === a2.foeAlly ? a2.foe : null) : null]
 			.filter(m => m && m.curHP > 0).map(m => this.abilityOf(m));
 		if (guard.includes('flowerveil') && target.types.includes('Grass')) {
-			this.pushMsg(`${target.name} is protected by FLOWER VEIL!`);
+			this.pushMsg(`${this.label(target)} is protected by FLOWER VEIL!`);
 			return false;
 		}
 		if ((STATUS_IMMUNE_AB[st] || []).includes(tAb2)
 			|| (tAb2 === 'leafguard' && this.weatherKind() === 'sun')
 			|| (tAb2 === 'comatose')) {
-			this.pushMsg(`${target.name}'s ${this.abilityName(tAb2)} prevents that!`);
+			this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb2)} prevents that!`);
 			return false;
 		}
 		if (st === 'slp' && this.actorMons().some(m => m.lockMove === 'uproar')) {
@@ -1609,22 +1621,22 @@ export class Battle {
 		target.status = st;
 		if (st === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 		if (bad) { target.badPsn = true; target.toxicN = 1; }
-		this.pushMsg(`${target.name} ${bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[st]}`);
+		this.pushMsg(`${this.label(target)} ${bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[st]}`);
 		// same visible-punch rule as stat stages: the ailment tag pops on the sprite
 		this.float(this.sideOfMon(target), st.toUpperCase(), '#e0b36b');
 		this.pushMsg('', () => this.checkBerry(target, target === this.active?.me ? 'me' : 'foe'));
 		if (source && this.abilityOf(target) === 'synchronize' && ['brn', 'psn', 'par'].includes(st)) {
-			this.pushMsg(`${target.name}'s Synchronize passed it back!`, () => {});
+			this.pushMsg(`${this.label(target)}'s Synchronize passed it back!`, () => {});
 			this.applyStatus(source, st, bad, null);
 		}
 		return true;
 	}
 
 	applyConfusion(target) {
-		if (this.abilityOf(target) === 'owntempo') { this.pushMsg(`${target.name}'s Own Tempo prevents confusion!`); return; }
+		if (this.abilityOf(target) === 'owntempo') { this.pushMsg(`${this.label(target)}'s Own Tempo prevents confusion!`); return; }
 		if (target.confuseTurns > 0) { this.pushMsg('But it failed!'); return; }
 		target.confuseTurns = 2 + Math.floor(Math.random() * 4);
-		this.pushMsg(`${target.name} became confused!`);
+		this.pushMsg(`${this.label(target)} became confused!`);
 		this.pushMsg('', () => this.checkBerry(target, target === this.active?.me ? 'me' : 'foe'));
 	}
 
@@ -1713,18 +1725,18 @@ export class Battle {
 	beforeMove(user, userBoosts, isFoe, move) {
 		if (user.flinched) {
 			user.flinched = false;
-			this.pushMsg(`${user.name} flinched and couldn't move!`);
+			this.pushMsg(`${this.label(user)} flinched and couldn't move!`);
 			return false;
 		}
 		if (user.rechargeTurn) {
 			user.rechargeTurn = false;
-			this.pushMsg(`${user.name} must recharge!`);
+			this.pushMsg(`${this.label(user)} must recharge!`);
 			return false;
 		}
 		if (this.abilityOf(user) === 'truant') {
 			if (user.loafed) {
 				user.loafed = false;
-				this.pushMsg(`${user.name} is loafing around!`);
+				this.pushMsg(`${this.label(user)} is loafing around!`);
 				return false;
 			}
 			user.loafed = true;
@@ -1736,9 +1748,9 @@ export class Battle {
 			if (this.abilityOf(user) === 'earlybird') user.sleepTurns--;
 			if (--user.sleepTurns <= 0) {
 				user.status = null;
-				this.pushMsg(`${user.name} woke up!`);
+				this.pushMsg(`${this.label(user)} woke up!`);
 			} else {
-				this.pushMsg(`${user.name} is fast asleep.`);
+				this.pushMsg(`${this.label(user)} is fast asleep.`);
 				// Sleep Talk (and Snore) still work while sleeping
 				if (move?.id === 'sleeptalk' || move?.id === 'snore') return true;
 				return false;
@@ -1747,18 +1759,18 @@ export class Battle {
 		if (user.status === 'frz') {
 			if (Math.random() < 0.2) {
 				user.status = null;
-				this.pushMsg(`${user.name} thawed out!`);
+				this.pushMsg(`${this.label(user)} thawed out!`);
 			} else {
-				this.pushMsg(`${user.name} is frozen solid!`);
+				this.pushMsg(`${this.label(user)} is frozen solid!`);
 				return false;
 			}
 		}
 		if (user.confuseTurns > 0) {
 			user.confuseTurns--;
 			if (user.confuseTurns <= 0) {
-				this.pushMsg(`${user.name} snapped out of its confusion!`);
+				this.pushMsg(`${this.label(user)} snapped out of its confusion!`);
 			} else {
-				this.pushMsg(`${user.name} is confused!`);
+				this.pushMsg(`${this.label(user)} is confused!`);
 				if (Math.random() < 0.5) {
 					// 40-power typeless self-hit off its own attack and defense
 					const A = this.statOf(user, userBoosts || freshBoosts(), 'atk');
@@ -1775,11 +1787,11 @@ export class Battle {
 			}
 		}
 		if (user.attracted && Math.random() < 0.5) {
-			this.pushMsg(`${user.name} is immobilized by love!`);
+			this.pushMsg(`${this.label(user)} is immobilized by love!`);
 			return false;
 		}
 		if (user.status === 'par' && Math.random() < 0.25) {
-			this.pushMsg(`${user.name} is fully paralyzed!`);
+			this.pushMsg(`${this.label(user)} is fully paralyzed!`);
 			return false;
 		}
 		return true;
@@ -1818,14 +1830,14 @@ export class Battle {
 			if (other && other.curHP > 0 && this.abilityOf(other) === 'dancer') {
 				this.pushMsg('', () => {
 					if (other.curHP <= 0 || a.phase === 'done') return;
-					this.pushMsg(`${other.name} danced along! (Dancer)`);
+					this.pushMsg(`${this.label(other)} danced along! (Dancer)`);
 					const tgt = isFoe ? a.foe : a.me;
 					this.useMove(other, this.boostsOf(other), tgt, this.boostsOf(tgt),
 						{ id: move.id, name: move.name, pp: 1, maxPp: 1 }, !isFoe, { called: true });
 				});
 			}
 		}
-		if (fx.firstTurn && !firstAction) { this.pushMsg(`${user.name} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
+		if (fx.firstTurn && !firstAction) { this.pushMsg(`${this.label(user)} used ${move.name}!`); this.pushMsg('But it failed!'); return; }
 		move.pp = Math.max(0, move.pp - 1);
 		// two-turn moves spend their first turn charging (PP refunded: one use, one PP)
 		if (fx.chargeText && !user.chargeMove && !(move.id === 'solarbeam' && a.weather?.kind === 'sun')) {
@@ -1836,7 +1848,7 @@ export class Battle {
 			if (VANISH_MOVES.has(move.id) || fx.vanish) user.vanished = move.id;
 			if (move.id === 'bide') user.bideDmg = 0;
 			move.pp = Math.min(move.maxPp, move.pp + 1);
-			this.pushMsg(`${user.name} ${fx.chargeText}`);
+			this.pushMsg(`${this.label(user)} ${fx.chargeText}`);
 			return;
 		}
 		if (user.chargeMove === move.id) { user.chargeMove = null; user.vanished = null; }
@@ -1844,7 +1856,7 @@ export class Battle {
 			const sideKey = isFoe ? 'meFuture' : 'foeFuture';   // it lands on the TARGET's side
 			if (a[sideKey]) { this.pushMsg('But it failed!'); return; }
 			a[sideKey] = { move: move.id, name: move.name, turns: fx.delayed, user, level: user.level };
-			this.pushMsg(`${user.name} foresaw an attack!`);
+			this.pushMsg(`${this.label(user)} foresaw an attack!`);
 			return;
 		}
 		// LOCK-IN: begin a 2-3 turn rampage, or count down one already running
@@ -1864,12 +1876,12 @@ export class Battle {
 			for (const [st, d] of Object.entries(fx.selfBoost)) {
 				boosts[st] = Math.max(-6, Math.min(6, (boosts[st] || 0) + d));
 			}
-			this.pushMsg(`${user.name}'s stats rose sharply!`);
+			this.pushMsg(`${this.label(user)}'s stats rose sharply!`);
 			return;
 		}
 		// protect's streak resets whenever anything else is used
 		if (!fx.protect) user.protectN = 0;
-		this.pushMsg(`${user.name} used ${move.name}!`);
+		this.pushMsg(`${this.label(user)} used ${move.name}!`);
 		a.lastMoveId = move.id;
 		a.lastMove[isFoe ? 'foe' : 'me'] = move.id;
 
@@ -1879,7 +1891,7 @@ export class Battle {
 		// UNSEEN FIST punches straight through a Protect on contact
 		if (aimsAtFoe && target.protectedTurn && !fx.breaksProtect
 			&& !(this.abilityOf(user) === 'unseenfist' && mv.category === 'Physical')) {
-			this.pushMsg(`${target.name} protected itself!`);
+			this.pushMsg(`${this.label(target)} protected itself!`);
 			return;
 		}
 		// the SIDE guards: QUICK GUARD walls priority, WIDE GUARD walls spread —
@@ -1888,7 +1900,7 @@ export class Battle {
 			const tSide = this.sideOfMon(target) === 'me' ? a.meSide : a.foeSide;
 			if ((tSide.quickGuard && this.movePriority(user, move) > 0)
 				|| (tSide.wideGuard && opts?.spread)) {
-				this.pushMsg(`${target.name} was protected by the guard!`);
+				this.pushMsg(`${this.label(target)} was protected by the guard!`);
 				return;
 			}
 		}
@@ -1897,26 +1909,26 @@ export class Battle {
 		// DAZZLING / QUEENLY MAJESTY / ARMOR TAIL refuse priority moves
 		if (aimsAtFoe && (mv.priority || 0) > 0
 			&& ['dazzling', 'queenlymajesty', 'armortail'].includes(defAb)) {
-			this.pushMsg(`${target.name}'s ${this.abilityName(defAb)} blocked the move!`);
+			this.pushMsg(`${this.label(target)}'s ${this.abilityName(defAb)} blocked the move!`);
 			return;
 		}
 		// WIND RIDER rides the gust instead of taking it
 		if (aimsAtFoe && defAb === 'windrider' && WIND_MOVES.has(move.id)) {
 			const wb = isFoe ? a.meBoosts : a.foeBoosts;
 			wb.atk = Math.min(6, (wb.atk || 0) + 1);
-			this.pushMsg(`${target.name} rode the wind — its Attack rose!`);
+			this.pushMsg(`${this.label(target)} rode the wind — its Attack rose!`);
 			return;
 		}
 		// GOOD AS GOLD shrugs off status moves entirely
 		if (aimsAtFoe && mv.category === 'Status' && defAb === 'goodasgold') {
-			this.pushMsg(`${target.name}'s GOOD AS GOLD blocked it!`);
+			this.pushMsg(`${this.label(target)}'s GOOD AS GOLD blocked it!`);
 			return;
 		}
 		// MAGIC BOUNCE / REBOUND send a status move straight back. MYCELIUM MIGHT
 		// is the counter to that whole family, so it is checked first.
 		if (aimsAtFoe && mv.category === 'Status' && this.abilityOf(user) !== 'myceliummight'
 			&& (defAb === 'magicbounce' || defAb === 'rebound') && !opts.bounced) {
-			this.pushMsg(`${target.name} bounced the move back!`, () => {
+			this.pushMsg(`${this.label(target)} bounced the move back!`, () => {
 				this.useMove(target, targetBoosts, user, userBoosts, move, !isFoe, { bounced: true });
 			});
 			return;
@@ -1929,11 +1941,11 @@ export class Battle {
 		// Safeguard blocks statuses, Mist blocks stat drops, from the foe's side
 		const targetSide2 = isFoe ? a.meSide : a.foeSide;
 		if ((fx.status || fx.confuse || fx.yawn) && targetSide2?.safeguard > 0) {
-			this.pushMsg(`${target.name} is protected by Safeguard!`);
+			this.pushMsg(`${this.label(target)} is protected by Safeguard!`);
 			return;
 		}
 		if (STAT_MOVES[move.id]?.foe && targetSide2?.mist > 0) {
-			this.pushMsg(`${target.name} is protected by the mist!`);
+			this.pushMsg(`${this.label(target)} is protected by the mist!`);
 			return;
 		}
 
@@ -1964,13 +1976,13 @@ export class Battle {
 		// vs Earthquake. No-Guard and Lock-On still connect.
 		if (aimsAtFoe && target.vanished && !sureHit && uAbAcc !== 'noguard') {
 			if (!(VANISH_REACH[target.vanished] || []).includes(move.id)) {
-				this.pushMsg(`${user.name}'s attack missed ${target.name}!`);
+				this.pushMsg(`${this.label(user)}'s attack missed ${target.name}!`);
 				return;
 			}
 		}
 		if (!sureHit && (mv.acc ?? 100) !== true && aimsAtFoe && Math.random() * 100 > hitChance) {
 			user.rampN = 0; user.rampMove = null;   // a miss breaks the Rollout chain
-			this.pushMsg(`${user.name}'s attack missed!`);
+			this.pushMsg(`${this.label(user)}'s attack missed!`);
 			return;
 		}
 		if (mv.category === 'Status') {
@@ -1980,17 +1992,17 @@ export class Battle {
 			this.pushAnim(sArch, sArch === 'debuff' ? targetSideOf(isFoe) : (isFoe ? 'foe' : 'me'), 0.45, null,
 				{ color: UI.TYPE_COLORS[mv.type] || '#e8e8e8', slot: this.slotOfMon(sArch === 'debuff' ? target : user) });
 			if (fx.heal) {
-				if (user.healBlockTurns > 0) { this.pushMsg(`${user.name} can't heal — Heal Block!`); return; }
+				if (user.healBlockTurns > 0) { this.pushMsg(`${this.label(user)} can't heal — Heal Block!`); return; }
 				if (user.curHP >= user.maxHP) { this.pushMsg('But it failed!'); return; }
 				const amt = Math.floor(user.maxHP * fx.heal);
-				this.pushMsg(`${user.name} regained health!`, () => {
+				this.pushMsg(`${this.label(user)} regained health!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + amt);
 					this.float(isFoe ? 'foe' : 'me', `+${amt}`, '#6be08a');
 				});
 				if (fx.selfStatus === 'slp') {
 					user.status = 'slp';
 					user.sleepTurns = 2;
-					this.pushMsg(`${user.name} went to sleep!`);
+					this.pushMsg(`${this.label(user)} went to sleep!`);
 				}
 				return;
 			}
@@ -2005,7 +2017,7 @@ export class Battle {
 					const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed' };
 					for (const [st, d] of Object.entries(fx.foeBoost)) {
 						targetBoosts[st] = Math.max(-6, Math.min(6, (targetBoosts[st] || 0) + d));
-						this.pushMsg(`${target.name}'s ${words[st] || st} ${d > 0 ? 'rose' : 'fell'}!`);
+						this.pushMsg(`${this.label(target)}'s ${words[st] || st} ${d > 0 ? 'rose' : 'fell'}!`);
 					}
 				}
 				this.applyStatus(target, fx.status, fx.bad, user);
@@ -2017,7 +2029,7 @@ export class Battle {
 					for (const [st, d] of Object.entries(fx.foeBoost)) {
 						targetBoosts[st] = Math.max(-6, Math.min(6, (targetBoosts[st] || 0) + d));
 					}
-					this.pushMsg(`${target.name}'s ${Object.keys(fx.foeBoost)[0] === 'atk' ? 'Attack' : 'Sp. Atk'} rose sharply!`);
+					this.pushMsg(`${this.label(target)}'s ${Object.keys(fx.foeBoost)[0] === 'atk' ? 'Attack' : 'Sp. Atk'} rose sharply!`);
 				}
 				this.applyConfusion(target);
 				return;
@@ -2033,7 +2045,7 @@ export class Battle {
 				user.protectN = (user.protectN || 0) + 1;
 				if (Math.random() < 1 / Math.pow(2, user.protectN - 1)) {
 					user.protectedTurn = true;
-					this.pushMsg(`${user.name} protected itself!`);
+					this.pushMsg(`${this.label(user)} protected itself!`);
 				} else {
 					user.protectN = 0;
 					this.pushMsg('But it failed!');
@@ -2043,7 +2055,7 @@ export class Battle {
 			if (fx.yawn) {
 				if (target.status || target.drowsy) { this.pushMsg('But it failed!'); return; }
 				target.drowsy = 2;
-				this.pushMsg(`${target.name} grew drowsy!`);
+				this.pushMsg(`${this.label(target)} grew drowsy!`);
 				return;
 			}
 			if (fx.haze) {
@@ -2054,7 +2066,7 @@ export class Battle {
 			}
 			if (fx.blow) {
 				if (a.isTrainer) { this.pushMsg('But it failed!'); return; }
-				this.pushMsg(`${isFoe ? a.me.name : a.foe.name} was blown away!`, () => { sfx('flee'); this.finish('escaped'); });
+				this.pushMsg(`${this.label(isFoe ? a.me : a.foe)} was blown away!`, () => { sfx('flee'); this.finish('escaped'); });
 				return;
 			}
 			if (fx.cureParty) {
@@ -2066,7 +2078,7 @@ export class Battle {
 			}
 			if (fx.cureSelf) {
 				if (!user.status) { this.pushMsg('But it failed!'); return; }
-				this.pushMsg(`${user.name} shook off its status problem!`, () => {
+				this.pushMsg(`${this.label(user)} shook off its status problem!`, () => {
 					user.status = null; delete user.badPsn; delete user.toxicN;
 				});
 				return;
@@ -2074,13 +2086,13 @@ export class Battle {
 			if (fx.regen) {
 				if (user.aquaRing) { this.pushMsg('But it failed!'); return; }
 				user.aquaRing = true;
-				this.pushMsg(`${user.name} surrounded itself with restoring energy!`);
+				this.pushMsg(`${this.label(user)} surrounded itself with restoring energy!`);
 				return;
 			}
 			if (fx.bellydrum) {
 				const cost = Math.floor(user.maxHP / 2);
 				if (user.curHP <= cost) { this.pushMsg('But it failed!'); return; }
-				this.pushMsg(`${user.name} cut its own HP and maximized its Attack!`, () => {
+				this.pushMsg(`${this.label(user)} cut its own HP and maximized its Attack!`, () => {
 					user.curHP -= cost;
 					this.float(isFoe ? 'foe' : 'me', `-${cost}`, '#ff7a6b');
 					userBoosts.atk = 6;
@@ -2099,7 +2111,7 @@ export class Battle {
 				if (target.types.includes('Grass')) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
 				if (target.seeded) { this.pushMsg('But it failed!'); return; }
 				target.seeded = true;
-				this.pushMsg(`${target.name} was seeded!`);
+				this.pushMsg(`${this.label(target)} was seeded!`);
 				return;
 			}
 			if (fx.screen) {
@@ -2108,7 +2120,7 @@ export class Battle {
 					if (side.reflect > 0 && side.light > 0) { this.pushMsg('But it failed!'); return; }
 					side.reflect = Math.max(side.reflect || 0, 5);
 					side.light = Math.max(side.light || 0, 5);
-					this.pushMsg(`${user.name} is protected by Aurora Veil!`);
+					this.pushMsg(`${this.label(user)} is protected by Aurora Veil!`);
 					return;
 				}
 				if (side[fx.screen] > 0) { this.pushMsg('But it failed!'); return; }
@@ -2119,13 +2131,13 @@ export class Battle {
 				return;
 			}
 			if (fx.attract) {
-				if (this.abilityOf(target) === 'oblivious') { this.pushMsg(`${target.name}'s Oblivious blocks it!`); return; }
+				if (this.abilityOf(target) === 'oblivious') { this.pushMsg(`${this.label(target)}'s Oblivious blocks it!`); return; }
 				if (!user.gender || !target.gender || user.gender === target.gender || target.attracted) {
 					this.pushMsg('But it failed!');
 					return;
 				}
 				target.attracted = true;
-				this.pushMsg(`${target.name} fell in love!`);
+				this.pushMsg(`${this.label(target)} fell in love!`);
 				return;
 			}
 			if (this.statusFx(fx, user, userBoosts, target, targetBoosts, move, isFoe)) return;
@@ -2140,7 +2152,7 @@ export class Battle {
 				if (eff.foe) {
 					changes = Object.fromEntries(Object.entries(changes).filter(([st, d]) => d >= 0 || this.canLowerStat(target, st)));
 					if (!Object.keys(changes).length) {
-						this.pushMsg(`${target.name}'s ability protects its stats!`);
+						this.pushMsg(`${this.label(target)}'s ability protects its stats!`);
 						return;
 					}
 				}
@@ -2152,7 +2164,7 @@ export class Battle {
 					if (boosts[st] === before) continue;
 					any = true;
 					const dirWord = d > 0 ? (d > 1 ? 'rose sharply' : 'rose') : (d < -1 ? 'fell harshly' : 'fell');
-					this.pushMsg(`${who.name}'s ${words[st]} ${dirWord}!`);
+					this.pushMsg(`${this.label(who)}'s ${words[st]} ${dirWord}!`);
 					// visible punch, same rule as the doubles/self path: the arrow pops
 					// on the sprite so a buff/debuff turn doesn't read as nothing
 					const arrows = { atk: 'ATK', def: 'DEF', spa: 'SP.A', spd: 'SP.D', spe: 'SPE', acc: 'ACC', eva: 'EVA' };
@@ -2167,7 +2179,7 @@ export class Battle {
 					if (dAb2 === 'defiant' || dAb2 === 'competitive') {
 						const key = dAb2 === 'defiant' ? 'atk' : 'spa';
 						boosts[key] = Math.min(6, (boosts[key] || 0) + 2);
-						this.pushMsg(`${target.name}'s ${this.abilityName(dAb2)} sharply raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
+						this.pushMsg(`${this.label(target)}'s ${this.abilityName(dAb2)} sharply raised its ${key === 'atk' ? 'Attack' : 'Sp. Atk'}!`);
 					}
 				}
 				// OPPORTUNIST: the other side mirrors the SELF-boost as it lands
@@ -2176,7 +2188,7 @@ export class Battle {
 					const watcher = who === a.me ? a.foe : a.me;
 					const wBoosts = targetBoosts; // the self-booster's opponent, both directions
 					if (watcher && watcher.curHP > 0 && this.abilityOf(watcher) === 'opportunist') {
-						this.pushMsg(`${watcher.name}'s Opportunist copies the boost!`);
+						this.pushMsg(`${this.label(watcher)}'s Opportunist copies the boost!`);
 						for (const [st, d] of Object.entries(changes)) {
 							if (d > 0) wBoosts[st] = Math.max(-6, Math.min(6, (wBoosts[st] || 0) + d));
 						}
@@ -2201,7 +2213,7 @@ export class Battle {
 		if ((uAb === 'protean' || uAb === 'libero') && mv.type && !user.types.includes(mv.type)) {
 			this.snapTypes(user);
 			user.types = [mv.type];
-			this.pushMsg(`${user.name} became ${mv.type}-type!`);
+			this.pushMsg(`${this.label(user)} became ${mv.type}-type!`);
 		}
 		const phys = mv.category === 'Physical';
 		// Unaware ignores the other side's stat stages
@@ -2241,7 +2253,7 @@ export class Battle {
 		// Present: usually a 40/80/120 bomb, sometimes a healing gift
 		if (move.id === 'present') {
 			if (Math.random() < 0.2) {
-				this.pushMsg(`${target.name} received a gift!`, () => {
+				this.pushMsg(`${this.label(target)} received a gift!`, () => {
 					const healed = Math.max(1, Math.floor(target.maxHP / 4));
 					target.curHP = Math.min(target.maxHP, target.curHP + healed);
 					this.float(isFoe ? 'me' : 'foe', `+${healed}`, '#6be08a');
@@ -2254,7 +2266,7 @@ export class Battle {
 		if (Pw <= 0 && !fx.fixed && !fx.ohko) { this.pushMsg('But nothing happened!'); return; }
 		// the flung/gifted item is spent once the move is definitely happening
 		if (move.id === 'fling') {
-			this.pushMsg(`${user.name} flung its ${this.itemName(user)}!`);
+			this.pushMsg(`${this.label(user)} flung its ${this.itemName(user)}!`);
 			this.consumeItem(user);
 		}
 		if (move.id === 'naturalgift') {
@@ -2262,10 +2274,10 @@ export class Battle {
 			this.consumeItem(user);
 		}
 		// absorbing / immune abilities take the hit instead
-		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${target.name} floats with Levitate!`); return; }
+		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${this.label(target)} floats with Levitate!`); return; }
 		const absorb = AB_ABSORB[tAb];
 		if (absorb && mv.type === absorb.t) {
-			this.pushMsg(`${target.name}'s ${this.abilityName(tAb)} absorbed it!`, () => {
+			this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb)} absorbed it!`, () => {
 				if (absorb.heal) target.curHP = Math.min(target.maxHP, target.curHP + Math.floor(target.maxHP / 4));
 				if (absorb.boost) {
 					const tb = isFoe ? a.meBoosts : a.foeBoosts;
@@ -2274,25 +2286,25 @@ export class Battle {
 			});
 			return;
 		}
-		if (tAb === 'bulletproof' && BULLET_MOVES.has(move.id)) { this.pushMsg(`${target.name}'s Bulletproof blocks it!`); return; }
-		if (tAb === 'overcoat' && POWDER_MOVES.has(move.id)) { this.pushMsg(`${target.name}'s Overcoat blocks it!`); return; }
+		if (tAb === 'bulletproof' && BULLET_MOVES.has(move.id)) { this.pushMsg(`${this.label(target)}'s Bulletproof blocks it!`); return; }
+		if (tAb === 'overcoat' && POWDER_MOVES.has(move.id)) { this.pushMsg(`${this.label(target)}'s Overcoat blocks it!`); return; }
 		if (tAb === 'flashfire' && mv.type === 'Fire') {
 			target.flashFired = true;
-			this.pushMsg(`${target.name}'s Flash Fire drank the flames!`);
+			this.pushMsg(`${this.label(target)}'s Flash Fire drank the flames!`);
 			return;
 		}
 		if (tAb === 'soundproof' && SOUND_MOVES.has(move.id)) {
-			this.pushMsg(`${target.name}'s Soundproof blocks it!`);
+			this.pushMsg(`${this.label(target)}'s Soundproof blocks it!`);
 			return;
 		}
 		if (fx.selfKO && (uAb === 'damp' || tAb === 'damp')) { this.pushMsg('The Damp ability prevents explosions!'); return; }
-		if (fx.ohko && tAb === 'sturdy') { this.pushMsg(`${target.name}'s Sturdy blocks one-hit KOs!`); return; }
+		if (fx.ohko && tAb === 'sturdy') { this.pushMsg(`${this.label(target)}'s Sturdy blocks one-hit KOs!`); return; }
 		let eff = effectiveness(mv.type, target.types);
 		if (eff === 0 && target.foresight) eff = 1;
 		if (eff === 0 && uAb === 'scrappy' && (mv.type === 'Normal' || mv.type === 'Fighting')
 			&& target.types.includes('Ghost')) eff = effectiveness(mv.type, target.types.filter(t => t !== 'Ghost'));
 		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
-		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${target.name}'s Wonder Guard blocks it!`); return; }
+		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${this.label(target)}'s Wonder Guard blocks it!`); return; }
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
 		const nHits = fx.hits ? (uAb === 'skilllink' ? fx.hits[1] : fx.hits[0] + Math.floor(Math.random() * (fx.hits[1] - fx.hits[0] + 1))) : 1;
 		// Reflect / Light Screen on the defender's side halves the matching category
@@ -2463,14 +2475,14 @@ export class Battle {
 			sfx(eff > 1 ? 'hit_super' : eff < 1 ? 'hit_weak' : 'hit_normal');
 			if (this.abilityOf(target) === 'disguise' && !target.disguiseBroken) {
 				target.disguiseBroken = true;
-				this.pushMsg(`${target.name}'s disguise served as a decoy!`);
+				this.pushMsg(`${this.label(target)}'s disguise served as a decoy!`);
 				return;
 			}
 			if (hitsSub) {
 				target.subHP -= total;
 				if (target.subHP <= 0) {
 					target.subHP = 0;
-					this.pushMsg(`${target.name}'s substitute faded!`);
+					this.pushMsg(`${this.label(target)}'s substitute faded!`);
 				} else {
 					this.pushMsg('The substitute took the hit!');
 				}
@@ -2479,19 +2491,19 @@ export class Battle {
 			let dealt = total;
 			if (target.enduring && dealt >= target.curHP) {
 				dealt = target.curHP - 1;
-				this.pushMsg(`${target.name} endured the hit!`);
+				this.pushMsg(`${this.label(target)} endured the hit!`);
 			}
 			// Focus Sash: survive from full HP, consuming the sash
 			if (this.itemFx(target)?.sash && target.curHP === target.maxHP && dealt >= target.curHP) {
 				dealt = target.curHP - 1;
 				this.consumeItem(target);
-				this.pushMsg(`${target.name} hung on with its Focus Sash!`);
+				this.pushMsg(`${this.label(target)} hung on with its Focus Sash!`);
 			}
 			// FOCUS BAND: unlike the Sash it is not consumed and does not need full
 			// HP — it is a 1-in-10 reprieve from any lethal hit.
 			else if (this.itemFx(target)?.focusBand && dealt >= target.curHP && Math.random() < 0.1) {
 				dealt = target.curHP - 1;
-				this.pushMsg(`${target.name} hung on using its FOCUS BAND!`);
+				this.pushMsg(`${this.label(target)} hung on using its FOCUS BAND!`);
 			}
 			target.curHP = Math.max(0, target.curHP - dealt);
 			this.lastWasCrit = crits > 0;   // test surface for the crit-tier suite
@@ -2505,13 +2517,13 @@ export class Battle {
 			if (target.bideDmg != null) target.bideDmg += dealt;
 			// GRUDGE: felled while bearing one, the killing move loses all its PP
 			if (target.curHP <= 0 && target.grudged && move && move.pp != null) {
-				this.pushMsg(`${target.name}'s GRUDGE drained all the PP\nfrom ${move.name}!`, () => { move.pp = 0; });
+				this.pushMsg(`${this.label(target)}'s GRUDGE drained all the PP\nfrom ${move.name}!`, () => { move.pp = 0; });
 			}
 			// PERISH BODY: a physical hit dooms striker and struck alike
 			if (phys && target.curHP > 0 && user.curHP > 0 && this.abilityOf(target) === 'perishbody'
 				&& !(user.perishN > 0) && !(target.perishN > 0)) {
 				user.perishN = 4; target.perishN = 4;
-				this.pushMsg(`${target.name}'s Perish Body dooms them BOTH —\nthree turns to live!`);
+				this.pushMsg(`${this.label(target)}'s Perish Body dooms them BOTH —\nthree turns to live!`);
 			}
 			// EMERGENCY EXIT / WIMP OUT: crossing below half sends it packing (wild)
 			{
@@ -2532,7 +2544,7 @@ export class Battle {
 				const ub2 = this.boostsOf(user);
 				if ((ub2.atk || 0) < 6) {
 					ub2.atk = Math.min(6, (ub2.atk || 0) + 1);
-					this.pushMsg(`${user.name}'s Moxie boosted its Attack!`);
+					this.pushMsg(`${this.label(user)}'s Moxie boosted its Attack!`);
 				}
 			}
 			// CHILLING NEIGH / GRIM NEIGH / SOUL HEART: Moxie's shape on other stats
@@ -2542,14 +2554,14 @@ export class Battle {
 				const ubn = this.boostsOf(user);
 				if ((ubn[neighStat] || 0) < 6) {
 					ubn[neighStat] = Math.min(6, (ubn[neighStat] || 0) + 1);
-					this.pushMsg(`${user.name}'s ${this.abilityName(this.abilityOf(user))} rose its power!`);
+					this.pushMsg(`${this.label(user)}'s ${this.abilityName(this.abilityOf(user))} rose its power!`);
 				}
 			}
 			// INNARDS OUT pays the attacker back for the KO
 			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(target) === 'innardsout') {
 				const back = Math.max(1, dealt);
 				user.curHP = Math.max(0, user.curHP - back);
-				this.pushMsg(`${user.name} was hit by ${target.name}'s INNARDS OUT!`);
+				this.pushMsg(`${this.label(user)} was hit by ${target.name}'s INNARDS OUT!`);
 			}
 			// BEAST BOOST: same shape as Moxie but on the user's BEST stat (inert: 11)
 			if (target.curHP <= 0 && user.curHP > 0 && this.abilityOf(user) === 'beastboost') {
@@ -2558,7 +2570,7 @@ export class Battle {
 					.reduce((b, k) => (user.stats[k] || 0) > (user.stats[b] || 0) ? k : b, 'atk');
 				if ((ub3[best] || 0) < 6) {
 					ub3[best] = Math.min(6, (ub3[best] || 0) + 1);
-					this.pushMsg(`${user.name}'s BEAST BOOST raised its ${best.toUpperCase()}!`);
+					this.pushMsg(`${this.label(user)}'s BEAST BOOST raised its ${best.toUpperCase()}!`);
 				}
 			}
 			// on-hit reaction abilities (Stamina, Gooey, Justified, ...)
@@ -2573,38 +2585,38 @@ export class Battle {
 				const ub = isFoe ? a.foeBoosts : a.meBoosts;
 				if (rx.drop && this.canLowerStat(user, rx.drop)) {
 					ub[rx.drop] = Math.max(-6, (ub[rx.drop] || 0) - 1);
-					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} lowered ${user.name}'s stats!`);
+					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} lowered ${user.name}'s stats!`);
 				}
 				if (rx.self) {
 					tb[rx.self[0]] = Math.min(6, (tb[rx.self[0]] || 0) + rx.self[1]);
-					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} raised its stats!`);
+					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} raised its stats!`);
 				}
 				if (rx.selfMulti) {
 					for (const [st, d] of Object.entries(rx.selfMulti)) tb[st] = Math.max(-6, Math.min(6, (tb[st] || 0) + d));
-					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} triggered!`);
+					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} triggered!`);
 				}
 				if (rx.chip && phys) {
 					const chip = Math.max(1, Math.floor(user.maxHP / rx.chip));
 					user.curHP = Math.max(0, user.curHP - chip);
-					this.pushMsg(`${user.name} was hurt by ${this.abilityName(rAb)}!`);
+					this.pushMsg(`${this.label(user)} was hurt by ${this.abilityName(rAb)}!`);
 				}
 				if (rx.weather && a.weather?.kind !== rx.weather) {
 					a.weather = { kind: rx.weather, turns: 5 };
-					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} whipped up a storm!`);
+					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} whipped up a storm!`);
 				}
 				if (rx.terrain && a.terrain?.kind !== rx.terrain) {
 					a.terrain = { kind: rx.terrain, turns: 5 };
-					this.pushMsg(`${target.name}'s ${this.abilityName(rAb)} changed the field!`);
+					this.pushMsg(`${this.label(target)}'s ${this.abilityName(rAb)} changed the field!`);
 				}
 				// ELECTROMORPHOSIS / WIND POWER bank a charged Electric hit
 				if (rx.charge && !target.chargedUp) {
 					target.chargedUp = true;   // the same flag Charge sets; doubles Electric
-					this.pushMsg(`${target.name} became charged!`);
+					this.pushMsg(`${this.label(target)} became charged!`);
 				}
 				if (rx.disable && !user.disabledMove) {
 					user.disabledMove = move.id;
 					user.disableTurns = 4;
-					this.pushMsg(`${target.name}'s Cursed Body disabled the move!`);
+					this.pushMsg(`${this.label(target)}'s Cursed Body disabled the move!`);
 				}
 			}
 			// Rocky Helmet + item aftermath on the attacker
@@ -2612,13 +2624,13 @@ export class Battle {
 			if (phys && tHeld?.helmet && user.curHP > 0) {
 				const chip = Math.max(1, Math.floor(user.maxHP / 6));
 				user.curHP = Math.max(0, user.curHP - chip);
-				this.pushMsg(`${user.name} was hurt by the Rocky Helmet!`);
+				this.pushMsg(`${this.label(user)} was hurt by the Rocky Helmet!`);
 			}
 			const uHeld = this.itemFx(user);
 			if (uHeld?.lifeOrb && user.curHP > 0 && this.abilityOf(user) !== 'magicguard') {
 				const chip = Math.max(1, Math.floor(user.maxHP / 10));
 				user.curHP = Math.max(0, user.curHP - chip);
-				this.pushMsg(`${user.name} was hurt by its Life Orb!`);
+				this.pushMsg(`${this.label(user)} was hurt by its Life Orb!`);
 			}
 			if (uHeld?.shellBell && user.curHP > 0 && user.curHP < user.maxHP) {
 				user.curHP = Math.min(user.maxHP, user.curHP + Math.max(1, Math.floor(dealt / 8)));
@@ -2637,21 +2649,21 @@ export class Battle {
 				&& target.curHP + dealt >= target.maxHP / 2) {
 				const tb = isFoe ? a.meBoosts : a.foeBoosts;
 				tb.spa = Math.min(6, (tb.spa || 0) + 1);
-				this.pushMsg(`${target.name}'s Berserk raised its Sp. Atk!`);
+				this.pushMsg(`${this.label(target)}'s Berserk raised its Sp. Atk!`);
 			}
 			if (rAb === 'angerpoint' && crits && target.curHP > 0) {
 				const tb = isFoe ? a.meBoosts : a.foeBoosts;
 				tb.atk = 6;
-				this.pushMsg(`${target.name}'s Anger Point maxed its Attack!`);
+				this.pushMsg(`${this.label(target)}'s Anger Point maxed its Attack!`);
 			}
 			// Aftermath: fainting to a contact move burns the attacker
 			if (target.curHP <= 0 && this.abilityOf(target) === 'aftermath' && phys && this.abilityOf(user) !== 'damp') {
 				const chip = Math.max(1, Math.floor(user.maxHP / 4));
 				user.curHP = Math.max(0, user.curHP - chip);
-				this.pushMsg(`${target.name}'s Aftermath hurt ${user.name}!`);
+				this.pushMsg(`${this.label(target)}'s Aftermath hurt ${user.name}!`);
 			}
 			if (target.curHP <= 0 && target.destinyBond) {
-				this.pushMsg(`${target.name} took ${user.name} down with it!`, () => { user.curHP = 0; });
+				this.pushMsg(`${this.label(target)} took ${user.name} down with it!`, () => { user.curHP = 0; });
 			}
 		});
 		if (nHits > 1) this.pushMsg(`Hit ${nHits} time(s)!`);
@@ -2666,7 +2678,7 @@ export class Battle {
 		}
 		// Weakness Policy: eating a super-effective hit sharply boosts both attacks
 		if (eff > 1 && total > 0 && !hitsSub && target.curHP > 0 && this.itemFx(target)?.weakPolicy) {
-			this.pushMsg(`${target.name}'s Weakness Policy sharply raised its stats!`, () => {
+			this.pushMsg(`${this.label(target)}'s Weakness Policy sharply raised its stats!`, () => {
 				target.heldItem = null;
 				targetBoosts.atk = Math.min(6, (targetBoosts.atk || 0) + 2);
 				targetBoosts.spa = Math.min(6, (targetBoosts.spa || 0) + 2);
@@ -2677,14 +2689,14 @@ export class Battle {
 			const healed = Math.max(1, Math.floor(total * fx.drain));
 			// LIQUID OOZE turns the drain against the attacker (was inert: 7 species)
 			if (this.abilityOf(target) === 'liquidooze') {
-				this.pushMsg(`${user.name} sucked up the LIQUID OOZE!`, () => {
+				this.pushMsg(`${this.label(user)} sucked up the LIQUID OOZE!`, () => {
 					user.curHP = Math.max(0, user.curHP - healed);
 					this.float(isFoe ? 'foe' : 'me', `-${healed}`, '#ff7a6b');
 				});
 			} else if (user.healBlockTurns > 0) {
-				this.pushMsg(`${user.name} was prevented from draining by Heal Block!`);
+				this.pushMsg(`${this.label(user)} was prevented from draining by Heal Block!`);
 			} else {
-				this.pushMsg(`${target.name} had its energy drained!`, () => {
+				this.pushMsg(`${this.label(target)} had its energy drained!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + healed);
 					this.float(isFoe ? 'foe' : 'me', `+${healed}`, '#6be08a');
 				});
@@ -2699,17 +2711,17 @@ export class Battle {
 			const mine = isFoe ? 'foeHazards' : 'meHazards';
 			const hadHazards = Object.values(a[mine] || {}).some(v => v > 0);
 			a[mine] = {};
-			if (user.trapTurns > 0) { user.trapTurns = 0; this.pushMsg(`${user.name} spun free of ${user.trapName}!`); }
-			if (user.seeded) { delete user.seeded; this.pushMsg(`${user.name} shed the LEECH SEED!`); }
-			if (hadHazards) this.pushMsg(`${user.name} blew away the hazards!`);
+			if (user.trapTurns > 0) { user.trapTurns = 0; this.pushMsg(`${this.label(user)} spun free of ${user.trapName}!`); }
+			if (user.seeded) { delete user.seeded; this.pushMsg(`${this.label(user)} shed the LEECH SEED!`); }
+			if (hadHazards) this.pushMsg(`${this.label(user)} blew away the hazards!`);
 			if (move.id === 'rapidspin' && userBoosts) {
 				userBoosts.spe = Math.max(-6, Math.min(6, (userBoosts.spe || 0) + 1));
-				this.pushMsg(`${user.name}'s Speed rose!`);
+				this.pushMsg(`${this.label(user)}'s Speed rose!`);
 			}
 		}
 		if (fx.recoil && uAb !== 'rockhead') {
 			const rec = Math.max(1, Math.floor(total * fx.recoil));
-			this.pushMsg(`${user.name} is damaged by recoil!`, () => {
+			this.pushMsg(`${this.label(user)} is damaged by recoil!`, () => {
 				user.curHP = Math.max(0, user.curHP - rec);
 				this.float(isFoe ? 'foe' : 'me', `-${rec}`, '#ff7a6b');
 			});
@@ -2724,13 +2736,13 @@ export class Battle {
 				if (this.abilityOf(user) === 'poisontouch' && Math.random() < 0.3 && !target.status
 					&& target.curHP > 0 && !target.types.some(t => t === 'Poison' || t === 'Steel')) {
 					target.status = 'psn';
-					this.pushMsg(`${target.name} was poisoned by POISON TOUCH!`);
+					this.pushMsg(`${this.label(target)} was poisoned by POISON TOUCH!`);
 				}
 				// MAGICIAN lifts the TARGET's item when it lands a hit (inert: 7)
 				if (this.abilityOf(user) === 'magician' && target.heldItem && !user.heldItem
 					&& this.abilityOf(target) !== 'stickyhold') {
 					user.heldItem = target.heldItem; target.heldItem = null;
-					this.pushMsg(`${user.name} magicked away the ${this.itemName(user)}!`);
+					this.pushMsg(`${this.label(user)} magicked away the ${this.itemName(user)}!`);
 				}
 				// TOXIC CHAIN has a chance to badly poison on any hit (inert: 3)
 				if (this.abilityOf(user) === 'toxicchain' && target.curHP > 0 && !target.status
@@ -2741,48 +2753,48 @@ export class Battle {
 				if (dAb === 'pickpocket' && user.heldItem && !target.heldItem
 					&& this.abilityOf(user) !== 'stickyhold') {
 					target.heldItem = user.heldItem; user.heldItem = null;
-					this.pushMsg(`${target.name} pickpocketed the ${this.itemName(target)}!`);
+					this.pushMsg(`${this.label(target)} pickpocketed the ${this.itemName(target)}!`);
 				}
 				// MUMMY / LINGERING AROMA / WANDERING SPIRIT rewrite the attacker
 				if ((dAb === 'mummy' || dAb === 'lingeringaroma') && this.abilityOf(user) !== dAb) {
 					this.snapAbility(user);
 					user.ability = dAb;
-					this.pushMsg(`${user.name} was infected by ${this.abilityName(dAb)}!`);
+					this.pushMsg(`${this.label(user)} was infected by ${this.abilityName(dAb)}!`);
 				} else if (dAb === 'wanderingspirit' && this.abilityOf(user)) {
 					const swap = this.abilityOf(user);
 					this.snapAbility(user); this.snapAbility(target);
 					user.ability = dAb; target.ability = swap;
-					this.pushMsg(`${target.name} and ${user.name} swapped abilities!`);
+					this.pushMsg(`${this.label(target)} and ${user.name} swapped abilities!`);
 				}
 				if (dAb === 'colorchange' && target.curHP > 0 && mv.type && !target.types.includes(mv.type)) {
 					this.snapTypes(target);
 					target.types = [mv.type];
-					this.pushMsg(`${target.name}'s COLOR CHANGE made it ${mv.type}-type!`);
+					this.pushMsg(`${this.label(target)}'s COLOR CHANGE made it ${mv.type}-type!`);
 				}
 				if (dAb === 'toxicdebris' && target.curHP > 0) {
 					const h = isFoe ? a.foeHazards : a.meHazards;
 					if ((h.toxicspikes || 0) < 2) {
 						h.toxicspikes = (h.toxicspikes || 0) + 1;
-						this.pushMsg(`${target.name} scattered TOXIC DEBRIS!`);
+						this.pushMsg(`${this.label(target)} scattered TOXIC DEBRIS!`);
 					}
 				}
 				if (dAb === 'static' && roll < 0.3 && !user.status) {
 					user.status = 'par';
-					this.pushMsg(`${user.name} was paralyzed by Static!`);
+					this.pushMsg(`${this.label(user)} was paralyzed by Static!`);
 				} else if (dAb === 'poisonpoint' && roll < 0.3 && !user.status) {
 					user.status = 'psn';
-					this.pushMsg(`${user.name} was poisoned by Poison Point!`);
+					this.pushMsg(`${this.label(user)} was poisoned by Poison Point!`);
 				} else if (dAb === 'flamebody' && roll < 0.3 && !user.status) {
 					user.status = 'brn';
-					this.pushMsg(`${user.name} was burned by Flame Body!`);
+					this.pushMsg(`${this.label(user)} was burned by Flame Body!`);
 				} else if (dAb === 'effectspore' && roll < 0.3 && !user.status) {
 					user.status = ['psn', 'par', 'slp'][Math.floor(Math.random() * 3)];
 					if (user.status === 'slp') user.sleepTurns = 2;
-					this.pushMsg(`${user.name} was afflicted by Effect Spore!`);
+					this.pushMsg(`${this.label(user)} was afflicted by Effect Spore!`);
 				} else if (dAb === 'cutecharm' && roll < 0.3 && user.gender && target.gender
 					&& user.gender !== target.gender && !user.attracted) {
 					user.attracted = true;
-					this.pushMsg(`${user.name} fell in love with Cute Charm!`);
+					this.pushMsg(`${this.label(user)} fell in love with Cute Charm!`);
 				}
 			});
 		}
@@ -2790,16 +2802,16 @@ export class Battle {
 			this.pushMsg('', () => {
 				if (target.curHP <= 0 || !target.heldItem) return;
 				if (this.abilityOf(target) === 'stickyhold') {
-					this.pushMsg(`${target.name}'s Sticky Hold kept its item!`);
+					this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`);
 					return;
 				}
 				if (fx.knockOff) {
-					this.pushMsg(`${user.name} knocked off ${target.name}'s ${this.itemName(target)}!`, () => {
+					this.pushMsg(`${this.label(user)} knocked off ${target.name}'s ${this.itemName(target)}!`, () => {
 						target.heldItem = null;
 						if (this.abilityOf(target) === 'unburden') target.unburdened = true;
 					});
 				} else if (!user.heldItem) {
-					this.pushMsg(`${user.name} stole ${target.name}'s ${this.itemName(target)}!`, () => {
+					this.pushMsg(`${this.label(user)} stole ${target.name}'s ${this.itemName(target)}!`, () => {
 						user.heldItem = target.heldItem;
 						target.heldItem = null;
 						if (this.abilityOf(target) === 'unburden') target.unburdened = true;
@@ -2812,7 +2824,7 @@ export class Battle {
 				if (target.curHP > 0 && !target.trapTurns) {
 					target.trapTurns = 2 + Math.floor(Math.random() * 4);
 					target.trapName = fx.trap;
-					this.pushMsg(`${target.name} was trapped by ${fx.trap}!`);
+					this.pushMsg(`${this.label(target)} was trapped by ${fx.trap}!`);
 				}
 			});
 		}
@@ -2831,7 +2843,7 @@ export class Battle {
 					const before = userBoosts[st] ?? 0;
 					userBoosts[st] = Math.max(-6, Math.min(6, before + d));
 					if (userBoosts[st] !== before) {
-						this.pushMsg(`${user.name}'s ${words[st]} ${d < -1 ? 'fell harshly' : 'fell'}!`);
+						this.pushMsg(`${this.label(user)}'s ${words[st]} ${d < -1 ? 'fell harshly' : 'fell'}!`);
 					}
 				}
 			});
@@ -2848,7 +2860,7 @@ export class Battle {
 					const before = userBoosts[st] ?? 0;
 					userBoosts[st] = Math.max(-6, Math.min(6, before + d));
 					if (userBoosts[st] !== before) {
-						this.pushMsg(`${user.name}'s ${words[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
+						this.pushMsg(`${this.label(user)}'s ${words[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
 					}
 				}
 			});
@@ -2863,7 +2875,7 @@ export class Battle {
 						// STEADFAST turns every flinch into speed (was inert: 15 species)
 						if (this.abilityOf(target) === 'steadfast' && targetBoosts) {
 							targetBoosts.spe = Math.max(-6, Math.min(6, (targetBoosts.spe || 0) + 1));
-							this.pushMsg(`${target.name}'s STEADFAST raised its Speed!`);
+							this.pushMsg(`${this.label(target)}'s STEADFAST raised its Speed!`);
 						}
 					}
 				}
@@ -2873,12 +2885,12 @@ export class Battle {
 					targetBoosts[fx.sec.stat] = Math.max(-6, Math.min(6, before + fx.sec.d));
 					if (targetBoosts[fx.sec.stat] !== before) {
 						const words = { atk: 'Attack', def: 'Defense', spa: 'Sp. Atk', spd: 'Sp. Def', spe: 'Speed', acc: 'accuracy' };
-						this.pushMsg(`${target.name}'s ${words[fx.sec.stat]} fell!`);
+						this.pushMsg(`${this.label(target)}'s ${words[fx.sec.stat]} fell!`);
 					}
 				} else if (fx.sec.confuse) {
 					if (!(target.confuseTurns > 0)) {
 						target.confuseTurns = 2 + Math.floor(Math.random() * 4);
-						this.pushMsg(`${target.name} became confused!`);
+						this.pushMsg(`${this.label(target)} became confused!`);
 					}
 				} else if (!target.status
 					&& !(STATUS_IMMUNE[fx.sec.status] || []).some(t => target.types.includes(t))
@@ -2888,7 +2900,7 @@ export class Battle {
 					target.status = fx.sec.status;
 					if (fx.sec.status === 'slp') target.sleepTurns = 1 + Math.floor(Math.random() * 3);
 					if (fx.sec.bad) { target.badPsn = true; target.toxicN = 1; }
-					this.pushMsg(`${target.name} ${fx.sec.bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[fx.sec.status]}`);
+					this.pushMsg(`${this.label(target)} ${fx.sec.bad ? 'was badly poisoned!' : STATUS_APPLIED_MSG[fx.sec.status]}`);
 				}
 			});
 		}
@@ -2902,7 +2914,7 @@ export class Battle {
 				if (!isFoe) {
 					const next = a.party.find(m => m !== user && m.curHP > 0);
 					if (!next) return;
-					this.pushMsg(`${user.name} went back!`, () => {
+					this.pushMsg(`${this.label(user)} went back!`, () => {
 						this.clearVolatiles(user);
 						a.me = next; a.meImg = a.backSprites.get(next);
 						Object.assign(a.meBoosts, freshBoosts());
@@ -2936,7 +2948,7 @@ export class Battle {
 			const side = this.sideOfMon(mon);
 			if (mon.status === 'psn' && this.abilityOf(mon) === 'poisonheal') {
 				if (mon.curHP < mon.maxHP) {
-					this.pushMsg(`${mon.name}'s Poison Heal restored HP!`, () => {
+					this.pushMsg(`${this.label(mon)}'s Poison Heal restored HP!`, () => {
 						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 8)));
 					});
 				}
@@ -2945,7 +2957,7 @@ export class Battle {
 					? Math.max(1, Math.floor(mon.maxHP / 16) * Math.min(15, mon.toxicN || 1))
 					: Math.max(1, Math.floor(mon.maxHP / 8));
 				if (mon.badPsn) mon.toxicN = (mon.toxicN || 1) + 1;
-				this.pushMsg(`${mon.name} is hurt by its ${mon.status === 'brn' ? 'burn' : 'poison'}!`,
+				this.pushMsg(`${this.label(mon)} is hurt by its ${mon.status === 'brn' ? 'burn' : 'poison'}!`,
 					() => {
 						mon.curHP = Math.max(0, mon.curHP - chip);
 						this.float(side, `-${chip}`, '#c98fe8');
@@ -2954,7 +2966,7 @@ export class Battle {
 			if (mon.seeded && this.abilityOf(mon) !== 'magicguard') {
 				const other = this.sideOfMon(mon) === 'me' ? a.foe : a.me;
 				const sap = Math.max(1, Math.floor(mon.maxHP / 8));
-				this.pushMsg(`${mon.name}'s health is sapped by Leech Seed!`, () => {
+				this.pushMsg(`${this.label(mon)}'s health is sapped by Leech Seed!`, () => {
 					mon.curHP = Math.max(0, mon.curHP - sap);
 					this.float(side, `-${sap}`, '#8ad86b');
 					if (other.curHP > 0) {
@@ -2974,18 +2986,18 @@ export class Battle {
 			const side = this.sideOfMon(mon);
 			if (mon.trapTurns > 0 && this.abilityOf(mon) !== 'magicguard') {
 				const chip = Math.max(1, Math.floor(mon.maxHP / 16));
-				this.pushMsg(`${mon.name} is hurt by ${mon.trapName}!`, () => {
+				this.pushMsg(`${this.label(mon)} is hurt by ${mon.trapName}!`, () => {
 					mon.curHP = Math.max(0, mon.curHP - chip);
 					this.float(side, `-${chip}`, '#e8b16b');
 				});
-				if (--mon.trapTurns <= 0) this.pushMsg(`${mon.name} was freed from ${mon.trapName}!`);
+				if (--mon.trapTurns <= 0) this.pushMsg(`${this.label(mon)} was freed from ${mon.trapName}!`);
 			}
 			if (mon.drowsy && --mon.drowsy <= 0) {
 				delete mon.drowsy;
 				if (!mon.status) {
 					mon.status = 'slp';
 					mon.sleepTurns = 1 + Math.floor(Math.random() * 3);
-					this.pushMsg(`${mon.name} fell asleep!`);
+					this.pushMsg(`${this.label(mon)} fell asleep!`);
 				}
 			}
 			if (mon.aquaRing && mon.curHP < mon.maxHP) {
@@ -3007,9 +3019,9 @@ export class Battle {
 			if (mon.lockMove && --mon.lockTurns <= 0) {
 				const wasUproar = mon.lockMove === 'uproar';
 				mon.lockMove = null; mon.lockTurns = 0;
-				if (wasUproar) this.pushMsg(`${mon.name} calmed down.`);
+				if (wasUproar) this.pushMsg(`${this.label(mon)} calmed down.`);
 				else {
-					this.pushMsg(`${mon.name} tired itself out!`);
+					this.pushMsg(`${this.label(mon)} tired itself out!`);
 					this.applyConfusion(mon);
 				}
 			}
@@ -3025,7 +3037,7 @@ export class Battle {
 				const lowered = Object.keys(b).filter(k => b[k] < 0);
 				if (lowered.length) {
 					for (const k of lowered) b[k] = 0;
-					this.pushMsg(`${mon.name}'s WHITE HERB restored its stats!`);
+					this.pushMsg(`${this.label(mon)}'s WHITE HERB restored its stats!`);
 					this.consumeItem(mon);
 				}
 			}
@@ -3035,19 +3047,19 @@ export class Battle {
 					: mon === a.foe ? a.foeAlly : mon === a.foeAlly ? a.foe : null;
 				if (ally && ally.curHP > 0 && ally.status && Math.random() < 0.3) {
 					ally.status = null; ally.sleepTurns = 0;
-					this.pushMsg(`${mon.name}'s HEALER cured ${ally.name}!`);
+					this.pushMsg(`${this.label(mon)}'s HEALER cured ${ally.name}!`);
 				}
 			}
 			if (herb?.mentalHerb && (mon.attracted || mon.tauntTurns > 0 || mon.encoreTurns > 0 || mon.tormented)) {
 				mon.attracted = false; mon.tauntTurns = 0; mon.encoreTurns = 0; mon.tormented = false;
-				this.pushMsg(`${mon.name} used its MENTAL HERB to snap out of it!`);
+				this.pushMsg(`${this.label(mon)} used its MENTAL HERB to snap out of it!`);
 				this.consumeItem(mon);
 			}
 			if (mon.embargoTurns > 0 && --mon.embargoTurns === 0) {
-				this.pushMsg(`${mon.name} can use items again!`);
+				this.pushMsg(`${this.label(mon)} can use items again!`);
 			}
 			if (mon.healBlockTurns > 0 && --mon.healBlockTurns === 0) {
-				this.pushMsg(`${mon.name}'s Heal Block wore off!`);
+				this.pushMsg(`${this.label(mon)}'s Heal Block wore off!`);
 			}
 			mon.electrified = false; // Electrify lasts one turn
 		}
@@ -3077,7 +3089,7 @@ export class Battle {
 			} else {
 				dmg = Math.max(1, Math.floor(victim.maxHP * 0.35));
 			}
-			this.pushMsg(`${victim.name} took the ${f.name} attack!`, () => {
+			this.pushMsg(`${this.label(victim)} took the ${f.name} attack!`, () => {
 				victim.curHP = Math.max(0, victim.curHP - dmg);
 				this.float(victim === a.me ? 'me' : 'foe', `-${dmg}`, '#c9a0ff');
 			});
@@ -3086,7 +3098,7 @@ export class Battle {
 		for (const [side, screens, who] of [['me', a.meScreens, a.me], ['foe', a.foeScreens, a.foe]]) {
 			for (const key of ['reflect', 'light']) {
 				if (screens[key] > 0 && --screens[key] === 0) {
-					this.pushMsg(`${who.name}'s ${key === 'reflect' ? 'Reflect' : 'Light Screen'} wore off!`);
+					this.pushMsg(`${this.label(who)}'s ${key === 'reflect' ? 'Reflect' : 'Light Screen'} wore off!`);
 				}
 			}
 		}
@@ -3102,7 +3114,7 @@ export class Battle {
 				const immuneChip = ab3 === 'magicguard' || ab3 === 'overcoat' || ab3 === 'icebody' || ab3 === 'snowcloak';
 				if (!immuneChip && ((wk2 === 'sand' && !immuneSand) || (wk2 === 'hail' && !mon.types.includes('Ice')))) {
 					const chip = Math.max(1, Math.floor(mon.maxHP / 16));
-					this.pushMsg(`${mon.name} is buffeted by the ${wk2 === 'sand' ? 'sandstorm' : 'hail'}!`, () => {
+					this.pushMsg(`${this.label(mon)} is buffeted by the ${wk2 === 'sand' ? 'sandstorm' : 'hail'}!`, () => {
 						mon.curHP = Math.max(0, mon.curHP - chip);
 						this.float(side, `-${chip}`, '#d8cf9a');
 					});
@@ -3134,7 +3146,7 @@ export class Battle {
 		// per-side effects: wish lands, timers fade
 		for (const [sname, s, active] of [['me', a.meSide, a.me], ['foe', a.foeSide, a.foe]]) {
 			if (s.wishT > 0 && --s.wishT === 0 && active.curHP > 0) {
-				this.pushMsg(`${active.name}'s wish came true!`, () => {
+				this.pushMsg(`${this.label(active)}'s wish came true!`, () => {
 					active.curHP = Math.min(active.maxHP, active.curHP + s.wishAmt);
 					this.float(sname, `+${s.wishAmt}`, '#6be08a');
 				});
@@ -3149,14 +3161,14 @@ export class Battle {
 			if (mon.curHP <= 0) continue;
 			if (mon.nightmared && mon.status === 'slp') {
 				const chip = Math.max(1, Math.floor(mon.maxHP / 4));
-				this.pushMsg(`${mon.name} is locked in a nightmare!`, () => {
+				this.pushMsg(`${this.label(mon)} is locked in a nightmare!`, () => {
 					mon.curHP = Math.max(0, mon.curHP - chip);
 					this.float(side, `-${chip}`, '#c98fe8');
 				});
 			} else if (mon.nightmared) delete mon.nightmared;
 			if (mon.perishN > 0) {
 				mon.perishN--;
-				this.pushMsg(`${mon.name}'s perish count fell to ${mon.perishN}!`, () => {
+				this.pushMsg(`${this.label(mon)}'s perish count fell to ${mon.perishN}!`, () => {
 					if (mon.perishN <= 0) mon.curHP = 0;
 				});
 			}
@@ -3170,7 +3182,7 @@ export class Battle {
 			const boosts = this.boostsOf(mon);
 			if (ab === 'speedboost') {
 				boosts.spe = Math.min(6, (boosts.spe || 0) + 1);
-				this.pushMsg(`${mon.name}'s Speed Boost raised its Speed!`);
+				this.pushMsg(`${this.label(mon)}'s Speed Boost raised its Speed!`);
 			}
 			// HUNGER SWITCH: Morpeko flips Full Belly ↔ Hangry every end of turn
 			if (ab === 'hungerswitch' && (mon.speciesId === 'morpeko' || mon.form === 'morpeko_hangry')) {
@@ -3179,27 +3191,27 @@ export class Battle {
 					want === 'morpeko_hangry' ? `${mon.name} got hangry!` : `${mon.name} calmed down.`);
 			}
 			if (ab === 'raindish' && this.weatherKind() === 'rain' && mon.curHP < mon.maxHP) {
-				this.pushMsg(`${mon.name}'s Rain Dish restored a little HP!`, () => {
+				this.pushMsg(`${this.label(mon)}'s Rain Dish restored a little HP!`, () => {
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
 				});
 			}
 			if (ab === 'icebody' && this.weatherKind() === 'hail' && mon.curHP < mon.maxHP) {
-				this.pushMsg(`${mon.name}'s Ice Body restored a little HP!`, () => {
+				this.pushMsg(`${this.label(mon)}'s Ice Body restored a little HP!`, () => {
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
 				});
 			}
 			if (ab === 'shedskin' && mon.status && Math.random() < 0.3) {
-				this.pushMsg(`${mon.name}'s Shed Skin cured its status!`, () => {
+				this.pushMsg(`${this.label(mon)}'s Shed Skin cured its status!`, () => {
 					mon.status = null; delete mon.badPsn; delete mon.toxicN;
 				});
 			}
 			if (ab === 'hydration' && mon.status && this.weatherKind() === 'rain') {
-				this.pushMsg(`${mon.name}'s Hydration cured its status!`, () => { mon.status = null; });
+				this.pushMsg(`${this.label(mon)}'s Hydration cured its status!`, () => { mon.status = null; });
 			}
 			if (ab === 'baddreams') {
 				const other = this.sideOfMon(mon) === 'me' ? a.foe : a.me;
 				if (other.curHP > 0 && other.status === 'slp') {
-					this.pushMsg(`${other.name} is tormented by Bad Dreams!`, () => {
+					this.pushMsg(`${this.label(other)} is tormented by Bad Dreams!`, () => {
 						other.curHP = Math.max(0, other.curHP - Math.max(1, Math.floor(other.maxHP / 8)));
 					});
 				}
@@ -3211,43 +3223,43 @@ export class Battle {
 				if (down === up) down = stats[(stats.indexOf(up) + 1) % 5];
 				boosts[up] = Math.min(6, (boosts[up] || 0) + 2);
 				boosts[down] = Math.max(-6, (boosts[down] || 0) - 1);
-				this.pushMsg(`${mon.name}'s Moody juggled its stats!`);
+				this.pushMsg(`${this.label(mon)}'s Moody juggled its stats!`);
 			}
 			if (ab === 'solarpower' && this.weatherKind() === 'sun') {
-				this.pushMsg(`${mon.name} is worn down by Solar Power!`, () => {
+				this.pushMsg(`${this.label(mon)} is worn down by Solar Power!`, () => {
 					mon.curHP = Math.max(0, mon.curHP - Math.max(1, Math.floor(mon.maxHP / 8)));
 				});
 			}
 			if (ab === 'dryskin') {
 				const wk3 = this.weatherKind();
 				if (wk3 === 'rain' && mon.curHP < mon.maxHP) {
-					this.pushMsg(`${mon.name}'s Dry Skin drank the rain!`, () => {
+					this.pushMsg(`${this.label(mon)}'s Dry Skin drank the rain!`, () => {
 						mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 8)));
 					});
 				} else if (wk3 === 'sun') {
-					this.pushMsg(`${mon.name}'s Dry Skin cracked in the sun!`, () => {
+					this.pushMsg(`${this.label(mon)}'s Dry Skin cracked in the sun!`, () => {
 						mon.curHP = Math.max(0, mon.curHP - Math.max(1, Math.floor(mon.maxHP / 8)));
 					});
 				}
 			}
 			if (mon.slowStartT > 0 && --mon.slowStartT === 0) {
-				this.pushMsg(`${mon.name} finally got its act together!`);
+				this.pushMsg(`${this.label(mon)} finally got its act together!`);
 			}
 			const held = this.itemFx(mon);
 			if (held?.endHealFrac && mon.curHP < mon.maxHP) {
-				this.pushMsg(`${mon.name} restored a little HP with its ${this.itemName(mon)}!`, () => {
+				this.pushMsg(`${this.label(mon)} restored a little HP with its ${this.itemName(mon)}!`, () => {
 					mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP * held.endHealFrac)));
 				});
 			}
 			if (held?.sludge) {
 				if (mon.types.includes('Poison')) {
 					if (mon.curHP < mon.maxHP) {
-						this.pushMsg(`${mon.name} sipped its Black Sludge!`, () => {
+						this.pushMsg(`${this.label(mon)} sipped its Black Sludge!`, () => {
 							mon.curHP = Math.min(mon.maxHP, mon.curHP + Math.max(1, Math.floor(mon.maxHP / 16)));
 						});
 					}
 				} else if (this.abilityOf(mon) !== 'magicguard') {
-					this.pushMsg(`${mon.name} is hurt by its Black Sludge!`, () => {
+					this.pushMsg(`${this.label(mon)} is hurt by its Black Sludge!`, () => {
 						mon.curHP = Math.max(0, mon.curHP - Math.max(1, Math.floor(mon.maxHP / 8)));
 					});
 				}
@@ -3256,7 +3268,7 @@ export class Battle {
 				&& /berry/.test(mon.consumedItem) && Math.random() < 0.5) {
 				mon.heldItem = mon.consumedItem;
 				mon.consumedItem = null;
-				this.pushMsg(`${mon.name}'s Harvest regrew its berry!`);
+				this.pushMsg(`${this.label(mon)}'s Harvest regrew its berry!`);
 			}
 		}
 		this.pushMsg('', () => this.checkFaints());
@@ -3265,7 +3277,7 @@ export class Battle {
 		if (a.roamer && Math.random() < 0.5) {
 			this.pushMsg('', () => {
 				if (a.foe.curHP <= 0 || a.caughtMon || a.phase === 'done') return;
-				if (this.trappedBy(a.foe)) { this.pushMsg(`${a.foe.name} strains to escape, but can't flee!`); return; }
+				if (this.trappedBy(a.foe)) { this.pushMsg(`${this.label(a.foe)} strains to escape, but can't flee!`); return; }
 				this.pushMsg(`The roaming ${a.foe.name} got away!`, () => { sfx('flee'); this.finish('escaped'); });
 			});
 		}
@@ -3547,7 +3559,7 @@ export class Battle {
 			this.grantExp();
 		}
 		if (meDown) {
-			this.pushMsg(`${a.me.name} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me, true); });
+			this.pushMsg(`${this.label(a.me)} fainted!`, () => { cry(a.me.speciesId); this.clearVolatiles(a.me, true); });
 			this.pushAnim('faint', 'me', 0.7, () => { a.meHidden = true; });
 			const next = a.party.find(m => m.curHP > 0);
 			if (next) {
@@ -3676,14 +3688,14 @@ export class Battle {
 		// whole point — without it the bell did nothing at all.
 		const bell = this.itemFx(mon)?.friendBoost || 1;
 		mon.friend = Math.min(255, (mon.friend ?? 70) + 2 * bell);
-		this.pushMsg(`${mon.name} gained ${gain} EXP!`);
+		this.pushMsg(`${this.label(mon)} gained ${gain} EXP!`);
 		const sp = this.data.species[mon.speciesId];
 		const cap = Math.max(1, this.levelCap || CLASSIC_MAX_LEVEL);
 		while (mon.level < Math.min(MAX_LEVEL, cap) && mon.exp >= expForLevel(mon.level + 1)) {
 			mon.level++;
 			mon.friend = Math.min(255, (mon.friend ?? 70) + 1 * bell);
 			const lvl = mon.level;
-			this.pushMsg(`${mon.name} grew to Lv${lvl}!`, () => {
+			this.pushMsg(`${this.label(mon)} grew to Lv${lvl}!`, () => {
 				sfx('levelup');
 				const ivs = mon.ivs || { hp: 15, atk: 15, def: 15, spa: 15, spd: 15, spe: 15 };
 				const oldMax = mon.maxHP;
@@ -3705,11 +3717,11 @@ export class Battle {
 			for (const [lv, mid] of sp.learnset) {
 				if (lv !== lvl || mon.moves.some(m => m.id === mid)) continue;
 				if (mon.moves.length < 4) {
-					this.pushMsg(`${mon.name} learned ${this.data.moves[mid]?.name || mid}!`,
+					this.pushMsg(`${this.label(mon)} learned ${this.data.moves[mid]?.name || mid}!`,
 						() => mon.moves.push(makeMove(mid, this.data)));
 				} else {
 					const name = this.data.moves[mid]?.name || mid;
-					this.pushMsg(`${mon.name} wants to learn ${name}!`, () => {
+					this.pushMsg(`${this.label(mon)} wants to learn ${name}!`, () => {
 						a.learn = { mid, name, mon };
 						a.learnIdx = 0;
 						a.phase = 'learn';
@@ -3724,7 +3736,7 @@ export class Battle {
 		// above the cap (gifts, trades) are never de-levelled.
 		if (mon.level >= cap && mon.level < MAX_LEVEL && mon.exp >= expForLevel(mon.level + 1)) {
 			mon.exp = expForLevel(mon.level + 1) - 1;
-			this.pushMsg(`${mon.name} is at the LEVEL CAP!`);
+			this.pushMsg(`${this.label(mon)} is at the LEVEL CAP!`);
 		}
 	}
 
@@ -3953,7 +3965,7 @@ export class Battle {
 						if (a.double) this.planMove(STRUGGLE());
 						else {
 							this.startQueue(() => {
-								this.pushMsg(`${a.me.name} has no moves left!`);
+								this.pushMsg(`${this.label(a.me)} has no moves left!`);
 								this.resolveTurn(STRUGGLE());
 							});
 						}
@@ -4053,7 +4065,7 @@ export class Battle {
 		// Corrosive Gas: melt the target's held item (no damage)
 		if (fx.corrode) {
 			if (!target.heldItem) { this.pushMsg('But it failed!'); return true; }
-			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${target.name}'s Sticky Hold kept its item!`); return true; }
+			if (this.abilityOf(target) === 'stickyhold') { this.pushMsg(`${this.label(target)}'s Sticky Hold kept its item!`); return true; }
 			this.pushMsg(`Corrosive gas melted ${target.name}'s ${this.itemName(target)}!`, () => {
 				target.heldItem = null;
 				if (this.abilityOf(target) === 'unburden') target.unburdened = true;
@@ -4074,7 +4086,7 @@ export class Battle {
 				boosts[st] = Math.max(-6, Math.min(6, before + d));
 				if (boosts[st] !== before) {
 					if (boosts[st] > before) gains[st] = boosts[st] - before;
-					this.pushMsg(`${who.name}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
+					this.pushMsg(`${this.label(who)}'s ${boostWords[st]} ${d > 1 ? 'rose sharply' : d > 0 ? 'rose' : d < -1 ? 'fell harshly' : 'fell'}!`);
 					// visible punch: the text line alone made buff turns read as
 					// nothing happening — float the arrow on the sprite too
 					sfx(d > 0 ? 'stat_up' : 'stat_dn');
@@ -4087,7 +4099,7 @@ export class Battle {
 			if (!copied && Object.keys(gains).length && !a.double) {
 				const opp = this.sideOfMon(who) === 'me' ? a.foe : a.me;
 				if (opp && opp.curHP > 0 && this.abilityOf(opp) === 'opportunist') {
-					this.pushMsg(`${opp.name}'s Opportunist copies the boost!`);
+					this.pushMsg(`${this.label(opp)}'s Opportunist copies the boost!`);
 					applyBoosts(this.boostsOf(opp), opp, gains, true);
 				}
 			}
@@ -4106,13 +4118,13 @@ export class Battle {
 			const ally = allyOf(user);
 			if (!ally || ally.curHP <= 0) { this.pushMsg('But it failed!'); return true; }
 			ally.helpingHand = true;   // consumed by the damage calc this turn
-			this.pushMsg(`${user.name} is ready to help ${ally.name}!`);
+			this.pushMsg(`${this.label(user)} is ready to help ${ally.name}!`);
 			return true;
 		}
 		if (fx.centerTaunt) {
 			if (!a.double) { this.pushMsg('But it failed!'); return true; }
 			user.centerOfAttention = true;
-			this.pushMsg(`${user.name} became the center of attention!`);
+			this.pushMsg(`${this.label(user)} became the center of attention!`);
 			return true;
 		}
 		if (fx.allySwitch) {
@@ -4120,7 +4132,7 @@ export class Battle {
 			if (!ally || ally.curHP <= 0) { this.pushMsg('But it failed!'); return true; }
 			if (user === a.me || user === a.meAlly) [a.me, a.meAlly] = [a.meAlly, a.me];
 			else [a.foe, a.foeAlly] = [a.foeAlly, a.foe];
-			this.pushMsg(`${user.name} and ${ally.name} switched places!`);
+			this.pushMsg(`${this.label(user)} and ${ally.name} switched places!`);
 			return true;
 		}
 		if (fx.allyBoost) {
@@ -4130,7 +4142,7 @@ export class Battle {
 			for (const [st, d] of Object.entries(fx.allyBoost)) {
 				b[st] = Math.max(-6, Math.min(6, (b[st] || 0) + d));
 			}
-			this.pushMsg(`${ally.name}'s stats rose!`);
+			this.pushMsg(`${this.label(ally)}'s stats rose!`);
 			return true;
 		}
 		if (fx.allyCrit) {
@@ -4138,7 +4150,7 @@ export class Battle {
 			const ally = allyOf(user);
 			if (!ally || ally.curHP <= 0 || ally.focusEnergy) { this.pushMsg('But it failed!'); return true; }
 			ally.focusEnergy = true;
-			this.pushMsg(`${user.name}'s cheer fired ${ally.name} up!`);
+			this.pushMsg(`${this.label(user)}'s cheer fired ${ally.name} up!`);
 			return true;
 		}
 		if (fx.festMsg) { this.pushMsg(fx.festMsg); return true; }
@@ -4149,24 +4161,24 @@ export class Battle {
 		if (fx.embargo) {
 			if (target.embargoTurns > 0) { this.pushMsg('But it failed!'); return true; }
 			target.embargoTurns = 5;
-			this.pushMsg(`${target.name} can't use items anymore!`);
+			this.pushMsg(`${this.label(target)} can't use items anymore!`);
 			return true;
 		}
 		if (fx.healBlock) {
 			if (target.healBlockTurns > 0) { this.pushMsg('But it failed!'); return true; }
 			target.healBlockTurns = 5;
-			this.pushMsg(`${target.name} was prevented from healing!`);
+			this.pushMsg(`${this.label(target)} was prevented from healing!`);
 			return true;
 		}
 		if (fx.imprison) {
 			if (user.imprisoning) { this.pushMsg('But it failed!'); return true; }
 			user.imprisoning = true;
-			this.pushMsg(`${user.name} sealed the moves it knows —\nits foes can't use them!`);
+			this.pushMsg(`${this.label(user)} sealed the moves it knows —\nits foes can't use them!`);
 			return true;
 		}
 		if (fx.grudgeSelf) {
 			user.grudged = true;
-			this.pushMsg(`${user.name} wants its foe to bear a GRUDGE!`);
+			this.pushMsg(`${this.label(user)} wants its foe to bear a GRUDGE!`);
 			return true;
 		}
 		if (fx.teatime) {
@@ -4174,7 +4186,7 @@ export class Battle {
 			this.pushMsg(eaters.length ? 'Tea time! Everyone dug into their berries!' : 'But nothing happened!');
 			for (const m of eaters) {
 				const held = Bag.ITEMS[m.heldItem].held;
-				this.pushMsg(`${m.name} ate its ${Bag.ITEMS[m.heldItem].name}!`, () => {
+				this.pushMsg(`${this.label(m)} ate its ${Bag.ITEMS[m.heldItem].name}!`, () => {
 					if (held.berryHeal) m.curHP = Math.min(m.maxHP, m.curHP + held.berryHeal);
 					if (held.berryHealFrac) m.curHP = Math.min(m.maxHP, m.curHP + Math.max(1, Math.floor(m.maxHP * held.berryHealFrac)));
 					if (held.cure) {
@@ -4190,7 +4202,7 @@ export class Battle {
 		}
 		if (fx.electrifyTarget) {
 			target.electrified = true; // consumed by the type-rewrite chain, cleared each turn
-			this.pushMsg(`${target.name}'s moves were electrified!`);
+			this.pushMsg(`${this.label(target)}'s moves were electrified!`);
 			return true;
 		}
 		if (fx.ionDeluge) {
@@ -4207,14 +4219,14 @@ export class Battle {
 			const t = user.heldItem || null;
 			user.heldItem = target.heldItem || null;
 			target.heldItem = t;
-			this.pushMsg(`${user.name} swapped items with ${target.name}!`);
+			this.pushMsg(`${this.label(user)} swapped items with ${target.name}!`);
 			return true;
 		}
 		if (fx.itemGive) {
 			if (user.heldItem && !target.heldItem) {
 				target.heldItem = user.heldItem;
 				user.heldItem = null;
-				this.pushMsg(`${user.name} bestowed its item on ${target.name}!`);
+				this.pushMsg(`${this.label(user)} bestowed its item on ${target.name}!`);
 			} else this.pushMsg('But it failed!');
 			return true;
 		}
@@ -4222,7 +4234,7 @@ export class Battle {
 			if (!user.consumedItem || user.heldItem) { this.pushMsg('But it failed!'); return true; }
 			user.heldItem = user.consumedItem;
 			user.consumedItem = null;
-			this.pushMsg(`${user.name} recycled its ${this.itemName(user)}!`);
+			this.pushMsg(`${this.label(user)} recycled its ${this.itemName(user)}!`);
 			return true;
 		}
 		if (fx.splashMsg) { this.pushMsg('But nothing happened!'); return true; }
@@ -4259,7 +4271,7 @@ export class Battle {
 			user.protectN = (user.protectN || 0) + 1;
 			if (Math.random() < 1 / Math.pow(2, user.protectN - 1)) {
 				user.enduring = true;
-				this.pushMsg(`${user.name} braced itself!`);
+				this.pushMsg(`${this.label(user)} braced itself!`);
 			} else { user.protectN = 0; this.pushMsg('But it failed!'); }
 			return true;
 		}
@@ -4287,7 +4299,7 @@ export class Battle {
 			if (isFoe) { this.pushMsg('But it failed!'); return true; }
 			const next = a.party.find(m => m !== user && m.curHP > 0);
 			if (!next) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} passed the baton!`, () => {
+			this.pushMsg(`${this.label(user)} passed the baton!`, () => {
 				const keep = { boosts: { ...userBoosts }, subHP: user.subHP, focusEnergy: user.focusEnergy, perishN: user.perishN };
 				this.clearVolatiles(user);
 				a.me = next;
@@ -4308,7 +4320,7 @@ export class Battle {
 			if (!isFoe) {
 				const next = a.party.find(m => m !== user && m.curHP > 0);
 				if (next) {
-					this.pushMsg(`${user.name} switched out!`, () => {
+					this.pushMsg(`${this.label(user)} switched out!`, () => {
 						this.clearVolatiles(user);
 						a.me = next;
 						a.meImg = a.backSprites.get(next);
@@ -4324,25 +4336,25 @@ export class Battle {
 		}
 		if (fx.fleeSelf) {
 			if (a.isTrainer) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} fled the battle!`, () => { sfx('flee'); this.finish('escaped'); });
+			this.pushMsg(`${this.label(user)} fled the battle!`, () => { sfx('flee'); this.finish('escaped'); });
 			return true;
 		}
 		if (fx.memento) {
 			applyBoosts(targetBoosts, target, { atk: -2, spa: -2 });
-			this.pushMsg(`${user.name} gave everything it had!`, () => { user.curHP = 0; });
+			this.pushMsg(`${this.label(user)} gave everything it had!`, () => { user.curHP = 0; });
 			this.pushMsg('', () => this.checkFaints());
 			return true;
 		}
 		if (fx.healingWish) {
 			if (isFoe || !a.party.find(m => m !== user && m.curHP > 0)) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} made a healing wish!`, () => { user.curHP = 0; a.healingWish = true; });
+			this.pushMsg(`${this.label(user)} made a healing wish!`, () => { user.curHP = 0; a.healingWish = true; });
 			this.pushMsg('', () => this.checkFaints());
 			return true;
 		}
 		if (fx.revive) {
 			const fainted = isFoe ? null : a.party.find(m => m.curHP <= 0);
 			if (!fainted) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${fainted.name} was revived!`, () => {
+			this.pushMsg(`${this.label(fainted)} was revived!`, () => {
 				fainted.curHP = Math.floor(fainted.maxHP / 2);
 				fainted.status = null;
 			});
@@ -4353,34 +4365,34 @@ export class Battle {
 			const veil = [target, a.double ? (target === a.me ? a.meAlly : target === a.meAlly ? a.me
 				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null) : null]
 				.filter(m => m && m.curHP > 0).some(m => this.abilityOf(m) === 'aromaveil');
-			if (veil) { this.pushMsg(`${target.name} is protected by AROMA VEIL!`); return true; }
+			if (veil) { this.pushMsg(`${this.label(target)} is protected by AROMA VEIL!`); return true; }
 			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
 			if (fx.restrict === 'disable') {
 				if (!lastId || target.disabledMove) { this.pushMsg('But it failed!'); return true; }
 				target.disabledMove = lastId; target.disableTurns = 4;
-				this.pushMsg(`${target.name}'s move was disabled!`);
+				this.pushMsg(`${this.label(target)}'s move was disabled!`);
 			} else if (fx.restrict === 'encore') {
 				if (!lastId || target.encoreMove) { this.pushMsg('But it failed!'); return true; }
 				target.encoreMove = lastId; target.encoreTurns = 3;
-				this.pushMsg(`${target.name} received an encore!`);
+				this.pushMsg(`${this.label(target)} received an encore!`);
 			} else if (fx.restrict === 'taunt') {
 				if (target.tauntTurns > 0) { this.pushMsg('But it failed!'); return true; }
 				target.tauntTurns = 3;
-				this.pushMsg(`${target.name} fell for the taunt!`);
+				this.pushMsg(`${this.label(target)} fell for the taunt!`);
 			} else {
 				if (target.tormented) { this.pushMsg('But it failed!'); return true; }
 				target.tormented = true;
-				this.pushMsg(`${target.name} was subjected to torment!`);
+				this.pushMsg(`${this.label(target)} was subjected to torment!`);
 			}
 			return true;
 		}
 		if (fx.noSwitch) {
 			target.noSwitch = true;
-			this.pushMsg(`${target.name} can no longer escape!`);
+			this.pushMsg(`${this.label(target)} can no longer escape!`);
 			return true;
 		}
-		if (fx.magnetRise) { user.magnetRise = 5; this.pushMsg(`${user.name} levitated with electromagnetism!`); return true; }
-		if (fx.telekinesis) { target.telekinesis = 3; this.pushMsg(`${target.name} was hurled into the air!`); return true; }
+		if (fx.magnetRise) { user.magnetRise = 5; this.pushMsg(`${this.label(user)} levitated with electromagnetism!`); return true; }
+		if (fx.telekinesis) { target.telekinesis = 3; this.pushMsg(`${this.label(target)} was hurled into the air!`); return true; }
 		if (fx.call) {
 			let id = null;
 			if (fx.call === 'metronome') {
@@ -4407,13 +4419,13 @@ export class Battle {
 			if (idx < 0) { this.pushMsg('But it failed!'); return true; }
 			if (!user.mimicSlot) user.mimicSlot = { idx, orig: move };
 			user.moves[idx] = makeMove(lastId, this.data);
-			this.pushMsg(`${user.name} mimicked the move!`);
+			this.pushMsg(`${this.label(user)} mimicked the move!`);
 			return true;
 		}
 		if (fx.boostCost) {
 			const cost = Math.floor(user.maxHP * fx.boostCost.frac);
 			if (user.curHP <= cost) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} paid with its vitality!`, () => {
+			this.pushMsg(`${this.label(user)} paid with its vitality!`, () => {
 				user.curHP -= cost;
 				this.float(mySide, `-${cost}`, '#ff7a6b');
 			});
@@ -4425,12 +4437,12 @@ export class Battle {
 			if (fx.selfBoost) applyBoosts(userBoosts, user, fx.selfBoost);
 			if (fx.foeBoost2) applyBoosts(targetBoosts, target, fx.foeBoost2);
 			if (fx.cureSelfToo && user.status) {
-				this.pushMsg(`${user.name} shook off its status!`, () => { user.status = null; delete user.badPsn; delete user.toxicN; });
+				this.pushMsg(`${this.label(user)} shook off its status!`, () => { user.status = null; delete user.badPsn; delete user.toxicN; });
 			}
 			if (fx.heal) {
-				if (user.healBlockTurns > 0) { this.pushMsg(`${user.name} can't heal — Heal Block!`); return true; }
+				if (user.healBlockTurns > 0) { this.pushMsg(`${this.label(user)} can't heal — Heal Block!`); return true; }
 				const amt = Math.floor(user.maxHP * fx.heal);
-				this.pushMsg(`${user.name} regained health!`, () => {
+				this.pushMsg(`${this.label(user)} regained health!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + amt);
 					this.float(mySide, `+${amt}`, '#6be08a');
 				});
@@ -4442,13 +4454,13 @@ export class Battle {
 			applyBoosts(userBoosts, user, { [stats[Math.floor(Math.random() * stats.length)]]: 2 });
 			return true;
 		}
-		if (fx.focusEnergy) { user.focusEnergy = true; this.pushMsg(`${user.name} is getting pumped!`); return true; }
-		if (fx.laserFocus) { user.laserFocus = true; this.pushMsg(`${user.name} concentrated intensely!`); return true; }
-		if (fx.lockOn) { user.lockOn = true; this.pushMsg(`${user.name} took aim at ${target.name}!`); return true; }
-		if (fx.foresight) { target.foresight = true; this.pushMsg(`${user.name} identified ${target.name}!`); return true; }
+		if (fx.focusEnergy) { user.focusEnergy = true; this.pushMsg(`${this.label(user)} is getting pumped!`); return true; }
+		if (fx.laserFocus) { user.laserFocus = true; this.pushMsg(`${this.label(user)} concentrated intensely!`); return true; }
+		if (fx.lockOn) { user.lockOn = true; this.pushMsg(`${this.label(user)} took aim at ${target.name}!`); return true; }
+		if (fx.foresight) { target.foresight = true; this.pushMsg(`${this.label(user)} identified ${target.name}!`); return true; }
 		if (fx.healTarget) {
 			const amt = Math.floor(target.maxHP * fx.healTarget);
-			this.pushMsg(`${target.name}'s HP was restored.`, () => {
+			this.pushMsg(`${this.label(target)}'s HP was restored.`, () => {
 				target.curHP = Math.min(target.maxHP, target.curHP + amt);
 				this.float(isFoe ? 'me' : 'foe', `+${amt}`, '#6be08a');
 			});
@@ -4458,13 +4470,13 @@ export class Battle {
 			const s = sideOf(mySide);
 			if (s.wishT > 0) { this.pushMsg('But it failed!'); return true; }
 			s.wishT = 2; s.wishAmt = Math.floor(user.maxHP / 2);
-			this.pushMsg(`${user.name} made a wish!`);
+			this.pushMsg(`${this.label(user)} made a wish!`);
 			return true;
 		}
 		if (fx.strengthSap) {
 			const amt = this.statOf(target, targetBoosts, 'atk');
 			applyBoosts(targetBoosts, target, { atk: -1 });
-			this.pushMsg(`${user.name} drained ${target.name}'s strength!`, () => {
+			this.pushMsg(`${this.label(user)} drained ${target.name}'s strength!`, () => {
 				user.curHP = Math.min(user.maxHP, user.curHP + amt);
 				this.float(mySide, `+${amt}`, '#6be08a');
 			});
@@ -4472,7 +4484,7 @@ export class Battle {
 		}
 		if (fx.purify) {
 			if (!target.status) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${target.name} was purified!`, () => {
+			this.pushMsg(`${this.label(target)} was purified!`, () => {
 				target.status = null; delete target.badPsn;
 				user.curHP = Math.min(user.maxHP, user.curHP + Math.floor(user.maxHP / 2));
 			});
@@ -4480,7 +4492,7 @@ export class Battle {
 		}
 		if (fx.psychoShift) {
 			if (!user.status || target.status) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} shifted its status onto ${target.name}!`, () => {
+			this.pushMsg(`${this.label(user)} shifted its status onto ${target.name}!`, () => {
 				target.status = user.status;
 				user.status = null;
 			});
@@ -4489,7 +4501,7 @@ export class Battle {
 		if (fx.nightmare) {
 			if (target.status !== 'slp' || target.nightmared) { this.pushMsg('But it failed!'); return true; }
 			target.nightmared = true;
-			this.pushMsg(`${target.name} began having a nightmare!`);
+			this.pushMsg(`${this.label(target)} began having a nightmare!`);
 			return true;
 		}
 		if (fx.perishSong) {
@@ -4497,18 +4509,18 @@ export class Battle {
 			this.pushMsg('All battlers will faint in three turns!');
 			return true;
 		}
-		if (fx.destinyBond) { user.destinyBond = true; this.pushMsg(`${user.name} is trying to take its foe down with it!`); return true; }
+		if (fx.destinyBond) { user.destinyBond = true; this.pushMsg(`${this.label(user)} is trying to take its foe down with it!`); return true; }
 		if (fx.spite) {
 			const lastId = a.lastMove[isFoe ? 'me' : 'foe'];
 			const mv2 = lastId && target.moves.find(m2 => m2.id === lastId);
 			if (!mv2 || mv2.pp <= 0) { this.pushMsg('But it failed!'); return true; }
 			mv2.pp = Math.max(0, mv2.pp - 4);
-			this.pushMsg(`${target.name}'s move lost PP!`);
+			this.pushMsg(`${this.label(target)}'s move lost PP!`);
 			return true;
 		}
 		if (fx.psychUp) {
 			Object.assign(userBoosts, { ...targetBoosts });
-			this.pushMsg(`${user.name} copied ${target.name}'s stat changes!`);
+			this.pushMsg(`${this.label(user)} copied ${target.name}'s stat changes!`);
 			return true;
 		}
 		if (fx.swapBoosts) {
@@ -4547,12 +4559,12 @@ export class Battle {
 			const t = user.stats[k1];
 			user.stats[k1] = user.stats[k2];
 			user.stats[k2] = t;
-			this.pushMsg(`${user.name} swapped its stats!`);
+			this.pushMsg(`${this.label(user)} swapped its stats!`);
 			return true;
 		}
 		if (fx.invertBoosts) {
 			for (const k of Object.keys(targetBoosts)) targetBoosts[k] = -(targetBoosts[k] || 0);
-			this.pushMsg(`${target.name}'s stat changes were turned upside down!`);
+			this.pushMsg(`${this.label(target)}'s stat changes were turned upside down!`);
 			return true;
 		}
 		if (fx.transform) {
@@ -4561,13 +4573,13 @@ export class Battle {
 			user.types = [...target.types];
 			user.transformedMoves = user.transformedMoves || user.moves;
 			user.moves = target.moves.map(m2 => ({ id: m2.id, name: m2.name, pp: 5, maxPp: 5 }));
-			this.pushMsg(`${user.name} transformed into ${target.name}!`);
+			this.pushMsg(`${this.label(user)} transformed into ${target.name}!`);
 			return true;
 		}
 		if (fx.substitute) {
 			const cost = Math.floor(user.maxHP / 4);
 			if (user.subHP > 0 || user.curHP <= cost) { this.pushMsg('But it failed!'); return true; }
-			this.pushMsg(`${user.name} put up a substitute!`, () => {
+			this.pushMsg(`${this.label(user)} put up a substitute!`, () => {
 				user.curHP -= cost;
 				user.subHP = cost;
 				this.float(mySide, `-${cost}`, '#ff7a6b');
@@ -4580,10 +4592,10 @@ export class Battle {
 				: fx.typeSelf === 'copy' ? [...target.types]
 				: fx.typeSelf === 'random' ? [Object.keys(CHART)[Math.floor(Math.random() * 18)]]
 				: [fx.typeSelf];
-			this.pushMsg(`${user.name} became ${user.types.join('/')} type!`);
+			this.pushMsg(`${this.label(user)} became ${user.types.join('/')} type!`);
 			return true;
 		}
-		if (fx.typeTarget) { this.snapTypes(target); target.types = [...fx.typeTarget]; this.pushMsg(`${target.name} became ${fx.typeTarget[0]} type!`); return true; }
+		if (fx.typeTarget) { this.snapTypes(target); target.types = [...fx.typeTarget]; this.pushMsg(`${this.label(target)} became ${fx.typeTarget[0]} type!`); return true; }
 		if (fx.addType) {
 			this.snapTypes(target);
 			if (!target.types.includes(fx.addType)) target.types = [...target.types, fx.addType];
@@ -4594,21 +4606,21 @@ export class Battle {
 			if ((user.stockN || 0) >= 3) { this.pushMsg('But it failed!'); return true; }
 			user.stockN = (user.stockN || 0) + 1;
 			applyBoosts(userBoosts, user, { def: 1, spd: 1 });
-			this.pushMsg(`${user.name} stockpiled ${user.stockN}!`);
+			this.pushMsg(`${this.label(user)} stockpiled ${user.stockN}!`);
 			return true;
 		}
 		if (fx.spitUp || fx.swallow) {
 			if (!user.stockN) { this.pushMsg('But it failed!'); return true; }
 			if (fx.spitUp) {
 				const dmg = Math.min(target.curHP, 30 * user.stockN + Math.floor(user.level * user.stockN / 2));
-				this.pushMsg(`${user.name} spat up its power!`, () => {
+				this.pushMsg(`${this.label(user)} spat up its power!`, () => {
 					sfx('hit_normal');
 					target.curHP = Math.max(0, target.curHP - dmg);
 					this.float(isFoe ? 'me' : 'foe', `-${dmg}`, '#ff7a6b');
 				});
 			} else {
 				const amt = Math.floor(user.maxHP * [0.25, 0.5, 1][user.stockN - 1]);
-				this.pushMsg(`${user.name} swallowed its power!`, () => {
+				this.pushMsg(`${this.label(user)} swallowed its power!`, () => {
 					user.curHP = Math.min(user.maxHP, user.curHP + amt);
 					this.float(mySide, `+${amt}`, '#6be08a');
 				});
@@ -4619,14 +4631,14 @@ export class Battle {
 		if (fx.chargeUp) {
 			user.chargedUp = true;
 			applyBoosts(userBoosts, user, { spd: 1 });
-			this.pushMsg(`${user.name} began charging power!`);
+			this.pushMsg(`${this.label(user)} began charging power!`);
 			return true;
 		}
 		if (fx.abilityCopy) {
 			if (!target.ability) { this.pushMsg('But it failed!'); return true; }
 			this.snapAbility(user);
 			user.ability = target.ability;
-			this.pushMsg(`${user.name} copied ${target.name}'s ability!`);
+			this.pushMsg(`${this.label(user)} copied ${target.name}'s ability!`);
 			return true;
 		}
 		if (fx.abilitySwap) {
@@ -4637,9 +4649,9 @@ export class Battle {
 			this.pushMsg('The battlers swapped abilities!');
 			return true;
 		}
-		if (fx.abilityGive) { this.snapAbility(target); target.ability = user.ability; this.pushMsg(`${target.name}'s ability changed!`); return true; }
-		if (fx.abilitySuppress) { target.abilitySuppressed = true; this.pushMsg(`${target.name}'s ability was suppressed!`); return true; }
-		if (fx.abilitySet) { this.snapAbility(target); target.ability = fx.abilitySet; this.pushMsg(`${target.name}'s ability changed!`); return true; }
+		if (fx.abilityGive) { this.snapAbility(target); target.ability = user.ability; this.pushMsg(`${this.label(target)}'s ability changed!`); return true; }
+		if (fx.abilitySuppress) { target.abilitySuppressed = true; this.pushMsg(`${this.label(target)}'s ability was suppressed!`); return true; }
+		if (fx.abilitySet) { this.snapAbility(target); target.ability = fx.abilitySet; this.pushMsg(`${this.label(target)}'s ability changed!`); return true; }
 		return false;
 	}
 
@@ -4661,7 +4673,7 @@ export class Battle {
 		if (h.spikes && grounded) {
 			const frac = [1 / 8, 1 / 6, 1 / 4][Math.min(2, h.spikes - 1)];
 			const dmg = Math.max(1, Math.floor(mon.maxHP * frac));
-			this.pushMsg(`${mon.name} was hurt by spikes!`, () => {
+			this.pushMsg(`${this.label(mon)} was hurt by spikes!`, () => {
 				mon.curHP = Math.max(0, mon.curHP - dmg);
 				this.float(side, `-${dmg}`, '#e8b16b');
 			});
@@ -4669,17 +4681,17 @@ export class Battle {
 		if (h.toxicspikes && grounded) {
 			if (mon.types.includes('Poison')) {
 				h.toxicspikes = 0;
-				this.pushMsg(`${mon.name} absorbed the toxic spikes!`);
+				this.pushMsg(`${this.label(mon)} absorbed the toxic spikes!`);
 			} else if (!mon.status && !mon.types.includes('Steel')) {
 				mon.status = 'psn';
 				if (h.toxicspikes >= 2) { mon.badPsn = true; mon.toxicN = 1; }
-				this.pushMsg(`${mon.name} was poisoned by toxic spikes!`);
+				this.pushMsg(`${this.label(mon)} was poisoned by toxic spikes!`);
 			}
 		}
 		if (h.stickyweb && grounded) {
 			const boosts = side === 'me' ? a.meBoosts : a.foeBoosts;
 			boosts.spe = Math.max(-6, (boosts.spe || 0) - 1);
-			this.pushMsg(`${mon.name} was caught in a sticky web!`);
+			this.pushMsg(`${this.label(mon)} was caught in a sticky web!`);
 		}
 		this.pushMsg('', () => this.checkFaints());
 	}
@@ -4818,7 +4830,7 @@ export class Battle {
 			const mon = a[slot];
 			if (mon && mon.curHP <= 0 && !mon.faintCounted) {
 				mon.faintCounted = true;
-				this.pushMsg(`${mon.name} fainted!`, () => cry(mon.speciesId));
+				this.pushMsg(`${this.label(mon)} fainted!`, () => cry(mon.speciesId));
 				this.grantExp(mon);
 				// a trainer's bench refills the slot; the wild just thins out
 				this.pushMsg('', () => {
@@ -4840,7 +4852,7 @@ export class Battle {
 			const mon = a[slot];
 			if (mon && mon.curHP <= 0 && !mon.faintCounted) {
 				mon.faintCounted = true;
-				this.pushMsg(`${mon.name} fainted!`, () => { cry(mon.speciesId); this.clearVolatiles(mon, true); });
+				this.pushMsg(`${this.label(mon)} fainted!`, () => { cry(mon.speciesId); this.clearVolatiles(mon, true); });
 				this.pushMsg('', () => {
 					const partnerSlot = !!a.partner && slot === 'meAlly';
 					const bench = partnerSlot ? a.partner.party : a.party;
@@ -4935,7 +4947,7 @@ export class Battle {
 				this.pushMsg(`You used an ${item.name}!`, () => {
 					for (const m of a.me.moves) m.pp = Math.min(m.maxPp, m.pp + item.amount);
 				});
-				this.pushMsg(`${a.me.name}'s moves regained PP.`);
+				this.pushMsg(`${this.label(a.me)}'s moves regained PP.`);
 				this.foeFreeMove();
 			});
 			return;
@@ -4949,7 +4961,7 @@ export class Battle {
 					a.me.curHP = Math.min(a.me.maxHP, a.me.curHP + item.amount);
 					if (item.cures) a.me.status = null;
 				});
-				this.pushMsg(`${a.me.name}'s HP was restored.`);
+				this.pushMsg(`${this.label(a.me)}'s HP was restored.`);
 				this.foeFreeMove();
 			});
 			return;
@@ -4963,7 +4975,7 @@ export class Battle {
 					fainted.curHP = item.full ? fainted.maxHP : Math.floor(fainted.maxHP / 2); // MAX REVIVE / REVIVAL HERB restore full HP
 					fainted.status = null;
 				});
-				this.pushMsg(`${fainted.name} came back to its senses!`);
+				this.pushMsg(`${this.label(fainted)} came back to its senses!`);
 				this.foeFreeMove();
 			});
 			return;
@@ -4982,7 +4994,7 @@ export class Battle {
 					if (cures) { a.me.status = null; delete a.me.badPsn; delete a.me.toxicN; }   // Toxic's counter too, or a later plain poison escalates
 					if (uncon) a.me.confuseTurns = 0;
 				});
-				this.pushMsg(`${a.me.name} was cured!`);
+				this.pushMsg(`${this.label(a.me)} was cured!`);
 				this.foeFreeMove();
 			});
 			return;
@@ -5000,7 +5012,7 @@ export class Battle {
 					this.pushMsg(`You used the ${item.name}!`, () => {
 						a.meBoosts[stat] = Math.min(6, (a.meBoosts[stat] || 0) + d);
 					});
-					this.pushMsg(`${a.me.name}'s ${words[stat]} rose!`);
+					this.pushMsg(`${this.label(a.me)}'s ${words[stat]} rose!`);
 					this.foeFreeMove();
 				});
 			} else if (item.crit) {
@@ -5008,7 +5020,7 @@ export class Battle {
 				Bag.consume(itemId);
 				this.startQueue(() => {
 					this.pushMsg(`You used the ${item.name}!`, () => { a.me.focusEnergy = true; });
-					this.pushMsg(`${a.me.name} is getting pumped!`);
+					this.pushMsg(`${this.label(a.me)} is getting pumped!`);
 					this.foeFreeMove();
 				});
 			} else if (item.guard) {
