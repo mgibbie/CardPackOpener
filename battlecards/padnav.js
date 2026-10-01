@@ -218,6 +218,19 @@ export function onPress(action) {
 	if (action === 'menu') return key(' ');
 }
 
+// the RIGHT stick scrolls the open dialog (the game log drawer, a long Discover
+// list): its first scrollable box, a few px a frame in proportion to the tilt
+function scrollWithRightStick() {
+	const pads = window.__owFakePads || (navigator.getGamepads ? [...navigator.getGamepads()] : []);
+	let y = 0;
+	for (const p of pads) { const v = p && p.connected !== false && p.axes ? +p.axes[3] || 0 : 0; if (Math.abs(v) > Math.abs(y)) y = v; }
+	if (Math.abs(y) < 0.3) return;
+	const m = openModal();
+	if (!m) return;
+	const box = [m, ...m.querySelectorAll('*')].find(el => el.scrollHeight > el.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(el).overflowY));
+	if (box) box.scrollTop += y * 16;
+}
+
 let pad = null;
 export function initPadnav() {
 	if (pad || typeof window === 'undefined' || !signedIn()) return null;
@@ -227,6 +240,7 @@ export function initPadnav() {
 		// unplugged (the last pad gone): drop the ring and the hover it was showing;
 		// focus is kept, so the next press on a reconnected pad picks up there
 		onFrame: p => {
+			scrollWithRightStick();
 			if (!ringOn || p.connected()) return;
 			ringOn = false;
 			if (focused) { focused.classList.remove('padnav-focus'); hover(focused, false); }

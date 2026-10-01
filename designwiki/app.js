@@ -2257,6 +2257,7 @@ function controlsView() {
         ['Bottom face (cancel)', 'Back out of placing or targeting'],
         ['Left face', 'Read the focused card in the large focus view (◄ ► / LB RB step through the cards beside it; cancel closes). Confirm on a card you cannot act on opens it too'],
         ['Start', 'Menu: game log, auto-pass, sound, concede'],
+        ['Game log', 'Card names are links: confirm on one to read the card. Right stick scrolls; cancel closes'],
       ])),
     section('Typing on a controller', 'Nicknames, friend codes, searches and pasted deck or replay codes use the on-screen keyboard.',
       table(['Button', 'Action'], [

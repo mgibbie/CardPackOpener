@@ -1499,32 +1499,142 @@ const logEl = $('log');
 // full match history (for the scrollable log drawer); the inline #log HUD keeps
 // only the last few lines. Bounded so a very long game can't grow without limit.
 const logHistory = [];
-function log(msg) {
+// CARD NAMES in the log are links (Plans/CONTROLLER_V2_PLAN.md D): parallel to
+// logHistory, each line's [{ s, e, id, uid }] — character span, card id, and the
+// uid of a PUBLIC copy when there was one. Clicking one opens the card focus view.
+const logLinks = [];
+// every card name this match can print, mapped to its id and (when one is face-up
+// on the table, in a graveyard/exile, or in YOUR hand) a public uid. A name is
+// only linked where the log already printed it, and a hidden copy's uid is never
+// stored — so a link reveals nothing the line didn't.
+function logNameIndex() {
+	const out = new Map();
+	if (!state) return out;
+	const add = (c, pub) => {
+		if (!c || !c.name || typeof c !== 'object') return;
+		const e = out.get(c.name) || { id: c.id, uid: null };
+		if (pub && e.uid == null && !(c.disguised && c.controller !== HUMAN)) e.uid = c.uid;
+		if (!e.id) e.id = c.id;
+		out.set(c.name, e);
+	};
+	state.players.forEach((p, pi) => {
+		for (const z of ['board', 'lands', 'artifacts', 'enchantments', 'planeswalkers', 'emblems', 'graveyard', 'exile', 'quests', 'heroPowers', 'command'])
+			for (const c of p[z] || []) add(c, true);
+		add(p.weapon, true); add(p.companion, true);
+		for (const c of p.hand || []) add(c, pi === HUMAN);
+		for (const z of ['deck', 'secrets', 'traps']) for (const c of p[z] || []) add(c, false);
+		const hp = classPowerOf(pi); if (hp) add(hp, true);
+	});
+	return out;
+}
+function findLogLinks(msg, refs) {
+	const links = [];
+	if (!msg || !state) return links;
+	const taken = (s0, e0) => links.some(l => s0 < l.e && e0 > l.s);
+	const wordAt = (s0, e0) => !/[\w']/.test(msg[s0 - 1] || ' ') && !/[\w]/.test(msg[e0] || ' ');
+	// explicit refs first (two copies of one name resolve to the right one)
+	for (const r of refs || []) {
+		const name = r && (r.name || cardOf(r.uid)?.name);
+		if (!name) continue;
+		const i = msg.indexOf(name);
+		if (i < 0 || taken(i, i + name.length)) continue;
+		const live = r.uid != null ? cardOf(r.uid) : null;
+		const hidden = live && live.controller !== HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
+		// a dead card's event carries only its name: find its id by name
+		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(state.cardsById).find(d => d && d.name === name)?.id || null;
+		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null) });
+	}
+	// then every other card name the line printed, longest first
+	const idx = logNameIndex();
+	const names = [...idx.keys()].filter(n => n.length >= 3 && msg.includes(n)).sort((a, b) => b.length - a.length);
+	for (const n of names) {
+		let from = 0, i;
+		while ((i = msg.indexOf(n, from)) >= 0) {
+			from = i + n.length;
+			if (!wordAt(i, i + n.length) || taken(i, i + n.length)) continue;
+			const e = idx.get(n);
+			links.push({ s: i, e: i + n.length, id: e.id, uid: e.uid });
+		}
+	}
+	return links.sort((a, b) => a.s - b.s);
+}
+// a log line as DOM: text with its card names as buttons
+function logLineEl(msg, links) {
+	const d = document.createElement('div');
+	if (/^— Turn \d+/.test(msg)) d.className = 'lf-turn';
+	let at = 0;
+	for (const l of links || []) {
+		if (l.s > at) d.appendChild(document.createTextNode(msg.slice(at, l.s)));
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = 'log-card';
+		b.textContent = msg.slice(l.s, l.e);
+		b.title = 'See this card';
+		b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); openLogCard(l); });
+		d.appendChild(b);
+		at = l.e;
+	}
+	if (at < msg.length) d.appendChild(document.createTextNode(msg.slice(at)));
+	return d;
+}
+// a log link -> the card focus view: the live card while it's still public, else its definition
+function openLogCard(l) {
+	let c = l.uid != null ? cardOf(l.uid) : null;
+	if (c && !canFocusCard(c)) c = null;
+	if (!c && state) {
+		const def = state.cardsById[l.id] || (l.id && Object.values(state.cardsById).find(d => d && d.id === l.id));
+		if (def) c = { ...def, uid: 'preview_' + def.id, zone: 'preview', controller: null, maxHealth: def.health, keywords: def.keywords || [], damage: 0 };
+	}
+	if (c) showCardFocus(c);
+}
+function log(msg, refs) {
+	const links = findLogLinks(msg, refs);
 	logHistory.push(msg);
-	if (logHistory.length > 500) logHistory.shift();
-	const div = document.createElement('div');
-	div.textContent = msg;
+	logLinks.push(links);
+	if (logHistory.length > 500) { logHistory.shift(); logLinks.shift(); }
+	const div = logLineEl(msg, links);
 	logEl.appendChild(div);
 	// the inline feed shows only the freshest few events and each fades out on
-	// its own — the full history stays behind the 📜 Log drawer
-	setTimeout(() => {
+	// its own — the full history stays behind the 📜 Log drawer. A line whose card
+	// name is under the pointer waits, so you can click it.
+	const fade = () => {
+		if (div.querySelector('.log-card:hover')) { setTimeout(fade, 600); return; }
 		div.classList.add('fade');
 		setTimeout(() => div.remove(), 800);
-	}, 4200);
+	};
+	setTimeout(fade, 4200);
 	while (logEl.children.length > 3) logEl.removeChild(logEl.firstChild);
-	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg);
+	if (logFull && logFull.classList.contains('open')) appendLogFullLine(msg, links);
 }
 const logFull = $('log-full');
 const logFullBody = logFull && logFull.querySelector('.lf-body');
-function appendLogFullLine(msg) {
-	const d = document.createElement('div'); d.textContent = msg; logFullBody.appendChild(d);
-	logFullBody.scrollTop = logFullBody.scrollHeight;
+function appendLogFullLine(msg, links) {
+	// stay pinned to the newest line unless you've scrolled up to read
+	const atEnd = logFullBody.scrollHeight - logFullBody.scrollTop - logFullBody.clientHeight < 24;
+	logFullBody.appendChild(logLineEl(msg, links));
+	if (atEnd) logFullBody.scrollTop = logFullBody.scrollHeight;
 }
 function renderLogFull() {
 	logFullBody.innerHTML = '';
-	for (const line of logHistory) { const d = document.createElement('div'); d.textContent = line; logFullBody.appendChild(d); }
+	logHistory.forEach((line, i) => logFullBody.appendChild(logLineEl(line, logLinks[i])));
 	logFullBody.scrollTop = logFullBody.scrollHeight;
 }
+// the drawer is a dialog: padnav drives it on a controller (up/down between card
+// names, confirm opens one, cancel closes) and Esc closes it for a keyboard
+function openLogFull() {
+	if (!logFull) return;
+	logFull.classList.add('open');
+	logFull.setAttribute('aria-modal', 'true');
+	renderLogFull();
+}
+function closeLogFull() {
+	if (!logFull) return;
+	logFull.classList.remove('open');
+	logFull.removeAttribute('aria-modal');
+}
+addEventListener('keydown', ev => {
+	if (ev.key === 'Escape' && logFull && logFull.classList.contains('open') && !cardFocusOpen()) { ev.stopPropagation(); closeLogFull(); }
+}, true);
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)
 		const b = $('sfx-btn');
@@ -1532,11 +1642,8 @@ if (logFull) {
 		paint();
 		b.addEventListener('click', () => { SFX.setMuted(!SFX.isMuted()); paint(); if (!SFX.isMuted()) SFX.play('click'); });
 	}
-	$('log-btn').addEventListener('click', () => {
-		logFull.classList.toggle('open');
-		if (logFull.classList.contains('open')) renderLogFull();
-	});
-	logFull.querySelector('.lf-close').addEventListener('click', () => logFull.classList.remove('open'));
+	$('log-btn').addEventListener('click', () => { if (logFull.classList.contains('open')) closeLogFull(); else openLogFull(); });
+	logFull.querySelector('.lf-close').addEventListener('click', () => closeLogFull());
 	$('nav-toggle')?.addEventListener('click', () => document.body.classList.toggle('nav-open'));
 }
 
@@ -3276,7 +3383,7 @@ function nextEvent() {
 		case 'play':
 			if (matchStats) statInc(matchStats.cards, ev.player);
 			SFX.play('cardPlay');
-			log(`${nameOf(ev.player)} played ${ev.card.name}`);
+			log(`${nameOf(ev.player)} played ${ev.card.name}`, [ev.card]);
 			delay = 420;
 			if (ev.target) {
 				pendingFx.push({ c: ev.card.uid, p: ev.player, t: ev.target, fr: ev.target.player === ev.player ? 1 : 0 });
@@ -3286,7 +3393,7 @@ function nextEvent() {
 		case 'summon':
 			if (matchStats) statInc(matchStats.summons, ev.player);
 			SFX.play('summon');
-			log(`${nameOf(ev.player)} summoned ${ev.card.name}`);
+			log(`${nameOf(ev.player)} summoned ${ev.card.name}`, [ev.card]);
 			delay = 260;
 			break;
 		case 'attack': {
@@ -3366,7 +3473,7 @@ function nextEvent() {
 			const ent = entities.get(ev.uid);
 			SFX.play('death');
 			if (ent) { ent.dying = performance.now(); }
-			if (ev.name) log(`${ev.name} died`);
+			if (ev.name) log(`${ev.name} died`, [{ uid: ev.uid, name: ev.name, id: ev.id }]);
 			delay = 330;
 			break;
 		}
@@ -3392,7 +3499,7 @@ function nextEvent() {
 			delay = 200;
 			break;
 		case 'weaponEquip':
-			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`);
+			log(`${nameOf(ev.player)} equipped ${ev.card.name} (${ev.card.attack}/${ev.card.durability})`, [ev.card]);
 			delay = 320;
 			break;
 		case 'weaponDurability': delay = 60; break;
@@ -5296,6 +5403,8 @@ animate();
 // headless test hook
 try { wireModalVeil(); } catch (e) { /* no DOM (node tests) */ }
 window.__game = {
+	logForTest: (msg, refs) => log(msg, refs),
+	get logLinks() { return logLinks.map(a => a.map(l => ({ ...l }))); }, get logLines() { return logHistory.slice(); }, openLogFull, closeLogFull,
 	get cardFocus() { return focusCard ? { uid: focusCard.uid, id: focusCard.id, zone: focusCard.zone } : null; }, showCardFocus, hideCardFocus,
 	get boardVanishLog() { return boardVanishLog; },
 	get state() { return state; },
@@ -5376,6 +5485,14 @@ initPadboard({
 	// the card focus view: onClose hands focus back to the board on the card you read
 	openCardFocus: (card, onClose) => showCardFocus(card, { onClose }), cardFocusOpen, hideCardFocus,
 	heroPowerCard: () => classPowerOf(HUMAN),
+	// opened from the pad: start the selector on the newest card name
+	openLog: () => {
+		openLogFull();
+		requestAnimationFrame(() => {
+			const last = [...(logFullBody?.querySelectorAll('.log-card') || [])].pop();
+			if (last && window.__padnav) window.__padnav.focusTo(last);
+		});
+	},
 	canvas: renderer.domElement,
 	setHover: (uid, x, y) => { hoverUid = uid; if (x != null) updateTooltip({ clientX: x, clientY: y }); else $('tooltip').style.display = 'none'; },
 	setMouse: (x, y) => { mouseX = x; mouseY = y; },
@@ -6482,7 +6599,8 @@ async function start() {
 	$('restart').style.display = 'none';
 	logEl.innerHTML = '';
 	logHistory.length = 0; // fresh match → fresh log history
-	if (logFull) { logFull.classList.remove('open'); if (logFullBody) logFullBody.innerHTML = ''; }
+	logLinks.length = 0;
+	if (logFull) { closeLogFull(); if (logFullBody) logFullBody.innerHTML = ''; }
 	buildTable();
 	frameCamera();
 	const data = await loadCardsData();
