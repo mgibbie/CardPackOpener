@@ -154,6 +154,24 @@ try {
 		const r = await talk(p, scope);
 		A(r.bagAdded.includes('silphscope') && r.gone, 'the SILPH SCOPE ball gives the SILPH SCOPE and goes away', JSON.stringify(r));
 		A(!/BAG is full/.test(r.said), '...without a false "Too bad! The BAG is full…" (giveitem answers TRUE)', r.said.slice(0, 160));
+		// the LIFT KEY is story progression, not just an item (report addendum, 3:06pm):
+		// its script sets FLAG_CAN_USE_ROCKET_HIDEOUT_LIFT, which the elevator reads
+		const lift = balls.find(b => /LiftKey$/.test(b.script || ''));
+		const rl = await talk(p, lift);
+		A(rl.bagAdded.includes('liftkey') && rl.gone, 'the LIFT KEY ball gives the LIFT KEY and goes away', JSON.stringify(rl));
+		const liftFlag = await p.evaluate(async () => (await import('./events.js')).getFlag('FLAG_CAN_USE_ROCKET_HIDEOUT_LIFT'));
+		A(liftFlag === true, '...and runs the whole authored script: FLAG_CAN_USE_ROCKET_HIDEOUT_LIFT is set', String(liftFlag));
+		// the elevator's floor select branches on that flag: it must not answer NeedKey
+		const elev = await p.evaluate(async () => {
+			const O = window.__ow;
+			await O.moveToMap('RocketHideout_Elevator');
+			const S = (await import('./ow_state.js')).S;
+			const ops = S.mapScripts.RocketHideout_Elevator_EventScript_FloorSelect || [];
+			const gate = ops.find(o => o.op === 'branch' && /NeedKey/.test(o.label || ''));
+			return { hasGate: !!gate, cond: gate && gate.cond };
+		});
+		A(elev.hasGate && elev.cond && elev.cond.flag === 'FLAG_CAN_USE_ROCKET_HIDEOUT_LIFT' && elev.cond.state === false,
+			'the elevator gates on exactly that flag (unset -> NeedKey), so the key now opens it', JSON.stringify(elev));
 		A((await junk(p)).length === 0, 'no junk item', JSON.stringify(await junk(p)));
 		await p.close();
 	}
