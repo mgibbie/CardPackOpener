@@ -311,18 +311,23 @@ export function step(state, pi = 1) {
 
 	// -1e. tap {T} artifacts whose ability is armed (e.g. Detective's Satchel after a Clue sac)
 	for (const a of [...p.artifacts]) {
-		if (!a.tapAbility || !E.canTapArtifact(state, pi, a.uid)) continue;
-		const spec = E.tapArtifactSpec(state, pi, a.uid);
-		let target = null;
-		if (spec && spec.required) {
-			const legal = E.legalTargets(state, pi, spec);
-			if (!legal.length) continue;
-			// score the target like a spell's (helpful → ours, harmful → their biggest)
-			target = pickFromLegal(state, pi, a.tapAbility.effects, legal)
-				|| pickTarget(state, pi, { id: a.id + ':tap', type: 'sorcery', effects: a.tapAbility.effects || [] })
-				|| legal[Math.floor(state.rng() * legal.length)];
+		const abs = E.artifactTaps(a);
+		// several {T} abilities: the first one that can fire (order = the card's)
+		for (let i = 0; i < abs.length; i++) {
+			const ab = abs[i];
+			if (!E.canTapArtifact(state, pi, a.uid, i)) continue;
+			const spec = E.tapArtifactSpec(state, pi, a.uid, i);
+			let target = null;
+			if (spec && spec.required) {
+				const legal = E.legalTargets(state, pi, spec);
+				if (!legal.length) continue;
+				// score the target like a spell's (helpful → ours, harmful → their biggest)
+				target = pickFromLegal(state, pi, ab.effects, legal)
+					|| pickTarget(state, pi, { id: a.id + ':tap', type: 'sorcery', effects: ab.effects || [] })
+					|| legal[Math.floor(state.rng() * legal.length)];
+			}
+			if (E.tapArtifact(state, pi, a.uid, target, i)) return true;
 		}
-		if (E.tapArtifact(state, pi, a.uid, target)) return true;
 	}
 
 	// -1b. unmask disguised creatures worth their cost

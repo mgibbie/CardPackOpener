@@ -91,7 +91,12 @@ register('grant-ongoing', ({ state, pi, target, source, enemies, scaled, hm, pic
 				return;
 			}
 			const t = chosenCreature();
-			if (t) t.ongoing = JSON.parse(JSON.stringify(e.ongoing));
+			if (!t) return;
+			const clone = JSON.parse(JSON.stringify(e.ongoing));
+			// `stack`: a creature keeps its own trigger; the grant joins `ongoings`
+			// (Mirkwood Darkflame Arrow's Inspire on a creature that already has one)
+			if (e.stack && t.ongoing) (t.ongoings = t.ongoings || []).push(clone);
+			else t.ongoing = clone;
 });
 
 
