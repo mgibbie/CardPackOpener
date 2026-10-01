@@ -516,6 +516,16 @@ export async function importSave(input, opts = {}) {
 		try { const r = await MP.call('ow-load'); serverRev = Math.max(0, parseInt(r?.ow?.ow?.[OW_REV_KEY], 10) || 0); }
 		catch (e) { serverRev = null; }
 	}
+	// A repair file built FROM a particular save (a story restore, a junk cleanup)
+	// carries `baseRev`: the server revision it was made from. If the account has
+	// been played since, the file is stale and would silently undo that play —
+	// refuse, nothing changed, and say what to ask for. (opts.allowStale overrides.)
+	const baseRev = (() => { try { const d = typeof input === 'string' ? JSON.parse(input) : input; return Number.isInteger(d && d.baseRev) ? d.baseRev : null; } catch (e) { return null; } })();
+	if (baseRev != null && serverRev != null && serverRev > baseRev && !opts.allowStale) {
+		_importing = false;
+		return finishImport({ ...base, stage: 'stale', fileRev: v.fileRev, baseRev, serverRevBefore: serverRev,
+			error: `This file was made from your save at revision ${baseRev}, but your save has moved on to ${serverRev} since. Importing it would undo that play — nothing was changed. Ask for a fresh file.` }, false);
+	}
 	const ap = Savefile.applySaveSafely(v.keys);
 	if (!ap.ok) return finishImport({ ...base, stage: 'apply', error: ap.error, rolledBack: ap.rolledBack, fileRev: v.fileRev }, false);
 	// the imported game must outrank the stored one; keep the file's own revision
