@@ -286,12 +286,19 @@ export function fitCanvas() {
 		frame.height = VIEW_H;
 		ctx.imageSmoothingEnabled = false; // resizing resets context state
 	}
+	// The integer scale is floored at 2x (the menus and battle UI are drawn for
+	// it), so below ~490 CSS px at 1x pixel density the canvas came out WIDER than
+	// the window and everything — the OPTIONS panel most visibly — was cut off at
+	// both sides. Keep the sharp 2x backing store but SHOW it no wider than the
+	// window; taps map through the shown size (screenPos), so input follows.
+	const natW = VIEW_W * s / dpr, natH = VIEW_H * s / dpr;
+	const fitK = Math.min(1, (innerWidth * 0.98) / natW);
+	screen.style.width = (natW * fitK) + 'px';
+	screen.style.height = (natH * fitK) + 'px';
 	if (s === SCALE && screen.width === VIEW_W * s && screen.height === VIEW_H * s) return;
 	SCALE = s;
 	screen.width = VIEW_W * s;
 	screen.height = VIEW_H * s;
-	screen.style.width = (VIEW_W * s / dpr) + 'px';
-	screen.style.height = (VIEW_H * s / dpr) + 'px';
 	sctx.imageSmoothingEnabled = false; // resizing resets context state
 }
 export const frame = document.createElement('canvas'); // native view-sized (240x160 landscape)
