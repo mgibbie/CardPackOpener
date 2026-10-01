@@ -183,6 +183,7 @@ export function startScriptedWildBattle(species, level) {
 	if (!species || !battle.data?.species?.[species]) return 'skip';
 	if (!S.party || !leadMon(S.party) || battle.blocking) return 'skip';
 	Dex.markSeen(species);
+	S.scriptedWildCount = (S.scriptedWildCount || 0) + 1;   // a scripted ball's encounter happened (ow_input runScriptedBall)
 	battle.endSpec = { kind: 'wild' };   // the blocking script is gone after a reload; a plain wild ending is safe
 	battle.start(S.party, species, level, result => {
 		if (result === 'caught' && battle.lastCaught) {

@@ -19,7 +19,7 @@ import { healParty, saveParty } from './party.js';
 import { safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk, startWildBattle } from './ow_places.js';
+import { fossilManiacTalk, fossilPick, fossilUnderpassTalk, generatorTalk, lastOutdoor, museumCuratorTalk, museumPaintTalk, noteHealPoint, ruinsWordTalk } from './ow_places.js';
 import { gcMenu } from './ow_gamecorner.js';
 import { legendaryHere, startLegendaryBattle } from './ow_follower.js';
 import { openDaycare, openMoveShop, openNameRater, openTownMap } from './ow_music.js';
@@ -168,6 +168,27 @@ function postBattleLine(label) {
 	const raw = (S.mapStrings && S.mapStrings[next.text]) || null;
 	return raw ? Story.normalizeText(raw, cutsceneCtx()) : null;
 }
+// A SCRIPTED ball (items.js): run its own script with the ball as the talked-to
+// object, so the script's `removeobject VAR_LAST_TALKED` takes it away. A static
+// encounter (Aqua Hideout / Power Plant ELECTRODE, New Mauville VOLTORB) is gone
+// after the battle whatever the outcome: WON/RAN remove it in the script itself;
+// CAUGHT is removed by the decomp's map OnResume, which this port has no hook
+// for, and a loss still costs it — so any encounter it starts hides it here too.
+function runScriptedBall(sb) {
+	if (!S.mapScripts[sb.script]) { console.warn('[items] no script for scripted ball', sb.script); return; }
+	const n0 = S.scriptedWildCount || 0;
+	if (!runScriptLabel(sb.script, sb)) return;
+	const watch = () => {
+		if (cutscene.blocking || battle.blocking || dialog.blocking) { requestAnimationFrame(watch); return; }
+		if ((S.scriptedWildCount || 0) > n0 && !sb.hidden) {
+			sb.hidden = true;
+			const f = sb.ev && sb.ev.flag;
+			if (f && f !== '0') Story.setFlag(f);
+		}
+	};
+	requestAnimationFrame(watch);
+}
+
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
 export function interact() {
 	if (player.moving || trainers.engaging) return;
@@ -175,13 +196,10 @@ export function interact() {
 	const fx = player.tx + dx, fy = player.ty + dy;
 	// another player standing on the faced tile — challenge them or offer a trade
 	if (MP_ON) { const who = ghostAt(fx, fy); if (who) { playerMenu.open = true; playerMenu.idx = 0; playerMenu.target = who; return; } }
-	// a disguised VOLTORB "item ball" springs its ambush
-	const amb = items.ambushAt(fx, fy);
-	if (amb) {
-		items.takeAmbush(amb);
-		dialog.open("It's not an item — the ball has EYES!\n\nVOLTORB attacked!", () => startWildBattle({ id: amb.ambush, level: 25 }));
-		return;
-	}
+	// a SCRIPTED ball (an Electrode / Voltorb in disguise, a gift POKeMON, a key
+	// item): run its own authored script, with it as the talked-to object
+	const sb = items.scriptedAt(fx, fy);
+	if (sb) { runScriptedBall(sb); return; }
 	// item balls / berry trees / hidden items (facing tile, then standing tile).
 	// A PERSON on the faced tile is talked to, not searched under: Emerald hides
 	// the Trick House NUGGET on the very tile the Trick Master stands on, and

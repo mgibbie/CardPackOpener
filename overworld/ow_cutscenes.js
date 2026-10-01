@@ -4,7 +4,7 @@ import * as Bag from './bag.js';
 import * as Daycare from './daycare.js';
 import { META } from './engine.js';
 import * as Story from './events.js';
-import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
+import { battle, cutscene, dialog, hud, items, npcs, player, trainers, world } from './ow_core.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { buildMonForGift } from './ow_gamecorner.js';
 import { shopMenu } from './ow_menukeys.js';
@@ -44,7 +44,9 @@ export function npcById(localId) {
 	// Slowpoke Well grunts are trainers, and hiding them is what sets
 	// EVENT_SLOWPOKE_WELL_ROCKETS and clears the Azalea gym doorway. Searching one
 	// list found none of them.
-	const list = [...(npcs.list || []), ...((trainers && trainers.list) || [])];
+	// ...and neither are the SCRIPTED item balls (items.js owns every ball): an
+	// Electrode's `removeobject VAR_LAST_TALKED` must find the ball it came from
+	const list = [...(npcs.list || []), ...((trainers && trainers.list) || []), ...((items && items.scriptedBalls && items.scriptedBalls()) || [])];
 	// 1. the map's own id, which is what a correctly-named reference uses
 	const exact = list.find(n => n.ev && n.ev.local_id === localId);
 	if (exact) return exact;
