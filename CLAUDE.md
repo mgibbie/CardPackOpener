@@ -7,7 +7,7 @@ updated_at)`). Cloudflare Pages deploys `main` automatically — merging IS ship
 
 Two big asset folders are **gitignored** and deployed to their own Pages projects:
 `overworld/data` → magepunk-owdata.pages.dev, `battlecards/art` → magepunk-cardart.pages.dev.
-A fresh clone has neither (see Cloud sessions).
+A fresh clone has neither (see "start setup").
 
 ## Owner rules (always)
 - Fix bugs with a **regression test**, and show it **fails with the fix reverted**.
@@ -31,7 +31,7 @@ A fresh clone has neither (see Cloud sessions).
   After an interruption: add `--resume`. Failures are retried alone at the end; "FLAKY
   (failed, then passed alone)" is a pass.
 - Battlecards engine tests: `npm test` (`battlecards/tests/run-all.mjs`).
-- Tests need `CHROME` (a Chrome/Chromium path) and `overworld/data`.
+- Tests need a Chrome (`CHROME`, or `/opt/chrome/chrome` after cloud setup) and `overworld/data`.
 
 ## "check on the testers"
 `node tools/playtest-digest.mjs` (SELECT-only) diffs the playtest accounts (the default
@@ -58,15 +58,26 @@ Investigate its ⚠ items. Message a tester via their bell: the `chat:dm:<user>`
 Card text conventions: keywords alphabetical, `A, B & C.`; a spell's school is its `tribe`;
 "Luck:" = coin flip `{type:'luck', effects}`; Red/Green/... card pools = `landSet` Mountain/Forest/....
 
-## Cloud sessions (Claude Code on the web)
-Environment settings:
-- **Setup script:** `bash tools/cloud/setup.sh` (npm install, Chrome at `/opt/chrome/chrome`,
-  `overworld/data` from live — ~3-4 min, so it caches).
-- **Variables:** `CHROME=/opt/chrome/chrome`, `CLOUDFLARE_API_TOKEN=<D1-scoped token>`,
-  `CLOUDFLARE_ACCOUNT_ID=<account id>`.
-- **Network:** include api.cloudflare.com, magepunk-owdata.pages.dev, the npm registry,
-  GitHub, and Chrome's download host (storage.googleapis.com).
-Then `node tools/cloud/doctor.mjs` must print "all good". Commands time out at 30 min in
-the background: run the full gate as `run-all.mjs` then `run-all.mjs --resume` until done.
-After adding files to `overworld/data` locally (and deploying them to magepunk-owdata),
-refresh the list with `node tools/cloud/fetch-owdata.mjs --write-manifest`.
+## "start setup" — a cloud session readies itself (the owner types this, often from the iPhone app)
+Do ALL of it without asking questions; keep replies phone-short.
+1. `bash tools/cloud/setup.sh` (background; ~4 min; idempotent): npm install, Chrome at
+   `/opt/chrome/chrome` (the gate runners and the doctor use it automatically), and the
+   gitignored `overworld/data` from magepunk-owdata.pages.dev.
+2. `node tools/cloud/doctor.mjs`, then fix what it reports yourself:
+   - **Chrome won't launch** — `ldd /opt/chrome/chrome | grep "not found"`, `apt-get install -y`
+     those libraries; or `apt-get install -y chromium` and `ln -sf "$(command -v chromium)" /opt/chrome/chrome`.
+   - **Downloads fail** (npm, Chrome, or overworld/data) — the environment's network access
+     blocks the host. The owner's fix: set the environment's **Network access to Full**.
+   - **D1 fails, no `CLOUDFLARE_API_TOKEN`** — the one thing only the owner can do. Tell them,
+     in these 3 lines (never ask them to paste the token into the chat):
+     1. Cloudflare → My Profile → API Tokens → Create Token → Custom: **Account · D1 · Edit**, their account only.
+     2. This environment's settings → Environment variables → `CLOUDFLARE_API_TOKEN=<token>`.
+     3. Start a new session and type "start setup" again.
+   - **gh not authenticated** — report it (cloud sessions normally have it).
+3. Re-run the doctor. When it prints "all good", reply: "Ready — gate, testers, bug list and to-do list all work here."
+
+Cloud notes: background commands stop at 30 min, so run the full gate as `run-all.mjs`, then
+`run-all.mjs --resume` until it finishes. Each new cloud session starts fresh: "start setup"
+again (or put `bash tools/cloud/setup.sh` in the environment's setup script so it's cached).
+After adding files to `overworld/data` (and deploying them to magepunk-owdata), refresh the
+list with `node tools/cloud/fetch-owdata.mjs --write-manifest`.

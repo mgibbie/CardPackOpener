@@ -33,7 +33,7 @@
 // FLAKES ARE REPORTED, NOT HIDDEN. A suite that fails is rerun once, alone, after
 // everything else. If it passes then, it is listed as FLAKY (and counted in the
 // history file) rather than silently passed. A suite that fails twice fails the gate.
-import { readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { spawn, execSync } from 'child_process';
 import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
@@ -41,6 +41,8 @@ import { dirname, join } from 'path';
 import os from 'os';
 
 const here = dirname(fileURLToPath(import.meta.url));
+// a cloud session's Chrome (tools/cloud/setup.sh) — every suite reads CHROME and inherits this env
+if (!process.env.CHROME && existsSync('/opt/chrome/chrome')) process.env.CHROME = '/opt/chrome/chrome';
 const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : null; };
 const jobsArg = flag('--jobs');

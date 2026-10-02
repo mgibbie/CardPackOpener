@@ -23,8 +23,8 @@ let puppeteer = null;
 try { puppeteer = (await import('puppeteer-core')).default; row(true, 'puppeteer-core installed'); }
 catch (e) { row(false, 'puppeteer-core installed', 'run npm install'); }
 
-const chrome = process.env.CHROME;
-if (!chrome) row(false, 'CHROME is set', 'set CHROME=/opt/chrome/chrome in the environment variables');
+const chrome = process.env.CHROME || (fs.existsSync('/opt/chrome/chrome') ? '/opt/chrome/chrome' : null);   // the gate runner defaults to the same
+if (!chrome) row(false, 'a Chrome to test with', 'run bash tools/cloud/setup.sh (installs /opt/chrome/chrome)');
 else if (puppeteer) {
 	try {
 		const b = await puppeteer.launch({ executablePath: chrome, headless: 'new', args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
@@ -33,7 +33,7 @@ else if (puppeteer) {
 	} catch (e) { row(false, `CHROME launches (${chrome})`, String(e.message).split('\n')[0]); }
 }
 
-const want = fs.readFileSync(path.join(ROOT, 'tools/cloud/owdata_manifest.txt'), 'utf8').split('\n').filter(Boolean);
+const want = fs.readFileSync(path.join(ROOT, 'tools/cloud/owdata_manifest.txt'), 'utf8').split(/\r?\n/).map(s => s.trim()).filter(Boolean);   // a Windows checkout has CRLF
 const missing = want.filter(p => !fs.existsSync(path.join(ROOT, 'overworld/data', p)));
 row(missing.length === 0, `overworld/data has all ${want.length} manifest files`, missing.length ? `${missing.length} missing (e.g. ${missing[0]}) — run node tools/cloud/fetch-owdata.mjs` : '');
 
