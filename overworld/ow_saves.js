@@ -319,6 +319,45 @@ export async function checkRepair() {
 	});
 }
 
+// THE DEX ONLY GROWS. Seen/caught, the Unown letters and the claimed milestones
+// are sets — two copies of a save never really disagree about them, one just
+// lacks entries. So whichever copy a sync keeps, it takes the union of both.
+// (2026-10-01: a reload on a device with a stale dex kept its copy at a tied
+// revision and dropped 10 seen species from Instinct's server save.)
+// Returns the keys whose merged value differs from `base`.
+const DEX_SET_KEYS = { magepunk_dex_v1: 'dex', magepunk_unown_v1: 'list', magepunk_dexclaims_v1: 'list' };
+export function dexUnion(base, other) {
+	const out = {};
+	const parse = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
+	const uni = (a, b) => [...new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])])];
+	for (const [k, shape] of Object.entries(DEX_SET_KEYS)) {
+		const a = parse(base[k]), b = parse(other[k]);
+		if (b == null) continue;
+		let merged;
+		if (shape === 'dex') {
+			if (!b || !Array.isArray(b.seen) || !Array.isArray(b.caught)) continue;
+			const A = a && Array.isArray(a.seen) && Array.isArray(a.caught) ? a : { seen: [], caught: [] };
+			merged = { ...A, seen: uni(A.seen, b.seen), caught: uni(A.caught, b.caught) };
+			if (merged.seen.length === A.seen.length && merged.caught.length === A.caught.length && a) continue;
+		} else {
+			if (!Array.isArray(b)) continue;
+			merged = uni(a, b);
+			if (Array.isArray(a) && merged.length === a.length) continue;
+		}
+		out[k] = JSON.stringify(merged);
+	}
+	return out;
+}
+function applyDexUnion(base, other, why) {
+	const m = dexUnion(base, other);
+	const keys = Object.keys(m);
+	if (!keys.length) return [];
+	for (const k of keys) safeSaveStr(k, m[k]);
+	Dex.reloadDex();
+	syncLog('hydrate.dex', { action: 'merged dex', why, keys });
+	return keys;
+}
+
 export async function hydrateOw() {
 	if (!MP_ON) { syncLog('hydrate.skip', { reason: 'MP_ON=false' }); return; }
 	try {
@@ -379,7 +418,8 @@ export async function hydrateOw() {
 				// THE FIX for the reported rollback. Local carries work the server never
 				// acknowledged. Adopting the server here is exactly what destroyed
 				// x16/y32. Keep local, and push it up instead.
-				syncLog('hydrate.decision', { winner: 'local', reason: `localRev ${localRev} > remoteRev ${remoteRev} — refusing to rewrite local backward`, rewroteLocal: false, keysOverwritten: [] });
+				const dexKeys = applyDexUnion(localSnap, ow, 'local ahead');
+				syncLog('hydrate.decision', { winner: 'local', reason: `localRev ${localRev} > remoteRev ${remoteRev} — refusing to rewrite local backward${dexKeys.length ? ', dex merged' : ''}`, rewroteLocal: dexKeys.length > 0, keysOverwritten: dexKeys });
 				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
 				pushOw();
 				return;
@@ -403,7 +443,9 @@ export async function hydrateOw() {
 					Story.reloadStory();
 					syncLog('hydrate.story', { action: 'adopted remote story', reason: 'local story was a strict regression', missing: reg.missing.length, sample: reg.missing.slice(0, 8) });
 				}
-				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote${reg ? ', story from remote' : ''}`, rewroteLocal: !!reg, keysOverwritten: reg ? ['magepunk_story'] : [], conflict: true });
+				const dexKeys = applyDexUnion(localSnap, ow, 'same-revision divergence');
+				const rewrote = [...(reg ? ['magepunk_story'] : []), ...dexKeys];
+				syncLog('hydrate.decision', { winner: 'local', reason: `equal revisions (${localRev}) with differing bodies — kept local, preserved remote${reg ? ', story from remote' : ''}${dexKeys.length ? ', dex merged' : ''}`, rewroteLocal: rewrote.length > 0, keysOverwritten: rewrote, conflict: true });
 				hud.textContent = 'This game moved on somewhere else too — kept this device\'s copy.';
 				// pushOw() bumps the revision itself, so local lands on remoteRev + 1 and
 				// the tie is broken. The extra setOwRev here double-counted it: the
@@ -423,12 +465,19 @@ export async function hydrateOw() {
 					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { overwritten.push(k); localStorage.setItem(k, ow[k]); changed = true; }
 				} catch (e) {}
 			}
+			// what the server holds, as acked — so a dex this device adds on top
+			// (merged just below) is still dirty, and gets pushed
+			_lastAckedBody = owBody(owSnapshot());
+			const dexKeys = applyDexUnion(owSnapshot(), localSnap, 'remote ahead');
+			// this device now holds work the server lacks: one revision past it, so
+			// the boot after the reload below pushes it as local-ahead rather than
+			// reading the merge as a same-revision divergence
+			if (dexKeys.length) { changed = true; setOwRev(remoteRev + 1); }
 			syncLog('hydrate.decision', {
-				winner: 'remote', reason: `remoteRev ${remoteRev} > localRev ${localRev}`,
+				winner: 'remote', reason: `remoteRev ${remoteRev} > localRev ${localRev}${dexKeys.length ? ', dex merged' : ''}`,
 				rewroteLocal: changed, keysOverwritten: overwritten,
 				afterFp: owFingerprint(owSnapshot()),
 			});
-			_lastAckedBody = owBody(owSnapshot()); // don't immediately re-push what we just pulled
 			// Story/Bag/Badges/Dex read their strings at IMPORT time, so a hydration
 			// that actually changed something must reload once — otherwise a stale
 			// in-memory module would quietly save itself back over the fresh data.

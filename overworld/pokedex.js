@@ -16,6 +16,9 @@ function save(d) {
 }
 
 let dex = load();
+// re-read after the save sync rewrote the stored dex (a merged conflict), so
+// the in-memory copy can't save its stale self back over the merge
+export function reloadDex() { dex = load(); unownSet = new Set(safeLoad(UNOWN_KEY, [])); }
 
 // ---------- the UNOWN DEX ----------
 // Each Unown letter is its own species (unown, unown_b … unown_z, unown_exclaim,
