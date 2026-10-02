@@ -3,13 +3,15 @@
 //         node battlecards/tests/run-all.mjs frigid  (only suites whose filename contains "frigid")
 //         npm test -- frigid                         (same, through npm)
 // Exit code is non-zero if any suite fails, so this is CI-safe.
-import { readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dirs = ['characterization', 'unit', 'regression', 'fuzz'];
+// a cloud session's Chrome (tools/cloud/setup.sh) — suites read CHROME and inherit this env
+if (!process.env.CHROME && existsSync('/opt/chrome/chrome')) process.env.CHROME = '/opt/chrome/chrome';
+const dirs =['characterization', 'unit', 'regression', 'fuzz'];
 const filter = (process.argv[2] || '').toLowerCase(); // substring match on the filename
 let suites = 0, failed = 0;
 

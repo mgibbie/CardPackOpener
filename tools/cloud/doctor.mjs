@@ -23,8 +23,8 @@ let puppeteer = null;
 try { puppeteer = (await import('puppeteer-core')).default; row(true, 'puppeteer-core installed'); }
 catch (e) { row(false, 'puppeteer-core installed', 'run npm install'); }
 
-const chrome = process.env.CHROME;
-if (!chrome) row(false, 'CHROME is set', 'set CHROME=/opt/chrome/chrome in the environment variables');
+const chrome = process.env.CHROME || (fs.existsSync('/opt/chrome/chrome') ? '/opt/chrome/chrome' : null);   // the gate runner defaults to the same
+if (!chrome) row(false, 'a Chrome to test with', 'run bash tools/cloud/setup.sh (installs /opt/chrome/chrome)');
 else if (puppeteer) {
 	try {
 		const b = await puppeteer.launch({ executablePath: chrome, headless: 'new', args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
