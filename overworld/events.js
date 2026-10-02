@@ -433,6 +433,10 @@ export class Cutscene {
 				case 'checkmoney': setVar('VAR_RESULT', (ctx.money?.() ?? 0) >= (+op.amount || 0) ? 1 : 0); break;
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
 				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
+				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
+				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later
+				// message prints — "PLAYER received the {STR_VAR_1} from the KARATE MASTER."
+				case 'buffer': setStrVar(op.dst, bufferText(op)); break;
 				// FireRed/Emerald multichoice (restored by tools/gen_multichoice.mjs): the
 				// menu WAITS for the player; the pick lands in VAR_RESULT before the
 				// switch that follows reads it. No UI -> no answer is invented.
@@ -668,6 +672,7 @@ export function normalizeText(s, ctx = {}) {
 	if (typeof s !== 'string') return '...';
 	s = s.replace(/\{PLAYER\}/g, ctx.playerName || 'PLAYER')
 		.replace(/\{RIVAL\}/g, ctx.rivalName || 'RIVAL')
+		.replace(/\{STR_VAR_([123])\}/g, (m, n) => strVars[n] || '')   // what a `buffer` op put there
 		.replace(/\{[^{}]*\}/g, '')          // drop any remaining control token, incl. arg'd ones like {PAUSE 0x56}
 		// pokecrystal's charmap prints "#" as POKé, so the ported Johto strings
 		// are full of "#MON" / "#DEX" / "# BALL". Expand before the é fold below.
@@ -751,6 +756,43 @@ export function itemId(sym) {
 		return m ? m[1].toLowerCase().replace(/[^a-z0-9]/g, '') : null;
 	}
 	return sym.replace(/^ITEM_/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+// ---------- the STR_VAR buffers ----------
+// The GBA engine's gStringVar1-3: `buffer*` commands write a name or number into
+// one, and a later message prints it as {STR_VAR_n}. The transpile dropped every
+// buffer command, so each of those 924 placeholders printed as nothing —
+// "PLAYER received the  from the KARATE MASTER." (2026-10-02, Instinct). Like
+// the real buffers they hold whatever was last written, for the session.
+const strVars = {};
+function setStrVar(dst, text) {
+	const m = /STR_VAR_([123])/.exec(dst || '');
+	if (m && text != null) strVars[m[1]] = text;
+}
+export function getStrVar(n) { return strVars[n] || ''; }
+// SPECIES_HITMONLEE -> "HITMONLEE", ITEM_POKE_BALL -> "POKE BALL" (the game's
+// upper-case names), with the few that need punctuation spelled out
+const SYMBOL_NAMES = { MR_MIME: 'MR. MIME', MIME_JR: 'MIME JR.', NIDORAN_F: 'NIDORAN♀', NIDORAN_M: 'NIDORAN♂', FARFETCHD: "FARFETCH'D", HO_OH: 'HO-OH', PORYGON_Z: 'PORYGON-Z' };
+function symbolName(sym, prefix) {
+	const k = String(sym).replace(prefix, '');
+	return SYMBOL_NAMES[k] || k.replace(/_/g, ' ');
+}
+function bufferText(op) {
+	let v = op.src;
+	if (typeof v === 'string' && /^VAR_/.test(v)) v = getVar(v);
+	switch (op.kind) {
+		case 'species':
+			if (typeof v === 'string' && /^SPECIES_/.test(v)) return symbolName(v, /^SPECIES_/);
+			return null;   // a number with no table here: leave the buffer as it was
+		case 'item': case 'itemplural': {
+			if (typeof v === 'number') v = ITEM_BY_NUM()[v];
+			if (typeof v !== 'string' || !/^ITEM_/.test(v)) return null;
+			const n = symbolName(v, /^ITEM_/);
+			return op.kind === 'itemplural' && !/S$/.test(n) ? n + 'S' : n;
+		}
+		case 'move': return typeof v === 'string' && /^MOVE_/.test(v) ? symbolName(v, /^MOVE_/) : null;
+		case 'number': { const n = resolveValue(v); return Number.isFinite(+n) ? String(+n) : null; }
+	}
+	return null;
 }
 function speciesId(sym) {
 	if (typeof sym !== 'string') return sym;

@@ -18,7 +18,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const REF = path.resolve('..', 'Magepunk66', 'Reference');
+const REF = process.env.MAGEPUNK_REF || path.resolve('..', 'Magepunk66', 'Reference');
 const DATA = path.resolve('overworld', 'data');
 const read = p => fs.readFileSync(p, 'utf8');
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
@@ -67,7 +67,7 @@ const shared = JSON.parse(read(path.join(DATA, 'shared_scripts.json')));
 const sharedScripts = shared.scripts || shared;
 const patches = {}, sharedPatches = {};
 let found = 0, applied = 0;
-const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0 };
+const restored = { multichoice: 0, checkmoney: 0, removemoney: 0, setdynamicwarp: 0, buffer: 0 };
 const unapplied = [];
 
 // ---- the ALIGNER ----
@@ -76,7 +76,11 @@ const unapplied = [];
 // restored here) is inserted at that point. So a menu lands right after its
 // question, a checkmoney right before the branch that reads it, and a command
 // that opens the label at index 0 (Lilycove's elevator and vending machine).
-const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp']);
+// the STR_VAR fillers: `bufferspeciesname STR_VAR_1, VAR_TEMP_1` before "received
+// the {STR_VAR_1}" (2026-10-02: the Dojo gift printed a blank name)
+const BUFFER_KINDS = { bufferspeciesname: 'species', bufferitemname: 'item', bufferitemnameplural: 'itemplural', buffernumberstring: 'number', buffermovename: 'move' };
+const RESTORE = new Set(['multichoice', 'multichoicedefault', 'multichoicegrid', 'checkmoney', 'removemoney', 'setdynamicwarp', ...Object.keys(BUFFER_KINDS)]);
+const RESTORED_OPS = new Set(['multichoice', 'checkmoney', 'removemoney', 'setdynamicwarp', 'buffer']);
 function keptAs(cmd, a) {
 	switch (cmd) {
 		case 'msgbox': case 'message': return o => (o.op === 'msg' || o.op === 'say') && o.text === a[0];
@@ -107,6 +111,7 @@ function restoredOp(cmd, a, lists, lastText) {
 		if (lastText) op.prompt = lastText;
 		return { op };
 	}
+	if (BUFFER_KINDS[cmd]) return { op: { op: 'buffer', kind: BUFFER_KINDS[cmd], dst: a[0], src: a[1] } };
 	if (cmd === 'checkmoney' || cmd === 'removemoney') return { op: { op: cmd, amount: +a[0] || 0 } };
 	if (cmd === 'setdynamicwarp') {
 		const op = { op: 'setdynamicwarp', map: a[0] };
@@ -144,7 +149,7 @@ for (const g of GAMES) {
 			for (const [kind, stem] of targets) {
 				const src = kind === 'map' ? (JSON.parse(read(path.join(DATA, 'scripts', stem + '.json')))[lab]) : sharedScripts[lab];
 				if (!Array.isArray(src)) { if (kind === 'map' && !sharedScripts[lab]) unapplied.push(`${g.name} ${lab}: not in ${stem}`); continue; }
-				if (src.some(o => RESTORE.has(o.op))) continue;   // already carries them
+				if (src.some(o => RESTORED_OPS.has(o.op))) continue;   // already carries them
 				const ops = JSON.parse(JSON.stringify(src));
 				let p = 0, lastText = null, ok = true;
 				const counts = {};
@@ -153,7 +158,7 @@ for (const g of GAMES) {
 						const r = restoredOp(cmd, a, lists, lastText);
 						if (r.err) { ok = false; unapplied.push(`${g.name} ${lab}: ${r.err}`); break; }
 						ops.splice(p, 0, r.op); p++;
-						counts[/^multichoice/.test(cmd) ? 'multichoice' : cmd] = (counts[/^multichoice/.test(cmd) ? 'multichoice' : cmd] || 0) + 1;
+						{ const ck = /^multichoice/.test(cmd) ? 'multichoice' : BUFFER_KINDS[cmd] ? 'buffer' : cmd; counts[ck] = (counts[ck] || 0) + 1; }
 						continue;
 					}
 					if (cmd === 'msgbox' || cmd === 'message') lastText = a[0];
