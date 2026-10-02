@@ -21,6 +21,7 @@ import { checkIntroTrigger, checkOnFrame, checkRivalTrigger, checkVillainTrigger
 import { trickHouseOpenDoors } from './ow_venues.js';
 import * as Quest from './quest.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { syncRegionToMap } from './region_sync.js';
 import { applySailFix } from './sail_fix.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -83,6 +84,7 @@ function warmBattleSprites() {
 }
 
 export async function refreshMapContent(label) {
+	await syncRegionToMap(world.current.name);   // before anything below reads the region
 	S.strengthActive = false; S.strengthHinted = false; // STRENGTH must be re-used per map
 	trickHouseOpenDoors(label);
 	shoalFixup(label);

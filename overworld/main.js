@@ -2,6 +2,7 @@
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
+import { syncRegionToMap } from './region_sync.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
 // the shared singletons (see ow_core.js)
@@ -693,6 +694,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	// resuming a save that stood on water means we were surfing
 	if (world.isSurfable(sx, sy)) player.surfing = true;
 	repairSaves();   // before the map's objects are read, so a repaired hide takes effect on THIS load
+	await syncRegionToMap(world.current.name);   // a save resumed in another region's town (flown there) is in THAT region
 	await npcs.loadForMap();
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
