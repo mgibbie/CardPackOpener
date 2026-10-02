@@ -168,6 +168,16 @@ function postBattleLine(label) {
 	const raw = (S.mapStrings && S.mapStrings[next.text]) || null;
 	return raw ? Story.normalizeText(raw, cutsceneCtx()) : null;
 }
+// does this script branch on an EVENT_BEAT_* flag before its first battle? Then
+// it handles an already-beaten talk itself (never re-fights)
+function guardsOwnBeat(ops) {
+	if (!Array.isArray(ops)) return false;
+	for (const o of ops) {
+		if (o.op === 'trainerbattle') return false;
+		if (o.op === 'branch' && o.kind === 'goto' && o.cond && /^EVENT_BEAT_/.test(o.cond.flag || '') && o.cond.state === true) return true;
+	}
+	return false;
+}
 // A SCRIPTED ball (items.js): run its own script with the ball as the talked-to
 // object, so the script's `removeobject VAR_LAST_TALKED` takes it away. A static
 // encounter (Aqua Hideout / Power Plant ELECTRODE, New Mauville VOLTORB) is gone
@@ -363,6 +373,11 @@ export function interact() {
 			// continuation (Olivia's line, Dana's phone number and rematch): run it
 			const hdr = crystalTrainerHeader(world, t.ev.script);
 			if (hdr && S.mapScripts[t.ev.script] && runScriptLabel(t.ev.script, t)) return;
+			// a Crystal LEADER's full script checks its own beat event before the
+			// battle (`checkevent EVENT_BEAT_JASMINE / iftrue .FightDone`): talking
+			// again is how the TM is collected, so run it rather than quote the
+			// roster (2026-10-02: Jasmine's TM23 IRON TAIL could never be had)
+			if (guardsOwnBeat(S.mapScripts[t.ev.script]) && runScriptLabel(t.ev.script, t)) return;
 			// Emerald/FireRed: an already-beaten trainer's `trainerbattle` skips to
 			// the next line, which is their post-battle line (Jeff: "...")
 			const post = postBattleLine(t.ev.script);

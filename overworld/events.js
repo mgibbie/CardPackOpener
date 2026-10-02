@@ -473,7 +473,8 @@ export class Cutscene {
 				case 'goto': if (!this._goto(op.label, false)) this._advance(); continue;
 				case 'call': this._advance(); this._goto(op.label, true); continue;
 				case 'return': if (c.frames.length) c.frames.pop(); continue;
-				case 'end': return this._finish();
+				// Crystal: `end` in a called label returns to the caller (fallthrough.js)
+				case 'end': if (c.program.__crystalEnd && c.frames.length > 1) { c.frames.pop(); continue; } return this._finish();
 				case 'branch': {
 					let hit;
 					// `checkitem X` -> an ITEM condition. It used to transpile to a

@@ -1,5 +1,6 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { choiceMenu, loadChoiceData } from './choice.js';
+import { loadFallthroughData } from './fallthrough.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
@@ -634,6 +635,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	// the PHONE: contacts, call lines, restored trainer scripts + Crystal's rematch teams
 	await loadPhoneData(getJSON);
 	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
+	await loadFallthroughData(getJSON);   // the decomp's label fall-through (fallthrough.js)
 	mergePhoneTeams(S.trainerTeams);
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through

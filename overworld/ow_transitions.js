@@ -1,5 +1,6 @@
 // ow_transitions.js — map transitions: moveToMap/warpTo/flyTo, per-map script loading, Fly points (split from main.js).
 import { choicePatches, sharedChoicePatches } from './choice.js';
+import { applyFallthrough } from './fallthrough.js';
 import { phoneScriptOverrides } from './phone.js';
 import { getImage, getJSON } from './engine.js';
 import * as Story from './events.js';
@@ -60,7 +61,8 @@ export async function loadMapScripts(stem) {
 	// through it without knowing it exists.
 	// + each label's restored multichoice (choice.js; a map's own copy still wins
 	// over the shared one) + the PHONE's restored trainer scripts
-	S.mapScripts = applySailFix({ ...sharedScripts, ...sharedChoicePatches(), ...(c.scr || {}), ...choicePatches(stem), ...phoneScriptOverrides(stem) });
+	// + the decomp's label fall-through (fallthrough.js: the leaders' TMs)
+	S.mapScripts = applyFallthrough(stem, applySailFix({ ...sharedScripts, ...sharedChoicePatches(), ...(c.scr || {}), ...choicePatches(stem), ...phoneScriptOverrides(stem) }), !!world.current?.map?._crystal_tileset);
 	S.mapStrings = c.str || {};
 }
 
