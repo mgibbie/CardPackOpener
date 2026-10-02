@@ -229,15 +229,36 @@ export class Blockers {
 		this.givers = (GIVERS[id] || []).slice();
 	}
 
+	// A guard on the EDGE of the next map over (Mahogany's GYM GUIDE stands on its
+	// west column, the tiles you arrive on from Route 42). Off the current map a
+	// tile belongs to a connection, so look the guard up there: otherwise you
+	// walked straight through the connection and were set down ON his solid tile,
+	// boxed in, with Fly the only way out (2026-10-02, Instinct). Only the quest
+	// backstop gated connections, and it reads the region you STARTED in — a
+	// Kanto starter walking in Johto never met it.
+	farBlocker(tx, ty) {
+		const lay = this.world.current?.layout;
+		if (!lay || (tx >= 0 && tx < lay.width && ty >= 0 && ty < lay.height)) return null;
+		const hit = this.world.connectionAt?.(tx, ty);
+		const id = hit?.conn?.map?.id;
+		if (!id || !BLOCKERS[id]) return null;
+		const here = curMapId;
+		setBlockerMap(id);   // its conditions read the region of the map it stands on
+		try {
+			return BLOCKERS[id].find(b => !condMet(b.cond) && tilesOf(b).some(([x, y]) => x === hit.lx && y === hit.ly)) || null;
+		} finally { setBlockerMap(here); }
+	}
+
 	// solid if an active blocker (or a giver) covers the tile
 	blocks(tx, ty) {
 		return this.list.some(b => tilesOf(b).some(([x, y]) => x === tx && y === ty))
-			|| this.givers.some(g => g.tx === tx && g.ty === ty);
+			|| this.givers.some(g => g.tx === tx && g.ty === ty)
+			|| !!this.farBlocker(tx, ty);
 	}
 
 	// the blocker occupying a tile (for the face+A / bump message)
 	kindAt(tx, ty) {
-		return this.list.find(b => tilesOf(b).some(([x, y]) => x === tx && y === ty)) || null;
+		return this.list.find(b => tilesOf(b).some(([x, y]) => x === tx && y === ty)) || this.farBlocker(tx, ty);
 	}
 
 	messageAt(tx, ty) { const b = this.kindAt(tx, ty); return b ? b.msg : null; }

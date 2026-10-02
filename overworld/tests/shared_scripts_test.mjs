@@ -79,7 +79,8 @@ const shared = JSON.parse(fs.readFileSync(path.join(D, 'shared_scripts.json'), '
 	// table is built), which is why this no longer pins the exact spelling.
 	// Later layers may follow the map's own (its restored menus, the PHONE's
 	// scripts), but nothing SHARED may spread after it.
-	const merge = (src.match(/mapScripts = (?:[A-Za-z_$][\w$]*\()?\{([^}]*\.\.\.\(c\.scr \|\| \{\}\)[^}]*)\}/) || [])[1] || '';
+	// (any number of wrappers: applyFallthrough(stem, applySailFix({...})) too)
+	const merge = (src.match(/mapScripts = (?:[A-Za-z_$][\w$]*\((?:[\w$]+,\s*)?)*\{([^}]*\.\.\.\(c\.scr \|\| \{\}\)[^}]*)\}/) || [])[1] || '';
 	const own = merge.indexOf('...(c.scr || {})');
 	A(merge && merge.indexOf('...sharedScripts') >= 0 && merge.indexOf('...sharedScripts') < own
 		&& !/shared/i.test(merge.slice(own)),

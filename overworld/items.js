@@ -88,12 +88,10 @@ const berryPretty = id => id.replace(/berry$/, ' Berry').replace(/^./, c => c.to
 // HM-terrain obstacles seeded in code at progression chokepoints (Ilex Cut, Fiery
 // Path rock, etc.) — map data is read-only so these can't live in the map JSON.
 // Filled by the per-region blocker passes; keys are MAP_ ids.
-const CODE_FIELD_OBJS = {
-	// Ilex Forest: the single-tile CUT gap that gates the road south to Goldenrod
-	// (Cut is badge-gated at 2 badges in Johto — HM_GATE). No CUTTABLE_TREE exists in
-	// this map's data, so it's seeded here.
-	MAP_ILEX_FOREST: [{ tx: 8, ty: 25, kind: 'cut' }],
-};
+// (Ilex Forest's CUT gap used to be seeded here as a tree OBJECT over the map's
+// solid tree tile: cutting removed the object and left the tile, so the road
+// south stayed shut — 2026-10-02. It is a Crystal block tree, in cut_blocks.json.)
+const CODE_FIELD_OBJS = {};
 
 export class Items {
 	constructor(world) {
@@ -109,6 +107,9 @@ export class Items {
 
 	async init() {
 		this.fruitMap = await getJSON('data/berry_trees.json').catch(() => ({}));
+		// Crystal's CUT trees are painted into the map blocks, not objects
+		// (tools/gen_cut_blocks.mjs): { MAP_ID: [[x, y, treeValue, cutValue]] }
+		this.cutBlocks = (await getJSON('cut_blocks.json').catch(() => null))?.maps || {};
 		// item balls are drawn procedurally now (drawBall) — the old data/npcs/pokeball.png
 		// was a lumpy off-centre blob with no band/button
 	}
@@ -212,6 +213,13 @@ export class Items {
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
 		// cut trees / rocks / boulders at progression gates, cleared by the usual HMs
 		for (const o of CODE_FIELD_OBJS[map.id] || []) this.fieldObjs.push({ tx: o.tx, ty: o.ty, kind: o.kind });
+		// Crystal block trees: the tile IS the tree (drawn by the map), so CUT has to
+		// swap the tile, not just drop an object. Like every cut tree they grow back
+		// on the next visit — the cached layout was edited, so put the tree back.
+		for (const [tx, ty, tree, cut] of (this.cutBlocks && this.cutBlocks[map.id]) || []) {
+			if (this.world.gridAt(tx, ty) !== tree) this.world.setGridValue(tx, ty, tree);
+			this.fieldObjs.push({ tx, ty, kind: 'cut', tile: true, cutTo: cut });
+		}
 		for (const b of map.bg_events || []) {
 			if (b.type !== 'hidden_item') continue;
 			const parsed = parseItemConst(b.item);
@@ -266,6 +274,8 @@ export class Items {
 	removeFieldObj(obj) {
 		const i = this.fieldObjs.indexOf(obj);
 		if (i >= 0) this.fieldObjs.splice(i, 1);
+		// a block tree: cutting it swaps in the replacement (walkable) tile
+		if (obj && obj.cutTo != null) this.world.setGridValue(obj.tx, obj.ty, obj.cutTo);
 	}
 	moveFieldObj(obj, tx, ty) {
 		obj.tx = tx; obj.ty = ty;
@@ -288,6 +298,7 @@ export class Items {
 	}
 	draw(ctx, camX, camY) {
 		for (const o of this.fieldObjs) {
+			if (o.tile) continue;   // a block tree: the map tile already draws it
 			const x = o.tx * META - camX, y = o.ty * META - camY;
 			if (o.kind === 'boulder') {
 				// a big rounded strength boulder filling the tile
