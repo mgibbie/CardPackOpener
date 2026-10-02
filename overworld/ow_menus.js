@@ -497,7 +497,8 @@ export function drawTownMap(W, H) {
 		sctx.fillText(`${Fly.REGION_LABEL[region]}: ${Badges.count(rkey)}/8 gyms`, rx + 18 * u, ty); ty += 20 * u;
 		if (owes && Quest.globalTier() < 8) {
 			sctx.fillStyle = '#ffd27a';
-			sctx.fillText(`Owes GYM ${Quest.globalTier() + 1} here`, rx + 18 * u, ty); ty += 20 * u;
+			const owed = Quest.nextGym(rkey);   // the earliest missing badge, not "gym tier+1"
+			sctx.fillText(owed ? `Owes ${owed.leader} (${owed.town})` : `Owes GYM ${Quest.globalTier() + 1} here`, rx + 18 * u, ty); ty += 20 * u;
 		}
 	} else {
 		sctx.fillStyle = BUI.C.dim;
