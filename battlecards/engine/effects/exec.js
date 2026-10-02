@@ -56,6 +56,10 @@ export function execEffects(state, pi, effects, target, source) {
 		}
 	};
 	const buffCreature = (c, atk, hpv) => {
+		// a LOCATION shares the board row but is not a creature: "give your
+		// creatures +2/+2" turned the trolls' Hammerheims into 2/2s that then
+		// attacked (2026-10-02 replay). Stats never land on a location.
+		if (c && c.type === 'location') return;
 		atk = atk || 0; hpv = hpv || 0; // robustness: undefined stat -> 0
 		if (c.doubleBuffs) { atk *= 2; hpv *= 2; } // Saidan the Scarlet
 		if (c.statGainBonus && (atk > 0 || hpv > 0)) { atk += 1; hpv += 1; } // Dalaran Champion

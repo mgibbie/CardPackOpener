@@ -3247,6 +3247,7 @@ export function attackersFor(state, pi) {
 
 export function canAttackWith(state, pi, c) {
 	if (state.over || state.current !== pi || state.priority != null || state.stack.length || c.attack <= 0) return false;
+	if (c.type === 'location') return false;   // locations never attack, whatever stats an effect gave them
 	if (c.frozen) return false;
 	if (c.titan && (c._onceAbilities || []).length < (c.activated || []).length) return false; // Titan: can't attack until all 3 abilities are used
 	if (c.cantAttackWhile != null && state.players.some(pl => pl.board.some(x => x.uid === c.cantAttackWhile && !isDead(x)))) return false; // Annoying Fan lock
