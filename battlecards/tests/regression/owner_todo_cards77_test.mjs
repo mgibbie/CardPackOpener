@@ -3,6 +3,7 @@
 //   Mauhúr's Ragged Short Spear    -> "Swing: Luck: Add two Red cards to your hand." (the Mountain pool)
 //   Mauhúr's Smite the Deathless   -> "Deal 3 damage to any target & Draw a card."
 //   Mauhúr's Book of Mazarbul      -> "Alliance: Luck: Draw a creature."
+//   Lightning Invocation           -> "Deal 2 damage to each creature you don't control.", cost 2, Nature
 // Luck is a coin flip (state.rng() < 0.5), so each Luck card is fired over many
 // seeds: every outcome must be all-or-nothing, and both halves must occur.
 import fs from 'fs';
@@ -89,6 +90,22 @@ const redPool = new Set(Object.values(byId).filter(d => d.landSet === 'Mountain'
 		ok(`[${seed}] Alliance + Luck draws a creature or nothing`, (h.length === 0 && st.players[0].deck.length === 3) || (h.length === 1 && h[0].id === '_ogre' && st.players[0].deck.length === 2), JSON.stringify({ hand: h.map(x => x.id), deck: st.players[0].deck.length }));
 	}
 	ok('over 24 creatures played, both Luck outcomes happen', counts.has(0) && counts.has(1), JSON.stringify([...counts]));
+}
+
+// ---- 5) Lightning Invocation (Duels treasure): 2 to each creature you don't control, cost 2, Nature ----
+{
+	const c = byId.duels_lightning_invocation;
+	ok('Invocation text', c.description === "Deal 2 damage to each creature you don't control.", c.description);
+	ok('Invocation costs 2', c.cost === 2, c.cost);
+	ok('Invocation is a Nature spell (schoolOf reads tribe)', E.schoolOf(c) === 'Nature', E.schoolOf(c));
+	const st = fresh();
+	const mine = put(st, 0, byId._ogre), foe1 = put(st, 1, byId._ogre), foe2 = put(st, 1, byId._ogre);
+	st.players[0].ironRoots = true;   // Iron Roots: a Nature spell buffs a random friendly +1/+1 & Taunt
+	const card = give(st, 0, c);
+	E.playCard(st, 0, card.uid, null, null, 0);
+	ok('2 damage to each enemy creature, none to yours or the heroes', foe1.damage === 2 && foe2.damage === 2 && mine.damage === 0 && st.players[1].life === 30 && st.players[0].life === 30, JSON.stringify({ foe1: foe1.damage, foe2: foe2.damage, mine: mine.damage }));
+	ok('...and it counts as a Nature spell when cast (Iron Roots fires)', mine.keywords.includes('taunt') && mine.attack === 2, JSON.stringify({ atk: mine.attack, kw: mine.keywords }));
+	ok('...and costs 2 Mana', st.players[0].mana.cur === 28, st.players[0].mana.cur);
 }
 
 console.log(`${pass} passed, ${fail} failed`);
