@@ -949,7 +949,8 @@ export default async function handler(req, env) {
 
 	// ---------- Bug Report Review list (playtesters -> owner) ----------
 	// The to-do inbox's twin for BUGS (2026-10-01). The playtesters (MP_BUG_REPORTERS,
-	// default Instinct + Muse) and the owner file reports from /bugs/, the in-game
+	// default Instinct + Muse, and remytest — the account Remy's bot signs in with)
+	// and the owner file reports from /bugs/, the in-game
 	// OPTIONS > REPORT A BUG, or straight at this API (Remy's bot). Each report is
 	// its OWN row ('bug:<ts>-<user>') — reports run to 10KB+ of markdown, and a
 	// per-row store makes "done" race-free (exact keys, never a wipe). The owner
@@ -957,11 +958,11 @@ export default async function handler(req, env) {
 	// reads them, fixes, and marks them done. The reporter comes from the verified
 	// token, never the client.
 	if (action === 'bug-add' || action === 'bug-mine' || action === 'bug-list' || action === 'bug-done') {
-		const reporters = (process.env.MP_BUG_REPORTERS || 'instinctloretest0918,remygl').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+		const reporters = (process.env.MP_BUG_REPORTERS || 'instinctloretest0918,remygl,remytest').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 		const canFile = isAdmin(username) || reporters.includes(username);
 		const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 		if (action === 'bug-add') {
-			if (!canFile) return json({ error: 'bug reports are open to playtesters only' }, 403);
+			if (!canFile) return json({ error: `signed in as ${username} — bug reports are open to the playtester accounts only` }, 403);
 			const text = clip(body.text, BUG_TEXT_MAX).trim();
 			if (!text) return json({ error: 'empty report' }, 400);
 			const mine = (await store.list('bug:')).filter(r => r.value && r.value.user === username).length;
@@ -988,7 +989,7 @@ export default async function handler(req, env) {
 			return json({ ok: true, id: `${ts}-${username}` });
 		}
 		if (action === 'bug-mine') {
-			if (!canFile) return json({ error: 'bug reports are open to playtesters only' }, 403);
+			if (!canFile) return json({ error: `signed in as ${username} — bug reports are open to the playtester accounts only` }, 403);
 			const rows = (await store.list('bug:')).filter(r => r.value && r.value.user === username);
 			return json({ bugs: rows.map(r => ({ id: r.key.slice(4), ts: r.value.ts, title: r.value.title, area: r.value.area, severity: r.value.severity })) });
 		}

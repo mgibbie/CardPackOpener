@@ -110,7 +110,12 @@ function restoredOp(cmd, a, lists, lastText) {
 	if (cmd === 'checkmoney' || cmd === 'removemoney') return { op: { op: cmd, amount: +a[0] || 0 } };
 	if (cmd === 'setdynamicwarp') {
 		const op = { op: 'setdynamicwarp', map: a[0] };
-		if (a.length >= 3) { op.x = +a[1]; op.y = +a[2]; } else if (a.length === 2) op.warp = a[1];
+		// formatwarp: (map), (map, warpId), (map, x, y) or (map, warpId, x, y). FRLG's
+		// elevators use the last with warpId 255 = WARP_ID_NONE, so x,y win —
+		// reading it as (map, x, y) sent every FRLG floor to x=255 (2026-10-02:
+		// the Rocket Hideout lift dropped you at B4F's stair side, cut off from Giovanni)
+		if (a.length >= 4) { if (+a[1] !== 255) op.warp = a[1]; op.x = +a[2]; op.y = +a[3]; }
+		else if (a.length === 3) { op.x = +a[1]; op.y = +a[2]; } else if (a.length === 2) op.warp = a[1];
 		return { op };
 	}
 	return { err: 'unknown ' + cmd };
