@@ -175,7 +175,7 @@ try {
 
 	// ---- the top face is no longer the hero power; the orb is a place you move to ----
 	{
-		const used = () => page.evaluate(() => { const g = window.__game, p = g.state.players[g.HUMAN]; return { cur: p.mana.cur, uses: p.heroPowerUses ?? p.powerUsed ?? null, log: document.getElementById('log').textContent }; });
+		const used = () => page.evaluate(() => { const g = window.__game, p = g.state.players[g.HUMAN]; return { cur: p.mana.cur, uses: p.heroPowerUses ?? p.powerUsed ?? null, logLines: g.logLines.length }; });   // the HISTORY, not the inline feed: its lines fade out on a ~5 s timer, which made this flaky
 		const before = await used();
 		await tap(BTN.top);
 		await sleep(400);
