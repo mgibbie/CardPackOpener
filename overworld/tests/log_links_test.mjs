@@ -148,6 +148,25 @@ try {
 	A(f && f.zone === 'preview' && f.uid !== seed.secret.uid, '...clicking it shows the card\'s definition, never the hidden card in their hand', JSON.stringify(f));
 	await page.keyboard.press('Escape'); await sleep(150);
 
+	// ===== 5b: a TOKEN that has left play (2026-10-02: tokens showed nothing) =====
+	// a summoned token has no card definition; once it's exiled, its log link
+	// must still open what it was
+	await page.evaluate(() => {
+		const g = window.__game, p = g.state.players[g.HUMAN];
+		p.board.push({ id: '_tok_wisp', name: 'Zzyx Test Wisp', type: 'creature', token: true, attack: 2, health: 3, maxHealth: 3, damage: 0,
+			keywords: ['taunt'], description: 'Taunt.', uid: 'tok_wisp_1', controller: g.HUMAN, zone: 'board' });
+		g.logForTest('(test) Zzyx Test Wisp joins the fight');
+		p.board = p.board.filter(c => c.uid !== 'tok_wisp_1');   // ...and is exiled
+	});
+	ll = await lastLinks();
+	const tokLine = ll.find(x => x.t.includes('Zzyx Test Wisp'));
+	A(tokLine && tokLine.links.length === 1, 'a token\'s name in the log is a link', JSON.stringify(tokLine));
+	await page.evaluate(() => { const bs = [...document.querySelectorAll('#log .log-card')].filter(b => b.textContent === 'Zzyx Test Wisp'); bs[bs.length - 1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); });
+	await sleep(250);
+	f = await focus();
+	A(f && f.id === '_tok_wisp' && f.zone === 'preview', '...and after the token is gone, clicking it still shows the token', JSON.stringify(f));
+	await page.keyboard.press('Escape'); await sleep(150);
+
 	// ===== 7: controller =====
 	await page.evaluate(() => { for (let i = 0; i < 60; i++) window.__game.logForTest(`(filler line ${i})`); });
 	await page.mouse.move(5, 5);

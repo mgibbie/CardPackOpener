@@ -3611,8 +3611,12 @@ export function heroAttack(state, pi, target) {
 				}
 			}
 			// the defending creature strikes back at the hero
-			// (Gladiator's Longbow: the hero is immune while attacking)
-			if (!(w && w.static?.type === 'immune-attacking')) {
+			// (Gladiator's Longbow: the hero is immune while attacking). A Swift
+			// (first-strike) weapon hits FIRST, like a Swift creature: a defender it
+			// kills never strikes back — 2026-10-02, a 3/2 Swift weapon into a 3/2
+			// creature still took the 3.
+			const swiftKill = w && has(w, KW.FIRST_STRIKE) && !has(defender, KW.FIRST_STRIKE) && isDead(defender);
+			if (!(w && w.static?.type === 'immune-attacking') && !swiftKill) {
 				const counter = damageHero(state, pi, defender.attack, defender.controller);
 				if (has(defender, KW.LIFESTEAL) && counter > 0) healHero(state, defender.controller, counter);
 			}

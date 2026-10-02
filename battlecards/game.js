@@ -1507,6 +1507,13 @@ const logLinks = [];
 // on the table, in a graveyard/exile, or in YOUR hand) a public uid. A name is
 // only linked where the log already printed it, and a hidden copy's uid is never
 // stored — so a link reveals nothing the line didn't.
+// A summoned token has no card definition, so once it dies (tokens are exiled)
+// its log link had nothing to show (2026-10-02). Links to such cards keep a copy
+// of the card as it was when the line was logged.
+function logSnap(c) {
+	if (!c || typeof c !== 'object') return null;
+	return { ...c, keywords: [...(c.keywords || [])], ongoing: c.ongoing, effects: c.effects };
+}
 function logNameIndex() {
 	const out = new Map();
 	if (!state) return out;
@@ -1515,6 +1522,7 @@ function logNameIndex() {
 		const e = out.get(c.name) || { id: c.id, uid: null };
 		if (pub && e.uid == null && !(c.disguised && c.controller !== HUMAN)) e.uid = c.uid;
 		if (!e.id) e.id = c.id;
+		if (pub && !e.snap && !state.cardsById[c.id]) e.snap = logSnap(c);   // a token: no definition to fall back on once it's gone
 		out.set(c.name, e);
 	};
 	state.players.forEach((p, pi) => {
@@ -1542,7 +1550,8 @@ function findLogLinks(msg, refs) {
 		const hidden = live && live.controller !== HUMAN && (live.zone === 'hand' || live.zone === 'deck' || live.disguised);
 		// a dead card's event carries only its name: find its id by name
 		const id = r.id || live?.id || logNameIndex().get(name)?.id || Object.values(state.cardsById).find(d => d && d.name === name)?.id || null;
-		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null) });
+		const snap = !hidden && live && !state.cardsById[live.id] ? logSnap(live) : (logNameIndex().get(name)?.snap || null);
+		links.push({ s: i, e: i + name.length, id, uid: hidden ? null : (r.uid ?? null), ...(snap ? { snap } : {}) });
 	}
 	// then every other card name the line printed, longest first
 	const idx = logNameIndex();
@@ -1553,7 +1562,7 @@ function findLogLinks(msg, refs) {
 			from = i + n.length;
 			if (!wordAt(i, i + n.length) || taken(i, i + n.length)) continue;
 			const e = idx.get(n);
-			links.push({ s: i, e: i + n.length, id: e.id, uid: e.uid });
+			links.push({ s: i, e: i + n.length, id: e.id, uid: e.uid, ...(e.snap ? { snap: e.snap } : {}) });
 		}
 	}
 	return links.sort((a, b) => a.s - b.s);
@@ -1584,6 +1593,7 @@ function openLogCard(l) {
 	if (!c && state) {
 		const def = state.cardsById[l.id] || (l.id && Object.values(state.cardsById).find(d => d && d.id === l.id));
 		if (def) c = { ...def, uid: 'preview_' + def.id, zone: 'preview', controller: null, maxHealth: def.health, keywords: def.keywords || [], damage: 0 };
+		else if (l.snap) c = { ...l.snap, uid: 'preview_' + (l.snap.uid ?? l.snap.name), zone: 'preview', controller: null };   // a token that's gone
 	}
 	if (c) showCardFocus(c);
 }
