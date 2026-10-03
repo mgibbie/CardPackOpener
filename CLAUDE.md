@@ -19,7 +19,7 @@ A fresh clone has neither (see "start setup").
   `bug:`/`repair:` rows) are pre-approved for monitoring. Any **write** touches only exact
   keys, guarded (compare-and-delete), never a bulk wipe.
 - **Never log credentials or secrets.**
-- If the system kills a gate for memory, don't restart it unasked — report it.
+- If the system kills a gate for low memory, wait 1 minute and retry it with `--resume` (one background command: `sleep 60; node overworld/tests/run-all.mjs [--changed] --resume`). Other background jobs: report, don't restart.
 - Worktrees: if `overworld/data` / `node_modules` are junctions/symlinks into the main
   checkout, remove the LINK first (non-recursive) and verify it is gone; never
   `git worktree remove --force` while a link remains — it deletes the target's contents.
