@@ -884,6 +884,13 @@ export function runSpecial(name, store, op) {
 			return set(Dex.counts().caught);
 		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
 			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
+		// Crystal: the FIRST non-egg party mon's happiness into the script var — the
+		// Route 27 Sandstorm house (> 149 gives TM37), the Happiness Rater, the
+		// Dept Store 5F TM ladies (crystal_scriptvar.js restores their tests)
+		// (eggs never ride in the party here — they wait at the Day Care — so the
+		// first non-egg mon is the lead, and the lead is never an egg)
+		case 'GetFirstPokemonHappiness': return set((S.party || [])[0] ? ((S.party[0].friend) ?? 70) : 0);
+		case 'CheckFirstMonIsEgg': return set(0);
 		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
 		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
 			return set(living().length);
