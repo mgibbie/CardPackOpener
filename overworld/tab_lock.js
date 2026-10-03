@@ -9,12 +9,14 @@
 // When a NEWER overworld tab starts, every older tab pauses: a blocking notice
 // ("This game is open in another tab — this one is paused. Reload to play
 // here."), every write to a synced save key is dropped, and pushOw stops (it
-// checks isTabPaused). Reloading the paused tab makes it the newest, which
-// pauses the other. A single tab never pauses. BroadcastChannel only — where it
+// checks isTabPaused). Reloading the paused tab (its button, or Z / Enter /
+// Space) makes it the newest, which pauses the other; and when the newer tab
+// goes away, a tab it paused takes over by itself. A single tab never pauses. BroadcastChannel only — where it
 // doesn't exist the game behaves as before.
 const CHANNEL = 'magepunk-ow';
 const me = { id: Math.random().toString(36).slice(2) + Date.now().toString(36), t: Date.now() };
 let paused = false;
+let pausedBy = null;   // the newer tab that paused this one
 let channel = null;
 
 export function isTabPaused() { return paused; }
@@ -27,9 +29,29 @@ export function startTabLock({ keys = [], onPause } = {}) {
 	const newer = m => m.t > me.t || (m.t === me.t && m.id > me.id);
 	channel.onmessage = e => {
 		const m = e && e.data;
-		if (!m || m.type !== 'hello' || m.id === me.id || !newer(m)) return;
+		if (!m || m.id === me.id) return;
+		// the tab that paused us went away (closed, navigated, reloaded): nobody
+		// else is playing, so take over. A reload, never an in-place resume —
+		// this tab's cached state is stale by now.
+		// But a RELOADING active tab also says bye, and is back a moment later:
+		// wait, ask who's active, and take over only if nobody answers — or the
+		// two tabs would ping-pong.
+		if (m.type === 'bye' && paused && m.id === pausedBy) { setTimeout(probe, 1500); return; }
+		if (m.type === 'who' && !paused) { try { channel.postMessage({ type: 'here', id: me.id }); } catch (e) {} return; }
+		if (m.type === 'here' && paused) { heard = true; pausedBy = m.id; return; }
+		if (m.type !== 'hello' || !newer(m)) return;
+		pausedBy = m.id;
 		pause();
 	};
+	let heard = false;
+	function probe() {
+		if (!paused) return;
+		heard = false;
+		try { channel.postMessage({ type: 'who', id: me.id }); } catch (e) { return; }
+		setTimeout(() => { if (paused && !heard) takeOver(); }, 800);
+	}
+	// tell paused tabs when this one goes away, so they can take over
+	try { addEventListener('pagehide', () => { try { channel.postMessage({ type: 'bye', id: me.id }); } catch (e) {} }); } catch (e) {}
 	function pause() {
 		if (paused) return;
 		paused = true;
@@ -47,6 +69,9 @@ export function startTabLock({ keys = [], onPause } = {}) {
 	try { channel.postMessage({ type: 'hello', ...me }); } catch (e) {}
 }
 
+// reloading makes this the newest tab (it announces itself on boot)
+function takeOver() { try { location.reload(); } catch (e) {} }
+
 function showPausedNotice() {
 	if (typeof document === 'undefined' || document.getElementById('tab-paused')) return;
 	const d = document.createElement('div');
@@ -62,10 +87,16 @@ function showPausedNotice() {
 	b.type = 'button';
 	b.textContent = 'Reload to play here';
 	b.style.cssText = 'font:inherit;padding:8px 16px;border-radius:8px;border:0;background:#6c5ce7;color:#fff;cursor:pointer';
-	b.addEventListener('click', () => location.reload());
+	b.addEventListener('click', takeOver);
 	box.append(p, b);
 	d.append(box);
 	document.body.append(d);
 	// the game behind keeps no input: keys stop here
-	addEventListener('keydown', e => { if (paused && e.key !== 'F5') { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+	// ...except the game's confirm keys, which take over (2026-10-03: Instinct
+	// pressed Z at the notice and nothing happened)
+	addEventListener('keydown', e => {
+		if (!paused || e.key === 'F5') return;
+		e.stopImmediatePropagation(); e.preventDefault();
+		if (['z', 'Z', 'Enter', ' '].includes(e.key)) takeOver();
+	}, true);
 }
