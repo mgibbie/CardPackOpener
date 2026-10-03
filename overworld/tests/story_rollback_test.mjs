@@ -160,11 +160,16 @@ try {
 		await b.evaluate(async flags => { const S = await import('./events.js'); for (const f of flags) S.setFlag(f); S.setVar('VAR_SLATEPORT_CITY_STATE', 2); }, LOST_FLAGS);
 		await sleep(300);
 		A((await runtime(a)).length === 0, '[two tabs] tab A sees the progress tab B earned', JSON.stringify(await runtime(a)));
-		// tab A, which loaded first, writes something
+		// tab A, which loaded first, tries to write — since the one-active-tab lock
+		// (tab_lock.js) the older tab is paused, so its write is dropped
 		await a.evaluate(async () => { const S = await import('./events.js'); S.setVar('VAR_TAB_A', 1); S.clearFlag('FLAG_FIXTURE_0'); });
 		const st = await localStory(a);
 		A(missingFrom(st).length === 0 && st.vars.VAR_SLATEPORT_CITY_STATE === 2, '[two tabs] tab A\'s write does not erase tab B\'s progress', JSON.stringify(missingFrom(st)));
-		A(st.vars.VAR_TAB_A === 1 && !st.flags.FLAG_FIXTURE_0, '[two tabs] ...and tab A\'s own set and CLEAR both land (no blind union)');
+		A(st.vars.VAR_TAB_A === undefined && !!st.flags.FLAG_FIXTURE_0 && await a.evaluate(() => !!document.getElementById('tab-paused')), '[two tabs] ...tab A is paused: its write is dropped');
+		// the active tab's own set and CLEAR both land (no blind union)
+		await b.evaluate(async () => { const S = await import('./events.js'); S.setVar('VAR_TAB_B', 1); S.clearFlag('FLAG_FIXTURE_0'); });
+		const st2 = await localStory(b);
+		A(st2.vars.VAR_TAB_B === 1 && !st2.flags.FLAG_FIXTURE_0 && missingFrom(st2).length === 0, '[two tabs] ...and the active tab\'s own set and CLEAR both land (no blind union)', JSON.stringify({ v: st2.vars.VAR_TAB_B, f: st2.flags.FLAG_FIXTURE_0 }));
 		await a.close(); await b.close();
 	}
 

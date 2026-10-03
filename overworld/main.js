@@ -4,6 +4,7 @@ import { loadFallthroughData } from './fallthrough.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
+import { startTabLock } from './tab_lock.js';
 import { applySailFix } from './sail_fix.js';
 import * as GymPuzzles from './gym_puzzles.js';
 // the shared singletons (see ow_core.js)
@@ -647,6 +648,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		const sh = await getJSON('data/shared_scripts.json').catch(() => null);
 		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
 	}
+	// one tab plays at a time: a newer tab pauses this one (no stale writes from it)
+	startTabLock({ keys: OW_KEYS });
 	await hydrateOw(); // server-authoritative: refresh starter/region/position from D1 before reading them
 	installImportInput(); // #ow-save-import: a persistent file input for automated save restores
 	S.party = loadParty(battle.data);

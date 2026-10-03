@@ -6,10 +6,11 @@ import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
-import { dialog, hud, player, trainers, world } from './ow_core.js';
+import { dialog, hud, items, player, trainers, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import * as Dex from './pokedex.js';
 import { safeSave, safeSaveStr } from './safestore.js';
+import { isTabPaused } from './tab_lock.js';
 import * as Savefile from './savefile.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { LEGENDARY_ENCOUNTERS, awState } from './ow_legendaries.js';
@@ -230,6 +231,7 @@ export const owDirty = () => owBody(owSnapshot()) !== _lastAckedBody;
 export function pushOw(opts) {
 	if (!MP_ON) { syncLog('push.skip', { reason: 'MP_ON=false' }); return Promise.resolve(false); }
 	if (_importing) { syncLog('push.skip', { reason: 'import in progress' }); return Promise.resolve(false); }
+	if (isTabPaused()) { syncLog('push.skip', { reason: 'paused: the game is open in a newer tab' }); return Promise.resolve(false); }
 	const keepalive = !!(opts && opts.keepalive === true);
 	const body = owBody(owSnapshot());
 	if (body === '{}') { syncLog('push.skip', { reason: 'empty' }); return Promise.resolve(false); }
@@ -358,6 +360,13 @@ function applyDexUnion(base, other, why) {
 	return keys;
 }
 
+const HYDRATE_RELOADS_KEY = 'mp_ow_hydrate_reloads';
+const HYDRATE_MAX_RELOADS = 2;
+// a hydration settled (equal / kept local): the next one may reload again
+function clearHydrateLatch() {
+	try { sessionStorage.removeItem('mp_ow_hydrated'); sessionStorage.removeItem(HYDRATE_RELOADS_KEY); } catch (e) {}
+}
+
 export async function hydrateOw() {
 	if (!MP_ON) { syncLog('hydrate.skip', { reason: 'MP_ON=false' }); return; }
 	try {
@@ -390,7 +399,7 @@ export async function hydrateOw() {
 			if (sameBody) {
 				syncLog('hydrate.decision', { winner: 'equal', reason: `bodies identical (localRev ${localRev}, remoteRev ${remoteRev})`, rewroteLocal: false, keysOverwritten: [] });
 				_lastAckedBody = owBody(localSnap);
-				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				clearHydrateLatch();
 				return;
 			}
 			// ABSENCE BEATS REVISION. Every save written before revisions existed reads
@@ -405,12 +414,12 @@ export async function hydrateOw() {
 				for (const k of OW_KEYS) { try { if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { localStorage.setItem(k, ow[k]); took = true; } } catch (e) {} }
 				_lastAckedBody = owBody(owSnapshot());
 				if (took && !sessionStorage.getItem('mp_ow_hydrated')) { sessionStorage.setItem('mp_ow_hydrated', '1'); location.reload(); return; }
-				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				clearHydrateLatch();
 				return;
 			}
 			if (remoteWeight === 0 && localWeight > 0) {
 				syncLog('hydrate.decision', { winner: 'local', reason: `remote holds no game (weight 0) — keeping this device's save`, rewroteLocal: false, localWeight, remoteWeight });
-				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				clearHydrateLatch();
 				pushOw();
 				return;
 			}
@@ -420,7 +429,7 @@ export async function hydrateOw() {
 				// x16/y32. Keep local, and push it up instead.
 				const dexKeys = applyDexUnion(localSnap, ow, 'local ahead');
 				syncLog('hydrate.decision', { winner: 'local', reason: `localRev ${localRev} > remoteRev ${remoteRev} — refusing to rewrite local backward${dexKeys.length ? ', dex merged' : ''}`, rewroteLocal: dexKeys.length > 0, keysOverwritten: dexKeys });
-				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				clearHydrateLatch();
 				pushOw();
 				return;
 			}
@@ -450,7 +459,7 @@ export async function hydrateOw() {
 				// pushOw() bumps the revision itself, so local lands on remoteRev + 1 and
 				// the tie is broken. The extra setOwRev here double-counted it: the
 				// reported jump was 2679 -> 2681 with only one write behind it.
-				try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {}
+				clearHydrateLatch();
 				pushOw();
 				return;
 			}
@@ -478,25 +487,39 @@ export async function hydrateOw() {
 				rewroteLocal: changed, keysOverwritten: overwritten,
 				afterFp: owFingerprint(owSnapshot()),
 			});
-			// Story/Bag/Badges/Dex read their strings at IMPORT time, so a hydration
-			// that actually changed something must reload once — otherwise a stale
-			// in-memory module would quietly save itself back over the fresh data.
-			// The sessionStorage latch stops a reload loop when a write can't stick.
-			if (changed && !sessionStorage.getItem('mp_ow_hydrated')) {
-				sessionStorage.setItem('mp_ow_hydrated', '1');
-				location.reload();
-				return;
-			}
+			// Several modules cache their record when the game starts — the party
+			// (S.party), badges, collected items + berry timers, the Pokedex,
+			// plot-fired beats, the journal, phone, daycare, Safari / Bug Contest
+			// sessions, the flute and repel — and write the WHOLE cached copy back on
+			// the next change. A hydration that adopted the server's save must therefore
+			// RELOAD, or one of them quietly writes the old copy back over the fresh data
+			// (2026-10-03: Instinct lost 96 trainer wins and the Mineral badge this way,
+			// when the old one-shot latch skipped the reload). It always reloads now,
+			// once the adopted keys are confirmed in storage; a per-tab counter stops a
+			// reload loop if writes genuinely don't stick.
 			if (changed) {
-				// the reload latch kept us from reloading, so modules that cached their
-				// record at startup still hold the OLD one: re-read them in place, or the
-				// next write puts the old copy back (Instinct's trainer victories, 2026-10-03)
+				// (the revision and the dex keys are rewritten on purpose just above — the
+				// dex union, and the revision stepped past the server's)
+				const stuck = overwritten.filter(k => k !== OW_REV_KEY && !(k in DEX_SET_KEYS))
+					.every(k => { try { return localStorage.getItem(k) === ow[k]; } catch (e) { return false; } });
+				const n = parseInt(sessionStorage.getItem(HYDRATE_RELOADS_KEY), 10) || 0;
+				if (stuck && n < HYDRATE_MAX_RELOADS) {
+					try { sessionStorage.setItem('mp_ow_hydrated', '1'); sessionStorage.setItem(HYDRATE_RELOADS_KEY, String(n + 1)); } catch (e) {}
+					syncLog('hydrate.reload', { reloads: n + 1 });
+					location.reload();
+					return;
+				}
+				// the guard tripped (or the writes didn't stick): no reload is coming, so
+				// re-read what can be re-read in place before anything writes again
 				try { trainers.reloadDefeated(); } catch (e) {}
 				try { Story.reloadStory(); } catch (e) {}
 				try { Dex.reloadDex(); } catch (e) {}
-				syncLog('hydrate.inplace', { action: 'reloaded cached modules in place (reload latch held)' });
+				try { Badges._reset(); } catch (e) {}
+				try { items.reloadCollected(); } catch (e) {}
+				syncLog('hydrate.inplace', { action: 'reloaded cached modules in place', stuck, reloads: n });
+				try { globalThis.reportErr && globalThis.reportErr(`hydrate could not reload (stuck=${stuck}, reloads=${n}) — re-read in place`, 'ow_saves.hydrateOw'); } catch (e) {}
 			}
-			if (!changed) { try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {} }
+			if (!changed) clearHydrateLatch();
 		}
 	} catch (e) { /* offline / logged out -> keep the localStorage cache */ }
 }
