@@ -848,6 +848,7 @@ export class Battle {
 			result: null,
 			caughtMon: null,
 			roamer: !!opts?.roamer, // a roaming legendary: flee-prone, wounds persist
+			noCatch: !!opts?.noCatch, // the Pokémon Tower ghost MAROWAK: balls are dodged (FRLG BATTLE_TYPE_GHOST)
 		};
 		if (opts?.roamer?.hp != null) foe.curHP = Math.max(1, Math.min(foe.maxHP, opts.roamer.hp | 0));
 		if (opts?.roamer?.status) foe.status = opts.roamer.status;
@@ -4938,6 +4939,10 @@ export class Battle {
 		if (item.kind === 'ball') {
 			a.lastBall = itemId;          // R re-throws it; see the battle key handler
 			Bag.consume(itemId);
+			if (a.noCatch) {              // FRLG: the ball is spent and the turn with it
+				this.startQueue(() => { this.pushMsg('It dodged the thrown BALL!'); this.pushMsg('This POKéMON can\'t be caught!'); this.foeFreeMove(); });
+				return;
+			}
 			this.startQueue(() => this.throwBall(item.name, this.ballMultFor(itemId, item), itemId));
 			return;
 		}

@@ -26,7 +26,7 @@ import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
-import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene } from './ow_scaling.js';
+import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { whiteOut } from './ow_places.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
@@ -819,6 +819,9 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
+		// was missing, so the script read a stale VAR_RESULT and never fought
+		case 'StartMarowakBattle': return startMarowakBattle();
 		// Lilycove Department Store's elevator (its menu + dynamic warp are
 		// restored by tools/gen_multichoice.mjs). The floor you rode from is the
 		// map you came in by; the menu's cursor starts on it (5F is option 0).
