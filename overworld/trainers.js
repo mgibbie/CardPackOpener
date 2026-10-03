@@ -107,14 +107,30 @@ export class Trainers {
 		this.engagement = null; // { trainer, phase: 'exclaim'|'walk', t }
 		this.onEngage = null;   // set by main.js
 		this.spawnFlagged = null; // set by main.js: predicate to un-hide villain-grunt events during a beat
-		{ const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []); }
-		{ const r = safeLoad(REMATCH_KEY, {}); this.rematch = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {}; }
+		this.reloadDefeated();
+		// another tab (or a sync that rewrote storage without a reload) changed
+		// the record: follow it, so this tab never writes an older copy back
+		try { addEventListener('storage', e => { if (e.key === DEFEATED_KEY || e.key === REMATCH_KEY || e.key === null) this.reloadDefeated(); }); } catch (e) {}
+	}
+
+	// The defeated set lives in localStorage; the in-memory copy is only a
+	// cache. It used to be read ONCE at startup and written back WHOLE on every
+	// win — so when storage changed underneath it (a hydrate that adopted the
+	// server's newer save without reloading the page, a second tab), the next win
+	// overwrote the newer record with the stale one (2026-10-03: Instinct's 724
+	// victories fell to 629 on beating Norman — exactly the first 628 + Norman).
+	// Every change now re-reads storage first and applies only its own delta
+	// (rebase-on-write, as the story store does since #624).
+	reloadDefeated() {
+		const d = safeLoad(DEFEATED_KEY, []); this.defeated = new Set(Array.isArray(d) ? d : []);
+		const r = safeLoad(REMATCH_KEY, {}); this.rematch = (r && typeof r === 'object' && !Array.isArray(r)) ? r : {};
 	}
 
 	// VS Seeker: re-arm this map's defeated trainers for a rematch. The tier
 	// (badge count at re-arm, min 1) sticks to the trainer key and scales
 	// buildBattle's levels, so rematches keep pace with the player.
 	rearmMap(tier) {
+		this.reloadDefeated();   // rebase on the stored record
 		let n = 0;
 		// a couple re-arms as ONE encounter: every partner's key clears and takes the tier
 		const beaten = this.list.filter(t => this.isDefeated(t));
@@ -175,6 +191,7 @@ export class Trainers {
 	isDefeated(t) { return this.partnersOf(t).some(p => this.defeated.has(this.keyOf(p))); }
 
 	markDefeated(t) {
+		this.reloadDefeated();   // rebase on the stored record, then add only this win
 		for (const p of this.partnersOf(t)) this.defeated.add(this.keyOf(p));
 		safeSave(DEFEATED_KEY, [...this.defeated]);
 	}
