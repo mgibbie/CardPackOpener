@@ -6,7 +6,7 @@ import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
-import { dialog, hud, player, world } from './ow_core.js';
+import { dialog, hud, player, trainers, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import * as Dex from './pokedex.js';
 import { safeSave, safeSaveStr } from './safestore.js';
@@ -486,6 +486,15 @@ export async function hydrateOw() {
 				sessionStorage.setItem('mp_ow_hydrated', '1');
 				location.reload();
 				return;
+			}
+			if (changed) {
+				// the reload latch kept us from reloading, so modules that cached their
+				// record at startup still hold the OLD one: re-read them in place, or the
+				// next write puts the old copy back (Instinct's trainer victories, 2026-10-03)
+				try { trainers.reloadDefeated(); } catch (e) {}
+				try { Story.reloadStory(); } catch (e) {}
+				try { Dex.reloadDex(); } catch (e) {}
+				syncLog('hydrate.inplace', { action: 'reloaded cached modules in place (reload latch held)' });
 			}
 			if (!changed) { try { sessionStorage.removeItem('mp_ow_hydrated'); } catch (e) {} }
 		}
