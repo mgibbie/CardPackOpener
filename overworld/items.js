@@ -108,6 +108,14 @@ export class Items {
 	// only caches. Every change re-reads storage first and applies its own delta,
 	// so a record that changed underneath (a sync, another tab) is never written
 	// back stale (rebase-on-write, as trainers.js since #647).
+	// mutators UNION storage into the cache (collected items and berry timers
+	// only grow): a record that grew underneath is picked up, and nothing this
+	// tab holds is dropped when storage can't be read (full / blocked storage)
+	mergeCollected() {
+		const c = safeLoad(COLLECTED_KEY, []); if (Array.isArray(c)) for (const k of c) this.collected.add(k);
+		const b = safeLoad(BERRY_KEY, {});
+		if (b && typeof b === 'object' && !Array.isArray(b)) for (const [k, t] of Object.entries(b)) if (!(k in this.berryTimes) || t > this.berryTimes[k]) this.berryTimes[k] = t;
+	}
 	reloadCollected() {
 		const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []);
 		const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {};
@@ -123,7 +131,7 @@ export class Items {
 	}
 
 	markCollected(key) {
-		this.reloadCollected();
+		this.mergeCollected();
 		this.collected.add(key);
 		safeSave(COLLECTED_KEY, [...this.collected]);
 	}
@@ -134,7 +142,7 @@ export class Items {
 		return !!ts && Date.now() - ts < 24 * 3600 * 1000;
 	}
 	markHarvested(key) {
-		this.reloadCollected();
+		this.mergeCollected();
 		this.berryTimes[key] = Date.now();
 		safeSave(BERRY_KEY, this.berryTimes);
 	}

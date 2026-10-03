@@ -178,7 +178,19 @@ function persist() { safeSave(KEY, state()); }
 // adopted the server's save, another tab) is never written back away
 // (2026-10-03: earning Balance wrote back a table from before Jasmine and the
 // Mineral badge vanished). Rebase-on-write, as trainers.js since #647.
-function fresh() { _state = null; return state(); }
+// Badges only ever grow, so the rebase is a UNION of the cache and storage:
+// a badge that landed underneath is picked up, and one this tab holds is never
+// dropped — even when storage can't be read or written (full/blocked storage,
+// a test without localStorage), where a plain re-read would lose it.
+function fresh() {
+	const st = state();
+	const raw = safeLoad(KEY, null);
+	if (raw && typeof raw === 'object') {
+		for (const [r, set] of Object.entries(raw.badges || {})) for (const [id, v] of Object.entries(set || {})) if (v) (st.badges[r] = st.badges[r] || {})[id] = true;
+		for (const [r, v] of Object.entries(raw.champion || {})) if (v) st.champion[r] = true;
+	}
+	return st;
+}
 
 // reset the in-memory cache (tests / a fresh account after a wipe)
 export function _reset() { _state = null; }
