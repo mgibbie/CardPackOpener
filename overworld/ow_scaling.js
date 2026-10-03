@@ -1,6 +1,7 @@
 // ow_scaling.js — postgame level scaling (JohKanto wilds/trainers relative to your lead) and alternate forms (form changes, form sprites).
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Badges from './badges.js';
+import * as Bag from './bag.js';
 import { statsFor } from './battle.js';
 import * as Story from './events.js';
 import { battle, cutscene, evolution, hud, world } from './ow_core.js';
@@ -219,6 +220,43 @@ export function startScriptedWildBattle(species, level) {
 			cutscene.resume();
 		}
 	});
+	return 'wait';
+}
+// FireRed's `special StartMarowakBattle` (Pokémon Tower 6F). Unimplemented, it
+// did nothing and the script read a STALE VAR_RESULT: with the SILPH SCOPE in the
+// bag no battle ever started and the stairs to Mr. Fuji stayed shut (2026-10-03).
+// battle_setup.c: with the Scope it's a battle vs MAROWAK Lv30 that can't be
+// caught; CB2_EndMarowakBattle then sets VAR_RESULT = FALSE only when the player
+// WON (the script calms the spirit and opens the stairs), TRUE otherwise (forced
+// back down), and a loss whites out. Without the Scope the GHOST can't be
+// identified and you can only run — same as RAN, so VAR_RESULT = TRUE.
+export function startMarowakBattle() {
+	const scope = Bag.count('silphscope') > 0;
+	if (!scope || !S.party || !leadMon(S.party) || battle.blocking || !battle.data?.species?.marowak) {
+		Story.setVar('VAR_RESULT', 1);
+		return;
+	}
+	Dex.markSeen('marowak');
+	battle.endSpec = { kind: 'wild' };
+	battle.start(S.party, 'marowak', 30, result => {
+		if (result === 'victory') {
+			S.lastBattleOutcome = B_OUTCOME_WON;
+			Story.setVar('VAR_RESULT', 0);
+			evolution.check(S.party, battle.data);
+			saveParty(S.party);
+			cutscene.resume();
+		} else if (result === 'defeat') {
+			S.lastBattleOutcome = B_OUTCOME_LOST;
+			Story.setVar('VAR_RESULT', 1);
+			whiteOut();
+			cutscene.stop();
+		} else {
+			S.lastBattleOutcome = B_OUTCOME_RAN;
+			Story.setVar('VAR_RESULT', 1);
+			saveParty(S.party);
+			cutscene.resume();
+		}
+	}, null, { noCatch: true });
 	return 'wait';
 }
 export function startCutscene(steps, onDone) {

@@ -26,7 +26,7 @@ import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openRadio } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
-import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene } from './ow_scaling.js';
+import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle } from './ow_scaling.js';
 import { whiteOut } from './ow_places.js';
 import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
 import { buildMonForGift } from './ow_gamecorner.js';
@@ -819,6 +819,9 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
+		// was missing, so the script read a stale VAR_RESULT and never fought
+		case 'StartMarowakBattle': return startMarowakBattle();
 		// Lilycove Department Store's elevator (its menu + dynamic warp are
 		// restored by tools/gen_multichoice.mjs). The floor you rode from is the
 		// map you came in by; the menu's cursor starts on it (5F is option 0).
@@ -881,6 +884,13 @@ export function runSpecial(name, store, op) {
 			return set(Dex.counts().caught);
 		case 'GetLeadMonFriendship': case 'GetLeadMonFriendshipScore':
 			return set(living()[0] ? (living()[0].friend ?? 70) : 0);
+		// Crystal: the FIRST non-egg party mon's happiness into the script var — the
+		// Route 27 Sandstorm house (> 149 gives TM37), the Happiness Rater, the
+		// Dept Store 5F TM ladies (crystal_scriptvar.js restores their tests)
+		// (eggs never ride in the party here — they wait at the Day Care — so the
+		// first non-egg mon is the lead, and the lead is never an egg)
+		case 'GetFirstPokemonHappiness': return set((S.party || [])[0] ? ((S.party[0].friend) ?? 70) : 0);
+		case 'CheckFirstMonIsEgg': return set(0);
 		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
 		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
 			return set(living().length);

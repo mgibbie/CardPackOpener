@@ -1,6 +1,7 @@
 // main.js — game loop, input, camera, warps, connection crossing.
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
+import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
 import { applySailFix } from './sail_fix.js';
@@ -637,6 +638,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadPhoneData(getJSON);
 	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
 	await loadFallthroughData(getJSON);   // the decomp's label fall-through (fallthrough.js)
+	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
 	mergePhoneTeams(S.trainerTeams);
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through
