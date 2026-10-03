@@ -469,10 +469,11 @@ export async function hydrateOw() {
 			if (owDirty() && _lastAckedBody !== '') stashConflict('local edits superseded by a newer remote revision', localSnap, localRev, remoteRev);
 			let changed = false;
 			const overwritten = [];
+			const writeErrs = {};   // key -> why its write failed (QuotaExceededError, ...)
 			for (const k of OW_KEYS) {
 				try {
-					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { overwritten.push(k); localStorage.setItem(k, ow[k]); changed = true; }
-				} catch (e) {}
+					if (ow[k] != null && localStorage.getItem(k) !== ow[k]) { overwritten.push(k); changed = true; localStorage.setItem(k, ow[k]); }
+				} catch (e) { writeErrs[k] = (e && e.name) || String(e); }
 			}
 			// what the server holds, as acked — so a dex this device adds on top
 			// (merged just below) is still dirty, and gets pushed
@@ -500,8 +501,9 @@ export async function hydrateOw() {
 			if (changed) {
 				// (the revision and the dex keys are rewritten on purpose just above — the
 				// dex union, and the revision stepped past the server's)
-				const stuck = overwritten.filter(k => k !== OW_REV_KEY && !(k in DEX_SET_KEYS))
-					.every(k => { try { return localStorage.getItem(k) === ow[k]; } catch (e) { return false; } });
+				const notStuck = overwritten.filter(k => k !== OW_REV_KEY && !(k in DEX_SET_KEYS))
+					.filter(k => { try { return localStorage.getItem(k) !== ow[k]; } catch (e) { return true; } });
+				const stuck = notStuck.length === 0;
 				const n = parseInt(sessionStorage.getItem(HYDRATE_RELOADS_KEY), 10) || 0;
 				if (stuck && n < HYDRATE_MAX_RELOADS) {
 					try { sessionStorage.setItem('mp_ow_hydrated', '1'); sessionStorage.setItem(HYDRATE_RELOADS_KEY, String(n + 1)); } catch (e) {}
@@ -516,8 +518,16 @@ export async function hydrateOw() {
 				try { Dex.reloadDex(); } catch (e) {}
 				try { Badges._reset(); } catch (e) {}
 				try { items.reloadCollected(); } catch (e) {}
-				syncLog('hydrate.inplace', { action: 'reloaded cached modules in place', stuck, reloads: n });
-				try { globalThis.reportErr && globalThis.reportErr(`hydrate could not reload (stuck=${stuck}, reloads=${n}) — re-read in place`, 'ow_saves.hydrateOw'); } catch (e) {}
+				// say WHICH keys didn't land and why: a paused tab (the one-tab lock drops
+				// its writes — correct, not an error), a full storage quota, or a mismatch
+				const why = isTabPaused() ? 'tab paused (another tab is active)'
+					: Object.keys(writeErrs).length ? Object.entries(writeErrs).map(([k, e]) => `${k}:${e}`).join(', ')
+					: notStuck.length ? 'mismatch after write' : 'reload guard tripped';
+				const detail = notStuck.map(k => `${k}(${String(ow[k] || '').length}b)`).join(', ');
+				syncLog('hydrate.inplace', { action: 'reloaded cached modules in place', stuck, reloads: n, why, notStuck });
+				if (!isTabPaused()) {
+					try { globalThis.reportErr && globalThis.reportErr(`hydrate could not reload (reloads=${n}; ${why}; keys: ${detail || 'none'}) — re-read in place`, 'ow_saves.hydrateOw'); } catch (e) {}
+				}
 			}
 			if (!changed) clearHydrateLatch();
 		}
