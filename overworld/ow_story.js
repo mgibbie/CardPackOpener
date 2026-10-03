@@ -33,6 +33,7 @@ import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
+import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
@@ -650,6 +651,37 @@ export function armStoryScenes(region) {
 // badges for Johto's gyms whichever region you started in.
 export function syncStoryVars() {
 	Story.setVar('VAR_BADGES', Badges.count('JOHTO'));
+	syncPetalburgGym();
+}
+
+// FLAG_BADGE0N_GET as the scripts of THIS map's game mean it (see events.js):
+// FireRed Kanto maps ask about the Nth Kanto badge, Emerald/Hoenn2 maps the Nth
+// Hoenn badge — answered from the badges actually held. Crystal maps (Johto,
+// JohKanto) use ENGINE_ flags instead, and neutral maps keep the stored flag.
+const BADGE_FLAG_SLICE = { KANTO: 'KANTO', HOENN: 'HOENN', HOENN2: 'HOENN' };
+Story.setBadgeFlagResolver(n => {
+	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
+	const b = slice && Badges.BADGES[slice][n - 1];
+	return b ? Badges.has(slice, b.id) : null;
+});
+
+// Norman's gym (Emerald PetalburgCity_Gym): VAR_PETALBURG_GYM_STATE is 2 once you
+// have met him, and each of the Rustboro / Dewford / Mauville / Lavaridge gym
+// scripts adds 1 — at 6 he battles (7 = beaten, 8 = rematch; 0/1 = not met yet).
+// Badges won BEFORE meeting him never counted, and the four can come in any
+// order here (cross-region tiers, portals), so a save holding all four could sit
+// at 3 for good (2026-10-02, Instinct: state 3 with all four badges, Norman
+// stuck on "one badge"). Derive it from the badges held: only ever RAISED, only
+// once he's been met (2..5), and reaching 6 does what the game's own
+// Common_EventScript_ReadyPetalburgGymForBattle does.
+const NORMAN_PREREQS = ['stone', 'knuckle', 'dynamo', 'heat'];
+function syncPetalburgGym() {
+	const s = Story.getVar('VAR_PETALBURG_GYM_STATE');
+	if (s < 2 || s > 5) return;
+	const want = 2 + NORMAN_PREREQS.filter(id => Badges.has('HOENN', id)).length;
+	if (want <= s) return;
+	Story.setVar('VAR_PETALBURG_GYM_STATE', want);
+	if (want === 6) { Story.clearFlag('FLAG_HIDE_PETALBURG_GYM_GREETER'); Story.setFlag('FLAG_PETALBURG_MART_EXPANDED_ITEMS'); }
 }
 
 // Vars the scripts READ but nothing here ever WROTE, so every branch on them
@@ -673,6 +705,7 @@ function syncScriptVars() {
 	Story.setVar('VAR_WEEKDAY', new Date().getDay());          // SUNDAY = 0 .. SATURDAY = 6
 	Story.setVar('VAR_PARTYCOUNT', (S.party || []).length);
 	Story.setVar('VAR_UNOWNCOUNT', Dex.unownCount());          // lights up the Ruins research-center branches
+	syncPetalburgGym();                                         // Norman's gate tracks the badges held
 }
 
 // pokecrystal runs InitializeEventsScript before a new save's first step, and now
