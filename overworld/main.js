@@ -686,6 +686,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	if (!params.has('map')) saved = safeLoad(POS_KEY, null);
 	const startMap = params.get('map') || saved?.map || 'PalletTown';
 	try { await world.load(startMap); } catch (e) { saved = null; await world.load('PalletTown'); }
+	if (saved?.dyn && !S.dynamicWarp) S.dynamicWarp = saved.dyn;   // a MAP_DYNAMIC exit's destination survives a reload
 	const sx = params.has('x') ? +params.get('x')
 		: saved?.x ?? Math.floor(world.current.layout.width / 2);
 	const sy = params.has('y') ? +params.get('y')

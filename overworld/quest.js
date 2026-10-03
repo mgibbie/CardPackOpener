@@ -230,6 +230,18 @@ export function globalTier() { return Math.min(...SHARED.map(r => Badges.count(r
 // the shared regions still short of the current tier (they hold the world back)
 export function laggingRegions() { const g = globalTier(); return SHARED.filter(r => Badges.count(r) === g); }
 
+// WHICH gym a region owes next: the FIRST gym in order whose badge is missing.
+// Counts decide the tier rules (gates, level caps), but a count can't say which
+// gym is left: 2026-10-02 Instinct held Hoenn stone/knuckle/dynamo/heat/FEATHER
+// (5, Norman's Balance missing), and every guide indexed GYMS[HOENN][5] — sending
+// them back to Winona, already beaten, instead of Norman. 8 = none owed.
+export function nextGymIndex(region) {
+	const rk = regionKey(region);
+	const i = (Badges.BADGES[rk] || []).findIndex(b => !Badges.has(rk, b.id));
+	return i < 0 ? 8 : i;
+}
+export function nextGym(region) { return GYMS[regionKey(region)][nextGymIndex(region)] || null; }
+
 export const INTRO = -1, LEAGUE = 8, DONE = 9;
 
 // current stage: INTRO (no starter yet) -> 0..7 (working toward gym stage+1) ->
@@ -260,7 +272,7 @@ function crossRegionWait(rk) {
 	const g = globalTier();
 	if (Badges.count(rk) <= g) return null;             // at the floor — advance normally
 	const laggers = laggingRegions().filter(r => r !== rk);
-	const where = laggers.map(r => `${GYMS[r][g].leader} in ${GYMS[r][g].town}`);
+	const where = laggers.map(r => nextGym(r)).filter(Boolean).map(n => `${n.leader} in ${n.town}`);
 	const lead = where.length ? where.join(' and ') : 'the other regions';
 	return `${rk} is ahead! Collect the remaining GYM ${g + 1} BADGE SHARDS — ${lead} — in any order. Take the PORTAL by the POKeMON CENTER.`;
 }
@@ -279,13 +291,13 @@ export function objective(region) {
 		if (lb) return lb.objective;
 		return 'All 8 badges earned! Enter VICTORY ROAD and challenge the POKeMON LEAGUE.';
 	}
-	const g = GYMS[rk][s];
+	const g = nextGym(rk) || GYMS[rk][s];
 	const gb = gateBeat(rk, g.map);
 	if (gb) return gb.objective;
 	// badge-thirds, made visible: the next tier needs its BADGE SHARD from every
 	// region, earned in ANY order — so name the local gym AND the two abroad
 	// instead of railroading the player to the current region's leader
-	const need = SHARED.filter(r => r !== rk && Badges.count(r) <= s).map(r => `${GYMS[r][s].leader} (${GYMS[r][s].town})`);
+	const need = SHARED.filter(r => r !== rk && Badges.count(r) <= s).map(r => nextGym(r)).filter(Boolean).map(n => `${n.leader} (${n.town})`);
 	if (need.length) return `Collect all three ${ordinal(s + 1)}-badge SHARDS, any order: ${g.leader} in ${g.town}, or PORTAL to ${need.join(' / ')}.`;
 	return `Defeat ${g.leader} in ${g.town} for the last ${ordinal(s + 1)}-badge SHARD.`;
 }
@@ -300,8 +312,9 @@ export function shortObjective(region) {
 	if (s === DONE) return 'CHAMPION!';
 	if (Badges.count(rk) > globalTier()) return `Portal: GYM ${globalTier() + 1} SHARDS abroad`; // waiting on the other regions
 	if (s === LEAGUE) { const lb = gateBeat(rk, LEAGUE_MAP[rk]); return lb ? `Stop ${lb.boss}` : 'POKeMON LEAGUE'; }
-	const gb = gateBeat(rk, GYMS[rk][s].map);
-	return gb ? `Stop ${gb.boss}` : GYMS[rk][s].town;
+	const ng = nextGym(rk) || GYMS[rk][s];
+	const gb = gateBeat(rk, ng.map);
+	return gb ? `Stop ${gb.boss}` : ng.town;
 }
 
 // ordered quest-log rows for the QUEST menu (done / current / locked), with the
@@ -311,9 +324,10 @@ export function log(region) {
 	const n = Badges.count(rk);
 	const champ = Badges.isChampion(rk);
 	const team = rk === 'HOENN' ? 'TEAM AQUA' : 'TEAM ROCKET';
+	const next = nextGymIndex(rk);   // by badge held, not by count — a skipped gym stays 'current'
 	const items = GYMS[rk].map((g, i) => ({
 		key: i, label: `${g.leader} — ${g.town}`,
-		state: i < n ? 'done' : (i === n && !champ ? 'current' : 'locked'),
+		state: Badges.has(rk, Badges.BADGES[rk][i].id) ? 'done' : (i === next && !champ ? 'current' : 'locked'),
 	}));
 	for (const b of VILLAIN_BEATS[rk] || []) {
 		const done = Story.getFlag(b.doneFlag);
@@ -361,7 +375,7 @@ export function blocked(region, destMap, fromMap) {
 	// name the badge the LAGGING regions still owe (the player's own region may already
 	// hold it), so the message points at what actually blocks progress
 	const laggers = laggingRegions();
-	const towns = laggers.map(r => GYMS[r][need - 1]?.town).filter(Boolean);
+	const towns = laggers.map(r => nextGym(r)?.town).filter(Boolean);
 	const where = towns.length ? towns.join(' and ') : 'the other regions';
 	return { need, msg: `The way ahead is sealed.\nClear GYM ${need} in ${where} first — every region must keep pace.` };
 }

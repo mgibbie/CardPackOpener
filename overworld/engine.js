@@ -96,6 +96,8 @@ export function getImage(url) {
 // such pair, and its sheet was exported under its own name. Graphics only: the
 // metatile JSON keeps the tileset's own name.
 const SHARED_GRAPHICS = { firered: { SilphCo: 'Condominiums' } };
+// map file -> { warp index: its tile } whose exit the decomp makes MAP_DYNAMIC (see World.load)
+const DYNAMIC_EXITS = { TerraCave_Entrance: { 0: { x: 8, y: 18 } } };
 const gfxName = (name, game) => {
 	const own = String(name || '').replace('gTileset_', '');
 	const to = SHARED_GRAPHICS[game] && SHARED_GRAPHICS[game][own];
@@ -373,6 +375,15 @@ export class World {
 		const b = await this._renderedBundle(name);
 		this.current = b;
 		this.warps = (b.map.warp_events || []).map(w => ({ ...w, x: +w.x, y: +w.y }));
+		// Exits the decomp sends to MAP_DYNAMIC ("back where you came in") that the
+		// exported data hardwired to one route. Terra Cave's exit went to Route 114
+		// warp 4 — a Surf-only pocket — so a player who walked in from Route 116 came
+		// out sealed in it (2026-10-02, Muse). The only such warp of the 64 MAP_DYNAMIC
+		// warps in pokeemerald/pokefirered.
+		for (const [i, w] of this.warps.entries()) {
+			const fix = DYNAMIC_EXITS[name]?.[i];
+			if (fix && w.x === fix.x && w.y === fix.y) { w.dest_map = 'MAP_DYNAMIC'; w.dest_warp_id = 'WARP_ID_DYNAMIC'; }
+		}
 		// Keyed by direction, this kept ONE connection per side, and the two on
 		// Route 111's west edge loaded concurrently: whichever finished last
 		// overwrote the other. When Route 113 won, Route 112 could not be entered

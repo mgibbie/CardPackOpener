@@ -67,7 +67,27 @@ if (typeof addEventListener === 'function') {
 	addEventListener('storage', e => { if (e.key === KEY || e.key === null) sync(); });
 }
 
-export function getFlag(f) { return !!store.flags[f]; }
+// FLAG_BADGE01_GET..FLAG_BADGE08_GET are ONE set of names shared by two games:
+// FireRed's Kanto gyms set them for Boulder..Earth, Emerald's (and Hoenn2's) for
+// Stone..Rain. In one story store they collide — 2026-10-02, Instinct's Kanto Soul
+// badge (FLAG_BADGE05_GET) told Hoenn's scripts they held Balance, Norman's. So a
+// read of a badge flag is answered from the badges actually held, for the region
+// of the map being played (ow_story.js installs the resolver); null = no answer
+// there (Crystal maps use ENGINE_ flags; neutral maps) -> the stored flag, as before.
+// Writes still land in the store, so nothing a script set is ever lost.
+let badgeFlagResolver = null;
+export function setBadgeFlagResolver(fn) { badgeFlagResolver = typeof fn === 'function' ? fn : null; }
+const BADGE_FLAG_RE = /^FLAG_BADGE0([1-8])_GET$/;
+export function getFlag(f) {
+	if (badgeFlagResolver) {
+		const m = BADGE_FLAG_RE.exec(f);
+		if (m) { try { const r = badgeFlagResolver(+m[1]); if (r != null) return !!r; } catch (e) { /* fall back to the store */ } }
+	}
+	return !!store.flags[f];
+}
+// the flag exactly as stored, with no badge-flag answer (save/sync code and tests
+// that check what the story store itself holds)
+export function getStoredFlag(f) { return !!store.flags[f]; }
 // (each checks the CURRENT stored value first, so a no-op costs no serialising)
 export function setFlag(f) { sync(); if (store.flags[f] === true) return; mutate(s => { s.flags[f] = true; }); }
 export function clearFlag(f) { sync(); if (!(f in store.flags)) return; mutate(s => { delete s.flags[f]; }); }

@@ -35,6 +35,12 @@ export function playerRegionOfMap(name) {
 	return (r && PLAYER_REGIONS[r]) ? r : null;
 }
 
+// the map's raw region key from map_regions.json (KANTO, JOHTO, HOENN, HOENN2,
+// JOHKANTO, OTHER), or null before the table loads / for an unknown map
+export function mapRegionOf(name) {
+	return (byName && byName.get(name)) || null;
+}
+
 // returns true when the saved region changed
 export async function syncRegionToMap(name) {
 	await loadMapRegions();

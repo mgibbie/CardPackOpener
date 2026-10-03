@@ -132,7 +132,7 @@ try {
 	};
 	const localStory = p => p.evaluate(() => JSON.parse(localStorage.getItem('magepunk_story') || 'null'));
 	const localRev = p => p.evaluate(() => parseInt(localStorage.getItem('magepunk_ow_rev'), 10) || 0);
-	const runtime = p => p.evaluate(async flags => { const S = await import('./events.js'); return flags.filter(f => !S.getFlag(f)); }, LOST_FLAGS);
+	const runtime = p => p.evaluate(async flags => { const S = await import('./events.js'); return flags.filter(f => !S.getStoredFlag(f)); }, LOST_FLAGS);   // what the in-memory STORE holds (badge flags read through the badges otherwise)
 
 	// ===== 1. a stale import-time cache =====
 	{
