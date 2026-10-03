@@ -8,8 +8,8 @@
 // win overwrote the newer record. Every change now re-reads storage first.
 //   1. storage grows under a running game (as a hydrate would), then a win:
 //      every stored victory is kept, plus the new one
-//   2. a second tab records a win: this tab follows it (storage event) and
-//      its own next win keeps both
+//   2. a second tab records a win: this tab follows it (storage event); this
+//      older tab is then paused (one active tab), so its write is dropped
 //   3. a VS Seeker re-arm rebases too: it clears only this map's trainers
 //
 //   node overworld/tests/defeats_rebase_test.mjs
@@ -88,22 +88,23 @@ try {
 	A(NEWER.every(k => s.includes(k)) && s.includes(won) && s.length === NEWER.length + 1,
 		'1. a win after the record grew keeps EVERY stored victory and adds its own (8 + 1)', JSON.stringify({ n: s.length, lost: NEWER.filter(k => !s.includes(k)) }));
 
-	// ===== 2. a second tab wins; this tab follows, and its next win keeps both =====
+	// ===== 2. a second tab wins; this tab follows it, and (since the one-active-tab
+	//         lock) the OLDER tab is paused — its writes are dropped, never stale =====
 	const page2 = await ctx.newPage();
 	await boot(page2, 'Route3');
 	const won2 = await page2.evaluate(() => { const T = window.__ow.trainers, t = T.list.filter(x => !T.isDefeated(x))[0]; T.markDefeated(t); return T.keyOf(t); });
 	await sleep(300);
-	A(await page.evaluate(k => window.__ow.trainers.defeated.has(k), won2), '2. the first tab sees the second tab\'s win (storage event)');
+	A(await page.evaluate(k => window.__ow.trainers.defeated.has(k), won2), "2. the first tab sees the second tab's win (storage event)");
 	const won3 = await page.evaluate(() => { const T = window.__ow.trainers, t = T.list.find(x => !T.isDefeated(x)); T.markDefeated(t); return T.keyOf(t); });
-	s = await stored(page);
-	A(s.includes(won) && s.includes(won2) && s.includes(won3) && NEWER.every(k => s.includes(k)), '2. ...and its next win keeps the other tab\'s win and everything before', JSON.stringify({ n: s.length }));
-	await page2.close();
+	s = await stored(page2);
+	A(s.includes(won) && s.includes(won2) && !s.includes(won3) && NEWER.every(k => s.includes(k)), '2. ...the first tab is paused: its write is dropped, and nothing stored is lost', JSON.stringify({ n: s.length }));
 
-	// ===== 3. VS Seeker re-arm rebases: only this map's trainers clear =====
-	await page.evaluate(() => { const a = JSON.parse(localStorage.getItem('magepunk_defeated_v1')); a.push('MAP_ELSEWHERE:LateWin'); localStorage.setItem('magepunk_defeated_v1', JSON.stringify(a)); });
-	const n = await page.evaluate(() => window.__ow.trainers.rearmMap(1));
-	s = await stored(page);
-	A(n >= 1 && s.includes('MAP_ELSEWHERE:LateWin') && NEWER.every(k => s.includes(k)) && !s.includes(won), '3. a VS Seeker re-arm clears this map\'s wins only, keeping a win stored meanwhile', JSON.stringify({ n, has: s.includes('MAP_ELSEWHERE:LateWin') }));
+	// ===== 3. VS Seeker re-arm rebases (in the active tab): only this map's trainers clear =====
+	await page2.evaluate(() => { const a = JSON.parse(localStorage.getItem('magepunk_defeated_v1')); a.push('MAP_ELSEWHERE:LateWin'); localStorage.setItem('magepunk_defeated_v1', JSON.stringify(a)); });
+	const n = await page2.evaluate(() => window.__ow.trainers.rearmMap(1));
+	s = await stored(page2);
+	A(n >= 1 && s.includes('MAP_ELSEWHERE:LateWin') && NEWER.every(k => s.includes(k)) && !s.includes(won), "3. a VS Seeker re-arm clears this map's wins only, keeping a win stored meanwhile", JSON.stringify({ n, has: s.includes('MAP_ELSEWHERE:LateWin') }));
+	await page2.close();
 	A(errors.length === 0, 'no page errors', JSON.stringify(errors.slice(0, 3)));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));

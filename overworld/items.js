@@ -101,8 +101,16 @@ export class Items {
 		this.fieldObjs = [];
 		this.fruitMap = {};
 		this.ballImg = null;
-		{ const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []); }
-		{ const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {}; }
+		this.reloadCollected();
+	}
+
+	// collected balls/hidden items + berry timers live in localStorage; these are
+	// only caches. Every change re-reads storage first and applies its own delta,
+	// so a record that changed underneath (a sync, another tab) is never written
+	// back stale (rebase-on-write, as trainers.js since #647).
+	reloadCollected() {
+		const c = safeLoad(COLLECTED_KEY, []); this.collected = new Set(Array.isArray(c) ? c : []);
+		const b = safeLoad(BERRY_KEY, {}); this.berryTimes = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {};
 	}
 
 	async init() {
@@ -115,6 +123,7 @@ export class Items {
 	}
 
 	markCollected(key) {
+		this.reloadCollected();
 		this.collected.add(key);
 		safeSave(COLLECTED_KEY, [...this.collected]);
 	}
@@ -125,6 +134,7 @@ export class Items {
 		return !!ts && Date.now() - ts < 24 * 3600 * 1000;
 	}
 	markHarvested(key) {
+		this.reloadCollected();
 		this.berryTimes[key] = Date.now();
 		safeSave(BERRY_KEY, this.berryTimes);
 	}

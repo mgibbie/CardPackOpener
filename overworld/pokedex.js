@@ -35,7 +35,9 @@ function unownLetterOf(id) {
 	return m ? m[1].toUpperCase() : null;
 }
 export function markUnown(letter) {
-	if (!letter || unownSet.has(letter)) return;
+	if (!letter) return;
+	unownSet = new Set(safeLoad(UNOWN_KEY, []));   // rebase on the stored record
+	if (unownSet.has(letter)) return;
 	unownSet.add(letter);
 	safeSave(UNOWN_KEY, [...unownSet]);
 }
@@ -50,8 +52,11 @@ function foldUnown(id) {
 	return 'unown';
 }
 
+// seen/caught re-read storage before changing it (rebase-on-write), so a dex
+// that grew underneath this tab (a sync, another tab) is never written back smaller
 export function markSeen(id) {
 	id = foldUnown(id);
+	dex = load();
 	if (!id || dex.seen.has(id)) return;
 	dex.seen.add(id);
 	save(dex);
@@ -60,6 +65,7 @@ export function markSeen(id) {
 export function markCaught(id) {
 	if (!id) return;
 	id = foldUnown(id);
+	dex = load();
 	let changed = false;
 	if (!dex.seen.has(id)) { dex.seen.add(id); changed = true; }
 	if (!dex.caught.has(id)) { dex.caught.add(id); changed = true; }
@@ -102,6 +108,7 @@ export function caughtCount() { return dex.caught.size; }
 
 // seed from the current party/box on boot so existing saves aren't blank
 export function seedFrom(mons) {
+	dex = load();   // rebase on the stored record
 	let changed = false;
 	for (const m of mons || []) {
 		if (!m || !m.speciesId) continue;
