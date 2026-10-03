@@ -155,6 +155,9 @@ export function savePos() {
 	safeSave(POS_KEY, {
 		map: world.current.name, x: player.tx, y: player.ty,
 		back: world.lastWarpSource || null,
+		// where a MAP_DYNAMIC exit leads (Terra Cave's way out): a reload inside
+		// must still know it, or the exit falls back to whatever door came last
+		dyn: S.dynamicWarp || null,
 	});
 }
 // the `msg` right after a script's first trainerbattle: what an already-beaten

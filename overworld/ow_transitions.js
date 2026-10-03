@@ -236,6 +236,8 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 	}
 	sfx('door');
 	const source = { name: world.current.name, tx: player.tx, ty: player.ty };
+	// the door being used, for the arrival rule below
+	const srcMapId = world.current.map?.id, srcWarp = world.warps.findIndex(w => w.x === player.tx && w.y === player.ty);
 	await fadeTo(1);             // dip to black as the door opens (fades in below)
 	S.loading = true;
 	try {
@@ -268,6 +270,12 @@ export async function warpTo(mapId, destWarpId, destX, destY) {
 		else if (hasXY) player.setTile(destX, destY);
 		else if (world.warps[0]) player.setTile(world.warps[0].x, world.warps[0].y);
 		else player.setTile(Math.floor(world.current.layout.width / 2), Math.floor(world.current.layout.height / 2));
+		// Gen 3's arrival rule (field_control_avatar.c SetupWarp): landing on a door
+		// whose own exit is MAP_DYNAMIC remembers the door you came through, so that
+		// exit leads back out the same way — Terra Cave from Route 116 returns you to
+		// Route 116. Script setdynamicwarps (elevators) still set it their own way.
+		if (w && w.dest_map === 'MAP_DYNAMIC' && srcMapId && srcWarp >= 0)
+			S.dynamicWarp = { map: srcMapId, warp: srcWarp, x: source.tx, y: source.ty };
 		world.lastWarpSource = source;
 		await refreshMapContent(file);
 	} catch (e) { afterLoadError('warpTo ' + mapId, e); }
