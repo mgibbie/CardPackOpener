@@ -1071,6 +1071,9 @@ export function startRivalEncounter(tier) {
 }
 export function completeVillainBeat(region, beat) {
 	Story.setFlag(beat.doneFlag);
+	// ...and the native script's story effects, so the world matches a native win
+	// (Saffron's Rocket guards leave, the Silph Scope appears, the Well clears)
+	Quest.applyNativeBeat(beat);
 	saveParty(S.party);
 	refreshObjective();
 	syncOverworldAchievements(); // a villain arc just closed — surface it on the profile
