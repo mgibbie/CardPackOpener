@@ -103,6 +103,9 @@ export const VILLAIN_BEATS = {
 			maps: ['RocketHideout_B1F', 'RocketHideout_B2F', 'RocketHideout_B3F'], boss: 'GIOVANNI',
 			team: [{ s: 'onix', l: 25 }, { s: 'rhyhorn', l: 24 }, { s: 'kangaskhan', l: 29 }],
 			doneFlag: 'villain_kanto_hideout',
+			// native RocketHideout_B4F_EventScript_Giovanni: removeobject GIOVANNI (its
+			// flag), addobject + clearflag the SILPH SCOPE ball, setflag CELADON_ROCKETS
+			native: { done: 'FLAG_HIDE_CELADON_ROCKETS', set: ['FLAG_HIDE_HIDEOUT_GIOVANNI', 'FLAG_HIDE_CELADON_ROCKETS'], clear: ['FLAG_HIDE_SILPH_SCOPE'] },
 			objective: 'TEAM ROCKET has taken over the CELADON GAME CORNER — storm their HIDEOUT.',
 			intro: ['GIOVANNI: So a nosy kid found our hideout.', "GIOVANNI: I am the boss of TEAM ROCKET. Interfere and you'll regret it!"],
 			outro: ['GIOVANNI: ...Impressive. But TEAM ROCKET will rise again!', '(TEAM ROCKET flees the CELADON hideout.)'],
@@ -112,6 +115,10 @@ export const VILLAIN_BEATS = {
 			maps: ['SilphCo_2F', 'SilphCo_3F', 'SilphCo_4F', 'SilphCo_5F', 'SilphCo_6F', 'SilphCo_7F', 'SilphCo_8F', 'SilphCo_9F', 'SilphCo_10F'],
 			team: [{ s: 'nidorino', l: 37 }, { s: 'kangaskhan', l: 35 }, { s: 'rhyhorn', l: 37 }, { s: 'nidoqueen', l: 41 }],
 			doneFlag: 'villain_kanto_silph',
+			// native SilphCo_11F_EventScript_BattleGiovanni: removeobject GIOVANNI + both
+			// grunts (all FLAG_HIDE_SILPH_ROCKETS), scene 1, SAFFRON_ROCKETS (the gym
+			// guard at 46,13), SAFFRON_CIVILIANS back
+			native: { done: 'FLAG_HIDE_SAFFRON_ROCKETS', set: ['FLAG_HIDE_SILPH_ROCKETS', 'FLAG_HIDE_SAFFRON_ROCKETS'], clear: ['FLAG_HIDE_SAFFRON_CIVILIANS'], vars: { VAR_MAP_SCENE_SILPH_CO_11F: 1 } },
 			objective: 'TEAM ROCKET has seized SILPH CO. in SAFFRON — drive them out.',
 			intro: ['GIOVANNI: You again! TEAM ROCKET now controls SILPH CO.', 'GIOVANNI: This is your last warning. Leave — or be crushed!'],
 			outro: ['GIOVANNI: ...Beaten again. TEAM ROCKET, retreat!', "(SAFFRON is free — SABRINA's GYM has reopened.)"],
@@ -129,6 +136,14 @@ export const VILLAIN_BEATS = {
 			id: 'slowpoke', afterBadges: 1, at: 'SlowpokeWellB1F', maps: ['SlowpokeWellB1F'], boss: 'PROTON', gate: 'AzaleaGym',
 			team: [{ s: 'zubat', l: 14 }, { s: 'rattata', l: 14 }, { s: 'koffing', l: 16 }],
 			doneFlag: 'villain_johto_slowpoke',
+			// native SlowpokeWellB1F TrainerGruntM1.Script (the Well's clear): the rockets
+			// disappear, EVENT_CLEARED_SLOWPOKE_WELL, Azalea's rival-battle scene, and the
+			// Ilex / Charcoal Kiln / Kurt's-house swaps (the warp to Kurt's house is not
+			// a story effect and is left out)
+			native: { done: 'EVENT_CLEARED_SLOWPOKE_WELL',
+				set: ['EVENT_SLOWPOKE_WELL_ROCKETS', 'EVENT_CLEARED_SLOWPOKE_WELL', 'EVENT_CHARCOAL_KILN_FARFETCH_D', 'EVENT_CHARCOAL_KILN_APPRENTICE', 'EVENT_SLOWPOKE_WELL_SLOWPOKES', 'EVENT_SLOWPOKE_WELL_KURT'],
+				clear: ['EVENT_ILEX_FOREST_APPRENTICE', 'EVENT_ILEX_FOREST_FARFETCHD', 'EVENT_AZALEA_TOWN_SLOWPOKES', 'EVENT_KURTS_HOUSE_SLOWPOKE', 'EVENT_KURTS_HOUSE_KURT_1'],
+				vars: { VAR_SCENE_AzaleaTown: 1 } },
 			objective: 'TEAM ROCKET is cutting SLOWPOKE tails in the SLOWPOKE WELL by AZALEA — stop them.',
 			intro: ["PROTON: I'm PROTON, an executive of TEAM ROCKET.", 'PROTON: These SLOWPOKE tails sell for a fortune. Out of my way, brat!'],
 			outro: ["PROTON: Tch... you'll pay for this.", "(TEAM ROCKET flees — AZALEA's GYM is clear.)"],
@@ -138,6 +153,15 @@ export const VILLAIN_BEATS = {
 			maps: ['TeamRocketBaseB1F', 'TeamRocketBaseB2F'], boss: 'ARIANA', gate: 'MahoganyGym',
 			team: [{ s: 'gloom', l: 32 }, { s: 'murkrow', l: 32 }, { s: 'arbok', l: 34 }, { s: 'vileplume', l: 36 }],
 			doneFlag: 'villain_johto_hq',
+			// native TeamRocketBaseB2F: the executive's defeat (RocketBaseBossFScript) and
+			// the base's clear after the electrodes (RocketBaseElectrodeScript); the
+			// HM WHIRLPOOL gift is an item, left out
+			native: { done: 'EVENT_CLEARED_ROCKET_HIDEOUT',
+				set: ['EVENT_TEAM_ROCKET_BASE_B2F_EXECUTIVE', 'EVENT_TEAM_ROCKET_BASE_B2F_GRUNT_WITH_EXECUTIVE', 'EVENT_TEAM_ROCKET_BASE_B2F_LANCE', 'EVENT_BEAT_ROCKET_EXECUTIVEF_2',
+					'EVENT_CLEARED_ROCKET_HIDEOUT', 'EVENT_ROUTE_43_GATE_ROCKETS', 'EVENT_MAHOGANY_TOWN_POKEFAN_M_BLOCKS_GYM', 'EVENT_TURNED_OFF_SECURITY_CAMERAS',
+					'EVENT_SECURITY_CAMERA_1', 'EVENT_SECURITY_CAMERA_2', 'EVENT_SECURITY_CAMERA_3', 'EVENT_SECURITY_CAMERA_4', 'EVENT_SECURITY_CAMERA_5'],
+				clear: ['EVENT_LAKE_OF_RAGE_CIVILIANS', 'ENGINE_ROCKET_SIGNAL_ON_CH20'],
+				vars: { VAR_SCENE_TeamRocketBaseB2F: 3 } },
 			objective: "TEAM ROCKET's secret base hides beneath MAHOGANY TOWN — shut it down.",
 			intro: ['ARIANA: How did a kid get into our secret HQ?!', "ARIANA: I'm ARIANA of TEAM ROCKET. You won't leave here!"],
 			outro: ['ARIANA: Impossible... TEAM ROCKET, fall back!', "(The MAHOGANY hideout is shut down — PRYCE's GYM has opened.)"],
@@ -149,6 +173,9 @@ export const VILLAIN_BEATS = {
 			maps: ['AquaHideout_1F', 'AquaHideout_B1F'], boss: 'MATT',
 			team: [{ s: 'mightyena', l: 34 }, { s: 'golbat', l: 34 }, { s: 'carvanha', l: 32 }],
 			doneFlag: 'villain_hoenn_hideout',
+			// native AquaHideout_B2F_EventScript_SubmarineEscape (after MATT): the
+			// submarine leaves (its flag), AQUA escaped, Lilycove's grunts gone
+			native: { done: 'FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE', set: ['FLAG_HIDE_AQUA_HIDEOUT_B2F_SUBMARINE_SHADOW', 'FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE', 'FLAG_HIDE_LILYCOVE_CITY_AQUA_GRUNTS'] },
 			objective: 'TEAM AQUA is scheming in their LILYCOVE HIDEOUT — foil their plan.',
 			intro: ['MATT: Hehe, you followed us into the AQUA HIDEOUT?', "MATT: I'm MATT! Nobody wrecks TEAM AQUA's plans!"],
 			outro: ["MATT: Argh, so strong... this isn't over!", '(TEAM AQUA scatters from the hideout.)'],
@@ -163,12 +190,40 @@ export const VILLAIN_BEATS = {
 			gate: ['EverGrandeCity', 'VictoryRoad_1F', 'EverGrandeCity_PokemonLeague_1F'],
 			team: [{ s: 'mightyena', l: 41 }, { s: 'crobat', l: 41 }, { s: 'sharpedo', l: 43 }],
 			doneFlag: 'villain_hoenn_climax',
+			// native SeafloorCavern_Room9_EventScript_ArchieAwakenKyogre: ONLY the room's
+			// own cleanup. The rest of that block starts the Sootopolis weather crisis
+			// (legendaries in Sootopolis, weather control, Juan's gym shut until the
+			// Rayquaza chain), which this campaign's League gate doesn't model, so it
+			// would strand the 8th badge. Left out on purpose.
+			native: { done: 'FLAG_KYOGRE_ESCAPED_SEAFLOOR_CAVERN',
+				set: ['FLAG_HIDE_SEAFLOOR_CAVERN_ROOM_9_ARCHIE', 'FLAG_HIDE_SEAFLOOR_CAVERN_ROOM_9_MAXIE', 'FLAG_HIDE_SEAFLOOR_CAVERN_ROOM_9_MAGMA_GRUNTS', 'FLAG_HIDE_SEAFLOOR_CAVERN_ROOM_9_KYOGRE', 'FLAG_HIDE_SEAFLOOR_CAVERN_AQUA_GRUNTS'] },
 			objective: 'TEAM AQUA is awakening a legend in the SEAFLOOR CAVERN — stop ARCHIE before the LEAGUE.',
 			intro: ["ARCHIE: You're too late! I'll awaken the sea's guardian!", 'ARCHIE: I am ARCHIE, leader of TEAM AQUA. Stand aside!'],
 			outro: ['ARCHIE: What have I... the sea rages beyond control. I must go!', '(TEAM AQUA flees — the path to the POKeMON LEAGUE is open.)'],
 		},
 	],
 };
+
+// A beat is done when its campaign battle was won (doneFlag) OR the original
+// game's battle it stands in for was won (the native script's own marker):
+// either route counts, so a player who cleared Silph the native way isn't sent
+// into a second Giovanni. The doneFlag is recorded the first time that's seen.
+export function beatDone(b) {
+	if (Story.getFlag(b.doneFlag)) return true;
+	if (b.native && b.native.done && Story.getFlag(b.native.done)) { Story.setFlag(b.doneFlag); return true; }
+	return false;
+}
+// the native story effects of the battle a campaign beat replaces
+// (VILLAIN_BEATS[].native): a campaign win leaves the world as the native win
+// would (Saffron's Rocket guards gone, the Silph Scope out, the Well cleared).
+// 2026-10-03, Instinct: the campaign Silph win left Sabrina's gym guarded.
+export function applyNativeBeat(b) {
+	const n = b && b.native;
+	if (!n) return;
+	for (const f of n.set || []) Story.setFlag(f);
+	for (const f of n.clear || []) Story.clearFlag(f);
+	for (const [k, v] of Object.entries(n.vars || {})) Story.setVar(k, v);
+}
 
 // the beat located at `map` that is active (badges reached) and not yet done —
 // what checkVillainTrigger fires on entry
@@ -177,7 +232,7 @@ export function beatAt(region, map) {
 	if (!Story.getFlag('intro_done')) return null;
 	const n = Badges.count(rk);
 	for (const b of VILLAIN_BEATS[rk] || []) {
-		if (b.at === map && n >= b.afterBadges && !Story.getFlag(b.doneFlag)) return b;
+		if (b.at === map && n >= b.afterBadges && !beatDone(b)) return b;
 	}
 	return null;
 }
@@ -189,7 +244,7 @@ export function isDungeonFloor(region, map) {
 	const n = Badges.count(rk);
 	for (const b of VILLAIN_BEATS[rk] || []) {
 		if (!b.maps) continue;
-		if (n >= b.afterBadges && !Story.getFlag(b.doneFlag) && b.maps.includes(map)) return true;
+		if (n >= b.afterBadges && !beatDone(b) && b.maps.includes(map)) return true;
 	}
 	return false;
 }
@@ -199,7 +254,7 @@ function gateBeat(region, destMap) {
 	for (const b of VILLAIN_BEATS[rk] || []) {
 		if (!b.gate) continue;
 		const gates = Array.isArray(b.gate) ? b.gate : [b.gate];
-		if (gates.includes(destMap) && !Story.getFlag(b.doneFlag)) return b;
+		if (gates.includes(destMap) && !beatDone(b)) return b;
 	}
 	return null;
 }
@@ -330,7 +385,7 @@ export function log(region) {
 		state: Badges.has(rk, Badges.BADGES[rk][i].id) ? 'done' : (i === next && !champ ? 'current' : 'locked'),
 	}));
 	for (const b of VILLAIN_BEATS[rk] || []) {
-		const done = Story.getFlag(b.doneFlag);
+		const done = beatDone(b);
 		items.push({
 			key: b.afterBadges - 0.5, label: `${b.boss} — ${team}`,
 			state: done ? 'done' : (n >= b.afterBadges ? 'current' : 'locked'),
