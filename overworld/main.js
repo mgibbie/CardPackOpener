@@ -647,6 +647,11 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	{
 		const sh = await getJSON('data/shared_scripts.json').catch(() => null);
 		if (sh) { sharedScripts = sh.scripts || {}; commonStrings = { ...(sh.strings || {}), ...commonStrings }; }
+		// + labels a map's OWN script calls that the shared table never pulled in
+		// (tools/audit_missing_labels.mjs --write; the Pokemon Mansion statue
+		// switches, 2026-10-04). A fallback under shared_scripts, like it.
+		const ml = await getJSON('missing_labels_data.json').catch(() => null);
+		if (ml) { sharedScripts = { ...(ml.scripts || {}), ...sharedScripts }; commonStrings = { ...(ml.strings || {}), ...commonStrings }; }
 	}
 	// one tab plays at a time: a newer tab pauses this one (no stale writes from it)
 	startTabLock({ keys: OW_KEYS });

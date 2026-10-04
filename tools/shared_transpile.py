@@ -19,7 +19,8 @@ import os
 import sys
 from collections import Counter
 
-MP66_TOOLS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Magepunk66', 'tools')
+MP66_TOOLS = os.path.join(os.environ['MAGEPUNK66'], 'tools') if os.environ.get('MAGEPUNK66') \
+    else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Magepunk66', 'tools')
 sys.path.insert(0, os.path.abspath(MP66_TOOLS))
 
 import transpile_scripts as T  # noqa: E402

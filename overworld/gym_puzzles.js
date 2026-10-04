@@ -124,4 +124,9 @@ export function mauvilleGymDeactivatePuzzle(w) {
 // the maps whose ON_LOAD script lays out one of the puzzles above. main.js only
 // runs ON_LOAD for these: game-wide it is 124 maps / 506 setmetatile ops that
 // have never executed, some of which raise walls whose unlock is not ported.
-export const ONLOAD_MAPS = new Set(['VermilionCity_Gym', 'MauvilleCity_Gym', 'Hoenn2_MauvilleCity_Gym']);
+// + the Pokemon Mansion floors: their ON_LOAD lays out the statue switches' doors
+// (call_if_set FLAG_POKEMON_MANSION_SWITCH_STATE), and the switch itself is ported
+// now (overworld/missing_labels_data.json), so a floor entered with the switch
+// pressed must show it pressed (2026-10-04).
+export const ONLOAD_MAPS = new Set(['VermilionCity_Gym', 'MauvilleCity_Gym', 'Hoenn2_MauvilleCity_Gym',
+	'PokemonMansion_1F', 'PokemonMansion_2F', 'PokemonMansion_3F', 'PokemonMansion_B1F']);
