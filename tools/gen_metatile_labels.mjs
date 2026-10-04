@@ -37,6 +37,15 @@ for (const f of fs.readdirSync(D).filter(f => f.endsWith('.json'))) {
 		}
 	}
 }
+// + the tracked overlay of restored labels (tools/audit_missing_labels.mjs): its
+// bodies name tiles too — the Pokemon Mansion switches' doors. Their names are
+// unique to one decomp, so the per-map FR/EM split never applies to them.
+{
+	let ov = null; try { ov = JSON.parse(fs.readFileSync('overworld/missing_labels_data.json', 'utf8')); } catch {}
+	for (const v of Object.values(ov?.scripts || {})) if (Array.isArray(v)) for (const o of v) {
+		if (o && o.op === 'setmetatile' && typeof o.tile === 'string' && !used.has(o.tile)) used.set(o.tile, new Set(['(overlay)']));
+	}
+}
 const labels = {}, byMap = {}, missing = [];
 for (const [name, maps] of [...used].sort((a, b) => a[0].localeCompare(b[0]))) {
 	const a = fr.get(name), b = em.get(name);
