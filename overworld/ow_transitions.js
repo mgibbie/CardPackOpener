@@ -195,7 +195,8 @@ export function afterLoadError(where, err) {
 	console.warn(`[load-guard] ${where} failed`, err);
 	S.loading = false;
 	if (cutscene.blocking) cutscene.stop();
-	hud.textContent = "That area couldn't be loaded.";
+	hud.textContent = "Couldn't load that area — try again.";
+	try { globalThis.reportErr && globalThis.reportErr(`load failed: ${where}: ${String(err && err.message || err).slice(0, 160)}`, 'ow_transitions'); } catch (e) {}
 }
 
 export async function moveToMap(file, px, py) {
