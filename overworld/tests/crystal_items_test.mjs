@@ -30,7 +30,8 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra ? '  ' + extra : '')); } };
 
 const regions = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/map_regions.json'), 'utf8'));
-const itemsSrc = fs.readFileSync(path.join(ROOT, 'overworld/items.js'), 'utf8');
+// the ball parsers moved to ball_parse.js (shared with tools/gen_ball_flags.mjs)
+const itemsSrc = fs.readFileSync(path.join(ROOT, 'overworld/items.js'), 'utf8') + '\n' + fs.readFileSync(path.join(ROOT, 'overworld/ball_parse.js'), 'utf8');
 
 // ---------- the data ----------
 let balls = 0, hidden = 0, crystalMaps = 0;
