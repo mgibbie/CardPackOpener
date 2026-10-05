@@ -58,7 +58,9 @@ const HOENN_MARTS = [
 const GAME_CORNERS = {
 	MAP_CELADON_CITY_GAME_CORNER: [[4, 2], [4, 3], [6, 2], [6, 3]],
 	MAP_CELADON_CITY_GAME_CORNER_PRIZE_ROOM: [[4, 2], [4, 3], [6, 2], [6, 3]],
-	MAP_GOLDENROD_GAME_CORNER: [[3, 2], [3, 3], [16, 2], [16, 3], [18, 2], [18, 3]],
+	// Goldenrod: only the coin clerk. The TM (16,2) and prize-POKeMON (18,2) clerks
+	// run their own Crystal scripts (restored by tools/gen_crystal_scriptvar.mjs).
+	MAP_GOLDENROD_GAME_CORNER: [[3, 2], [3, 3]],
 	MAP_MAUVILLE_CITY_GAME_CORNER: [[11, 2], [11, 3], [13, 2], [13, 3], [14, 2], [14, 3]],
 	MAP_JOHKANTO_CELADON_GAME_CORNER: [[3, 2], [3, 3], [5, 2], [5, 3]],
 	MAP_JOHKANTO_CELADON_GAME_CORNER_PRIZE_ROOM: [[0, 2], [0, 3], [4, 4], [4, 5]],

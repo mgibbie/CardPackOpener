@@ -39,9 +39,19 @@ const MP66 = (() => {
 	}
 })();
 
-// labels (stem:label prefixes) where the dropped coin / setval / verticalmenu
-// commands are restored — the Goldenrod City move tutor (Wed/Sat after the E4)
-const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript'];
+// labels (stem:label prefixes) where the dropped coin / money / setval /
+// verticalmenu / givepoke commands are restored (and where a `scall` or a
+// `giveitem` answers the iftrue/iffalse after it): the Goldenrod City move tutor
+// (Wed/Sat after the E4), the Game Corner TM and prize-Pokémon vendors (Goldenrod,
+// Celadon), the Celadon gambler's 18 coins, the Dept. Store 6F vending machines
+// and the Dragon Shrine quiz. Every label here was read by hand: its menus lead to
+// nothing the engine lacks (unlike the slots, the link/mobile counters, Moomoo...).
+const RESTORE_COMMANDS_IN = ['GoldenrodCity:MoveTutorScript',
+	'GoldenrodGameCorner:GoldenrodGameCornerTMVendor', 'GoldenrodGameCorner:GoldenrodGameCornerPrizeMonVendor',
+	'JohKantoCeladonGameCornerPrizeRoom:CeladonGameCornerPrizeRoomPokemonVendor', 'JohKantoCeladonGameCornerPrizeRoom:CeladonPrizeRoom_tmcounterloop',
+	'JohKantoCeladonGameCorner:CeladonGameCornerFisherScript',
+	'GoldenrodDeptStore6F:GoldenrodVendingMachine', 'JohKantoCeladonDeptStore6F:CeladonDeptStore6FVendingMachine',
+	'DragonShrine:DragonShrineTakeTestScript'];
 // specials whose result the engine actually computes (ow_story.js runSpecial)
 const ALLOW = new Set(['GetFirstPokemonHappiness', 'CheckFirstMonIsEgg', 'ReturnShuckie', 'GiveShuckle', 'MoveTutor']);
 // commands that leave hScriptVar alone (display / movement); anything else between
@@ -50,28 +60,37 @@ const NEUTRAL = new Set(['writetext', 'promptbutton', 'waitbutton', 'closetext',
 	'turnobject', 'pause', 'playsound', 'waitsfx', 'buttonsound', 'applymovement', 'cry', 'special_sound',
 	'ifequal', 'ifnotequal', 'ifgreater', 'ifless', 'iftrue', 'iffalse', 'loadmenu', 'closewindow']);
 const CONST = { PARTY_LENGTH: 6, NUM_POKEMON: 251, NUM_JOHTO_BADGES: 8, NUM_KANTO_BADGES: 8, NUM_BADGES: 16,
-	MORN_HOUR: 4, DAY_HOUR: 10, NITE_HOUR: 18, TRUE: 1, FALSE: 0,
+	MORN_HOUR: 4, DAY_HOUR: 10, NITE_HOUR: 18, TRUE: 1, FALSE: 0, MAX_COINS: 9999,
 	// pokecrystal constants/script_constants.asm
 	HAVE_MORE: 0, HAVE_AMOUNT: 1, HAVE_LESS: 2, MOVETUTOR_FLAMETHROWER: 1, MOVETUTOR_THUNDERBOLT: 2, MOVETUTOR_ICE_BEAM: 3 };
+// the map's own `DEF NAME EQU value` lines (prices: GOLDENRODGAMECORNER_TM25_COINS)
+let LOCAL = {};
+function localDefs(asm) {
+	const out = {};
+	for (const m of asm.matchAll(/^DEF\s+([A-Z_][A-Z0-9_]*)\s+EQU\s+(\d+)\s*$/gm)) out[m[1]] = +m[2];
+	return out;
+}
 function evalExpr(s) {
-	const t = String(s).replace(/[A-Z_][A-Z0-9_]*/g, n => (n in CONST ? String(CONST[n]) : '#'));
+	const t = String(s).replace(/[A-Z_][A-Z0-9_]*/g, n => (n in LOCAL ? String(LOCAL[n]) : n in CONST ? String(CONST[n]) : '#'));
 	if (/#|[^0-9+\-*\s()]/.test(t)) return null;
 	try { const v = Function('return (' + t + ')')(); return Number.isInteger(v) ? v : null; } catch (e) { return null; }
 }
 // `loadmenu .Header` + `verticalmenu`: the Header's `dw .MenuData` lists the items
 // as `db "NAME@"`. Crystal's verticalmenu answers 1-based (B = 0) — see below.
-function menuItems(asm, header) {
+// A local `.MenuHeader` / `.MenuData` is the first one AFTER its global label (the
+// Goldenrod Game Corner has three `.MenuData`s) — so search from the scope `g`.
+function menuItems(asm, header, g) {
 	const lines = asm.split(/\r?\n/);
-	const at = name => lines.findIndex(l => l.trim().startsWith(name + ':'));
-	const i = at(header); if (i < 0) return null;
+	const at = (name, from = 0) => { for (let k = from; k < lines.length; k++) if (lines[k].trim().startsWith(name + ':')) return k; return -1; };
+	const i = at(header, header.startsWith('.') && g ? Math.max(0, at(g)) : 0); if (i < 0) return null;
 	let data = null;
 	for (let k = i + 1; k < lines.length && k < i + 8; k++) { const m = /dw\s+(\.?\w+)/.exec(lines[k]); if (m) { data = m[1]; break; } }
 	if (!data) return null;
-	const j = at(data); if (j < 0) return null;
+	const j = at(data, data.startsWith('.') ? i : 0); if (j < 0) return null;
 	const items = [];
 	for (let k = j + 1; k < lines.length; k++) {
 		const m = /^\s*db\s+"([^"]*)@"/.exec(lines[k]);
-		if (m) { items.push(m[1]); continue; }
+		if (m) { items.push(m[1].replace(/\{d:(\w+)\}/g, (x, n) => (n in LOCAL ? String(LOCAL[n]) : x))); continue; }
 		if (/^\s*\.?\w+:/.test(lines[k]) || (/^\s*$/.test(lines[k]) && items.length)) break;
 	}
 	return items.length ? items : null;
@@ -117,6 +136,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		let src = null, n = 0, menu = null;
 		const asmFile = path.join(MP66, 'Reference', 'pokecrystal', 'maps', j.name + '.asm');
 		const asm = fs.existsSync(asmFile) ? fs.readFileSync(asmFile, 'utf8') : '';
+		LOCAL = localDefs(asm);
 		const tally = k => { bySource[k] = (bySource[k] || 0) + 1; };
 		// the dropped COMMANDS below (coins, setval, menus) are restored only in
 		// labels on this list; elsewhere they're reported. Many other menus lead into
@@ -125,12 +145,19 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		const newKinds = RESTORE_COMMANDS_IN.some(p => `${stem}:${label}`.startsWith(p));
 		const wouldRestore = c => { if (!newKinds) { skipped.notEnabled.add(`${stem}:${label} (${c})`); return false; } return true; };
 		for (const [cmd, a, conv] of rows) {
-			if (!conv.length && ['checkcoins', 'takecoins', 'setval', 'verticalmenu'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
+			if (!conv.length && ['checkcoins', 'takecoins', 'givecoins', 'checkmoney', 'takemoney', 'givepoke', 'setval', 'verticalmenu'].includes(cmd) && !wouldRestore(cmd)) { out.push(...conv); continue; }
 			// commands the transpile dropped outright (conv empty) that the engine runs
 			if (!conv.length && cmd === 'checkcoins' && evalExpr(a[0]) != null) { add({ op: 'checkcoins', amount: evalExpr(a[0]) }); n++; tally('checkcoins'); src = { var: 'VAR_RESULT', name: 'checkcoins' }; continue; }
 			if (!conv.length && cmd === 'takecoins' && evalExpr(a[0]) != null) { add({ op: 'takecoins', amount: evalExpr(a[0]) }); n++; tally('takecoins'); continue; }
+			if (!conv.length && cmd === 'givecoins' && evalExpr(a[0]) != null) { add({ op: 'givecoins', amount: evalExpr(a[0]) }); n++; tally('givecoins'); continue; }
+			// Crystal's checkmoney answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2 (the
+			// FireRed one the engine also runs answers 1/0) — `crystal: true` picks the 3-way
+			if (!conv.length && cmd === 'checkmoney' && a[0] === 'YOUR_MONEY' && evalExpr(a[1]) != null) { add({ op: 'checkmoney', amount: evalExpr(a[1]), crystal: true }); n++; tally('checkmoney'); src = { var: 'VAR_RESULT', name: 'checkmoney' }; continue; }
+			if (!conv.length && cmd === 'takemoney' && a[0] === 'YOUR_MONEY' && evalExpr(a[1]) != null) { add({ op: 'removemoney', amount: evalExpr(a[1]) }); n++; tally('takemoney'); continue; }
+			// givepoke SPECIES, LEVEL (no held item / OT extras): party, or the PC when full
+			if (!conv.length && cmd === 'givepoke' && a.length === 2 && /^[A-Z][A-Z0-9_]*$/.test(a[0]) && evalExpr(a[1]) != null) { add({ op: 'givemon', species: 'SPECIES_' + a[0], level: evalExpr(a[1]) }); n++; tally('givepoke'); src = null; continue; }
 			if (!conv.length && cmd === 'setval' && evalExpr(a[0]) != null) { add({ op: 'setvar', var: 'VAR_RESULT', value: evalExpr(a[0]) }); n++; tally('setval'); src = { var: 'VAR_RESULT', name: 'setval' }; continue; }
-			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0]); continue; }
+			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0], g); continue; }
 			if (!conv.length && cmd === 'changeblock' && inCallback(j.name, label)) {
 				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
 				const cells = x != null && y != null && Number.isFinite(block) ? harvestBlock(j._crystal_tileset, block) : null;
@@ -161,6 +188,9 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			out.push(...conv);
 			if (cmd === 'special') src = ALLOW.has(a[0]) ? { var: 'VAR_RESULT', name: 'special ' + a[0] } : null;
 			else if (cmd === 'readvar' && a[0]) src = { var: a[0], name: 'readvar ' + a[0] };
+			// a confirm subroutine ends in `yesorno` (the engine's prompt answers 1/0), and
+			// giveitem answers 1/0 — both read by the iffalse after them (listed labels only)
+			else if (newKinds && ['scall', 'giveitem', 'verbosegiveitem'].includes(cmd) && conv.length) src = { var: 'VAR_RESULT', name: cmd };
 			else if (!NEUTRAL.has(cmd)) src = null;
 		}
 		if (!n) continue;

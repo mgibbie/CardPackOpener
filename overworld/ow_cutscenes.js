@@ -191,6 +191,7 @@ export function cutsceneCtx(talker, scriptLabel) {
 		spendMoney: n => { Bag.spend(n); },
 		coins: () => Bag.getCoins(),                  // Crystal checkcoins / takecoins
 		spendCoins: n => { Bag.spendCoins(n); },
+		giveCoins: n => { Bag.addCoins(n); },
 		// the next MAP_DYNAMIC warp goes here (an elevator's floor, set by its script)
 		setDynamicWarp: op => { S.dynamicWarp = { map: op.map, warp: op.warp ?? null, x: op.x ?? null, y: op.y ?? null }; },
 		noteCompare: (cond, hit) => noteCompare(cond, hit),

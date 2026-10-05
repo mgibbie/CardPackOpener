@@ -492,5 +492,67 @@
   "TinTower1F:TinTower1FStairsCallback": "gates the stairs on EVENT_GOT_RAINBOW_WING, but the port hands the RAINBOW WING to the Johto Champion without that flag (ow_progression.js) — running it would hide the way to HO-OH",
   "TinTowerRoof:TinTowerRoofHoOhCallback": "HO-OH is encountered through the native legendary system (ow_legendaries.js)",
   "WhirlIslandLugiaChamber:WhirlIslandLugiaChamberLugiaCallback": "LUGIA is encountered through the native legendary system (ow_legendaries.js)"
+ },
+ "signs": {
+  "GoldenrodDeptStore6F": [
+   {
+    "type": "sign",
+    "x": 8,
+    "y": 1,
+    "script": "GoldenrodVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 9,
+    "y": 1,
+    "script": "GoldenrodVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 10,
+    "y": 1,
+    "script": "GoldenrodVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 11,
+    "y": 1,
+    "script": "GoldenrodVendingMachine",
+    "facing": "up"
+   }
+  ],
+  "JohKantoCeladonDeptStore6F": [
+   {
+    "type": "sign",
+    "x": 8,
+    "y": 1,
+    "script": "CeladonDeptStore6FVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 9,
+    "y": 1,
+    "script": "CeladonDeptStore6FVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 10,
+    "y": 1,
+    "script": "CeladonDeptStore6FVendingMachine",
+    "facing": "up"
+   },
+   {
+    "type": "sign",
+    "x": 11,
+    "y": 1,
+    "script": "CeladonDeptStore6FVendingMachine",
+    "facing": "up"
+   }
+  ]
  }
 }

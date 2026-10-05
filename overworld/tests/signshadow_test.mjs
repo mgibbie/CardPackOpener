@@ -69,7 +69,8 @@ const displayOnly = ops => !Array.isArray(ops) || ops.every(o => !o || !o.op || 
 	// the routing rule must exist and must be checked BEFORE the sign text
 	const mn = overworldSource();
 	A(/function scriptIsDisplayOnly/.test(mn), 'main.js classifies a script as display-only or not');
-	const i = mn.indexOf('for (const ev of world.current.map.bg_events');
+	// (the loop also walks crystalSignsFor(): the restored BGEVENT_UP vending machines)
+	const i = mn.search(/for \(const ev of (\[\.\.\.\()?world\.current\.map\.bg_events/);
 	const body = mn.slice(i, i + 2600);
 	const gScript = body.indexOf('!scriptIsDisplayOnly(scr)');
 	const gSign = body.indexOf('if (signTexts[lab])');

@@ -453,12 +453,19 @@ export class Cutscene {
 				// and it is why the BICYCLE and the SUPER ROD could never be obtained.
 				// restored by tools/gen_multichoice.mjs (the transpile dropped them):
 				// money gates that never checked or charged, and elevator exits
-				case 'checkmoney': setVar('VAR_RESULT', (ctx.money?.() ?? 0) >= (+op.amount || 0) ? 1 : 0); break;
+				// (a Crystal one — `crystal: true`, from tools/gen_crystal_scriptvar.mjs — answers
+				// HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkcoins below)
+				case 'checkmoney': {
+					const have = ctx.money?.() ?? 0, need = +op.amount || 0;
+					setVar('VAR_RESULT', op.crystal ? (have > need ? 0 : have === need ? 1 : 2) : have >= need ? 1 : 0);
+					break;
+				}
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
 				// Crystal's Game Corner coins (restored by tools/gen_crystal_scriptvar.mjs):
 				// checkcoins answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkmoney
 				case 'checkcoins': { const have = ctx.coins?.() ?? 0, need = +op.amount || 0; setVar('VAR_RESULT', have > need ? 0 : have === need ? 1 : 2); break; }
 				case 'takecoins': ctx.spendCoins?.(+op.amount || 0); break;
+				case 'givecoins': ctx.giveCoins?.(+op.amount || 0); break;
 				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
 				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
 				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later

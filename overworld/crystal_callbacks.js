@@ -6,9 +6,14 @@
 // minus a deny-list (callbacks that would fight a native system — the daycare,
 // the Bug-Catching Contest, the legendaries — or need an unimplemented mechanism);
 // their dropped changeblocks come back through crystal_scriptvar_data.json.
-let TABLE = {};
+let TABLE = {}, SIGNS = {};
 export async function loadCrystalCallbacks(getJSON) {
-	TABLE = ((await getJSON('crystal_callbacks.json').catch(() => null)) || {}).callbacks || {};
+	const j = (await getJSON('crystal_callbacks.json').catch(() => null)) || {};
+	TABLE = j.callbacks || {};
+	SIGNS = j.signs || {};
 }
 // [[kind, label], ...] for a map (its file stem), already in run order
 export function crystalCallbacksFor(stem) { return TABLE[stem] || []; }
+// the directional bg_events the conversion dropped (BGEVENT_UP: read only while
+// facing up — the Dept. Store 6F vending machines), as extra bg_events
+export function crystalSignsFor(stem) { return SIGNS[stem] || []; }

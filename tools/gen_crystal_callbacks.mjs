@@ -12,7 +12,8 @@
 // tools/gen_crystal_scriptvar.mjs (only whole callbacks; see there).
 //
 // Writes tracked overworld/crystal_callbacks.json:
-//   { callbacks: { stem: [[kind, label], ...] }, denied: { "stem:label": reason } }
+//   { callbacks: { stem: [[kind, label], ...] }, denied: { "stem:label": reason },
+//     signs: { stem: [{ type, x, y, script, facing }] } }
 //
 //   node tools/gen_crystal_callbacks.mjs
 import fs from 'fs';
@@ -44,20 +45,32 @@ const DENY = {
 	TinTower1F: 'gates the stairs on EVENT_GOT_RAINBOW_WING, but the port hands the RAINBOW WING to the Johto Champion without that flag (ow_progression.js) — running it would hide the way to HO-OH',
 };
 const ORDER = { NEWMAP: 0, TILES: 1, OBJECTS: 2, CMDQUEUE: 3, SPRITES: 4 };
+// DIRECTIONAL bg_events (`bg_event x, y, BGEVENT_UP, Label` — read only while facing
+// that way) never made it into the converted maps, which kept BGEVENT_READ only.
+// The ones listed here are added back (crystal_callbacks.json `signs`): the Dept.
+// Store 6F vending machines, whose purchase is restored by gen_crystal_scriptvar.mjs.
+// The other directional ones (slot/card-flip machines, link consoles, Rocket
+// security cameras, the Ruins puzzles) lead to mechanisms the port doesn't run.
+const SIGN_ALLOW = new Set(['GoldenrodVendingMachine', 'CeladonDeptStore6FVendingMachine']);
+const signsByName = {};   // crystal map name -> [{x, y, script, facing}]
 
 const byName = {};   // crystal map name -> [[kind, label]]
 for (const f of fs.readdirSync(path.join(CR, 'maps')).filter(f => f.endsWith('.asm'))) {
 	const name = f.replace('.asm', '');
 	for (const m of fs.readFileSync(path.join(CR, 'maps', f), 'utf8').matchAll(/callback MAPCALLBACK_(\w+),\s*(\w+)/g))
 		(byName[name] = byName[name] || []).push([m[1], m[2]]);
+	for (const m of fs.readFileSync(path.join(CR, 'maps', f), 'utf8').matchAll(/bg_event\s+(\d+),\s*(\d+),\s*BGEVENT_(UP|DOWN|LEFT|RIGHT),\s*(\w+)/g))
+		if (SIGN_ALLOW.has(m[4])) (signsByName[name] = signsByName[name] || []).push({ type: 'sign', x: +m[1], y: +m[2], script: m[4], facing: m[3].toLowerCase() });
 }
 
-const callbacks = {}, denied = {}, missing = [];
+const callbacks = {}, denied = {}, missing = [], signs = {};
 let run = 0;
 for (const f of fs.readdirSync(path.join(D, 'maps')).filter(f => f.endsWith('_map.json'))) {
 	const j = JSON.parse(fs.readFileSync(path.join(D, 'maps', f), 'utf8'));
-	if (!j._crystal_tileset || !j.name || !byName[j.name]) continue;
+	if (!j._crystal_tileset || !j.name) continue;
 	const stem = f.replace('_map.json', '');
+	if (signsByName[j.name]) signs[stem] = signsByName[j.name].filter(e => !(j.bg_events || []).some(b => +b.x === e.x && +b.y === e.y));
+	if (!byName[j.name]) continue;
 	const sf = path.join(D, 'scripts', stem + '.json');
 	const prog = fs.existsSync(sf) ? JSON.parse(fs.readFileSync(sf, 'utf8')) : {};
 	for (const [kind, label] of byName[j.name]) {
@@ -69,9 +82,10 @@ for (const f of fs.readdirSync(path.join(D, 'maps')).filter(f => f.endsWith('_ma
 	if (callbacks[stem]) callbacks[stem].sort((a, b) => (ORDER[a[0]] ?? 9) - (ORDER[b[0]] ?? 9));
 }
 const OUT = path.join('overworld', 'crystal_callbacks.json');
-fs.writeFileSync(OUT, JSON.stringify({ generated: 'tools/gen_crystal_callbacks.mjs', callbacks, denied }, null, 1) + '\n');
+fs.writeFileSync(OUT, JSON.stringify({ generated: 'tools/gen_crystal_callbacks.mjs', callbacks, denied, signs }, null, 1) + '\n');
 const total = Object.values(byName).reduce((n, l) => n + l.length, 0);
 console.log(`${total} callbacks in pokecrystal; running ${run} on ${Object.keys(callbacks).length} maps; denied ${Object.keys(denied).length}; label missing in our scripts ${missing.length}`);
 for (const [k, why] of Object.entries(denied)) console.log('  deny ' + k + ' — ' + why);
 if (missing.length) console.log('  missing: ' + missing.join(' '));
+console.log('directional signs added: ' + Object.entries(signs).map(([k, l]) => k + ' ' + l.length).join(', '));
 console.log('wrote ' + OUT);
