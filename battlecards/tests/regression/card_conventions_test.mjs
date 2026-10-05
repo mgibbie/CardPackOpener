@@ -54,6 +54,21 @@ ok('keyword lines are alphabetical', !bad.kwOrder.length, bad.kwOrder.slice(0, 8
 const ANIMALS = ['Cat', 'Bird', 'Rat', 'Wolf', 'Spider', 'Snake', 'Insect', 'Bat', 'Wurm', 'Lizard', 'Fish', 'Turtle', 'Bear', 'Elephant', 'Crocodile', 'Hound', 'Octopus', 'Crab', 'Frog', 'Jackal', 'Rhino', 'Dinosaur', 'Kraken', 'Serpent', 'Pegasus', 'Salamander', 'Scorpion', 'Boar', 'Squirrel', 'Dog', 'Horse', 'Whale', 'Unicorn'];
 const unBeasted = cards.filter(c => c.type === 'creature' && c.tribe && !/\b(Beast|Horror|Hydra|Hero)\b/.test(c.tribe) && c.tribe.split(/\s+/).some(w => ANIMALS.includes(w)));
 ok('animal creature tribes are Beast (Tabaxi / Aarakocra for the humanoids; Horror & Hydra excepted)', !unBeasted.length, unBeasted.slice(0, 8).map(c => `${c.name} (${c.tribe})`).join(', '));
+// ...and so do the tribes INSIDE effects — summoned tokens, auras, "Discover a X"
+// filters — or a "Spider" token and a Spider-synergy card would miss the Beasts
+// (owner: synergies say Beast too: "Discover a Beast", "Your other Beasts ...")
+const nested = [];
+const walk = (o, c, path) => {
+	if (Array.isArray(o)) { o.forEach((x, i) => walk(x, c, path + '[' + i + ']')); return; }
+	if (!o || typeof o !== 'object') return;
+	for (const [k, v] of Object.entries(o)) {
+		if (k === 'tribe' && path !== '' && typeof v === 'string' && !/\b(Beast|Horror|Hydra|Hero)\b/.test(v) && v.split(/\s+/).some(w => ANIMALS.includes(w))) nested.push(`${c.name} ${path}: ${v}`);
+		else walk(v, c, path + '.' + k);
+	}
+};
+for (const c of cards) walk(c, c, '');
+ok('no token / aura / Discover filter uses an un-Beasted animal tribe', !nested.length, nested.slice(0, 6).join(' | '));
+
 // the owner's exceptions stay as they were (some cards were "Horror Beast" in the
 // source data already — this checks the animal Horrors/Hydras weren't touched)
 const count = t => cards.filter(c => c.tribe === t).length;
