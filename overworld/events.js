@@ -452,6 +452,10 @@ export class Cutscene {
 				// money gates that never checked or charged, and elevator exits
 				case 'checkmoney': setVar('VAR_RESULT', (ctx.money?.() ?? 0) >= (+op.amount || 0) ? 1 : 0); break;
 				case 'removemoney': ctx.spendMoney?.(+op.amount || 0); break;
+				// Crystal's Game Corner coins (restored by tools/gen_crystal_scriptvar.mjs):
+				// checkcoins answers HAVE_MORE 0 / HAVE_AMOUNT 1 / HAVE_LESS 2, like checkmoney
+				case 'checkcoins': { const have = ctx.coins?.() ?? 0, need = +op.amount || 0; setVar('VAR_RESULT', have > need ? 0 : have === need ? 1 : 2); break; }
+				case 'takecoins': ctx.spendCoins?.(+op.amount || 0); break;
 				case 'setdynamicwarp': ctx.setDynamicWarp?.(op); break;
 				// bufferspeciesname / bufferitemname / buffernumberstring / buffermovename
 				// (restored by tools/gen_multichoice.mjs): fill the {STR_VAR_n} a later

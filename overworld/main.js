@@ -2,6 +2,7 @@
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
 import { loadCrystalScriptVarData } from './crystal_scriptvar.js';
+import { loadCrystalObjectConsts } from './crystal_object_consts.js';
 import { World, Player, VIEW_W, VIEW_H, setViewSize, META } from './engine.js';
 import { syncRegionToMap } from './region_sync.js';
 import { startTabLock } from './tab_lock.js';
@@ -640,6 +641,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	await loadChoiceData(getJSON);   // every multichoice the transpile dropped (choice.js)
 	await loadFallthroughData(getJSON);   // the decomp's label fall-through (fallthrough.js)
 	await loadCrystalScriptVarData(getJSON);   // Crystal's dropped script-var comparisons (crystal_scriptvar.js)
+	await loadCrystalObjectConsts(getJSON);    // Crystal object constants -> map objects (crystal_object_consts.js)
 	mergePhoneTeams(S.trainerTeams);
 	commonStrings = await getJSON('data/strings/_common.json').catch(() => ({}));
 	// the shared bodies, and the text they speak — an unstringed msg falls through

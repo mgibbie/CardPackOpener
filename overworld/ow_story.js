@@ -32,7 +32,7 @@ import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_pr
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
-import { chooseMonForMoveTutor } from './move_tutor.js';
+import { chooseMonForMoveTutor, crystalMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
@@ -368,6 +368,7 @@ export async function runMapSetupScripts(isBoot) {
 	const before = vis();
 	applyRestedSceneOutcomes(world.current?.name);   // after the snapshot, so the objects it hides reload
 	const run = () => {
+		try { runCrystalCallbacks(); } catch (e) { console.warn('[plot] crystal callback failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapOnLoad(); } catch (e) { console.warn('[plot] onLoad failed', e); if (cutscene.blocking) cutscene.stop(); }
 		try { runMapTransition(); } catch (e) { console.warn('[plot] onTransition failed', e); if (cutscene.blocking) cutscene.stop(); }
 	};
@@ -377,6 +378,25 @@ export async function runMapSetupScripts(isBoot) {
 	await trainers.loadForMap();
 	npcs.list = npcs.list.filter(n => !trainers.list.some(t => t.ev === n.ev));
 	run();
+}
+
+// Crystal map callbacks (`callback MAPCALLBACK_OBJECTS / NEWMAP / TILES`) — the
+// port does not run them in general: pokecrystal has 103, and turning them all on
+// at once would change hundreds of maps' setup. These are the ones that ARE run,
+// each checked against its decomp callback:
+//   GoldenrodCityMoveTutorCallback — the move tutor appears on Wednesdays and
+//   Saturdays once the Elite Four are beaten and you hold the COIN CASE (and
+//   hasn't taught today: ENGINE_DAILY_MOVE_TUTOR), otherwise he's gone.
+const CRYSTAL_CALLBACKS = { GoldenrodCity: ['GoldenrodCityMoveTutorCallback'] };
+function runCrystalCallbacks() {
+	const labels = CRYSTAL_CALLBACKS[world.current?.name] || [];
+	if (!labels.length) return;
+	syncScriptVars();   // VAR_WEEKDAY is what the tutor's callback reads
+	for (const label of labels) {
+		if (!S.mapScripts[label] || cutscene.blocking) continue;
+		cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
+		if (cutscene.blocking) cutscene.stop();   // setup only
+	}
 }
 
 function runMapTransition() {
@@ -897,6 +917,7 @@ export function runSpecial(name, store, op) {
 			return set(living().length);
 		// FireRed's move tutors (move_tutor.js): party pick -> forget a move -> VAR_RESULT
 		case 'ChooseMonForMoveTutor': return chooseMonForMoveTutor();
+		case 'MoveTutor': return crystalMoveTutor();   // Crystal (Goldenrod City), move in the script var
 		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
 			return set(0); // party-slot pickers: default to the lead / no selection
 		case 'DoesPlayerPartyContainSpecies': case 'PlayerPartyContainsSpeciesWithPlayerID':

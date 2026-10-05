@@ -1,4 +1,5 @@
-// move_tutor.js — FireRed's move tutors teach (special ChooseMonForMoveTutor).
+// move_tutor.js — the move tutors teach: FireRed/Emerald `special
+// ChooseMonForMoveTutor`, Crystal `special MoveTutor` (Goldenrod City).
 //
 // 2026-10-05, Instinct: the Cinnabar Metronome tutor did nothing. Its map
 // script jumps into pokefirered's shared move_tutors.inc, whose six goto-only
@@ -31,15 +32,34 @@ export function tutorMove(v) {
 	return m ? m[1].toLowerCase().replace(/_/g, '') : null;
 }
 
+// FireRed/Emerald answer TRUE when a move was taught; Crystal's `special MoveTutor`
+// answers FALSE when taught and -1 when the player backed out (move_tutor.asm)
+const FRLG_RESULT = ok => (ok ? 1 : 0);
+const CRYSTAL_RESULT = ok => (ok ? 0 : -1);
+let result = FRLG_RESULT;
 function finish(ok) {
-	Story.setVar('VAR_RESULT', ok ? 1 : 0);
+	Story.setVar('VAR_RESULT', result(ok));
 	cutscene.resume();
 }
 
 export function chooseMonForMoveTutor() {
+	result = FRLG_RESULT;
 	const mid = tutorMove(Story.getVar('VAR_0x8005'));
 	const party = S.party || [];
 	if (!mid || !battle.data?.moves?.[mid] || !party.length) { Story.setVar('VAR_RESULT', 0); return; }
+	pickMon(mid);
+	return 'wait';
+}
+
+// Crystal: the Goldenrod City tutor (Wednesdays and Saturdays, after the Elite
+// Four, 4000 coins) does `setval MOVETUTOR_*` then `special MoveTutor`; the move is
+// in the SCRIPT VAR (VAR_RESULT here). pokecrystal constants/script_constants.asm.
+const CRYSTAL_TUTORS = [null, 'flamethrower', 'thunderbolt', 'icebeam'];
+export function crystalMoveTutor() {
+	result = CRYSTAL_RESULT;
+	const mid = CRYSTAL_TUTORS[+Story.getVar('VAR_RESULT')] || null;
+	const party = S.party || [];
+	if (!mid || !battle.data?.moves?.[mid] || !party.length) { Story.setVar('VAR_RESULT', -1); return; }
 	pickMon(mid);
 	return 'wait';
 }
