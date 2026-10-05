@@ -6,7 +6,7 @@
 import { safeLoad, safeSave } from './safestore.js';
 import { STD_OF, STD_TEXT } from './crystal_stds.js';
 import { SCENE_SET } from './crystal_scenes.js';
-import { SCRIPT_CONSTANTS } from './script_constants.js';
+import { ITEM_NUMBERS, SCRIPT_CONSTANTS } from './script_constants.js';
 const KEY = 'magepunk_story';
 const META = 16;
 const STEP_TIME = { walk: 0.22, slow: 0.32, fast: 0.13, slide: 0.10, jump: 0.24, face: 0, noop: 0 };
@@ -196,6 +196,19 @@ function resolveValue(v) {
 	if (typeof v === 'string' && /^VAR_/.test(v)) return getVar(v);
 	const n = Number(v);
 	return isNaN(n) ? v : n;
+}
+// A value op (random / addvar) needs a NUMBER. An operand symbol nothing defines
+// used to fall through as a string — `random` silently gave 0 and `addvar`
+// glued text onto the var — so Route 114's berry man handed over no berry and
+// said "The BAG is full" (2026-10-05). Now it's loud (once per symbol) and the
+// var is left alone rather than corrupted. Add the symbol to
+// tools/gen_script_constants.mjs (it's in tools/audit_unresolved_constants.mjs).
+const _warnedOperands = new Set();
+function numericOperand(v, op) {
+	const n = resolveValue(v);
+	if (typeof n === 'number' && Number.isFinite(n)) return n;
+	if (!_warnedOperands.has(v)) { _warnedOperands.add(v); try { console.warn(`[script] ${op}: unresolved operand ${JSON.stringify(v)} — not a number; skipped`); } catch (e) {} }
+	return null;
 }
 function cmp(a, op, b) {
 	switch (op) {
@@ -399,7 +412,7 @@ export class Cutscene {
 				case 'setflag': setFlag(op.flag); break;
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
-				case 'addvar': setVar(op.var, getVar(op.var) + resolveValue(op.value)); break;
+				case 'addvar': { const n = numericOperand(op.value, 'addvar'); if (n !== null) setVar(op.var, getVar(op.var) + n); break; }
 				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
 				case 'setrespawn': break;
 				// giveitem / additem answer in VAR_RESULT (TRUE = it went in the bag), and the
@@ -476,7 +489,7 @@ export class Cutscene {
 				// the Trick House prizes. Dropped before, so the branch after it read a
 				// stale var and always took one arm.
 				case 'random': {
-					const n = resolveValue(op.max);
+					const n = numericOperand(op.max, 'random');
 					setVar('VAR_RESULT', Number.isFinite(n) && n > 0 ? Math.floor(Math.random() * n) : 0);
 					break;
 				}
@@ -754,7 +767,13 @@ function giveArgs(op) {
 //   • a VAR_ symbol (a runtime-computed item, 24 of them) — unresolvable
 //     statically, so hand back null and let the caller skip the give entirely.
 let itemByNum = null;
-const ITEM_BY_NUM = () => itemByNum || (itemByNum = Object.fromEntries(Object.entries(SCRIPT_CONSTANTS).filter(([k]) => /^ITEM_/.test(k)).map(([k, v]) => [v, k])));
+// number -> ITEM_ name: every item the decomps number (ITEM_NUMBERS), so a COMPUTED
+// item — FIRST_BERRY_INDEX + a random offset — can be named; first name wins
+const ITEM_BY_NUM = () => itemByNum || (itemByNum = (() => {
+	const m = {};
+	for (const [k, v] of [...Object.entries(SCRIPT_CONSTANTS).filter(([k]) => /^ITEM_/.test(k)), ...Object.entries(ITEM_NUMBERS)]) if (!(v in m)) m[v] = k;
+	return m;
+})());
 export function itemId(sym) {
 	if (typeof sym !== 'string') return sym;
 	// A runtime item. The script sets the var to the real ITEM_ symbol immediately
