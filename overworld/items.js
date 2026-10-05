@@ -2,7 +2,8 @@
 // (bg_events), Emerald berry trees, and Crystal fruit trees. Port of
 // MapItems.lua + MapTrees.lua; collected state persists in localStorage.
 import { getJSON, getImage, META } from './engine.js';
-import { objectHiddenByFlag } from './events.js';
+import { objectHiddenByFlag, setFlag, getStoredFlag } from './events.js';
+import { parseBallScript, parseCrystalBall, parseItemConst } from './ball_parse.js';
 import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
 
@@ -29,52 +30,6 @@ const COLLECTED_KEY = 'magepunk_collected_v1';
 const BERRY_KEY = 'magepunk_berrytimes_v1'; // tree key -> last-harvest timestamp (24h regrowth)
 const HARVEST_AMOUNT = 2;
 
-// "<Map>_EventScript_ItemRareCandy2" -> ["rarecandy", "Rare Candy"]
-function parseBallScript(script) {
-	const m = /_EventScript_Item(.+)$/.exec(script || '');
-	if (!m) return null;
-	// The trailing-digit strip disambiguates repeats ("ItemRareCandy2" -> rarecandy).
-	// For a TM or HM the digits ARE the identity, so stripping them produced the id
-	// "tm" — an unsellable junk item that teaches nothing (tmMoveId needs tm<n>).
-	// 29 balls were affected, including HM07 WATERFALL in Icefall Cave.
-	const camel = /^(TM|HM)\d+$/i.test(m[1]) ? m[1] : m[1].replace(/\d+$/, '');
-	const id = camel.toLowerCase().replace(/[^a-z0-9]/g, '');
-	if (!id) return null;
-	const pretty = camel.replace(/([a-z])([A-Z])/g, '$1 $2');
-	return [id, pretty];
-}
-
-// Crystal writes an item ball's script as <Map><Item> — "RockTunnel1FElixer",
-// "Route12Nugget" — with no _EventScript_Item marker for parseBallScript to find.
-// The map stem is the only thing that says where the map name ends, so it is
-// passed in; a JohKanto map carries Crystal's own (unprefixed) name in the script,
-// so both spellings are tried.
-//
-// The three starter balls in Elm's lab are POKE_BALLs too and must NOT become
-// items: picking up a "Cyndaquil" would put a junk id in the bag.
-const STARTER_BALLS = /^(Cyndaquil|Totodile|Chikorita)PokeBallScript$/;
-function parseCrystalBall(script, stem) {
-	if (!script || STARTER_BALLS.test(script)) return null;
-	let tail = script;
-	for (const pre of [stem, String(stem).replace(/^JohKanto/, '')]) {
-		if (pre && tail.startsWith(pre)) { tail = tail.slice(pre.length); break; }
-	}
-	tail = tail.replace(/Script$/, '');
-	if (!tail || tail === script) return null;       // nothing stripped: not this form
-	const id = tail.toLowerCase().replace(/[^a-z0-9]/g, '');
-	if (!id) return null;
-	return [id, tail.replace(/([a-z])([A-Z])/g, '$1 $2')];
-}
-
-// "ITEM_RARE_CANDY" -> ["rarecandy", "Rare Candy"]
-function parseItemConst(c) {
-	if (!c || c === 'ITEM_NONE') return null;
-	const body = c.replace(/^ITEM_/, '');
-	const id = body.toLowerCase().replace(/[^a-z0-9]/g, '');
-	const pretty = body.split('_').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');
-	return [id, pretty];
-}
-
 // "BERRY_TREE_ROUTE_102_ORAN" / "..._CHERI_1" -> "oranberry"
 function emeraldBerry(treeId) {
 	if (!treeId || treeId === '0') return null;
@@ -92,6 +47,9 @@ const berryPretty = id => id.replace(/berry$/, ' Berry').replace(/^./, c => c.to
 // solid tree tile: cutting removed the object and left the tile, so the road
 // south stayed shut — 2026-10-02. It is a Crystal block tree, in cut_blocks.json.)
 const CODE_FIELD_OBJS = {};
+
+// an object's hide flag, as a story flag name (or null)
+const storyFlag = f => (f && f !== '0' && /^(FLAG_|EVENT_)/.test(f)) ? f : null;
 
 export class Items {
 	constructor(world) {
@@ -126,8 +84,23 @@ export class Items {
 		// Crystal's CUT trees are painted into the map blocks, not objects
 		// (tools/gen_cut_blocks.mjs): { MAP_ID: [[x, y, treeValue, cutValue]] }
 		this.cutBlocks = (await getJSON('cut_blocks.json').catch(() => null))?.maps || {};
+		await this.healPickupFlags();
 		// item balls are drawn procedurally now (drawBall) — the old data/npcs/pokeball.png
 		// was a lumpy off-centre blob with no band/button
+	}
+
+	// SELF-HEAL for saves from before pickups set their story flag: a pickup ball
+	// already in the collected record gets its hide flag set in the story. Only
+	// PLAIN pickup balls (tools/gen_ball_flags.mjs -> ball_flags.json) — a SCRIPTED
+	// ball's flag must not be set from the collected record, which holds old junk
+	// pickups of scripted balls that are meant to come back (items.js loadForMap).
+	async healPickupFlags() {
+		const list = (await getJSON('ball_flags.json').catch(() => null))?.flags;
+		if (!Array.isArray(list)) return 0;
+		const pickup = new Set(list);
+		let n = 0;
+		for (const k of this.collected) if (pickup.has(k) && !getStoredFlag(k)) { setFlag(k); n++; }
+		return n;
 	}
 
 	markCollected(key) {
@@ -215,7 +188,7 @@ export class Items {
 				}
 				const key = this.keyFor('', o);
 				if (this.collected.has(key)) continue;
-				this.balls.push({ tx: +o.x, ty: +o.y, id: parsed[0], pretty: parsed[1], key, hidden: false });
+				this.balls.push({ tx: +o.x, ty: +o.y, id: parsed[0], pretty: parsed[1], key, hidden: false, flag: storyFlag(o.flag) });
 			} else if (g.includes('BERRY_TREE') || g.includes('FRUIT_TREE')) {
 				const item = g.includes('BERRY_TREE')
 					? emeraldBerry(o.trainer_sight_or_berry_tree_id)
@@ -244,7 +217,7 @@ export class Items {
 			if (!parsed) continue;
 			const key = this.keyFor('', b);
 			if (this.collected.has(key)) continue;
-			this.balls.push({ tx: +b.x, ty: +b.y, id: parsed[0], pretty: parsed[1], key, hidden: true });
+			this.balls.push({ tx: +b.x, ty: +b.y, id: parsed[0], pretty: parsed[1], key, hidden: true, flag: storyFlag(b.flag) });
 		}
 	}
 
@@ -263,6 +236,11 @@ export class Items {
 			const b = this.balls[i];
 			this.balls.splice(i, 1);
 			this.markCollected(b.key);
+			// the decomp's pickup (finditem + removeobject) also SETS the ball's hide
+			// flag in the story — and story scripts read it: Cinnabar's gym door
+			// unlocks only when FLAG_HIDE_POKEMON_MANSION_B1F_SECRET_KEY is set
+			// (2026-10-04: Instinct had the key in the bag and a locked door)
+			if (b.flag) setFlag(b.flag);
 			Bag.addItem(b.id);
 			Bag.registerName(b.id, b.pretty.toUpperCase());
 			return `Found ${b.pretty.toUpperCase()}!`;
