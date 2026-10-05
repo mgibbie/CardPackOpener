@@ -16,7 +16,7 @@ const put = (st, pi, inst) => { inst.zone = 'board'; inst.sick = false; st.playe
 {
 	const c = cardsById.invigorate;
 	ok('altCost is gone', c.altCost === undefined, JSON.stringify(c.altCost));
-	ok('reads "Target creature gets +4/+4 until end of turn. Each player gains 4 Life."', c.description === 'Target creature gets +4/+4 until end of turn. Each player gains 4 Life.', JSON.stringify(c.description));
+	ok('reads "Target creature gains +4/+4 until end of turn. Each player gains 4 Life." (gets -> gains: conventions pass, 2026-10-05)', c.description === 'Target creature gains +4/+4 until end of turn. Each player gains 4 Life.', JSON.stringify(c.description));
 	ok('no leftover "control a Forest" text', !/control a Forest/.test(c.description));
 	// still works: +4 Attack to the target + 4 Life to each hero
 	const st = game();
