@@ -1,6 +1,382 @@
 {
-	"generated": "2026-09-28",
+	"generated": "2026-10-05",
 	"entries": [
+		{
+			"sha": "16a751a",
+			"date": "2026-10-05",
+			"kind": "patch",
+			"title": "Card text conventions pass: 338 MTG/paper cards reworded to the house rules",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2403cae",
+			"date": "2026-10-04",
+			"kind": "patch",
+			"title": "Owner to-do (cards78): Magitek Infantry, Gongaga",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d24fc68",
+			"date": "2026-10-04",
+			"kind": "patch",
+			"title": "Pokémon Mansion switch works; restore 17 dropped shared script labels (+ audit)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "50db076",
+			"date": "2026-10-04",
+			"kind": "patch",
+			"title": "Campaign villain wins apply the original battle's story effects",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "962f901",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "A paused tab recovers: it takes over when the newer tab goes away, and Z takes over",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5ea6868",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "Hydrate fallback says which key didn't land and why; a paused tab isn't an error",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "28663bf",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "No stale cached save is ever written back: hydrate reloads, one active tab, grow-only records union",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9ecdb09",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "Trainer victories rebase on storage: a win never writes back an older record",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1287cce",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "Tester bugs: Pokémon Tower Marowak, Crystal friendship/badge checks, Route 46 guard",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9b60ab7",
+			"date": "2026-10-03",
+			"kind": "patch",
+			"title": "Tester bugs: Terra Cave exit, Norman's gate + badge flags, HUD next-gym, two guards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "aa3dde8",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Locations are not creatures: no buffs, no attacks",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "bd2af7e",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Swift weapons strike first; token names in the log open the token",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9a71f1a",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Saved region follows the map you're on",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e85672a",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Owner to-do (cards77): Spellthief tribe, three Mauhúr cards, Lightning Invocation",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3d74567",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Four tester bugs: Jasmine's TM, Mahogany gate edge, gift names, Ilex Forest CUT",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "39f1c1d",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "FRLG elevators go to the floor you chose; remytest can file bug reports",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1516590",
+			"date": "2026-10-02",
+			"kind": "patch",
+			"title": "Save sync never shrinks the Pokédex",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9aec7fd",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "In-game save-repair delivery; stale = real play, not a newer revision",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "78f3188",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Import refuses a stale repair file (baseRev older than the server's save)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "335674a",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Fit the game canvas to narrow windows (OPTIONS panel cut off in portrait)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b8f737d",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Never leave an actor facing undefined (two live overworld crashes)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "40689fe",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Bug Report Review list + daily playtest digest",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "bf7563d",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Scripted balls: Voltorbs fought under the old ambush stay gone",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "88f9d92",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Silph Co tileset: draw Condominiums' graphics; report missing tilesheets",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6ae0590",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Owner to-do (cards76): Ents, Pathmaker, Garruk's Savagery, Urabrask's Aggression, Emrakul's Breach",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "05d42ab",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Scripted item balls run their own scripts (Electrodes, Lift Key, gifts — no junk items)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e0e4ad5",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Battle messages say whose Pokémon acted: \"Wild X\" / \"Foe X\"",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "435e359",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Story store: a stale cache can no longer roll back earned progress",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "51e7802",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Hoenn cable car: CableCarWarp + CableCar actually ride",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cb23f81",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Controller v2: no test bar, End Turn + hero power as stops, card focus view, clickable log",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9239066",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Owner to-do (cards75): four Legolas Middle-earth cards + multi-ability artifacts",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5496834",
+			"date": "2026-10-01",
+			"kind": "patch",
+			"title": "Restore Lilycove's elevator + vending machine (and every dropped money/warp command)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cc41b34",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Overworld: restore every dropped multichoice (Trick House Puzzle 5 quizzes had no answers) (#619)",
+			"body": "* Overworld: restore every dropped multichoice (Trick House Puzzle 5 quizzes had no answers)\n\nPlaytest (instinctloretest0918, 2026-09-30), Route110_TrickHousePuzzle5: a\nMechadoll asked its quiz, then 'BZZZT. DISAPPOINTMENT. ERROR.' with no\nchoices shown. Verified: the map transpile dropped EVERY multichoice /\nmultichoicedefault / multichoicegrid (253 in pokeemerald + pokefirered), so\neach switch read a stale VAR_RESULT (0; Mechadoll1 Quiz1 wants 2). The only\nmenu op was the yes/no prompt (0/1).\n\n- tools/gen_multichoice.mjs -> overworld/multichoice_data.json: finds every\n  multichoice in the decomps' scripts, resolves its list (script_menu) to the\n  real option strings (src/strings.c + data/text), and re-inserts a\n  multichoice op into our transpiled label, right after the question's msg\n  (else before the first VAR_RESULT branch). 236 label copies restored on 73\n  maps + 10 shared labels; not restored: the link/Cable Club menus (no link\n  play) and Lilycove's elevator + rooftop vending machine (their transpiled\n  labels lost the whole menu structure, not only the multichoice).\n- overworld/choice.js + the multichoice op (events.js): the question above\n  its options (a grid where the source asks); it WAITS, writes the zero-based\n  pick to VAR_RESULT, and only then resumes; nothing picks for the player.\n  B/X cancels only where the source allows (ignoreBPress FALSE), answering\n  MULTI_B_PRESSED (127). It takes keys under its paused script (like the\n  shop). Loaded as an overlay (like the phone's), so no map-data redeploy.\n- Instrumentation: window.__owChoiceLog (console with ?owlog=1): the list,\n  options shown, the index chosen, and VAR_RESULT at the compare reading it.\n\ntrickhouse5_test 157/157 with real keys: all 15 variants show the question\nand full list; every option of every variant writes its own index and the\ncompare reads it; nothing touches VAR_RESULT while the menu waits; right\nanswers take CORRECT, wrong ones 'DISAPPOINTMENT' back to the start with no\nmenu left; a full run (five dolls, scroll, MAGNET); the server push and a\nreload keep stage 5, the MAGNET and the six-POKeMON party. Without the\nrestored menus it fails as reported.\n\n\n* Tests: split trickhouse5 to fit the gate; shared_scripts checks merge ORDER\n\n- trickhouse5_test timed out at the gate's 5-minute suite limit (45 answers,\n  30 of them warping back to the start). It now drives dialog in-page (real\n  keydown events, one round trip per wait), treats 'idle' as no dialog/scene/\n  fade for ~0.5s (a warp's fade-in used to read as idle and land during the\n  next variant), and identifies the full run's quiz by its list id (two of\n  Mechadoll 5's option lists are identical). Split: part A dolls 1-3 (187s),\n  trickhouse5b_test dolls 4-5 + the full run, reward, reload/sync (137s).\n- shared_scripts_test pinned the loader's exact merge line, which the PHONE\n  overlay (#617) and the multichoice overlay both extend. It now asserts the\n  ORDER it cares about: every shared layer before the map's own labels, and\n  nothing shared after them.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "bdc1b5a",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Overworld: the PHONE, in every region, for every new game (#617)",
+			"body": "* Overworld: the PHONE, in every region, for every new game\n\nOwner: 'build the phone system but then extend it to all regions. then make\nsure you get the phone no matter what region you start.' One device, PHONE,\nin the START menu; occasional incoming calls; Kanto's contacts are the VS\nSEEKER trainers (owner's choices).\n\n- overworld/phone.js: contacts (MOM, the region's PROFESSOR, trainers who\n  gave their number), outgoing calls (the professor states your next goal),\n  incoming calls (at most one every few minutes, only when free: never in a\n  battle, cutscene, dialog, the Safari Game or a trainer's approach), rematch\n  requests, gifts, the PHONE menu, and the hand-off.\n- tools/gen_phone_data.mjs -> overworld/phone_data.json, from the decomps:\n  JOHTO: Crystal's 28 phone trainers. Their header .Script (number ask,\n    rematch, gift) is re-converted from maps/*.asm -- the transpile had\n    dropped askforphonenumber, checkcellnum, loadmem and every jumpstd phone\n    line -- with Crystal semantics kept (an scall'd label's end returns;\n    labels fall through). Every call line from data/phone/text, their\n    ENGINE_*_READY_FOR_REMATCH / _HAS_* flags, and the 100 rematch parties\n    (LASS_DANA2...) the roster import never had.\n  HOENN: Emerald's 64 Match Call trainers (gRematchTable, leaders excluded):\n    the dropped register_matchcall restored as a PhoneRegister special in\n    their scripts; rematches step through their team tiers (capped by badges).\n  KANTO: FireRed's 221 VS SEEKER trainers (sRematches) offer their number\n    after a win and rematch with their tiered teams.\n- Every intro's send-off hands over the PHONE with the POKeDEX (and the\n  recovery pick does); a save already past the intro gets it on load. It\n  sets Emerald's FLAG_HAS_MATCH_CALL. magepunk_phone_v1 is in the reset list\n  (so it also syncs).\n\nphone_test 37/37: a new game in KANTO/JOHTO/HOENN gets the PHONE from OAK/\nELM/BIRCH; migration; menu + calls; the scheduler; Dana's own number ask ->\nregistered -> her call sets ENGINE_DANA_READY_FOR_REMATCH -> the rematch\nwith her team -> her THUNDERSTONE; Calvin registered by his restored script\n-> tier-2 rematch; Ben's number and rematch. Quick gate 60/60\n(trickhouse3 flaked once on a step read, passed alone).\n\n\n* trickhouse3_test: wait for the step to start and finish (flake)\n\nThe quick gate on the phone branch caught it reading (8,3) mid-walk: a\nfixed 260ms hold on a slow run released before the step began. The helper\nnow holds until the step starts (or bumps) and waits for it to finish.\n3/3 runs pass.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "aeb8ff0",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Overworld: Lavaridge Gym's buried trainers battle once, as themselves (#616)",
+			"body": "Playtest (instinctloretest0918, 2026-09-30), Lavaridge Gym B1F: Kindler Jeff\nbattled a fallback team (two ~Lv11 Spearow) instead of his two Lv22 Slugma,\nthe win recorded nothing, and talking to him again started a fresh battle.\n\n- events.js: trainerbattle's trainer is the first TRAINER_* argument that is\n  not a battle FORM. `trainerbattle TRAINER_BATTLE_CONTINUE_SCRIPT,\n  TRAINER_JEFF, LOCALID_JEFF, ...` (20 uses) passed the form, which missed\n  every team lookup; every other layout (1,492) leads with the trainer and is\n  unchanged. A CONTINUE_SCRIPT battle whose post script is not loaded now ends\n  there instead of falling into the post-battle line meant for a later talk.\n- trainers.js: TRAINER_TYPE_BURIED is a trainer type. The ash trainers were\n  plain NPCs, so a win could never record their map/LOCALID key.\n- ow_transitions.js: a floor map (_B1F/_2F...) reads its _1F strings under its\n  own; Emerald keeps the Gym B1F lines in the 1F text file (Jeff's intro\n  read '...').\n- ow_input.js: a beaten trainer says the line after their trainerbattle, as\n  the decomp's trainerbattle skips to it once beaten (Jeff: 'I can walk on\n  hot coals barefoot!'), instead of the generic defeat line.\n\nlavaridge_buried_test 39/39: Jeff (2x Slugma 22), Jace, Keegan, Eli (B1F)\nand Cole, Gerald, Axle, Danielle (1F) each battle their own team, record one\ndurable key, start no second battle on a later talk or after a reload; Jeff's\nown intro and post-battle lines, the latter not shown straight after the\nbattle; an ordinary single (Route 102 Calvin) and the Route 104 twins still\nbattle and record. The old code fails as reported.",
+			"cards": []
+		},
+		{
+			"sha": "aba8344",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Overworld: Crystal trainer headers get their first battle (Route 38 skipped them) (#615)",
+			"body": "Playtest (instinctloretest0918, 2026-09-30), Route 38: Beauty Olivia and\nBird Keeper Toby, unbeaten, said their POST-battle line and never fought;\nLass Dana asked for a phone number. pokecrystal points a trainer object at a\n`trainer CLASS, ID, EVENT_BEAT_*, SeenText, BeatenText, 0, .Script` header;\nthe engine runs seen text -> battle -> beaten text -> beat event, and only a\nlater talk runs .Script. The transpile kept only .Script, under the header's\nlabel, and onEngage treated any loaded script as the battle.\n\n- tools/gen_crystal_trainer_headers.mjs reads pokecrystal maps/*.asm and emits\n  overworld/crystal_trainers.js: the 333 labels that are headers ->\n  {beat, seen, beaten}. Only those labels change; full scripts (Gym Leaders,\n  Sage Li, Kevin's Nugget-then-battle, the officers) are not headers and still\n  run themselves. Crystal maps only.\n- onEngage: a header always gets the ordinary first battle (its roster), with\n  its authentic SEEN / BEATEN texts from the map strings; victory also sets\n  its EVENT_BEAT_* (ow_progression startTrainerBattle).\n- a beaten header trainer's talk runs its loaded continuation (Olivia's line,\n  Dana's and Chad's phone-number / rematch flow) instead of the generic\n  defeat line.\n\ncrystal_trainerheader_test 65/65: Olivia, Toby, Valerie, Harry, Dana, Chad\neach get their first battle with the right roster, seen and beaten texts,\nexactly their collision-safe key, the beat event and the prize; a later talk\nplays the continuation with no second battle or payout (Dana/Chad's phone\nflags set); both duplicate-key pairs keep their suffixes; Olivine Lighthouse\n(Alfred, a header) battles; Sprout Tower's Sage Li (full script) runs his own\nscene while Sage Jin (header) battles; the Weather Institute grunt (Emerald)\nruns his script. Restoring the old dispatch reproduces the report. Quick gate\n44/44; johkanto_trainers/gyms, trainerdepth, gymstory, crystal_story,\ncrystal_branches, kurtstory, staticbattles, postbattle pass.",
+			"cards": []
+		},
+		{
+			"sha": "ef500cb",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Owner inbox batch 74: Lupine Harbingers, Legolas's Quick Reflexes, Galadhrim Bow (#614)",
+			"body": "- Lupine Harbingers: Rush & Trample. Inspire: Add a random Beast to each\n  player's hand. (add-random-card learns eachPlayer: every living player\n  gets their own random card.)\n- Legolas's Quick Reflexes: Target creature gains +2/+2 & Taunt. Twinspell.\n  (any creature; the _ii twin is a non-token copy that does not re-conjure,\n  shaped like Aragorn's, so it cycles and does not join Legolas's deck.)\n- Galadhrim Bow: Deathtouch. Swing: Deal 1 damage to a random creature you\n  don't control. Filed as 'Deathrattle.'; owner: 'i meant deathtouch. the\n  deathtouch effect should be utilized on the random ping as well' -- the\n  ping threads the Bow as its source, so Deathtouch destroys what it hits.\n\nowner_todo_cards74_test 27/27; twinspell_cycle_test covers the new pair;\nbattlecards run-all passes. No live art/sprite overrides to fold.",
+			"cards": []
+		},
+		{
+			"sha": "9ad28b7",
+			"date": "2026-09-30",
+			"kind": "patch",
+			"title": "Overworld: scripted tile edits honour symbolic TRUE/FALSE (Trick House puzzle 3 walled shut) (#613)",
+			"body": "Playtest (instinctloretest0918, 2026-09-30): in Trick House puzzle 3,\nstepping on the (8,2) button made all four buttons impassable, the player\nbumped at (8,3), and no route reached the scroll. The decomp scripts write\nsetmetatile's impassable as 'TRUE'/'FALSE' (957 ops; 250 more use 1/0), and\nworld.setMetatile read it by truthiness: the STRING 'FALSE' is truthy, so\nall 502 FALSE ops across the maps walled their tile off (buttons, open\ndoors). The gym-puzzle adapter in ow_story.js also coerced with !!.\n\n- engine.js: scriptBool() parses a script boolean: TRUE/1/true -> true,\n  FALSE/0/false -> false, null/undefined -> null (keep the tile's current\n  collision), anything else warns and counts as not given. setMetatile\n  applies it at the boundary every path goes through; the adapter passes\n  its value through instead of !!.\n- Found replaying the puzzle to its reward: Z on the Trick Master dug up the\n  NUGGET Emerald hides on his tile instead of claiming the prize (items were\n  checked before people). A person on the faced tile is now talked to; hidden\n  items there are skipped (interactAt skipHidden), as objects come before bg\n  events on cartridge.\n\ntrickhouse3_test 20/20: scriptBool/setMetatile semantics (FALSE clears,\nTRUE sets, null keeps); the (8,2) press with real key input; every door and\nbutton tile vs the script that set it (on entry and after the press);\nstepping back onto the button; a BFS route to the scroll; the scroll; the\nTrick Master's HARD STONE; the save push with every defeated trainer key\nintact. With the parse removed, 5 fail (the exact report: walls, bump at\n(8,3), no route). Quick gate 44/44.",
+			"cards": []
+		},
+		{
+			"sha": "55932f5",
+			"date": "2026-09-29",
+			"kind": "patch",
+			"title": "every Corrupt card corrupts (Day at the Faire + 9 more) (#611)",
+			"body": "Report (2026-09-29): \"Day at the Faire corrupt doesn't work\". It had no\n`corrupt` link, so playing a costlier card never upgraded it. An audit of\nevery card with Corrupt text found 7 more with no link (Insight, Nitroboost\nPoison, Shadow Word: Forbid, Ring Toss, Auspicious Spirits, Moontouched\nAmulet, Dunk Tank) and 2 whose link pointed at a card that did not exist\n(Don't Feed the Animals, Stage Dive).\n\nEach now has its corrupted form (token, same name/cost/class; art from the\nbase card where it has none of its own): 5 recruits; hand Beasts +2/+2; the\ndrawn Rush creature +2/+1; the drawn creature costs (2) less; creature AND\nweapon +2 Attack; destroy ALL 4-Attack creatures (destroy-all learns\nminAttack); 2 Secrets; a 7-Cost creature; +4 Attack and 6 Armor; 4 damage\nthen 2 to all enemy creatures.\n\ncorrupt_forms_test 24/24 (the pool check: Corrupt text => a resolving link;\nthen every form corrupts and does its thing); on the old data 22 fail.\nbattlecards run-all 587/587; quick gate 28/28.",
+			"cards": []
+		},
+		{
+			"sha": "1284868",
+			"date": "2026-09-29",
+			"kind": "patch",
+			"title": "Overworld: a partyless save can always get a POKeMON (Remy: stuck partyless forever) (#610)",
+			"body": "Remy (automated playtesting, 2026-09-29): a new game ended permanently\npartyless: no magepunk_party_v1, the party screen threw, no battles, and the\nstarter was never offered again. The report blamed the seeded\nFLAG_GOT_FIRST_POKEMON; nothing reads that flag, and from a clean profile the\nlab re-offers the pick after any reload. The real trap reproduced with the\nbrowser store nearly full: the pick's party write failed in SILENCE while the\nsmall story write (intro_done) still landed, and the lab trigger gated on\nintro_done, so no starter was ever offered again. (A partyless copy from the\nserver would strand a save the same way.)\n\n- checkIntroTrigger offers a starter to any PARTYLESS player in the lab; on a\n  save whose intro already ran, the pick is a recovery (no rival replay).\n- saveParty returns whether it stuck; on failure it drops the expendable\n  Battlecards replay tapes and retries. A starter that still cannot be saved\n  says so (dialog + HUD) instead of failing in silence.\n- the objective line reads 'NEXT: Get your first POKeMON from <prof> at the\n  LAB' for a partyless save (also right after the region pick).\n- the party screen shows a hint instead of throwing on no party.\n- the seed no longer sets FLAG_GOT_FIRST_POKEMON (nothing reads it; the pick\n  sets it), so the flag means what it says.\n\npartyless_test 19/19 (fresh game, a stranded save recovered, store full with\nand without a tape); restoring the intro_done gate fails 5. Quick gate\n28/29 (owreset: the replay key is now listed as kept), then owreset,\nintro_regions, intro_resume pass.",
+			"cards": []
+		},
+		{
+			"sha": "e8ce340",
+			"date": "2026-09-29",
+			"kind": "patch",
+			"title": "Overworld: a persistent in-DOM file input for save import (#ow-save-import) (#608)",
+			"body": "Follow-up to #606: the automation side can only transfer the backup through\na real <input type=file> in the DOM, and its page evaluation is read-only,\nso it can call neither window.__ow.importSave nor the chooser (whose input\nonly exists while OPTIONS > IMPORT SAVE is open).\n\ninstallImportInput() (at boot, after hydrateOw) appends a persistent,\nvisually hidden (not display:none) #ow-save-import. An upload runs the same\nimportSave pipeline: full validation first (malformed = no change, no\npush), backup + apply with rollback, revision stamp, force-push, server\nread-back. No confirm(): the input is invisible to players and a caller that\ncannot run code cannot answer a dialog. The outcome is written to\n#ow-save-import-status (data-status idle|busy|ok|error; textContent = the\nresult JSON) and restored there after the post-import reload. The chooser\nflow is unchanged.\n\nsaveimport_test 61/61: the input is in the document from boot; a malformed\nupload shows an error naming every bad key with no change and no push; a\nvalid rev-30000 upload applies, pushes, reads back at 30000, and the status\nsurvives the reload (driven by uploadFile + DOM reads only). Without the\ninput, the new checks fail.",
+			"cards": []
+		},
+		{
+			"sha": "41002ad",
+			"date": "2026-09-29",
+			"kind": "patch",
+			"title": "Overworld: save import without the native file chooser (window.__ow.importSave) (#606)",
+			"body": "Automation needs to restore a full save export (rev 16413) and could not:\nOPTIONS > IMPORT SAVE raised a DETACHED <input type=file>, which upload\ntooling cannot target.\n\nwindow.__ow.importSave(json) runs the same pipeline as the chooser:\n1. validate the WHOLE export first (Savefile.validateSave): magic, version,\n   known keys only, every value a string, integer/text/JSON per key, shape\n   checks for party/box/pos/story/badges/bag/dex, \"holds a game\", and the\n   push size limit. Every problem is listed by key; on failure NOTHING\n   changes (no local write, no backup, no push).\n2. read the server revision.\n3. back up the current game to a local-only key (magepunk_ow_import_backup,\n   never synced, spared by resets) and apply with a read-back of every key;\n   any write that does not stick rolls the whole game back. If the backup\n   itself cannot be written, nothing is touched.\n4. stamp the revision: the export's own when it already outranks the server\n   (a rev-16413 export lands at 16413), else server + 1.\n5. force-push, then read the server copy back (same body, same revision).\nThe result { ok, stage, error(s), fileRev, appliedRev, serverRevBefore,\nfp, readback } is returned and kept in sessionStorage across the reload\nthat follows (lastImportResult()); verifySave() pushes pending changes and\nre-checks local against the server; rollbackImport() restores the replaced\ngame through the same pipeline.\n\nServer: a FORCED ow-save now stashes the stored game in the UNDO slot first\n(OPTIONS > SERVER BACKUPS > UNDO), and refuses the replace if it cannot.\n\nThe chooser keeps its flow (validate, confirm, import, reload) on the same\npipeline; its file input now sits in the DOM (#ow-save-file) while open.\n\nsaveimport_test 54/54: 10 malformed/unsupported exports refused with no\nchange, a storage failure mid-apply rolled back (swapping in the old\napply fails 10 checks), a rev-16413 import pushed and read back, verified\nafter the reload, rollback, a server-ahead import, and the chooser via\nuploadFile. savesafety, owsync, owconflict, owreset and battlecards run-all\n(586/586) pass.",
+			"cards": []
+		},
+		{
+			"sha": "bb1aab3",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Duels: every creature carries its Hearthstone tribe (#604)",
+			"body": "After Brewster (#603), a sweep of Duels creatures against\ntools/data/hs_cards_full.json (the PVPDR_ card first, else by name) found 32\nmissing a tribe: Pirates (Tuskarr Raider, Seabreaker Goliath, Deck Swabbie),\nBeasts (Frostwolf Cub, Moonbeast, Bonecrusher, Deathstrider x4), Demons\n(Impish Aid, Mo'arg Outcast, Demonizer x4), Dragons (Drocomurchanicas,\nHerald of the Scaled Ones x4), Undead (Nerubian Peddler, both Thimbles,\nJoras Thuldoom), Mech (Scrapmetal Demolitionist x4), and Undead Beast\n(Gluth-sicle; Gluth and Crimson were only Undead). The other 24 untribed\nDuels creatures have no tribe in Hearthstone either. Tribe checks match by\nsubstring, so the dual tribes count for both.\n\nduels_tribes_test 33/33; battlecards run-all 586/586.",
+			"cards": []
+		},
+		{
+			"sha": "f95cf81",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Bryan's fixes: Honorable Kill in a trade, live hero power cost, Instrument Case, weapon badge, Brewster (#603)",
+			"body": "* Battlecards: Honorable Kill fires in a trade; hero power orb shows the live cost; Instrument Case arms its maker\n\nBryan, 2026-09-28:\n- \"Sneaky scout honorable kill did not work ... I used it and it still took\n  mana away\". Honorable Kill fired only for an attacker that SURVIVED. Sneaky\n  Scout is a 3/2, so its natural trade into a 3-health minion killed it and\n  the discount never landed. It now fires either way, as in Hearthstone.\n  Separately, every power orb drew the PRINTED cost, so even a landed\n  discount still read (2). The hero-panel orb, the side-panel orb and the\n  tooltip now show the live cost (green when cheaper, red when taxed).\n- \"Instrument Case deathrattle (from Worgen Roadie) did not give me a\n  weapon\". The case sits under the opponent's control and its deathrattle\n  equipped its controller, so the ENEMY got the weapon (and a fixed 3/2 axe,\n  not the promised random weapon). A token summoned for another player now\n  records its maker (createdBy), and equip-random {forCreator} arms that\n  player with a random weapon, whoever breaks the case.\n\nTests: battlecards regression/honorable_trade_roadie_test (17; the old code\nfails 11) and overworld hpcost_test (10; the old code fails 4, the\norb-only revert fails 1). battlecards run-all 585/585, boardhand 16/16.\n\n\n* Battlecards: your weapon gets a badge in the hero panel's top band\n\nBryan, 2026-09-28: \"Not able to see my weapon while it's active (I can use it\nand it works)\". The weapon was a small \"⚔ 3/2\" on the gear line at the\nbottom of the hero panel, and the raised hand covers that part of the panel.\nIt is now a gold badge under your name in the top band (attack/durability,\nglowing green when you can swing), which the hand never covers. A hero\nattack without a weapon shows there as \"+N\" too.\n\nhpcost_test 13/13 (badge drawn, in the top band, gone without a weapon);\nboardhand 16/16.\n\n\n* Battlecards: Brewster, the Brutal is a Beast\n\nBryan, 2026-09-28: \"Brewster, the Brutal is not a beast and it should be\".\nThe Duels treasure had no tribe. Asserted in honorable_trade_roadie_test.\n\n\n---------",
+			"cards": []
+		},
+		{
+			"sha": "fbb8552",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Run rewards: a reload on the reward screen resumes it, not the beaten fight (#602)",
+			"body": "Bryan, 2026-09-28: on the card-select screen his laptop slept; on return\nhe faced the same opponent (Liliana) again \"with I THINK 5 more HP\". A won\nfight banked the win and then showed the reward, but the next enemy was\nonly chosen after the pick. A reload there found the win banked and the\nbeaten enemy still set, so boot rebuilt the SAME fight (setRunLife counts\ngames, hence the extra HP) and the reward was lost. The same shape was in\nall six reward-screen run modes: Lorequest, Middle-earth, Sword Coast,\nFinal Fantasy, Multiverse, and Duels (which loots after losses too).\n\nNow each fight's end writes a post-fight checkpoint (won, a seed, stage)\nwith the banked result. Every reward offer is rolled from that seed, so a\nreload shows the SAME choices (frame-exact resume, the owner's rule); the\nfirst pick is saved as it is made (stage 2); boot reopens the pending\nreward instead of a fight; advancing to the next enemy clears it. The\nreward screens read the mode's own card table, since no game state exists\nyet at boot. Mini card faces carry data-card-id.\n\nrunreward_test 35/35 (lorequest, middle-earth, duels: win, reload on the\nreward, same offer, no rebuilt fight, win counted once, first pick saved,\nreload on step 2, next enemy set); on the old code it rebuilds the beaten\nfight. runcoin, boardhand, dungeon_resume(+_choices) and battlecards\nrun-all (584/584) pass.",
+			"cards": []
+		},
+		{
+			"sha": "f4fb059",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "the planar die is a hero-panel orb; planeswalkers out from behind the panel; hand stats readable (#601)",
+			"body": "Bryan's report (2026-09-28, a 1366x768 laptop):\n\n1. \"Not able to click on this planeswalker bc my hand comes up to meet me\":\n   planeswalkers sat dead-centre at the hero panel's depth, i.e. right BEHIND\n   your hero panel (only the name strip showed), and any pointer low on the\n   screen popped the tucked hand up over them. Planeswalkers now flank the\n   panel (right, left, further out), and the tucked hand rises only when you\n   reach for the hand itself, not for a planeswalker or the panel.\n\n2. The \"Planeswalk\" button (the Planechase planar die) appeared when a\n   planeswalker came out, read as a planeswalker action, and vanished once\n   the next roll cost more than you had. Owner's call: treat it like another\n   hero power attached to the hero, but not one of the hero-power slots. It\n   is now an orb on your hero panel beside the power orb: glowing when you\n   can roll, dimmed (not gone) when you can't, with the next roll's cost as a\n   badge; a quick click rolls it (or says why not); hover explains it (5 =\n   Chaos, 6 = new plane, the escalating cost); each roll banners its result.\n   The floating button is retired. The board controller can focus it too.\n\n3. \"Can't see my creatures' health/attack... even when hovering\": the\n   hovered hand card's stat corners were below the window. A hovered hand\n   card now lifts until its whole face is on screen (projected bottom edge),\n   stays hovered while the pointer remains in its column below it (no\n   flicker), and a press there still grabs it. Every creature tooltip now\n   names Attack and Health (weapons: Attack and Durability).\n\nboardhand_test 16/16 at 1366x768 (fails on the old code). padboard,\npadnav, controller_polish, runcoin, and the handcard_drag, targeting_commit,\ndecision_modal and modal_tip_persist smokes all pass.",
+			"cards": []
+		},
+		{
+			"sha": "be03062",
+			"date": "2026-09-28",
+			"kind": "patch",
+			"title": "Extract the input diagnostics into ow_diagnostics.js (#600)",
+			"body": "openCanvasMenus() and gateReport() (every movement gate named at once)\nmove out of main.js (990 -> 947 lines); ow_input and ow_loop import them\ndirectly. The keyboard's keydown listener beside them stays in main.js\nwith the rest of the input wiring.",
+			"cards": []
+		},
 		{
 			"sha": "897e928",
 			"date": "2026-09-28",
