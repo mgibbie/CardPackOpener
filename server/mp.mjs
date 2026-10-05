@@ -129,7 +129,11 @@ const GC_TABLE = [
 // ow:<user>) — NOT in GC_TABLE, so never swept — so a logged-in player gets the same, current state on
 // any device/browser instead of whatever a possibly-stale localStorage cache holds. Kept off the user
 // row so the account blob stays small; each carries `updated_at` for last-write-wins reconciliation.
-const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1']);
+// every run mode's localStorage key (battlecards/game.js *_KEY); a key missing here
+// makes run-save 400 "bad run key", so that mode's run never reaches the server
+// (2026-10-04: Sword Coast / Final Fantasy / Multiverse — Remy's FF wins never
+// saved). run_keys_test keeps this in step with game.js.
+const RUN_KEYS = new Set(['magepunk_dungeon_v1', 'magepunk_heist_v1', 'magepunk_tombs_v1', 'magepunk_duels_v1', 'magepunk_arena_v1', 'magepunk_lorequest_v1', 'magepunk_middleearth_v1', 'magepunk_swordcoast_v1', 'magepunk_finalfantasy_v1', 'magepunk_multiverse_v1']);
 const RUN_MAX_BYTES = 700_000; // a run may carry a mid-fight snapshot (both hands/board/deck order)
 // The overworld blob now carries the WHOLE canonical save (story flags, badges,
 // bag, dex, collected items — not just party/boxes), so the ceiling moved up.
