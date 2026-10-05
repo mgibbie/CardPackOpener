@@ -1,0 +1,496 @@
+{
+ "generated": "tools/gen_crystal_callbacks.mjs",
+ "callbacks": {
+  "AzaleaTown": [
+   [
+    "NEWMAP",
+    "AzaleaTownFlypointCallback"
+   ]
+  ],
+  "BattleTowerOutside": [
+   [
+    "TILES",
+    "BattleTowerOutsideNoopCallback"
+   ],
+   [
+    "OBJECTS",
+    "BattleTowerOutsideShowCiviliansCallback"
+   ]
+  ],
+  "BlackthornCity": [
+   [
+    "NEWMAP",
+    "BlackthornCityFlypointCallback"
+   ],
+   [
+    "OBJECTS",
+    "BlackthornCitySantosCallback"
+   ]
+  ],
+  "BlackthornGym1F": [
+   [
+    "TILES",
+    "BlackthornGym1FBouldersCallback"
+   ]
+  ],
+  "BrunosRoom": [
+   [
+    "TILES",
+    "BrunosRoomDoorsCallback"
+   ]
+  ],
+  "BurnedTower1F": [
+   [
+    "TILES",
+    "BurnedTower1FHoleAndLadderCallback"
+   ]
+  ],
+  "BurnedTowerB1F": [
+   [
+    "TILES",
+    "BurnedTowerB1FLadderCallback"
+   ]
+  ],
+  "CherrygroveCity": [
+   [
+    "NEWMAP",
+    "CherrygroveCityFlypointCallback"
+   ]
+  ],
+  "CianwoodCity": [
+   [
+    "NEWMAP",
+    "CianwoodCityFlypointAndSuicuneCallback"
+   ]
+  ],
+  "DragonsDenB1F": [
+   [
+    "NEWMAP",
+    "DragonsDenB1FCheckRivalCallback"
+   ]
+  ],
+  "EcruteakCity": [
+   [
+    "NEWMAP",
+    "EcruteakCityFlypointCallback"
+   ]
+  ],
+  "EcruteakTinTowerEntrance": [
+   [
+    "OBJECTS",
+    "EcruteakTinTowerEntranceInitializeSagesCallback"
+   ]
+  ],
+  "GoldenrodCity": [
+   [
+    "NEWMAP",
+    "GoldenrodCityFlypointAndFloriaCallback"
+   ],
+   [
+    "OBJECTS",
+    "GoldenrodCityMoveTutorCallback"
+   ]
+  ],
+  "GoldenrodDeptStore5F": [
+   [
+    "OBJECTS",
+    "GoldenrodDeptStore5FCheckIfSundayCallback"
+   ]
+  ],
+  "GoldenrodDeptStoreB1F": [
+   [
+    "NEWMAP",
+    "GoldenRodDeptStoreUnblockCallback"
+   ],
+   [
+    "TILES",
+    "GoldenRodDeptStoreB1FClearBoxesCallback"
+   ]
+  ],
+  "GoldenrodDeptStoreRoof": [
+   [
+    "TILES",
+    "GoldenrodDeptStoreRoofCheckSaleChangeBlockCallback"
+   ],
+   [
+    "OBJECTS",
+    "GoldenrodDeptStoreRoofCheckSaleChangeClerkCallback"
+   ]
+  ],
+  "GoldenrodGameCorner": [
+   [
+    "OBJECTS",
+    "GoldenrodGameCornerMoveTutorCallback"
+   ]
+  ],
+  "GoldenrodUndergroundSwitchRoomEntrances": [
+   [
+    "TILES",
+    "GoldenrodUndergroundSwitchRoomEntrancesUpdateDoorPositionsCallback"
+   ]
+  ],
+  "GoldenrodUndergroundWarehouse": [
+   [
+    "NEWMAP",
+    "GoldenrodUndergroundWarehouseResetSwitchesCallback"
+   ]
+  ],
+  "GoldenrodUnderground": [
+   [
+    "NEWMAP",
+    "GoldenrodUndergroundResetSwitchesCallback"
+   ],
+   [
+    "TILES",
+    "GoldenrodUndergroundCheckBasementKeyCallback"
+   ],
+   [
+    "OBJECTS",
+    "GoldenrodUndergroundCheckDayOfWeekCallback"
+   ]
+  ],
+  "IndigoPlateauPokecenter1F": [
+   [
+    "NEWMAP",
+    "IndigoPlateauPokecenter1FPrepareElite4Callback"
+   ]
+  ],
+  "JohKantoCeladonCity": [
+   [
+    "NEWMAP",
+    "CeladonCityFlypointCallback"
+   ]
+  ],
+  "JohKantoCeladonDeptStore6F": [
+   [
+    "TILES",
+    "CeladonDeptStore6FHideRooftopStairsCallback"
+   ]
+  ],
+  "JohKantoCeruleanCity": [
+   [
+    "NEWMAP",
+    "CeruleanCityFlypointCallback"
+   ]
+  ],
+  "JohKantoCinnabarIsland": [
+   [
+    "NEWMAP",
+    "CinnabarIslandFlypointCallback"
+   ]
+  ],
+  "JohKantoCopycatsHouse2F": [
+   [
+    "OBJECTS",
+    "CopycatsHouse2FWhichGenderCallback"
+   ]
+  ],
+  "JohKantoFuchsiaCity": [
+   [
+    "NEWMAP",
+    "FuchsiaCityFlypointCallback"
+   ]
+  ],
+  "JohKantoLavenderTown": [
+   [
+    "NEWMAP",
+    "LavenderTownFlypointCallback"
+   ]
+  ],
+  "JohKantoPalletTown": [
+   [
+    "NEWMAP",
+    "PalletTownFlypointCallback"
+   ]
+  ],
+  "JohKantoPewterCity": [
+   [
+    "NEWMAP",
+    "PewterCityFlypointCallback"
+   ]
+  ],
+  "JohKantoRoute16": [
+   [
+    "NEWMAP",
+    "Route16AlwaysOnBikeCallback"
+   ]
+  ],
+  "JohKantoRoute17": [
+   [
+    "NEWMAP",
+    "Route17AlwaysOnBikeCallback"
+   ]
+  ],
+  "JohKantoRoute19": [
+   [
+    "TILES",
+    "Route19ClearRocksCallback"
+   ]
+  ],
+  "JohKantoRoute20": [
+   [
+    "NEWMAP",
+    "Route20ClearRocksCallback"
+   ]
+  ],
+  "JohKantoSaffronCity": [
+   [
+    "NEWMAP",
+    "SaffronCityFlypointCallback"
+   ]
+  ],
+  "JohKantoVermilionCity": [
+   [
+    "NEWMAP",
+    "VermilionCityFlypointCallback"
+   ]
+  ],
+  "JohKantoViridianCity": [
+   [
+    "NEWMAP",
+    "ViridianCityFlypointCallback"
+   ]
+  ],
+  "KarensRoom": [
+   [
+    "TILES",
+    "KarensRoomDoorsCallback"
+   ]
+  ],
+  "KogasRoom": [
+   [
+    "TILES",
+    "KogasRoomDoorsCallback"
+   ]
+  ],
+  "KurtsHouse": [
+   [
+    "OBJECTS",
+    "KurtsHouseKurtCallback"
+   ]
+  ],
+  "LakeOfRage": [
+   [
+    "NEWMAP",
+    "LakeOfRageFlypointCallback"
+   ],
+   [
+    "OBJECTS",
+    "LakeOfRageWesleyCallback"
+   ]
+  ],
+  "LancesRoom": [
+   [
+    "TILES",
+    "LancesRoomDoorsCallback"
+   ]
+  ],
+  "MahoganyMart1F": [
+   [
+    "TILES",
+    "MahoganyMart1FStaircaseCallback"
+   ]
+  ],
+  "MahoganyTown": [
+   [
+    "NEWMAP",
+    "MahoganyTownFlypointCallback"
+   ]
+  ],
+  "MountMoonSquare": [
+   [
+    "NEWMAP",
+    "MountMoonSquareDisappearMoonStoneCallback"
+   ],
+   [
+    "OBJECTS",
+    "MountMoonSquareDisappearRockCallback"
+   ]
+  ],
+  "NewBarkTown": [
+   [
+    "NEWMAP",
+    "NewBarkTownFlypointCallback"
+   ]
+  ],
+  "OlivineCity": [
+   [
+    "NEWMAP",
+    "OlivineCityFlypointCallback"
+   ]
+  ],
+  "RadioTower3F": [
+   [
+    "TILES",
+    "RadioTower3FCardKeyShutterCallback"
+   ]
+  ],
+  "Route29": [
+   [
+    "OBJECTS",
+    "Route29TuscanyCallback"
+   ]
+  ],
+  "Route31": [
+   [
+    "NEWMAP",
+    "Route31CheckMomCallCallback"
+   ]
+  ],
+  "Route32": [
+   [
+    "OBJECTS",
+    "Route32FriedaCallback"
+   ]
+  ],
+  "Route34IlexForestGate": [
+   [
+    "OBJECTS",
+    "Route34IsForestRestlessCallback"
+   ]
+  ],
+  "Route36": [
+   [
+    "OBJECTS",
+    "Route36ArthurCallback"
+   ]
+  ],
+  "Route37": [
+   [
+    "OBJECTS",
+    "Route37SunnyCallback"
+   ]
+  ],
+  "Route40BattleTowerGate": [
+   [
+    "OBJECTS",
+    "RouteBattleTowerGateShowSailorCallback"
+   ]
+  ],
+  "Route40": [
+   [
+    "OBJECTS",
+    "Route40MonicaCallback"
+   ]
+  ],
+  "Route43Gate": [
+   [
+    "NEWMAP",
+    "Route43GateCheckIfRocketsCallback"
+   ]
+  ],
+  "Route43": [
+   [
+    "NEWMAP",
+    "Route43CheckIfRocketsScene"
+   ]
+  ],
+  "RuinsOfAlphAerodactylChamber": [
+   [
+    "TILES",
+    "RuinsOfAlphAerodactylChamberHiddenDoorsCallback"
+   ]
+  ],
+  "RuinsOfAlphHoOhChamber": [
+   [
+    "TILES",
+    "RuinsOfAlphHoOhChamberHiddenDoorsCallback"
+   ]
+  ],
+  "RuinsOfAlphKabutoChamber": [
+   [
+    "TILES",
+    "RuinsOfAlphKabutoChamberHiddenDoorsCallback"
+   ]
+  ],
+  "RuinsOfAlphOmanyteChamber": [
+   [
+    "TILES",
+    "RuinsOfAlphOmanyteChamberHiddenDoorsCallback"
+   ]
+  ],
+  "RuinsOfAlphOutside": [
+   [
+    "OBJECTS",
+    "RuinsOfAlphOutsideScientistCallback"
+   ]
+  ],
+  "RuinsOfAlphResearchCenter": [
+   [
+    "OBJECTS",
+    "RuinsOfAlphResearchCenterScientistCallback"
+   ]
+  ],
+  "SilverCaveOutside": [
+   [
+    "NEWMAP",
+    "SilverCaveOutsideFlypointCallback"
+   ]
+  ],
+  "TeamRocketBaseB1F": [
+   [
+    "OBJECTS",
+    "TeamRocketBaseB1FHideSecurityGruntCallback"
+   ]
+  ],
+  "TeamRocketBaseB2F": [
+   [
+    "TILES",
+    "TeamRocketBaseB2FTransmitterDoorCallback"
+   ]
+  ],
+  "TeamRocketBaseB3F": [
+   [
+    "TILES",
+    "TeamRocketBaseB3FCheckGiovanniDoorCallback"
+   ]
+  ],
+  "UnionCaveB2F": [
+   [
+    "OBJECTS",
+    "UnionCaveB2FLaprasCallback"
+   ]
+  ],
+  "VermilionPort": [
+   [
+    "NEWMAP",
+    "VermilionPortFlypointCallback"
+   ]
+  ],
+  "VioletCity": [
+   [
+    "NEWMAP",
+    "VioletCityFlypointCallback"
+   ]
+  ],
+  "WillsRoom": [
+   [
+    "TILES",
+    "WillsRoomDoorsCallback"
+   ]
+  ],
+  "WiseTriosRoom": [
+   [
+    "OBJECTS",
+    "WiseTriosRoomWiseTrioCallback"
+   ]
+  ]
+ },
+ "denied": {
+  "BlackthornGym2F:BlackthornGym2FSetUpStoneTableCallback": "CMDQUEUE stone tables (boulders into holes) are not implemented",
+  "DayCare:DayCareEggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
+  "IcePathB1F:IcePathB1FSetUpStoneTableCallback": "CMDQUEUE stone tables (boulders into holes) are not implemented",
+  "IlexForest:IlexForestFarfetchdCallback": "reads wFarfetchdPosition, which nothing in the port sets (the Farfetch'd puzzle)",
+  "PlayersHouse2F:PlayersHouse2FInitializeRoomCallback": "decoration specials (ToggleDecorationsVisibility / ToggleMaptileDecorations) are not implemented",
+  "PlayersHouse2F:PlayersHouse2FSetUpTileDecorationsCallback": "decoration specials (ToggleDecorationsVisibility / ToggleMaptileDecorations) are not implemented",
+  "Route34:Route34EggCheckCallback": "the Day-Care Man is run by the native daycare (daycare.js)",
+  "Route35NationalParkGate:Route35NationalParkGateCheckIfContestRunningCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
+  "Route35NationalParkGate:Route35NationalParkGateCheckIfContestAvailableCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
+  "Route36NationalParkGate:Route36NationalParkGateCheckIfContestRunningCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
+  "Route36NationalParkGate:Route36NationalParkGateCheckIfContestAvailableCallback": "the Bug-Catching Contest is run natively (ow_venues.js)",
+  "TinTower1F:TinTower1FNPCsCallback": "gates the stairs on EVENT_GOT_RAINBOW_WING, but the port hands the RAINBOW WING to the Johto Champion without that flag (ow_progression.js) — running it would hide the way to HO-OH",
+  "TinTower1F:TinTower1FStairsCallback": "gates the stairs on EVENT_GOT_RAINBOW_WING, but the port hands the RAINBOW WING to the Johto Champion without that flag (ow_progression.js) — running it would hide the way to HO-OH",
+  "TinTowerRoof:TinTowerRoofHoOhCallback": "HO-OH is encountered through the native legendary system (ow_legendaries.js)",
+  "WhirlIslandLugiaChamber:WhirlIslandLugiaChamberLugiaCallback": "LUGIA is encountered through the native legendary system (ow_legendaries.js)"
+ }
+}

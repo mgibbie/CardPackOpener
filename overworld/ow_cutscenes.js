@@ -175,6 +175,7 @@ export function cutsceneCtx(talker, scriptLabel) {
 			if (f && /^EVENT_/.test(f)) Story.clearFlag(f);
 		},
 		setMetatile: (x, y, tile, impassable) => world.setMetatile(x, y, tile, impassable), // tile edits: not yet applied to the web layout
+		changeBlock: op => { const c = op.cells || []; [[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([dx, dy], q) => { if (c[q] != null) world.setGridValue(op.x + dx, op.y + dy, c[q]); }); },
 		startBattle: trainerId => startScriptedBattle(trainerId, scriptLabel, talker),
 		wildBattle: (species, level) => startScriptedWildBattle(species, level),
 		// a clerk's `openmart`: raise the standard shop counter and hold the script

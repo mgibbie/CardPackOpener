@@ -442,6 +442,9 @@ export class Cutscene {
 				if (ctx.openMart?.() === 'wait') { this._advance(); c.sub = { kind: 'special' }; return; }
 				break;
 				case 'setmetatile': ctx.setMetatile?.(op.x, op.y, op.tile, op.impassable); break;
+				// Crystal changeblock, restored by tools/gen_crystal_scriptvar.mjs as the
+				// block's four converted grid cells at its 16px origin
+				case 'changeblock': ctx.changeBlock?.(op); break;
 				// Crystal's yes/no box. It writes its answer where the following
 				// iftrue/iffalse reads it, so it lowers onto VAR_RESULT and the ordinary
 				// var branch. Default YES before asking, so a context with no prompt

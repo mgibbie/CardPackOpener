@@ -27,6 +27,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
+import { loadCrystalMaps, makeHarvester } from './crystal_blocks.mjs';
 
 const D = path.join('overworld', 'data');
 const OUT = path.join('overworld', 'crystal_scriptvar_data.json');
@@ -78,9 +79,24 @@ function menuItems(asm, header) {
 const qualify = (label, g) => (label.startsWith('.') && g ? g + label : label);
 const strip = ops => JSON.stringify((ops || []).map(o => { const { steps, ...r } = o; return r; }));
 
+// Crystal MAP CALLBACKS (`callback MAPCALLBACK_TILES, Label`): their `changeblock`s
+// were dropped too (a TILES callback became a bare branch + end). They are
+// restored in callback labels (and their .sublabels) only, each as the 4 grid
+// cells of the target block harvested from our converted layouts.
+const CR = path.join(MP66, 'Reference', 'pokecrystal');
+const CALLBACK_LABELS = {};   // crystal map name -> Set(label)
+for (const f of fs.readdirSync(path.join(CR, 'maps')).filter(f => f.endsWith('.asm'))) {
+	for (const m of fs.readFileSync(path.join(CR, 'maps', f), 'utf8').matchAll(/callback MAPCALLBACK_\w+,\s*(\w+)/g))
+		(CALLBACK_LABELS[f.replace('.asm', '')] = CALLBACK_LABELS[f.replace('.asm', '')] || new Set()).add(m[1]);
+}
+const inCallback = (mapName, label) => { const set = CALLBACK_LABELS[mapName]; return !!set && [...set].some(l => label === l || label.startsWith(l + '.')); };
+const harvestBlock = makeHarvester(loadCrystalMaps(path.resolve('.'), CR));
+const changeblockSkipped = [];
+
 const trace = JSON.parse(execFileSync('python', [path.join('tools', 'crystal_trace.py'), path.join(MP66, 'tools'), path.join(MP66, 'Reference', 'pokecrystal', 'maps')], { maxBuffer: 1 << 28 }).toString());
 
 const patches = {};
+const STEMS = [];
 let restored = 0, labels = 0;
 const skipped = { handPatched: [], unresolved: [], notEnabled: new Set() }, bySource = {};
 for (const f of fs.readdirSync(path.join(D, 'maps'))) {
@@ -88,6 +104,7 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 	const j = JSON.parse(fs.readFileSync(path.join(D, 'maps', f), 'utf8'));
 	if (!j._crystal_tileset || !j.name || !trace[j.name]) continue;
 	const stem = f.replace('_map.json', '');
+	STEMS.push({ stem, name: j.name });
 	const sf = path.join(D, 'scripts', stem + '.json');
 	if (!fs.existsSync(sf)) continue;
 	const ours = JSON.parse(fs.readFileSync(sf, 'utf8'));
@@ -114,6 +131,14 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 			if (!conv.length && cmd === 'takecoins' && evalExpr(a[0]) != null) { add({ op: 'takecoins', amount: evalExpr(a[0]) }); n++; tally('takecoins'); continue; }
 			if (!conv.length && cmd === 'setval' && evalExpr(a[0]) != null) { add({ op: 'setvar', var: 'VAR_RESULT', value: evalExpr(a[0]) }); n++; tally('setval'); src = { var: 'VAR_RESULT', name: 'setval' }; continue; }
 			if (!conv.length && cmd === 'loadmenu') { menu = menuItems(asm, a[0]); continue; }
+			if (!conv.length && cmd === 'changeblock' && inCallback(j.name, label)) {
+				const x = evalExpr(a[0]), y = evalExpr(a[1]), block = parseInt(String(a[2]).replace('$', ''), 16);
+				const cells = x != null && y != null && Number.isFinite(block) ? harvestBlock(j._crystal_tileset, block) : null;
+				// changeblock x, y addresses the BLOCK containing that 16px cell
+				if (cells) { add({ op: 'changeblock', x: Math.floor(x / 2) * 2, y: Math.floor(y / 2) * 2, cells }); n++; tally('changeblock'); }
+				else changeblockSkipped.push(`${stem}:${label} changeblock ${a.join(',')}`);
+				continue;
+			}
 			if (!conv.length && cmd === 'verticalmenu' && menu) {
 				// the engine's menu answers 0-based (B = 127); Crystal's verticalmenu is
 				// 1-based, so add 1 — B then reads 128, which matches no ifequal, as in Crystal
@@ -150,11 +175,31 @@ for (const f of fs.readdirSync(path.join(D, 'maps'))) {
 		restored += n; labels++;
 	}
 }
+// ALL OR NOTHING per callback: a TILES callback whose changeblocks are only partly
+// restorable could close an entrance without opening the exit (the Elite Four
+// rooms: the entrance-closing block exists in our layouts, the exit-opening one
+// doesn't) and trap the player. If any changeblock in a callback can't be
+// restored, none of that callback's are — its tiles stay as the map draws them.
+const brokenRoots = new Set(changeblockSkipped.map(x => { const [stem, rest] = x.split(':'); return stem + ':' + rest.split(' ')[0].split('.')[0]; }));
+let withdrawn = 0;
+for (const [stem, labels] of Object.entries(patches)) {
+	for (const [label, ops] of Object.entries(labels)) {
+		if (!brokenRoots.has(stem + ':' + label.split('.')[0])) continue;
+		const kept = ops.filter(o => o.op !== 'changeblock');
+		withdrawn += ops.length - kept.length;
+		const crName = (STEMS.find(m => m.stem === stem) || {}).name;
+		const fresh = (trace[crName] || {})[label];
+		if (fresh && strip(kept) === strip(fresh.flatMap(r => r[2]))) delete labels[label]; else labels[label] = kept;
+	}
+	if (!Object.keys(labels).length) delete patches[stem];
+}
+console.log(`changeblock: withdrew ${withdrawn} from ${brokenRoots.size} callback(s) that are only partly restorable (all or nothing)`);
 fs.writeFileSync(OUT, JSON.stringify({ generated: 'tools/gen_crystal_scriptvar.mjs', patches }));
 console.log(`restored ${restored} dropped comparison(s) in ${labels} label(s) across ${Object.keys(patches).length} map(s)`);
 console.log('by source:', JSON.stringify(bySource));
 console.log(`skipped (hand-patched labels, left alone): ${skipped.handPatched.length}`, skipped.handPatched.join(' '));
 console.log(`skipped (value not resolvable): ${skipped.unresolved.length}`, skipped.unresolved.join(' | '));
 console.log('wrote ' + OUT);
+console.log(`changeblocks not restorable (block never appears in a converted map of that tileset): ${changeblockSkipped.length}`, changeblockSkipped.join(' | '));
 console.log(`dropped coin/setval/menu commands NOT restored (not on RESTORE_COMMANDS_IN): ${skipped.notEnabled.size}`);
 for (const x of [...skipped.notEnabled].sort()) console.log('   ' + x);

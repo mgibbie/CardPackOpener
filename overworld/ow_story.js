@@ -38,6 +38,7 @@ import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
 import { savePos } from './ow_input.js';
 import { cutsceneCtx } from './ow_cutscenes.js';
+import { crystalCallbacksFor } from './crystal_callbacks.js';
 import {
 	STARTERS, refreshObjective, starterMenu, urlPinnedMap,
 } from './main.js';
@@ -380,19 +381,18 @@ export async function runMapSetupScripts(isBoot) {
 	run();
 }
 
-// Crystal map callbacks (`callback MAPCALLBACK_OBJECTS / NEWMAP / TILES`) — the
-// port does not run them in general: pokecrystal has 103, and turning them all on
-// at once would change hundreds of maps' setup. These are the ones that ARE run,
-// each checked against its decomp callback:
-//   GoldenrodCityMoveTutorCallback — the move tutor appears on Wednesdays and
-//   Saturdays once the Elite Four are beaten and you hold the COIN CASE (and
-//   hasn't taught today: ENGINE_DAILY_MOVE_TUTOR), otherwise he's gone.
-const CRYSTAL_CALLBACKS = { GoldenrodCity: ['GoldenrodCityMoveTutorCallback'] };
+// Crystal map callbacks (`callback MAPCALLBACK_NEWMAP / TILES / OBJECTS`) — run as
+// the map loads, in that order, from crystal_callbacks.json
+// (tools/gen_crystal_callbacks.mjs): 82 of pokecrystal's 103 — the Day-of-Week
+// siblings, the Goldenrod move tutor, the Mahogany Mart staircase, the Rocket HQ
+// doors... The deny-list there (and its reasons) covers the ones that would
+// fight a native system. A TILES callback's changeblocks are restored only when
+// all of them can be (see tools/gen_crystal_scriptvar.mjs).
 function runCrystalCallbacks() {
-	const labels = CRYSTAL_CALLBACKS[world.current?.name] || [];
-	if (!labels.length) return;
-	syncScriptVars();   // VAR_WEEKDAY is what the tutor's callback reads
-	for (const label of labels) {
+	const list = crystalCallbacksFor(world.current?.name);
+	if (!list.length) return;
+	syncScriptVars();   // VAR_WEEKDAY / VAR_HOUR are what the callbacks read
+	for (const [, label] of list) {
 		if (!S.mapScripts[label] || cutscene.blocking) continue;
 		cutscene.run(S.mapScripts, label, cutsceneCtx(), () => {});
 		if (cutscene.blocking) cutscene.stop();   // setup only
