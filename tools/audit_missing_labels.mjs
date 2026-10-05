@@ -61,6 +61,11 @@ const ALLOW = [
 	/^Aide_EventScript_/,                    // Prof. Oak's aides' replies (not enough caught / no room / declined)
 	/^Common_EventScript_PlayerHandedOverTheItem$/,   // "handed over the LETTER / METEORITE" (Steven, Cozmo)
 	/^RusturfTunnel_EventScript_SetRusturfTunnelOpen$/, // Rusturf Tunnel opens after Wanda's boyfriend digs through
+	// FireRed's move tutors reached by `goto` (Cinnabar Metronome, ...): the map
+	// labels jump into pokefirered's shared move_tutors.inc (Instinct, 2026-10-05).
+	// They teach through special ChooseMonForMoveTutor (ow_story.js).
+	/^EventScript_(ThunderWave|DreamEater|Softboiled|Counter|Metronome|Mimic)(Tutor|Declined|Taught|TaughtMale|TaughtFemale)$/,
+	/^CapeBrinkTutor_EventScript_FadeTaughtMove$/,   // the Cape Brink starter-move tutor's fade
 ];
 const SHOW = process.argv.includes('--show');
 const readJ = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return d; } };

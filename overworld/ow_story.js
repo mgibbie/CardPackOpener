@@ -32,6 +32,7 @@ import { notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_pr
 import { buildMonForGift } from './ow_gamecorner.js';
 import { dexMilestoneCheck, refreshFollower } from './ow_follower.js';
 import { halfParty, openHalfParty } from './ow_music.js';
+import { chooseMonForMoveTutor } from './move_tutor.js';
 import { moveToMap, warpTo } from './ow_transitions.js';
 import { mapRegionOf } from './region_sync.js';
 import { fadeTo, REDUCED_MOTION_OW } from './ow_fade.js';
@@ -894,6 +895,8 @@ export function runSpecial(name, store, op) {
 		case 'GetFirstFreePartySlot': return set(Math.min((S.party || []).length, 6));
 		case 'CountPartyAliveNonEggMonsExcept': case 'CalculatePlayerPartyCountMinusEgg':
 			return set(living().length);
+		// FireRed's move tutors (move_tutor.js): party pick -> forget a move -> VAR_RESULT
+		case 'ChooseMonForMoveTutor': return chooseMonForMoveTutor();
 		case 'GetPartyMonSpecies': case 'ChoosePartyMon': case 'ScriptGetPartyMonSpecies':
 			return set(0); // party-slot pickers: default to the lead / no selection
 		case 'DoesPlayerPartyContainSpecies': case 'PlayerPartyContainsSpeciesWithPlayerID':
