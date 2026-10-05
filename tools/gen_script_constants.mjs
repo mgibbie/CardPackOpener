@@ -48,7 +48,7 @@ const OPERAND_FIELDS = ['value', 'max', 'count', 'amount'];
 // turning them into numbers would break more than it fixes. Only counts, offsets
 // and limits — NUM_*, FIRST_*, LAST_*, *_PRICE ... — are resolved for operands.
 const NAME_PREFIX = /^(SPECIES|ITEM|MOVE|LOCALID|MAP|FLAG|VAR|TRAINER|OBJ_EVENT|SE|MUS|METATILE|DECOR|EVENT|ENGINE|TYPE|ABILITY|NATURE|STR|STD|TEXT|SPECIAL|SPRITE|BG|WEATHER|SONG|FANFARE|MULTI|EGG|BERRY_TREE|HOLE|CONTEST|LILYCOVE|DAY)_/;
-const COUNT_LIKE = /^(NUM|FIRST|LAST|MAX|MIN)_|_(COUNT|SIZE|MEMBERS)$|_BERRIES(_SKIPPED)?$|_INDEX$/;
+const COUNT_LIKE = /^(NUM|FIRST|LAST|MAX|MIN)_|_(COUNT|SIZE|MEMBERS|PRICE)$|_BERRIES(_SKIPPED)?$|_INDEX$/;
 const wanted = new Map();          // symbol -> uses (branch comparisons — resolved exactly as before)
 const wantedOperand = new Map();   // symbol -> uses (counts/limits used as op operands)
 for (const f of fs.readdirSync(path.join(D, 'scripts'))) {
@@ -146,6 +146,33 @@ for (let pass = 0; pass < 12; pass++) {
 		}
 	}
 	if (!added) break;
+}
+// map-level `.set NAME, value` in the decomps' script files — the Glass Workshop's
+// prices (`.set BLUE_FLUTE_PRICE, 250`, `.set LOWEST_ASH_PRICE, BLUE_FLUTE_PRICE`).
+// File-scoped, so two maps setting one name differently is a conflict and stays out.
+{
+	const sets = [];   // [name, raw value, decomp]
+	for (const dec of ['pokefirered', 'pokeemerald']) {
+		const data = path.join(REF, dec, 'data');
+		if (!fs.existsSync(data)) continue;
+		const walkInc = dir => {
+			for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+				const p = path.join(dir, e.name);
+				if (e.isDirectory()) { walkInc(p); continue; }
+				if (!e.name.endsWith('.inc')) continue;
+				for (const line of fs.readFileSync(p, 'utf8').split('\n')) {
+					const m = /^\s*\.set\s+([A-Z_][A-Z0-9_]*)\s*,\s*([A-Za-z0-9_x]+)\s*(?:@.*)?$/.exec(line);
+					if (m) sets.push([m[1], m[2], dec]);
+				}
+			}
+		};
+		walkInc(data);
+	}
+	for (const [n, v, dec] of sets) if (/^-?(0x[0-9a-fA-F]+|\d+)$/.test(v)) note(n, Number(v), dec + ' (.set)');
+	for (let pass = 0; pass < 4; pass++) for (const [n, v, dec] of sets) {
+		if (/^-?(0x[0-9a-fA-F]+|\d+)$/.test(v) || found.has(n)) continue;
+		const t = valueOf(v); if (t !== undefined) note(n, t, dec + ' (.set)');
+	}
 }
 console.log(`constants harvested from the decomps: ${found.size}`);
 // a symbol's values from PLAIN numeric #defines only (no evaluated expressions) —

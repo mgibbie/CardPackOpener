@@ -8,6 +8,8 @@ import { INIT_EVENTS } from './crystal_init_events.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
+import { startChoice } from './choice.js';
+import { scrollOptions } from './scroll_multichoice.js';
 import * as GymPuzzles from './gym_puzzles.js';
 import { Journal } from './journal.js';
 import { battle, cutscene, dialog, hud, npcs, player, trainers, world } from './ow_core.js';
@@ -819,6 +821,15 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// Emerald's scroll list (the Glass Workshop's flutes/furniture, the Fan Club
+		// rater, the Frontier vendors...): VAR_0x8004 names the list, the pick lands
+		// in VAR_RESULT (B = MULTI_B_PRESSED). It was never implemented, so the menu
+		// never opened and the script branched on a stale result (2026-10-05).
+		case 'ShowScrollableMultichoice': {
+			const sc = scrollOptions(Story.getVar('VAR_0x8004'));
+			if (!sc) return;
+			return startChoice({ options: sc.options, list: sc.name, ignoreB: false, default: 0 });
+		}
 		// Pokémon Tower 6F's ghost MAROWAK (FireRed): a no-store action special that
 		// was missing, so the script read a stale VAR_RESULT and never fought
 		case 'StartMarowakBattle': return startMarowakBattle();

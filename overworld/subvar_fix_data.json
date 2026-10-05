@@ -1,0 +1,68 @@
+{
+ "generated": "tools/gen_subvar_fix.mjs",
+ "flips": {
+  "Route113_GlassWorkshop_EventScript_BlueFlute": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "BLUE_FLUTE_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_YellowFlute": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "YELLOW_FLUTE_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_RedFlute": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "RED_FLUTE_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_WhiteFlute": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "WHITE_FLUTE_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_BlackFlute": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "BLACK_FLUTE_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_PrettyChair": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "PRETTY_CHAIR_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_PrettyDesk": [
+   {
+    "k": 0,
+    "var": "VAR_ASH_GATHER_COUNT",
+    "value": "PRETTY_DESK_PRICE"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_NotEnoughAsh": [
+   {
+    "k": 0,
+    "var": "VAR_0x800A",
+    "value": "VAR_ASH_GATHER_COUNT"
+   }
+  ],
+  "Route113_GlassWorkshop_EventScript_NotEnoughAshForItem": [
+   {
+    "k": 0,
+    "var": "VAR_0x800A",
+    "value": "VAR_ASH_GATHER_COUNT"
+   }
+  ]
+ }
+}

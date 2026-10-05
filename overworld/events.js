@@ -413,6 +413,9 @@ export class Cutscene {
 				case 'clearflag': clearFlag(op.flag); break;
 				case 'setvar': setVar(op.var, resolveValue(op.value)); break;
 				case 'addvar': { const n = numericOperand(op.value, 'addvar'); if (n !== null) setVar(op.var, getVar(op.var) + n); break; }
+				// a decomp `subvar` whose operand is a symbol (subvar_fix.js restores these;
+				// the transpile had turned them into addvars — the Glass Workshop GAVE ash)
+				case 'subvar': { const n = numericOperand(op.value, 'subvar'); if (n !== null) setVar(op.var, getVar(op.var) - n); break; }
 				case 'copyvar': setVar(op.dst, resolveValue(op.src)); break;
 				case 'setrespawn': break;
 				// giveitem / additem answer in VAR_RESULT (TRUE = it went in the bag), and the
